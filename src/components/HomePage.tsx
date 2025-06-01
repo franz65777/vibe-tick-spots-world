@@ -138,31 +138,53 @@ const HomePage = () => {
 
   const renderMap = () => {
     const filteredLocations = getFilteredLocations();
-    const pinColor = selectedMapFilter === 'following' ? 'blue' : 
-                    selectedMapFilter === 'popular' ? 'red' : 'green';
     
     return (
       <div className="flex-1 p-4">
-        <div className="rounded-lg bg-gray-100 h-full relative">
-          <div className="absolute top-4 left-4 bg-white px-3 py-1 rounded-full text-sm font-medium capitalize shadow-sm">
+        <div className="rounded-lg bg-gray-100 h-full relative min-h-96">
+          <div className="absolute top-4 left-4 bg-white px-3 py-1 rounded-full text-sm font-medium capitalize shadow-sm z-10">
             {selectedMapFilter} ({filteredLocations.length})
           </div>
-          <div className="h-full flex items-center justify-center">
-            <div className="text-gray-500 relative">
-              {filteredLocations.map((location) => (
-                <div
-                  key={location.id}
-                  className="absolute cursor-pointer"
-                  style={{
-                    top: `calc(50% + ${(location.latitude || 0) - 40.785091} * 1000)`,
-                    left: `calc(50% + ${(location.longitude || 0) + 73.968285} * 1000)`,
-                  }}
-                  onClick={() => handleLocationClick(location)}
-                >
-                  <MapPin className={`w-6 h-6 text-${pinColor}-500`} />
+          
+          {/* Map pins positioned absolutely */}
+          {filteredLocations.map((location, index) => {
+            const pinColor = selectedMapFilter === 'following' ? 'blue' : 
+                           selectedMapFilter === 'popular' ? 'red' : 'green';
+            
+            // Simple positioning for demo - spread pins across the map
+            const topPercent = 20 + (index * 20);
+            const leftPercent = 20 + (index * 25);
+            
+            return (
+              <div
+                key={location.id}
+                className="absolute cursor-pointer z-20"
+                style={{
+                  top: `${topPercent}%`,
+                  left: `${leftPercent}%`,
+                }}
+                onClick={() => handleLocationClick(location)}
+              >
+                <div className="relative">
+                  <MapPin 
+                    className={`w-8 h-8 ${
+                      pinColor === 'blue' ? 'text-blue-500' :
+                      pinColor === 'red' ? 'text-red-500' :
+                      'text-green-500'
+                    } drop-shadow-lg`} 
+                  />
+                  <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 bg-white px-2 py-1 rounded text-xs font-medium shadow-sm whitespace-nowrap">
+                    {location.name}
+                  </div>
                 </div>
-              ))}
-              Mock Map
+              </div>
+            );
+          })}
+          
+          {/* Map background text */}
+          <div className="h-full flex items-center justify-center">
+            <div className="text-gray-400 text-lg font-medium">
+              Interactive Map
             </div>
           </div>
         </div>
