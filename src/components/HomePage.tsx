@@ -7,6 +7,8 @@ import SaveLocationDialog from '@/components/SaveLocationDialog';
 import { locationService, Location } from '@/services/locationService';
 
 const HomePage = () => {
+  console.log('HomePage component rendering...');
+  
   const [selectedTab, setSelectedTab] = useState('following');
   const [selectedCity, setSelectedCity] = useState('Detecting location...');
   const [isSearching, setIsSearching] = useState(false);
@@ -30,6 +32,7 @@ const HomePage = () => {
 
   // Get user's current location
   useEffect(() => {
+    console.log('HomePage useEffect for location running...');
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
@@ -67,12 +70,19 @@ const HomePage = () => {
 
   // Load user's saved locations
   useEffect(() => {
+    console.log('HomePage useEffect for loading saved locations running...');
     loadSavedLocations();
   }, []);
 
   const loadSavedLocations = async () => {
-    const locations = await locationService.getUserSavedLocations();
-    setSavedLocations(locations);
+    try {
+      console.log('Loading saved locations...');
+      const locations = await locationService.getUserSavedLocations();
+      console.log('Loaded locations:', locations);
+      setSavedLocations(locations);
+    } catch (error) {
+      console.error('Error loading saved locations:', error);
+    }
   };
 
   // Handle search functionality
@@ -133,8 +143,16 @@ const HomePage = () => {
     }
   ];
 
+  console.log('HomePage rendering with state:', {
+    selectedTab,
+    selectedCity,
+    savedLocations: savedLocations.length,
+    places: places.length
+  });
+
   return (
     <div className="flex flex-col h-full bg-white">
+      {console.log('HomePage JSX rendering...')}
       {/* Header */}
       <div className="px-4 py-4 bg-white border-b border-gray-100">
         <div className="flex items-center justify-between mb-4">
