@@ -1,668 +1,287 @@
-import { useState, useEffect } from 'react';
-import { Heart, Settings, Bell, Plus, MapPin, Search, X, Bookmark } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useState } from 'react';
+import { MapPin, Search, User, Heart, Settings, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import SaveLocationDialog from '@/components/SaveLocationDialog';
-import { locationService, Location } from '@/services/locationService';
-import LocationDetailSheet from '@/components/LocationDetailSheet';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Card, CardContent } from '@/components/ui/card';
+import LocationDetailSheet from './LocationDetailSheet';
+import StoriesViewer from './StoriesViewer';
+import CreateStoryModal from './CreateStoryModal';
 
-// Mock data types for different location categories
-interface LocationWithMetadata extends Location {
-  rating?: number;
-  visitors?: string[];
-  isNew?: boolean;
-  price?: string;
-  coordinates?: { lat: number; lng: number };
-  likes?: number;
-  isFromFollowing?: boolean;
-  savedDate?: string;
+interface Location {
+  id: string;
+  name: string;
+  category: string;
+  address: string;
+  latitude: number;
+  longitude: number;
 }
 
 const HomePage = () => {
-  console.log('HomePage component rendering...');
-  
-  const [selectedTab, setSelectedTab] = useState('following');
-  const [selectedCity, setSelectedCity] = useState('Detecting location...');
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<string[]>([]);
-  const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [savedLocations, setSavedLocations] = useState<Location[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
-  const [showLocationDetail, setShowLocationDetail] = useState(false);
-
-  // Sample cities for search (in a real app, this would come from an API)
-  const popularCities = [
-    'New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix',
-    'Philadelphia', 'San Antonio', 'San Diego', 'Dallas', 'Austin',
-    'Jacksonville', 'Fort Worth', 'Columbus', 'Charlotte', 'Seattle',
-    'Denver', 'Washington', 'Boston', 'Nashville', 'Baltimore',
-    'Oklahoma City', 'Portland', 'Las Vegas', 'Louisville', 'Milwaukee',
-    'Albuquerque', 'Tucson', 'Fresno', 'Sacramento', 'Kansas City',
-    'Atlanta', 'Miami', 'Colorado Springs', 'Raleigh', 'Omaha',
-    'Long Beach', 'Virginia Beach', 'Oakland', 'Minneapolis', 'Tampa',
-    'Tulsa', 'Arlington', 'New Orleans', 'Wichita', 'Cleveland'
-  ];
-
-  // Mock data for different categories
-  const followingPlaces: LocationWithMetadata[] = [
+  const [savedLocations, setSavedLocations] = useState<Location[]>([
     {
-      id: 'following-1',
-      name: 'Golden Gate Cafe',
-      category: 'Restaurant',
-      rating: 4.8,
-      visitors: ['Emma', 'Michael'],
-      isNew: false,
-      price: '$$',
-      coordinates: { lat: 37.7749, lng: -122.4194 },
-      likes: 124,
-      isFromFollowing: true,
-      created_by: 'demo-user',
-      pioneer_user_id: 'demo-user',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      address: '123 Golden Gate Ave, San Francisco, CA'
+      id: '1',
+      name: 'Central Park',
+      category: 'park',
+      address: 'New York, NY',
+      latitude: 40.785091,
+      longitude: -73.968285,
     },
     {
-      id: 'following-2',
-      name: 'Sunset View Point',
-      category: 'Viewpoint',
-      rating: 4.9,
-      visitors: ['Sophia', 'Emma'],
-      isNew: false,
-      price: 'Free',
-      coordinates: { lat: 37.7849, lng: -122.4294 },
-      likes: 89,
-      isFromFollowing: true,
-      created_by: 'demo-user',
-      pioneer_user_id: 'demo-user',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      address: 'Sunset Blvd, San Francisco, CA'
+      id: '2',
+      name: 'Golden Gate Bridge',
+      category: 'landmark',
+      address: 'San Francisco, CA',
+      latitude: 37.819929,
+      longitude: -122.478255,
+    },
+    {
+      id: '3',
+      name: 'Eiffel Tower',
+      category: 'landmark',
+      address: 'Paris, France',
+      latitude: 48.8584,
+      longitude: 2.2945,
+    },
+  ]);
+  const [selectedTab, setSelectedTab] = useState('map');
+  const [selectedStory, setSelectedStory] = useState<number | null>(null);
+  const [showCreateStory, setShowCreateStory] = useState(false);
+
+  // Mock stories data - in a real app this would come from your API
+  const mockStories = [
+    {
+      id: '1',
+      userId: 'user1',
+      userName: 'Emma',
+      userAvatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png',
+      mediaUrl: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png',
+      mediaType: 'image' as const,
+      locationId: '1',
+      locationName: 'Cafe Central',
+      locationAddress: '123 Main St',
+      timestamp: '2h ago',
+      isViewed: false,
+      bookingUrl: 'https://www.opentable.com/booking/cafe-central'
+    },
+    {
+      id: '2',
+      userId: 'user2',
+      userName: 'Michael',
+      userAvatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png',
+      mediaUrl: '/lovable-uploads/5bb15f7b-b3ba-4eae-88b1-7fa789eb67c4.png',
+      mediaType: 'image' as const,
+      locationId: '2',
+      locationName: 'The Rooftop Bar',
+      locationAddress: '456 High St',
+      timestamp: '4h ago',
+      isViewed: true,
+      bookingUrl: 'https://www.booking.com/hotel/rooftop-bar'
+    },
+    {
+      id: '3',
+      userId: 'user3',
+      userName: 'Alex',
+      userAvatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png',
+      mediaUrl: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png',
+      mediaType: 'image' as const,
+      locationId: '3',
+      locationName: 'Giuseppe\'s Restaurant',
+      locationAddress: '789 Food St',
+      timestamp: '6h ago',
+      isViewed: false,
+      bookingUrl: 'https://www.opentable.com/booking/giuseppe-restaurant'
     }
   ];
 
-  const popularPlaces: LocationWithMetadata[] = [
-    {
-      id: 'popular-1',
-      name: 'Mission Rooftop Bar',
-      category: 'Bar',
-      rating: 4.7,
-      visitors: ['Alex', 'Sarah', 'Mike'],
-      isNew: false,
-      price: '$$$',
-      coordinates: { lat: 37.7649, lng: -122.4094 },
-      likes: 456,
-      isFromFollowing: false,
-      created_by: 'demo-user',
-      pioneer_user_id: 'demo-user',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      address: '456 Mission St, San Francisco, CA'
-    },
-    {
-      id: 'popular-2',
-      name: 'Chinatown Tea House',
-      category: 'Restaurant',
-      rating: 4.6,
-      visitors: ['Lisa', 'John'],
-      isNew: false,
-      price: '$$',
-      coordinates: { lat: 37.7949, lng: -122.4094 },
-      likes: 334,
-      isFromFollowing: false,
-      created_by: 'demo-user',
-      pioneer_user_id: 'demo-user',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      address: '789 Grant Ave, San Francisco, CA'
-    },
-    {
-      id: 'popular-3',
-      name: 'Union Square Shopping',
-      category: 'Shopping',
-      rating: 4.5,
-      visitors: ['Emma', 'Sophia'],
-      isNew: false,
-      price: '$$$$',
-      coordinates: { lat: 37.7879, lng: -122.4074 },
-      likes: 278,
-      isFromFollowing: false,
-      created_by: 'demo-user',
-      pioneer_user_id: 'demo-user',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      address: 'Union Square, San Francisco, CA'
-    }
-  ];
-
-  const newPlaces: LocationWithMetadata[] = [
-    {
-      id: 'new-1',
-      name: 'Hidden Garden Cafe',
-      category: 'Restaurant',
-      rating: 4.3,
-      visitors: ['Michael'],
-      isNew: true,
-      price: '$$',
-      coordinates: { lat: 37.7549, lng: -122.4194 },
-      likes: 23,
-      isFromFollowing: true,
-      savedDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
-      created_by: 'demo-user',
-      pioneer_user_id: 'demo-user',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      address: '321 Hidden St, San Francisco, CA'
-    },
-    {
-      id: 'new-2',
-      name: 'Artisan Coffee Lab',
-      category: 'Cafe',
-      rating: 4.4,
-      visitors: ['Sophia'],
-      isNew: true,
-      price: '$',
-      coordinates: { lat: 37.7649, lng: -122.4294 },
-      likes: 15,
-      isFromFollowing: true,
-      savedDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
-      created_by: 'demo-user',
-      pioneer_user_id: 'demo-user',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      address: '654 Artisan Ave, San Francisco, CA'
-    }
-  ];
-
-  // Get places based on selected tab
-  const getPlacesForTab = (tab: string): LocationWithMetadata[] => {
-    switch (tab) {
-      case 'following':
-        return followingPlaces;
-      case 'popular':
-        return popularPlaces.sort((a, b) => (b.likes || 0) - (a.likes || 0)).slice(0, 10);
-      case 'new':
-        // Filter places saved within the last week
-        const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-        return newPlaces.filter(place => {
-          if (!place.savedDate) return false;
-          return new Date(place.savedDate) > oneWeekAgo;
-        });
-      default:
-        return followingPlaces;
-    }
+  const handleStoryViewed = (storyId: string) => {
+    console.log('Story viewed:', storyId);
+    // In a real app, you would update the story's viewed status in your backend
   };
 
-  // Get current places based on selected tab
-  const places = getPlacesForTab(selectedTab);
-
-  // Get user's current location
-  useEffect(() => {
-    console.log('HomePage useEffect for location running...');
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-          console.log('User location:', latitude, longitude);
-          
-          // In a real app, you would use a reverse geocoding service
-          // For now, we'll simulate getting the city name
-          try {
-            // Simulated reverse geocoding - in real app use Google Maps API or similar
-            setSelectedCity('Current Location');
-            setTimeout(() => {
-              // Simulate getting actual city name
-              setSelectedCity('San Francisco'); // Default fallback
-            }, 1000);
-          } catch (error) {
-            console.error('Error getting location name:', error);
-            setSelectedCity('San Francisco');
-          }
-        },
-        (error) => {
-          console.error('Error getting location:', error);
-          setSelectedCity('San Francisco'); // Default fallback
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 300000 // 5 minutes
-        }
-      );
-    } else {
-      setSelectedCity('San Francisco'); // Default fallback
-    }
-  }, []);
-
-  // Load user's saved locations with error handling
-  useEffect(() => {
-    console.log('HomePage useEffect for loading saved locations running...');
-    loadSavedLocations();
-  }, []);
-
-  const loadSavedLocations = async () => {
-    try {
-      console.log('Loading saved locations...');
-      setIsLoading(true);
-      const locations = await locationService.getUserSavedLocations();
-      console.log('Loaded locations:', locations);
-      setSavedLocations(locations);
-    } catch (error) {
-      console.error('Error loading saved locations:', error);
-      // Don't fail the component, just use empty array
-      setSavedLocations([]);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleStoryCreated = () => {
+    console.log('Story created');
+    // In a real app, you would refresh the stories list
   };
 
-  // Handle search functionality
-  useEffect(() => {
-    if (searchQuery.length > 0) {
-      const filtered = popularCities.filter(city =>
-        city.toLowerCase().includes(searchQuery.toLowerCase())
-      ).slice(0, 5); // Limit to 5 results
-      setSearchResults(filtered);
-    } else {
-      setSearchResults([]);
-    }
-  }, [searchQuery]);
-
-  const handleCitySelect = (city: string) => {
-    setSelectedCity(city);
-    setIsSearching(false);
-    setSearchQuery('');
-    setSearchResults([]);
-  };
-
-  const handlePinClick = (place: LocationWithMetadata) => {
-    // Convert place to Location format
-    const location: Location = {
-      id: place.id,
-      name: place.name,
-      category: place.category,
-      address: place.address || `${place.coordinates?.lat}, ${place.coordinates?.lng}`,
-      latitude: place.coordinates?.lat,
-      longitude: place.coordinates?.lng,
-      created_by: place.created_by,
-      pioneer_user_id: place.pioneer_user_id,
-      created_at: place.created_at,
-      updated_at: place.updated_at,
-    };
-    
+  const handleLocationClick = (location: Location) => {
     setSelectedLocation(location);
-    setShowLocationDetail(true);
+    setIsSheetOpen(true);
   };
 
-  const friends = [
-    { name: 'Emma', avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png' },
-    { name: 'Michael', avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png' },
-    { name: 'Sophia', avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png' },
-  ];
+  const handleCloseSheet = () => {
+    setIsSheetOpen(false);
+  };
 
-  console.log('HomePage rendering with state:', {
-    selectedTab,
-    selectedCity,
-    savedLocations: savedLocations.length,
-    places: places.length,
-    isLoading
-  });
-
-  // Show loading state
-  if (isLoading) {
-    return (
-      <div className="flex flex-col h-full bg-white items-center justify-center">
-        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="mt-4 text-gray-600">Loading...</p>
+  const renderMap = () => (
+    <div className="flex-1 p-4">
+      <div className="rounded-lg bg-gray-100 h-full">
+        {/* Mock Map */}
+        <div className="h-full flex items-center justify-center">
+          <div className="text-gray-500">
+            {savedLocations.map((location) => (
+              <div
+                key={location.id}
+                className="absolute cursor-pointer"
+                style={{
+                  top: `calc(50% + ${location.latitude - 40.785091} * 1000)`,
+                  left: `calc(50% + ${location.longitude + 73.968285} * 1000)`,
+                }}
+                onClick={() => handleLocationClick(location)}
+              >
+                <MapPin className="w-6 h-6 text-blue-500" />
+              </div>
+            ))}
+            Mock Map
+          </div>
+        </div>
       </div>
-    );
-  }
+    </div>
+  );
+
+  const renderList = () => (
+    <div className="flex-1 p-4">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold">Saved Locations</h2>
+      </div>
+      <div className="space-y-3">
+        {savedLocations.map((location) => (
+          <Card
+            key={location.id}
+            className="border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => handleLocationClick(location)}
+          >
+            <CardContent className="p-3">
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-blue-50 text-blue-500 w-8 h-8 flex items-center justify-center">
+                  <MapPin className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-800">{location.name}</h3>
+                  <p className="text-sm text-gray-500">{location.address}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="h-full flex flex-col bg-gray-50">
       {/* Header */}
-      <div className="px-4 py-4 bg-white border-b border-gray-100">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3 flex-1">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
-              <MapPin className="w-6 h-6 text-white" />
-            </div>
-            <div className="flex-1">
-              <span className="text-sm text-gray-500">Discover</span>
-              {isSearching ? (
-                <div className="relative">
-                  <Input
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search for a city..."
-                    className="text-lg font-semibold border-0 p-0 h-auto bg-transparent focus-visible:ring-0"
-                    autoFocus
-                  />
-                  {searchResults.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-50 mt-1">
-                      {searchResults.map((city) => (
-                        <button
-                          key={city}
-                          onClick={() => handleCitySelect(city)}
-                          className="w-full text-left px-3 py-2 hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg"
-                        >
-                          {city}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <button
-                  onClick={() => setIsSearching(true)}
-                  className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors text-left"
-                >
-                  {selectedCity}
-                </button>
-              )}
-            </div>
-            {isSearching && (
-              <button
-                onClick={() => {
-                  setIsSearching(false);
-                  setSearchQuery('');
-                  setSearchResults([]);
-                }}
-                className="w-6 h-6 flex items-center justify-center"
-              >
-                <X className="w-4 h-4 text-gray-500" />
-              </button>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Bell className="w-6 h-6 text-gray-600" />
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
-            </div>
-            <div className="relative">
-              <div className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center">
-                <span className="text-xs">📋</span>
-              </div>
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
-            </div>
-          </div>
-        </div>
-
-        {/* Tab Navigation */}
-        <div className="flex bg-gray-100 rounded-xl p-1 mb-4">
-          <button
-            onClick={() => setSelectedTab('following')}
-            className={cn(
-              "flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all",
-              selectedTab === 'following'
-                ? "bg-blue-600 text-white shadow-sm"
-                : "text-gray-600"
-            )}
-          >
-            <div className="flex items-center justify-center gap-1">
-              <span className="text-xs">👥</span>
-              Following
-            </div>
-          </button>
-          <button
-            onClick={() => setSelectedTab('popular')}
-            className={cn(
-              "flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all",
-              selectedTab === 'popular'
-                ? "bg-blue-600 text-white shadow-sm"
-                : "text-gray-600"
-            )}
-          >
-            <div className="flex items-center justify-center gap-1">
-              <Heart className="w-4 h-4" />
-              Popular
-            </div>
-          </button>
-          <button
-            onClick={() => setSelectedTab('new')}
-            className={cn(
-              "flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all relative",
-              selectedTab === 'new'
-                ? "bg-blue-600 text-white shadow-sm"
-                : "text-gray-600"
-            )}
-          >
-            <div className="flex items-center justify-center gap-1">
-              <Settings className="w-4 h-4" />
-              New
-              {newPlaces.length > 0 && (
-                <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></div>
-              )}
-            </div>
-          </button>
-        </div>
-
-        {/* Friends Stories */}
-        <div className="flex gap-3 mb-4">
-          <div className="flex flex-col items-center gap-2">
-            <div className="w-16 h-16 border-2 border-dashed border-gray-300 rounded-full flex items-center justify-center">
-              <Plus className="w-6 h-6 text-gray-400" />
-            </div>
-            <span className="text-xs text-gray-500">Add Story</span>
-          </div>
-          {friends.map((friend, index) => (
-            <div key={index} className="flex flex-col items-center gap-2">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 p-0.5">
-                <div className="w-full h-full rounded-full bg-white p-0.5">
-                  <div className="w-full h-full rounded-full bg-gray-200 flex items-center justify-center">
-                    <span className="text-xs font-medium">{friend.name[0]}</span>
-                  </div>
-                </div>
-              </div>
-              <span className="text-xs text-gray-700 font-medium">{friend.name}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Map Section */}
-      <div className="px-4 pb-4 bg-white">
-        <div className="h-64 bg-gradient-to-br from-green-50 to-blue-50 rounded-2xl relative overflow-hidden shadow-lg">
-          {/* Map Background with Google Maps Style */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-100 via-green-50 to-blue-200">
-            {/* Street lines */}
-            <svg className="absolute inset-0 w-full h-full">
-              <defs>
-                <pattern id="streets" patternUnits="userSpaceOnUse" width="40" height="40">
-                  <path d="M0,20 L40,20" stroke="#ddd" strokeWidth="1"/>
-                  <path d="M20,0 L20,40" stroke="#ddd" strokeWidth="1"/>
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#streets)" opacity="0.3"/>
-            </svg>
-          </div>
-
-          {/* Location Labels */}
-          <div className="absolute top-4 left-4 text-xs font-medium text-gray-600 bg-white/80 px-2 py-1 rounded">
-            PACIFIC HEIGHTS
-          </div>
-          <div className="absolute top-6 right-4 text-xs font-medium text-gray-600 bg-white/80 px-2 py-1 rounded">
-            CHINATOWN
-          </div>
-          <div className="absolute bottom-16 left-4 text-xs font-medium text-gray-600 bg-white/80 px-2 py-1 rounded">
-            MISSION<br />DISTRICT
-          </div>
-          <div className="absolute bottom-20 right-8 text-xs font-medium text-gray-600 bg-white/80 px-2 py-1 rounded">
-            UNION SQUARE
-          </div>
-
-          {/* Tab indicator */}
-          <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white text-xs px-3 py-1 rounded-full font-medium">
-            {selectedTab === 'following' && `${places.length} from friends`}
-            {selectedTab === 'popular' && `Top ${places.length} popular`}
-            {selectedTab === 'new' && `${places.length} new this week`}
-          </div>
-
-          {/* Place Pins with visitor info */}
-          {places.map((place, index) => (
-            <div 
-              key={place.id}
-              className="absolute group cursor-pointer"
-              style={{
-                top: `${30 + index * 15}%`,
-                left: `${25 + index * 20}%`
-              }}
-              onClick={() => handlePinClick(place)}
+      <div className="bg-white px-4 py-3 border-b border-gray-200">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">Discover</h1>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => setShowCreateStory(true)}
+              className="text-blue-600"
             >
-              {/* Pin with different colors based on tab */}
-              <div className={cn(
-                "w-8 h-8 rounded-full flex items-center justify-center shadow-lg border-2 border-white hover:scale-110 transition-transform",
-                selectedTab === 'following' && "bg-blue-500",
-                selectedTab === 'popular' && "bg-red-500", 
-                selectedTab === 'new' && "bg-green-500"
-              )}>
-                <div className="w-3 h-3 bg-white rounded-full"></div>
-              </div>
-              
-              {/* New badge for new places */}
-              {place.isNew && selectedTab === 'new' && (
-                <div className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
-                  <span className="text-xs text-white font-bold">!</span>
-                </div>
-              )}
-              
-              {/* Hover Info Card */}
-              <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-white rounded-lg shadow-lg p-3 min-w-48 opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
-                <div className="text-sm font-semibold text-gray-900">{place.name}</div>
-                <div className="text-xs text-gray-500 mb-1">{place.category} • {place.price}</div>
-                <div className="text-xs text-gray-600">
-                  Visited by: {place.visitors?.join(', ')}
-                </div>
-                <div className="flex items-center gap-1 mt-1">
-                  <span className="text-xs text-yellow-500">★</span>
-                  <span className="text-xs text-gray-600">{place.rating}</span>
-                  {selectedTab === 'popular' && (
-                    <>
-                      <span className="text-xs text-gray-400">•</span>
-                      <Heart className="w-3 h-3 text-red-500" />
-                      <span className="text-xs text-gray-600">{place.likes}</span>
-                    </>
-                  )}
-                </div>
-                {/* Arrow */}
-                <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+              <Plus className="w-5 h-5 mr-1" />
+              Story
+            </Button>
+            <Button variant="ghost" size="sm">
+              <Settings className="w-5 h-5" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Stories */}
+      <div className="bg-white border-b border-gray-200 px-4 py-3">
+        <div className="flex gap-3 overflow-x-auto">
+          {/* Your story */}
+          <div 
+            className="flex-shrink-0 text-center cursor-pointer"
+            onClick={() => setShowCreateStory(true)}
+          >
+            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center relative">
+              <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center">
+                <Plus className="w-6 h-6 text-gray-600" />
               </div>
             </div>
-          ))}
-
-          {/* Current Location Indicator */}
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-            <div className="w-4 h-4 bg-blue-600 rounded-full border-4 border-white shadow-lg animate-pulse"></div>
+            <p className="text-xs mt-1 text-gray-600">Your Story</p>
           </div>
 
-          {/* Expand Map Button */}
-          <button className="absolute bottom-4 right-4 w-10 h-10 bg-white rounded-lg shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors">
-            <div className="grid grid-cols-2 gap-0.5">
-              <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
-              <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
-              <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
-              <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
+          {/* Friends' stories */}
+          {mockStories.map((story, index) => (
+            <div 
+              key={story.id}
+              className="flex-shrink-0 text-center cursor-pointer"
+              onClick={() => setSelectedStory(index)}
+            >
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center relative ${
+                story.isViewed 
+                  ? 'bg-gray-300' 
+                  : 'bg-gradient-to-r from-pink-500 to-orange-500'
+              }`}>
+                <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center overflow-hidden">
+                  <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                    <span className="text-xs font-medium">{story.userName[0]}</span>
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs mt-1 text-gray-600 truncate w-16">{story.userName}</p>
             </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Selection Tabs */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="flex justify-around items-center">
+          <button
+            onClick={() => setSelectedTab('map')}
+            className={cn(
+              "flex-1 py-3 text-sm font-medium transition-colors",
+              selectedTab === 'map' ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-500"
+            )}
+          >
+            Map
+          </button>
+          <button
+            onClick={() => setSelectedTab('list')}
+            className={cn(
+              "flex-1 py-3 text-sm font-medium transition-colors",
+              selectedTab === 'list' ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-500"
+            )}
+          >
+            List
           </button>
         </div>
       </div>
 
-      {/* Categories */}
-      <div className="px-4 py-4 bg-white border-t border-gray-100">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex gap-3">
-            <Button size="sm" className="bg-blue-600 text-white rounded-full">All</Button>
-            <Button size="sm" variant="outline" className="rounded-full">Restaurants</Button>
-            <Button size="sm" variant="outline" className="rounded-full">Hotels</Button>
-            <Button size="sm" variant="outline" className="rounded-full">Bars</Button>
-          </div>
-          {places.length > 0 && (
-            <div className="flex items-center gap-1 text-xs text-gray-500">
-              <Bookmark className="w-3 h-3" />
-              {places.length} places
-            </div>
-          )}
-        </div>
-
-        {/* Place Cards */}
-        <div className="space-y-3">
-          {places.map((place) => (
-            <div key={place.id} className="relative">
-              {place.isNew && (
-                <div className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-medium z-10">
-                  NEW
-                </div>
-              )}
-              <div className="bg-gray-100 rounded-xl h-32 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-blue-400 opacity-50"></div>
-                <div className="absolute bottom-2 right-2 bg-white text-gray-800 text-xs px-2 py-1 rounded">
-                  {place.price}
-                </div>
-                <div className="absolute bottom-2 left-2 text-white text-sm font-medium">
-                  {place.name}
-                </div>
-                <div className="absolute top-2 right-2 text-white text-xs">
-                  ★ {place.rating}
-                </div>
-                {selectedTab === 'popular' && (
-                  <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/50 text-white text-xs px-2 py-1 rounded">
-                    <Heart className="w-3 h-3" />
-                    {place.likes}
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-          
-          {places.length === 0 && (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <MapPin className="w-8 h-8 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {selectedTab === 'following' && 'No places from friends yet'}
-                {selectedTab === 'popular' && 'No popular places found'}
-                {selectedTab === 'new' && 'No new places this week'}
-              </h3>
-              <p className="text-sm text-gray-500 mb-4">
-                {selectedTab === 'following' && 'Follow friends to see their saved places!'}
-                {selectedTab === 'popular' && 'Check back later for trending spots.'}
-                {selectedTab === 'new' && 'Be the first to discover new places!'}
-              </p>
-              <Button
-                onClick={() => setShowSaveDialog(true)}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                Save Your First Location
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Floating Add Button */}
-      <button 
-        onClick={() => setShowSaveDialog(true)}
-        className="absolute bottom-20 right-4 w-14 h-14 bg-blue-600 rounded-2xl shadow-lg flex items-center justify-center hover:bg-blue-700 transition-colors"
-      >
-        <Plus className="w-6 h-6 text-white" />
-      </button>
-
-      {/* Save Location Dialog */}
-      <SaveLocationDialog
-        isOpen={showSaveDialog}
-        onClose={() => setShowSaveDialog(false)}
-        onLocationSaved={loadSavedLocations}
-      />
+      {/* Map */}
+      {selectedTab === 'map' ? renderMap() : renderList()}
 
       {/* Location Detail Sheet */}
       <LocationDetailSheet
-        isOpen={showLocationDetail}
-        onClose={() => setShowLocationDetail(false)}
+        isOpen={isSheetOpen}
+        onClose={handleCloseSheet}
         location={selectedLocation}
+      />
+
+      {/* Stories Viewer */}
+      {selectedStory !== null && (
+        <StoriesViewer
+          stories={mockStories}
+          initialStoryIndex={selectedStory}
+          onClose={() => setSelectedStory(null)}
+          onStoryViewed={handleStoryViewed}
+        />
+      )}
+
+      {/* Create Story Modal */}
+      <CreateStoryModal
+        isOpen={showCreateStory}
+        onClose={() => setShowCreateStory(false)}
+        onStoryCreated={handleStoryCreated}
       />
     </div>
   );
