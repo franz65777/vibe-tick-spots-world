@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { MapPin, Search, User, Heart, Settings, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -318,7 +319,7 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Map */}
+      {/* Map or List */}
       {selectedTab === 'map' ? renderMap() : renderList()}
 
       {/* Location Detail Sheet */}
