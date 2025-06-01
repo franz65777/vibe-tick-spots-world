@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Heart, Settings, Bell, Plus, MapPin, Search, X, Bookmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -184,8 +183,10 @@ const HomePage = () => {
       updated_at: new Date().toISOString(),
     };
     
+    console.log('Setting selected location:', location);
     setSelectedLocation(location);
     setShowLocationDetail(true);
+    console.log('LocationDetailSheet should open now');
   };
 
   const handleLocationCardClick = (place: any) => {
@@ -204,8 +205,10 @@ const HomePage = () => {
       updated_at: new Date().toISOString(),
     };
     
+    console.log('Setting selected location from card:', location);
     setSelectedLocation(location);
     setShowLocationDetail(true);
+    console.log('LocationDetailSheet should open from card click');
   };
 
   const handleStoryViewed = (storyId: string) => {
@@ -262,7 +265,9 @@ const HomePage = () => {
     selectedCity,
     savedLocations: savedLocations.length,
     places: places.length,
-    isLoading
+    isLoading,
+    showLocationDetail,
+    selectedLocation: selectedLocation?.name
   });
 
   // Show loading state
@@ -593,7 +598,11 @@ const HomePage = () => {
       {/* Location Detail Sheet */}
       <LocationDetailSheet
         isOpen={showLocationDetail}
-        onClose={() => setShowLocationDetail(false)}
+        onClose={() => {
+          console.log('Closing LocationDetailSheet');
+          setShowLocationDetail(false);
+          setSelectedLocation(null);
+        }}
         location={selectedLocation}
       />
 
