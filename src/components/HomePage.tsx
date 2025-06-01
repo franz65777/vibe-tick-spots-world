@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Heart, Settings, Bell, Plus, MapPin, Search, X, Bookmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import SaveLocationDialog from '@/components/SaveLocationDialog';
 import { locationService, Location } from '@/services/locationService';
+import LocationDetailSheet from '@/components/LocationDetailSheet';
 
 const HomePage = () => {
   console.log('HomePage component rendering...');
@@ -18,6 +18,8 @@ const HomePage = () => {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [savedLocations, setSavedLocations] = useState<Location[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
+  const [showLocationDetail, setShowLocationDetail] = useState(false);
 
   // Sample cities for search (in a real app, this would come from an API)
   const popularCities = [
@@ -109,6 +111,25 @@ const HomePage = () => {
     setIsSearching(false);
     setSearchQuery('');
     setSearchResults([]);
+  };
+
+  const handlePinClick = (place: any) => {
+    // Convert place to Location format
+    const location: Location = {
+      id: place.id,
+      name: place.name,
+      category: place.category,
+      address: `${place.coordinates.lat}, ${place.coordinates.lng}`, // Mock address
+      latitude: place.coordinates.lat,
+      longitude: place.coordinates.lng,
+      created_by: 'demo-user',
+      pioneer_user_id: 'demo-user',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    
+    setSelectedLocation(location);
+    setShowLocationDetail(true);
   };
 
   const friends = [
@@ -348,14 +369,15 @@ const HomePage = () => {
                 top: `${30 + index * 15}%`,
                 left: `${25 + index * 20}%`
               }}
+              onClick={() => handlePinClick(place)}
             >
               {/* Pin */}
-              <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+              <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white hover:scale-110 transition-transform">
                 <div className="w-3 h-3 bg-white rounded-full"></div>
               </div>
               
               {/* Hover Info Card */}
-              <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-white rounded-lg shadow-lg p-3 min-w-48 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+              <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-white rounded-lg shadow-lg p-3 min-w-48 opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
                 <div className="text-sm font-semibold text-gray-900">{place.name}</div>
                 <div className="text-xs text-gray-500 mb-1">{place.category} • {place.price}</div>
                 <div className="text-xs text-gray-600">
@@ -460,6 +482,13 @@ const HomePage = () => {
         isOpen={showSaveDialog}
         onClose={() => setShowSaveDialog(false)}
         onLocationSaved={loadSavedLocations}
+      />
+
+      {/* Location Detail Sheet */}
+      <LocationDetailSheet
+        isOpen={showLocationDetail}
+        onClose={() => setShowLocationDetail(false)}
+        location={selectedLocation}
       />
     </div>
   );
