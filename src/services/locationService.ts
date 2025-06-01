@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 export interface Location {
@@ -29,6 +28,20 @@ export interface SaveLocationData {
 export const locationService = {
   // Save a new location (creates the hub)
   async saveLocation(locationData: SaveLocationData): Promise<Location | null> {
+    // If Supabase is not configured, return mock data
+    if (!supabase) {
+      console.warn('Supabase not configured, returning mock location');
+      return {
+        id: Date.now().toString(),
+        ...locationData,
+        created_by: 'demo-user',
+        pioneer_user_id: 'demo-user',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        is_saved: true,
+      };
+    }
+
     try {
       const { data: user } = await supabase.auth.getUser();
       if (!user?.user) throw new Error('User not authenticated');
@@ -83,15 +96,15 @@ export const locationService = {
 
   // Get user's saved locations with better error handling
   async getUserSavedLocations(): Promise<Location[]> {
+    // If Supabase is not configured, return empty array
+    if (!supabase) {
+      console.warn('Supabase not configured, returning empty locations array');
+      return [];
+    }
+
     try {
       console.log('Getting user saved locations...');
       
-      // Check if Supabase is properly configured
-      if (!supabase) {
-        console.warn('Supabase not configured, returning empty array');
-        return [];
-      }
-
       const { data: user, error: userError } = await supabase.auth.getUser();
       
       if (userError) {
@@ -170,6 +183,11 @@ export const locationService = {
 
   // Get location details with media count
   async getLocationDetails(locationId: string): Promise<Location | null> {
+    if (!supabase) {
+      console.warn('Supabase not configured');
+      return null;
+    }
+
     try {
       const { data: location, error } = await supabase
         .from('locations')
@@ -194,6 +212,11 @@ export const locationService = {
 
   // Search locations
   async searchLocations(query: string): Promise<Location[]> {
+    if (!supabase) {
+      console.warn('Supabase not configured, returning empty search results');
+      return [];
+    }
+
     try {
       const { data, error } = await supabase
         .from('locations')
@@ -211,6 +234,11 @@ export const locationService = {
 
   // Unsave location
   async unsaveLocation(locationId: string): Promise<boolean> {
+    if (!supabase) {
+      console.warn('Supabase not configured');
+      return false;
+    }
+
     try {
       const { data: user } = await supabase.auth.getUser();
       if (!user?.user) return false;

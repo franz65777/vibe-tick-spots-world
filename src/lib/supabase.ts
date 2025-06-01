@@ -9,13 +9,14 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 console.log('Supabase URL:', supabaseUrl ? 'Present' : 'Missing');
 console.log('Supabase Anon Key:', supabaseAnonKey ? 'Present' : 'Missing');
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables:', {
-    url: !!supabaseUrl,
-    key: !!supabaseAnonKey
-  });
-  throw new Error('Missing Supabase environment variables');
-}
+// Create Supabase client only if environment variables are present
+export const supabase = supabaseUrl && supabaseAnonKey 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-console.log('Supabase client created successfully');
+if (supabase) {
+  console.log('Supabase client created successfully');
+} else {
+  console.warn('Supabase client not created - missing environment variables');
+  console.warn('App will run in demo mode without backend functionality');
+}
