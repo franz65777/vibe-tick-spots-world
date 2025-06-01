@@ -81,11 +81,30 @@ export const locationService = {
     }
   },
 
-  // Get user's saved locations
+  // Get user's saved locations with better error handling
   async getUserSavedLocations(): Promise<Location[]> {
     try {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user?.user) return [];
+      console.log('Getting user saved locations...');
+      
+      // Check if Supabase is properly configured
+      if (!supabase) {
+        console.warn('Supabase not configured, returning empty array');
+        return [];
+      }
+
+      const { data: user, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) {
+        console.warn('Auth error, user not authenticated:', userError);
+        return [];
+      }
+      
+      if (!user?.user) {
+        console.warn('No authenticated user found');
+        return [];
+      }
+
+      console.log('User authenticated, fetching saved locations...');
 
       const { data, error } = await supabase
         .from('user_saved_locations')
@@ -109,25 +128,40 @@ export const locationService = {
         .eq('user_id', user.user.id)
         .order('saved_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error fetching saved locations:', error);
+        return [];
+      }
 
-      return data?.map(item => {
-        const location = item.locations as any;
-        return {
-          id: location.id,
-          name: location.name,
-          category: location.category,
-          address: location.address,
-          latitude: location.latitude,
-          longitude: location.longitude,
-          created_by: location.created_by,
-          pioneer_user_id: location.pioneer_user_id,
-          created_at: location.created_at,
-          updated_at: location.updated_at,
-          metadata: location.metadata,
-          is_saved: true,
-        } as Location;
-      }) || [];
+      console.log('Raw data from Supabase:', data);
+
+      if (!data) {
+        console.log('No data returned from query');
+        return [];
+      }
+
+      const locations = data
+        .filter(item => item.locations) // Filter out any null locations
+        .map(item => {
+          const location = item.locations as any;
+          return {
+            id: location.id,
+            name: location.name,
+            category: location.category,
+            address: location.address,
+            latitude: location.latitude,
+            longitude: location.longitude,
+            created_by: location.created_by,
+            pioneer_user_id: location.pioneer_user_id,
+            created_at: location.created_at,
+            updated_at: location.updated_at,
+            metadata: location.metadata,
+            is_saved: true,
+          } as Location;
+        });
+
+      console.log('Processed locations:', locations);
+      return locations;
     } catch (error) {
       console.error('Error fetching saved locations:', error);
       return [];

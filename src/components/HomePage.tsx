@@ -17,6 +17,7 @@ const HomePage = () => {
   const [searchResults, setSearchResults] = useState<string[]>([]);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [savedLocations, setSavedLocations] = useState<Location[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Sample cities for search (in a real app, this would come from an API)
   const popularCities = [
@@ -69,7 +70,7 @@ const HomePage = () => {
     }
   }, []);
 
-  // Load user's saved locations
+  // Load user's saved locations with error handling
   useEffect(() => {
     console.log('HomePage useEffect for loading saved locations running...');
     loadSavedLocations();
@@ -78,11 +79,16 @@ const HomePage = () => {
   const loadSavedLocations = async () => {
     try {
       console.log('Loading saved locations...');
+      setIsLoading(true);
       const locations = await locationService.getUserSavedLocations();
       console.log('Loaded locations:', locations);
       setSavedLocations(locations);
     } catch (error) {
       console.error('Error loading saved locations:', error);
+      // Don't fail the component, just use empty array
+      setSavedLocations([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -148,8 +154,19 @@ const HomePage = () => {
     selectedTab,
     selectedCity,
     savedLocations: savedLocations.length,
-    places: places.length
+    places: places.length,
+    isLoading
   });
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-full bg-white items-center justify-center">
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-4 text-gray-600">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full bg-white">
