@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Heart, Settings, Bell, Plus, MapPin, Search, X, Bookmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,8 @@ import { locationService, Location } from '@/services/locationService';
 import LocationDetailSheet from '@/components/LocationDetailSheet';
 import StoriesViewer from './StoriesViewer';
 import CreateStoryModal from './CreateStoryModal';
+import NotificationsModal from './NotificationsModal';
+import MessagesModal from './MessagesModal';
 
 const HomePage = () => {
   console.log('HomePage component rendering...');
@@ -25,6 +26,8 @@ const HomePage = () => {
   const [showLocationDetail, setShowLocationDetail] = useState(false);
   const [selectedStory, setSelectedStory] = useState<number | null>(null);
   const [showCreateStory, setShowCreateStory] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showMessages, setShowMessages] = useState(false);
 
   // Sample cities for search (in a real app, this would come from an API)
   const popularCities = [
@@ -307,16 +310,22 @@ const HomePage = () => {
             )}
           </div>
           <div className="flex items-center gap-3">
-            <div className="relative">
+            <button 
+              onClick={() => setShowNotifications(true)}
+              className="relative"
+            >
               <Bell className="w-6 h-6 text-gray-600" />
               <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
-            </div>
-            <div className="relative">
+            </button>
+            <button 
+              onClick={() => setShowMessages(true)}
+              className="relative"
+            >
               <div className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center">
                 <span className="text-xs">📋</span>
               </div>
               <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
-            </div>
+            </button>
           </div>
         </div>
 
@@ -577,6 +586,18 @@ const HomePage = () => {
         isOpen={showCreateStory}
         onClose={() => setShowCreateStory(false)}
         onStoryCreated={handleStoryCreated}
+      />
+
+      {/* Notifications Modal */}
+      <NotificationsModal
+        isOpen={showNotifications}
+        onClose={() => setShowNotifications(false)}
+      />
+
+      {/* Messages Modal */}
+      <MessagesModal
+        isOpen={showMessages}
+        onClose={() => setShowMessages(false)}
       />
     </div>
   );
