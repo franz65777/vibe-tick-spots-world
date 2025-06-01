@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { MapPin, Search, User, Heart, Settings, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -29,7 +30,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col max-w-md mx-auto relative">
-      {console.log('Index JSX rendering...')}
       {/* Status Bar Mock */}
       <div className="bg-white px-4 py-2 flex justify-between items-center text-sm font-medium">
         <span>15:20</span>

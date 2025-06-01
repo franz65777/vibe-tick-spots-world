@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Heart, Settings, Bell, Plus, MapPin, Search, X, Bookmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -152,7 +153,6 @@ const HomePage = () => {
 
   return (
     <div className="flex flex-col h-full bg-white">
-      {console.log('HomePage JSX rendering...')}
       {/* Header */}
       <div className="px-4 py-4 bg-white border-b border-gray-100">
         <div className="flex items-center justify-between mb-4">
