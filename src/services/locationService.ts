@@ -111,10 +111,23 @@ export const locationService = {
 
       if (error) throw error;
 
-      return data?.map(item => ({
-        ...item.locations,
-        is_saved: true,
-      })) || [];
+      return data?.map(item => {
+        const location = item.locations as any;
+        return {
+          id: location.id,
+          name: location.name,
+          category: location.category,
+          address: location.address,
+          latitude: location.latitude,
+          longitude: location.longitude,
+          created_by: location.created_by,
+          pioneer_user_id: location.pioneer_user_id,
+          created_at: location.created_at,
+          updated_at: location.updated_at,
+          metadata: location.metadata,
+          is_saved: true,
+        } as Location;
+      }) || [];
     } catch (error) {
       console.error('Error fetching saved locations:', error);
       return [];
