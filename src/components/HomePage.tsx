@@ -7,6 +7,18 @@ import SaveLocationDialog from '@/components/SaveLocationDialog';
 import { locationService, Location } from '@/services/locationService';
 import LocationDetailSheet from '@/components/LocationDetailSheet';
 
+// Mock data types for different location categories
+interface LocationWithMetadata extends Location {
+  rating?: number;
+  visitors?: string[];
+  isNew?: boolean;
+  price?: string;
+  coordinates?: { lat: number; lng: number };
+  likes?: number;
+  isFromFollowing?: boolean;
+  savedDate?: string;
+}
+
 const HomePage = () => {
   console.log('HomePage component rendering...');
   
@@ -33,6 +45,159 @@ const HomePage = () => {
     'Long Beach', 'Virginia Beach', 'Oakland', 'Minneapolis', 'Tampa',
     'Tulsa', 'Arlington', 'New Orleans', 'Wichita', 'Cleveland'
   ];
+
+  // Mock data for different categories
+  const followingPlaces: LocationWithMetadata[] = [
+    {
+      id: 'following-1',
+      name: 'Golden Gate Cafe',
+      category: 'Restaurant',
+      rating: 4.8,
+      visitors: ['Emma', 'Michael'],
+      isNew: false,
+      price: '$$',
+      coordinates: { lat: 37.7749, lng: -122.4194 },
+      likes: 124,
+      isFromFollowing: true,
+      created_by: 'demo-user',
+      pioneer_user_id: 'demo-user',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      address: '123 Golden Gate Ave, San Francisco, CA'
+    },
+    {
+      id: 'following-2',
+      name: 'Sunset View Point',
+      category: 'Viewpoint',
+      rating: 4.9,
+      visitors: ['Sophia', 'Emma'],
+      isNew: false,
+      price: 'Free',
+      coordinates: { lat: 37.7849, lng: -122.4294 },
+      likes: 89,
+      isFromFollowing: true,
+      created_by: 'demo-user',
+      pioneer_user_id: 'demo-user',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      address: 'Sunset Blvd, San Francisco, CA'
+    }
+  ];
+
+  const popularPlaces: LocationWithMetadata[] = [
+    {
+      id: 'popular-1',
+      name: 'Mission Rooftop Bar',
+      category: 'Bar',
+      rating: 4.7,
+      visitors: ['Alex', 'Sarah', 'Mike'],
+      isNew: false,
+      price: '$$$',
+      coordinates: { lat: 37.7649, lng: -122.4094 },
+      likes: 456,
+      isFromFollowing: false,
+      created_by: 'demo-user',
+      pioneer_user_id: 'demo-user',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      address: '456 Mission St, San Francisco, CA'
+    },
+    {
+      id: 'popular-2',
+      name: 'Chinatown Tea House',
+      category: 'Restaurant',
+      rating: 4.6,
+      visitors: ['Lisa', 'John'],
+      isNew: false,
+      price: '$$',
+      coordinates: { lat: 37.7949, lng: -122.4094 },
+      likes: 334,
+      isFromFollowing: false,
+      created_by: 'demo-user',
+      pioneer_user_id: 'demo-user',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      address: '789 Grant Ave, San Francisco, CA'
+    },
+    {
+      id: 'popular-3',
+      name: 'Union Square Shopping',
+      category: 'Shopping',
+      rating: 4.5,
+      visitors: ['Emma', 'Sophia'],
+      isNew: false,
+      price: '$$$$',
+      coordinates: { lat: 37.7879, lng: -122.4074 },
+      likes: 278,
+      isFromFollowing: false,
+      created_by: 'demo-user',
+      pioneer_user_id: 'demo-user',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      address: 'Union Square, San Francisco, CA'
+    }
+  ];
+
+  const newPlaces: LocationWithMetadata[] = [
+    {
+      id: 'new-1',
+      name: 'Hidden Garden Cafe',
+      category: 'Restaurant',
+      rating: 4.3,
+      visitors: ['Michael'],
+      isNew: true,
+      price: '$$',
+      coordinates: { lat: 37.7549, lng: -122.4194 },
+      likes: 23,
+      isFromFollowing: true,
+      savedDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+      created_by: 'demo-user',
+      pioneer_user_id: 'demo-user',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      address: '321 Hidden St, San Francisco, CA'
+    },
+    {
+      id: 'new-2',
+      name: 'Artisan Coffee Lab',
+      category: 'Cafe',
+      rating: 4.4,
+      visitors: ['Sophia'],
+      isNew: true,
+      price: '$',
+      coordinates: { lat: 37.7649, lng: -122.4294 },
+      likes: 15,
+      isFromFollowing: true,
+      savedDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
+      created_by: 'demo-user',
+      pioneer_user_id: 'demo-user',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      address: '654 Artisan Ave, San Francisco, CA'
+    }
+  ];
+
+  // Get places based on selected tab
+  const getPlacesForTab = (tab: string): LocationWithMetadata[] => {
+    switch (tab) {
+      case 'following':
+        return followingPlaces;
+      case 'popular':
+        return popularPlaces.sort((a, b) => (b.likes || 0) - (a.likes || 0)).slice(0, 10);
+      case 'new':
+        // Filter places saved within the last week
+        const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        return newPlaces.filter(place => {
+          if (!place.savedDate) return false;
+          return new Date(place.savedDate) > oneWeekAgo;
+        });
+      default:
+        return followingPlaces;
+    }
+  };
+
+  // Get current places based on selected tab
+  const places = getPlacesForTab(selectedTab);
 
   // Get user's current location
   useEffect(() => {
@@ -113,19 +278,19 @@ const HomePage = () => {
     setSearchResults([]);
   };
 
-  const handlePinClick = (place: any) => {
+  const handlePinClick = (place: LocationWithMetadata) => {
     // Convert place to Location format
     const location: Location = {
       id: place.id,
       name: place.name,
       category: place.category,
-      address: `${place.coordinates.lat}, ${place.coordinates.lng}`, // Mock address
-      latitude: place.coordinates.lat,
-      longitude: place.coordinates.lng,
-      created_by: 'demo-user',
-      pioneer_user_id: 'demo-user',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      address: place.address || `${place.coordinates?.lat}, ${place.coordinates?.lng}`,
+      latitude: place.coordinates?.lat,
+      longitude: place.coordinates?.lng,
+      created_by: place.created_by,
+      pioneer_user_id: place.pioneer_user_id,
+      created_at: place.created_at,
+      updated_at: place.updated_at,
     };
     
     setSelectedLocation(location);
@@ -136,39 +301,6 @@ const HomePage = () => {
     { name: 'Emma', avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png' },
     { name: 'Michael', avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png' },
     { name: 'Sophia', avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png' },
-  ];
-
-  // Replace sample places with actual saved locations or default places
-  const places = savedLocations.length > 0 ? savedLocations.map(location => ({
-    id: location.id,
-    name: location.name,
-    category: location.category,
-    rating: 4.5 + Math.random() * 0.5, // Mock rating
-    visitors: ['Emma', 'Michael'], // Mock visitors
-    isNew: false,
-    price: '$$',
-    coordinates: { lat: location.latitude || 37.7749, lng: location.longitude || -122.4194 }
-  })) : [
-    {
-      id: '1',
-      name: 'Golden Gate Cafe',
-      category: 'Restaurant',
-      rating: 4.8,
-      visitors: ['Emma', 'Michael'],
-      isNew: false,
-      price: '$$',
-      coordinates: { lat: 37.7749, lng: -122.4194 }
-    },
-    {
-      id: '2',
-      name: 'Mission Rooftop Bar',
-      category: 'Bar',
-      rating: 4.6,
-      visitors: ['Sophia'],
-      isNew: true,
-      price: '$$$',
-      coordinates: { lat: 37.7849, lng: -122.4094 }
-    }
   ];
 
   console.log('HomePage rendering with state:', {
@@ -301,7 +433,9 @@ const HomePage = () => {
             <div className="flex items-center justify-center gap-1">
               <Settings className="w-4 h-4" />
               New
-              <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></div>
+              {newPlaces.length > 0 && (
+                <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></div>
+              )}
             </div>
           </button>
         </div>
@@ -360,6 +494,13 @@ const HomePage = () => {
             UNION SQUARE
           </div>
 
+          {/* Tab indicator */}
+          <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white text-xs px-3 py-1 rounded-full font-medium">
+            {selectedTab === 'following' && `${places.length} from friends`}
+            {selectedTab === 'popular' && `Top ${places.length} popular`}
+            {selectedTab === 'new' && `${places.length} new this week`}
+          </div>
+
           {/* Place Pins with visitor info */}
           {places.map((place, index) => (
             <div 
@@ -371,21 +512,40 @@ const HomePage = () => {
               }}
               onClick={() => handlePinClick(place)}
             >
-              {/* Pin */}
-              <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white hover:scale-110 transition-transform">
+              {/* Pin with different colors based on tab */}
+              <div className={cn(
+                "w-8 h-8 rounded-full flex items-center justify-center shadow-lg border-2 border-white hover:scale-110 transition-transform",
+                selectedTab === 'following' && "bg-blue-500",
+                selectedTab === 'popular' && "bg-red-500", 
+                selectedTab === 'new' && "bg-green-500"
+              )}>
                 <div className="w-3 h-3 bg-white rounded-full"></div>
               </div>
+              
+              {/* New badge for new places */}
+              {place.isNew && selectedTab === 'new' && (
+                <div className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                  <span className="text-xs text-white font-bold">!</span>
+                </div>
+              )}
               
               {/* Hover Info Card */}
               <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-white rounded-lg shadow-lg p-3 min-w-48 opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
                 <div className="text-sm font-semibold text-gray-900">{place.name}</div>
                 <div className="text-xs text-gray-500 mb-1">{place.category} • {place.price}</div>
                 <div className="text-xs text-gray-600">
-                  Visited by: {place.visitors.join(', ')}
+                  Visited by: {place.visitors?.join(', ')}
                 </div>
                 <div className="flex items-center gap-1 mt-1">
                   <span className="text-xs text-yellow-500">★</span>
                   <span className="text-xs text-gray-600">{place.rating}</span>
+                  {selectedTab === 'popular' && (
+                    <>
+                      <span className="text-xs text-gray-400">•</span>
+                      <Heart className="w-3 h-3 text-red-500" />
+                      <span className="text-xs text-gray-600">{place.likes}</span>
+                    </>
+                  )}
                 </div>
                 {/* Arrow */}
                 <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
@@ -419,10 +579,10 @@ const HomePage = () => {
             <Button size="sm" variant="outline" className="rounded-full">Hotels</Button>
             <Button size="sm" variant="outline" className="rounded-full">Bars</Button>
           </div>
-          {savedLocations.length > 0 && (
+          {places.length > 0 && (
             <div className="flex items-center gap-1 text-xs text-gray-500">
               <Bookmark className="w-3 h-3" />
-              {savedLocations.length} saved
+              {places.length} places
             </div>
           )}
         </div>
@@ -447,17 +607,31 @@ const HomePage = () => {
                 <div className="absolute top-2 right-2 text-white text-xs">
                   ★ {place.rating}
                 </div>
+                {selectedTab === 'popular' && (
+                  <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                    <Heart className="w-3 h-3" />
+                    {place.likes}
+                  </div>
+                )}
               </div>
             </div>
           ))}
           
-          {savedLocations.length === 0 && (
+          {places.length === 0 && (
             <div className="text-center py-8">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <MapPin className="w-8 h-8 text-gray-400" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No saved locations yet</h3>
-              <p className="text-sm text-gray-500 mb-4">Start saving places to create location hubs!</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {selectedTab === 'following' && 'No places from friends yet'}
+                {selectedTab === 'popular' && 'No popular places found'}
+                {selectedTab === 'new' && 'No new places this week'}
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">
+                {selectedTab === 'following' && 'Follow friends to see their saved places!'}
+                {selectedTab === 'popular' && 'Check back later for trending spots.'}
+                {selectedTab === 'new' && 'Be the first to discover new places!'}
+              </p>
               <Button
                 onClick={() => setShowSaveDialog(true)}
                 className="bg-blue-600 hover:bg-blue-700"
