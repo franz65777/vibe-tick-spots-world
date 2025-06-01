@@ -7,15 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import LocationDetailSheet from './LocationDetailSheet';
 import StoriesViewer from './StoriesViewer';
 import CreateStoryModal from './CreateStoryModal';
-
-interface Location {
-  id: string;
-  name: string;
-  category: string;
-  address: string;
-  latitude: number;
-  longitude: number;
-}
+import { Location } from '@/services/locationService';
 
 const HomePage = () => {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -28,6 +20,10 @@ const HomePage = () => {
       address: 'New York, NY',
       latitude: 40.785091,
       longitude: -73.968285,
+      created_by: 'user1',
+      pioneer_user_id: 'user1',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
     },
     {
       id: '2',
@@ -36,6 +32,10 @@ const HomePage = () => {
       address: 'San Francisco, CA',
       latitude: 37.819929,
       longitude: -122.478255,
+      created_by: 'user2',
+      pioneer_user_id: 'user2',
+      created_at: '2024-01-02T00:00:00Z',
+      updated_at: '2024-01-02T00:00:00Z',
     },
     {
       id: '3',
@@ -44,11 +44,16 @@ const HomePage = () => {
       address: 'Paris, France',
       latitude: 48.8584,
       longitude: 2.2945,
+      created_by: 'user3',
+      pioneer_user_id: 'user3',
+      created_at: '2024-01-03T00:00:00Z',
+      updated_at: '2024-01-03T00:00:00Z',
     },
   ]);
   const [selectedTab, setSelectedTab] = useState('map');
   const [selectedStory, setSelectedStory] = useState<number | null>(null);
   const [showCreateStory, setShowCreateStory] = useState(false);
+  const [selectedMapFilter, setSelectedMapFilter] = useState('following');
 
   // Mock stories data - in a real app this would come from your API
   const mockStories = [
@@ -115,31 +120,54 @@ const HomePage = () => {
     setIsSheetOpen(false);
   };
 
-  const renderMap = () => (
-    <div className="flex-1 p-4">
-      <div className="rounded-lg bg-gray-100 h-full">
-        {/* Mock Map */}
-        <div className="h-full flex items-center justify-center">
-          <div className="text-gray-500">
-            {savedLocations.map((location) => (
-              <div
-                key={location.id}
-                className="absolute cursor-pointer"
-                style={{
-                  top: `calc(50% + ${location.latitude - 40.785091} * 1000)`,
-                  left: `calc(50% + ${location.longitude + 73.968285} * 1000)`,
-                }}
-                onClick={() => handleLocationClick(location)}
-              >
-                <MapPin className="w-6 h-6 text-blue-500" />
-              </div>
-            ))}
-            Mock Map
+  const getFilteredLocations = () => {
+    switch (selectedMapFilter) {
+      case 'following':
+        return savedLocations.filter(loc => ['user1', 'user2'].includes(loc.created_by));
+      case 'popular':
+        return savedLocations.slice(0, 2); // Mock: show first 2 as most popular
+      case 'new':
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        return savedLocations.filter(loc => new Date(loc.created_at) > oneWeekAgo);
+      default:
+        return savedLocations;
+    }
+  };
+
+  const renderMap = () => {
+    const filteredLocations = getFilteredLocations();
+    const pinColor = selectedMapFilter === 'following' ? 'blue' : 
+                    selectedMapFilter === 'popular' ? 'red' : 'green';
+    
+    return (
+      <div className="flex-1 p-4">
+        <div className="rounded-lg bg-gray-100 h-full relative">
+          <div className="absolute top-4 left-4 bg-white px-3 py-1 rounded-full text-sm font-medium capitalize shadow-sm">
+            {selectedMapFilter} ({filteredLocations.length})
+          </div>
+          <div className="h-full flex items-center justify-center">
+            <div className="text-gray-500 relative">
+              {filteredLocations.map((location) => (
+                <div
+                  key={location.id}
+                  className="absolute cursor-pointer"
+                  style={{
+                    top: `calc(50% + ${(location.latitude || 0) - 40.785091} * 1000)`,
+                    left: `calc(50% + ${(location.longitude || 0) + 73.968285} * 1000)`,
+                  }}
+                  onClick={() => handleLocationClick(location)}
+                >
+                  <MapPin className={`w-6 h-6 text-${pinColor}-500`} />
+                </div>
+              ))}
+              Mock Map
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderList = () => (
     <div className="flex-1 p-4">
@@ -230,6 +258,39 @@ const HomePage = () => {
               <p className="text-xs mt-1 text-gray-600 truncate w-16">{story.userName}</p>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Map Filter Tabs */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="flex justify-around items-center">
+          <button
+            onClick={() => setSelectedMapFilter('following')}
+            className={cn(
+              "flex-1 py-3 text-sm font-medium transition-colors",
+              selectedMapFilter === 'following' ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-500"
+            )}
+          >
+            Following
+          </button>
+          <button
+            onClick={() => setSelectedMapFilter('popular')}
+            className={cn(
+              "flex-1 py-3 text-sm font-medium transition-colors",
+              selectedMapFilter === 'popular' ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-500"
+            )}
+          >
+            Popular
+          </button>
+          <button
+            onClick={() => setSelectedMapFilter('new')}
+            className={cn(
+              "flex-1 py-3 text-sm font-medium transition-colors",
+              selectedMapFilter === 'new' ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-500"
+            )}
+          >
+            New
+          </button>
         </div>
       </div>
 
