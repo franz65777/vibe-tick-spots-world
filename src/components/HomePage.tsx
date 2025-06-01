@@ -1,9 +1,10 @@
-
 import { useState, useEffect } from 'react';
-import { Heart, Settings, Bell, Plus, MapPin, Search, X } from 'lucide-react';
+import { Heart, Settings, Bell, Plus, MapPin, Search, X, Bookmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import SaveLocationDialog from '@/components/SaveLocationDialog';
+import { locationService, Location } from '@/services/locationService';
 
 const HomePage = () => {
   const [selectedTab, setSelectedTab] = useState('following');
@@ -11,6 +12,8 @@ const HomePage = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<string[]>([]);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [savedLocations, setSavedLocations] = useState<Location[]>([]);
 
   // Sample cities for search (in a real app, this would come from an API)
   const popularCities = [
@@ -62,6 +65,16 @@ const HomePage = () => {
     }
   }, []);
 
+  // Load user's saved locations
+  useEffect(() => {
+    loadSavedLocations();
+  }, []);
+
+  const loadSavedLocations = async () => {
+    const locations = await locationService.getUserSavedLocations();
+    setSavedLocations(locations);
+  };
+
   // Handle search functionality
   useEffect(() => {
     if (searchQuery.length > 0) {
@@ -87,10 +100,19 @@ const HomePage = () => {
     { name: 'Sophia', avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png' },
   ];
 
-  // Sample places data - would come from API based on selectedCity and following
-  const places = [
+  // Replace sample places with actual saved locations or default places
+  const places = savedLocations.length > 0 ? savedLocations.map(location => ({
+    id: location.id,
+    name: location.name,
+    category: location.category,
+    rating: 4.5 + Math.random() * 0.5, // Mock rating
+    visitors: ['Emma', 'Michael'], // Mock visitors
+    isNew: false,
+    price: '$$',
+    coordinates: { lat: location.latitude || 37.7749, lng: location.longitude || -122.4194 }
+  })) : [
     {
-      id: 1,
+      id: '1',
       name: 'Golden Gate Cafe',
       category: 'Restaurant',
       rating: 4.8,
@@ -100,7 +122,7 @@ const HomePage = () => {
       coordinates: { lat: 37.7749, lng: -122.4194 }
     },
     {
-      id: 2,
+      id: '2',
       name: 'Mission Rooftop Bar',
       category: 'Bar',
       rating: 4.6,
@@ -108,16 +130,6 @@ const HomePage = () => {
       isNew: true,
       price: '$$$',
       coordinates: { lat: 37.7849, lng: -122.4094 }
-    },
-    {
-      id: 3,
-      name: 'Union Square Bistro',
-      category: 'Restaurant',
-      rating: 4.5,
-      visitors: ['Emma'],
-      isNew: false,
-      price: '$$$',
-      coordinates: { lat: 37.7879, lng: -122.4074 }
     }
   ];
 
@@ -343,11 +355,19 @@ const HomePage = () => {
 
       {/* Categories */}
       <div className="px-4 py-4 bg-white border-t border-gray-100">
-        <div className="flex gap-3 mb-4">
-          <Button size="sm" className="bg-blue-600 text-white rounded-full">All</Button>
-          <Button size="sm" variant="outline" className="rounded-full">Restaurants</Button>
-          <Button size="sm" variant="outline" className="rounded-full">Hotels</Button>
-          <Button size="sm" variant="outline" className="rounded-full">Bars</Button>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex gap-3">
+            <Button size="sm" className="bg-blue-600 text-white rounded-full">All</Button>
+            <Button size="sm" variant="outline" className="rounded-full">Restaurants</Button>
+            <Button size="sm" variant="outline" className="rounded-full">Hotels</Button>
+            <Button size="sm" variant="outline" className="rounded-full">Bars</Button>
+          </div>
+          {savedLocations.length > 0 && (
+            <div className="flex items-center gap-1 text-xs text-gray-500">
+              <Bookmark className="w-3 h-3" />
+              {savedLocations.length} saved
+            </div>
+          )}
         </div>
 
         {/* Place Cards */}
@@ -373,13 +393,39 @@ const HomePage = () => {
               </div>
             </div>
           ))}
+          
+          {savedLocations.length === 0 && (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <MapPin className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No saved locations yet</h3>
+              <p className="text-sm text-gray-500 mb-4">Start saving places to create location hubs!</p>
+              <Button
+                onClick={() => setShowSaveDialog(true)}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Save Your First Location
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Floating Add Button */}
-      <button className="absolute bottom-20 right-4 w-14 h-14 bg-blue-600 rounded-2xl shadow-lg flex items-center justify-center">
+      <button 
+        onClick={() => setShowSaveDialog(true)}
+        className="absolute bottom-20 right-4 w-14 h-14 bg-blue-600 rounded-2xl shadow-lg flex items-center justify-center hover:bg-blue-700 transition-colors"
+      >
         <Plus className="w-6 h-6 text-white" />
       </button>
+
+      {/* Save Location Dialog */}
+      <SaveLocationDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        onLocationSaved={loadSavedLocations}
+      />
     </div>
   );
 };
