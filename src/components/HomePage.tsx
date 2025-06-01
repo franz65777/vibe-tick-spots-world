@@ -1,12 +1,85 @@
 
-import { useState } from 'react';
-import { Heart, Settings, Bell, Plus, MapPin } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Heart, Settings, Bell, Plus, MapPin, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
 const HomePage = () => {
   const [selectedTab, setSelectedTab] = useState('following');
-  const [selectedCity, setSelectedCity] = useState('San Francisco');
+  const [selectedCity, setSelectedCity] = useState('Detecting location...');
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<string[]>([]);
+
+  // Sample cities for search (in a real app, this would come from an API)
+  const popularCities = [
+    'New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix',
+    'Philadelphia', 'San Antonio', 'San Diego', 'Dallas', 'Austin',
+    'Jacksonville', 'Fort Worth', 'Columbus', 'Charlotte', 'Seattle',
+    'Denver', 'Washington', 'Boston', 'Nashville', 'Baltimore',
+    'Oklahoma City', 'Portland', 'Las Vegas', 'Louisville', 'Milwaukee',
+    'Albuquerque', 'Tucson', 'Fresno', 'Sacramento', 'Kansas City',
+    'Atlanta', 'Miami', 'Colorado Springs', 'Raleigh', 'Omaha',
+    'Long Beach', 'Virginia Beach', 'Oakland', 'Minneapolis', 'Tampa',
+    'Tulsa', 'Arlington', 'New Orleans', 'Wichita', 'Cleveland'
+  ];
+
+  // Get user's current location
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          console.log('User location:', latitude, longitude);
+          
+          // In a real app, you would use a reverse geocoding service
+          // For now, we'll simulate getting the city name
+          try {
+            // Simulated reverse geocoding - in real app use Google Maps API or similar
+            setSelectedCity('Current Location');
+            setTimeout(() => {
+              // Simulate getting actual city name
+              setSelectedCity('San Francisco'); // Default fallback
+            }, 1000);
+          } catch (error) {
+            console.error('Error getting location name:', error);
+            setSelectedCity('San Francisco');
+          }
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+          setSelectedCity('San Francisco'); // Default fallback
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000 // 5 minutes
+        }
+      );
+    } else {
+      setSelectedCity('San Francisco'); // Default fallback
+    }
+  }, []);
+
+  // Handle search functionality
+  useEffect(() => {
+    if (searchQuery.length > 0) {
+      const filtered = popularCities.filter(city =>
+        city.toLowerCase().includes(searchQuery.toLowerCase())
+      ).slice(0, 5); // Limit to 5 results
+      setSearchResults(filtered);
+    } else {
+      setSearchResults([]);
+    }
+  }, [searchQuery]);
+
+  const handleCitySelect = (city: string) => {
+    setSelectedCity(city);
+    setIsSearching(false);
+    setSearchQuery('');
+    setSearchResults([]);
+  };
 
   const friends = [
     { name: 'Emma', avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png' },
@@ -40,14 +113,56 @@ const HomePage = () => {
       {/* Header */}
       <div className="px-4 py-4 bg-white border-b border-gray-100">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-1">
             <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
               <MapPin className="w-6 h-6 text-white" />
             </div>
-            <div>
+            <div className="flex-1">
               <span className="text-sm text-gray-500">Discover</span>
-              <h1 className="text-lg font-semibold text-gray-900">{selectedCity}</h1>
+              {isSearching ? (
+                <div className="relative">
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search for a city..."
+                    className="text-lg font-semibold border-0 p-0 h-auto bg-transparent focus-visible:ring-0"
+                    autoFocus
+                  />
+                  {searchResults.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-50 mt-1">
+                      {searchResults.map((city) => (
+                        <button
+                          key={city}
+                          onClick={() => handleCitySelect(city)}
+                          className="w-full text-left px-3 py-2 hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg"
+                        >
+                          {city}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={() => setIsSearching(true)}
+                  className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors text-left"
+                >
+                  {selectedCity}
+                </button>
+              )}
             </div>
+            {isSearching && (
+              <button
+                onClick={() => {
+                  setIsSearching(false);
+                  setSearchQuery('');
+                  setSearchResults([]);
+                }}
+                className="w-6 h-6 flex items-center justify-center"
+              >
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <div className="relative">
