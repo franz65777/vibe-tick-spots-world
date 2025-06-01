@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageCircle, Share, X, Play } from 'lucide-react';
+import { Heart, MessageCircle, Share, X, Play, Bookmark, Camera, Users } from 'lucide-react';
 import { Location } from '@/services/locationService';
+import { cn } from '@/lib/utils';
 
 interface MediaItem {
   id: string;
