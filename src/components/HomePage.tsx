@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Heart, Settings, Bell, Plus, MapPin, Search, X, Bookmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -168,12 +169,33 @@ const HomePage = () => {
   };
 
   const handlePinClick = (place: any) => {
+    console.log('Pin clicked:', place);
     // Convert place to Location format
     const location: Location = {
       id: place.id,
       name: place.name,
       category: place.category,
-      address: `${place.coordinates.lat}, ${place.coordinates.lng}`, // Mock address
+      address: place.address || `${place.coordinates.lat}, ${place.coordinates.lng}`, // Mock address
+      latitude: place.coordinates.lat,
+      longitude: place.coordinates.lng,
+      created_by: 'demo-user',
+      pioneer_user_id: 'demo-user',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    
+    setSelectedLocation(location);
+    setShowLocationDetail(true);
+  };
+
+  const handleLocationCardClick = (place: any) => {
+    console.log('Location card clicked:', place);
+    // Convert place to Location format - same as handlePinClick
+    const location: Location = {
+      id: place.id,
+      name: place.name,
+      category: place.category,
+      address: place.address || `${place.category} in ${selectedCity}`, // Better mock address
       latitude: place.coordinates.lat,
       longitude: place.coordinates.lng,
       created_by: 'demo-user',
@@ -510,7 +532,11 @@ const HomePage = () => {
         {/* Place Cards */}
         <div className="space-y-3">
           {places.map((place) => (
-            <div key={place.id} className="relative">
+            <div 
+              key={place.id} 
+              className="relative cursor-pointer hover:scale-[1.02] transition-transform"
+              onClick={() => handleLocationCardClick(place)}
+            >
               {place.isNew && (
                 <div className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-medium z-10">
                   NEW
