@@ -11,63 +11,99 @@ interface CitySearchProps {
   onCitySelect: (city: string) => void;
 }
 
-// City data with more appropriate landmark icons
+// City data with more appropriate landmark icons and search variations
 const cityData = {
   'san francisco': { 
     name: 'San Francisco', 
-    icon: Building2, // Golden Gate Bridge structure
-    description: 'Golden Gate City'
+    icon: Building2,
+    description: 'Golden Gate City',
+    searchTerms: ['san francisco', 'sf', 'san fran', 'sanfrancisco']
   },
   'milan': { 
     name: 'Milan', 
-    icon: Church, // Duomo cathedral
-    description: 'Fashion Capital'
-  },
-  'milano': { 
-    name: 'Milan', 
-    icon: Church, // Duomo cathedral
-    description: 'Fashion Capital'
+    icon: Church,
+    description: 'Fashion Capital',
+    searchTerms: ['milan', 'milano', 'milaan', 'miland']
   },
   'paris': { 
     name: 'Paris', 
-    icon: Landmark, // Eiffel Tower
-    description: 'City of Light'
+    icon: Landmark,
+    description: 'City of Light',
+    searchTerms: ['paris', 'paris', 'pariis', 'pariss']
   },
   'new york': { 
     name: 'New York', 
-    icon: Building, // Skyscrapers/Empire State
-    description: 'The Big Apple'
+    icon: Building,
+    description: 'The Big Apple',
+    searchTerms: ['new york', 'ny', 'nyc', 'newyork', 'new yourk', 'new yor']
   },
   'london': { 
     name: 'London', 
-    icon: Clock, // Big Ben
-    description: 'Royal City'
+    icon: Clock,
+    description: 'Royal City',
+    searchTerms: ['london', 'londdon', 'londn', 'lonon']
   },
   'tokyo': { 
     name: 'Tokyo', 
-    icon: Mountain, // Mount Fuji
-    description: 'Land of Rising Sun'
+    icon: Mountain,
+    description: 'Land of Rising Sun',
+    searchTerms: ['tokyo', 'tokio', 'tokyio', 'tokya']
   },
   'rome': { 
     name: 'Rome', 
-    icon: Shield, // Roman architecture
-    description: 'Eternal City'
+    icon: Shield,
+    description: 'Eternal City',
+    searchTerms: ['rome', 'roma', 'roome', 'rom']
   },
   'barcelona': { 
     name: 'Barcelona', 
-    icon: Church, // Sagrada Familia
-    description: 'Gaudí\'s City'
+    icon: Church,
+    description: 'Gaudí\'s City',
+    searchTerms: ['barcelona', 'barselona', 'barcellona', 'barca']
   },
   'amsterdam': { 
     name: 'Amsterdam', 
-    icon: Waves, // Canals
-    description: 'Venice of North'
+    icon: Waves,
+    description: 'Venice of North',
+    searchTerms: ['amsterdam', 'amsterdamm', 'amesterdam', 'amstrerdam']
   },
   'sydney': { 
     name: 'Sydney', 
-    icon: Waves, // Opera House by harbor
-    description: 'Harbor City'
+    icon: Waves,
+    description: 'Harbor City',
+    searchTerms: ['sydney', 'sydny', 'sideny', 'sydey']
   }
+};
+
+// Function to calculate string similarity (Levenshtein distance based)
+const getSimilarity = (str1: string, str2: string): number => {
+  const longer = str1.length > str2.length ? str1 : str2;
+  const shorter = str1.length > str2.length ? str2 : str1;
+  
+  if (longer.length === 0) return 1.0;
+  
+  const editDistance = getEditDistance(longer, shorter);
+  return (longer.length - editDistance) / longer.length;
+};
+
+const getEditDistance = (str1: string, str2: string): number => {
+  const matrix = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
+  
+  for (let i = 0; i <= str1.length; i++) matrix[0][i] = i;
+  for (let j = 0; j <= str2.length; j++) matrix[j][0] = j;
+  
+  for (let j = 1; j <= str2.length; j++) {
+    for (let i = 1; i <= str1.length; i++) {
+      const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
+      matrix[j][i] = Math.min(
+        matrix[j][i - 1] + 1,
+        matrix[j - 1][i] + 1,
+        matrix[j - 1][i - 1] + indicator
+      );
+    }
+  }
+  
+  return matrix[str2.length][str1.length];
 };
 
 const CitySearch = ({ 
@@ -78,7 +114,7 @@ const CitySearch = ({
   onCitySelect 
 }: CitySearchProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [filteredCities, setFilteredCities] = useState<Array<{key: string, data: typeof cityData[keyof typeof cityData]}>>([]);
+  const [filteredCities, setFilteredCities] = useState<Array<{key: string, data: typeof cityData[keyof typeof cityData], similarity: number}>>([]);
   const searchRef = useRef<HTMLDivElement>(null);
 
   // Get current city data
@@ -86,14 +122,31 @@ const CitySearch = ({
   const CurrentCityIcon = currentCityData?.icon || MapPin;
 
   useEffect(() => {
-    if (searchQuery.trim()) {
-      const filtered = Object.entries(cityData)
-        .filter(([key, data]) => 
-          key.includes(searchQuery.toLowerCase()) || 
-          data.name.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-        .map(([key, data]) => ({ key, data }));
-      setFilteredCities(filtered);
+    if (searchQuery.trim() && searchQuery.trim() !== ' ') {
+      const query = searchQuery.toLowerCase().trim();
+      
+      // Find matches with similarity scoring
+      const matches = Object.entries(cityData)
+        .map(([key, data]) => {
+          let bestSimilarity = 0;
+          
+          // Check against all search terms for each city
+          data.searchTerms.forEach(term => {
+            if (term.includes(query) || query.includes(term)) {
+              bestSimilarity = Math.max(bestSimilarity, 0.9);
+            } else {
+              const similarity = getSimilarity(query, term);
+              bestSimilarity = Math.max(bestSimilarity, similarity);
+            }
+          });
+          
+          return { key, data, similarity: bestSimilarity };
+        })
+        .filter(item => item.similarity > 0.4) // Only show reasonably similar matches
+        .sort((a, b) => b.similarity - a.similarity) // Sort by best match first
+        .slice(0, 5); // Limit to top 5 results
+      
+      setFilteredCities(matches);
       setIsOpen(true);
     } else {
       setFilteredCities([]);
@@ -122,7 +175,7 @@ const CitySearch = ({
     <div ref={searchRef} className="relative flex-1 max-w-md">
       {/* Current City Display / Search Input */}
       <div className="relative">
-        {!searchQuery ? (
+        {!searchQuery || searchQuery.trim() === ' ' ? (
           // Show current city when not searching
           <div className="flex items-center gap-3 bg-white/90 border border-gray-200 rounded-2xl h-12 px-4 hover:bg-white transition-colors cursor-pointer"
                onClick={() => document.getElementById('city-search-input')?.focus()}>
@@ -137,7 +190,7 @@ const CitySearch = ({
               id="city-search-input"
               type="text"
               placeholder="Search cities..."
-              value={searchQuery}
+              value={searchQuery === ' ' ? '' : searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               onKeyPress={onSearchKeyPress}
               onFocus={() => searchQuery && setIsOpen(true)}
@@ -150,7 +203,7 @@ const CitySearch = ({
       </div>
 
       {/* Hidden input for focusing */}
-      {!searchQuery && (
+      {(!searchQuery || searchQuery.trim() === ' ') && (
         <input
           id="city-search-input"
           type="text"
@@ -164,7 +217,7 @@ const CitySearch = ({
       {/* Dropdown Results */}
       {isOpen && filteredCities.length > 0 && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 max-h-64 overflow-y-auto z-50">
-          {filteredCities.map(({ key, data }) => {
+          {filteredCities.map(({ key, data, similarity }) => {
             const IconComponent = data.icon;
             return (
               <button
@@ -177,6 +230,11 @@ const CitySearch = ({
                   <div className="font-medium text-gray-900">{data.name}</div>
                   <div className="text-xs text-gray-500">{data.description}</div>
                 </div>
+                {similarity > 0.8 && (
+                  <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                    Best match
+                  </div>
+                )}
               </button>
             );
           })}
@@ -184,10 +242,11 @@ const CitySearch = ({
       )}
 
       {/* No results */}
-      {isOpen && searchQuery.trim() && filteredCities.length === 0 && (
+      {isOpen && searchQuery.trim() && searchQuery.trim() !== ' ' && filteredCities.length === 0 && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 z-50">
           <div className="text-gray-500 text-sm text-center">
-            No cities found. Try Milan, Paris, or New York.
+            <div className="mb-2">No cities found for "{searchQuery}"</div>
+            <div className="text-xs">Try: Milan, Paris, New York, London, Tokyo</div>
           </div>
         </div>
       )}
