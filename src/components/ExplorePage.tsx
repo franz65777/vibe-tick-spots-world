@@ -17,6 +17,8 @@ interface Place {
   isNew: boolean;
   coordinates: { lat: number; lng: number };
   image?: string;
+  posts?: { content: string; tags: string[] }[];
+  comments?: { content: string; author: string }[];
 }
 
 const ExplorePage = () => {
@@ -36,7 +38,7 @@ const ExplorePage = () => {
   // User's current location (San Francisco as default)
   const userLocation = { lat: 37.7749, lng: -122.4194 };
 
-  // Sample data for locations with better images
+  // Sample data for locations with posts and comments containing keywords
   const locations = [
     {
       id: '1',
@@ -53,7 +55,15 @@ const ExplorePage = () => {
       ],
       visitors: ['user1', 'user2'],
       isNew: true,
-      coordinates: { lat: 37.7849, lng: -122.4094 }
+      coordinates: { lat: 37.7849, lng: -122.4094 },
+      posts: [
+        { content: "Amazing pizza here! The margherita is to die for", tags: ["pizza", "italian", "delicious"] },
+        { content: "Great coffee and pastries", tags: ["coffee", "pastries", "breakfast"] }
+      ],
+      comments: [
+        { content: "Love their pepperoni pizza!", author: "foodie123" },
+        { content: "Best espresso in town", author: "coffee_lover" }
+      ]
     },
     {
       id: '2',
@@ -69,7 +79,15 @@ const ExplorePage = () => {
       ],
       visitors: ['user4', 'user5'],
       isNew: false,
-      coordinates: { lat: 37.7749, lng: -122.4094 }
+      coordinates: { lat: 37.7749, lng: -122.4094 },
+      posts: [
+        { content: "Incredible seafood pasta and the sunset view is breathtaking", tags: ["seafood", "pasta", "sunset", "romantic"] },
+        { content: "Their wine selection is outstanding", tags: ["wine", "dinner", "date"] }
+      ],
+      comments: [
+        { content: "The lobster was amazing!", author: "seafood_fan" },
+        { content: "Perfect place for a romantic dinner", author: "couple_goals" }
+      ]
     },
     {
       id: '3',
@@ -82,7 +100,15 @@ const ExplorePage = () => {
       image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop",
       visitors: ['user6'],
       isNew: false,
-      coordinates: { lat: 37.7649, lng: -122.4194 }
+      coordinates: { lat: 37.7649, lng: -122.4194 },
+      posts: [
+        { content: "The rooftop bar serves incredible cocktails and has city views", tags: ["cocktails", "rooftop", "city", "drinks"] },
+        { content: "Room service has great burgers", tags: ["burgers", "room service", "comfort food"] }
+      ],
+      comments: [
+        { content: "Their signature martini is perfect", author: "cocktail_expert" },
+        { content: "Best hotel burger I've ever had", author: "burger_king" }
+      ]
     },
     {
       id: '4',
@@ -95,7 +121,15 @@ const ExplorePage = () => {
       image: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=300&fit=crop",
       visitors: ['user7'],
       isNew: true,
-      coordinates: { lat: 37.7549, lng: -122.4294 }
+      coordinates: { lat: 37.7549, lng: -122.4294 },
+      posts: [
+        { content: "Great craft beer selection and they serve pizza until late", tags: ["craft beer", "pizza", "late night"] },
+        { content: "The DJ plays amazing electronic music", tags: ["music", "electronic", "dancing"] }
+      ],
+      comments: [
+        { content: "Pizza here is surprisingly good for a bar!", author: "night_owl" },
+        { content: "Love the atmosphere and beer selection", author: "beer_enthusiast" }
+      ]
     },
     {
       id: '5',
@@ -113,7 +147,15 @@ const ExplorePage = () => {
       ],
       visitors: ['user8'],
       isNew: false,
-      coordinates: { lat: 37.7949, lng: -122.4294 }
+      coordinates: { lat: 37.7949, lng: -122.4294 },
+      posts: [
+        { content: "Their sushi is fresh and the ramen is authentic", tags: ["sushi", "ramen", "japanese", "authentic"] },
+        { content: "Amazing vegetarian options and organic ingredients", tags: ["vegetarian", "organic", "healthy"] }
+      ],
+      comments: [
+        { content: "Best sushi in the area!", author: "sushi_master" },
+        { content: "Love their vegan ramen", author: "plant_based" }
+      ]
     },
     {
       id: '6',
@@ -126,7 +168,15 @@ const ExplorePage = () => {
       image: "https://images.unsplash.com/photo-1453614512568-c4024d13c247?w=400&h=300&fit=crop",
       visitors: ['user9'],
       isNew: false,
-      coordinates: { lat: 37.7849, lng: -122.4294 }
+      coordinates: { lat: 37.7849, lng: -122.4294 },
+      posts: [
+        { content: "They serve artisan donuts and the best latte art", tags: ["donuts", "latte", "artisan", "coffee"] },
+        { content: "Great study spot with free wifi", tags: ["study", "wifi", "quiet"] }
+      ],
+      comments: [
+        { content: "Their glazed donuts are heavenly", author: "sweet_tooth" },
+        { content: "Perfect place to work remotely", author: "digital_nomad" }
+      ]
     }
   ];
 
@@ -211,11 +261,27 @@ const ExplorePage = () => {
 
     if (searchType === 'locations') {
       const nearbyLocations = getNearbyLocations(locations);
-      const results = nearbyLocations.filter(location =>
-        location.name.toLowerCase().includes(query.toLowerCase()) ||
-        location.location.toLowerCase().includes(query.toLowerCase()) ||
-        location.description.toLowerCase().includes(query.toLowerCase())
-      );
+      const results = nearbyLocations.filter(location => {
+        const queryLower = query.toLowerCase();
+        
+        // Search in basic location info
+        const basicMatch = location.name.toLowerCase().includes(queryLower) ||
+          location.location.toLowerCase().includes(queryLower) ||
+          location.description.toLowerCase().includes(queryLower);
+        
+        // Search in posts content and tags
+        const postMatch = location.posts?.some(post => 
+          post.content.toLowerCase().includes(queryLower) ||
+          post.tags.some(tag => tag.toLowerCase().includes(queryLower))
+        );
+        
+        // Search in comments
+        const commentMatch = location.comments?.some(comment =>
+          comment.content.toLowerCase().includes(queryLower)
+        );
+        
+        return basicMatch || postMatch || commentMatch;
+      });
       setSearchResults(results);
     } else {
       const results = users.filter(user =>
@@ -462,7 +528,7 @@ const ExplorePage = () => {
             <Input
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
-              placeholder={searchType === 'locations' ? 'Search for places' : 'Search for users'}
+              placeholder={searchType === 'locations' ? 'Search for places (e.g., pizza, sushi, coffee)' : 'Search for users'}
               className="pl-10 pr-10 bg-gray-100 border-none rounded-full"
             />
             {searchQuery && (
