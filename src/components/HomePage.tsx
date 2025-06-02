@@ -201,9 +201,10 @@ const HomePage = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [currentCity, setCurrentCity] = useState('San Francisco');
-  const [activeFilter, setActiveFilter] = useState('All');
+  const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'new'>('following');
   const [places, setPlaces] = useState<Place[]>(initialPlaces);
   const [stories, setStories] = useState<Story[]>(initialStories);
+  const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
   const [isCreateStoryModalOpen, setIsCreateStoryModalOpen] = useState(false);
   const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
   const [isMessagesModalOpen, setIsMessagesModalOpen] = useState(false);
@@ -218,6 +219,14 @@ const HomePage = () => {
   const [isSearchActive, setIsSearchActive] = useState(false);
 
   const mapCenter = { lat: 37.7749, lng: -122.4194 };
+
+  // Get the top location (most liked)
+  const topLocation = places.reduce((prev, current) => 
+    prev.likes > current.likes ? prev : current
+  );
+
+  // Count new places
+  const newCount = places.filter(place => place.isNew).length;
 
   const handleSearchChange = (value: string) => {
     console.log('Search query changed:', value);
@@ -235,13 +244,17 @@ const HomePage = () => {
     setCurrentCity(city);
   };
 
-  const handleLike = (placeId: string) => {
-    console.log('Liked place:', placeId);
-    setPlaces((prevPlaces) =>
-      prevPlaces.map((place) =>
-        place.id === placeId ? { ...place, likes: place.likes + 1 } : place
-      )
-    );
+  const handleLikeToggle = (placeId: string) => {
+    console.log('Toggled like for place:', placeId);
+    setLikedPlaces(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(placeId)) {
+        newSet.delete(placeId);
+      } else {
+        newSet.add(placeId);
+      }
+      return newSet;
+    });
   };
 
   const handleSave = (placeId: string) => {
@@ -298,8 +311,10 @@ const HomePage = () => {
   };
 
   const filteredPlaces = places.filter((place) => {
-    if (activeFilter === 'All') return true;
-    return place.category === activeFilter;
+    if (activeFilter === 'following') return true;
+    if (activeFilter === 'popular') return place.likes > 50;
+    if (activeFilter === 'new') return place.isNew;
+    return true;
   });
 
   return (
@@ -332,7 +347,10 @@ const HomePage = () => {
         {/* Location of the Week - Hidden when search is active */}
         {!isSearchActive && (
           <div className="px-4 mb-4">
-            <LocationOfTheWeek />
+            <LocationOfTheWeek
+              topLocation={topLocation}
+              onLocationClick={handleLocationClick}
+            />
           </div>
         )}
 
@@ -342,6 +360,7 @@ const HomePage = () => {
             <FilterButtons
               activeFilter={activeFilter}
               onFilterChange={setActiveFilter}
+              newCount={newCount}
             />
           </div>
         )}
@@ -353,11 +372,11 @@ const HomePage = () => {
               <PlaceCard
                 key={place.id}
                 place={place}
-                onLike={handleLike}
-                onSave={handleSave}
+                isLiked={likedPlaces.has(place.id)}
+                onCardClick={handleLocationClick}
+                onLikeToggle={handleLikeToggle}
                 onShare={handleShare}
                 onComment={handleComment}
-                onLocationClick={handleLocationClick}
               />
             ))}
           </div>
@@ -367,8 +386,8 @@ const HomePage = () => {
         <div className="px-4 pb-6">
           <MapSection
             places={filteredPlaces}
-            center={mapCenter}
-            onPlaceClick={handleLocationClick}
+            onPinClick={handleLocationClick}
+            mapCenter={mapCenter}
           />
         </div>
       </div>
@@ -391,7 +410,7 @@ const HomePage = () => {
         onNotificationsModalClose={() => setIsNotificationsModalOpen(false)}
         onMessagesModalClose={() => setIsMessagesModalOpen(false)}
         onShareModalClose={() => setIsShareModalOpen(false)}
-        onCommentModalClose={() => setIsCommentModalOpen(false)}
+        onCommentModalClose={() => setIsCommentModalClose(false)}
         onLocationDetailClose={() => setIsLocationDetailOpen(false)}
         onStoriesViewerClose={() => setIsStoriesViewerOpen(false)}
         onStoryCreated={handleStoryCreated}
