@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Heart, Bell, MessageCircle, Users, TrendingUp, Sparkles, Search } from 'lucide-react';
+import { Heart, Bell, MessageCircle, Users, TrendingUp, Sparkles, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
