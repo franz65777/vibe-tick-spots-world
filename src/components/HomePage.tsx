@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import Header from './home/Header';
 import StoriesSection from './home/StoriesSection';
@@ -410,7 +411,7 @@ const HomePage = () => {
         onNotificationsModalClose={() => setIsNotificationsModalOpen(false)}
         onMessagesModalClose={() => setIsMessagesModalOpen(false)}
         onShareModalClose={() => setIsShareModalOpen(false)}
-        onCommentModalClose={() => setIsCommentModalClose(false)}
+        onCommentModalClose={() => setIsCommentModalOpen(false)}
         onLocationDetailClose={() => setIsLocationDetailOpen(false)}
         onStoriesViewerClose={() => setIsStoriesViewerOpen(false)}
         onStoryCreated={handleStoryCreated}
