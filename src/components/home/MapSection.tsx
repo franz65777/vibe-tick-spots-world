@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { Minimize, Maximize, Search, X } from 'lucide-react';
@@ -30,6 +31,8 @@ const MapSection = ({ places, onPinClick }: MapSectionProps) => {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [showApiKeySetup, setShowApiKeySetup] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationPermissionDenied, setLocationPermissionDenied] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Check for API key on mount
@@ -42,12 +45,41 @@ const MapSection = ({ places, onPinClick }: MapSectionProps) => {
     }
   }, []);
 
+  // Get user's current location
+  useEffect(() => {
+    if (navigator.geolocation) {
+      console.log('Requesting user location...');
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          console.log('User location obtained:', latitude, longitude);
+          setUserLocation({ lat: latitude, lng: longitude });
+          setLocationPermissionDenied(false);
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+          setLocationPermissionDenied(true);
+          // Fallback to San Francisco
+          setUserLocation({ lat: 37.7749, lng: -122.4194 });
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000
+        }
+      );
+    } else {
+      console.log('Geolocation not supported');
+      setUserLocation({ lat: 37.7749, lng: -122.4194 });
+    }
+  }, []);
+
   // Initialize Google Maps
   useEffect(() => {
-    if (!apiKey || apiKey === 'demo') return;
+    if (!apiKey || apiKey === 'demo' || !userLocation) return;
 
     const initMap = async () => {
-      console.log('Initializing Google Maps with API key...');
+      console.log('Initializing Google Maps with API key and user location...');
       setMapError(null);
       
       const loader = new Loader({
@@ -61,10 +93,10 @@ const MapSection = ({ places, onPinClick }: MapSectionProps) => {
         const { Map } = await loader.importLibrary('maps');
         
         if (mapRef.current) {
-          console.log('Creating map instance...');
+          console.log('Creating map instance at user location:', userLocation);
           const mapInstance = new Map(mapRef.current, {
-            center: { lat: 37.7749, lng: -122.4194 }, // San Francisco
-            zoom: 13,
+            center: userLocation,
+            zoom: 14,
             streetViewControl: false,
             mapTypeControl: false,
             fullscreenControl: false,
@@ -73,8 +105,25 @@ const MapSection = ({ places, onPinClick }: MapSectionProps) => {
           console.log('Map created successfully');
           setMap(mapInstance);
 
+          // Add user location marker
+          const userMarker = new google.maps.Marker({
+            map: mapInstance,
+            position: userLocation,
+            title: 'Your Location',
+            icon: {
+              url: 'data:image/svg+xml;base64,' + btoa(`
+                <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="8" fill="#4285F4" stroke="white" stroke-width="2"/>
+                  <circle cx="12" cy="12" r="3" fill="white"/>
+                </svg>
+              `),
+              scaledSize: new google.maps.Size(24, 24),
+              anchor: new google.maps.Point(12, 12)
+            }
+          });
+
           // Add markers for places
-          const newMarkers: google.maps.Marker[] = [];
+          const newMarkers: google.maps.Marker[] = [userMarker];
           places.forEach((place) => {
             const marker = new google.maps.Marker({
               map: mapInstance,
@@ -109,7 +158,7 @@ const MapSection = ({ places, onPinClick }: MapSectionProps) => {
     };
 
     initMap();
-  }, [apiKey, places, onPinClick]);
+  }, [apiKey, places, onPinClick, userLocation]);
 
   // Handle search functionality
   const handleSearch = async () => {
@@ -224,6 +273,11 @@ const MapSection = ({ places, onPinClick }: MapSectionProps) => {
               Demo mode - Search functionality disabled. Add your Google Maps API key for full features.
             </div>
           )}
+          {locationPermissionDenied && (
+            <div className="mt-2 text-xs text-yellow-600 bg-yellow-50 px-2 py-1 rounded">
+              Location access denied - Showing default location. Enable location permissions for better experience.
+            </div>
+          )}
           {mapError && (
             <div className="mt-2 text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
               {mapError}
@@ -284,22 +338,31 @@ const MapSection = ({ places, onPinClick }: MapSectionProps) => {
                 </div>
               </div>
             )}
+            {locationPermissionDenied && (
+              <div className="absolute bottom-6 left-4 text-xs text-yellow-600 bg-yellow-50/90 px-2 py-1 rounded">
+                Enable location for better experience
+              </div>
+            )}
           </div>
         )}
 
-        {/* Location Labels */}
-        <div className="absolute top-4 left-4 text-xs font-medium text-gray-600 bg-white/80 px-2 py-1 rounded">
-          PACIFIC HEIGHTS
-        </div>
-        <div className="absolute top-6 right-4 text-xs font-medium text-gray-600 bg-white/80 px-2 py-1 rounded">
-          CHINATOWN
-        </div>
-        <div className="absolute bottom-16 left-4 text-xs font-medium text-gray-600 bg-white/80 px-2 py-1 rounded">
-          MISSION<br />DISTRICT
-        </div>
-        <div className="absolute bottom-20 right-8 text-xs font-medium text-gray-600 bg-white/80 px-2 py-1 rounded">
-          UNION SQUARE
-        </div>
+        {/* Location Labels - only show if using demo mode or no user location */}
+        {(apiKey === 'demo' || locationPermissionDenied) && (
+          <>
+            <div className="absolute top-4 left-4 text-xs font-medium text-gray-600 bg-white/80 px-2 py-1 rounded">
+              PACIFIC HEIGHTS
+            </div>
+            <div className="absolute top-6 right-4 text-xs font-medium text-gray-600 bg-white/80 px-2 py-1 rounded">
+              CHINATOWN
+            </div>
+            <div className="absolute bottom-16 left-4 text-xs font-medium text-gray-600 bg-white/80 px-2 py-1 rounded">
+              MISSION<br />DISTRICT
+            </div>
+            <div className="absolute bottom-20 right-8 text-xs font-medium text-gray-600 bg-white/80 px-2 py-1 rounded">
+              UNION SQUARE
+            </div>
+          </>
+        )}
 
         {/* Expand Map Button */}
         <button 
