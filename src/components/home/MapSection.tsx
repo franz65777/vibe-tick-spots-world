@@ -82,7 +82,7 @@ const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
 
   // Initialize Google Maps
   useEffect(() => {
-    if (!apiKey || apiKey === 'demo' || !userLocation || isMapLoaded) {
+    if (!apiKey || apiKey === 'demo' || !userLocation || isMapLoaded || !mapRef.current) {
       return;
     }
 
@@ -91,8 +91,19 @@ const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
         console.log('Initializing Google Maps...');
         setMapError(null);
         
+        // Wait for the DOM element to be fully rendered
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         if (!mapRef.current) {
-          console.error('Map container not found');
+          console.error('Map container not found after delay');
+          return;
+        }
+
+        // Check if the container is visible
+        const rect = mapRef.current.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) {
+          console.error('Map container has no dimensions');
+          setMapError('Map container is not visible');
           return;
         }
 
@@ -118,9 +129,12 @@ const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
           fullscreenControl: false
         });
 
-        mapInstanceRef.current = mapInstance;
-        setIsMapLoaded(true);
-        console.log('Map instance created and ready');
+        // Wait for the map to be fully loaded
+        google.maps.event.addListenerOnce(mapInstance, 'idle', () => {
+          console.log('Map is fully loaded and ready');
+          mapInstanceRef.current = mapInstance;
+          setIsMapLoaded(true);
+        });
 
       } catch (error) {
         console.error('Error loading Google Maps:', error);
