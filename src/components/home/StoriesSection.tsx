@@ -22,10 +22,12 @@ interface StoriesSectionProps {
 const getCategoryIcon = (category: string) => {
   switch (category?.toLowerCase()) {
     case 'restaurant':
+    case 'cafe':
       return <Utensils className="w-3 h-3 text-white" />;
     case 'hotel':
       return <Hotel className="w-3 h-3 text-white" />;
     case 'bar':
+    case 'nightlife':
       return <Wine className="w-3 h-3 text-white" />;
     default:
       return <Utensils className="w-3 h-3 text-white" />;
@@ -35,10 +37,12 @@ const getCategoryIcon = (category: string) => {
 const getCategoryColor = (category: string) => {
   switch (category?.toLowerCase()) {
     case 'restaurant':
+    case 'cafe':
       return 'from-orange-500 to-red-500';
     case 'hotel':
       return 'from-blue-500 to-indigo-500';
     case 'bar':
+    case 'nightlife':
       return 'from-purple-500 to-pink-500';
     default:
       return 'from-orange-500 to-red-500';
