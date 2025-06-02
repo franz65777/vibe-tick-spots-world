@@ -1,14 +1,16 @@
-
 import { useState } from 'react';
-import { Heart, Bell, MessageCircle } from 'lucide-react';
+import { Heart, Bell, MessageCircle, Users, TrendingUp, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import MapSection from '@/components/home/MapSection';
 import StoriesSection from '@/components/home/StoriesSection';
+import PlaceCard from '@/components/home/PlaceCard';
 import CreateStoryModal from '@/components/CreateStoryModal';
 import NotificationsModal from '@/components/NotificationsModal';
 import MessagesModal from '@/components/MessagesModal';
 import StoriesViewer from '@/components/StoriesViewer';
+import ShareModal from '@/components/home/ShareModal';
+import CommentModal from '@/components/home/CommentModal';
 
 interface Place {
   id: string;
@@ -20,6 +22,10 @@ interface Place {
   isNew: boolean;
   coordinates: { lat: number; lng: number };
   image?: string;
+  addedBy?: string;
+  addedDate?: string;
+  isFollowing?: boolean;
+  popularity?: number;
 }
 
 interface Story {
@@ -48,9 +54,13 @@ const mockPlaces: Place[] = [
       { name: 'Mike', avatar: '1581091226825-a6a2a5aee158' }
     ],
     visitors: ['user1', 'user2'],
-    isNew: true,
+    isNew: false,
     coordinates: { lat: 37.7849, lng: -122.4094 },
-    image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop'
+    image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
+    addedBy: 'user1',
+    addedDate: '2024-05-25',
+    isFollowing: true,
+    popularity: 85
   },
   {
     id: '2',
@@ -58,9 +68,13 @@ const mockPlaces: Place[] = [
     category: 'restaurant',
     likes: 18,
     visitors: ['user3'],
-    isNew: false,
+    isNew: true,
     coordinates: { lat: 37.7849, lng: -122.4194 },
-    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop'
+    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop',
+    addedBy: 'user2',
+    addedDate: '2024-06-01',
+    isFollowing: true,
+    popularity: 92
   },
   {
     id: '3',
@@ -73,7 +87,11 @@ const mockPlaces: Place[] = [
     visitors: ['user4', 'user5'],
     isNew: false,
     coordinates: { lat: 37.7749, lng: -122.4094 },
-    image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop'
+    image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop',
+    addedBy: 'user5',
+    addedDate: '2024-05-15',
+    isFollowing: false,
+    popularity: 96
   },
   {
     id: '4',
@@ -83,7 +101,11 @@ const mockPlaces: Place[] = [
     visitors: ['user6'],
     isNew: true,
     coordinates: { lat: 37.7649, lng: -122.4194 },
-    image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=300&fit=crop'
+    image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=300&fit=crop',
+    addedBy: 'user3',
+    addedDate: '2024-05-30',
+    isFollowing: true,
+    popularity: 78
   },
   {
     id: '5',
@@ -98,7 +120,11 @@ const mockPlaces: Place[] = [
     visitors: ['user7', 'user8'],
     isNew: false,
     coordinates: { lat: 37.7549, lng: -122.4294 },
-    image: 'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400&h=300&fit=crop'
+    image: 'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400&h=300&fit=crop',
+    addedBy: 'user6',
+    addedDate: '2024-05-10',
+    isFollowing: false,
+    popularity: 88
   },
   {
     id: '6',
@@ -108,7 +134,11 @@ const mockPlaces: Place[] = [
     visitors: ['user9'],
     isNew: false,
     coordinates: { lat: 37.7949, lng: -122.4294 },
-    image: 'https://images.unsplash.com/photo-1453614512568-c4024d13c247?w=400&h=300&fit=crop'
+    image: 'https://images.unsplash.com/photo-1453614512568-c4024d13c247?w=400&h=300&fit=crop',
+    addedBy: 'user4',
+    addedDate: '2024-05-20',
+    isFollowing: true,
+    popularity: 71
   }
 ];
 
@@ -166,6 +196,32 @@ const HomePage = () => {
   const [isStoriesViewerOpen, setIsStoriesViewerOpen] = useState(false);
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const [stories, setStories] = useState(mockStories);
+  const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'new'>('following');
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
+  const [sharePlace, setSharePlace] = useState<Place | null>(null);
+  const [commentPlace, setCommentPlace] = useState<Place | null>(null);
+
+  const getFilteredPlaces = () => {
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+    switch (activeFilter) {
+      case 'following':
+        return mockPlaces.filter(place => place.isFollowing);
+      case 'popular':
+        return mockPlaces.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+      case 'new':
+        return mockPlaces.filter(place => {
+          const addedDate = new Date(place.addedDate || '');
+          return place.isFollowing && addedDate >= oneWeekAgo;
+        });
+      default:
+        return mockPlaces;
+    }
+  };
 
   const handleCreateStory = () => {
     console.log('Create story clicked');
@@ -191,7 +247,37 @@ const HomePage = () => {
 
   const handlePinClick = (place: Place) => {
     console.log('Map pin clicked:', place.name);
+    setSelectedPlace(place);
   };
+
+  const handleLikeToggle = (placeId: string) => {
+    setLikedPlaces(prev => {
+      const newLiked = new Set(prev);
+      if (newLiked.has(placeId)) {
+        newLiked.delete(placeId);
+      } else {
+        newLiked.add(placeId);
+      }
+      return newLiked;
+    });
+  };
+
+  const handleShare = (place: Place) => {
+    setSharePlace(place);
+    setIsShareModalOpen(true);
+  };
+
+  const handleComment = (place: Place) => {
+    setCommentPlace(place);
+    setIsCommentModalOpen(true);
+  };
+
+  const handleCardClick = (place: Place) => {
+    console.log('Place card clicked:', place.name);
+    // TODO: Navigate to place detail view
+  };
+
+  const filteredPlaces = getFilteredPlaces();
 
   return (
     <div className="flex flex-col h-full bg-gray-50">
@@ -200,7 +286,6 @@ const HomePage = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Discover</h1>
-            <p className="text-gray-500 mt-1">Explore new places and share your experiences</p>
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -236,10 +321,69 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Map Section - now takes remaining space */}
-      <div className="flex-1">
-        <MapSection places={mockPlaces} onPinClick={handlePinClick} />
+      {/* Filter Buttons */}
+      <div className="bg-white px-4 py-3 border-b border-gray-200">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setActiveFilter('following')}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors",
+              activeFilter === 'following'
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            )}
+          >
+            <Users className="w-4 h-4" />
+            Following
+          </button>
+          <button
+            onClick={() => setActiveFilter('popular')}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors",
+              activeFilter === 'popular'
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            )}
+          >
+            <Heart className="w-4 h-4" />
+            Popular
+          </button>
+          <button
+            onClick={() => setActiveFilter('new')}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors relative",
+              activeFilter === 'new'
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            )}
+          >
+            <Sparkles className="w-4 h-4" />
+            New
+            {getFilteredPlaces().length > 0 && activeFilter !== 'new' && (
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
+            )}
+          </button>
+        </div>
       </div>
+
+      {/* Map Section */}
+      <div className="flex-1">
+        <MapSection places={filteredPlaces} onPinClick={handlePinClick} />
+      </div>
+
+      {/* Selected Place Card */}
+      {selectedPlace && (
+        <div className="bg-white border-t border-gray-200 p-4">
+          <PlaceCard
+            place={selectedPlace}
+            isLiked={likedPlaces.has(selectedPlace.id)}
+            onCardClick={handleCardClick}
+            onLikeToggle={handleLikeToggle}
+            onShare={handleShare}
+            onComment={handleComment}
+          />
+        </div>
+      )}
 
       {/* Modals */}
       <CreateStoryModal
@@ -256,6 +400,18 @@ const HomePage = () => {
       <MessagesModal
         isOpen={isMessagesModalOpen}
         onClose={() => setIsMessagesModalOpen(false)}
+      />
+
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        place={sharePlace}
+      />
+
+      <CommentModal
+        isOpen={isCommentModalOpen}
+        onClose={() => setIsCommentModalOpen(false)}
+        place={commentPlace}
       />
 
       {/* Stories Viewer */}
