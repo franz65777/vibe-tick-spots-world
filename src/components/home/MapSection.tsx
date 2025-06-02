@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { Minimize, Maximize, Search, X } from 'lucide-react';
@@ -19,9 +18,10 @@ interface Place {
 interface MapSectionProps {
   places: Place[];
   onPinClick: (place: Place) => void;
+  mapCenter?: { lat: number; lng: number };
 }
 
-const MapSection = ({ places, onPinClick }: MapSectionProps) => {
+const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -48,8 +48,14 @@ const MapSection = ({ places, onPinClick }: MapSectionProps) => {
     }
   }, []);
 
-  // Get user's current location
+  // Get user's current location or use mapCenter
   useEffect(() => {
+    if (mapCenter) {
+      console.log('Using provided map center:', mapCenter);
+      setUserLocation(mapCenter);
+      return;
+    }
+
     if (navigator.geolocation) {
       console.log('Requesting user location...');
       navigator.geolocation.getCurrentPosition(
@@ -75,14 +81,23 @@ const MapSection = ({ places, onPinClick }: MapSectionProps) => {
       console.log('Geolocation not supported');
       setUserLocation({ lat: 37.7749, lng: -122.4194 });
     }
-  }, []);
+  }, [mapCenter]);
+
+  // Update map center when mapCenter prop changes
+  useEffect(() => {
+    if (map && mapCenter) {
+      console.log('Updating map center to:', mapCenter);
+      map.setCenter(mapCenter);
+      map.setZoom(14);
+    }
+  }, [map, mapCenter]);
 
   // Initialize Google Maps
   useEffect(() => {
     if (!apiKey || apiKey === 'demo' || !userLocation || !mapRef.current || isMapLoaded) return;
 
     const initMap = async () => {
-      console.log('Initializing Google Maps with API key and user location...');
+      console.log('Initializing Google Maps with API key and location:', userLocation);
       setMapError(null);
       
       try {
@@ -100,7 +115,7 @@ const MapSection = ({ places, onPinClick }: MapSectionProps) => {
         await new Promise(resolve => setTimeout(resolve, 100));
         
         if (mapRef.current && !isMapLoaded) {
-          console.log('Creating map instance at user location:', userLocation);
+          console.log('Creating map instance at location:', userLocation);
           const mapInstance = new google.maps.Map(mapRef.current, {
             center: userLocation,
             zoom: 14,
@@ -120,55 +135,6 @@ const MapSection = ({ places, onPinClick }: MapSectionProps) => {
           console.log('Map created successfully');
           setMap(mapInstance);
           setIsMapLoaded(true);
-
-          // Clear existing markers
-          markers.forEach(marker => marker.setMap(null));
-
-          // Add user location marker
-          const userMarker = new google.maps.Marker({
-            map: mapInstance,
-            position: userLocation,
-            title: 'Your Location',
-            icon: {
-              url: 'data:image/svg+xml;base64,' + btoa(`
-                <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="12" cy="12" r="8" fill="#4285F4" stroke="white" stroke-width="2"/>
-                  <circle cx="12" cy="12" r="3" fill="white"/>
-                </svg>
-              `),
-              scaledSize: new google.maps.Size(24, 24),
-              anchor: new google.maps.Point(12, 12)
-            }
-          });
-
-          // Add markers for places
-          const newMarkers: google.maps.Marker[] = [userMarker];
-          places.forEach((place) => {
-            const marker = new google.maps.Marker({
-              map: mapInstance,
-              position: place.coordinates,
-              title: place.name,
-              icon: {
-                url: 'data:image/svg+xml;base64,' + btoa(`
-                  <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="16" cy="16" r="12" fill="#EF4444" stroke="white" stroke-width="2"/>
-                    <circle cx="16" cy="16" r="4" fill="white"/>
-                  </svg>
-                `),
-                scaledSize: new google.maps.Size(32, 32),
-                anchor: new google.maps.Point(16, 16)
-              }
-            });
-
-            marker.addListener('click', () => {
-              onPinClick(place);
-            });
-
-            newMarkers.push(marker);
-          });
-
-          setMarkers(newMarkers);
-          console.log('Markers added successfully');
         }
       } catch (error) {
         console.error('Error loading Google Maps:', error);
@@ -178,7 +144,65 @@ const MapSection = ({ places, onPinClick }: MapSectionProps) => {
     };
 
     initMap();
-  }, [apiKey, places, onPinClick, userLocation, isMapLoaded]);
+  }, [apiKey, userLocation, isMapLoaded]);
+
+  // Update markers when places change
+  useEffect(() => {
+    if (!map) return;
+
+    // Clear existing markers
+    markers.forEach(marker => marker.setMap(null));
+
+    const newMarkers: google.maps.Marker[] = [];
+
+    // Add user location marker only if not using a specific map center
+    if (!mapCenter && userLocation) {
+      const userMarker = new google.maps.Marker({
+        map: map,
+        position: userLocation,
+        title: 'Your Location',
+        icon: {
+          url: 'data:image/svg+xml;base64,' + btoa(`
+            <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="8" fill="#4285F4" stroke="white" stroke-width="2"/>
+              <circle cx="12" cy="12" r="3" fill="white"/>
+            </svg>
+          `),
+          scaledSize: new google.maps.Size(24, 24),
+          anchor: new google.maps.Point(12, 12)
+        }
+      });
+      newMarkers.push(userMarker);
+    }
+
+    // Add markers for places
+    places.forEach((place) => {
+      const marker = new google.maps.Marker({
+        map: map,
+        position: place.coordinates,
+        title: place.name,
+        icon: {
+          url: 'data:image/svg+xml;base64,' + btoa(`
+            <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="16" cy="16" r="12" fill="#EF4444" stroke="white" stroke-width="2"/>
+              <circle cx="16" cy="16" r="4" fill="white"/>
+            </svg>
+          `),
+          scaledSize: new google.maps.Size(32, 32),
+          anchor: new google.maps.Point(16, 16)
+        }
+      });
+
+      marker.addListener('click', () => {
+        onPinClick(place);
+      });
+
+      newMarkers.push(marker);
+    });
+
+    setMarkers(newMarkers);
+    console.log('Markers updated, total:', newMarkers.length);
+  }, [map, places, onPinClick, userLocation, mapCenter]);
 
   // Handle search functionality
   const handleSearch = async () => {
@@ -373,7 +397,7 @@ const MapSection = ({ places, onPinClick }: MapSectionProps) => {
                 </div>
               </div>
             )}
-            {locationPermissionDenied && (
+            {locationPermissionDenied && !mapCenter && (
               <div className="absolute bottom-6 left-4 text-xs text-yellow-600 bg-yellow-50/90 px-2 py-1 rounded">
                 Enable location for better experience
               </div>

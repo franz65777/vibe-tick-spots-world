@@ -50,104 +50,175 @@ interface Story {
   locationCategory?: string;
 }
 
-const mockPlaces: Place[] = [
-  {
-    id: '1',
-    name: 'The Cozy Corner Café',
-    category: 'cafe',
-    likes: 24,
-    friendsWhoSaved: [
-      { name: 'Sarah', avatar: '1649972904349-6e44c42644a7' },
-      { name: 'Mike', avatar: '1581091226825-a6a2a5aee158' }
-    ],
-    visitors: ['user1', 'user2'],
-    isNew: false,
-    coordinates: { lat: 37.7849, lng: -122.4094 },
-    image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
-    addedBy: 'user1',
-    addedDate: '2024-05-25',
-    isFollowing: true,
-    popularity: 85
+// City data with places for different cities
+const cityData: Record<string, { coordinates: { lat: number; lng: number }; places: Place[] }> = {
+  'san francisco': {
+    coordinates: { lat: 37.7749, lng: -122.4194 },
+    places: [
+      {
+        id: '1',
+        name: 'The Cozy Corner Café',
+        category: 'cafe',
+        likes: 24,
+        friendsWhoSaved: [
+          { name: 'Sarah', avatar: '1649972904349-6e44c42644a7' },
+          { name: 'Mike', avatar: '1581091226825-a6a2a5aee158' }
+        ],
+        visitors: ['user1', 'user2'],
+        isNew: false,
+        coordinates: { lat: 37.7849, lng: -122.4094 },
+        image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
+        addedBy: 'user1',
+        addedDate: '2024-05-25',
+        isFollowing: true,
+        popularity: 85
+      },
+      {
+        id: '2',
+        name: 'Sunset View Restaurant',
+        category: 'restaurant',
+        likes: 18,
+        visitors: ['user3'],
+        isNew: true,
+        coordinates: { lat: 37.7849, lng: -122.4194 },
+        image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop',
+        addedBy: 'user2',
+        addedDate: '2024-06-01',
+        isFollowing: true,
+        popularity: 92
+      },
+      {
+        id: '3',
+        name: 'Grand Plaza Hotel',
+        category: 'hotel',
+        likes: 45,
+        friendsWhoSaved: [
+          { name: 'Emma', avatar: '1581092795360-fd1ca04f0952' }
+        ],
+        visitors: ['user4', 'user5'],
+        isNew: false,
+        coordinates: { lat: 37.7749, lng: -122.4094 },
+        image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop',
+        addedBy: 'user5',
+        addedDate: '2024-05-15',
+        isFollowing: false,
+        popularity: 96
+      }
+    ]
   },
-  {
-    id: '2',
-    name: 'Sunset View Restaurant',
-    category: 'restaurant',
-    likes: 18,
-    visitors: ['user3'],
-    isNew: true,
-    coordinates: { lat: 37.7849, lng: -122.4194 },
-    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop',
-    addedBy: 'user2',
-    addedDate: '2024-06-01',
-    isFollowing: true,
-    popularity: 92
+  'milan': {
+    coordinates: { lat: 45.4642, lng: 9.1900 },
+    places: [
+      {
+        id: 'milan1',
+        name: 'Café Milano',
+        category: 'cafe',
+        likes: 32,
+        friendsWhoSaved: [
+          { name: 'Marco', avatar: '1649972904349-6e44c42644a7' },
+          { name: 'Sofia', avatar: '1581091226825-a6a2a5aee158' }
+        ],
+        visitors: ['user1', 'user2', 'user3'],
+        isNew: true,
+        coordinates: { lat: 45.4642, lng: 9.1900 },
+        image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=300&fit=crop',
+        addedBy: 'user1',
+        addedDate: '2024-05-28',
+        isFollowing: true,
+        popularity: 88
+      },
+      {
+        id: 'milan2',
+        name: 'Duomo Restaurant',
+        category: 'restaurant',
+        likes: 45,
+        visitors: ['user4', 'user5'],
+        isNew: false,
+        coordinates: { lat: 45.4640, lng: 9.1896 },
+        image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop',
+        addedBy: 'user2',
+        addedDate: '2024-05-20',
+        isFollowing: true,
+        popularity: 94
+      },
+      {
+        id: 'milan3',
+        name: 'Navigli Bar',
+        category: 'bar',
+        likes: 28,
+        friendsWhoSaved: [
+          { name: 'Giuseppe', avatar: '1581092795360-fd1ca04f0952' }
+        ],
+        visitors: ['user6'],
+        isNew: true,
+        coordinates: { lat: 45.4583, lng: 9.1756 },
+        image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=300&fit=crop',
+        addedBy: 'user3',
+        addedDate: '2024-06-01',
+        isFollowing: true,
+        popularity: 82
+      },
+      {
+        id: 'milan4',
+        name: 'Hotel Principe di Savoia',
+        category: 'hotel',
+        likes: 67,
+        friendsWhoSaved: [
+          { name: 'Isabella', avatar: '1649972904349-6e44c42644a7' },
+          { name: 'Lorenzo', avatar: '1581091226825-a6a2a5aee158' }
+        ],
+        visitors: ['user7', 'user8', 'user9'],
+        isNew: false,
+        coordinates: { lat: 45.4696, lng: 9.1965 },
+        image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
+        addedBy: 'user4',
+        addedDate: '2024-05-10',
+        isFollowing: false,
+        popularity: 96
+      }
+    ]
   },
-  {
-    id: '3',
-    name: 'Grand Plaza Hotel',
-    category: 'hotel',
-    likes: 45,
-    friendsWhoSaved: [
-      { name: 'Emma', avatar: '1581092795360-fd1ca04f0952' }
-    ],
-    visitors: ['user4', 'user5'],
-    isNew: false,
-    coordinates: { lat: 37.7749, lng: -122.4094 },
-    image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop',
-    addedBy: 'user5',
-    addedDate: '2024-05-15',
-    isFollowing: false,
-    popularity: 96
-  },
-  {
-    id: '4',
-    name: 'Neon Nights Bar',
-    category: 'bar',
-    likes: 32,
-    visitors: ['user6'],
-    isNew: true,
-    coordinates: { lat: 37.7649, lng: -122.4194 },
-    image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=300&fit=crop',
-    addedBy: 'user3',
-    addedDate: '2024-05-30',
-    isFollowing: true,
-    popularity: 78
-  },
-  {
-    id: '5',
-    name: 'Ocean Breeze Restaurant',
-    category: 'restaurant',
-    likes: 28,
-    friendsWhoSaved: [
-      { name: 'Alex', avatar: '1535268647677-300dbf3d78d1' },
-      { name: 'Jordan', avatar: '1649972904349-6e44c42644a7' },
-      { name: 'Casey', avatar: '1581091226825-a6a2a5aee158' }
-    ],
-    visitors: ['user7', 'user8'],
-    isNew: false,
-    coordinates: { lat: 37.7549, lng: -122.4294 },
-    image: 'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400&h=300&fit=crop',
-    addedBy: 'user6',
-    addedDate: '2024-05-10',
-    isFollowing: false,
-    popularity: 88
-  },
-  {
-    id: '6',
-    name: 'Artisan Coffee House',
-    category: 'cafe',
-    likes: 22,
-    visitors: ['user9'],
-    isNew: false,
-    coordinates: { lat: 37.7949, lng: -122.4294 },
-    image: 'https://images.unsplash.com/photo-1453614512568-c4024d13c247?w=400&h=300&fit=crop',
-    addedBy: 'user4',
-    addedDate: '2024-05-20',
-    isFollowing: true,
-    popularity: 71
+  'paris': {
+    coordinates: { lat: 48.8566, lng: 2.3522 },
+    places: [
+      {
+        id: 'paris1',
+        name: 'Café de Flore',
+        category: 'cafe',
+        likes: 56,
+        friendsWhoSaved: [
+          { name: 'Pierre', avatar: '1649972904349-6e44c42644a7' },
+          { name: 'Marie', avatar: '1581091226825-a6a2a5aee158' }
+        ],
+        visitors: ['user1', 'user2'],
+        isNew: false,
+        coordinates: { lat: 48.8542, lng: 2.3320 },
+        image: 'https://images.unsplash.com/photo-1559925393-8be0ec4767c8?w=400&h=300&fit=crop',
+        addedBy: 'user1',
+        addedDate: '2024-05-15',
+        isFollowing: true,
+        popularity: 91
+      },
+      {
+        id: 'paris2',
+        name: 'Le Jules Verne',
+        category: 'restaurant',
+        likes: 89,
+        visitors: ['user3', 'user4'],
+        isNew: true,
+        coordinates: { lat: 48.8584, lng: 2.2945 },
+        image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=300&fit=crop',
+        addedBy: 'user2',
+        addedDate: '2024-05-30',
+        isFollowing: true,
+        popularity: 98
+      }
+    ]
   }
-];
+};
+
+// Default to San Francisco places
+const defaultPlaces = cityData['san francisco'].places;
 
 const mockStories: Story[] = [
   {
@@ -277,10 +348,12 @@ const HomePage = () => {
   const [locationDetailPlace, setLocationDetailPlace] = useState<Place | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentCity, setCurrentCity] = useState('San Francisco');
+  const [currentPlaces, setCurrentPlaces] = useState<Place[]>(defaultPlaces);
+  const [mapCenter, setMapCenter] = useState({ lat: 37.7749, lng: -122.4194 });
 
   // Get the most popular location based on total engagement (likes + visitors)
   const getLocationOfTheWeek = () => {
-    return mockPlaces.reduce((topPlace, currentPlace) => {
+    return currentPlaces.reduce((topPlace, currentPlace) => {
       const currentEngagement = currentPlace.likes + currentPlace.visitors.length + (currentPlace.friendsWhoSaved?.length || 0);
       const topEngagement = topPlace.likes + topPlace.visitors.length + (topPlace.friendsWhoSaved?.length || 0);
       return currentEngagement > topEngagement ? currentPlace : topPlace;
@@ -293,16 +366,16 @@ const HomePage = () => {
 
     switch (activeFilter) {
       case 'following':
-        return mockPlaces.filter(place => place.isFollowing);
+        return currentPlaces.filter(place => place.isFollowing);
       case 'popular':
-        return mockPlaces.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+        return currentPlaces.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
       case 'new':
-        return mockPlaces.filter(place => {
+        return currentPlaces.filter(place => {
           const addedDate = new Date(place.addedDate || '');
           return place.isFollowing && addedDate >= oneWeekAgo;
         });
       default:
-        return mockPlaces;
+        return currentPlaces;
     }
   };
 
@@ -374,10 +447,21 @@ const HomePage = () => {
   const handleCitySearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      console.log('Searching for city:', searchQuery);
-      setCurrentCity(searchQuery.trim());
-      // TODO: Update places and map based on the searched city
-      // For now, we'll just update the current city display
+      const searchedCity = searchQuery.trim().toLowerCase();
+      console.log('Searching for city:', searchedCity);
+      
+      const cityInfo = cityData[searchedCity];
+      if (cityInfo) {
+        setCurrentCity(searchQuery.trim());
+        setCurrentPlaces(cityInfo.places);
+        setMapCenter(cityInfo.coordinates);
+        console.log(`Updated to ${searchedCity}:`, cityInfo.places.length, 'places found');
+      } else {
+        // If city not found, show a default set or empty
+        console.log('City not found in database, using default places');
+        setCurrentCity(searchQuery.trim());
+        setCurrentPlaces([]);
+      }
     }
   };
 
@@ -414,10 +498,12 @@ const HomePage = () => {
       </div>
 
       {/* Location of the Week - Compact */}
-      <LocationOfTheWeek 
-        topLocation={locationOfTheWeek}
-        onLocationClick={handleCardClick}
-      />
+      {currentPlaces.length > 0 && (
+        <LocationOfTheWeek 
+          topLocation={locationOfTheWeek}
+          onLocationClick={handleCardClick}
+        />
+      )}
 
       {/* Filter Buttons */}
       <FilterButtons
@@ -429,7 +515,11 @@ const HomePage = () => {
       {/* Map Section */}
       <div className="flex-1 relative">
         <div className="absolute inset-0 bg-gradient-to-t from-white/20 via-transparent to-transparent pointer-events-none z-10"></div>
-        <MapSection places={filteredPlaces} onPinClick={handlePinClick} />
+        <MapSection 
+          places={filteredPlaces} 
+          onPinClick={handlePinClick}
+          mapCenter={mapCenter}
+        />
       </div>
 
       {/* Selected Place Card */}
@@ -443,6 +533,16 @@ const HomePage = () => {
             onShare={handleShare}
             onComment={handleComment}
           />
+        </div>
+      )}
+
+      {/* No places found message */}
+      {currentPlaces.length === 0 && (
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="text-center">
+            <div className="text-gray-500 text-lg mb-2">No places found</div>
+            <div className="text-gray-400 text-sm">Try searching for Milan, Paris, or San Francisco</div>
+          </div>
         </div>
       )}
 
