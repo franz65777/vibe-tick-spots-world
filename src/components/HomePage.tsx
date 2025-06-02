@@ -11,6 +11,7 @@ import MessagesModal from '@/components/MessagesModal';
 import StoriesViewer from '@/components/StoriesViewer';
 import ShareModal from '@/components/home/ShareModal';
 import CommentModal from '@/components/home/CommentModal';
+import LocationOfTheWeek from '@/components/home/LocationOfTheWeek';
 
 interface Place {
   id: string;
@@ -268,6 +269,15 @@ const HomePage = () => {
   const [sharePlace, setSharePlace] = useState<Place | null>(null);
   const [commentPlace, setCommentPlace] = useState<Place | null>(null);
 
+  // Get the most popular location based on total engagement (likes + visitors)
+  const getLocationOfTheWeek = () => {
+    return mockPlaces.reduce((topPlace, currentPlace) => {
+      const currentEngagement = currentPlace.likes + currentPlace.visitors.length + (currentPlace.friendsWhoSaved?.length || 0);
+      const topEngagement = topPlace.likes + topPlace.visitors.length + (topPlace.friendsWhoSaved?.length || 0);
+      return currentEngagement > topEngagement ? currentPlace : topPlace;
+    });
+  };
+
   const getFilteredPlaces = () => {
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
@@ -352,6 +362,7 @@ const HomePage = () => {
   };
 
   const filteredPlaces = getFilteredPlaces();
+  const locationOfTheWeek = getLocationOfTheWeek();
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-blue-50/30 via-white to-purple-50/20">
@@ -442,6 +453,12 @@ const HomePage = () => {
           </button>
         </div>
       </div>
+
+      {/* Location of the Week */}
+      <LocationOfTheWeek 
+        topLocation={locationOfTheWeek}
+        onLocationClick={handleCardClick}
+      />
 
       {/* Map Section */}
       <div className="flex-1 relative">
