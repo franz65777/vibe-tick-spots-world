@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Heart, Bell, MessageCircle, Users, TrendingUp, Sparkles, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -353,6 +354,10 @@ const HomePage = () => {
 
   // Get the most popular location based on total engagement (likes + visitors)
   const getLocationOfTheWeek = () => {
+    if (currentPlaces.length === 0) {
+      return null;
+    }
+    
     return currentPlaces.reduce((topPlace, currentPlace) => {
       const currentEngagement = currentPlace.likes + currentPlace.visitors.length + (currentPlace.friendsWhoSaved?.length || 0);
       const topEngagement = topPlace.likes + topPlace.visitors.length + (topPlace.friendsWhoSaved?.length || 0);
@@ -498,7 +503,7 @@ const HomePage = () => {
       </div>
 
       {/* Location of the Week - Compact */}
-      {currentPlaces.length > 0 && (
+      {locationOfTheWeek && (
         <LocationOfTheWeek 
           topLocation={locationOfTheWeek}
           onLocationClick={handleCardClick}
@@ -562,7 +567,7 @@ const HomePage = () => {
         currentStoryIndex={currentStoryIndex}
         onCreateStoryModalClose={() => setIsCreateStoryModalOpen(false)}
         onNotificationsModalClose={() => setIsNotificationsModalOpen(false)}
-        onMessagesModalClose={() => setIsMessagesModalOpen(false)}
+        onMessagesModalClose={() => setIsMessagesModalClose(false)}
         onShareModalClose={() => setIsShareModalOpen(false)}
         onCommentModalClose={() => setIsCommentModalOpen(false)}
         onLocationDetailClose={() => setIsLocationDetailOpen(false)}
