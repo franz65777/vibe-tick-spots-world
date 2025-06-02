@@ -76,7 +76,7 @@ const MapSection = ({ places, onPinClick }: MapSectionProps) => {
 
   // Initialize Google Maps
   useEffect(() => {
-    if (!apiKey || apiKey === 'demo' || !userLocation) return;
+    if (!apiKey || apiKey === 'demo' || !userLocation || !mapRef.current) return;
 
     const initMap = async () => {
       console.log('Initializing Google Maps with API key and user location...');
@@ -104,6 +104,9 @@ const MapSection = ({ places, onPinClick }: MapSectionProps) => {
 
           console.log('Map created successfully');
           setMap(mapInstance);
+
+          // Clear existing markers
+          markers.forEach(marker => marker.setMap(null));
 
           // Add user location marker
           const userMarker = new google.maps.Marker({
