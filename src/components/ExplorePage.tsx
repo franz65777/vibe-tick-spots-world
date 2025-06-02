@@ -38,13 +38,13 @@ const ExplorePage = () => {
   const locations = [
     {
       id: '1',
-      name: "Golden Gate Cafe",
+      name: "The Cozy Corner Café",
       location: "San Francisco, CA",
       description: "Best coffee in the city!",
-      likes: 128,
+      likes: 24,
       category: "cafe",
       distance: 0.8,
-      image: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400&h=300&fit=crop",
+      image: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop",
       friendsWhoSaved: [
         { name: 'Sarah', avatar: '1649972904349-6e44c42644a7' },
         { name: 'Mike', avatar: '1581091226825-a6a2a5aee158' }
@@ -55,13 +55,13 @@ const ExplorePage = () => {
     },
     {
       id: '2',
-      name: "Ocean View Hotel",
+      name: "Sunset View Restaurant",
       location: "Monterey, CA",
       description: "Stunning ocean views",
-      likes: 89,
-      category: "hotel",
+      likes: 18,
+      category: "restaurant",
       distance: 1.2,
-      image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop",
+      image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop",
       friendsWhoSaved: [
         { name: 'Emma', avatar: '1581092795360-fd1ca04f0952' }
       ],
@@ -71,52 +71,57 @@ const ExplorePage = () => {
     },
     {
       id: '3',
-      name: "The Rooftop Bar",
+      name: "Grand Plaza Hotel",
       location: "Los Angeles, CA",
       description: "Amazing cocktails with city view",
-      likes: 156,
-      category: "bar",
+      likes: 45,
+      category: "hotel",
       distance: 0.5,
-      image: "https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=400&h=300&fit=crop",
+      image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop",
       visitors: ['user6'],
-      isNew: true,
+      isNew: false,
       coordinates: { lat: 37.7649, lng: -122.4194 }
     },
     {
       id: '4',
-      name: "Modern Art Gallery",
+      name: "Neon Nights Bar",
       location: "New York, NY",
       description: "Contemporary art collection",
-      likes: 67,
-      category: "museum",
+      likes: 32,
+      category: "bar",
       distance: 2.1,
-      image: "https://images.unsplash.com/photo-1564399579883-451a5d5c4b6d?w=400&h=300&fit=crop",
+      image: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=300&fit=crop",
       visitors: ['user7'],
-      isNew: false,
+      isNew: true,
       coordinates: { lat: 37.7549, lng: -122.4294 }
     },
     {
       id: '5',
-      name: "Vintage Boutique",
+      name: "Ocean Breeze Restaurant",
       location: "Portland, OR",
       description: "Unique fashion finds",
-      likes: 43,
-      category: "shop",
+      likes: 28,
+      category: "restaurant",
       distance: 1.5,
-      image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop",
+      image: "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400&h=300&fit=crop",
+      friendsWhoSaved: [
+        { name: 'Alex', avatar: '1535268647677-300dbf3d78d1' },
+        { name: 'Jordan', avatar: '1649972904349-6e44c42644a7' },
+        { name: 'Casey', avatar: '1581091226825-a6a2a5aee158' }
+      ],
       visitors: ['user8'],
       isNew: false,
       coordinates: { lat: 37.7949, lng: -122.4294 }
     },
     {
       id: '6',
-      name: "Mountain Adventure Tours",
+      name: "Artisan Coffee House",
       location: "Denver, CO",
       description: "Unforgettable hiking experience",
-      likes: 92,
-      category: "experience",
+      likes: 22,
+      category: "cafe",
       distance: 3.2,
-      image: "https://images.unsplash.com/photo-1551632811-561732d1e306?w=400&h=300&fit=crop",
+      image: "https://images.unsplash.com/photo-1453614512568-c4024d13c247?w=400&h=300&fit=crop",
       visitors: ['user9'],
       isNew: false,
       coordinates: { lat: 37.7849, lng: -122.4294 }
@@ -164,39 +169,6 @@ const ExplorePage = () => {
     }
   ];
 
-  const categories = [
-    { 
-      name: "Restaurants", 
-      image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop", 
-      category: "restaurant" 
-    },
-    { 
-      name: "Hotels", 
-      image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop", 
-      category: "hotel" 
-    },
-    { 
-      name: "Bars", 
-      image: "https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?w=400&h=300&fit=crop", 
-      category: "bar" 
-    },
-    { 
-      name: "Museums", 
-      image: "https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=400&h=300&fit=crop", 
-      category: "museum" 
-    },
-    { 
-      name: "Shops", 
-      image: "https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=400&h=300&fit=crop", 
-      category: "shop" 
-    },
-    { 
-      name: "Experiences", 
-      image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop", 
-      category: "experience" 
-    }
-  ];
-
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     
@@ -226,9 +198,14 @@ const ExplorePage = () => {
 
   const handleCategoryFilter = (category: string) => {
     setSelectedCategory(category);
-    setIsSearching(true);
-    const results = locations.filter(location => location.category === category);
-    setSearchResults(results);
+    if (category === 'all') {
+      setIsSearching(false);
+      setSearchResults([]);
+    } else {
+      setIsSearching(true);
+      const results = locations.filter(location => location.category === category);
+      setSearchResults(results);
+    }
   };
 
   const clearSearch = () => {
@@ -385,30 +362,66 @@ const ExplorePage = () => {
     );
   };
 
-  const renderCategoryGrid = () => {
+  const renderCategoryFiltersAndNearbyPlaces = () => {
     return (
-      <div className="p-4">
-        <div className="grid grid-cols-2 gap-4">
-          {categories.map((category, index) => (
-            <div
-              key={index}
-              className="relative h-32 rounded-lg overflow-hidden cursor-pointer shadow-md"
-              onClick={() => handleCategoryFilter(category.category)}
+      <div>
+        {/* Category Filter Buttons */}
+        <div className="bg-white px-4 py-3 border-b border-gray-200">
+          <div className="flex space-x-2 overflow-x-auto">
+            <Button
+              variant={selectedCategory === 'all' ? 'default' : 'outline'}
+              onClick={() => handleCategoryFilter('all')}
+              className="whitespace-nowrap"
             >
-              <img
-                src={category.image}
-                alt={category.name}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = '/placeholder.svg';
-                }}
+              All
+            </Button>
+            <Button
+              variant={selectedCategory === 'restaurant' ? 'default' : 'outline'}
+              onClick={() => handleCategoryFilter('restaurant')}
+              className="whitespace-nowrap"
+            >
+              Restaurants
+            </Button>
+            <Button
+              variant={selectedCategory === 'hotel' ? 'default' : 'outline'}
+              onClick={() => handleCategoryFilter('hotel')}
+              className="whitespace-nowrap"
+            >
+              Hotels
+            </Button>
+            <Button
+              variant={selectedCategory === 'cafe' ? 'default' : 'outline'}
+              onClick={() => handleCategoryFilter('cafe')}
+              className="whitespace-nowrap"
+            >
+              Cafes
+            </Button>
+            <Button
+              variant={selectedCategory === 'bar' ? 'default' : 'outline'}
+              onClick={() => handleCategoryFilter('bar')}
+              className="whitespace-nowrap"
+            >
+              Bars
+            </Button>
+          </div>
+        </div>
+
+        {/* Nearby Places Section */}
+        <div className="bg-white px-4 py-4">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Nearby Places</h2>
+          <div className="grid grid-cols-2 gap-4">
+            {filteredLocations.map((location) => (
+              <PlaceCard
+                key={location.id}
+                place={location as Place}
+                isLiked={likedPlaces.has(location.id)}
+                onCardClick={handleCardClick}
+                onLikeToggle={handleLikeToggle}
+                onShare={handleShare}
+                onComment={handleComment}
               />
-              <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-                <span className="text-white font-semibold text-lg">{category.name}</span>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -416,10 +429,10 @@ const ExplorePage = () => {
 
   const renderMainContent = () => {
     if (searchType === 'locations') {
-      if (selectedCategory !== 'all' || isSearching) {
+      if (isSearching) {
         return renderLocationSearchResults();
       }
-      return renderCategoryGrid();
+      return renderCategoryFiltersAndNearbyPlaces();
     } else {
       if (isSearching) {
         return renderUserSearchResults();
@@ -486,81 +499,6 @@ const ExplorePage = () => {
           )}
         </div>
       </div>
-
-      {/* Category Filter Buttons - only show for locations */}
-      {searchType === 'locations' && (selectedCategory !== 'all' || isSearching) && (
-        <div className="bg-white px-4 py-3 border-b border-gray-200">
-          <div className="flex space-x-2 overflow-x-auto">
-            <Button
-              variant={selectedCategory === 'all' ? 'default' : 'outline'}
-              onClick={() => setSelectedCategory('all')}
-            >
-              All
-            </Button>
-            <Button
-              variant={selectedCategory === 'restaurant' ? 'default' : 'outline'}
-              onClick={() => setSelectedCategory('restaurant')}
-            >
-              Restaurants
-            </Button>
-            <Button
-              variant={selectedCategory === 'hotel' ? 'default' : 'outline'}
-              onClick={() => setSelectedCategory('hotel')}
-            >
-              Hotels
-            </Button>
-            <Button
-              variant={selectedCategory === 'cafe' ? 'default' : 'outline'}
-              onClick={() => setSelectedCategory('cafe')}
-            >
-              Cafes
-            </Button>
-            <Button
-              variant={selectedCategory === 'bar' ? 'default' : 'outline'}
-              onClick={() => setSelectedCategory('bar')}
-            >
-              Bars
-            </Button>
-            <Button
-              variant={selectedCategory === 'museum' ? 'default' : 'outline'}
-              onClick={() => setSelectedCategory('museum')}
-            >
-              Museums
-            </Button>
-            <Button
-              variant={selectedCategory === 'shop' ? 'default' : 'outline'}
-              onClick={() => setSelectedCategory('shop')}
-            >
-              Shops
-            </Button>
-            <Button
-              variant={selectedCategory === 'experience' ? 'default' : 'outline'}
-              onClick={() => setSelectedCategory('experience')}
-            >
-              Experiences
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Category/Results Title */}
-      {searchType === 'locations' && (selectedCategory !== 'all' || isSearching) && (
-        <div className="bg-white px-4 py-3 border-b">
-          <div className="flex items-center justify-between">
-            <h1 className="text-lg font-semibold capitalize">
-              {isSearching && searchQuery 
-                ? `"${searchQuery}" Results` 
-                : selectedCategory === 'all' 
-                  ? 'All Places' 
-                  : `${selectedCategory} Results`
-              }
-            </h1>
-            <span className="text-gray-500">
-              {(isSearching ? searchResults : filteredLocations).length} found
-            </span>
-          </div>
-        </div>
-      )}
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
