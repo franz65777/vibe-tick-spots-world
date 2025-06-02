@@ -48,8 +48,8 @@ const HomePage = () => {
       id: '1',
       userId: 'user1',
       userName: 'Emma',
-      userAvatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png',
-      mediaUrl: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png',
+      userAvatar: 'https://images.unsplash.com/photo-1494790108755-2616b9e1a9a5?w=100&h=100&fit=crop&crop=face',
+      mediaUrl: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400&h=600&fit=crop',
       mediaType: 'image' as const,
       locationId: '1',
       locationName: 'Cafe Central',
@@ -62,8 +62,8 @@ const HomePage = () => {
       id: '2',
       userId: 'user2',
       userName: 'Michael',
-      userAvatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png',
-      mediaUrl: '/lovable-uploads/5bb15f7b-b3ba-4eae-88b1-7fa789eb67c4.png',
+      userAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
+      mediaUrl: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=600&fit=crop',
       mediaType: 'image' as const,
       locationId: '2',
       locationName: 'The Rooftop Bar',
@@ -76,8 +76,8 @@ const HomePage = () => {
       id: '3',
       userId: 'user3',
       userName: 'Sophia',
-      userAvatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png',
-      mediaUrl: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png',
+      userAvatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face',
+      mediaUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=600&fit=crop',
       mediaType: 'image' as const,
       locationId: '3',
       locationName: 'Giuseppe\'s Restaurant',
@@ -222,9 +222,9 @@ const HomePage = () => {
   };
 
   const friends = [
-    { name: 'Emma', avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png' },
-    { name: 'Michael', avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png' },
-    { name: 'Sophia', avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png' },
+    { name: 'Emma', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b9e1a9a5?w=100&h=100&fit=crop&crop=face' },
+    { name: 'Michael', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face' },
+    { name: 'Sophia', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face' },
   ];
 
   // Replace sample places with actual saved locations or default places

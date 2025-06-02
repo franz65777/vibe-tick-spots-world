@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Search, MapPin, User, ArrowLeft, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -14,7 +13,7 @@ const ExplorePage = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
 
-  // Sample data for locations
+  // Sample data for locations with better images
   const locations = [
     {
       id: 1,
@@ -24,7 +23,7 @@ const ExplorePage = () => {
       likes: 128,
       category: "restaurant",
       distance: 0.8,
-      image: "/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png"
+      image: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400&h=300&fit=crop"
     },
     {
       id: 2,
@@ -34,7 +33,7 @@ const ExplorePage = () => {
       likes: 89,
       category: "hotel",
       distance: 1.2,
-      image: "/lovable-uploads/5bb15f7b-b3ba-4eae-88b1-7fa789eb67c4.png"
+      image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop"
     },
     {
       id: 3,
@@ -44,7 +43,37 @@ const ExplorePage = () => {
       likes: 156,
       category: "bar",
       distance: 0.5,
-      image: "/lovable-uploads/5df0be70-7240-4958-ba55-5921ab3785e9.png"
+      image: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=300&fit=crop"
+    },
+    {
+      id: 4,
+      name: "Modern Art Gallery",
+      location: "New York, NY",
+      description: "Contemporary art collection",
+      likes: 67,
+      category: "museum",
+      distance: 2.1,
+      image: "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=400&h=300&fit=crop"
+    },
+    {
+      id: 5,
+      name: "Vintage Boutique",
+      location: "Portland, OR",
+      description: "Unique fashion finds",
+      likes: 43,
+      category: "shop",
+      distance: 1.5,
+      image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop"
+    },
+    {
+      id: 6,
+      name: "Mountain Adventure Tours",
+      location: "Denver, CO",
+      description: "Unforgettable hiking experience",
+      likes: 92,
+      category: "experience",
+      distance: 3.2,
+      image: "https://images.unsplash.com/photo-1551632811-561732d1e306?w=400&h=300&fit=crop"
     }
   ];
 
@@ -90,12 +119,36 @@ const ExplorePage = () => {
   ];
 
   const categories = [
-    { name: "Restaurants", image: "/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png", category: "restaurant" },
-    { name: "Hotels", image: "/lovable-uploads/5bb15f7b-b3ba-4eae-88b1-7fa789eb67c4.png", category: "hotel" },
-    { name: "Bars", image: "/lovable-uploads/5df0be70-7240-4958-ba55-5921ab3785e9.png", category: "bar" },
-    { name: "Museums", image: "/lovable-uploads/8a9fd2cf-e687-48ee-a40f-3dd4b19ba4ff.png", category: "museum" },
-    { name: "Shops", image: "/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png", category: "shop" },
-    { name: "Experiences", image: "/lovable-uploads/5bb15f7b-b3ba-4eae-88b1-7fa789eb67c4.png", category: "experience" }
+    { 
+      name: "Restaurants", 
+      image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop", 
+      category: "restaurant" 
+    },
+    { 
+      name: "Hotels", 
+      image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop", 
+      category: "hotel" 
+    },
+    { 
+      name: "Bars", 
+      image: "https://images.unsplash.com/photo-1569949381669-ecf31ae8e613?w=400&h=300&fit=crop", 
+      category: "bar" 
+    },
+    { 
+      name: "Museums", 
+      image: "https://images.unsplash.com/photo-1566127992631-137a642a90f4?w=400&h=300&fit=crop", 
+      category: "museum" 
+    },
+    { 
+      name: "Shops", 
+      image: "https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=400&h=300&fit=crop", 
+      category: "shop" 
+    },
+    { 
+      name: "Experiences", 
+      image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop", 
+      category: "experience" 
+    }
   ];
 
   const handleSearch = (query: string) => {
