@@ -21,6 +21,7 @@ const HomePage = () => {
   
   const [selectedTab, setSelectedTab] = useState('following');
   const [selectedCity, setSelectedCity] = useState('Detecting location...');
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<string[]>([]);
@@ -229,7 +230,7 @@ const HomePage = () => {
   ];
 
   // Replace sample places with actual saved locations or default places with like data
-  const places = savedLocations.length > 0 ? savedLocations.map(location => ({
+  const allPlaces = savedLocations.length > 0 ? savedLocations.map(location => ({
     id: location.id,
     name: location.name,
     category: location.category,
@@ -260,8 +261,34 @@ const HomePage = () => {
       isNew: true,
       coordinates: { lat: 37.7849, lng: -122.4094 },
       image: 'https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=400&h=300&fit=crop'
+    },
+    {
+      id: '3',
+      name: 'Grand Hotel Downtown',
+      category: 'Hotel',
+      likes: 156,
+      friendsWhoSaved: [friends[0]],
+      visitors: ['Emma'],
+      isNew: false,
+      coordinates: { lat: 37.7649, lng: -122.4194 },
+      image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop'
+    },
+    {
+      id: '4',
+      name: 'Sunset Bistro',
+      category: 'Restaurant',
+      likes: 92,
+      friendsWhoSaved: [friends[1], friends[2]],
+      visitors: ['Michael', 'Sophia'],
+      isNew: true,
+      coordinates: { lat: 37.7549, lng: -122.4294 },
+      image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop'
     }
   ];
+
+  const filteredPlaces = selectedCategory === 'All' 
+    ? allPlaces 
+    : allPlaces.filter(place => place.category === selectedCategory);
 
   const handleLikeToggle = (placeId: string) => {
     setLikedPlaces(prev => {
@@ -300,8 +327,9 @@ const HomePage = () => {
   console.log('HomePage rendering with state:', {
     selectedTab,
     selectedCity,
+    selectedCategory,
     savedLocations: savedLocations.length,
-    places: places.length,
+    places: filteredPlaces.length,
     isLoading,
     showLocationDetail,
     selectedLocation: selectedLocation?.name
@@ -450,7 +478,7 @@ const HomePage = () => {
 
       {/* Map Section */}
       <MapSection
-        places={places}
+        places={filteredPlaces}
         onPinClick={handlePinClick}
       />
 
@@ -458,10 +486,54 @@ const HomePage = () => {
       <div className="px-4 py-4 bg-white border-t border-gray-100">
         <div className="flex items-center justify-between mb-4">
           <div className="flex gap-3">
-            <Button size="sm" className="bg-blue-600 text-white rounded-full">All</Button>
-            <Button size="sm" variant="outline" className="rounded-full">Restaurants</Button>
-            <Button size="sm" variant="outline" className="rounded-full">Hotels</Button>
-            <Button size="sm" variant="outline" className="rounded-full">Bars</Button>
+            <Button 
+              size="sm" 
+              className={cn(
+                "rounded-full",
+                selectedCategory === 'All' 
+                  ? "bg-blue-600 text-white" 
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              )}
+              onClick={() => setSelectedCategory('All')}
+            >
+              All
+            </Button>
+            <Button 
+              size="sm" 
+              className={cn(
+                "rounded-full",
+                selectedCategory === 'Restaurant' 
+                  ? "bg-blue-600 text-white" 
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              )}
+              onClick={() => setSelectedCategory('Restaurant')}
+            >
+              Restaurants
+            </Button>
+            <Button 
+              size="sm" 
+              className={cn(
+                "rounded-full",
+                selectedCategory === 'Hotel' 
+                  ? "bg-blue-600 text-white" 
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              )}
+              onClick={() => setSelectedCategory('Hotel')}
+            >
+              Hotels
+            </Button>
+            <Button 
+              size="sm" 
+              className={cn(
+                "rounded-full",
+                selectedCategory === 'Bar' 
+                  ? "bg-blue-600 text-white" 
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              )}
+              onClick={() => setSelectedCategory('Bar')}
+            >
+              Bars
+            </Button>
           </div>
           {savedLocations.length > 0 && (
             <div className="flex items-center gap-1 text-xs text-gray-500">
@@ -473,7 +545,7 @@ const HomePage = () => {
 
         {/* Place Cards */}
         <div className="space-y-3">
-          {places.map((place) => (
+          {filteredPlaces.map((place) => (
             <PlaceCard
               key={place.id}
               place={place}
@@ -485,7 +557,17 @@ const HomePage = () => {
             />
           ))}
           
-          {savedLocations.length === 0 && (
+          {filteredPlaces.length === 0 && selectedCategory !== 'All' && (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <MapPin className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No {selectedCategory.toLowerCase()}s found</h3>
+              <p className="text-sm text-gray-500 mb-4">Try selecting a different category or save some locations!</p>
+            </div>
+          )}
+
+          {savedLocations.length === 0 && selectedCategory === 'All' && (
             <div className="text-center py-8">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <MapPin className="w-8 h-8 text-gray-400" />
