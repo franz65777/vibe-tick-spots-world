@@ -1,6 +1,6 @@
 
 import { useState, useRef, useEffect } from 'react';
-import { Search, MapPin, Building2, Landmark, Mountain, Crown, Clock, Ship, Castle, Waves } from 'lucide-react';
+import { Search, MapPin, Building, Landmark, Building2, Clock, Mountain, Shield, Church, Waves, TreePine } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 interface CitySearchProps {
@@ -11,61 +11,61 @@ interface CitySearchProps {
   onCitySelect: (city: string) => void;
 }
 
-// City data with icons representing their landmarks
+// City data with more appropriate landmark icons
 const cityData = {
   'san francisco': { 
     name: 'San Francisco', 
-    icon: Building2, // Represents Golden Gate Bridge structure
+    icon: Building2, // Golden Gate Bridge structure
     description: 'Golden Gate City'
   },
   'milan': { 
     name: 'Milan', 
-    icon: Crown, // Represents the Duomo's spires
+    icon: Church, // Duomo cathedral
     description: 'Fashion Capital'
   },
   'milano': { 
     name: 'Milan', 
-    icon: Crown,
+    icon: Church, // Duomo cathedral
     description: 'Fashion Capital'
   },
   'paris': { 
     name: 'Paris', 
-    icon: Landmark, // Represents Eiffel Tower
+    icon: Landmark, // Eiffel Tower
     description: 'City of Light'
   },
   'new york': { 
     name: 'New York', 
-    icon: Building2, // Represents skyline
+    icon: Building, // Skyscrapers/Empire State
     description: 'The Big Apple'
   },
   'london': { 
     name: 'London', 
-    icon: Clock, // Represents Big Ben
+    icon: Clock, // Big Ben
     description: 'Royal City'
   },
   'tokyo': { 
     name: 'Tokyo', 
-    icon: Mountain, // Represents Mount Fuji
+    icon: Mountain, // Mount Fuji
     description: 'Land of Rising Sun'
   },
   'rome': { 
     name: 'Rome', 
-    icon: Castle, // Represents Colosseum
+    icon: Shield, // Roman architecture
     description: 'Eternal City'
   },
   'barcelona': { 
     name: 'Barcelona', 
-    icon: Building2, // Represents Sagrada Familia
+    icon: Church, // Sagrada Familia
     description: 'Gaudí\'s City'
   },
   'amsterdam': { 
     name: 'Amsterdam', 
-    icon: Ship, // Represents canals
+    icon: Waves, // Canals
     description: 'Venice of North'
   },
   'sydney': { 
     name: 'Sydney', 
-    icon: Waves, // Represents Opera House by harbor
+    icon: Waves, // Opera House by harbor
     description: 'Harbor City'
   }
 };
@@ -122,23 +122,44 @@ const CitySearch = ({
     <div ref={searchRef} className="relative flex-1 max-w-md">
       {/* Current City Display / Search Input */}
       <div className="relative">
-        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
-          <CurrentCityIcon className="w-4 h-4 text-blue-600" />
-          <span className="text-sm font-medium text-gray-700">
-            {currentCityData?.name || currentCity}
-          </span>
-        </div>
-        <Input
+        {!searchQuery ? (
+          // Show current city when not searching
+          <div className="flex items-center gap-3 bg-white/90 border border-gray-200 rounded-2xl h-12 px-4 hover:bg-white transition-colors cursor-pointer"
+               onClick={() => document.getElementById('city-search-input')?.focus()}>
+            <CurrentCityIcon className="w-5 h-5 text-blue-600 shrink-0" />
+            <span className="text-gray-900 font-medium">{currentCityData?.name || currentCity}</span>
+            <Search className="w-4 h-4 text-gray-400 ml-auto" />
+          </div>
+        ) : (
+          // Show search input when searching
+          <div className="relative">
+            <Input
+              id="city-search-input"
+              type="text"
+              placeholder="Search cities..."
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              onKeyPress={onSearchKeyPress}
+              onFocus={() => searchQuery && setIsOpen(true)}
+              className="pl-4 pr-10 bg-white/90 border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-2xl h-12"
+              autoFocus
+            />
+            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          </div>
+        )}
+      </div>
+
+      {/* Hidden input for focusing */}
+      {!searchQuery && (
+        <input
+          id="city-search-input"
           type="text"
-          placeholder="Search cities..."
-          value={searchQuery}
+          className="absolute inset-0 opacity-0 cursor-pointer"
+          onFocus={() => onSearchChange(' ')}
           onChange={(e) => onSearchChange(e.target.value)}
           onKeyPress={onSearchKeyPress}
-          onFocus={() => searchQuery && setIsOpen(true)}
-          className="pl-32 pr-10 bg-white/90 border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-2xl h-12"
         />
-        <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-      </div>
+      )}
 
       {/* Dropdown Results */}
       {isOpen && filteredCities.length > 0 && (
@@ -163,7 +184,7 @@ const CitySearch = ({
       )}
 
       {/* No results */}
-      {isOpen && searchQuery && filteredCities.length === 0 && (
+      {isOpen && searchQuery.trim() && filteredCities.length === 0 && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 z-50">
           <div className="text-gray-500 text-sm text-center">
             No cities found. Try Milan, Paris, or New York.
