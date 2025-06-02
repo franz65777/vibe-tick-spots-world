@@ -1,16 +1,14 @@
+
 import { useState } from 'react';
 import { Heart, Bell, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import MapSection from '@/components/home/MapSection';
 import StoriesSection from '@/components/home/StoriesSection';
-import PlaceCard from '@/components/home/PlaceCard';
 import CreateStoryModal from '@/components/CreateStoryModal';
 import NotificationsModal from '@/components/NotificationsModal';
 import MessagesModal from '@/components/MessagesModal';
-import ShareModal from '@/components/home/ShareModal';
 import StoriesViewer from '@/components/StoriesViewer';
-import LocationDetailSheet from '@/components/LocationDetailSheet';
 
 interface Place {
   id: string;
@@ -162,35 +160,12 @@ const mockStories: Story[] = [
 const HomePage = () => {
   console.log('HomePage rendering...');
   
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
   const [isCreateStoryModalOpen, setIsCreateStoryModalOpen] = useState(false);
   const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
   const [isMessagesModalOpen, setIsMessagesModalOpen] = useState(false);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [selectedPlaceToShare, setSelectedPlaceToShare] = useState<Place | null>(null);
   const [isStoriesViewerOpen, setIsStoriesViewerOpen] = useState(false);
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const [stories, setStories] = useState(mockStories);
-  const [isLocationDetailOpen, setIsLocationDetailOpen] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState<Place | null>(null);
-
-  const handleCategoryClick = (category: string) => {
-    console.log('Category clicked:', category);
-    setSelectedCategory(category);
-  };
-
-  const handleLikeToggle = (placeId: string) => {
-    setLikedPlaces(prev => {
-      const newLikes = new Set(prev);
-      if (newLikes.has(placeId)) {
-        newLikes.delete(placeId);
-      } else {
-        newLikes.add(placeId);
-      }
-      return newLikes;
-    });
-  };
 
   const handleCreateStory = () => {
     console.log('Create story clicked');
@@ -214,34 +189,9 @@ const HomePage = () => {
     ));
   };
 
-  const handleCardClick = (place: Place) => {
-    console.log('Place card clicked:', place.name);
-    setSelectedLocation(place);
-    setIsLocationDetailOpen(true);
-  };
-
-  const handleShare = (place: Place) => {
-    console.log('Share place:', place.name);
-    setSelectedPlaceToShare(place);
-    setIsShareModalOpen(true);
-  };
-
-  const handleShareComplete = (friendIds: string[], place: Place) => {
-    console.log('Sharing place with friends:', friendIds, place.name);
-    // TODO: Send location to selected friends' DMs
-  };
-
-  const handleComment = (place: Place) => {
-    console.log('Comment on place:', place.name);
-  };
-
   const handlePinClick = (place: Place) => {
     console.log('Map pin clicked:', place.name);
   };
-
-  const filteredPlaces = selectedCategory === 'all'
-    ? mockPlaces
-    : mockPlaces.filter(place => place.category === selectedCategory);
 
   return (
     <div className="flex flex-col h-full bg-gray-50">
@@ -275,7 +225,7 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Stories Section - Moved above map */}
+      {/* Stories Section */}
       <div className="bg-white px-4 py-4 border-b border-gray-200">
         <div className="overflow-x-auto">
           <StoriesSection 
@@ -286,72 +236,9 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Map Section */}
-      <MapSection places={filteredPlaces} onPinClick={handlePinClick} />
-
-      {/* Filter Buttons */}
-      <div className="bg-white px-4 py-3 border-b border-gray-200">
-        <div className="flex space-x-2 overflow-x-auto">
-          <Button
-            variant={selectedCategory === 'all' ? 'default' : 'outline'}
-            onClick={() => handleCategoryClick('all')}
-          >
-            All
-          </Button>
-          <Button
-            variant={selectedCategory === 'restaurant' ? 'default' : 'outline'}
-            onClick={() => handleCategoryClick('restaurant')}
-          >
-            Restaurants
-          </Button>
-          <Button
-            variant={selectedCategory === 'hotel' ? 'default' : 'outline'}
-            onClick={() => handleCategoryClick('hotel')}
-          >
-            Hotels
-          </Button>
-          <Button
-            variant={selectedCategory === 'cafe' ? 'default' : 'outline'}
-            onClick={() => handleCategoryClick('cafe')}
-          >
-            Cafes
-          </Button>
-          <Button
-            variant={selectedCategory === 'bar' ? 'default' : 'outline'}
-            onClick={() => handleCategoryClick('bar')}
-          >
-            Bars
-          </Button>
-        </div>
-      </div>
-
-      {/* Places Section */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="bg-white">
-          <div className="px-4 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">
-              {selectedCategory === 'all' 
-                ? 'Nearby Places' 
-                : `${selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}s Nearby`
-              }
-            </h2>
-          </div>
-          <div className="px-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              {filteredPlaces.map((place) => (
-                <PlaceCard
-                  key={place.id}
-                  place={place}
-                  isLiked={likedPlaces.has(place.id)}
-                  onCardClick={handleCardClick}
-                  onLikeToggle={handleLikeToggle}
-                  onShare={handleShare}
-                  onComment={handleComment}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
+      {/* Map Section - now takes remaining space */}
+      <div className="flex-1">
+        <MapSection places={mockPlaces} onPinClick={handlePinClick} />
       </div>
 
       {/* Modals */}
@@ -369,20 +256,6 @@ const HomePage = () => {
       <MessagesModal
         isOpen={isMessagesModalOpen}
         onClose={() => setIsMessagesModalOpen(false)}
-      />
-
-      <ShareModal
-        isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
-        place={selectedPlaceToShare}
-        onShare={handleShareComplete}
-      />
-
-      {/* Location Detail Sheet */}
-      <LocationDetailSheet
-        isOpen={isLocationDetailOpen}
-        onClose={() => setIsLocationDetailOpen(false)}
-        location={selectedLocation}
       />
 
       {/* Stories Viewer */}
