@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from 'react';
-import { Heart, Settings, Bell, Plus, MapPin, Search, X, Bookmark } from 'lucide-react';
+import { Heart, Settings, Bell, Plus, MapPin, Search, X, Bookmark, Share, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -29,6 +28,7 @@ const HomePage = () => {
   const [showCreateStory, setShowCreateStory] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMessages, setShowMessages] = useState(false);
+  const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
 
   // Sample cities for search (in a real app, this would come from an API)
   const popularCities = [
@@ -228,25 +228,25 @@ const HomePage = () => {
     { name: 'Sophia', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face' },
   ];
 
-  // Replace sample places with actual saved locations or default places
+  // Replace sample places with actual saved locations or default places with like data
   const places = savedLocations.length > 0 ? savedLocations.map(location => ({
     id: location.id,
     name: location.name,
     category: location.category,
-    rating: 4.5 + Math.random() * 0.5, // Mock rating
+    likes: Math.floor(Math.random() * 200) + 50, // Mock likes count
+    friendsWhoSaved: friends.slice(0, Math.floor(Math.random() * 3) + 1), // Random friends who saved
     visitors: ['Emma', 'Michael'], // Mock visitors
     isNew: false,
-    price: '$$',
     coordinates: { lat: location.latitude || 37.7749, lng: location.longitude || -122.4194 }
   })) : [
     {
       id: '1',
       name: 'Golden Gate Cafe',
       category: 'Restaurant',
-      rating: 4.8,
+      likes: 128,
+      friendsWhoSaved: [friends[0], friends[1]], // Emma and Michael
       visitors: ['Emma', 'Michael'],
       isNew: false,
-      price: '$$',
       coordinates: { lat: 37.7749, lng: -122.4194 },
       image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400&h=300&fit=crop'
     },
@@ -254,14 +254,43 @@ const HomePage = () => {
       id: '2',
       name: 'Mission Rooftop Bar',
       category: 'Bar',
-      rating: 4.6,
+      likes: 89,
+      friendsWhoSaved: [friends[2]], // Sophia
       visitors: ['Sophia'],
       isNew: true,
-      price: '$$$',
       coordinates: { lat: 37.7849, lng: -122.4094 },
       image: 'https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=400&h=300&fit=crop'
     }
   ];
+
+  const handleLikeToggle = (placeId: string) => {
+    setLikedPlaces(prev => {
+      const newLiked = new Set(prev);
+      if (newLiked.has(placeId)) {
+        newLiked.delete(placeId);
+      } else {
+        newLiked.add(placeId);
+      }
+      return newLiked;
+    });
+  };
+
+  const handleShare = (place: any) => {
+    console.log('Sharing place:', place.name);
+    // In a real app, this would open a share dialog
+    if (navigator.share) {
+      navigator.share({
+        title: place.name,
+        text: `Check out ${place.name} on our app!`,
+        url: window.location.href
+      });
+    }
+  };
+
+  const handleComment = (place: any) => {
+    console.log('Opening comments for:', place.name);
+    // In a real app, this would open a comments modal or navigate to comments
+  };
 
   console.log('HomePage rendering with state:', {
     selectedTab,
@@ -564,14 +593,69 @@ const HomePage = () => {
                   />
                 ) : null}
                 <div className={`absolute inset-0 bg-gradient-to-r from-green-400 to-blue-400 opacity-50 ${place.image ? 'hidden' : ''}`}></div>
-                <div className="absolute bottom-2 right-2 bg-white text-gray-800 text-xs px-2 py-1 rounded">
-                  {place.price}
+                
+                {/* Like button and count - top right */}
+                <div className="absolute top-2 right-2 flex items-center gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleLikeToggle(place.id);
+                    }}
+                    className="bg-white/90 backdrop-blur-sm rounded-full p-2 flex items-center gap-1 text-xs font-medium shadow-sm"
+                  >
+                    <Heart 
+                      className={`w-3 h-3 ${likedPlaces.has(place.id) ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} 
+                    />
+                    <span className="text-gray-800">{place.likes + (likedPlaces.has(place.id) ? 1 : 0)}</span>
+                  </button>
                 </div>
-                <div className="absolute bottom-2 left-2 text-white text-sm font-medium">
+
+                {/* Friends who saved - top left under NEW badge */}
+                {place.friendsWhoSaved && place.friendsWhoSaved.length > 0 && (
+                  <div className="absolute top-8 left-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
+                    <div className="flex -space-x-1">
+                      {place.friendsWhoSaved.slice(0, 2).map((friend, index) => (
+                        <div key={index} className="w-4 h-4 rounded-full bg-gray-300 border border-white flex items-center justify-center">
+                          <span className="text-xs font-medium">{friend.name[0]}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <span className="text-xs text-gray-700">
+                      {place.friendsWhoSaved.length === 1 
+                        ? `${place.friendsWhoSaved[0].name} saved`
+                        : `${place.friendsWhoSaved.length} friends saved`
+                      }
+                    </span>
+                  </div>
+                )}
+
+                {/* Location name - bottom left */}
+                <div className="absolute bottom-12 left-2 text-white text-sm font-medium">
                   {place.name}
                 </div>
-                <div className="absolute top-2 right-2 text-white text-xs">
-                  ★ {place.rating}
+
+                {/* Share and Comment buttons - bottom */}
+                <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleShare(place);
+                    }}
+                    className="bg-white/90 backdrop-blur-sm rounded-full p-2 flex items-center gap-1 text-xs font-medium shadow-sm"
+                  >
+                    <Share className="w-3 h-3 text-gray-600" />
+                    <span className="text-gray-800">Share</span>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleComment(place);
+                    }}
+                    className="bg-white/90 backdrop-blur-sm rounded-full p-2 flex items-center gap-1 text-xs font-medium shadow-sm"
+                  >
+                    <MessageCircle className="w-3 h-3 text-gray-600" />
+                    <span className="text-gray-800">Comment</span>
+                  </button>
                 </div>
               </div>
             </div>
