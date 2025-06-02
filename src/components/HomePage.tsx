@@ -272,6 +272,16 @@ const HomePage = () => {
     setIsCommentModalOpen(true);
   };
 
+  const handleShareSubmit = (friendIds: string[], place: Place) => {
+    console.log('Sharing place:', place.name, 'with friends:', friendIds);
+    // TODO: Implement actual sharing logic
+  };
+
+  const handleCommentSubmit = (text: string, place: Place) => {
+    console.log('Adding comment:', text, 'to place:', place.name);
+    // TODO: Implement actual comment submission logic
+  };
+
   const handleCardClick = (place: Place) => {
     console.log('Place card clicked:', place.name);
     // TODO: Navigate to place detail view
@@ -406,12 +416,14 @@ const HomePage = () => {
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
         place={sharePlace}
+        onShare={handleShareSubmit}
       />
 
       <CommentModal
         isOpen={isCommentModalOpen}
         onClose={() => setIsCommentModalOpen(false)}
         place={commentPlace}
+        onCommentSubmit={handleCommentSubmit}
       />
 
       {/* Stories Viewer */}
