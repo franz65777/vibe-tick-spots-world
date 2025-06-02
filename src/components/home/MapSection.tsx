@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { Minimize, Maximize, Search, X } from 'lucide-react';
@@ -92,7 +91,6 @@ const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
         console.log('Initializing Google Maps...');
         setMapError(null);
         
-        // Ensure the map container exists and is visible
         if (!mapRef.current) {
           console.error('Map container not found');
           return;
@@ -106,7 +104,6 @@ const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
 
         await loader.load();
         
-        // Double-check the container exists after loading
         if (!mapRef.current) {
           console.error('Map container disappeared during loading');
           return;
@@ -121,12 +118,9 @@ const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
           fullscreenControl: false
         });
 
-        // Wait for map to be idle before setting as loaded
-        google.maps.event.addListenerOnce(mapInstance, 'idle', () => {
-          console.log('Map is ready');
-          mapInstanceRef.current = mapInstance;
-          setIsMapLoaded(true);
-        });
+        mapInstanceRef.current = mapInstance;
+        setIsMapLoaded(true);
+        console.log('Map instance created and ready');
 
       } catch (error) {
         console.error('Error loading Google Maps:', error);
@@ -134,9 +128,7 @@ const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
       }
     };
 
-    // Add a small delay to ensure DOM is ready
-    const timeoutId = setTimeout(initMap, 100);
-    return () => clearTimeout(timeoutId);
+    initMap();
   }, [apiKey, userLocation, isMapLoaded]);
 
   // Update map center when mapCenter prop changes
@@ -396,29 +388,28 @@ const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
         ) : (
           <div className="relative w-full h-full">
             <div ref={mapRef} className="absolute inset-0 rounded-2xl" />
-            {(mapError || !isMapLoaded) && (
+            {!isMapLoaded && (
               <div className="absolute inset-0 bg-gray-50 rounded-2xl flex items-center justify-center">
                 <div className="text-center p-4">
-                  {!isMapLoaded && !mapError ? (
-                    <>
-                      <div className="text-gray-600 text-sm font-medium mb-2">Loading Map...</div>
-                      <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                    </>
-                  ) : mapError ? (
-                    <>
-                      <div className="text-red-600 text-sm font-medium mb-2">Map Error</div>
-                      <div className="text-red-500 text-xs mb-3">{mapError}</div>
-                      <Button 
-                        size="sm" 
-                        onClick={() => {
-                          setIsMapLoaded(false);
-                          setMapError(null);
-                        }}
-                      >
-                        Retry
-                      </Button>
-                    </>
-                  ) : null}
+                  <div className="text-gray-600 text-sm font-medium mb-2">Loading Map...</div>
+                  <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                </div>
+              </div>
+            )}
+            {mapError && (
+              <div className="absolute inset-0 bg-gray-50 rounded-2xl flex items-center justify-center">
+                <div className="text-center p-4">
+                  <div className="text-red-600 text-sm font-medium mb-2">Map Error</div>
+                  <div className="text-red-500 text-xs mb-3">{mapError}</div>
+                  <Button 
+                    size="sm" 
+                    onClick={() => {
+                      setIsMapLoaded(false);
+                      setMapError(null);
+                    }}
+                  >
+                    Retry
+                  </Button>
                 </div>
               </div>
             )}
