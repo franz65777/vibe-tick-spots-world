@@ -10,6 +10,7 @@ import CreateStoryModal from '@/components/CreateStoryModal';
 import NotificationsModal from '@/components/NotificationsModal';
 import MessagesModal from '@/components/MessagesModal';
 import ShareModal from '@/components/home/ShareModal';
+import StoriesViewer from '@/components/StoriesViewer';
 
 interface Place {
   id: string;
@@ -29,6 +30,13 @@ interface Story {
   userName: string;
   userAvatar: string;
   isViewed: boolean;
+  mediaUrl: string;
+  mediaType: 'image' | 'video';
+  locationId: string;
+  locationName: string;
+  locationAddress: string;
+  timestamp: string;
+  bookingUrl?: string;
 }
 
 const mockPlaces: Place[] = [
@@ -112,21 +120,42 @@ const mockStories: Story[] = [
     userId: 'user1',
     userName: 'Sarah',
     userAvatar: '1649972904349-6e44c42644a7',
-    isViewed: false
+    isViewed: false,
+    mediaUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=600&fit=crop',
+    mediaType: 'image',
+    locationId: '1',
+    locationName: 'The Cozy Corner Café',
+    locationAddress: '123 Main St, Downtown',
+    timestamp: '2 hours ago',
+    bookingUrl: 'https://www.opentable.com/booking'
   },
   {
     id: '2',
     userId: 'user2',
     userName: 'Mike',
     userAvatar: '1581091226825-a6a2a5aee158',
-    isViewed: true
+    isViewed: true,
+    mediaUrl: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=600&fit=crop',
+    mediaType: 'image',
+    locationId: '3',
+    locationName: 'Grand Plaza Hotel',
+    locationAddress: '456 Park Ave, Midtown',
+    timestamp: '4 hours ago',
+    bookingUrl: 'https://www.booking.com/hotel'
   },
   {
     id: '3',
     userId: 'user3',
     userName: 'Emma',
     userAvatar: '1581092795360-fd1ca04f0952',
-    isViewed: false
+    isViewed: false,
+    mediaUrl: 'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400&h=600&fit=crop',
+    mediaType: 'image',
+    locationId: '5',
+    locationName: 'Ocean Breeze Restaurant',
+    locationAddress: '789 Coastal Rd, Seafront',
+    timestamp: '6 hours ago',
+    bookingUrl: 'https://www.opentable.com/r/ocean-breeze'
   }
 ];
 
@@ -140,6 +169,9 @@ const HomePage = () => {
   const [isMessagesModalOpen, setIsMessagesModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [selectedPlaceToShare, setSelectedPlaceToShare] = useState<Place | null>(null);
+  const [isStoriesViewerOpen, setIsStoriesViewerOpen] = useState(false);
+  const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
+  const [stories, setStories] = useState(mockStories);
 
   const handleCategoryClick = (category: string) => {
     console.log('Category clicked:', category);
@@ -170,6 +202,14 @@ const HomePage = () => {
 
   const handleStoryClick = (index: number) => {
     console.log('Story clicked:', index);
+    setCurrentStoryIndex(index);
+    setIsStoriesViewerOpen(true);
+  };
+
+  const handleStoryViewed = (storyId: string) => {
+    setStories(prev => prev.map(story => 
+      story.id === storyId ? { ...story, isViewed: true } : story
+    ));
   };
 
   const handleCardClick = (place: Place) => {
@@ -235,7 +275,7 @@ const HomePage = () => {
       <div className="bg-white px-4 py-4 border-b border-gray-200">
         <div className="overflow-x-auto">
           <StoriesSection 
-            stories={mockStories}
+            stories={stories}
             onCreateStory={handleCreateStory}
             onStoryClick={handleStoryClick}
           />
@@ -333,6 +373,16 @@ const HomePage = () => {
         place={selectedPlaceToShare}
         onShare={handleShareComplete}
       />
+
+      {/* Stories Viewer */}
+      {isStoriesViewerOpen && (
+        <StoriesViewer
+          stories={stories}
+          initialStoryIndex={currentStoryIndex}
+          onClose={() => setIsStoriesViewerOpen(false)}
+          onStoryViewed={handleStoryViewed}
+        />
+      )}
     </div>
   );
 };
