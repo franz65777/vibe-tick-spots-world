@@ -172,7 +172,7 @@ const CitySearch = ({
   };
 
   return (
-    <div ref={searchRef} className="relative flex-1 max-w-md">
+    <div ref={searchRef} className="relative flex-1 max-w-md z-50">
       {/* Current City Display / Search Input */}
       <div className="relative">
         {!searchQuery || searchQuery.trim() === ' ' ? (
@@ -214,9 +214,17 @@ const CitySearch = ({
         />
       )}
 
-      {/* Dropdown Results */}
+      {/* Dropdown Results - Using portal-like positioning */}
       {isOpen && filteredCities.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 max-h-64 overflow-y-auto z-[9999]">
+        <div 
+          className="fixed bg-white rounded-2xl shadow-2xl border border-gray-100 max-h-64 overflow-y-auto"
+          style={{
+            top: searchRef.current ? searchRef.current.getBoundingClientRect().bottom + window.scrollY + 8 : 0,
+            left: searchRef.current ? searchRef.current.getBoundingClientRect().left + window.scrollX : 0,
+            width: searchRef.current ? searchRef.current.getBoundingClientRect().width : 'auto',
+            zIndex: 99999
+          }}
+        >
           {filteredCities.map(({ key, data, similarity }) => {
             const IconComponent = data.icon;
             return (
@@ -241,9 +249,17 @@ const CitySearch = ({
         </div>
       )}
 
-      {/* No results */}
+      {/* No results - Using portal-like positioning */}
       {isOpen && searchQuery.trim() && searchQuery.trim() !== ' ' && filteredCities.length === 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 z-[9999]">
+        <div 
+          className="fixed bg-white rounded-2xl shadow-2xl border border-gray-100 p-4"
+          style={{
+            top: searchRef.current ? searchRef.current.getBoundingClientRect().bottom + window.scrollY + 8 : 0,
+            left: searchRef.current ? searchRef.current.getBoundingClientRect().left + window.scrollX : 0,
+            width: searchRef.current ? searchRef.current.getBoundingClientRect().width : 'auto',
+            zIndex: 99999
+          }}
+        >
           <div className="text-gray-500 text-sm text-center">
             <div className="mb-2">No cities found for "{searchQuery}"</div>
             <div className="text-xs">Try: Milan, Paris, New York, London, Tokyo</div>
