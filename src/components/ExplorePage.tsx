@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Search, MapPin, User, ArrowLeft, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -43,7 +44,7 @@ const ExplorePage = () => {
       likes: 156,
       category: "bar",
       distance: 0.5,
-      image: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=300&fit=crop"
+      image: "https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=400&h=300&fit=crop"
     },
     {
       id: 4,
@@ -53,7 +54,7 @@ const ExplorePage = () => {
       likes: 67,
       category: "museum",
       distance: 2.1,
-      image: "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=400&h=300&fit=crop"
+      image: "https://images.unsplash.com/photo-1564399579883-451a5d5c4b6d?w=400&h=300&fit=crop"
     },
     {
       id: 5,
@@ -131,12 +132,12 @@ const ExplorePage = () => {
     },
     { 
       name: "Bars", 
-      image: "https://images.unsplash.com/photo-1569949381669-ecf31ae8e613?w=400&h=300&fit=crop", 
+      image: "https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?w=400&h=300&fit=crop", 
       category: "bar" 
     },
     { 
       name: "Museums", 
-      image: "https://images.unsplash.com/photo-1566127992631-137a642a90f4?w=400&h=300&fit=crop", 
+      image: "https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=400&h=300&fit=crop", 
       category: "museum" 
     },
     { 

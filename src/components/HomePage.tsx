@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Heart, Settings, Bell, Plus, MapPin, Search, X, Bookmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -246,7 +247,8 @@ const HomePage = () => {
       visitors: ['Emma', 'Michael'],
       isNew: false,
       price: '$$',
-      coordinates: { lat: 37.7749, lng: -122.4194 }
+      coordinates: { lat: 37.7749, lng: -122.4194 },
+      image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400&h=300&fit=crop'
     },
     {
       id: '2',
@@ -256,7 +258,8 @@ const HomePage = () => {
       visitors: ['Sophia'],
       isNew: true,
       price: '$$$',
-      coordinates: { lat: 37.7849, lng: -122.4094 }
+      coordinates: { lat: 37.7849, lng: -122.4094 },
+      image: 'https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=400&h=300&fit=crop'
     }
   ];
 
@@ -548,7 +551,19 @@ const HomePage = () => {
                 </div>
               )}
               <div className="bg-gray-100 rounded-xl h-32 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-blue-400 opacity-50"></div>
+                {place.image ? (
+                  <img
+                    src={place.image}
+                    alt={place.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      target.nextElementSibling?.setAttribute('style', 'display: block');
+                    }}
+                  />
+                ) : null}
+                <div className={`absolute inset-0 bg-gradient-to-r from-green-400 to-blue-400 opacity-50 ${place.image ? 'hidden' : ''}`}></div>
                 <div className="absolute bottom-2 right-2 bg-white text-gray-800 text-xs px-2 py-1 rounded">
                   {place.price}
                 </div>
