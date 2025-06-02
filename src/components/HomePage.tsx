@@ -409,6 +409,12 @@ const HomePage = () => {
         </div>
       </div>
 
+      {/* Location of the Week - Compact */}
+      <LocationOfTheWeek 
+        topLocation={locationOfTheWeek}
+        onLocationClick={handleCardClick}
+      />
+
       {/* Filter Buttons */}
       <div className="bg-white/60 backdrop-blur-sm px-6 py-5">
         <div className="flex gap-3">
@@ -453,12 +459,6 @@ const HomePage = () => {
           </button>
         </div>
       </div>
-
-      {/* Location of the Week */}
-      <LocationOfTheWeek 
-        topLocation={locationOfTheWeek}
-        onLocationClick={handleCardClick}
-      />
 
       {/* Map Section */}
       <div className="flex-1 relative">
