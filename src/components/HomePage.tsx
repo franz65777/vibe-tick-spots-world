@@ -399,7 +399,7 @@ const HomePage = () => {
       </div>
 
       {/* Stories Section */}
-      <div className="bg-white/60 backdrop-blur-sm px-6 py-6">
+      <div className="bg-white/60 backdrop-blur-sm px-6 py-4">
         <div className="overflow-x-auto">
           <StoriesSection 
             stories={stories}
@@ -416,7 +416,7 @@ const HomePage = () => {
       />
 
       {/* Filter Buttons */}
-      <div className="bg-white/60 backdrop-blur-sm px-6 py-5">
+      <div className="bg-white/60 backdrop-blur-sm px-6 py-3">
         <div className="flex gap-3">
           <button
             onClick={() => setActiveFilter('following')}
