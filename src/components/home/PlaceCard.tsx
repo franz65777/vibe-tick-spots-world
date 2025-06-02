@@ -1,5 +1,6 @@
 
 import { Heart, Share, MessageCircle } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 interface Friend {
   name: string;
@@ -74,9 +75,15 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
           <div className="absolute top-8 left-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
             <div className="flex -space-x-1">
               {place.friendsWhoSaved.slice(0, 2).map((friend, index) => (
-                <div key={index} className="w-4 h-4 rounded-full bg-gray-300 border border-white flex items-center justify-center">
-                  <span className="text-xs font-medium">{friend.name[0]}</span>
-                </div>
+                <Avatar key={index} className="w-4 h-4 border border-white">
+                  <AvatarImage 
+                    src={`https://images.unsplash.com/photo-${friend.avatar}?w=32&h=32&fit=crop&crop=face`} 
+                    alt={friend.name}
+                  />
+                  <AvatarFallback className="text-xs font-medium">
+                    {friend.name[0]}
+                  </AvatarFallback>
+                </Avatar>
               ))}
             </div>
             <span className="text-xs text-gray-700">

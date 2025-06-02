@@ -1,5 +1,6 @@
 
 import { Plus } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 interface Story {
   id: string;
@@ -38,9 +39,15 @@ const StoriesSection = ({ stories, onCreateStory, onStoryClick }: StoriesSection
             onClick={() => onStoryClick(index)}
           >
             <div className="w-full h-full rounded-full bg-white p-0.5">
-              <div className="w-full h-full rounded-full bg-gray-200 flex items-center justify-center">
-                <span className="text-xs font-medium">{story.userName[0]}</span>
-              </div>
+              <Avatar className="w-full h-full">
+                <AvatarImage 
+                  src={`https://images.unsplash.com/photo-${story.userAvatar}?w=64&h=64&fit=crop&crop=face`} 
+                  alt={story.userName}
+                />
+                <AvatarFallback className="text-xs font-medium">
+                  {story.userName[0]}
+                </AvatarFallback>
+              </Avatar>
             </div>
           </div>
           <span className="text-xs text-gray-700 font-medium">{story.userName}</span>

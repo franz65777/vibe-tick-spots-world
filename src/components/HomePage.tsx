@@ -34,8 +34,8 @@ const mockPlaces: Place[] = [
     category: 'cafe',
     likes: 24,
     friendsWhoSaved: [
-      { name: 'Sarah', avatar: '' },
-      { name: 'Mike', avatar: '' }
+      { name: 'Sarah', avatar: '1649972904349-6e44c42644a7' },
+      { name: 'Mike', avatar: '1581091226825-a6a2a5aee158' }
     ],
     visitors: ['user1', 'user2'],
     isNew: true,
@@ -58,7 +58,7 @@ const mockPlaces: Place[] = [
     category: 'hotel',
     likes: 45,
     friendsWhoSaved: [
-      { name: 'Emma', avatar: '' }
+      { name: 'Emma', avatar: '1581092795360-fd1ca04f0952' }
     ],
     visitors: ['user4', 'user5'],
     isNew: false,
@@ -81,9 +81,9 @@ const mockPlaces: Place[] = [
     category: 'restaurant',
     likes: 28,
     friendsWhoSaved: [
-      { name: 'Alex', avatar: '' },
-      { name: 'Jordan', avatar: '' },
-      { name: 'Casey', avatar: '' }
+      { name: 'Alex', avatar: '1535268647677-300dbf3d78d1' },
+      { name: 'Jordan', avatar: '1649972904349-6e44c42644a7' },
+      { name: 'Casey', avatar: '1581091226825-a6a2a5aee158' }
     ],
     visitors: ['user7', 'user8'],
     isNew: false,
@@ -107,21 +107,21 @@ const mockStories: Story[] = [
     id: '1',
     userId: 'user1',
     userName: 'Sarah',
-    userAvatar: '',
+    userAvatar: '1649972904349-6e44c42644a7',
     isViewed: false
   },
   {
     id: '2',
     userId: 'user2',
     userName: 'Mike',
-    userAvatar: '',
+    userAvatar: '1581091226825-a6a2a5aee158',
     isViewed: true
   },
   {
     id: '3',
     userId: 'user3',
     userName: 'Emma',
-    userAvatar: '',
+    userAvatar: '1581092795360-fd1ca04f0952',
     isViewed: false
   }
 ];
