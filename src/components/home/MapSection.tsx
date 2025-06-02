@@ -1,5 +1,10 @@
 
-import { MapPin } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Loader } from '@googlemaps/js-api-loader';
+import { Minimize, Maximize, Search, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import GoogleMapsSetup from '@/components/GoogleMapsSetup';
 
 interface Place {
   id: string;
@@ -17,22 +22,247 @@ interface MapSectionProps {
 }
 
 const MapSection = ({ places, onPinClick }: MapSectionProps) => {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [markers, setMarkers] = useState<google.maps.Marker[]>([]);
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [showApiKeySetup, setShowApiKeySetup] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Check for API key on mount
+  useEffect(() => {
+    const storedApiKey = localStorage.getItem('google-maps-api-key');
+    if (storedApiKey) {
+      setApiKey(storedApiKey);
+    } else {
+      setShowApiKeySetup(true);
+    }
+  }, []);
+
+  // Initialize Google Maps
+  useEffect(() => {
+    if (!apiKey || apiKey === 'demo') return;
+
+    const initMap = async () => {
+      const loader = new Loader({
+        apiKey: apiKey,
+        version: 'weekly',
+        libraries: ['places']
+      });
+
+      try {
+        const { Map } = await loader.importLibrary('maps');
+        
+        if (mapRef.current) {
+          const mapInstance = new Map(mapRef.current, {
+            center: { lat: 37.7749, lng: -122.4194 }, // San Francisco
+            zoom: 13,
+            streetViewControl: false,
+            mapTypeControl: false,
+            fullscreenControl: false,
+          });
+
+          setMap(mapInstance);
+
+          // Add markers for places
+          const newMarkers: google.maps.Marker[] = [];
+          places.forEach((place) => {
+            const marker = new google.maps.Marker({
+              map: mapInstance,
+              position: place.coordinates,
+              title: place.name,
+              icon: {
+                url: 'data:image/svg+xml;base64,' + btoa(`
+                  <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="16" cy="16" r="12" fill="#EF4444" stroke="white" stroke-width="2"/>
+                    <circle cx="16" cy="16" r="4" fill="white"/>
+                  </svg>
+                `),
+                scaledSize: new google.maps.Size(32, 32),
+                anchor: new google.maps.Point(16, 16)
+              }
+            });
+
+            marker.addListener('click', () => {
+              onPinClick(place);
+            });
+
+            newMarkers.push(marker);
+          });
+
+          setMarkers(newMarkers);
+        }
+      } catch (error) {
+        console.error('Error loading Google Maps:', error);
+      }
+    };
+
+    initMap();
+  }, [apiKey, places, onPinClick]);
+
+  // Handle search functionality
+  const handleSearch = async () => {
+    if (!map || !searchQuery.trim() || apiKey === 'demo') return;
+
+    const service = new google.maps.places.PlacesService(map);
+    const request = {
+      query: searchQuery,
+      fields: ['name', 'geometry', 'place_id', 'rating'],
+    };
+
+    service.textSearch(request, (results, status) => {
+      if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+        const place = results[0];
+        if (place.geometry?.location) {
+          map.setCenter(place.geometry.location);
+          map.setZoom(16);
+        }
+      }
+    });
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+    setTimeout(() => {
+      if (map) {
+        google.maps.event.trigger(map, 'resize');
+      }
+    }, 100);
+  };
+
+  const toggleSearch = () => {
+    setIsSearching(!isSearching);
+    if (!isSearching) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+    } else {
+      setSearchQuery('');
+    }
+  };
+
+  const handleApiKeySet = (key: string) => {
+    setApiKey(key);
+    setShowApiKeySetup(false);
+  };
+
+  // Show API key setup if needed
+  if (showApiKeySetup) {
+    return <GoogleMapsSetup onApiKeySet={handleApiKeySet} />;
+  }
+
+  if (isFullscreen) {
+    return (
+      <div className="fixed inset-0 z-50 bg-white">
+        {/* Fullscreen Header */}
+        <div className="absolute top-0 left-0 right-0 z-10 bg-white/95 backdrop-blur-sm border-b border-gray-200 p-4">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleFullscreen}
+              className="shrink-0"
+            >
+              <Minimize className="w-5 h-5" />
+            </Button>
+            
+            <div className="flex-1 relative">
+              {isSearching ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    ref={searchInputRef}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Search for places..."
+                    className="flex-1"
+                  />
+                  <Button onClick={handleSearch} size="sm" disabled={apiKey === 'demo'}>
+                    <Search className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggleSearch}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold">Explore Map</h2>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggleSearch}
+                  >
+                    <Search className="w-5 h-5" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+          {apiKey === 'demo' && (
+            <div className="mt-2 text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
+              Demo mode - Search functionality disabled. Add your Google Maps API key for full features.
+            </div>
+          )}
+        </div>
+
+        {/* Fullscreen Map */}
+        <div ref={mapRef} className="w-full h-full pt-20" />
+      </div>
+    );
+  }
+
   return (
     <div className="px-4 pb-4 bg-white">
       <div className="h-64 bg-gradient-to-br from-green-50 to-blue-50 rounded-2xl relative overflow-hidden shadow-lg">
-        {/* Map Background with Google Maps Style */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-100 via-green-50 to-blue-200">
-          {/* Street lines */}
-          <svg className="absolute inset-0 w-full h-full">
-            <defs>
-              <pattern id="streets" patternUnits="userSpaceOnUse" width="40" height="40">
-                <path d="M0,20 L40,20" stroke="#ddd" strokeWidth="1"/>
-                <path d="M20,0 L20,40" stroke="#ddd" strokeWidth="1"/>
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#streets)" opacity="0.3"/>
-          </svg>
-        </div>
+        {/* Google Map or Demo Map */}
+        {apiKey === 'demo' ? (
+          // Demo map fallback
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-100 via-green-50 to-blue-200">
+            <svg className="absolute inset-0 w-full h-full">
+              <defs>
+                <pattern id="streets" patternUnits="userSpaceOnUse" width="40" height="40">
+                  <path d="M0,20 L40,20" stroke="#ddd" strokeWidth="1"/>
+                  <path d="M20,0 L20,40" stroke="#ddd" strokeWidth="1"/>
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#streets)" opacity="0.3"/>
+            </svg>
+            {/* Demo pins */}
+            {places.map((place, index) => (
+              <div 
+                key={place.id}
+                className="absolute group cursor-pointer"
+                style={{
+                  top: `${30 + index * 15}%`,
+                  left: `${25 + index * 20}%`
+                }}
+                onClick={() => onPinClick(place)}
+              >
+                <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white hover:scale-110 transition-transform">
+                  <div className="w-3 h-3 bg-white rounded-full"></div>
+                </div>
+              </div>
+            ))}
+            <div className="absolute bottom-6 left-4 text-xs text-gray-600 bg-white/80 px-2 py-1 rounded">
+              Demo Map - Add Google Maps API key for interactive features
+            </div>
+          </div>
+        ) : (
+          <div ref={mapRef} className="absolute inset-0 rounded-2xl" />
+        )}
 
         {/* Location Labels */}
         <div className="absolute top-4 left-4 text-xs font-medium text-gray-600 bg-white/80 px-2 py-1 rounded">
@@ -48,52 +278,12 @@ const MapSection = ({ places, onPinClick }: MapSectionProps) => {
           UNION SQUARE
         </div>
 
-        {/* Place Pins with visitor info */}
-        {places.map((place, index) => (
-          <div 
-            key={place.id}
-            className="absolute group cursor-pointer"
-            style={{
-              top: `${30 + index * 15}%`,
-              left: `${25 + index * 20}%`
-            }}
-            onClick={() => onPinClick(place)}
-          >
-            {/* Pin */}
-            <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white hover:scale-110 transition-transform">
-              <div className="w-3 h-3 bg-white rounded-full"></div>
-            </div>
-            
-            {/* Hover Info Card */}
-            <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-white rounded-lg shadow-lg p-3 min-w-48 opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
-              <div className="text-sm font-semibold text-gray-900">{place.name}</div>
-              <div className="text-xs text-gray-500 mb-1">{place.category} • {place.price}</div>
-              <div className="text-xs text-gray-600">
-                Visited by: {place.visitors.join(', ')}
-              </div>
-              <div className="flex items-center gap-1 mt-1">
-                <span className="text-xs text-yellow-500">★</span>
-                <span className="text-xs text-gray-600">{place.rating}</span>
-              </div>
-              {/* Arrow */}
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
-            </div>
-          </div>
-        ))}
-
-        {/* Current Location Indicator */}
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-          <div className="w-4 h-4 bg-blue-600 rounded-full border-4 border-white shadow-lg animate-pulse"></div>
-        </div>
-
         {/* Expand Map Button */}
-        <button className="absolute bottom-4 right-4 w-10 h-10 bg-white rounded-lg shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors">
-          <div className="grid grid-cols-2 gap-0.5">
-            <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
-            <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
-            <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
-            <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
-          </div>
+        <button 
+          onClick={toggleFullscreen}
+          className="absolute bottom-4 right-4 w-10 h-10 bg-white rounded-lg shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors"
+        >
+          <Maximize className="w-5 h-5 text-gray-600" />
         </button>
       </div>
     </div>
