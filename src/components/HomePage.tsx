@@ -14,6 +14,9 @@ import ShareModal from '@/components/home/ShareModal';
 import CommentModal from '@/components/home/CommentModal';
 import LocationOfTheWeek from '@/components/home/LocationOfTheWeek';
 import LocationDetailSheet from '@/components/LocationDetailSheet';
+import Header from '@/components/home/Header';
+import FilterButtons from '@/components/home/FilterButtons';
+import ModalsManager from '@/components/home/ModalsManager';
 
 interface Place {
   id: string;
@@ -390,47 +393,14 @@ const HomePage = () => {
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-blue-50/30 via-white to-purple-50/20">
       {/* Header */}
-      <div className="bg-white/95 backdrop-blur-lg px-6 py-4 shadow-sm">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
-              Discover
-            </h1>
-            {/* Search Bar */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                type="text"
-                placeholder={`Search for cities... (currently in ${currentCity})`}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={handleSearchKeyPress}
-                className="pl-10 bg-white/80 border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-2xl"
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setIsNotificationsModalOpen(true)}
-              className="relative w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center hover:scale-105 transition-all duration-200 shadow-lg shadow-blue-500/25"
-            >
-              <Bell className="w-5 h-5 text-white" />
-              <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs rounded-full flex items-center justify-center font-medium shadow-lg">
-                3
-              </div>
-            </button>
-            <button
-              onClick={() => setIsMessagesModalOpen(true)}
-              className="relative w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center hover:scale-105 transition-all duration-200 shadow-lg shadow-purple-500/25"
-            >
-              <MessageCircle className="w-5 h-5 text-white" />
-              <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs rounded-full flex items-center justify-center font-medium shadow-lg">
-                2
-              </div>
-            </button>
-          </div>
-        </div>
-      </div>
+      <Header
+        searchQuery={searchQuery}
+        currentCity={currentCity}
+        onSearchChange={setSearchQuery}
+        onSearchKeyPress={handleSearchKeyPress}
+        onNotificationsClick={() => setIsNotificationsModalOpen(true)}
+        onMessagesClick={() => setIsMessagesModalOpen(true)}
+      />
 
       {/* Stories Section */}
       <div className="bg-white/60 backdrop-blur-sm px-6 py-2">
@@ -450,49 +420,11 @@ const HomePage = () => {
       />
 
       {/* Filter Buttons */}
-      <div className="bg-white/60 backdrop-blur-sm px-6 py-3">
-        <div className="flex gap-3">
-          <button
-            onClick={() => setActiveFilter('following')}
-            className={cn(
-              "flex items-center gap-3 px-6 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 shadow-lg",
-              activeFilter === 'following'
-                ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-blue-500/30 scale-105"
-                : "bg-white/90 text-gray-600 hover:bg-white hover:shadow-xl hover:scale-105"
-            )}
-          >
-            <Users className="w-5 h-5" />
-            Following
-          </button>
-          <button
-            onClick={() => setActiveFilter('popular')}
-            className={cn(
-              "flex items-center gap-3 px-6 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 shadow-lg",
-              activeFilter === 'popular'
-                ? "bg-gradient-to-r from-pink-500 to-red-500 text-white shadow-pink-500/30 scale-105"
-                : "bg-white/90 text-gray-600 hover:bg-white hover:shadow-xl hover:scale-105"
-            )}
-          >
-            <Heart className="w-5 h-5" />
-            Popular
-          </button>
-          <button
-            onClick={() => setActiveFilter('new')}
-            className={cn(
-              "flex items-center gap-3 px-6 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 shadow-lg relative",
-              activeFilter === 'new'
-                ? "bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-purple-500/30 scale-105"
-                : "bg-white/90 text-gray-600 hover:bg-white hover:shadow-xl hover:scale-105"
-            )}
-          >
-            <Sparkles className="w-5 h-5" />
-            New
-            {getFilteredPlaces().length > 0 && activeFilter !== 'new' && (
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-orange-400 to-red-500 rounded-full animate-pulse"></div>
-            )}
-          </button>
-        </div>
-      </div>
+      <FilterButtons
+        activeFilter={activeFilter}
+        onFilterChange={setActiveFilter}
+        newCount={getFilteredPlaces().length}
+      />
 
       {/* Map Section */}
       <div className="flex-1 relative">
@@ -515,51 +447,31 @@ const HomePage = () => {
       )}
 
       {/* Modals */}
-      <CreateStoryModal
-        isOpen={isCreateStoryModalOpen}
-        onClose={() => setIsCreateStoryModalOpen(false)}
+      <ModalsManager
+        isCreateStoryModalOpen={isCreateStoryModalOpen}
+        isNotificationsModalOpen={isNotificationsModalOpen}
+        isMessagesModalOpen={isMessagesModalOpen}
+        isShareModalOpen={isShareModalOpen}
+        isCommentModalOpen={isCommentModalOpen}
+        isLocationDetailOpen={isLocationDetailOpen}
+        isStoriesViewerOpen={isStoriesViewerOpen}
+        sharePlace={sharePlace}
+        commentPlace={commentPlace}
+        locationDetailPlace={locationDetailPlace}
+        stories={stories}
+        currentStoryIndex={currentStoryIndex}
+        onCreateStoryModalClose={() => setIsCreateStoryModalOpen(false)}
+        onNotificationsModalClose={() => setIsNotificationsModalOpen(false)}
+        onMessagesModalClose={() => setIsMessagesModalOpen(false)}
+        onShareModalClose={() => setIsShareModalOpen(false)}
+        onCommentModalClose={() => setIsCommentModalOpen(false)}
+        onLocationDetailClose={() => setIsLocationDetailOpen(false)}
+        onStoriesViewerClose={() => setIsStoriesViewerOpen(false)}
         onStoryCreated={handleStoryCreated}
-      />
-
-      <NotificationsModal
-        isOpen={isNotificationsModalOpen}
-        onClose={() => setIsNotificationsModalOpen(false)}
-      />
-
-      <MessagesModal
-        isOpen={isMessagesModalOpen}
-        onClose={() => setIsMessagesModalOpen(false)}
-      />
-
-      <ShareModal
-        isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
-        place={sharePlace}
         onShare={handleShareSubmit}
-      />
-
-      <CommentModal
-        isOpen={isCommentModalOpen}
-        onClose={() => setIsCommentModalOpen(false)}
-        place={commentPlace}
         onCommentSubmit={handleCommentSubmit}
+        onStoryViewed={handleStoryViewed}
       />
-
-      <LocationDetailSheet
-        isOpen={isLocationDetailOpen}
-        onClose={() => setIsLocationDetailOpen(false)}
-        location={locationDetailPlace}
-      />
-
-      {/* Stories Viewer */}
-      {isStoriesViewerOpen && (
-        <StoriesViewer
-          stories={stories}
-          initialStoryIndex={currentStoryIndex}
-          onClose={() => setIsStoriesViewerOpen(false)}
-          onStoryViewed={handleStoryViewed}
-        />
-      )}
     </div>
   );
 };
