@@ -156,7 +156,23 @@ const mockStories: Story[] = [
     locationName: 'The Cozy Corner Café',
     locationAddress: '123 Main St, Downtown',
     timestamp: '2 hours ago',
-    bookingUrl: 'https://www.opentable.com/booking'
+    bookingUrl: 'https://www.opentable.com/booking',
+    locationCategory: 'restaurant'
+  },
+  {
+    id: '4',
+    userId: 'user1',
+    userName: 'Sarah',
+    userAvatar: '1649972904349-6e44c42644a7',
+    isViewed: false,
+    mediaUrl: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=600&fit=crop',
+    mediaType: 'image',
+    locationId: '4',
+    locationName: 'Neon Nights Bar',
+    locationAddress: '789 Night St, Downtown',
+    timestamp: '1 hour ago',
+    bookingUrl: 'https://www.opentable.com/booking',
+    locationCategory: 'bar'
   },
   {
     id: '2',
@@ -170,7 +186,8 @@ const mockStories: Story[] = [
     locationName: 'Grand Plaza Hotel',
     locationAddress: '456 Park Ave, Midtown',
     timestamp: '4 hours ago',
-    bookingUrl: 'https://www.booking.com/hotel'
+    bookingUrl: 'https://www.booking.com/hotel',
+    locationCategory: 'hotel'
   },
   {
     id: '3',
@@ -184,7 +201,8 @@ const mockStories: Story[] = [
     locationName: 'Ocean Breeze Restaurant',
     locationAddress: '789 Coastal Rd, Seafront',
     timestamp: '6 hours ago',
-    bookingUrl: 'https://www.opentable.com/r/ocean-breeze'
+    bookingUrl: 'https://www.opentable.com/r/ocean-breeze',
+    locationCategory: 'restaurant'
   }
 ];
 
@@ -325,7 +343,7 @@ const HomePage = () => {
       </div>
 
       {/* Stories Section */}
-      <div className="bg-white/80 backdrop-blur-sm px-6 py-6">
+      <div className="bg-white/60 backdrop-blur-sm px-6 py-6">
         <div className="overflow-x-auto">
           <StoriesSection 
             stories={stories}
