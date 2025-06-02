@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { Minimize, Maximize, Search, X } from 'lucide-react';
@@ -34,7 +35,6 @@ const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationPermissionDenied, setLocationPermissionDenied] = useState(false);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Check for API key on mount
@@ -81,85 +81,79 @@ const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
     }
   }, [mapCenter, userLocation]);
 
-  // Update map center when mapCenter prop changes
+  // Initialize Google Maps
   useEffect(() => {
-    if (mapInstanceRef.current && mapCenter) {
-      console.log('Updating map center to:', mapCenter);
-      mapInstanceRef.current.setCenter(mapCenter);
-      mapInstanceRef.current.setZoom(14);
-    }
-  }, [mapCenter]);
-
-  // Initialize Google Maps - only once
-  useEffect(() => {
-    if (!apiKey || apiKey === 'demo' || !userLocation || !mapRef.current || isMapLoaded || isInitializing) {
+    if (!apiKey || apiKey === 'demo' || !userLocation || isMapLoaded) {
       return;
     }
 
     const initMap = async () => {
-      console.log('Initializing Google Maps with API key and location:', userLocation);
-      setMapError(null);
-      setIsInitializing(true);
-      
       try {
+        console.log('Initializing Google Maps...');
+        setMapError(null);
+        
+        // Ensure the map container exists and is visible
+        if (!mapRef.current) {
+          console.error('Map container not found');
+          return;
+        }
+
         const loader = new Loader({
           apiKey: apiKey,
           version: 'weekly',
-          libraries: ['places'],
-          retries: 3
+          libraries: ['places']
         });
 
-        console.log('Loading Google Maps libraries...');
         await loader.load();
         
-        // Ensure DOM element is ready
+        // Double-check the container exists after loading
         if (!mapRef.current) {
-          throw new Error('Map container not found');
+          console.error('Map container disappeared during loading');
+          return;
         }
         
-        console.log('Creating map instance at location:', userLocation);
+        console.log('Creating map instance...');
         const mapInstance = new google.maps.Map(mapRef.current, {
           center: userLocation,
           zoom: 14,
           streetViewControl: false,
           mapTypeControl: false,
-          fullscreenControl: false,
-          mapId: 'discovery-map'
+          fullscreenControl: false
         });
 
-        // Wait for map to be fully loaded
-        await new Promise<void>((resolve) => {
-          const listener = google.maps.event.addListenerOnce(mapInstance, 'tilesloaded', () => {
-            resolve();
-          });
-          
-          // Fallback timeout
-          setTimeout(() => {
-            google.maps.event.removeListener(listener);
-            resolve();
-          }, 5000);
+        // Wait for map to be idle before setting as loaded
+        google.maps.event.addListenerOnce(mapInstance, 'idle', () => {
+          console.log('Map is ready');
+          mapInstanceRef.current = mapInstance;
+          setIsMapLoaded(true);
         });
 
-        console.log('Map created successfully');
-        mapInstanceRef.current = mapInstance;
-        setIsMapLoaded(true);
       } catch (error) {
         console.error('Error loading Google Maps:', error);
         setMapError('Failed to load Google Maps. Please check your API key and internet connection.');
-      } finally {
-        setIsInitializing(false);
       }
     };
 
-    // Small delay to ensure DOM is ready
+    // Add a small delay to ensure DOM is ready
     const timeoutId = setTimeout(initMap, 100);
     return () => clearTimeout(timeoutId);
-  }, [apiKey, userLocation, isMapLoaded, isInitializing]);
+  }, [apiKey, userLocation, isMapLoaded]);
+
+  // Update map center when mapCenter prop changes
+  useEffect(() => {
+    if (mapInstanceRef.current && mapCenter && isMapLoaded) {
+      console.log('Updating map center to:', mapCenter);
+      mapInstanceRef.current.setCenter(mapCenter);
+      mapInstanceRef.current.setZoom(14);
+    }
+  }, [mapCenter, isMapLoaded]);
 
   // Update markers when places change
   useEffect(() => {
     if (!mapInstanceRef.current || !isMapLoaded) return;
 
+    console.log('Updating markers for', places.length, 'places');
+    
     // Clear existing markers
     markersRef.current.forEach(marker => marker.setMap(null));
     markersRef.current = [];
@@ -270,7 +264,6 @@ const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
     setApiKey(key);
     setShowApiKeySetup(false);
     setIsMapLoaded(false);
-    setIsInitializing(false);
     setMapError(null);
   };
 
@@ -371,7 +364,6 @@ const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
         {apiKey === 'demo' ? (
           // Demo map fallback
           <div className="absolute inset-0 bg-gradient-to-br from-blue-100 via-green-50 to-blue-200">
-            {/* ... keep existing code (demo map SVG and pins) */}
             <svg className="absolute inset-0 w-full h-full">
               <defs>
                 <pattern id="streets" patternUnits="userSpaceOnUse" width="40" height="40">
@@ -404,10 +396,10 @@ const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
         ) : (
           <div className="relative w-full h-full">
             <div ref={mapRef} className="absolute inset-0 rounded-2xl" />
-            {(mapError || isInitializing) && (
+            {(mapError || !isMapLoaded) && (
               <div className="absolute inset-0 bg-gray-50 rounded-2xl flex items-center justify-center">
                 <div className="text-center p-4">
-                  {isInitializing ? (
+                  {!isMapLoaded && !mapError ? (
                     <>
                       <div className="text-gray-600 text-sm font-medium mb-2">Loading Map...</div>
                       <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
@@ -420,7 +412,6 @@ const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
                         size="sm" 
                         onClick={() => {
                           setIsMapLoaded(false);
-                          setIsInitializing(false);
                           setMapError(null);
                         }}
                       >
