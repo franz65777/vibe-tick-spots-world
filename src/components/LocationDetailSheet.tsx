@@ -1,7 +1,9 @@
+
 import { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Heart, MessageCircle, Share, X, Play, Bookmark, Camera, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -212,15 +214,20 @@ const LocationDetailSheet = ({ isOpen, onClose, location }: LocationDetailSheetP
                   <Users className="w-5 h-5 text-blue-500" />
                   From people you follow
                 </h3>
-                <div className="grid grid-cols-2 gap-3">
-                  {followingMedia.map((media) => (
-                    <MediaCard 
-                      key={media.id} 
-                      media={media} 
-                      onClick={() => setSelectedMedia(media)} 
-                    />
-                  ))}
-                </div>
+                <Carousel className="w-full">
+                  <CarouselContent className="-ml-2 md:-ml-4">
+                    {followingMedia.map((media) => (
+                      <CarouselItem key={media.id} className="pl-2 md:pl-4 basis-1/2 md:basis-1/3">
+                        <MediaCard 
+                          media={media} 
+                          onClick={() => setSelectedMedia(media)} 
+                        />
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious className="left-2" />
+                  <CarouselNext className="right-2" />
+                </Carousel>
               </div>
             )}
 
@@ -228,15 +235,20 @@ const LocationDetailSheet = ({ isOpen, onClose, location }: LocationDetailSheetP
             {otherMedia.length > 0 && (
               <div>
                 <h3 className="text-lg font-semibold mb-3">Other posts</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  {otherMedia.map((media) => (
-                    <MediaCard 
-                      key={media.id} 
-                      media={media} 
-                      onClick={() => setSelectedMedia(media)} 
-                    />
-                  ))}
-                </div>
+                <Carousel className="w-full">
+                  <CarouselContent className="-ml-2 md:-ml-4">
+                    {otherMedia.map((media) => (
+                      <CarouselItem key={media.id} className="pl-2 md:pl-4 basis-1/2 md:basis-1/3">
+                        <MediaCard 
+                          media={media} 
+                          onClick={() => setSelectedMedia(media)} 
+                        />
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious className="left-2" />
+                  <CarouselNext className="right-2" />
+                </Carousel>
               </div>
             )}
           </div>
