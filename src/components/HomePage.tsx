@@ -202,7 +202,7 @@ const mockStories: Story[] = [
     locationAddress: '789 Coastal Rd, Seafront',
     timestamp: '6 hours ago',
     bookingUrl: 'https://www.opentable.com/r/ocean-breeze',
-    locationCategory: 'restaurant'
+    locationCategory: 'cafe'
   }
 ];
 
