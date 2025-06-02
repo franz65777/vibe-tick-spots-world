@@ -361,7 +361,7 @@ const ExplorePage = () => {
     }
 
     return (
-      <div className="space-y-6 px-4 pb-4">
+      <div className="space-y-3 px-4 pb-4">
         {resultsToShow.map((location) => (
           <PlaceCard
             key={location.id}

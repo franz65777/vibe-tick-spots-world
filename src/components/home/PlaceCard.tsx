@@ -31,11 +31,11 @@ interface PlaceCardProps {
 const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComment }: PlaceCardProps) => {
   return (
     <div 
-      className="relative cursor-pointer hover:scale-[1.02] transition-all duration-300 group bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-xl"
+      className="relative cursor-pointer hover:scale-[1.02] transition-all duration-300 group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md"
       onClick={() => onCardClick(place)}
     >
-      {/* Image Container */}
-      <div className="relative h-48 overflow-hidden">
+      {/* Image Container - Much smaller */}
+      <div className="relative h-24 overflow-hidden">
         {place.image ? (
           <img
             src={place.image}
@@ -51,36 +51,36 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
         <div className={`absolute inset-0 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 opacity-60 ${place.image ? 'hidden' : ''}`}></div>
         
         {/* Overlay gradient for better text readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
 
-        {/* NEW Badge */}
+        {/* NEW Badge - smaller */}
         {place.isNew && (
-          <div className="absolute top-4 left-4 bg-gradient-to-r from-orange-400 to-red-500 text-white text-xs px-3 py-1.5 rounded-full font-semibold z-10 shadow-lg">
+          <div className="absolute top-2 left-2 bg-gradient-to-r from-orange-400 to-red-500 text-white text-xs px-2 py-1 rounded-full font-semibold z-10 shadow-sm">
             NEW
           </div>
         )}
 
-        {/* Like button */}
-        <div className="absolute top-4 right-4">
+        {/* Like button - smaller */}
+        <div className="absolute top-2 right-2">
           <button
             onClick={(e) => {
               e.stopPropagation();
               onLikeToggle(place.id);
             }}
-            className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:scale-105 transition-all duration-200"
+            className="bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-sm hover:scale-105 transition-all duration-200"
           >
             <Heart 
-              className={`w-5 h-5 ${isLiked ? 'fill-red-500 text-red-500' : 'text-gray-600'} transition-colors duration-200`} 
+              className={`w-4 h-4 ${isLiked ? 'fill-red-500 text-red-500' : 'text-gray-600'} transition-colors duration-200`} 
             />
           </button>
         </div>
 
-        {/* Friends who saved */}
+        {/* Friends who saved - smaller and bottom left */}
         {place.friendsWhoSaved && place.friendsWhoSaved.length > 0 && (
-          <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-full px-3 py-2 flex items-center gap-2 shadow-lg">
+          <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1 shadow-sm">
             <div className="flex -space-x-1">
               {place.friendsWhoSaved.slice(0, 2).map((friend, index) => (
-                <Avatar key={index} className="w-5 h-5 border-2 border-white shadow-sm">
+                <Avatar key={index} className="w-4 h-4 border border-white shadow-sm">
                   <AvatarImage 
                     src={`https://images.unsplash.com/photo-${friend.avatar}?w=32&h=32&fit=crop&crop=face`} 
                     alt={friend.name}
@@ -92,39 +92,36 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
               ))}
             </div>
             <span className="text-xs text-gray-700 font-medium">
-              {place.friendsWhoSaved.length === 1 
-                ? `${place.friendsWhoSaved[0].name} saved`
-                : `${place.friendsWhoSaved.length} friends saved`
-              }
+              {place.friendsWhoSaved.length}
             </span>
           </div>
         )}
       </div>
 
-      {/* Content Container */}
-      <div className="p-4 space-y-4">
+      {/* Content Container - Much more compact */}
+      <div className="p-3 space-y-2">
         {/* Location Info */}
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-bold text-gray-900 truncate">{place.name}</h3>
-            <p className="text-sm text-gray-600 capitalize">{place.category}</p>
+            <h3 className="text-sm font-bold text-gray-900 truncate">{place.name}</h3>
+            <p className="text-xs text-gray-600 capitalize">{place.category}</p>
           </div>
           <div className="flex items-center gap-1 ml-2">
-            <Heart className="w-4 h-4 text-red-500" />
-            <span className="text-sm font-medium text-gray-700">{place.likes + (isLiked ? 1 : 0)}</span>
+            <Heart className="w-3 h-3 text-red-500" />
+            <span className="text-xs font-medium text-gray-700">{place.likes + (isLiked ? 1 : 0)}</span>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-3">
+        {/* Action Buttons - More compact */}
+        <div className="flex items-center gap-2">
           <button
             onClick={(e) => {
               e.stopPropagation();
               onShare(place);
             }}
-            className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl px-4 py-3 flex items-center justify-center gap-2 text-sm font-semibold transition-colors duration-200"
+            className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg px-3 py-2 flex items-center justify-center gap-1 text-xs font-semibold transition-colors duration-200"
           >
-            <Share className="w-4 h-4" />
+            <Share className="w-3 h-3" />
             <span>Share</span>
           </button>
           <button
@@ -132,9 +129,9 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
               e.stopPropagation();
               onComment(place);
             }}
-            className="flex-1 bg-purple-50 hover:bg-purple-100 text-purple-600 rounded-xl px-4 py-3 flex items-center justify-center gap-2 text-sm font-semibold transition-colors duration-200"
+            className="flex-1 bg-purple-50 hover:bg-purple-100 text-purple-600 rounded-lg px-3 py-2 flex items-center justify-center gap-1 text-xs font-semibold transition-colors duration-200"
           >
-            <MessageCircle className="w-4 h-4" />
+            <MessageCircle className="w-3 h-3" />
             <span>Comment</span>
           </button>
         </div>
