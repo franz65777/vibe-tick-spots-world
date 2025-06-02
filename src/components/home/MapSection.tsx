@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { Minimize, Maximize, Search, X } from 'lucide-react';
@@ -30,6 +29,7 @@ const MapSection = ({ places, onPinClick }: MapSectionProps) => {
   const [markers, setMarkers] = useState<google.maps.Marker[]>([]);
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [showApiKeySetup, setShowApiKeySetup] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Check for API key on mount
@@ -47,6 +47,9 @@ const MapSection = ({ places, onPinClick }: MapSectionProps) => {
     if (!apiKey || apiKey === 'demo') return;
 
     const initMap = async () => {
+      console.log('Initializing Google Maps with API key...');
+      setMapError(null);
+      
       const loader = new Loader({
         apiKey: apiKey,
         version: 'weekly',
@@ -54,9 +57,11 @@ const MapSection = ({ places, onPinClick }: MapSectionProps) => {
       });
 
       try {
+        console.log('Loading Google Maps libraries...');
         const { Map } = await loader.importLibrary('maps');
         
         if (mapRef.current) {
+          console.log('Creating map instance...');
           const mapInstance = new Map(mapRef.current, {
             center: { lat: 37.7749, lng: -122.4194 }, // San Francisco
             zoom: 13,
@@ -65,6 +70,7 @@ const MapSection = ({ places, onPinClick }: MapSectionProps) => {
             fullscreenControl: false,
           });
 
+          console.log('Map created successfully');
           setMap(mapInstance);
 
           // Add markers for places
@@ -94,9 +100,11 @@ const MapSection = ({ places, onPinClick }: MapSectionProps) => {
           });
 
           setMarkers(newMarkers);
+          console.log('Markers added successfully');
         }
       } catch (error) {
         console.error('Error loading Google Maps:', error);
+        setMapError('Failed to load Google Maps. Please check your API key and ensure the Maps JavaScript API is enabled.');
       }
     };
 
@@ -216,6 +224,11 @@ const MapSection = ({ places, onPinClick }: MapSectionProps) => {
               Demo mode - Search functionality disabled. Add your Google Maps API key for full features.
             </div>
           )}
+          {mapError && (
+            <div className="mt-2 text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
+              {mapError}
+            </div>
+          )}
         </div>
 
         {/* Fullscreen Map */}
@@ -261,7 +274,17 @@ const MapSection = ({ places, onPinClick }: MapSectionProps) => {
             </div>
           </div>
         ) : (
-          <div ref={mapRef} className="absolute inset-0 rounded-2xl" />
+          <div className="relative w-full h-full">
+            <div ref={mapRef} className="absolute inset-0 rounded-2xl" />
+            {mapError && (
+              <div className="absolute inset-0 bg-red-50 rounded-2xl flex items-center justify-center">
+                <div className="text-center p-4">
+                  <div className="text-red-600 text-sm font-medium mb-2">Map Error</div>
+                  <div className="text-red-500 text-xs">{mapError}</div>
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
         {/* Location Labels */}
