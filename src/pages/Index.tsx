@@ -52,86 +52,67 @@ const Index = () => {
         {renderActiveTab()}
       </div>
 
-      {/* Bottom Navigation - Redesigned */}
-      <div className="bg-white/90 backdrop-blur-lg border-t border-gray-100 px-4 py-3 safe-area-pb">
-        <div className="bg-gray-100/80 rounded-2xl p-2 flex justify-between items-center relative">
-          {/* Active indicator background */}
-          <div 
-            className={cn(
-              "absolute top-2 bottom-2 bg-white rounded-xl shadow-sm transition-all duration-300 ease-out",
-              activeTab === 'discover' && "left-2 right-[75%]",
-              activeTab === 'explore' && "left-[25%] right-[50%]",
-              activeTab === 'add' && "left-[50%] right-[25%]",
-              activeTab === 'profile' && "left-[75%] right-2"
-            )}
-          />
-          
+      {/* Bottom Navigation - Clean Design */}
+      <div className="bg-white/95 backdrop-blur-md border-t border-gray-100 px-6 py-4 safe-area-pb">
+        <div className="flex justify-between items-center">
           <button
             onClick={() => setActiveTab('discover')}
-            className={cn(
-              "relative z-10 flex flex-col items-center gap-1 py-3 px-4 rounded-xl transition-all duration-200",
-              activeTab === 'discover' 
-                ? "text-blue-600" 
-                : "text-gray-500 hover:text-gray-700"
-            )}
+            className="flex flex-col items-center gap-2 py-2 px-3 transition-all duration-200"
           >
             <MapPin className={cn(
-              "w-5 h-5 transition-all duration-200",
-              activeTab === 'discover' && "scale-110"
+              "w-6 h-6 transition-colors duration-200",
+              activeTab === 'discover' ? "text-blue-600" : "text-gray-400"
             )} />
-            <span className="text-xs font-medium">Discover</span>
+            <span className={cn(
+              "text-xs font-medium transition-colors duration-200",
+              activeTab === 'discover' ? "text-blue-600" : "text-gray-400"
+            )}>Discover</span>
           </button>
           
           <button
             onClick={() => setActiveTab('explore')}
-            className={cn(
-              "relative z-10 flex flex-col items-center gap-1 py-3 px-4 rounded-xl transition-all duration-200",
-              activeTab === 'explore' 
-                ? "text-blue-600" 
-                : "text-gray-500 hover:text-gray-700"
-            )}
+            className="flex flex-col items-center gap-2 py-2 px-3 transition-all duration-200"
           >
             <Search className={cn(
-              "w-5 h-5 transition-all duration-200",
-              activeTab === 'explore' && "scale-110"
+              "w-6 h-6 transition-colors duration-200",
+              activeTab === 'explore' ? "text-blue-600" : "text-gray-400"
             )} />
-            <span className="text-xs font-medium">Explore</span>
+            <span className={cn(
+              "text-xs font-medium transition-colors duration-200",
+              activeTab === 'explore' ? "text-blue-600" : "text-gray-400"
+            )}>Explore</span>
           </button>
 
           <button
             onClick={() => setActiveTab('add')}
-            className={cn(
-              "relative z-10 flex flex-col items-center gap-1 py-3 px-4 rounded-xl transition-all duration-200",
-              activeTab === 'add' 
-                ? "text-blue-600" 
-                : "text-gray-500 hover:text-gray-700"
-            )}
+            className="flex flex-col items-center gap-2 py-2 px-3 transition-all duration-200"
           >
             <div className={cn(
-              "w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-200",
+              "w-7 h-7 rounded-xl flex items-center justify-center transition-all duration-200",
               activeTab === 'add' 
-                ? "bg-blue-600 text-white scale-110" 
-                : "bg-gray-300 text-gray-600"
+                ? "bg-blue-600 text-white" 
+                : "bg-gray-200 text-gray-400"
             )}>
               <Plus className="w-4 h-4" />
             </div>
-            <span className="text-xs font-medium">Add</span>
+            <span className={cn(
+              "text-xs font-medium transition-colors duration-200",
+              activeTab === 'add' ? "text-blue-600" : "text-gray-400"
+            )}>Add</span>
           </button>
           
           <button
             onClick={() => setActiveTab('profile')}
-            className={cn(
-              "relative z-10 flex flex-col items-center gap-1 py-3 px-4 rounded-xl transition-all duration-200",
-              activeTab === 'profile' 
-                ? "text-blue-600" 
-                : "text-gray-500 hover:text-gray-700"
-            )}
+            className="flex flex-col items-center gap-2 py-2 px-3 transition-all duration-200"
           >
             <User className={cn(
-              "w-5 h-5 transition-all duration-200",
-              activeTab === 'profile' && "scale-110"
+              "w-6 h-6 transition-colors duration-200",
+              activeTab === 'profile' ? "text-blue-600" : "text-gray-400"
             )} />
-            <span className="text-xs font-medium">Profile</span>
+            <span className={cn(
+              "text-xs font-medium transition-colors duration-200",
+              activeTab === 'profile' ? "text-blue-600" : "text-gray-400"
+            )}>Profile</span>
           </button>
         </div>
       </div>
