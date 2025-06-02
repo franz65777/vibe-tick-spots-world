@@ -33,13 +33,16 @@ const MapSection = ({ places, onPinClick }: MapSectionProps) => {
   const [mapError, setMapError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationPermissionDenied, setLocationPermissionDenied] = useState(false);
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Check for API key on mount
   useEffect(() => {
     const storedApiKey = localStorage.getItem('google-maps-api-key');
-    if (storedApiKey) {
+    if (storedApiKey && storedApiKey !== 'demo') {
       setApiKey(storedApiKey);
+    } else if (storedApiKey === 'demo') {
+      setApiKey('demo');
     } else {
       setShowApiKeySetup(true);
     }
@@ -76,34 +79,47 @@ const MapSection = ({ places, onPinClick }: MapSectionProps) => {
 
   // Initialize Google Maps
   useEffect(() => {
-    if (!apiKey || apiKey === 'demo' || !userLocation || !mapRef.current) return;
+    if (!apiKey || apiKey === 'demo' || !userLocation || !mapRef.current || isMapLoaded) return;
 
     const initMap = async () => {
       console.log('Initializing Google Maps with API key and user location...');
       setMapError(null);
       
-      const loader = new Loader({
-        apiKey: apiKey,
-        version: 'weekly',
-        libraries: ['places']
-      });
-
       try {
+        const loader = new Loader({
+          apiKey: apiKey,
+          version: 'weekly',
+          libraries: ['places'],
+          retries: 3
+        });
+
         console.log('Loading Google Maps libraries...');
-        const { Map } = await loader.importLibrary('maps');
+        await loader.load();
         
-        if (mapRef.current) {
+        // Wait a bit for the DOM to be ready
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        if (mapRef.current && !isMapLoaded) {
           console.log('Creating map instance at user location:', userLocation);
-          const mapInstance = new Map(mapRef.current, {
+          const mapInstance = new google.maps.Map(mapRef.current, {
             center: userLocation,
             zoom: 14,
             streetViewControl: false,
             mapTypeControl: false,
             fullscreenControl: false,
+            mapId: 'discovery-map'
+          });
+
+          // Wait for map to be ready
+          await new Promise<void>((resolve) => {
+            google.maps.event.addListenerOnce(mapInstance, 'idle', () => {
+              resolve();
+            });
           });
 
           console.log('Map created successfully');
           setMap(mapInstance);
+          setIsMapLoaded(true);
 
           // Clear existing markers
           markers.forEach(marker => marker.setMap(null));
@@ -156,32 +172,37 @@ const MapSection = ({ places, onPinClick }: MapSectionProps) => {
         }
       } catch (error) {
         console.error('Error loading Google Maps:', error);
-        setMapError('Failed to load Google Maps. Please check your API key and ensure the Maps JavaScript API is enabled.');
+        setMapError('Failed to load Google Maps. Please check your API key and internet connection.');
+        setIsMapLoaded(false);
       }
     };
 
     initMap();
-  }, [apiKey, places, onPinClick, userLocation]);
+  }, [apiKey, places, onPinClick, userLocation, isMapLoaded]);
 
   // Handle search functionality
   const handleSearch = async () => {
     if (!map || !searchQuery.trim() || apiKey === 'demo') return;
 
-    const service = new google.maps.places.PlacesService(map);
-    const request = {
-      query: searchQuery,
-      fields: ['name', 'geometry', 'place_id', 'rating'],
-    };
+    try {
+      const service = new google.maps.places.PlacesService(map);
+      const request = {
+        query: searchQuery,
+        fields: ['name', 'geometry', 'place_id', 'rating'],
+      };
 
-    service.textSearch(request, (results, status) => {
-      if (status === google.maps.places.PlacesServiceStatus.OK && results) {
-        const place = results[0];
-        if (place.geometry?.location) {
-          map.setCenter(place.geometry.location);
-          map.setZoom(16);
+      service.textSearch(request, (results, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+          const place = results[0];
+          if (place.geometry?.location) {
+            map.setCenter(place.geometry.location);
+            map.setZoom(16);
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      console.error('Search error:', error);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -213,6 +234,8 @@ const MapSection = ({ places, onPinClick }: MapSectionProps) => {
   const handleApiKeySet = (key: string) => {
     setApiKey(key);
     setShowApiKeySetup(false);
+    setIsMapLoaded(false);
+    setMapError(null);
   };
 
   // Show API key setup if needed
@@ -337,7 +360,16 @@ const MapSection = ({ places, onPinClick }: MapSectionProps) => {
               <div className="absolute inset-0 bg-red-50 rounded-2xl flex items-center justify-center">
                 <div className="text-center p-4">
                   <div className="text-red-600 text-sm font-medium mb-2">Map Error</div>
-                  <div className="text-red-500 text-xs">{mapError}</div>
+                  <div className="text-red-500 text-xs mb-3">{mapError}</div>
+                  <Button 
+                    size="sm" 
+                    onClick={() => {
+                      setIsMapLoaded(false);
+                      setMapError(null);
+                    }}
+                  >
+                    Retry
+                  </Button>
                 </div>
               </div>
             )}
@@ -349,8 +381,8 @@ const MapSection = ({ places, onPinClick }: MapSectionProps) => {
           </div>
         )}
 
-        {/* Location Labels - only show if using demo mode or no user location */}
-        {(apiKey === 'demo' || locationPermissionDenied) && (
+        {/* Location Labels - only show if using demo mode */}
+        {apiKey === 'demo' && (
           <>
             <div className="absolute top-4 left-4 text-xs font-medium text-gray-600 bg-white/80 px-2 py-1 rounded">
               PACIFIC HEIGHTS
