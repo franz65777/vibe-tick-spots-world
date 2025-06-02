@@ -1,7 +1,9 @@
+
 import { useState } from 'react';
-import { Heart, Bell, MessageCircle, Users, TrendingUp, Sparkles } from 'lucide-react';
+import { Heart, Bell, MessageCircle, Users, TrendingUp, Sparkles, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import MapSection from '@/components/home/MapSection';
 import StoriesSection from '@/components/home/StoriesSection';
 import PlaceCard from '@/components/home/PlaceCard';
@@ -271,6 +273,8 @@ const HomePage = () => {
   const [commentPlace, setCommentPlace] = useState<Place | null>(null);
   const [isLocationDetailOpen, setIsLocationDetailOpen] = useState(false);
   const [locationDetailPlace, setLocationDetailPlace] = useState<Place | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentCity, setCurrentCity] = useState('San Francisco');
 
   // Get the most popular location based on total engagement (likes + visitors)
   const getLocationOfTheWeek = () => {
@@ -365,19 +369,34 @@ const HomePage = () => {
     setIsLocationDetailOpen(true);
   };
 
+  const handleCitySearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      console.log('Searching for city:', searchQuery);
+      setCurrentCity(searchQuery.trim());
+      // TODO: Update places and map based on the searched city
+      // For now, we'll just update the current city display
+    }
+  };
+
+  const handleSearchKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleCitySearch(e);
+    }
+  };
+
   const filteredPlaces = getFilteredPlaces();
   const locationOfTheWeek = getLocationOfTheWeek();
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-blue-50/30 via-white to-purple-50/20">
       {/* Header */}
-      <div className="bg-white/95 backdrop-blur-lg px-6 py-6 shadow-sm">
-        <div className="flex items-center justify-between">
+      <div className="bg-white/95 backdrop-blur-lg px-6 py-4 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               Discover
             </h1>
-            <p className="text-gray-500 text-sm mt-1">Find amazing places around you</p>
           </div>
           <div className="flex items-center gap-4">
             <button
@@ -400,10 +419,33 @@ const HomePage = () => {
             </button>
           </div>
         </div>
+
+        {/* Search Bar */}
+        <div className="relative">
+          <form onSubmit={handleCitySearch} className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                type="text"
+                placeholder={`Search for cities... (currently in ${currentCity})`}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={handleSearchKeyPress}
+                className="pl-10 bg-white/80 border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-2xl"
+              />
+            </div>
+            <Button 
+              type="submit" 
+              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-2xl px-6 shadow-lg"
+            >
+              Search
+            </Button>
+          </form>
+        </div>
       </div>
 
       {/* Stories Section */}
-      <div className="bg-white/60 backdrop-blur-sm px-6 py-3">
+      <div className="bg-white/60 backdrop-blur-sm px-6 py-2">
         <div className="overflow-x-auto">
           <StoriesSection 
             stories={stories}
