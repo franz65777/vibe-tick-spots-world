@@ -175,6 +175,36 @@ const mockStories: Story[] = [
     locationCategory: 'bar'
   },
   {
+    id: '5',
+    userId: 'user1',
+    userName: 'Sarah',
+    userAvatar: '1649972904349-6e44c42644a7',
+    isViewed: false,
+    mediaUrl: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=600&fit=crop',
+    mediaType: 'image',
+    locationId: '3',
+    locationName: 'Grand Plaza Hotel',
+    locationAddress: '456 Park Ave, Midtown',
+    timestamp: '30 minutes ago',
+    bookingUrl: 'https://www.booking.com/hotel',
+    locationCategory: 'hotel'
+  },
+  {
+    id: '6',
+    userId: 'user1',
+    userName: 'Sarah',
+    userAvatar: '1649972904349-6e44c42644a7',
+    isViewed: false,
+    mediaUrl: 'https://images.unsplash.com/photo-1453614512568-c4024d13c247?w=400&h=600&fit=crop',
+    mediaType: 'image',
+    locationId: '6',
+    locationName: 'Artisan Coffee House',
+    locationAddress: '789 Coffee St, Downtown',
+    timestamp: '15 minutes ago',
+    bookingUrl: 'https://www.opentable.com/booking',
+    locationCategory: 'cafe'
+  },
+  {
     id: '2',
     userId: 'user2',
     userName: 'Mike',
@@ -190,6 +220,21 @@ const mockStories: Story[] = [
     locationCategory: 'hotel'
   },
   {
+    id: '7',
+    userId: 'user2',
+    userName: 'Mike',
+    userAvatar: '1581091226825-a6a2a5aee158',
+    isViewed: false,
+    mediaUrl: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=600&fit=crop',
+    mediaType: 'image',
+    locationId: '4',
+    locationName: 'Neon Nights Bar',
+    locationAddress: '789 Night St, Downtown',
+    timestamp: '3 hours ago',
+    bookingUrl: 'https://www.opentable.com/booking',
+    locationCategory: 'bar'
+  },
+  {
     id: '3',
     userId: 'user3',
     userName: 'Emma',
@@ -202,7 +247,7 @@ const mockStories: Story[] = [
     locationAddress: '789 Coastal Rd, Seafront',
     timestamp: '6 hours ago',
     bookingUrl: 'https://www.opentable.com/r/ocean-breeze',
-    locationCategory: 'cafe'
+    locationCategory: 'restaurant'
   }
 ];
 

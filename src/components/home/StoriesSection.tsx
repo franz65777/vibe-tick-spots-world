@@ -1,5 +1,5 @@
 
-import { Plus, Utensils, Hotel, Wine } from 'lucide-react';
+import { Plus, Utensils, Hotel, Wine, MoreHorizontal } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 interface Story {
@@ -77,7 +77,9 @@ const StoriesSection = ({ stories, onCreateStory, onStoryClick }: StoriesSection
       {/* User Stories */}
       {Object.entries(groupedStories).map(([userId, userStories]) => {
         const mainStory = userStories[0];
-        const hasMultipleStories = userStories.length > 1;
+        const uniqueCategories = [...new Set(userStories.map(story => story.locationCategory))];
+        const displayCategories = uniqueCategories.slice(0, 2);
+        const hasMoreCategories = uniqueCategories.length > 2;
         
         return (
           <div key={userId} className="flex flex-col items-center gap-2 min-w-[70px]">
@@ -104,23 +106,35 @@ const StoriesSection = ({ stories, onCreateStory, onStoryClick }: StoriesSection
                   </Avatar>
                 </div>
                 
-                {/* Category Icon Badge */}
-                <div className={`absolute -bottom-1 -right-1 w-6 h-6 bg-gradient-to-br ${getCategoryColor(mainStory.locationCategory || '')} rounded-full flex items-center justify-center shadow-lg border-2 border-white`}>
-                  {getCategoryIcon(mainStory.locationCategory || '')}
+                {/* Category Icons at bottom right */}
+                <div className="absolute -bottom-1 -right-1 flex items-end">
+                  {displayCategories.map((category, index) => (
+                    <div 
+                      key={category}
+                      className={`w-6 h-6 bg-gradient-to-br ${getCategoryColor(category || '')} rounded-full flex items-center justify-center shadow-lg border-2 border-white`}
+                      style={{
+                        marginLeft: index > 0 ? '-8px' : '0',
+                        zIndex: displayCategories.length - index
+                      }}
+                    >
+                      {getCategoryIcon(category || '')}
+                    </div>
+                  ))}
+                  
+                  {/* More indicator */}
+                  {hasMoreCategories && (
+                    <div 
+                      className="w-6 h-6 bg-gradient-to-br from-gray-500 to-gray-600 rounded-full flex items-center justify-center shadow-lg border-2 border-white"
+                      style={{
+                        marginLeft: '-8px',
+                        zIndex: 0
+                      }}
+                    >
+                      <MoreHorizontal className="w-3 h-3 text-white" />
+                    </div>
+                  )}
                 </div>
               </div>
-
-              {/* Secondary Story Indicator */}
-              {hasMultipleStories && (
-                <div 
-                  className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-br from-pink-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white cursor-pointer hover:scale-110 transition-all duration-200"
-                  onClick={() => onStoryClick(stories.findIndex(s => s.id === userStories[1].id))}
-                >
-                  <div className={`w-4 h-4 bg-gradient-to-br ${getCategoryColor(userStories[1].locationCategory || '')} rounded-full flex items-center justify-center`}>
-                    {getCategoryIcon(userStories[1].locationCategory || '')}
-                  </div>
-                </div>
-              )}
             </div>
             <span className="text-xs text-gray-700 font-semibold text-center">{mainStory.userName}</span>
           </div>
