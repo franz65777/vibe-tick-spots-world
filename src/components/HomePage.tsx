@@ -1,11 +1,15 @@
+
 import { useState } from 'react';
-import { Heart } from 'lucide-react';
+import { Heart, Bell, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import MapSection from '@/components/home/MapSection';
 import StoriesSection from '@/components/home/StoriesSection';
 import PlaceCard from '@/components/home/PlaceCard';
 import CreateStoryModal from '@/components/CreateStoryModal';
+import NotificationsModal from '@/components/NotificationsModal';
+import MessagesModal from '@/components/MessagesModal';
+import ShareModal from '@/components/home/ShareModal';
 
 interface Place {
   id: string;
@@ -132,6 +136,10 @@ const HomePage = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
   const [isCreateStoryModalOpen, setIsCreateStoryModalOpen] = useState(false);
+  const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
+  const [isMessagesModalOpen, setIsMessagesModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [selectedPlaceToShare, setSelectedPlaceToShare] = useState<Place | null>(null);
 
   const handleCategoryClick = (category: string) => {
     console.log('Category clicked:', category);
@@ -170,6 +178,13 @@ const HomePage = () => {
 
   const handleShare = (place: Place) => {
     console.log('Share place:', place.name);
+    setSelectedPlaceToShare(place);
+    setIsShareModalOpen(true);
+  };
+
+  const handleShareComplete = (friendIds: string[], place: Place) => {
+    console.log('Sharing place with friends:', friendIds, place.name);
+    // TODO: Send location to selected friends' DMs
   };
 
   const handleComment = (place: Place) => {
@@ -188,8 +203,32 @@ const HomePage = () => {
     <div className="flex flex-col h-full bg-gray-50">
       {/* Header */}
       <div className="bg-white px-4 py-6 border-b border-gray-200">
-        <h1 className="text-2xl font-bold text-gray-900">Discover</h1>
-        <p className="text-gray-500 mt-1">Explore new places and share your experiences</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Discover</h1>
+            <p className="text-gray-500 mt-1">Explore new places and share your experiences</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsNotificationsModalOpen(true)}
+              className="relative w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+            >
+              <Bell className="w-5 h-5 text-gray-600" />
+              <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                3
+              </div>
+            </button>
+            <button
+              onClick={() => setIsMessagesModalOpen(true)}
+              className="relative w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+            >
+              <MessageCircle className="w-5 h-5 text-gray-600" />
+              <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                2
+              </div>
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Stories Section - Moved above map */}
@@ -271,11 +310,28 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Create Story Modal */}
+      {/* Modals */}
       <CreateStoryModal
         isOpen={isCreateStoryModalOpen}
         onClose={() => setIsCreateStoryModalOpen(false)}
         onStoryCreated={handleStoryCreated}
+      />
+
+      <NotificationsModal
+        isOpen={isNotificationsModalOpen}
+        onClose={() => setIsNotificationsModalOpen(false)}
+      />
+
+      <MessagesModal
+        isOpen={isMessagesModalOpen}
+        onClose={() => setIsMessagesModalOpen(false)}
+      />
+
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        place={selectedPlaceToShare}
+        onShare={handleShareComplete}
       />
     </div>
   );
