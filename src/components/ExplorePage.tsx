@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Search, MapPin, User, ArrowLeft, X, Heart, Share, MessageCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -33,6 +32,9 @@ const ExplorePage = () => {
   const [selectedPlaceToShare, setSelectedPlaceToShare] = useState<Place | null>(null);
   const [isLocationDetailOpen, setIsLocationDetailOpen] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<Place | null>(null);
+
+  // User's current location (San Francisco as default)
+  const userLocation = { lat: 37.7749, lng: -122.4194 };
 
   // Sample data for locations with better images
   const locations = [
@@ -169,6 +171,33 @@ const ExplorePage = () => {
     }
   ];
 
+  // Calculate distance between two coordinates (Haversine formula)
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371; // Radius of the Earth in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distance = R * c; // Distance in km
+    return distance;
+  };
+
+  // Filter locations within 3km radius
+  const getNearbyLocations = (allLocations: any[]) => {
+    return allLocations.filter(location => {
+      const distance = calculateDistance(
+        userLocation.lat,
+        userLocation.lng,
+        location.coordinates.lat,
+        location.coordinates.lng
+      );
+      return distance <= 3;
+    });
+  };
+
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     
@@ -181,7 +210,8 @@ const ExplorePage = () => {
     setIsSearching(true);
 
     if (searchType === 'locations') {
-      const results = locations.filter(location =>
+      const nearbyLocations = getNearbyLocations(locations);
+      const results = nearbyLocations.filter(location =>
         location.name.toLowerCase().includes(query.toLowerCase()) ||
         location.location.toLowerCase().includes(query.toLowerCase()) ||
         location.description.toLowerCase().includes(query.toLowerCase())
@@ -198,31 +228,16 @@ const ExplorePage = () => {
 
   const handleCategoryFilter = (category: string) => {
     setSelectedCategory(category);
-    if (category === 'all') {
-      setIsSearching(false);
-      setSearchResults([]);
-    } else {
-      setIsSearching(true);
-      const results = locations.filter(location => location.category === category);
-      setSearchResults(results);
-    }
   };
 
   const clearSearch = () => {
     setSearchQuery('');
     setIsSearching(false);
     setSearchResults([]);
-    setSelectedCategory('all');
   };
 
   const goBack = () => {
-    if (selectedCategory !== 'all') {
-      setSelectedCategory('all');
-      setIsSearching(false);
-      setSearchResults([]);
-    } else {
-      clearSearch();
-    }
+    clearSearch();
   };
 
   const handleLikeToggle = (placeId: string) => {
@@ -258,12 +273,17 @@ const ExplorePage = () => {
     console.log('Comment on place:', place.name);
   };
 
-  const filteredLocations = selectedCategory === 'all'
-    ? locations
-    : locations.filter(location => location.category === selectedCategory);
+  // Get filtered locations within 3km and by category
+  const getFilteredLocations = () => {
+    const nearbyLocations = getNearbyLocations(locations);
+    if (selectedCategory === 'all') {
+      return nearbyLocations;
+    }
+    return nearbyLocations.filter(location => location.category === selectedCategory);
+  };
 
   const renderLocationSearchResults = () => {
-    const resultsToShow = isSearching ? searchResults : filteredLocations;
+    const resultsToShow = isSearching ? searchResults : getFilteredLocations();
     
     if (resultsToShow.length === 0 && isSearching) {
       return (
@@ -362,77 +382,60 @@ const ExplorePage = () => {
     );
   };
 
-  const renderCategoryFiltersAndNearbyPlaces = () => {
-    return (
-      <div>
-        {/* Category Filter Buttons */}
-        <div className="bg-white px-4 py-3 border-b border-gray-200">
-          <div className="flex space-x-2 overflow-x-auto">
-            <Button
-              variant={selectedCategory === 'all' ? 'default' : 'outline'}
-              onClick={() => handleCategoryFilter('all')}
-              className="whitespace-nowrap"
-            >
-              All
-            </Button>
-            <Button
-              variant={selectedCategory === 'restaurant' ? 'default' : 'outline'}
-              onClick={() => handleCategoryFilter('restaurant')}
-              className="whitespace-nowrap"
-            >
-              Restaurants
-            </Button>
-            <Button
-              variant={selectedCategory === 'hotel' ? 'default' : 'outline'}
-              onClick={() => handleCategoryFilter('hotel')}
-              className="whitespace-nowrap"
-            >
-              Hotels
-            </Button>
-            <Button
-              variant={selectedCategory === 'cafe' ? 'default' : 'outline'}
-              onClick={() => handleCategoryFilter('cafe')}
-              className="whitespace-nowrap"
-            >
-              Cafes
-            </Button>
-            <Button
-              variant={selectedCategory === 'bar' ? 'default' : 'outline'}
-              onClick={() => handleCategoryFilter('bar')}
-              className="whitespace-nowrap"
-            >
-              Bars
-            </Button>
-          </div>
-        </div>
-
-        {/* Nearby Places Section */}
-        <div className="bg-white px-4 py-4">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Nearby Places</h2>
-          <div className="grid grid-cols-2 gap-4">
-            {filteredLocations.map((location) => (
-              <PlaceCard
-                key={location.id}
-                place={location as Place}
-                isLiked={likedPlaces.has(location.id)}
-                onCardClick={handleCardClick}
-                onLikeToggle={handleLikeToggle}
-                onShare={handleShare}
-                onComment={handleComment}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   const renderMainContent = () => {
     if (searchType === 'locations') {
-      if (isSearching) {
-        return renderLocationSearchResults();
-      }
-      return renderCategoryFiltersAndNearbyPlaces();
+      return (
+        <div>
+          {/* Category Filter Buttons - Always visible for locations */}
+          <div className="bg-white px-4 py-3 border-b border-gray-200">
+            <div className="flex space-x-2 overflow-x-auto">
+              <Button
+                variant={selectedCategory === 'all' ? 'default' : 'outline'}
+                onClick={() => handleCategoryFilter('all')}
+                className="whitespace-nowrap"
+              >
+                All
+              </Button>
+              <Button
+                variant={selectedCategory === 'restaurant' ? 'default' : 'outline'}
+                onClick={() => handleCategoryFilter('restaurant')}
+                className="whitespace-nowrap"
+              >
+                Restaurants
+              </Button>
+              <Button
+                variant={selectedCategory === 'hotel' ? 'default' : 'outline'}
+                onClick={() => handleCategoryFilter('hotel')}
+                className="whitespace-nowrap"
+              >
+                Hotels
+              </Button>
+              <Button
+                variant={selectedCategory === 'cafe' ? 'default' : 'outline'}
+                onClick={() => handleCategoryFilter('cafe')}
+                className="whitespace-nowrap"
+              >
+                Cafes
+              </Button>
+              <Button
+                variant={selectedCategory === 'bar' ? 'default' : 'outline'}
+                onClick={() => handleCategoryFilter('bar')}
+                className="whitespace-nowrap"
+              >
+                Bars
+              </Button>
+            </div>
+          </div>
+
+          {/* Nearby Places Section */}
+          <div className="bg-white px-4 py-4">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">
+              Nearby Places {!isSearching && `(${getFilteredLocations().length})`}
+            </h2>
+            {renderLocationSearchResults()}
+          </div>
+        </div>
+      );
     } else {
       if (isSearching) {
         return renderUserSearchResults();
@@ -446,8 +449,8 @@ const ExplorePage = () => {
       {/* Search Header */}
       <div className="bg-white p-4 border-b">
         <div className="flex items-center gap-3">
-          {/* Back button */}
-          {(isSearching || selectedCategory !== 'all' || (searchType === 'users' && !isSearching)) && (
+          {/* Back button - only show when searching */}
+          {isSearching && (
             <Button variant="ghost" size="icon" onClick={goBack}>
               <ArrowLeft className="w-5 h-5" />
             </Button>
@@ -475,7 +478,7 @@ const ExplorePage = () => {
           </div>
           
           {/* Search Type Toggle */}
-          {!isSearching && selectedCategory === 'all' && (
+          {!isSearching && (
             <div className="flex bg-gray-200 rounded-full p-1">
               <button
                 onClick={() => setSearchType('locations')}
