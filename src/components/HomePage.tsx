@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -6,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import MapSection from '@/components/home/MapSection';
 import StoriesSection from '@/components/home/StoriesSection';
 import PlaceCard from '@/components/home/PlaceCard';
+import CreateStoryModal from '@/components/CreateStoryModal';
 
 interface Place {
   id: string;
@@ -131,6 +131,7 @@ const HomePage = () => {
   
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
+  const [isCreateStoryModalOpen, setIsCreateStoryModalOpen] = useState(false);
 
   const handleCategoryClick = (category: string) => {
     console.log('Category clicked:', category);
@@ -151,6 +152,12 @@ const HomePage = () => {
 
   const handleCreateStory = () => {
     console.log('Create story clicked');
+    setIsCreateStoryModalOpen(true);
+  };
+
+  const handleStoryCreated = () => {
+    console.log('Story created successfully');
+    // TODO: Refresh stories list
   };
 
   const handleStoryClick = (index: number) => {
@@ -183,6 +190,17 @@ const HomePage = () => {
       <div className="bg-white px-4 py-6 border-b border-gray-200">
         <h1 className="text-2xl font-bold text-gray-900">Discover</h1>
         <p className="text-gray-500 mt-1">Explore new places and share your experiences</p>
+      </div>
+
+      {/* Stories Section - Moved above map */}
+      <div className="bg-white px-4 py-4 border-b border-gray-200">
+        <div className="overflow-x-auto">
+          <StoriesSection 
+            stories={mockStories}
+            onCreateStory={handleCreateStory}
+            onStoryClick={handleStoryClick}
+          />
+        </div>
       </div>
 
       {/* Map Section */}
@@ -224,18 +242,6 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Stories Section */}
-      <div className="bg-white px-4 py-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">Today's Stories</h2>
-        <div className="overflow-x-auto">
-          <StoriesSection 
-            stories={mockStories}
-            onCreateStory={handleCreateStory}
-            onStoryClick={handleStoryClick}
-          />
-        </div>
-      </div>
-
       {/* Places Section */}
       <div className="flex-1 overflow-y-auto">
         <div className="bg-white">
@@ -264,6 +270,13 @@ const HomePage = () => {
           </div>
         </div>
       </div>
+
+      {/* Create Story Modal */}
+      <CreateStoryModal
+        isOpen={isCreateStoryModalOpen}
+        onClose={() => setIsCreateStoryModalOpen(false)}
+        onStoryCreated={handleStoryCreated}
+      />
     </div>
   );
 };
