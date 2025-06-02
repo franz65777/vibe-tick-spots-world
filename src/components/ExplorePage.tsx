@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import PlaceCard from '@/components/home/PlaceCard';
 import ShareModal from '@/components/home/ShareModal';
+import CommentModal from '@/components/home/CommentModal';
 import LocationDetailSheet from '@/components/LocationDetailSheet';
 
 interface Place {
@@ -31,7 +32,9 @@ const ExplorePage = () => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
   const [selectedPlaceToShare, setSelectedPlaceToShare] = useState<Place | null>(null);
+  const [selectedPlaceToComment, setSelectedPlaceToComment] = useState<Place | null>(null);
   const [isLocationDetailOpen, setIsLocationDetailOpen] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<Place | null>(null);
 
@@ -337,6 +340,13 @@ const ExplorePage = () => {
 
   const handleComment = (place: Place) => {
     console.log('Comment on place:', place.name);
+    setSelectedPlaceToComment(place);
+    setIsCommentModalOpen(true);
+  };
+
+  const handleCommentSubmit = (text: string, place: Place) => {
+    console.log('Adding comment:', text, 'to place:', place.name);
+    // TODO: Implement actual comment submission logic
   };
 
   // Get filtered locations within 3km and by category
@@ -585,6 +595,13 @@ const ExplorePage = () => {
         onClose={() => setIsShareModalOpen(false)}
         place={selectedPlaceToShare}
         onShare={handleShareComplete}
+      />
+
+      <CommentModal
+        isOpen={isCommentModalOpen}
+        onClose={() => setIsCommentModalOpen(false)}
+        place={selectedPlaceToComment}
+        onCommentSubmit={handleCommentSubmit}
       />
 
       <LocationDetailSheet
