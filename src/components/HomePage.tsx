@@ -1,16 +1,30 @@
+
 import { useState } from 'react';
-import { MapPin, Heart } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import MapSection from '@/components/home/MapSection';
+import StoriesSection from '@/components/home/StoriesSection';
+import PlaceCard from '@/components/home/PlaceCard';
 
 interface Place {
   id: string;
   name: string;
   category: string;
-  imageUrl: string;
-  rating: number;
-  reviewCount: number;
-  isSaved: boolean;
+  likes: number;
+  friendsWhoSaved?: { name: string; avatar: string }[];
+  visitors: string[];
+  isNew: boolean;
+  coordinates: { lat: number; lng: number };
+  image?: string;
+}
+
+interface Story {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  isViewed: boolean;
 }
 
 const mockPlaces: Place[] = [
@@ -18,62 +32,145 @@ const mockPlaces: Place[] = [
     id: '1',
     name: 'The Cozy Corner Café',
     category: 'cafe',
-    imageUrl: 'https://source.unsplash.com/400x300/?cafe',
-    rating: 4.5,
-    reviewCount: 120,
-    isSaved: true,
+    likes: 24,
+    friendsWhoSaved: [
+      { name: 'Sarah', avatar: '' },
+      { name: 'Mike', avatar: '' }
+    ],
+    visitors: ['user1', 'user2'],
+    isNew: true,
+    coordinates: { lat: 37.7849, lng: -122.4094 },
+    image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop'
   },
   {
     id: '2',
     name: 'Sunset View Restaurant',
     category: 'restaurant',
-    imageUrl: 'https://source.unsplash.com/400x300/?restaurant',
-    rating: 4.2,
-    reviewCount: 85,
-    isSaved: false,
+    likes: 18,
+    visitors: ['user3'],
+    isNew: false,
+    coordinates: { lat: 37.7849, lng: -122.4194 },
+    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop'
   },
   {
     id: '3',
-    name: 'City Center Hotel',
+    name: 'Grand Plaza Hotel',
     category: 'hotel',
-    imageUrl: 'https://source.unsplash.com/400x300/?hotel',
-    rating: 4.8,
-    reviewCount: 210,
-    isSaved: true,
+    likes: 45,
+    friendsWhoSaved: [
+      { name: 'Emma', avatar: '' }
+    ],
+    visitors: ['user4', 'user5'],
+    isNew: false,
+    coordinates: { lat: 37.7749, lng: -122.4094 },
+    image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop'
   },
+  {
+    id: '4',
+    name: 'Neon Nights Bar',
+    category: 'bar',
+    likes: 32,
+    visitors: ['user6'],
+    isNew: true,
+    coordinates: { lat: 37.7649, lng: -122.4194 },
+    image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=300&fit=crop'
+  },
+  {
+    id: '5',
+    name: 'Ocean Breeze Restaurant',
+    category: 'restaurant',
+    likes: 28,
+    friendsWhoSaved: [
+      { name: 'Alex', avatar: '' },
+      { name: 'Jordan', avatar: '' },
+      { name: 'Casey', avatar: '' }
+    ],
+    visitors: ['user7', 'user8'],
+    isNew: false,
+    coordinates: { lat: 37.7549, lng: -122.4294 },
+    image: 'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400&h=300&fit=crop'
+  },
+  {
+    id: '6',
+    name: 'Artisan Coffee House',
+    category: 'cafe',
+    likes: 22,
+    visitors: ['user9'],
+    isNew: false,
+    coordinates: { lat: 37.7949, lng: -122.4294 },
+    image: 'https://images.unsplash.com/photo-1453614512568-c4024d13c247?w=400&h=300&fit=crop'
+  }
 ];
 
-const PlaceCard = ({ place }: { place: Place }) => {
-  return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-      <img src={place.imageUrl} alt={place.name} className="w-full h-40 object-cover" />
-      <div className="p-4">
-        <div className="flex justify-between items-start">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">{place.name}</h3>
-            <p className="text-sm text-gray-500">{place.category}</p>
-          </div>
-          <button className="text-gray-500 hover:text-red-600 transition-colors">
-            <Heart className={cn("w-5 h-5", place.isSaved ? "text-red-500" : "")} />
-          </button>
-        </div>
-        <div className="flex items-center mt-2">
-          <span className="text-sm text-gray-700 font-medium">{place.rating}</span>
-          <span className="text-sm text-gray-500 ml-1">({place.reviewCount} reviews)</span>
-        </div>
-      </div>
-    </div>
-  );
-};
+const mockStories: Story[] = [
+  {
+    id: '1',
+    userId: 'user1',
+    userName: 'Sarah',
+    userAvatar: '',
+    isViewed: false
+  },
+  {
+    id: '2',
+    userId: 'user2',
+    userName: 'Mike',
+    userAvatar: '',
+    isViewed: true
+  },
+  {
+    id: '3',
+    userId: 'user3',
+    userName: 'Emma',
+    userAvatar: '',
+    isViewed: false
+  }
+];
 
 const HomePage = () => {
   console.log('HomePage rendering...');
   
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
 
   const handleCategoryClick = (category: string) => {
     console.log('Category clicked:', category);
     setSelectedCategory(category);
+  };
+
+  const handleLikeToggle = (placeId: string) => {
+    setLikedPlaces(prev => {
+      const newLikes = new Set(prev);
+      if (newLikes.has(placeId)) {
+        newLikes.delete(placeId);
+      } else {
+        newLikes.add(placeId);
+      }
+      return newLikes;
+    });
+  };
+
+  const handleCreateStory = () => {
+    console.log('Create story clicked');
+  };
+
+  const handleStoryClick = (index: number) => {
+    console.log('Story clicked:', index);
+  };
+
+  const handleCardClick = (place: Place) => {
+    console.log('Place card clicked:', place.name);
+  };
+
+  const handleShare = (place: Place) => {
+    console.log('Share place:', place.name);
+  };
+
+  const handleComment = (place: Place) => {
+    console.log('Comment on place:', place.name);
+  };
+
+  const handlePinClick = (place: Place) => {
+    console.log('Map pin clicked:', place.name);
   };
 
   const filteredPlaces = selectedCategory === 'all'
@@ -89,11 +186,7 @@ const HomePage = () => {
       </div>
 
       {/* Map Section */}
-      <div className="bg-white px-4 py-4 border-b border-gray-200">
-        <div className="h-48 bg-gray-100 rounded-lg flex items-center justify-center text-gray-500">
-          Map Placeholder
-        </div>
-      </div>
+      <MapSection places={filteredPlaces} onPinClick={handlePinClick} />
 
       {/* Filter Buttons */}
       <div className="bg-white px-4 py-3 border-b border-gray-200">
@@ -122,16 +215,24 @@ const HomePage = () => {
           >
             Cafes
           </Button>
+          <Button
+            variant={selectedCategory === 'bar' ? 'default' : 'outline'}
+            onClick={() => handleCategoryClick('bar')}
+          >
+            Bars
+          </Button>
         </div>
       </div>
 
       {/* Stories Section */}
       <div className="bg-white px-4 py-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">Today's Stories</h2>
-        <div className="flex space-x-4 overflow-x-auto mt-2">
-          <div className="w-24 h-24 rounded-full bg-gray-200"></div>
-          <div className="w-24 h-24 rounded-full bg-gray-200"></div>
-          <div className="w-24 h-24 rounded-full bg-gray-200"></div>
+        <h2 className="text-lg font-semibold text-gray-900 mb-3">Today's Stories</h2>
+        <div className="overflow-x-auto">
+          <StoriesSection 
+            stories={mockStories}
+            onCreateStory={handleCreateStory}
+            onStoryClick={handleStoryClick}
+          />
         </div>
       </div>
 
@@ -146,10 +247,20 @@ const HomePage = () => {
               }
             </h2>
           </div>
-          <div className="px-4 py-2 space-y-3">
-            {filteredPlaces.map((place) => (
-              <PlaceCard key={place.id} place={place} />
-            ))}
+          <div className="px-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              {filteredPlaces.map((place) => (
+                <PlaceCard
+                  key={place.id}
+                  place={place}
+                  isLiked={likedPlaces.has(place.id)}
+                  onCardClick={handleCardClick}
+                  onLikeToggle={handleLikeToggle}
+                  onShare={handleShare}
+                  onComment={handleComment}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </div>
