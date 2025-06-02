@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Heart, Bell, MessageCircle, Users, TrendingUp, Sparkles, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -411,6 +410,11 @@ const HomePage = () => {
     setSelectedPlace(place);
   };
 
+  const handleCloseSelectedPlace = () => {
+    console.log('Closing selected place card');
+    setSelectedPlace(null);
+  };
+
   const handleLikeToggle = (placeId: string) => {
     setLikedPlaces(prev => {
       const newLiked = new Set(prev);
@@ -529,7 +533,14 @@ const HomePage = () => {
 
       {/* Selected Place Card */}
       {selectedPlace && (
-        <div className="bg-white/95 backdrop-blur-lg p-6 mx-4 mb-4 rounded-3xl shadow-2xl shadow-black/10 border border-white/20">
+        <div className="bg-white/95 backdrop-blur-lg p-6 mx-4 mb-4 rounded-3xl shadow-2xl shadow-black/10 border border-white/20 relative">
+          <button
+            onClick={handleCloseSelectedPlace}
+            className="absolute top-4 right-4 w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors z-10"
+            aria-label="Close place details"
+          >
+            <X className="w-4 h-4 text-gray-600" />
+          </button>
           <PlaceCard
             place={selectedPlace}
             isLiked={likedPlaces.has(selectedPlace.id)}
@@ -567,7 +578,7 @@ const HomePage = () => {
         currentStoryIndex={currentStoryIndex}
         onCreateStoryModalClose={() => setIsCreateStoryModalOpen(false)}
         onNotificationsModalClose={() => setIsNotificationsModalOpen(false)}
-        onMessagesModalClose={() => setIsMessagesModalClose(false)}
+        onMessagesModalClose={() => setIsMessagesModalOpen(false)}
         onShareModalClose={() => setIsShareModalOpen(false)}
         onCommentModalClose={() => setIsCommentModalOpen(false)}
         onLocationDetailClose={() => setIsLocationDetailOpen(false)}
