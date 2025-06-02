@@ -350,6 +350,7 @@ const HomePage = () => {
   const [currentCity, setCurrentCity] = useState('San Francisco');
   const [currentPlaces, setCurrentPlaces] = useState<Place[]>(defaultPlaces);
   const [mapCenter, setMapCenter] = useState({ lat: 37.7749, lng: -122.4194 });
+  const [isSearchActive, setIsSearchActive] = useState(false);
 
   // Get the most popular location based on total engagement (likes + visitors)
   const getLocationOfTheWeek = () => {
@@ -511,33 +512,38 @@ const HomePage = () => {
         onNotificationsClick={() => setIsNotificationsModalOpen(true)}
         onMessagesClick={() => setIsMessagesModalOpen(true)}
         onCitySelect={handleCitySelect}
+        onSearchActiveChange={setIsSearchActive}
       />
 
-      {/* Stories Section */}
-      <div className="bg-white/60 backdrop-blur-sm px-6 py-2">
-        <div className="overflow-x-auto">
-          <StoriesSection 
-            stories={stories}
-            onCreateStory={handleCreateStory}
-            onStoryClick={handleStoryClick}
-          />
+      {/* Stories Section - Hidden when search is active */}
+      {!isSearchActive && (
+        <div className="bg-white/60 backdrop-blur-sm px-6 py-2">
+          <div className="overflow-x-auto">
+            <StoriesSection 
+              stories={stories}
+              onCreateStory={handleCreateStory}
+              onStoryClick={handleStoryClick}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Location of the Week - Compact */}
-      {locationOfTheWeek && (
+      {/* Location of the Week - Compact - Hidden when search is active */}
+      {!isSearchActive && locationOfTheWeek && (
         <LocationOfTheWeek 
           topLocation={locationOfTheWeek}
           onLocationClick={handleCardClick}
         />
       )}
 
-      {/* Filter Buttons */}
-      <FilterButtons
-        activeFilter={activeFilter}
-        onFilterChange={setActiveFilter}
-        newCount={getFilteredPlaces().length}
-      />
+      {/* Filter Buttons - Hidden when search is active */}
+      {!isSearchActive && (
+        <FilterButtons
+          activeFilter={activeFilter}
+          onFilterChange={setActiveFilter}
+          newCount={getFilteredPlaces().length}
+        />
+      )}
 
       {/* Map Section */}
       <div className="flex-1 relative">
@@ -600,7 +606,7 @@ const HomePage = () => {
         onShareModalClose={() => setIsShareModalOpen(false)}
         onCommentModalClose={() => setIsCommentModalOpen(false)}
         onLocationDetailClose={() => setIsLocationDetailOpen(false)}
-        onStoriesViewerClose={() => setIsStoriesViewerOpen(false)}
+        onStoriesViewerClose={() => setIsStoriesViewerClose(false)}
         onStoryCreated={handleStoryCreated}
         onShare={handleShareSubmit}
         onCommentSubmit={handleCommentSubmit}
