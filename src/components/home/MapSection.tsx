@@ -23,17 +23,18 @@ interface MapSectionProps {
 
 const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
-  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const mapInstanceRef = useRef<google.maps.Map | null>(null);
+  const markersRef = useRef<google.maps.Marker[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [markers, setMarkers] = useState<google.maps.Marker[]>([]);
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [showApiKeySetup, setShowApiKeySetup] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationPermissionDenied, setLocationPermissionDenied] = useState(false);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Check for API key on mount
@@ -56,7 +57,7 @@ const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
       return;
     }
 
-    if (navigator.geolocation) {
+    if (navigator.geolocation && !userLocation) {
       console.log('Requesting user location...');
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -77,28 +78,28 @@ const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
           maximumAge: 300000
         }
       );
-    } else {
-      console.log('Geolocation not supported');
-      setUserLocation({ lat: 37.7749, lng: -122.4194 });
     }
-  }, [mapCenter]);
+  }, [mapCenter, userLocation]);
 
   // Update map center when mapCenter prop changes
   useEffect(() => {
-    if (map && mapCenter) {
+    if (mapInstanceRef.current && mapCenter) {
       console.log('Updating map center to:', mapCenter);
-      map.setCenter(mapCenter);
-      map.setZoom(14);
+      mapInstanceRef.current.setCenter(mapCenter);
+      mapInstanceRef.current.setZoom(14);
     }
-  }, [map, mapCenter]);
+  }, [mapCenter]);
 
-  // Initialize Google Maps
+  // Initialize Google Maps - only once
   useEffect(() => {
-    if (!apiKey || apiKey === 'demo' || !userLocation || !mapRef.current || isMapLoaded) return;
+    if (!apiKey || apiKey === 'demo' || !userLocation || !mapRef.current || isMapLoaded || isInitializing) {
+      return;
+    }
 
     const initMap = async () => {
       console.log('Initializing Google Maps with API key and location:', userLocation);
       setMapError(null);
+      setIsInitializing(true);
       
       try {
         const loader = new Loader({
@@ -111,54 +112,64 @@ const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
         console.log('Loading Google Maps libraries...');
         await loader.load();
         
-        // Wait a bit for the DOM to be ready
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        if (mapRef.current && !isMapLoaded) {
-          console.log('Creating map instance at location:', userLocation);
-          const mapInstance = new google.maps.Map(mapRef.current, {
-            center: userLocation,
-            zoom: 14,
-            streetViewControl: false,
-            mapTypeControl: false,
-            fullscreenControl: false,
-            mapId: 'discovery-map'
-          });
-
-          // Wait for map to be ready
-          await new Promise<void>((resolve) => {
-            google.maps.event.addListenerOnce(mapInstance, 'idle', () => {
-              resolve();
-            });
-          });
-
-          console.log('Map created successfully');
-          setMap(mapInstance);
-          setIsMapLoaded(true);
+        // Ensure DOM element is ready
+        if (!mapRef.current) {
+          throw new Error('Map container not found');
         }
+        
+        console.log('Creating map instance at location:', userLocation);
+        const mapInstance = new google.maps.Map(mapRef.current, {
+          center: userLocation,
+          zoom: 14,
+          streetViewControl: false,
+          mapTypeControl: false,
+          fullscreenControl: false,
+          mapId: 'discovery-map'
+        });
+
+        // Wait for map to be fully loaded
+        await new Promise<void>((resolve) => {
+          const listener = google.maps.event.addListenerOnce(mapInstance, 'tilesloaded', () => {
+            resolve();
+          });
+          
+          // Fallback timeout
+          setTimeout(() => {
+            google.maps.event.removeListener(listener);
+            resolve();
+          }, 5000);
+        });
+
+        console.log('Map created successfully');
+        mapInstanceRef.current = mapInstance;
+        setIsMapLoaded(true);
       } catch (error) {
         console.error('Error loading Google Maps:', error);
         setMapError('Failed to load Google Maps. Please check your API key and internet connection.');
-        setIsMapLoaded(false);
+      } finally {
+        setIsInitializing(false);
       }
     };
 
-    initMap();
-  }, [apiKey, userLocation, isMapLoaded]);
+    // Small delay to ensure DOM is ready
+    const timeoutId = setTimeout(initMap, 100);
+    return () => clearTimeout(timeoutId);
+  }, [apiKey, userLocation, isMapLoaded, isInitializing]);
 
   // Update markers when places change
   useEffect(() => {
-    if (!map) return;
+    if (!mapInstanceRef.current || !isMapLoaded) return;
 
     // Clear existing markers
-    markers.forEach(marker => marker.setMap(null));
+    markersRef.current.forEach(marker => marker.setMap(null));
+    markersRef.current = [];
 
     const newMarkers: google.maps.Marker[] = [];
 
     // Add user location marker only if not using a specific map center
     if (!mapCenter && userLocation) {
       const userMarker = new google.maps.Marker({
-        map: map,
+        map: mapInstanceRef.current,
         position: userLocation,
         title: 'Your Location',
         icon: {
@@ -178,7 +189,7 @@ const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
     // Add markers for places
     places.forEach((place) => {
       const marker = new google.maps.Marker({
-        map: map,
+        map: mapInstanceRef.current,
         position: place.coordinates,
         title: place.name,
         icon: {
@@ -200,16 +211,16 @@ const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
       newMarkers.push(marker);
     });
 
-    setMarkers(newMarkers);
+    markersRef.current = newMarkers;
     console.log('Markers updated, total:', newMarkers.length);
-  }, [map, places, onPinClick, userLocation, mapCenter]);
+  }, [places, onPinClick, userLocation, mapCenter, isMapLoaded]);
 
   // Handle search functionality
   const handleSearch = async () => {
-    if (!map || !searchQuery.trim() || apiKey === 'demo') return;
+    if (!mapInstanceRef.current || !searchQuery.trim() || apiKey === 'demo') return;
 
     try {
-      const service = new google.maps.places.PlacesService(map);
+      const service = new google.maps.places.PlacesService(mapInstanceRef.current);
       const request = {
         query: searchQuery,
         fields: ['name', 'geometry', 'place_id', 'rating'],
@@ -219,8 +230,8 @@ const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
         if (status === google.maps.places.PlacesServiceStatus.OK && results) {
           const place = results[0];
           if (place.geometry?.location) {
-            map.setCenter(place.geometry.location);
-            map.setZoom(16);
+            mapInstanceRef.current?.setCenter(place.geometry.location);
+            mapInstanceRef.current?.setZoom(16);
           }
         }
       });
@@ -238,8 +249,8 @@ const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
   const toggleFullscreen = () => {
     setIsFullscreen(!isFullscreen);
     setTimeout(() => {
-      if (map) {
-        google.maps.event.trigger(map, 'resize');
+      if (mapInstanceRef.current) {
+        google.maps.event.trigger(mapInstanceRef.current, 'resize');
       }
     }, 100);
   };
@@ -259,8 +270,20 @@ const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
     setApiKey(key);
     setShowApiKeySetup(false);
     setIsMapLoaded(false);
+    setIsInitializing(false);
     setMapError(null);
   };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (mapInstanceRef.current) {
+        console.log('Cleaning up map instance');
+        markersRef.current.forEach(marker => marker.setMap(null));
+        mapInstanceRef.current = null;
+      }
+    };
+  }, []);
 
   // Show API key setup if needed
   if (showApiKeySetup) {
@@ -348,6 +371,7 @@ const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
         {apiKey === 'demo' ? (
           // Demo map fallback
           <div className="absolute inset-0 bg-gradient-to-br from-blue-100 via-green-50 to-blue-200">
+            {/* ... keep existing code (demo map SVG and pins) */}
             <svg className="absolute inset-0 w-full h-full">
               <defs>
                 <pattern id="streets" patternUnits="userSpaceOnUse" width="40" height="40">
@@ -380,20 +404,30 @@ const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
         ) : (
           <div className="relative w-full h-full">
             <div ref={mapRef} className="absolute inset-0 rounded-2xl" />
-            {mapError && (
-              <div className="absolute inset-0 bg-red-50 rounded-2xl flex items-center justify-center">
+            {(mapError || isInitializing) && (
+              <div className="absolute inset-0 bg-gray-50 rounded-2xl flex items-center justify-center">
                 <div className="text-center p-4">
-                  <div className="text-red-600 text-sm font-medium mb-2">Map Error</div>
-                  <div className="text-red-500 text-xs mb-3">{mapError}</div>
-                  <Button 
-                    size="sm" 
-                    onClick={() => {
-                      setIsMapLoaded(false);
-                      setMapError(null);
-                    }}
-                  >
-                    Retry
-                  </Button>
+                  {isInitializing ? (
+                    <>
+                      <div className="text-gray-600 text-sm font-medium mb-2">Loading Map...</div>
+                      <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    </>
+                  ) : mapError ? (
+                    <>
+                      <div className="text-red-600 text-sm font-medium mb-2">Map Error</div>
+                      <div className="text-red-500 text-xs mb-3">{mapError}</div>
+                      <Button 
+                        size="sm" 
+                        onClick={() => {
+                          setIsMapLoaded(false);
+                          setIsInitializing(false);
+                          setMapError(null);
+                        }}
+                      >
+                        Retry
+                      </Button>
+                    </>
+                  ) : null}
                 </div>
               </div>
             )}
