@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Heart, Bell, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -11,6 +10,7 @@ import NotificationsModal from '@/components/NotificationsModal';
 import MessagesModal from '@/components/MessagesModal';
 import ShareModal from '@/components/home/ShareModal';
 import StoriesViewer from '@/components/StoriesViewer';
+import LocationDetailSheet from '@/components/LocationDetailSheet';
 
 interface Place {
   id: string;
@@ -172,6 +172,8 @@ const HomePage = () => {
   const [isStoriesViewerOpen, setIsStoriesViewerOpen] = useState(false);
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const [stories, setStories] = useState(mockStories);
+  const [isLocationDetailOpen, setIsLocationDetailOpen] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<Place | null>(null);
 
   const handleCategoryClick = (category: string) => {
     console.log('Category clicked:', category);
@@ -214,6 +216,8 @@ const HomePage = () => {
 
   const handleCardClick = (place: Place) => {
     console.log('Place card clicked:', place.name);
+    setSelectedLocation(place);
+    setIsLocationDetailOpen(true);
   };
 
   const handleShare = (place: Place) => {
@@ -372,6 +376,13 @@ const HomePage = () => {
         onClose={() => setIsShareModalOpen(false)}
         place={selectedPlaceToShare}
         onShare={handleShareComplete}
+      />
+
+      {/* Location Detail Sheet */}
+      <LocationDetailSheet
+        isOpen={isLocationDetailOpen}
+        onClose={() => setIsLocationDetailOpen(false)}
+        location={selectedLocation}
       />
 
       {/* Stories Viewer */}
