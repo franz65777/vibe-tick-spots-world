@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { Search, MapPin, Building, Landmark, Building2, Clock, Mountain, Shield, Church, Waves, TreePine } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -8,7 +9,6 @@ interface CitySearchProps {
   onSearchChange: (value: string) => void;
   onSearchKeyPress: (e: React.KeyboardEvent) => void;
   onCitySelect: (city: string) => void;
-  onSearchActiveChange?: (isActive: boolean) => void;
 }
 
 // City data with more appropriate landmark icons and search variations
@@ -111,8 +111,7 @@ const CitySearch = ({
   currentCity, 
   onSearchChange, 
   onSearchKeyPress,
-  onCitySelect,
-  onSearchActiveChange 
+  onCitySelect 
 }: CitySearchProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [filteredCities, setFilteredCities] = useState<Array<{key: string, data: typeof cityData[keyof typeof cityData], similarity: number}>>([]);
@@ -121,13 +120,6 @@ const CitySearch = ({
   // Get current city data
   const currentCityData = cityData[currentCity.toLowerCase() as keyof typeof cityData];
   const CurrentCityIcon = currentCityData?.icon || MapPin;
-
-  const isSearchActive = searchQuery && searchQuery.trim() !== ' ';
-
-  // Notify parent when search becomes active/inactive
-  useEffect(() => {
-    onSearchActiveChange?.(isSearchActive);
-  }, [isSearchActive, onSearchActiveChange]);
 
   useEffect(() => {
     if (searchQuery.trim() && searchQuery.trim() !== ' ') {
@@ -183,7 +175,7 @@ const CitySearch = ({
     <div ref={searchRef} className="relative flex-1 max-w-md z-50">
       {/* Current City Display / Search Input */}
       <div className="relative">
-        {!isSearchActive ? (
+        {!searchQuery || searchQuery.trim() === ' ' ? (
           // Show current city when not searching
           <div className="flex items-center gap-3 bg-white/90 border border-gray-200 rounded-2xl h-12 px-4 hover:bg-white transition-colors cursor-pointer"
                onClick={() => document.getElementById('city-search-input')?.focus()}>
@@ -211,7 +203,7 @@ const CitySearch = ({
       </div>
 
       {/* Hidden input for focusing */}
-      {!isSearchActive && (
+      {(!searchQuery || searchQuery.trim() === ' ') && (
         <input
           id="city-search-input"
           type="text"
@@ -222,9 +214,17 @@ const CitySearch = ({
         />
       )}
 
-      {/* Dropdown Results */}
+      {/* Dropdown Results - Using portal-like positioning */}
       {isOpen && filteredCities.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 max-h-64 overflow-y-auto z-50">
+        <div 
+          className="fixed bg-white rounded-2xl shadow-2xl border border-gray-100 max-h-64 overflow-y-auto"
+          style={{
+            top: searchRef.current ? searchRef.current.getBoundingClientRect().bottom + window.scrollY + 8 : 0,
+            left: searchRef.current ? searchRef.current.getBoundingClientRect().left + window.scrollX : 0,
+            width: searchRef.current ? searchRef.current.getBoundingClientRect().width : 'auto',
+            zIndex: 99999
+          }}
+        >
           {filteredCities.map(({ key, data, similarity }) => {
             const IconComponent = data.icon;
             return (
@@ -249,9 +249,17 @@ const CitySearch = ({
         </div>
       )}
 
-      {/* No results */}
+      {/* No results - Using portal-like positioning */}
       {isOpen && searchQuery.trim() && searchQuery.trim() !== ' ' && filteredCities.length === 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 z-50">
+        <div 
+          className="fixed bg-white rounded-2xl shadow-2xl border border-gray-100 p-4"
+          style={{
+            top: searchRef.current ? searchRef.current.getBoundingClientRect().bottom + window.scrollY + 8 : 0,
+            left: searchRef.current ? searchRef.current.getBoundingClientRect().left + window.scrollX : 0,
+            width: searchRef.current ? searchRef.current.getBoundingClientRect().width : 'auto',
+            zIndex: 99999
+          }}
+        >
           <div className="text-gray-500 text-sm text-center">
             <div className="mb-2">No cities found for "{searchQuery}"</div>
             <div className="text-xs">Try: Milan, Paris, New York, London, Tokyo</div>

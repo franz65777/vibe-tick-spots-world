@@ -10,7 +10,6 @@ interface HeaderProps {
   onNotificationsClick: () => void;
   onMessagesClick: () => void;
   onCitySelect?: (city: string) => void;
-  onSearchActiveChange?: (isActive: boolean) => void;
 }
 
 const Header = ({
@@ -20,8 +19,7 @@ const Header = ({
   onSearchKeyPress,
   onNotificationsClick,
   onMessagesClick,
-  onCitySelect,
-  onSearchActiveChange
+  onCitySelect
 }: HeaderProps) => {
   return (
     <div className="bg-white/95 backdrop-blur-lg px-6 py-4 shadow-sm">
@@ -32,7 +30,6 @@ const Header = ({
           onSearchChange={onSearchChange}
           onSearchKeyPress={onSearchKeyPress}
           onCitySelect={onCitySelect || (() => {})}
-          onSearchActiveChange={onSearchActiveChange}
         />
         
         <div className="flex items-center gap-3">

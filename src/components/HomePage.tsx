@@ -1,12 +1,22 @@
-
-import { useState, useEffect } from 'react';
-import Header from './home/Header';
-import StoriesSection from './home/StoriesSection';
-import LocationOfTheWeek from './home/LocationOfTheWeek';
-import FilterButtons from './home/FilterButtons';
-import PlaceCard from './home/PlaceCard';
-import MapSection from './home/MapSection';
-import ModalsManager from './home/ModalsManager';
+import { useState } from 'react';
+import { Heart, Bell, MessageCircle, Users, TrendingUp, Sparkles, Search, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import MapSection from '@/components/home/MapSection';
+import StoriesSection from '@/components/home/StoriesSection';
+import PlaceCard from '@/components/home/PlaceCard';
+import CreateStoryModal from '@/components/CreateStoryModal';
+import NotificationsModal from '@/components/NotificationsModal';
+import MessagesModal from '@/components/MessagesModal';
+import StoriesViewer from '@/components/StoriesViewer';
+import ShareModal from '@/components/home/ShareModal';
+import CommentModal from '@/components/home/CommentModal';
+import LocationOfTheWeek from '@/components/home/LocationOfTheWeek';
+import LocationDetailSheet from '@/components/LocationDetailSheet';
+import Header from '@/components/home/Header';
+import FilterButtons from '@/components/home/FilterButtons';
+import ModalsManager from '@/components/home/ModalsManager';
 
 interface Place {
   id: string;
@@ -40,255 +50,347 @@ interface Story {
   locationCategory?: string;
 }
 
+// City data with places for different cities
+const cityData: Record<string, { coordinates: { lat: number; lng: number }; places: Place[] }> = {
+  'san francisco': {
+    coordinates: { lat: 37.7749, lng: -122.4194 },
+    places: [
+      {
+        id: '1',
+        name: 'The Cozy Corner Café',
+        category: 'cafe',
+        likes: 24,
+        friendsWhoSaved: [
+          { name: 'Sarah', avatar: '1649972904349-6e44c42644a7' },
+          { name: 'Mike', avatar: '1581091226825-a6a2a5aee158' }
+        ],
+        visitors: ['user1', 'user2'],
+        isNew: false,
+        coordinates: { lat: 37.7849, lng: -122.4094 },
+        image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
+        addedBy: 'user1',
+        addedDate: '2024-05-25',
+        isFollowing: true,
+        popularity: 85
+      },
+      {
+        id: '2',
+        name: 'Sunset View Restaurant',
+        category: 'restaurant',
+        likes: 18,
+        visitors: ['user3'],
+        isNew: true,
+        coordinates: { lat: 37.7849, lng: -122.4194 },
+        image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop',
+        addedBy: 'user2',
+        addedDate: '2024-06-01',
+        isFollowing: true,
+        popularity: 92
+      },
+      {
+        id: '3',
+        name: 'Grand Plaza Hotel',
+        category: 'hotel',
+        likes: 45,
+        friendsWhoSaved: [
+          { name: 'Emma', avatar: '1581092795360-fd1ca04f0952' }
+        ],
+        visitors: ['user4', 'user5'],
+        isNew: false,
+        coordinates: { lat: 37.7749, lng: -122.4094 },
+        image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop',
+        addedBy: 'user5',
+        addedDate: '2024-05-15',
+        isFollowing: false,
+        popularity: 96
+      }
+    ]
+  },
+  'milan': {
+    coordinates: { lat: 45.4642, lng: 9.1900 },
+    places: [
+      {
+        id: 'milan1',
+        name: 'Café Milano',
+        category: 'cafe',
+        likes: 32,
+        friendsWhoSaved: [
+          { name: 'Marco', avatar: '1649972904349-6e44c42644a7' },
+          { name: 'Sofia', avatar: '1581091226825-a6a2a5aee158' }
+        ],
+        visitors: ['user1', 'user2', 'user3'],
+        isNew: true,
+        coordinates: { lat: 45.4642, lng: 9.1900 },
+        image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=300&fit=crop',
+        addedBy: 'user1',
+        addedDate: '2024-05-28',
+        isFollowing: true,
+        popularity: 88
+      },
+      {
+        id: 'milan2',
+        name: 'Duomo Restaurant',
+        category: 'restaurant',
+        likes: 45,
+        visitors: ['user4', 'user5'],
+        isNew: false,
+        coordinates: { lat: 45.4640, lng: 9.1896 },
+        image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop',
+        addedBy: 'user2',
+        addedDate: '2024-05-20',
+        isFollowing: true,
+        popularity: 94
+      },
+      {
+        id: 'milan3',
+        name: 'Navigli Bar',
+        category: 'bar',
+        likes: 28,
+        friendsWhoSaved: [
+          { name: 'Giuseppe', avatar: '1581092795360-fd1ca04f0952' }
+        ],
+        visitors: ['user6'],
+        isNew: true,
+        coordinates: { lat: 45.4583, lng: 9.1756 },
+        image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=300&fit=crop',
+        addedBy: 'user3',
+        addedDate: '2024-06-01',
+        isFollowing: true,
+        popularity: 82
+      },
+      {
+        id: 'milan4',
+        name: 'Hotel Principe di Savoia',
+        category: 'hotel',
+        likes: 67,
+        friendsWhoSaved: [
+          { name: 'Isabella', avatar: '1649972904349-6e44c42644a7' },
+          { name: 'Lorenzo', avatar: '1581091226825-a6a2a5aee158' }
+        ],
+        visitors: ['user7', 'user8', 'user9'],
+        isNew: false,
+        coordinates: { lat: 45.4696, lng: 9.1965 },
+        image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
+        addedBy: 'user4',
+        addedDate: '2024-05-10',
+        isFollowing: false,
+        popularity: 96
+      }
+    ]
+  },
+  'paris': {
+    coordinates: { lat: 48.8566, lng: 2.3522 },
+    places: [
+      {
+        id: 'paris1',
+        name: 'Café de Flore',
+        category: 'cafe',
+        likes: 56,
+        friendsWhoSaved: [
+          { name: 'Pierre', avatar: '1649972904349-6e44c42644a7' },
+          { name: 'Marie', avatar: '1581091226825-a6a2a5aee158' }
+        ],
+        visitors: ['user1', 'user2'],
+        isNew: false,
+        coordinates: { lat: 48.8542, lng: 2.3320 },
+        image: 'https://images.unsplash.com/photo-1559925393-8be0ec4767c8?w=400&h=300&fit=crop',
+        addedBy: 'user1',
+        addedDate: '2024-05-15',
+        isFollowing: true,
+        popularity: 91
+      },
+      {
+        id: 'paris2',
+        name: 'Le Jules Verne',
+        category: 'restaurant',
+        likes: 89,
+        visitors: ['user3', 'user4'],
+        isNew: true,
+        coordinates: { lat: 48.8584, lng: 2.2945 },
+        image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=300&fit=crop',
+        addedBy: 'user2',
+        addedDate: '2024-05-30',
+        isFollowing: true,
+        popularity: 98
+      }
+    ]
+  }
+};
+
+// Default to San Francisco places
+const defaultPlaces = cityData['san francisco'].places;
+
+const mockStories: Story[] = [
+  {
+    id: '1',
+    userId: 'user1',
+    userName: 'Sarah',
+    userAvatar: '1649972904349-6e44c42644a7',
+    isViewed: false,
+    mediaUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=600&fit=crop',
+    mediaType: 'image',
+    locationId: '1',
+    locationName: 'The Cozy Corner Café',
+    locationAddress: '123 Main St, Downtown',
+    timestamp: '2 hours ago',
+    bookingUrl: 'https://www.opentable.com/booking',
+    locationCategory: 'restaurant'
+  },
+  {
+    id: '4',
+    userId: 'user1',
+    userName: 'Sarah',
+    userAvatar: '1649972904349-6e44c42644a7',
+    isViewed: false,
+    mediaUrl: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=600&fit=crop',
+    mediaType: 'image',
+    locationId: '4',
+    locationName: 'Neon Nights Bar',
+    locationAddress: '789 Night St, Downtown',
+    timestamp: '1 hour ago',
+    bookingUrl: 'https://www.opentable.com/booking',
+    locationCategory: 'bar'
+  },
+  {
+    id: '5',
+    userId: 'user1',
+    userName: 'Sarah',
+    userAvatar: '1649972904349-6e44c42644a7',
+    isViewed: false,
+    mediaUrl: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=600&fit=crop',
+    mediaType: 'image',
+    locationId: '3',
+    locationName: 'Grand Plaza Hotel',
+    locationAddress: '456 Park Ave, Midtown',
+    timestamp: '30 minutes ago',
+    bookingUrl: 'https://www.booking.com/hotel',
+    locationCategory: 'hotel'
+  },
+  {
+    id: '6',
+    userId: 'user1',
+    userName: 'Sarah',
+    userAvatar: '1649972904349-6e44c42644a7',
+    isViewed: false,
+    mediaUrl: 'https://images.unsplash.com/photo-1453614512568-c4024d13c247?w=400&h=600&fit=crop',
+    mediaType: 'image',
+    locationId: '6',
+    locationName: 'Artisan Coffee House',
+    locationAddress: '789 Coffee St, Downtown',
+    timestamp: '15 minutes ago',
+    bookingUrl: 'https://www.opentable.com/booking',
+    locationCategory: 'cafe'
+  },
+  {
+    id: '2',
+    userId: 'user2',
+    userName: 'Mike',
+    userAvatar: '1581091226825-a6a2a5aee158',
+    isViewed: true,
+    mediaUrl: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=600&fit=crop',
+    mediaType: 'image',
+    locationId: '3',
+    locationName: 'Grand Plaza Hotel',
+    locationAddress: '456 Park Ave, Midtown',
+    timestamp: '4 hours ago',
+    bookingUrl: 'https://www.booking.com/hotel',
+    locationCategory: 'hotel'
+  },
+  {
+    id: '7',
+    userId: 'user2',
+    userName: 'Mike',
+    userAvatar: '1581091226825-a6a2a5aee158',
+    isViewed: false,
+    mediaUrl: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=600&fit=crop',
+    mediaType: 'image',
+    locationId: '4',
+    locationName: 'Neon Nights Bar',
+    locationAddress: '789 Night St, Downtown',
+    timestamp: '3 hours ago',
+    bookingUrl: 'https://www.opentable.com/booking',
+    locationCategory: 'bar'
+  },
+  {
+    id: '3',
+    userId: 'user3',
+    userName: 'Emma',
+    userAvatar: '1581092795360-fd1ca04f0952',
+    isViewed: false,
+    mediaUrl: 'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400&h=600&fit=crop',
+    mediaType: 'image',
+    locationId: '5',
+    locationName: 'Ocean Breeze Restaurant',
+    locationAddress: '789 Coastal Rd, Seafront',
+    timestamp: '6 hours ago',
+    bookingUrl: 'https://www.opentable.com/r/ocean-breeze',
+    locationCategory: 'restaurant'
+  }
+];
+
 const HomePage = () => {
   console.log('HomePage rendering...');
   
-  const initialPlaces: Place[] = [
-    {
-      id: '1',
-      name: 'Sunset Cafe',
-      category: 'Restaurant',
-      likes: 42,
-      friendsWhoSaved: [
-        { name: 'Alice', avatar: 'avatar-1.jpg' },
-        { name: 'Bob', avatar: 'avatar-2.jpg' },
-      ],
-      visitors: ['Charlie', 'David'],
-      isNew: true,
-      coordinates: { lat: 37.7749, lng: -122.4194 },
-      image: 'cafe-1.jpg',
-      addedBy: 'Alice',
-      addedDate: '2024-03-10',
-      isFollowing: true,
-      popularity: 0.8,
-    },
-    {
-      id: '2',
-      name: 'Mountain View Hotel',
-      category: 'Hotel',
-      likes: 120,
-      friendsWhoSaved: [
-        { name: 'Eve', avatar: 'avatar-3.jpg' },
-        { name: 'Bob', avatar: 'avatar-2.jpg' },
-      ],
-      visitors: ['Alice', 'David', 'Charlie'],
-      isNew: false,
-      coordinates: { lat: 34.0522, lng: -118.2437 },
-      image: 'hotel-1.jpg',
-      addedBy: 'Bob',
-      addedDate: '2024-03-05',
-      isFollowing: false,
-      popularity: 0.9,
-    },
-    {
-      id: '3',
-      name: 'City Art Gallery',
-      category: 'Museum',
-      likes: 78,
-      friendsWhoSaved: [{ name: 'Charlie', avatar: 'avatar-4.jpg' }],
-      visitors: ['Eve', 'Alice'],
-      isNew: false,
-      coordinates: { lat: 40.7128, lng: -74.006 },
-      image: 'museum-1.jpg',
-      addedBy: 'Charlie',
-      addedDate: '2024-02-28',
-      isFollowing: true,
-      popularity: 0.7,
-    },
-    {
-      id: '4',
-      name: 'Lakeside Bar',
-      category: 'Bar',
-      likes: 95,
-      friendsWhoSaved: [{ name: 'David', avatar: 'avatar-5.jpg' }],
-      visitors: ['Bob', 'Eve'],
-      isNew: true,
-      coordinates: { lat: 51.5074, lng: 0.1278 },
-      image: 'bar-1.jpg',
-      addedBy: 'David',
-      addedDate: '2024-02-20',
-      isFollowing: false,
-      popularity: 0.6,
-    },
-  ];
-
-  const initialStories: Story[] = [
-    {
-      id: 'story1',
-      userId: 'user1',
-      userName: 'Alice',
-      userAvatar: 'avatar-1.jpg',
-      mediaUrl: 'https://images.unsplash.com/photo-1682685797497-f296491f8c69?w=400&h=800&fit=crop&auto=format&dpr=2',
-      mediaType: 'image',
-      locationId: 'location1',
-      locationName: 'Sunset Cafe',
-      locationAddress: '123 Main St, Anytown',
-      timestamp: '2 hours ago',
-      isViewed: false,
-      bookingUrl: 'https://example.com/booking',
-      locationCategory: 'Restaurant',
-    },
-    {
-      id: 'story2',
-      userId: 'user2',
-      userName: 'Bob',
-      userAvatar: 'avatar-2.jpg',
-      mediaUrl: 'https://images.unsplash.com/photo-1519682337058-a94d519337bc?w=400&h=800&fit=crop&auto=format&dpr=2',
-      mediaType: 'image',
-      locationId: 'location2',
-      locationName: 'Mountain View Hotel',
-      locationAddress: '456 Elm St, Anytown',
-      timestamp: '1 day ago',
-      isViewed: false,
-      locationCategory: 'Hotel',
-    },
-    {
-      id: 'story3',
-      userId: 'user3',
-      userName: 'Charlie',
-      userAvatar: 'avatar-4.jpg',
-      mediaUrl: 'https://images.unsplash.com/photo-1541697497-6479bc410144?w=400&h=800&fit=crop&auto=format&dpr=2',
-      mediaType: 'image',
-      locationId: 'location3',
-      locationName: 'City Art Gallery',
-      locationAddress: '789 Oak St, Anytown',
-      timestamp: '3 hours ago',
-      isViewed: true,
-      locationCategory: 'Museum',
-    },
-    {
-      id: 'story4',
-      userId: 'user4',
-      userName: 'David',
-      userAvatar: 'avatar-5.jpg',
-      mediaUrl: 'https://images.unsplash.com/photo-1484820301354-639a0a862294?w=400&h=800&fit=crop&auto=format&dpr=2',
-      mediaType: 'image',
-      locationId: 'location4',
-      locationName: 'Lakeside Bar',
-      locationAddress: '101 Pine St, Anytown',
-      timestamp: '5 hours ago',
-      isViewed: true,
-      locationCategory: 'Bar',
-    },
-    {
-      id: 'story5',
-      userId: 'user1',
-      userName: 'Alice',
-      userAvatar: 'avatar-1.jpg',
-      mediaUrl: 'https://images.unsplash.com/photo-1541356665065-22676f35d225?w=400&h=800&fit=crop&auto=format&dpr=2',
-      mediaType: 'image',
-      locationId: 'location5',
-      locationName: 'Another Cafe',
-      locationAddress: '222 Maple St, Anytown',
-      timestamp: '7 hours ago',
-      isViewed: false,
-      locationCategory: 'Restaurant',
-    },
-    {
-      id: 'story6',
-      userId: 'user2',
-      userName: 'Bob',
-      userAvatar: 'avatar-2.jpg',
-      mediaUrl: 'https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=400&h=800&fit=crop&auto=format&dpr=2',
-      mediaType: 'image',
-      locationId: 'location6',
-      locationName: 'Seaside Hotel',
-      locationAddress: '333 Cherry St, Anytown',
-      timestamp: '9 hours ago',
-      isViewed: false,
-      locationCategory: 'Hotel',
-    },
-  ];
-
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentCity, setCurrentCity] = useState('San Francisco');
-  const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'new'>('following');
-  const [places, setPlaces] = useState<Place[]>(initialPlaces);
-  const [stories, setStories] = useState<Story[]>(initialStories);
-  const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
   const [isCreateStoryModalOpen, setIsCreateStoryModalOpen] = useState(false);
   const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
   const [isMessagesModalOpen, setIsMessagesModalOpen] = useState(false);
+  const [isStoriesViewerOpen, setIsStoriesViewerOpen] = useState(false);
+  const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
+  const [stories, setStories] = useState(mockStories);
+  const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'new'>('following');
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [sharePlace, setSharePlace] = useState<Place | null>(null);
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
+  const [sharePlace, setSharePlace] = useState<Place | null>(null);
   const [commentPlace, setCommentPlace] = useState<Place | null>(null);
   const [isLocationDetailOpen, setIsLocationDetailOpen] = useState(false);
   const [locationDetailPlace, setLocationDetailPlace] = useState<Place | null>(null);
-  const [isStoriesViewerOpen, setIsStoriesViewerOpen] = useState(false);
-  const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
-  const [isSearchActive, setIsSearchActive] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentCity, setCurrentCity] = useState('San Francisco');
+  const [currentPlaces, setCurrentPlaces] = useState<Place[]>(defaultPlaces);
+  const [mapCenter, setMapCenter] = useState({ lat: 37.7749, lng: -122.4194 });
 
-  const mapCenter = { lat: 37.7749, lng: -122.4194 };
-
-  // Get the top location (most liked)
-  const topLocation = places.reduce((prev, current) => 
-    prev.likes > current.likes ? prev : current
-  );
-
-  // Count new places
-  const newCount = places.filter(place => place.isNew).length;
-
-  const handleSearchChange = (value: string) => {
-    console.log('Search query changed:', value);
-    setSearchQuery(value);
-  };
-
-  const handleSearchKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      console.log('Search query submitted:', searchQuery);
+  // Get the most popular location based on total engagement (likes + visitors)
+  const getLocationOfTheWeek = () => {
+    if (currentPlaces.length === 0) {
+      return null;
     }
-  };
-
-  const handleCitySelect = (city: string) => {
-    console.log('City selected:', city);
-    setCurrentCity(city);
-  };
-
-  const handleLikeToggle = (placeId: string) => {
-    console.log('Toggled like for place:', placeId);
-    setLikedPlaces(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(placeId)) {
-        newSet.delete(placeId);
-      } else {
-        newSet.add(placeId);
-      }
-      return newSet;
+    
+    return currentPlaces.reduce((topPlace, currentPlace) => {
+      const currentEngagement = currentPlace.likes + currentPlace.visitors.length + (currentPlace.friendsWhoSaved?.length || 0);
+      const topEngagement = topPlace.likes + topPlace.visitors.length + (topPlace.friendsWhoSaved?.length || 0);
+      return currentEngagement > topEngagement ? currentPlace : topPlace;
     });
   };
 
-  const handleSave = (placeId: string) => {
-    console.log('Saved place:', placeId);
-    // Implement save logic here
+  const getFilteredPlaces = () => {
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+    switch (activeFilter) {
+      case 'following':
+        return currentPlaces.filter(place => place.isFollowing);
+      case 'popular':
+        return currentPlaces.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+      case 'new':
+        return currentPlaces.filter(place => {
+          const addedDate = new Date(place.addedDate || '');
+          return place.isFollowing && addedDate >= oneWeekAgo;
+        });
+      default:
+        return currentPlaces;
+    }
   };
 
-  const handleShare = (place: Place) => {
-    console.log('Share place:', place.name);
-    setSharePlace(place);
-    setIsShareModalOpen(true);
+  const handleCreateStory = () => {
+    console.log('Create story clicked');
+    setIsCreateStoryModalOpen(true);
   };
 
-  const handleShareSubmit = (friendIds: string[], place: Place) => {
-    console.log('Shared place:', place.name, 'with friends:', friendIds);
-    setIsShareModalOpen(false);
-  };
-
-  const handleComment = (place: Place) => {
-    console.log('Comment on place:', place.name);
-    setCommentPlace(place);
-    setIsCommentModalOpen(true);
-  };
-
-  const handleCommentSubmit = (text: string, place: Place) => {
-    console.log('Comment submitted:', text, 'for place:', place.name);
-    setIsCommentModalOpen(false);
-  };
-
-  const handleLocationClick = (place: Place) => {
-    console.log('Location clicked:', place.name);
-    setLocationDetailPlace(place);
-    setIsLocationDetailOpen(true);
+  const handleStoryCreated = () => {
+    console.log('Story created successfully');
+    // TODO: Refresh stories list
   };
 
   const handleStoryClick = (index: number) => {
@@ -297,103 +399,188 @@ const HomePage = () => {
     setIsStoriesViewerOpen(true);
   };
 
-  const handleStoryCreated = () => {
-    console.log('New story created');
-    setIsCreateStoryModalOpen(false);
-  };
-
   const handleStoryViewed = (storyId: string) => {
-    console.log('Story viewed:', storyId);
-    setStories(prevStories =>
-      prevStories.map(story =>
-        story.id === storyId ? { ...story, isViewed: true } : story
-      )
-    );
+    setStories(prev => prev.map(story => 
+      story.id === storyId ? { ...story, isViewed: true } : story
+    ));
   };
 
-  const filteredPlaces = places.filter((place) => {
-    if (activeFilter === 'following') return true;
-    if (activeFilter === 'popular') return place.likes > 50;
-    if (activeFilter === 'new') return place.isNew;
-    return true;
-  });
+  const handlePinClick = (place: Place) => {
+    console.log('Map pin clicked:', place.name);
+    setSelectedPlace(place);
+  };
+
+  const handleCloseSelectedPlace = () => {
+    console.log('Closing selected place card');
+    setSelectedPlace(null);
+  };
+
+  const handleLikeToggle = (placeId: string) => {
+    setLikedPlaces(prev => {
+      const newLiked = new Set(prev);
+      if (newLiked.has(placeId)) {
+        newLiked.delete(placeId);
+      } else {
+        newLiked.add(placeId);
+      }
+      return newLiked;
+    });
+  };
+
+  const handleShare = (place: Place) => {
+    setSharePlace(place);
+    setIsShareModalOpen(true);
+  };
+
+  const handleComment = (place: Place) => {
+    setCommentPlace(place);
+    setIsCommentModalOpen(true);
+  };
+
+  const handleShareSubmit = (friendIds: string[], place: Place) => {
+    console.log('Sharing place:', place.name, 'with friends:', friendIds);
+    // TODO: Implement actual sharing logic
+  };
+
+  const handleCommentSubmit = (text: string, place: Place) => {
+    console.log('Adding comment:', text, 'to place:', place.name);
+    // TODO: Implement actual comment submission logic
+  };
+
+  const handleCardClick = (place: Place) => {
+    console.log('Place card clicked:', place.name);
+    setLocationDetailPlace(place);
+    setIsLocationDetailOpen(true);
+  };
+
+  const handleCitySearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      const searchedCity = searchQuery.trim().toLowerCase();
+      console.log('Searching for city:', searchedCity);
+      
+      const cityInfo = cityData[searchedCity];
+      if (cityInfo) {
+        setCurrentCity(searchQuery.trim());
+        setCurrentPlaces(cityInfo.places);
+        setMapCenter(cityInfo.coordinates);
+        console.log(`Updated to ${searchedCity}:`, cityInfo.places.length, 'places found');
+      } else {
+        // If city not found, show a default set or empty
+        console.log('City not found in database, using default places');
+        setCurrentCity(searchQuery.trim());
+        setCurrentPlaces([]);
+      }
+    }
+  };
+
+  const handleCitySelect = (cityName: string) => {
+    const searchedCity = cityName.toLowerCase();
+    console.log('City selected:', searchedCity);
+    
+    const cityInfo = cityData[searchedCity];
+    if (cityInfo) {
+      setCurrentCity(cityName);
+      setCurrentPlaces(cityInfo.places);
+      setMapCenter(cityInfo.coordinates);
+      console.log(`Updated to ${cityName}:`, cityInfo.places.length, 'places found');
+    } else {
+      console.log('City not found in database, using default places');
+      setCurrentCity(cityName);
+      setCurrentPlaces([]);
+    }
+  };
+
+  const handleSearchKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleCitySearch(e);
+    }
+  };
+
+  const filteredPlaces = getFilteredPlaces();
+  const locationOfTheWeek = getLocationOfTheWeek();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white relative overflow-hidden">
+    <div className="flex flex-col h-full bg-gradient-to-br from-blue-50/30 via-white to-purple-50/20">
       {/* Header */}
       <Header
         searchQuery={searchQuery}
         currentCity={currentCity}
-        onSearchChange={handleSearchChange}
+        onSearchChange={setSearchQuery}
         onSearchKeyPress={handleSearchKeyPress}
         onNotificationsClick={() => setIsNotificationsModalOpen(true)}
         onMessagesClick={() => setIsMessagesModalOpen(true)}
         onCitySelect={handleCitySelect}
-        onSearchActiveChange={setIsSearchActive}
       />
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto">
-        {/* Stories Section - Hidden when search is active */}
-        {!isSearchActive && (
-          <div className="px-4 py-3">
-            <StoriesSection
-              stories={stories}
-              onCreateStory={() => setIsCreateStoryModalOpen(true)}
-              onStoryClick={handleStoryClick}
-            />
-          </div>
-        )}
-
-        {/* Location of the Week - Hidden when search is active */}
-        {!isSearchActive && (
-          <div className="px-4 mb-4">
-            <LocationOfTheWeek
-              topLocation={topLocation}
-              onLocationClick={handleLocationClick}
-            />
-          </div>
-        )}
-
-        {/* Filter Buttons - Hidden when search is active */}
-        {!isSearchActive && (
-          <div className="px-4 mb-4">
-            <FilterButtons
-              activeFilter={activeFilter}
-              onFilterChange={setActiveFilter}
-              newCount={newCount}
-            />
-          </div>
-        )}
-
-        {/* Places Grid */}
-        <div className="px-4 pb-4">
-          <div className="grid grid-cols-2 gap-3">
-            {filteredPlaces.map((place) => (
-              <PlaceCard
-                key={place.id}
-                place={place}
-                isLiked={likedPlaces.has(place.id)}
-                onCardClick={handleLocationClick}
-                onLikeToggle={handleLikeToggle}
-                onShare={handleShare}
-                onComment={handleComment}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Map Section */}
-        <div className="px-4 pb-6">
-          <MapSection
-            places={filteredPlaces}
-            onPinClick={handleLocationClick}
-            mapCenter={mapCenter}
+      {/* Stories Section */}
+      <div className="bg-white/60 backdrop-blur-sm px-6 py-2">
+        <div className="overflow-x-auto">
+          <StoriesSection 
+            stories={stories}
+            onCreateStory={handleCreateStory}
+            onStoryClick={handleStoryClick}
           />
         </div>
       </div>
 
-      {/* Modals Manager */}
+      {/* Location of the Week - Compact */}
+      {locationOfTheWeek && (
+        <LocationOfTheWeek 
+          topLocation={locationOfTheWeek}
+          onLocationClick={handleCardClick}
+        />
+      )}
+
+      {/* Filter Buttons */}
+      <FilterButtons
+        activeFilter={activeFilter}
+        onFilterChange={setActiveFilter}
+        newCount={getFilteredPlaces().length}
+      />
+
+      {/* Map Section */}
+      <div className="flex-1 relative">
+        <div className="absolute inset-0 bg-gradient-to-t from-white/20 via-transparent to-transparent pointer-events-none z-10"></div>
+        <MapSection 
+          places={filteredPlaces} 
+          onPinClick={handlePinClick}
+          mapCenter={mapCenter}
+        />
+      </div>
+
+      {/* Selected Place Card */}
+      {selectedPlace && (
+        <div className="bg-white/95 backdrop-blur-lg p-6 mx-4 mb-4 rounded-3xl shadow-2xl shadow-black/10 border border-white/20 relative">
+          <button
+            onClick={handleCloseSelectedPlace}
+            className="absolute top-4 right-4 w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors z-10"
+            aria-label="Close place details"
+          >
+            <X className="w-4 h-4 text-gray-600" />
+          </button>
+          <PlaceCard
+            place={selectedPlace}
+            isLiked={likedPlaces.has(selectedPlace.id)}
+            onCardClick={handleCardClick}
+            onLikeToggle={handleLikeToggle}
+            onShare={handleShare}
+            onComment={handleComment}
+          />
+        </div>
+      )}
+
+      {/* No places found message */}
+      {currentPlaces.length === 0 && (
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="text-center">
+            <div className="text-gray-500 text-lg mb-2">No places found</div>
+            <div className="text-gray-400 text-sm">Try searching for Milan, Paris, or San Francisco</div>
+          </div>
+        </div>
+      )}
+
+      {/* Modals */}
       <ModalsManager
         isCreateStoryModalOpen={isCreateStoryModalOpen}
         isNotificationsModalOpen={isNotificationsModalOpen}
