@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Heart, Bell, MessageCircle, Users, TrendingUp, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -13,6 +12,7 @@ import StoriesViewer from '@/components/StoriesViewer';
 import ShareModal from '@/components/home/ShareModal';
 import CommentModal from '@/components/home/CommentModal';
 import LocationOfTheWeek from '@/components/home/LocationOfTheWeek';
+import LocationDetailSheet from '@/components/LocationDetailSheet';
 
 interface Place {
   id: string;
@@ -269,6 +269,8 @@ const HomePage = () => {
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
   const [sharePlace, setSharePlace] = useState<Place | null>(null);
   const [commentPlace, setCommentPlace] = useState<Place | null>(null);
+  const [isLocationDetailOpen, setIsLocationDetailOpen] = useState(false);
+  const [locationDetailPlace, setLocationDetailPlace] = useState<Place | null>(null);
 
   // Get the most popular location based on total engagement (likes + visitors)
   const getLocationOfTheWeek = () => {
@@ -359,7 +361,8 @@ const HomePage = () => {
 
   const handleCardClick = (place: Place) => {
     console.log('Place card clicked:', place.name);
-    // TODO: Navigate to place detail view
+    setLocationDetailPlace(place);
+    setIsLocationDetailOpen(true);
   };
 
   const filteredPlaces = getFilteredPlaces();
@@ -510,6 +513,12 @@ const HomePage = () => {
         onClose={() => setIsCommentModalOpen(false)}
         place={commentPlace}
         onCommentSubmit={handleCommentSubmit}
+      />
+
+      <LocationDetailSheet
+        isOpen={isLocationDetailOpen}
+        onClose={() => setIsLocationDetailOpen(false)}
+        location={locationDetailPlace}
       />
 
       {/* Stories Viewer */}
