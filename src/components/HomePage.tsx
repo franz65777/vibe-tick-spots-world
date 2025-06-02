@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Heart, Bell, MessageCircle, Users, TrendingUp, Sparkles, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -392,11 +391,23 @@ const HomePage = () => {
     <div className="flex flex-col h-full bg-gradient-to-br from-blue-50/30 via-white to-purple-50/20">
       {/* Header */}
       <div className="bg-white/95 backdrop-blur-lg px-6 py-4 shadow-sm">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
               Discover
             </h1>
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                type="text"
+                placeholder={`Search for cities... (currently in ${currentCity})`}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={handleSearchKeyPress}
+                className="pl-10 bg-white/80 border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-2xl"
+              />
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <button
@@ -418,29 +429,6 @@ const HomePage = () => {
               </div>
             </button>
           </div>
-        </div>
-
-        {/* Search Bar */}
-        <div className="relative">
-          <form onSubmit={handleCitySearch} className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                type="text"
-                placeholder={`Search for cities... (currently in ${currentCity})`}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={handleSearchKeyPress}
-                className="pl-10 bg-white/80 border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-2xl"
-              />
-            </div>
-            <Button 
-              type="submit" 
-              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-2xl px-6 shadow-lg"
-            >
-              Search
-            </Button>
-          </form>
         </div>
       </div>
 
