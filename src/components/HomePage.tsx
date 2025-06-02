@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Heart, Bell, MessageCircle, Users, TrendingUp, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -367,7 +368,7 @@ const HomePage = () => {
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-blue-50/30 via-white to-purple-50/20">
       {/* Header */}
-      <div className="bg-white/95 backdrop-blur-lg px-6 py-8 shadow-sm">
+      <div className="bg-white/95 backdrop-blur-lg px-6 py-6 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -399,7 +400,7 @@ const HomePage = () => {
       </div>
 
       {/* Stories Section */}
-      <div className="bg-white/60 backdrop-blur-sm px-6 py-4">
+      <div className="bg-white/60 backdrop-blur-sm px-6 py-3">
         <div className="overflow-x-auto">
           <StoriesSection 
             stories={stories}

@@ -25,7 +25,7 @@ interface LocationOfTheWeekProps {
 
 const LocationOfTheWeek = ({ topLocation, onLocationClick }: LocationOfTheWeekProps) => {
   return (
-    <div className="mx-4 my-2">
+    <div className="mx-4 my-1">
       <div 
         className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-4 cursor-pointer hover:scale-[1.02] transition-all duration-300 shadow-md hover:shadow-lg border border-amber-200/50"
         onClick={() => onLocationClick(topLocation)}
