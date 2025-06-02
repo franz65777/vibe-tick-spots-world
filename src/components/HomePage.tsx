@@ -474,6 +474,23 @@ const HomePage = () => {
     }
   };
 
+  const handleCitySelect = (cityName: string) => {
+    const searchedCity = cityName.toLowerCase();
+    console.log('City selected:', searchedCity);
+    
+    const cityInfo = cityData[searchedCity];
+    if (cityInfo) {
+      setCurrentCity(cityName);
+      setCurrentPlaces(cityInfo.places);
+      setMapCenter(cityInfo.coordinates);
+      console.log(`Updated to ${cityName}:`, cityInfo.places.length, 'places found');
+    } else {
+      console.log('City not found in database, using default places');
+      setCurrentCity(cityName);
+      setCurrentPlaces([]);
+    }
+  };
+
   const handleSearchKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleCitySearch(e);
@@ -493,6 +510,7 @@ const HomePage = () => {
         onSearchKeyPress={handleSearchKeyPress}
         onNotificationsClick={() => setIsNotificationsModalOpen(true)}
         onMessagesClick={() => setIsMessagesModalOpen(true)}
+        onCitySelect={handleCitySelect}
       />
 
       {/* Stories Section */}
