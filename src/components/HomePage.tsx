@@ -41,6 +41,7 @@ interface Story {
   locationAddress: string;
   timestamp: string;
   bookingUrl?: string;
+  locationCategory?: string;
 }
 
 const mockPlaces: Place[] = [
