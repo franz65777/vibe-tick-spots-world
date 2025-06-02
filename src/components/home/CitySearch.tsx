@@ -216,7 +216,7 @@ const CitySearch = ({
 
       {/* Dropdown Results */}
       {isOpen && filteredCities.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 max-h-64 overflow-y-auto z-50">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 max-h-64 overflow-y-auto z-[9999]">
           {filteredCities.map(({ key, data, similarity }) => {
             const IconComponent = data.icon;
             return (
@@ -243,7 +243,7 @@ const CitySearch = ({
 
       {/* No results */}
       {isOpen && searchQuery.trim() && searchQuery.trim() !== ' ' && filteredCities.length === 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 z-50">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 z-[9999]">
           <div className="text-gray-500 text-sm text-center">
             <div className="mb-2">No cities found for "{searchQuery}"</div>
             <div className="text-xs">Try: Milan, Paris, New York, London, Tokyo</div>
