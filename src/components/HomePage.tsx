@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Heart, Settings, Bell, Plus, MapPin, Search, X, Bookmark, Share, MessageCircle } from 'lucide-react';
+import { Heart, Settings, Bell, Plus, MapPin, Search, X, Bookmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -10,6 +10,11 @@ import StoriesViewer from './StoriesViewer';
 import CreateStoryModal from './CreateStoryModal';
 import NotificationsModal from './NotificationsModal';
 import MessagesModal from './MessagesModal';
+import MapSection from './home/MapSection';
+import StoriesSection from './home/StoriesSection';
+import PlaceCard from './home/PlaceCard';
+import ShareModal from './home/ShareModal';
+import CommentModal from './home/CommentModal';
 
 const HomePage = () => {
   console.log('HomePage component rendering...');
@@ -29,6 +34,10 @@ const HomePage = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMessages, setShowMessages] = useState(false);
   const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [selectedPlaceForShare, setSelectedPlaceForShare] = useState<any>(null);
+  const [selectedPlaceForComment, setSelectedPlaceForComment] = useState<any>(null);
 
   // Sample cities for search (in a real app, this would come from an API)
   const popularCities = [
@@ -98,14 +107,10 @@ const HomePage = () => {
           const { latitude, longitude } = position.coords;
           console.log('User location:', latitude, longitude);
           
-          // In a real app, you would use a reverse geocoding service
-          // For now, we'll simulate getting the city name
           try {
-            // Simulated reverse geocoding - in real app use Google Maps API or similar
             setSelectedCity('Current Location');
             setTimeout(() => {
-              // Simulate getting actual city name
-              setSelectedCity('San Francisco'); // Default fallback
+              setSelectedCity('San Francisco');
             }, 1000);
           } catch (error) {
             console.error('Error getting location name:', error);
@@ -114,16 +119,16 @@ const HomePage = () => {
         },
         (error) => {
           console.error('Error getting location:', error);
-          setSelectedCity('San Francisco'); // Default fallback
+          setSelectedCity('San Francisco');
         },
         {
           enableHighAccuracy: true,
           timeout: 10000,
-          maximumAge: 300000 // 5 minutes
+          maximumAge: 300000
         }
       );
     } else {
-      setSelectedCity('San Francisco'); // Default fallback
+      setSelectedCity('San Francisco');
     }
   }, []);
 
@@ -142,7 +147,6 @@ const HomePage = () => {
       setSavedLocations(locations);
     } catch (error) {
       console.error('Error loading saved locations:', error);
-      // Don't fail the component, just use empty array
       setSavedLocations([]);
     } finally {
       setIsLoading(false);
@@ -154,7 +158,7 @@ const HomePage = () => {
     if (searchQuery.length > 0) {
       const filtered = popularCities.filter(city =>
         city.toLowerCase().includes(searchQuery.toLowerCase())
-      ).slice(0, 5); // Limit to 5 results
+      ).slice(0, 5);
       setSearchResults(filtered);
     } else {
       setSearchResults([]);
@@ -170,12 +174,11 @@ const HomePage = () => {
 
   const handlePinClick = (place: any) => {
     console.log('Pin clicked:', place);
-    // Convert place to Location format
     const location: Location = {
       id: place.id,
       name: place.name,
       category: place.category,
-      address: place.address || `${place.coordinates.lat}, ${place.coordinates.lng}`, // Mock address
+      address: place.address || `${place.coordinates.lat}, ${place.coordinates.lng}`,
       latitude: place.coordinates.lat,
       longitude: place.coordinates.lng,
       created_by: 'demo-user',
@@ -192,12 +195,11 @@ const HomePage = () => {
 
   const handleLocationCardClick = (place: any) => {
     console.log('Location card clicked:', place);
-    // Convert place to Location format - same as handlePinClick
     const location: Location = {
       id: place.id,
       name: place.name,
       category: place.category,
-      address: place.address || `${place.category} in ${selectedCity}`, // Better mock address
+      address: place.address || `${place.category} in ${selectedCity}`,
       latitude: place.coordinates.lat,
       longitude: place.coordinates.lng,
       created_by: 'demo-user',
@@ -214,12 +216,10 @@ const HomePage = () => {
 
   const handleStoryViewed = (storyId: string) => {
     console.log('Story viewed:', storyId);
-    // In a real app, you would update the story's viewed status in your backend
   };
 
   const handleStoryCreated = () => {
     console.log('Story created');
-    // In a real app, you would refresh the stories list
   };
 
   const friends = [
@@ -233,9 +233,9 @@ const HomePage = () => {
     id: location.id,
     name: location.name,
     category: location.category,
-    likes: Math.floor(Math.random() * 200) + 50, // Mock likes count
-    friendsWhoSaved: friends.slice(0, Math.floor(Math.random() * 3) + 1), // Random friends who saved
-    visitors: ['Emma', 'Michael'], // Mock visitors
+    likes: Math.floor(Math.random() * 200) + 50,
+    friendsWhoSaved: friends.slice(0, Math.floor(Math.random() * 3) + 1),
+    visitors: ['Emma', 'Michael'],
     isNew: false,
     coordinates: { lat: location.latitude || 37.7749, lng: location.longitude || -122.4194 }
   })) : [
@@ -244,7 +244,7 @@ const HomePage = () => {
       name: 'Golden Gate Cafe',
       category: 'Restaurant',
       likes: 128,
-      friendsWhoSaved: [friends[0], friends[1]], // Emma and Michael
+      friendsWhoSaved: [friends[0], friends[1]],
       visitors: ['Emma', 'Michael'],
       isNew: false,
       coordinates: { lat: 37.7749, lng: -122.4194 },
@@ -255,7 +255,7 @@ const HomePage = () => {
       name: 'Mission Rooftop Bar',
       category: 'Bar',
       likes: 89,
-      friendsWhoSaved: [friends[2]], // Sophia
+      friendsWhoSaved: [friends[2]],
       visitors: ['Sophia'],
       isNew: true,
       coordinates: { lat: 37.7849, lng: -122.4094 },
@@ -276,20 +276,25 @@ const HomePage = () => {
   };
 
   const handleShare = (place: any) => {
-    console.log('Sharing place:', place.name);
-    // In a real app, this would open a share dialog
-    if (navigator.share) {
-      navigator.share({
-        title: place.name,
-        text: `Check out ${place.name} on our app!`,
-        url: window.location.href
-      });
-    }
+    console.log('Opening share modal for:', place.name);
+    setSelectedPlaceForShare(place);
+    setShowShareModal(true);
   };
 
   const handleComment = (place: any) => {
     console.log('Opening comments for:', place.name);
-    // In a real app, this would open a comments modal or navigate to comments
+    setSelectedPlaceForComment(place);
+    setShowCommentModal(true);
+  };
+
+  const handleShareSubmit = (friendIds: string[], place: any) => {
+    console.log('Sharing place with friends:', { place: place.name, friendIds });
+    // In a real app, this would create messages with the shared location
+  };
+
+  const handleCommentSubmit = (text: string, place: any) => {
+    console.log('Adding comment:', { place: place.name, text });
+    // In a real app, this would save the comment to the backend
   };
 
   console.log('HomePage rendering with state:', {
@@ -436,118 +441,18 @@ const HomePage = () => {
         </div>
 
         {/* Friends Stories */}
-        <div className="flex gap-3 mb-4">
-          <div className="flex flex-col items-center gap-2">
-            <div 
-              className="w-16 h-16 border-2 border-dashed border-gray-300 rounded-full flex items-center justify-center cursor-pointer"
-              onClick={() => setShowCreateStory(true)}
-            >
-              <Plus className="w-6 h-6 text-gray-400" />
-            </div>
-            <span className="text-xs text-gray-500">Add Story</span>
-          </div>
-          {mockStories.map((story, index) => (
-            <div key={story.id} className="flex flex-col items-center gap-2">
-              <div 
-                className={`w-16 h-16 rounded-full p-0.5 cursor-pointer ${
-                  story.isViewed 
-                    ? 'bg-gray-300' 
-                    : 'bg-gradient-to-r from-pink-500 to-purple-500'
-                }`}
-                onClick={() => setSelectedStory(index)}
-              >
-                <div className="w-full h-full rounded-full bg-white p-0.5">
-                  <div className="w-full h-full rounded-full bg-gray-200 flex items-center justify-center">
-                    <span className="text-xs font-medium">{story.userName[0]}</span>
-                  </div>
-                </div>
-              </div>
-              <span className="text-xs text-gray-700 font-medium">{story.userName}</span>
-            </div>
-          ))}
-        </div>
+        <StoriesSection
+          stories={mockStories}
+          onCreateStory={() => setShowCreateStory(true)}
+          onStoryClick={(index) => setSelectedStory(index)}
+        />
       </div>
 
       {/* Map Section */}
-      <div className="px-4 pb-4 bg-white">
-        <div className="h-64 bg-gradient-to-br from-green-50 to-blue-50 rounded-2xl relative overflow-hidden shadow-lg">
-          {/* Map Background with Google Maps Style */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-100 via-green-50 to-blue-200">
-            {/* Street lines */}
-            <svg className="absolute inset-0 w-full h-full">
-              <defs>
-                <pattern id="streets" patternUnits="userSpaceOnUse" width="40" height="40">
-                  <path d="M0,20 L40,20" stroke="#ddd" strokeWidth="1"/>
-                  <path d="M20,0 L20,40" stroke="#ddd" strokeWidth="1"/>
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#streets)" opacity="0.3"/>
-            </svg>
-          </div>
-
-          {/* Location Labels */}
-          <div className="absolute top-4 left-4 text-xs font-medium text-gray-600 bg-white/80 px-2 py-1 rounded">
-            PACIFIC HEIGHTS
-          </div>
-          <div className="absolute top-6 right-4 text-xs font-medium text-gray-600 bg-white/80 px-2 py-1 rounded">
-            CHINATOWN
-          </div>
-          <div className="absolute bottom-16 left-4 text-xs font-medium text-gray-600 bg-white/80 px-2 py-1 rounded">
-            MISSION<br />DISTRICT
-          </div>
-          <div className="absolute bottom-20 right-8 text-xs font-medium text-gray-600 bg-white/80 px-2 py-1 rounded">
-            UNION SQUARE
-          </div>
-
-          {/* Place Pins with visitor info */}
-          {places.map((place, index) => (
-            <div 
-              key={place.id}
-              className="absolute group cursor-pointer"
-              style={{
-                top: `${30 + index * 15}%`,
-                left: `${25 + index * 20}%`
-              }}
-              onClick={() => handlePinClick(place)}
-            >
-              {/* Pin */}
-              <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white hover:scale-110 transition-transform">
-                <div className="w-3 h-3 bg-white rounded-full"></div>
-              </div>
-              
-              {/* Hover Info Card */}
-              <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-white rounded-lg shadow-lg p-3 min-w-48 opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
-                <div className="text-sm font-semibold text-gray-900">{place.name}</div>
-                <div className="text-xs text-gray-500 mb-1">{place.category} • {place.price}</div>
-                <div className="text-xs text-gray-600">
-                  Visited by: {place.visitors.join(', ')}
-                </div>
-                <div className="flex items-center gap-1 mt-1">
-                  <span className="text-xs text-yellow-500">★</span>
-                  <span className="text-xs text-gray-600">{place.rating}</span>
-                </div>
-                {/* Arrow */}
-                <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
-              </div>
-            </div>
-          ))}
-
-          {/* Current Location Indicator */}
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-            <div className="w-4 h-4 bg-blue-600 rounded-full border-4 border-white shadow-lg animate-pulse"></div>
-          </div>
-
-          {/* Expand Map Button */}
-          <button className="absolute bottom-4 right-4 w-10 h-10 bg-white rounded-lg shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors">
-            <div className="grid grid-cols-2 gap-0.5">
-              <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
-              <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
-              <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
-              <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
-            </div>
-          </button>
-        </div>
-      </div>
+      <MapSection
+        places={places}
+        onPinClick={handlePinClick}
+      />
 
       {/* Categories */}
       <div className="px-4 py-4 bg-white border-t border-gray-100">
@@ -569,96 +474,15 @@ const HomePage = () => {
         {/* Place Cards */}
         <div className="space-y-3">
           {places.map((place) => (
-            <div 
-              key={place.id} 
-              className="relative cursor-pointer hover:scale-[1.02] transition-transform"
-              onClick={() => handleLocationCardClick(place)}
-            >
-              {place.isNew && (
-                <div className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-medium z-10">
-                  NEW
-                </div>
-              )}
-              <div className="bg-gray-100 rounded-xl h-32 relative overflow-hidden">
-                {place.image ? (
-                  <img
-                    src={place.image}
-                    alt={place.name}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                      target.nextElementSibling?.setAttribute('style', 'display: block');
-                    }}
-                  />
-                ) : null}
-                <div className={`absolute inset-0 bg-gradient-to-r from-green-400 to-blue-400 opacity-50 ${place.image ? 'hidden' : ''}`}></div>
-                
-                {/* Like button and count - top right */}
-                <div className="absolute top-2 right-2 flex items-center gap-2">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleLikeToggle(place.id);
-                    }}
-                    className="bg-white/90 backdrop-blur-sm rounded-full p-2 flex items-center gap-1 text-xs font-medium shadow-sm"
-                  >
-                    <Heart 
-                      className={`w-3 h-3 ${likedPlaces.has(place.id) ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} 
-                    />
-                    <span className="text-gray-800">{place.likes + (likedPlaces.has(place.id) ? 1 : 0)}</span>
-                  </button>
-                </div>
-
-                {/* Friends who saved - top left under NEW badge */}
-                {place.friendsWhoSaved && place.friendsWhoSaved.length > 0 && (
-                  <div className="absolute top-8 left-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
-                    <div className="flex -space-x-1">
-                      {place.friendsWhoSaved.slice(0, 2).map((friend, index) => (
-                        <div key={index} className="w-4 h-4 rounded-full bg-gray-300 border border-white flex items-center justify-center">
-                          <span className="text-xs font-medium">{friend.name[0]}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <span className="text-xs text-gray-700">
-                      {place.friendsWhoSaved.length === 1 
-                        ? `${place.friendsWhoSaved[0].name} saved`
-                        : `${place.friendsWhoSaved.length} friends saved`
-                      }
-                    </span>
-                  </div>
-                )}
-
-                {/* Location name - bottom left */}
-                <div className="absolute bottom-12 left-2 text-white text-sm font-medium">
-                  {place.name}
-                </div>
-
-                {/* Share and Comment buttons - bottom */}
-                <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleShare(place);
-                    }}
-                    className="bg-white/90 backdrop-blur-sm rounded-full p-2 flex items-center gap-1 text-xs font-medium shadow-sm"
-                  >
-                    <Share className="w-3 h-3 text-gray-600" />
-                    <span className="text-gray-800">Share</span>
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleComment(place);
-                    }}
-                    className="bg-white/90 backdrop-blur-sm rounded-full p-2 flex items-center gap-1 text-xs font-medium shadow-sm"
-                  >
-                    <MessageCircle className="w-3 h-3 text-gray-600" />
-                    <span className="text-gray-800">Comment</span>
-                  </button>
-                </div>
-              </div>
-            </div>
+            <PlaceCard
+              key={place.id}
+              place={place}
+              isLiked={likedPlaces.has(place.id)}
+              onCardClick={handleLocationCardClick}
+              onLikeToggle={handleLikeToggle}
+              onShare={handleShare}
+              onComment={handleComment}
+            />
           ))}
           
           {savedLocations.length === 0 && (
@@ -687,14 +511,13 @@ const HomePage = () => {
         <Plus className="w-6 h-6 text-white" />
       </button>
 
-      {/* Save Location Dialog */}
+      {/* Modals and Dialogs */}
       <SaveLocationDialog
         isOpen={showSaveDialog}
         onClose={() => setShowSaveDialog(false)}
         onLocationSaved={loadSavedLocations}
       />
 
-      {/* Location Detail Sheet */}
       <LocationDetailSheet
         isOpen={showLocationDetail}
         onClose={() => {
@@ -705,7 +528,6 @@ const HomePage = () => {
         location={selectedLocation}
       />
 
-      {/* Stories Viewer */}
       {selectedStory !== null && (
         <StoriesViewer
           stories={mockStories}
@@ -715,23 +537,40 @@ const HomePage = () => {
         />
       )}
 
-      {/* Create Story Modal */}
       <CreateStoryModal
         isOpen={showCreateStory}
         onClose={() => setShowCreateStory(false)}
         onStoryCreated={handleStoryCreated}
       />
 
-      {/* Notifications Modal */}
       <NotificationsModal
         isOpen={showNotifications}
         onClose={() => setShowNotifications(false)}
       />
 
-      {/* Messages Modal */}
       <MessagesModal
         isOpen={showMessages}
         onClose={() => setShowMessages(false)}
+      />
+
+      <ShareModal
+        isOpen={showShareModal}
+        onClose={() => {
+          setShowShareModal(false);
+          setSelectedPlaceForShare(null);
+        }}
+        place={selectedPlaceForShare}
+        onShare={handleShareSubmit}
+      />
+
+      <CommentModal
+        isOpen={showCommentModal}
+        onClose={() => {
+          setShowCommentModal(false);
+          setSelectedPlaceForComment(null);
+        }}
+        place={selectedPlaceForComment}
+        onCommentSubmit={handleCommentSubmit}
       />
     </div>
   );

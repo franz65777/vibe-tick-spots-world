@@ -1,15 +1,20 @@
 
 import { useState } from 'react';
-import { X, Search, Send, Camera, Smile } from 'lucide-react';
+import { X, Search, Send, Camera, Smile, MapPin } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
 interface Message {
   id: string;
   senderId: string;
-  text: string;
+  text?: string;
   timestamp: string;
   isRead: boolean;
+  sharedLocation?: {
+    name: string;
+    category: string;
+    image?: string;
+  };
 }
 
 interface Chat {
@@ -39,12 +44,22 @@ const MessagesModal = ({ isOpen, onClose }: MessagesModalProps) => {
     {
       id: '1',
       user: { name: 'Emma', avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png', isOnline: true },
-      lastMessage: 'Hey! How was that cafe you went to?',
+      lastMessage: 'Check out this place I found!',
       timestamp: '2m',
       unreadCount: 2,
       messages: [
         { id: '1', senderId: 'emma', text: 'Hey! How was that cafe you went to?', timestamp: '2m', isRead: false },
-        { id: '2', senderId: 'emma', text: 'I saw your story, it looks amazing!', timestamp: '1m', isRead: false },
+        { 
+          id: '2', 
+          senderId: 'emma', 
+          timestamp: '1m', 
+          isRead: false,
+          sharedLocation: {
+            name: 'Golden Gate Cafe',
+            category: 'Restaurant',
+            image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400&h=300&fit=crop'
+          }
+        },
       ]
     },
     {
@@ -72,7 +87,6 @@ const MessagesModal = ({ isOpen, onClose }: MessagesModalProps) => {
 
   const handleSendMessage = () => {
     if (messageText.trim() && selectedChat) {
-      // In a real app, this would send the message to the backend
       console.log('Sending message:', messageText);
       setMessageText('');
     }
@@ -122,15 +136,54 @@ const MessagesModal = ({ isOpen, onClose }: MessagesModalProps) => {
                     message.senderId === 'me' ? 'justify-end' : 'justify-start'
                   )}
                 >
-                  <div
-                    className={cn(
-                      "max-w-xs px-4 py-2 rounded-2xl text-sm",
-                      message.senderId === 'me'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-900'
+                  <div className={cn(
+                    "max-w-xs",
+                    message.senderId === 'me' ? 'items-end' : 'items-start'
+                  )}>
+                    {message.sharedLocation ? (
+                      // Shared Location Message
+                      <div className={cn(
+                        "rounded-2xl overflow-hidden border border-gray-200",
+                        message.senderId === 'me' ? 'bg-blue-600' : 'bg-white'
+                      )}>
+                        <div className="relative">
+                          {message.sharedLocation.image && (
+                            <img 
+                              src={message.sharedLocation.image} 
+                              alt={message.sharedLocation.name}
+                              className="w-full h-32 object-cover"
+                            />
+                          )}
+                          <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
+                            <MapPin className="w-6 h-6 text-white" />
+                          </div>
+                        </div>
+                        <div className={cn(
+                          "p-3",
+                          message.senderId === 'me' ? 'text-white' : 'text-gray-900'
+                        )}>
+                          <h4 className="font-medium text-sm">{message.sharedLocation.name}</h4>
+                          <p className={cn(
+                            "text-xs",
+                            message.senderId === 'me' ? 'text-blue-100' : 'text-gray-500'
+                          )}>
+                            {message.sharedLocation.category}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      // Text Message
+                      <div
+                        className={cn(
+                          "px-4 py-2 rounded-2xl text-sm",
+                          message.senderId === 'me'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 text-gray-900'
+                        )}
+                      >
+                        {message.text}
+                      </div>
                     )}
-                  >
-                    {message.text}
                   </div>
                 </div>
               ))}
