@@ -361,20 +361,18 @@ const ExplorePage = () => {
     }
 
     return (
-      <div className="p-4">
-        <div className="grid grid-cols-2 gap-4">
-          {resultsToShow.map((location) => (
-            <PlaceCard
-              key={location.id}
-              place={location as Place}
-              isLiked={likedPlaces.has(location.id)}
-              onCardClick={handleCardClick}
-              onLikeToggle={handleLikeToggle}
-              onShare={handleShare}
-              onComment={handleComment}
-            />
-          ))}
-        </div>
+      <div className="space-y-6 px-4 pb-4">
+        {resultsToShow.map((location) => (
+          <PlaceCard
+            key={location.id}
+            place={location as Place}
+            isLiked={likedPlaces.has(location.id)}
+            onCardClick={handleCardClick}
+            onLikeToggle={handleLikeToggle}
+            onShare={handleShare}
+            onComment={handleComment}
+          />
+        ))}
       </div>
     );
   };
@@ -390,24 +388,24 @@ const ExplorePage = () => {
     }
 
     return (
-      <div className="space-y-2 p-4">
+      <div className="space-y-3 p-4">
         {searchResults.map((user) => (
-          <div key={user.id} className="flex items-center p-3 bg-white rounded-lg">
+          <div key={user.id} className="flex items-center p-4 bg-white rounded-xl shadow-sm border border-gray-100">
             <img
               src={user.avatar}
               alt={user.fullName}
-              className="w-12 h-12 rounded-full mr-3"
+              className="w-12 h-12 rounded-full mr-4"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.src = '/placeholder.svg';
               }}
             />
             <div className="flex-1">
-              <p className="font-semibold">{user.fullName}</p>
+              <p className="font-semibold text-gray-900">{user.fullName}</p>
               <p className="text-sm text-gray-600">@{user.username}</p>
             </div>
             <div className="text-right">
-              <p className="font-semibold">{user.followers}</p>
+              <p className="font-semibold text-gray-900">{user.followers}</p>
               <p className="text-xs text-gray-500">followers</p>
             </div>
           </div>
@@ -419,12 +417,12 @@ const ExplorePage = () => {
   const renderUserSearchHistory = () => {
     return (
       <div className="p-4">
-        <h2 className="text-lg font-semibold mb-4">Recent Searches</h2>
-        <div className="space-y-2">
+        <h2 className="text-lg font-semibold mb-4 text-gray-900">Recent Searches</h2>
+        <div className="space-y-3">
           {userSearchHistory.map((user, index) => (
             <div
               key={index}
-              className="flex items-center p-3 bg-white rounded-lg cursor-pointer"
+              className="flex items-center p-4 bg-white rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-shadow"
               onClick={() => handleSearch(user.username)}
             >
               <img
@@ -437,7 +435,7 @@ const ExplorePage = () => {
                 }}
               />
               <div className="flex-1">
-                <p className="font-semibold">{user.fullName}</p>
+                <p className="font-semibold text-gray-900">{user.fullName}</p>
                 <p className="text-sm text-gray-600">@{user.username}</p>
               </div>
               <p className="text-xs text-gray-500">{user.lastSearched}</p>
@@ -451,55 +449,62 @@ const ExplorePage = () => {
   const renderMainContent = () => {
     if (searchType === 'locations') {
       return (
-        <div>
-          {/* Category Filter Buttons - Always visible for locations */}
-          <div className="bg-white px-4 py-3 border-b border-gray-200">
-            <div className="flex space-x-2 overflow-x-auto">
+        <div className="space-y-4">
+          {/* Category Filter Buttons */}
+          <div className="bg-white px-4 py-4 border-b border-gray-100">
+            <div className="flex space-x-3 overflow-x-auto pb-1">
               <Button
                 variant={selectedCategory === 'all' ? 'default' : 'outline'}
                 onClick={() => handleCategoryFilter('all')}
-                className="whitespace-nowrap"
+                className="whitespace-nowrap rounded-full"
+                size="sm"
               >
                 All
               </Button>
               <Button
                 variant={selectedCategory === 'restaurant' ? 'default' : 'outline'}
                 onClick={() => handleCategoryFilter('restaurant')}
-                className="whitespace-nowrap"
+                className="whitespace-nowrap rounded-full"
+                size="sm"
               >
                 Restaurants
               </Button>
               <Button
                 variant={selectedCategory === 'hotel' ? 'default' : 'outline'}
                 onClick={() => handleCategoryFilter('hotel')}
-                className="whitespace-nowrap"
+                className="whitespace-nowrap rounded-full"
+                size="sm"
               >
                 Hotels
               </Button>
               <Button
                 variant={selectedCategory === 'cafe' ? 'default' : 'outline'}
                 onClick={() => handleCategoryFilter('cafe')}
-                className="whitespace-nowrap"
+                className="whitespace-nowrap rounded-full"
+                size="sm"
               >
                 Cafes
               </Button>
               <Button
                 variant={selectedCategory === 'bar' ? 'default' : 'outline'}
                 onClick={() => handleCategoryFilter('bar')}
-                className="whitespace-nowrap"
+                className="whitespace-nowrap rounded-full"
+                size="sm"
               >
                 Bars
               </Button>
             </div>
           </div>
 
-          {/* Nearby Places Section */}
-          <div className="bg-white px-4 py-4">
+          {/* Places Section Header */}
+          <div className="px-4">
             <h2 className="text-xl font-bold text-gray-900 mb-4">
               Nearby Places {!isSearching && `(${getFilteredLocations().length})`}
             </h2>
-            {renderLocationSearchResults()}
           </div>
+
+          {/* Places List */}
+          {renderLocationSearchResults()}
         </div>
       );
     } else {
@@ -513,11 +518,11 @@ const ExplorePage = () => {
   return (
     <div className="flex flex-col h-full bg-gray-50">
       {/* Search Header */}
-      <div className="bg-white p-4 border-b">
+      <div className="bg-white p-4 border-b border-gray-100 shadow-sm">
         <div className="flex items-center gap-3">
-          {/* Back button - only show when searching */}
+          {/* Back button */}
           {isSearching && (
-            <Button variant="ghost" size="icon" onClick={goBack}>
+            <Button variant="ghost" size="icon" onClick={goBack} className="shrink-0">
               <ArrowLeft className="w-5 h-5" />
             </Button>
           )}
@@ -529,7 +534,7 @@ const ExplorePage = () => {
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
               placeholder={searchType === 'locations' ? 'Search for places (e.g., pizza, sushi, coffee)' : 'Search for users'}
-              className="pl-10 pr-10 bg-gray-100 border-none rounded-full"
+              className="pl-10 pr-10 bg-gray-100 border-none rounded-full h-10"
             />
             {searchQuery && (
               <Button
@@ -545,7 +550,7 @@ const ExplorePage = () => {
           
           {/* Search Type Toggle */}
           {!isSearching && (
-            <div className="flex bg-gray-200 rounded-full p-1">
+            <div className="flex bg-gray-200 rounded-full p-1 shrink-0">
               <button
                 onClick={() => setSearchType('locations')}
                 className={cn(

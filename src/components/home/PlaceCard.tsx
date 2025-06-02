@@ -31,15 +31,11 @@ interface PlaceCardProps {
 const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComment }: PlaceCardProps) => {
   return (
     <div 
-      className="relative cursor-pointer hover:scale-[1.02] transition-all duration-300 group"
+      className="relative cursor-pointer hover:scale-[1.02] transition-all duration-300 group bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-xl"
       onClick={() => onCardClick(place)}
     >
-      {place.isNew && (
-        <div className="absolute top-3 left-3 bg-gradient-to-r from-orange-400 to-red-500 text-white text-xs px-3 py-1.5 rounded-full font-semibold z-10 shadow-lg animate-pulse">
-          NEW
-        </div>
-      )}
-      <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-3xl h-40 relative overflow-hidden shadow-xl group-hover:shadow-2xl transition-shadow duration-300">
+      {/* Image Container */}
+      <div className="relative h-48 overflow-hidden">
         {place.image ? (
           <img
             src={place.image}
@@ -55,28 +51,34 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
         <div className={`absolute inset-0 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 opacity-60 ${place.image ? 'hidden' : ''}`}></div>
         
         {/* Overlay gradient for better text readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"></div>
 
-        {/* Like button and count - top right */}
-        <div className="absolute top-3 right-3 flex items-center gap-2">
+        {/* NEW Badge */}
+        {place.isNew && (
+          <div className="absolute top-4 left-4 bg-gradient-to-r from-orange-400 to-red-500 text-white text-xs px-3 py-1.5 rounded-full font-semibold z-10 shadow-lg">
+            NEW
+          </div>
+        )}
+
+        {/* Like button */}
+        <div className="absolute top-4 right-4">
           <button
             onClick={(e) => {
               e.stopPropagation();
               onLikeToggle(place.id);
             }}
-            className="bg-white/95 backdrop-blur-lg rounded-2xl px-4 py-2 flex items-center gap-2 text-sm font-semibold shadow-lg hover:scale-105 transition-all duration-200"
+            className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:scale-105 transition-all duration-200"
           >
             <Heart 
-              className={`w-4 h-4 ${isLiked ? 'fill-red-500 text-red-500' : 'text-gray-600'} transition-colors duration-200`} 
+              className={`w-5 h-5 ${isLiked ? 'fill-red-500 text-red-500' : 'text-gray-600'} transition-colors duration-200`} 
             />
-            <span className="text-gray-800">{place.likes + (isLiked ? 1 : 0)}</span>
           </button>
         </div>
 
-        {/* Friends who saved - top left under NEW badge */}
+        {/* Friends who saved */}
         {place.friendsWhoSaved && place.friendsWhoSaved.length > 0 && (
-          <div className="absolute top-12 left-3 bg-white/95 backdrop-blur-lg rounded-2xl px-3 py-2 flex items-center gap-2 shadow-lg">
-            <div className="flex -space-x-2">
+          <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-full px-3 py-2 flex items-center gap-2 shadow-lg">
+            <div className="flex -space-x-1">
               {place.friendsWhoSaved.slice(0, 2).map((friend, index) => (
                 <Avatar key={index} className="w-5 h-5 border-2 border-white shadow-sm">
                   <AvatarImage 
@@ -97,34 +99,43 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
             </span>
           </div>
         )}
+      </div>
 
-        {/* Location name - bottom left */}
-        <div className="absolute bottom-16 left-4 text-white">
-          <h3 className="text-lg font-bold drop-shadow-lg">{place.name}</h3>
-          <p className="text-sm text-white/90 capitalize drop-shadow-md">{place.category}</p>
+      {/* Content Container */}
+      <div className="p-4 space-y-4">
+        {/* Location Info */}
+        <div className="flex items-start justify-between">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg font-bold text-gray-900 truncate">{place.name}</h3>
+            <p className="text-sm text-gray-600 capitalize">{place.category}</p>
+          </div>
+          <div className="flex items-center gap-1 ml-2">
+            <Heart className="w-4 h-4 text-red-500" />
+            <span className="text-sm font-medium text-gray-700">{place.likes + (isLiked ? 1 : 0)}</span>
+          </div>
         </div>
 
-        {/* Share and Comment buttons - bottom */}
-        <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between gap-3">
+        {/* Action Buttons */}
+        <div className="flex items-center gap-3">
           <button
             onClick={(e) => {
               e.stopPropagation();
               onShare(place);
             }}
-            className="bg-white/95 backdrop-blur-lg rounded-2xl px-4 py-2.5 flex items-center gap-2 text-sm font-semibold shadow-lg hover:scale-105 transition-all duration-200 flex-1"
+            className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl px-4 py-3 flex items-center justify-center gap-2 text-sm font-semibold transition-colors duration-200"
           >
-            <Share className="w-4 h-4 text-blue-600" />
-            <span className="text-gray-800">Share</span>
+            <Share className="w-4 h-4" />
+            <span>Share</span>
           </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
               onComment(place);
             }}
-            className="bg-white/95 backdrop-blur-lg rounded-2xl px-4 py-2.5 flex items-center gap-2 text-sm font-semibold shadow-lg hover:scale-105 transition-all duration-200 flex-1"
+            className="flex-1 bg-purple-50 hover:bg-purple-100 text-purple-600 rounded-xl px-4 py-3 flex items-center justify-center gap-2 text-sm font-semibold transition-colors duration-200"
           >
-            <MessageCircle className="w-4 h-4 text-purple-600" />
-            <span className="text-gray-800">Comment</span>
+            <MessageCircle className="w-4 h-4" />
+            <span>Comment</span>
           </button>
         </div>
       </div>
