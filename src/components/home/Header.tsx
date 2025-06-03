@@ -22,7 +22,7 @@ const Header = ({
   onCitySelect
 }: HeaderProps) => {
   return (
-    <div className="bg-white/95 backdrop-blur-lg px-6 py-4 shadow-sm">
+    <div className="bg-white/95 backdrop-blur-lg px-6 py-4 shadow-sm relative z-50">
       <div className="flex items-center justify-between gap-4">
         <CitySearch
           searchQuery={searchQuery}

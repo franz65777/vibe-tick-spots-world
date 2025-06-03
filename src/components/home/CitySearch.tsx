@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { Search, MapPin, Building, Landmark, Building2, Clock, Mountain, Shield, Church, Waves, TreePine } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -171,7 +172,7 @@ const CitySearch = ({
   };
 
   return (
-    <div ref={searchRef} className="relative flex-1 max-w-md z-50">
+    <div ref={searchRef} className="relative flex-1 max-w-md z-[100]">
       {/* Current City Display / Search Input */}
       <div className="relative">
         {!searchQuery || searchQuery.trim() === ' ' ? (
@@ -213,9 +214,9 @@ const CitySearch = ({
         />
       )}
 
-      {/* Dropdown Results - Fixed positioning */}
+      {/* Dropdown Results - High z-index to appear above everything */}
       {isOpen && filteredCities.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 max-h-64 overflow-y-auto z-[9999]">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 max-h-64 overflow-y-auto z-[9999] backdrop-blur-sm">
           {filteredCities.map(({ key, data, similarity }) => {
             const IconComponent = data.icon;
             return (
@@ -240,9 +241,9 @@ const CitySearch = ({
         </div>
       )}
 
-      {/* No results - Fixed positioning */}
+      {/* No results - High z-index to appear above everything */}
       {isOpen && searchQuery.trim() && searchQuery.trim() !== ' ' && filteredCities.length === 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 z-[9999]">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 z-[9999] backdrop-blur-sm">
           <div className="text-gray-500 text-sm text-center">
             <div className="mb-2">No cities found for "{searchQuery}"</div>
             <div className="text-xs">Try: Milan, Paris, New York, London, Tokyo</div>
