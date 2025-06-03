@@ -9,6 +9,131 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      business_notifications: {
+        Row: {
+          business_id: string | null
+          created_at: string | null
+          id: string
+          is_sent: boolean | null
+          location_id: string | null
+          message: string
+          metadata: Json | null
+          notification_type: Database["public"]["Enums"]["notification_type"]
+          open_count: number | null
+          recipient_count: number | null
+          scheduled_time: string | null
+          sent_time: string | null
+          title: string
+        }
+        Insert: {
+          business_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_sent?: boolean | null
+          location_id?: string | null
+          message: string
+          metadata?: Json | null
+          notification_type: Database["public"]["Enums"]["notification_type"]
+          open_count?: number | null
+          recipient_count?: number | null
+          scheduled_time?: string | null
+          sent_time?: string | null
+          title: string
+        }
+        Update: {
+          business_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_sent?: boolean | null
+          location_id?: string | null
+          message?: string
+          metadata?: Json | null
+          notification_type?: Database["public"]["Enums"]["notification_type"]
+          open_count?: number | null
+          recipient_count?: number | null
+          scheduled_time?: string | null
+          sent_time?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_notifications_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_notifications_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_profiles: {
+        Row: {
+          business_description: string | null
+          business_name: string
+          business_type: string
+          created_at: string | null
+          id: string
+          phone_number: string | null
+          subscription_expires_at: string | null
+          subscription_plan: string | null
+          subscription_started_at: string | null
+          updated_at: string | null
+          user_id: string | null
+          verification_status:
+            | Database["public"]["Enums"]["business_verification_status"]
+            | null
+          website_url: string | null
+        }
+        Insert: {
+          business_description?: string | null
+          business_name: string
+          business_type: string
+          created_at?: string | null
+          id?: string
+          phone_number?: string | null
+          subscription_expires_at?: string | null
+          subscription_plan?: string | null
+          subscription_started_at?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          verification_status?:
+            | Database["public"]["Enums"]["business_verification_status"]
+            | null
+          website_url?: string | null
+        }
+        Update: {
+          business_description?: string | null
+          business_name?: string
+          business_type?: string
+          created_at?: string | null
+          id?: string
+          phone_number?: string | null
+          subscription_expires_at?: string | null
+          subscription_plan?: string | null
+          subscription_started_at?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          verification_status?:
+            | Database["public"]["Enums"]["business_verification_status"]
+            | null
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       follows: {
         Row: {
           created_at: string | null
@@ -45,41 +170,327 @@ export type Database = {
           },
         ]
       }
+      location_claims: {
+        Row: {
+          business_id: string | null
+          claimed_at: string | null
+          id: string
+          location_id: string | null
+          verification_documents: Json | null
+          verification_status:
+            | Database["public"]["Enums"]["business_verification_status"]
+            | null
+        }
+        Insert: {
+          business_id?: string | null
+          claimed_at?: string | null
+          id?: string
+          location_id?: string | null
+          verification_documents?: Json | null
+          verification_status?:
+            | Database["public"]["Enums"]["business_verification_status"]
+            | null
+        }
+        Update: {
+          business_id?: string | null
+          claimed_at?: string | null
+          id?: string
+          location_id?: string | null
+          verification_documents?: Json | null
+          verification_status?:
+            | Database["public"]["Enums"]["business_verification_status"]
+            | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_claims_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_claims_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: true
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      locations: {
+        Row: {
+          address: string | null
+          category: string
+          city: string | null
+          country: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          latitude: number | null
+          longitude: number | null
+          metadata: Json | null
+          name: string
+          pioneer_user_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          category: string
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          metadata?: Json | null
+          name: string
+          pioneer_user_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          category?: string
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          metadata?: Json | null
+          name?: string
+          pioneer_user_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "locations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "locations_pioneer_user_id_fkey"
+            columns: ["pioneer_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      media: {
+        Row: {
+          caption: string | null
+          created_at: string | null
+          file_path: string
+          file_size: number | null
+          file_type: string
+          id: string
+          location_id: string | null
+          metadata: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string | null
+          file_path: string
+          file_size?: number | null
+          file_type: string
+          id?: string
+          location_id?: string | null
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string | null
+          file_path?: string
+          file_size?: number | null
+          file_type?: string
+          id?: string
+          location_id?: string | null
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "media_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           bio: string | null
+          business_verified: boolean | null
           created_at: string
           email: string | null
           full_name: string | null
           id: string
           posts_count: number | null
+          subscription_status:
+            | Database["public"]["Enums"]["subscription_status"]
+            | null
           updated_at: string
+          user_type: Database["public"]["Enums"]["user_type"] | null
           username: string | null
         }
         Insert: {
           avatar_url?: string | null
           bio?: string | null
+          business_verified?: boolean | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id: string
           posts_count?: number | null
+          subscription_status?:
+            | Database["public"]["Enums"]["subscription_status"]
+            | null
           updated_at?: string
+          user_type?: Database["public"]["Enums"]["user_type"] | null
           username?: string | null
         }
         Update: {
           avatar_url?: string | null
           bio?: string | null
+          business_verified?: boolean | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id?: string
           posts_count?: number | null
+          subscription_status?:
+            | Database["public"]["Enums"]["subscription_status"]
+            | null
           updated_at?: string
+          user_type?: Database["public"]["Enums"]["user_type"] | null
           username?: string | null
         }
         Relationships: []
+      }
+      promoted_posts: {
+        Row: {
+          business_id: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          media_id: string | null
+          promoted_at: string | null
+          promotion_type: string | null
+        }
+        Insert: {
+          business_id?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          media_id?: string | null
+          promoted_at?: string | null
+          promotion_type?: string | null
+        }
+        Update: {
+          business_id?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          media_id?: string | null
+          promoted_at?: string | null
+          promotion_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promoted_posts_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promoted_posts_media_id_fkey"
+            columns: ["media_id"]
+            isOneToOne: true
+            referencedRelation: "media"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_notification_settings: {
+        Row: {
+          allowed_types: Json | null
+          business_id: string | null
+          created_at: string | null
+          geographic_radius: number | null
+          id: string
+          is_muted: boolean | null
+          location_id: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          allowed_types?: Json | null
+          business_id?: string | null
+          created_at?: string | null
+          geographic_radius?: number | null
+          id?: string
+          is_muted?: boolean | null
+          location_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          allowed_types?: Json | null
+          business_id?: string | null
+          created_at?: string | null
+          geographic_radius?: number | null
+          id?: string
+          is_muted?: boolean | null
+          location_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_notification_settings_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_notification_settings_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_notification_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -89,7 +500,10 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      business_verification_status: "pending" | "verified" | "rejected"
+      notification_type: "event" | "discount" | "announcement" | "special_offer"
+      subscription_status: "active" | "inactive" | "trial" | "cancelled"
+      user_type: "free" | "business"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -204,6 +618,11 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      business_verification_status: ["pending", "verified", "rejected"],
+      notification_type: ["event", "discount", "announcement", "special_offer"],
+      subscription_status: ["active", "inactive", "trial", "cancelled"],
+      user_type: ["free", "business"],
+    },
   },
 } as const

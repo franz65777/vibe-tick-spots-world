@@ -2,6 +2,9 @@
 import { useState } from 'react';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Building2 } from 'lucide-react';
 import ProfileHeader from './profile/ProfileHeader';
 import ProfileStats from './profile/ProfileStats';
 import ProfileTabs from './profile/ProfileTabs';
@@ -13,6 +16,7 @@ import FollowersModal from './profile/FollowersModal';
 const ProfilePage = () => {
   const { profile, loading, error } = useProfile();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('posts');
   const [modalState, setModalState] = useState<{ isOpen: boolean; type: 'followers' | 'following' | null }>({
     isOpen: false,
@@ -67,6 +71,18 @@ const ProfilePage = () => {
   return (
     <div className="flex flex-col h-full bg-white">
       <ProfileHeader />
+      
+      {/* Business Dashboard Link */}
+      <div className="px-4 py-2">
+        <Button
+          onClick={() => navigate('/business')}
+          variant="outline"
+          className="w-full border-blue-200 text-blue-700 hover:bg-blue-50"
+        >
+          <Building2 className="w-4 h-4 mr-2" />
+          Business Dashboard
+        </Button>
+      </div>
       
       <ProfileStats 
         onFollowersClick={() => openModal('followers')}
