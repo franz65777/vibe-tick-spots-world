@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { ArrowLeft, MoreHorizontal, Bookmark, MapPin, Grid3X3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -49,13 +48,13 @@ const ProfilePage = () => {
     );
   }
 
-  // Generate initials from full name or username
+  // Generate initials from username or full name
   const getInitials = () => {
-    if (profile?.full_name) {
-      return profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase();
-    }
     if (profile?.username) {
       return profile.username.substring(0, 2).toUpperCase();
+    }
+    if (profile?.full_name) {
+      return profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase();
     }
     if (user?.email) {
       return user.email.substring(0, 2).toUpperCase();
@@ -63,8 +62,8 @@ const ProfilePage = () => {
     return 'U';
   };
 
-  const displayName = profile?.full_name || profile?.username || 'User';
   const displayUsername = profile?.username || user?.email?.split('@')[0] || 'user';
+  const displayFullName = profile?.full_name;
 
   return (
     <div className="flex flex-col h-full bg-white">
@@ -84,7 +83,7 @@ const ProfilePage = () => {
                   {profile?.avatar_url ? (
                     <img 
                       src={profile.avatar_url} 
-                      alt={displayName}
+                      alt={displayUsername}
                       className="w-full h-full object-cover rounded-full"
                     />
                   ) : (
@@ -100,12 +99,14 @@ const ProfilePage = () => {
           
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-xl font-bold text-gray-900">{displayName}</h1>
+              <h1 className="text-xl font-bold text-gray-900">{displayUsername}</h1>
               <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-3 py-1 rounded-full">
                 Elite
               </Button>
             </div>
-            <p className="text-gray-600 text-sm mb-2">@{displayUsername}</p>
+            {displayFullName && (
+              <p className="text-gray-600 text-sm mb-2">{displayFullName}</p>
+            )}
             <p className="text-gray-700 text-sm">
               {profile?.bio || 'Travel Enthusiast | Food Lover | Photographer'}
             </p>
