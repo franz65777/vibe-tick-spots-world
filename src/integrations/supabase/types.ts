@@ -9,6 +9,42 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      follows: {
+        Row: {
+          created_at: string | null
+          follower_id: string
+          following_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string | null
+          follower_id: string
+          following_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string | null
+          follower_id?: string
+          following_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follows_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follows_following_id_fkey"
+            columns: ["following_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -17,6 +53,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          posts_count: number | null
           updated_at: string
           username: string | null
         }
@@ -27,6 +64,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          posts_count?: number | null
           updated_at?: string
           username?: string | null
         }
@@ -37,6 +75,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          posts_count?: number | null
           updated_at?: string
           username?: string | null
         }
