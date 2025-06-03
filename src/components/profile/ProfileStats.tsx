@@ -28,7 +28,7 @@ const ProfileStats = ({ onFollowersClick, onFollowingClick, onPostsClick }: Prof
 
   if (followLoading || placesLoading) {
     return (
-      <div className="px-4 mb-6">
+      <div className="px-5 sm:px-4 mb-6">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
           <div className="grid grid-cols-4 gap-6 animate-pulse">
             {[1, 2, 3, 4].map((_, index) => (
@@ -73,30 +73,30 @@ const ProfileStats = ({ onFollowersClick, onFollowingClick, onPostsClick }: Prof
         setSelectedCity(city);
         setView('places');
       }}
-      className="bg-gradient-to-br from-white to-gray-50 rounded-2xl p-4 shadow-sm hover:shadow-lg transition-all cursor-pointer border border-gray-100 hover:border-blue-200"
+      className="bg-gradient-to-br from-white to-gray-50 rounded-2xl p-5 sm:p-4 shadow-sm hover:shadow-lg transition-all cursor-pointer border border-gray-100 hover:border-blue-200"
     >
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-bold text-gray-900">{city}</h3>
-          <p className="text-sm text-gray-600">{places.length} places saved</p>
+          <h3 className="font-bold text-lg sm:text-base text-gray-900">{city}</h3>
+          <p className="text-base sm:text-sm text-gray-600">{places.length} places saved</p>
         </div>
-        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-md">
-          <MapPin className="w-6 h-6 text-white" />
+        <div className="w-14 h-14 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-md">
+          <MapPin className="w-7 h-7 sm:w-6 sm:h-6 text-white" />
         </div>
       </div>
     </div>
   );
 
   const renderPlaceCard = (place: SavedPlace) => (
-    <div key={place.id} className="bg-gradient-to-br from-white to-gray-50 rounded-2xl p-4 shadow-sm border border-gray-100">
+    <div key={place.id} className="bg-gradient-to-br from-white to-gray-50 rounded-2xl p-5 sm:p-4 shadow-sm border border-gray-100">
       <div className="flex items-center justify-between">
         <div className="flex-1">
-          <h3 className="font-bold text-gray-900">{place.name}</h3>
-          <p className="text-sm text-gray-600 capitalize">{place.category}</p>
-          <p className="text-xs text-gray-500">Saved on {new Date(place.savedAt).toLocaleDateString()}</p>
+          <h3 className="font-bold text-lg sm:text-base text-gray-900">{place.name}</h3>
+          <p className="text-base sm:text-sm text-gray-600 capitalize">{place.category}</p>
+          <p className="text-sm sm:text-xs text-gray-500">Saved on {new Date(place.savedAt).toLocaleDateString()}</p>
         </div>
-        <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-2xl flex items-center justify-center shadow-md">
-          <span className="text-white text-sm font-bold">{place.category[0].toUpperCase()}</span>
+        <div className="w-14 h-14 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-2xl flex items-center justify-center shadow-md">
+          <span className="text-white text-base sm:text-sm font-bold">{place.category[0].toUpperCase()}</span>
         </div>
       </div>
     </div>
@@ -104,15 +104,15 @@ const ProfileStats = ({ onFollowersClick, onFollowingClick, onPostsClick }: Prof
 
   if (view === 'cities') {
     return (
-      <div className="px-4 mb-6">
-        <div className="flex items-center gap-3 mb-6">
+      <div className="px-5 sm:px-4 mb-6">
+        <div className="flex items-center gap-4 sm:gap-3 mb-6">
           <button 
             onClick={() => setView('stats')}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-3 sm:p-2 hover:bg-gray-100 rounded-full transition-colors min-w-[48px] min-h-[48px] sm:min-w-[44px] sm:min-h-[44px]"
           >
-            <ChevronLeft className="w-5 h-5 text-gray-600" />
+            <ChevronLeft className="w-6 h-6 sm:w-5 sm:h-5 text-gray-600" />
           </button>
-          <h2 className="text-xl font-bold text-gray-900">Your Cities</h2>
+          <h2 className="text-2xl sm:text-xl font-bold text-gray-900">Your Cities</h2>
         </div>
         <div className="space-y-4">
           {Object.entries(savedPlaces).map(([city, places]) => 
@@ -126,20 +126,20 @@ const ProfileStats = ({ onFollowersClick, onFollowingClick, onPostsClick }: Prof
   if (view === 'places' && selectedCity) {
     const cityPlaces = savedPlaces[selectedCity] || [];
     return (
-      <div className="px-4 mb-6">
-        <div className="flex items-center gap-3 mb-6">
+      <div className="px-5 sm:px-4 mb-6">
+        <div className="flex items-center gap-4 sm:gap-3 mb-6">
           <button 
             onClick={() => setView('cities')}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-3 sm:p-2 hover:bg-gray-100 rounded-full transition-colors min-w-[48px] min-h-[48px] sm:min-w-[44px] sm:min-h-[44px]"
           >
-            <ChevronLeft className="w-5 h-5 text-gray-600" />
+            <ChevronLeft className="w-6 h-6 sm:w-5 sm:h-5 text-gray-600" />
           </button>
-          <h2 className="text-xl font-bold text-gray-900">{selectedCity}</h2>
+          <h2 className="text-2xl sm:text-xl font-bold text-gray-900">{selectedCity}</h2>
           <button 
             onClick={() => setView('stats')}
-            className="ml-auto p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="ml-auto p-3 sm:p-2 hover:bg-gray-100 rounded-full transition-colors min-w-[48px] min-h-[48px] sm:min-w-[44px] sm:min-h-[44px]"
           >
-            <X className="w-4 h-4 text-gray-600" />
+            <X className="w-5 h-5 sm:w-4 sm:h-4 text-gray-600" />
           </button>
         </div>
         <div className="space-y-4">
@@ -150,19 +150,19 @@ const ProfileStats = ({ onFollowersClick, onFollowingClick, onPostsClick }: Prof
   }
 
   return (
-    <div className="px-4 mb-6">
+    <div className="px-5 sm:px-4 mb-6">
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="grid grid-cols-4">
           {statsData.map((stat, index) => (
             <button
               key={index}
               onClick={stat.onClick}
-              className={`text-center py-6 px-3 hover:bg-gray-50 transition-colors ${
+              className={`text-center py-5 px-4 sm:py-6 sm:px-3 hover:bg-gray-50 transition-colors min-h-[72px] sm:min-h-[80px] ${
                 index < statsData.length - 1 ? 'border-r border-gray-100' : ''
               }`}
             >
-              <div className="text-xl font-bold text-gray-900 mb-1">{stat.value}</div>
-              <div className="text-xs text-gray-600 font-medium">{stat.label}</div>
+              <div className="text-xl sm:text-xl font-bold text-gray-900 mb-1">{stat.value}</div>
+              <div className="text-sm sm:text-xs text-gray-600 font-medium">{stat.label}</div>
             </button>
           ))}
         </div>

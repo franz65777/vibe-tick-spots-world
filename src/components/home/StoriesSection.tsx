@@ -41,14 +41,14 @@ const getCategoryIcon = (category: string) => {
   switch (category?.toLowerCase()) {
     case 'restaurant':
     case 'cafe':
-      return <Utensils className="w-3 h-3 text-white" />;
+      return <Utensils className="w-4 h-4 sm:w-3 sm:h-3 text-white" />;
     case 'hotel':
-      return <Hotel className="w-3 h-3 text-white" />;
+      return <Hotel className="w-4 h-4 sm:w-3 sm:h-3 text-white" />;
     case 'bar':
     case 'nightlife':
-      return <Wine className="w-3 h-3 text-white" />;
+      return <Wine className="w-4 h-4 sm:w-3 sm:h-3 text-white" />;
     default:
-      return <Utensils className="w-3 h-3 text-white" />;
+      return <Utensils className="w-4 h-4 sm:w-3 sm:h-3 text-white" />;
   }
 };
 
@@ -78,18 +78,18 @@ const StoriesSection = ({ stories, onCreateStory, onStoryClick }: StoriesSection
   }, {} as Record<string, Story[]>);
 
   return (
-    <div className="flex gap-4 px-2 py-1">
+    <div className="flex gap-5 sm:gap-4 px-2 py-1">
       {/* Add Story Button */}
-      <div className="flex flex-col items-center gap-2 min-w-[70px]">
+      <div className="flex flex-col items-center gap-3 sm:gap-2 min-w-[80px] sm:min-w-[70px]">
         <div className="relative">
           <div 
-            className="w-16 h-16 border-2 border-dashed border-gray-300 rounded-full flex items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all duration-300 hover:scale-105"
+            className="w-20 h-20 sm:w-16 sm:h-16 border-2 border-dashed border-gray-300 rounded-full flex items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all duration-300 hover:scale-105"
             onClick={onCreateStory}
           >
-            <Plus className="w-6 h-6 text-gray-400" />
+            <Plus className="w-7 h-7 sm:w-6 sm:h-6 text-gray-400" />
           </div>
         </div>
-        <span className="text-xs text-gray-500 font-medium text-center">Add</span>
+        <span className="text-sm sm:text-xs text-gray-500 font-medium text-center">Add</span>
       </div>
 
       {/* User Stories */}
@@ -101,11 +101,11 @@ const StoriesSection = ({ stories, onCreateStory, onStoryClick }: StoriesSection
         const profilePic = getProfilePicture(mainStory.userName, mainStory.userAvatar);
         
         return (
-          <div key={userId} className="flex flex-col items-center gap-2 min-w-[70px]">
+          <div key={userId} className="flex flex-col items-center gap-3 sm:gap-2 min-w-[80px] sm:min-w-[70px]">
             <div className="relative">
               {/* Main Story Circle */}
               <div 
-                className={`w-16 h-16 rounded-full p-0.5 cursor-pointer transition-all duration-300 hover:scale-105 relative ${
+                className={`w-20 h-20 sm:w-16 sm:h-16 rounded-full p-0.5 cursor-pointer transition-all duration-300 hover:scale-105 relative ${
                   mainStory.isViewed 
                     ? 'bg-gradient-to-br from-gray-300 to-gray-400' 
                     : 'bg-gradient-to-br from-pink-500 via-purple-500 to-blue-500'
@@ -130,7 +130,7 @@ const StoriesSection = ({ stories, onCreateStory, onStoryClick }: StoriesSection
                   {displayCategories.map((category, index) => (
                     <div 
                       key={category}
-                      className={`w-6 h-6 bg-gradient-to-br ${getCategoryColor(category || '')} rounded-full flex items-center justify-center shadow-lg border-2 border-white`}
+                      className={`w-7 h-7 sm:w-6 sm:h-6 bg-gradient-to-br ${getCategoryColor(category || '')} rounded-full flex items-center justify-center shadow-lg border-2 border-white`}
                       style={{
                         marginLeft: index > 0 ? '-8px' : '0',
                         zIndex: displayCategories.length - index
@@ -143,19 +143,19 @@ const StoriesSection = ({ stories, onCreateStory, onStoryClick }: StoriesSection
                   {/* More indicator */}
                   {hasMoreCategories && (
                     <div 
-                      className="w-6 h-6 bg-gradient-to-br from-gray-500 to-gray-600 rounded-full flex items-center justify-center shadow-lg border-2 border-white"
+                      className="w-7 h-7 sm:w-6 sm:h-6 bg-gradient-to-br from-gray-500 to-gray-600 rounded-full flex items-center justify-center shadow-lg border-2 border-white"
                       style={{
                         marginLeft: '-8px',
                         zIndex: 0
                       }}
                     >
-                      <MoreHorizontal className="w-3 h-3 text-white" />
+                      <MoreHorizontal className="w-4 h-4 sm:w-3 sm:h-3 text-white" />
                     </div>
                   )}
                 </div>
               </div>
             </div>
-            <span className="text-xs text-gray-700 font-semibold text-center">{mainStory.userName}</span>
+            <span className="text-sm sm:text-xs text-gray-700 font-semibold text-center">{mainStory.userName}</span>
           </div>
         );
       })}

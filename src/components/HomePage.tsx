@@ -514,7 +514,7 @@ const HomePage = () => {
       />
 
       {/* Stories Section */}
-      <div className="bg-white/60 backdrop-blur-sm px-6 py-2">
+      <div className="bg-white/60 backdrop-blur-sm px-4 py-3 sm:px-6 sm:py-2">
         <div className="overflow-x-auto">
           <StoriesSection 
             stories={stories}
@@ -551,13 +551,13 @@ const HomePage = () => {
 
       {/* Selected Place Card */}
       {selectedPlace && (
-        <div className="bg-white/95 backdrop-blur-lg p-6 mx-4 mb-4 rounded-3xl shadow-2xl shadow-black/10 border border-white/20 relative">
+        <div className="bg-white/95 backdrop-blur-lg p-6 sm:p-5 mx-4 mb-4 rounded-3xl shadow-2xl shadow-black/10 border border-white/20 relative">
           <button
             onClick={handleCloseSelectedPlace}
-            className="absolute top-4 right-4 w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors z-10"
+            className="absolute top-4 right-4 w-12 h-12 sm:w-10 sm:h-10 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors z-10"
             aria-label="Close place details"
           >
-            <X className="w-4 h-4 text-gray-600" />
+            <X className="w-6 h-6 sm:w-5 sm:h-5 text-gray-600" />
           </button>
           <PlaceCard
             place={selectedPlace}
