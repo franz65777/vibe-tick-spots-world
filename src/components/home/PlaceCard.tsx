@@ -1,5 +1,4 @@
-
-import { Heart, Share, MessageCircle } from 'lucide-react';
+import { Heart, Share, MessageCircle, MapPin } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 
@@ -89,10 +88,18 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
         <div className="absolute top-2 right-2 flex gap-1">
           <button
             onClick={handleSaveToggle}
-            className="bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-sm hover:scale-105 transition-all duration-200"
+            className={`backdrop-blur-sm rounded-full p-1.5 shadow-sm hover:scale-110 transition-all duration-200 ${
+              isSaved 
+                ? 'bg-blue-500 animate-pulse' 
+                : 'bg-white/90 hover:bg-blue-50'
+            }`}
           >
-            <Heart 
-              className={`w-4 h-4 ${isSaved ? 'fill-blue-500 text-blue-500' : 'text-gray-600'} transition-colors duration-200`} 
+            <MapPin 
+              className={`w-4 h-4 transition-all duration-200 ${
+                isSaved 
+                  ? 'fill-white text-white drop-shadow-sm' 
+                  : 'text-blue-600'
+              }`} 
             />
           </button>
           <button

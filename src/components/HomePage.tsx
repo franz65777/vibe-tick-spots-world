@@ -597,7 +597,7 @@ const HomePage = () => {
         currentStoryIndex={currentStoryIndex}
         onCreateStoryModalClose={() => setIsCreateStoryModalOpen(false)}
         onNotificationsModalClose={() => setIsNotificationsModalOpen(false)}
-        onMessagesModalClose={() => setIsMessagesModalClose(false)}
+        onMessagesModalClose={() => setIsMessagesModalOpen(false)}
         onShareModalClose={() => setIsShareModalOpen(false)}
         onCommentModalClose={() => setIsCommentModalOpen(false)}
         onLocationDetailClose={() => setIsLocationDetailOpen(false)}

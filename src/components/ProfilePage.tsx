@@ -4,7 +4,6 @@ import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/contexts/AuthContext';
 import ProfileHeader from './profile/ProfileHeader';
 import ProfileStats from './profile/ProfileStats';
-import TravelStats from './profile/TravelStats';
 import ProfileTabs from './profile/ProfileTabs';
 import Achievements from './profile/Achievements';
 import FollowersModal from './profile/FollowersModal';
@@ -60,7 +59,6 @@ const ProfilePage = () => {
         onPostsClick={handlePostsClick}
       />
       
-      <TravelStats />
       <ProfileTabs />
       <Achievements />
 
