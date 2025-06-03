@@ -1,8 +1,8 @@
+
 import { useState } from 'react';
 import { useFollowStats } from '@/hooks/useFollowStats';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
-import { MapPin, Grid3X3, ChevronLeft, X, Users, Heart } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { MapPin, Grid3X3, ChevronLeft, X } from 'lucide-react';
 
 interface ProfileStatsProps {
   onFollowersClick: () => void;
@@ -29,14 +29,15 @@ const ProfileStats = ({ onFollowersClick, onFollowingClick, onPostsClick }: Prof
   if (followLoading || placesLoading) {
     return (
       <div className="px-4 mb-6">
-        <div className="grid grid-cols-4 gap-3">
-          {[1, 2, 3, 4].map((_, index) => (
-            <div key={index} className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl p-4 animate-pulse">
-              <div className="w-10 h-10 bg-gray-300 rounded-full mx-auto mb-3"></div>
-              <div className="h-6 bg-gray-300 rounded mb-1"></div>
-              <div className="h-4 bg-gray-300 rounded"></div>
-            </div>
-          ))}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div className="grid grid-cols-4 gap-6 animate-pulse">
+            {[1, 2, 3, 4].map((_, index) => (
+              <div key={index} className="text-center">
+                <div className="h-6 bg-gray-200 rounded mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded"></div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -44,37 +45,24 @@ const ProfileStats = ({ onFollowersClick, onFollowingClick, onPostsClick }: Prof
 
   const statsData = [
     { 
-      label: 'Posts', 
-      value: followStats.postsCount.toString(), 
-      onClick: onPostsClick, 
-      icon: Grid3X3,
-      gradient: 'from-purple-500 to-pink-500',
-      bgGradient: 'from-purple-50 to-pink-50'
+      label: 'followers', 
+      value: '1.5K', // Format large numbers
+      onClick: onFollowersClick
     },
     { 
-      label: 'Followers', 
-      value: followStats.followersCount.toString(), 
-      onClick: onFollowersClick,
-      icon: Users,
-      gradient: 'from-blue-500 to-cyan-500',
-      bgGradient: 'from-blue-50 to-cyan-50'
-    },
-    { 
-      label: 'Following', 
+      label: 'following', 
       value: followStats.followingCount.toString(), 
-      onClick: onFollowingClick,
-      icon: Heart,
-      gradient: 'from-rose-500 to-orange-500',
-      bgGradient: 'from-rose-50 to-orange-50'
+      onClick: onFollowingClick
     },
     { 
-      label: 'Locations', 
-      value: placesStats.cities.toString(), 
-      onClick: () => setView('cities'),
-      icon: MapPin,
-      subtitle: `${placesStats.places} places`,
-      gradient: 'from-emerald-500 to-teal-500',
-      bgGradient: 'from-emerald-50 to-teal-50'
+      label: 'posts', 
+      value: followStats.postsCount.toString(), 
+      onClick: onPostsClick
+    },
+    { 
+      label: `${placesStats.places} places`, 
+      value: `${placesStats.cities} cities`, 
+      onClick: () => setView('cities')
     },
   ];
 
@@ -163,25 +151,21 @@ const ProfileStats = ({ onFollowersClick, onFollowingClick, onPostsClick }: Prof
 
   return (
     <div className="px-4 mb-6">
-      <div className="grid grid-cols-4 gap-3">
-        {statsData.map((stat, index) => (
-          <button
-            key={index}
-            onClick={stat.onClick}
-            className={`relative overflow-hidden text-center hover:scale-105 rounded-2xl p-4 transition-all duration-300 bg-gradient-to-br ${stat.bgGradient} border border-white shadow-sm hover:shadow-lg`}
-          >
-            <div className="flex flex-col items-center gap-2">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br ${stat.gradient} shadow-md`}>
-                <stat.icon className="w-5 h-5 text-white" />
-              </div>
-              <div className="text-xl font-bold text-gray-900">{stat.value}</div>
-              <div className="text-xs font-medium text-gray-700">{stat.label}</div>
-              {stat.subtitle && (
-                <div className="text-xs text-gray-500">{stat.subtitle}</div>
-              )}
-            </div>
-          </button>
-        ))}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="grid grid-cols-4">
+          {statsData.map((stat, index) => (
+            <button
+              key={index}
+              onClick={stat.onClick}
+              className={`text-center py-6 px-3 hover:bg-gray-50 transition-colors ${
+                index < statsData.length - 1 ? 'border-r border-gray-100' : ''
+              }`}
+            >
+              <div className="text-xl font-bold text-gray-900 mb-1">{stat.value}</div>
+              <div className="text-xs text-gray-600 font-medium">{stat.label}</div>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

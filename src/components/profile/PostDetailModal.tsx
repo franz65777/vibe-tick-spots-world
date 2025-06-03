@@ -1,8 +1,9 @@
 
-import { Heart, MessageCircle, MapPin, X, Send, Bookmark } from 'lucide-react';
+import { MessageCircle, MapPin, X, Send, Bookmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useState } from 'react';
+import { getCategoryIcon, getCategoryColor } from '@/utils/categoryIcons';
 
 interface Post {
   id: string;
@@ -13,6 +14,7 @@ interface Post {
   caption: string;
   createdAt: string;
   totalSaves?: number;
+  category?: string; // Add category for dynamic icons
 }
 
 interface Comment {
@@ -20,6 +22,7 @@ interface Comment {
   username: string;
   text: string;
   timestamp: string;
+  avatar?: string;
 }
 
 interface PostDetailModalProps {
@@ -42,20 +45,47 @@ const PostDetailModal = ({
   onSaveToggle 
 }: PostDetailModalProps) => {
   const [newComment, setNewComment] = useState('');
-  
-  // Demo comments
-  const comments: Comment[] = [
-    { id: '1', username: 'sarah_travels', text: 'This place looks amazing! 😍', timestamp: '2h' },
-    { id: '2', username: 'foodie_mike', text: 'Best pasta I\'ve ever had!', timestamp: '4h' },
-    { id: '3', username: 'city_explorer', text: 'Adding this to my list 📝', timestamp: '6h' }
-  ];
+  const [comments, setComments] = useState<Comment[]>([
+    { 
+      id: '1', 
+      username: 'sarah_travels', 
+      text: 'This place looks amazing! 😍', 
+      timestamp: '2h',
+      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=32&h=32&fit=crop&crop=face'
+    },
+    { 
+      id: '2', 
+      username: 'foodie_mike', 
+      text: 'Best pasta I\'ve ever had!', 
+      timestamp: '4h',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=32&h=32&fit=crop&crop=face'
+    },
+    { 
+      id: '3', 
+      username: 'city_explorer', 
+      text: 'Adding this to my list 📝', 
+      timestamp: '6h',
+      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=32&h=32&fit=crop&crop=face'
+    }
+  ]);
 
   if (!isOpen || !post) return null;
+
+  // Get the appropriate icon and color for the category
+  const CategoryIcon = getCategoryIcon(post.category || 'restaurant');
+  const categoryColor = getCategoryColor(post.category || 'restaurant');
 
   const handleCommentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (newComment.trim()) {
-      console.log('New comment:', newComment);
+      const newCommentObj: Comment = {
+        id: Date.now().toString(),
+        username: 'your_username',
+        text: newComment,
+        timestamp: 'now',
+        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face'
+      };
+      setComments(prev => [newCommentObj, ...prev]);
       setNewComment('');
     }
   };
@@ -95,7 +125,7 @@ const PostDetailModal = ({
             <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="bg-white/95 backdrop-blur-md rounded-full px-3 py-2 flex items-center gap-2 shadow-lg">
-                  <Heart className="w-3.5 h-3.5 text-red-500" />
+                  <CategoryIcon className={`w-3.5 h-3.5 ${categoryColor}`} />
                   <span className="text-sm font-bold text-gray-800">{post.likes + (isLiked ? 1 : 0)}</span>
                 </div>
                 <div className="bg-white/95 backdrop-blur-md rounded-full px-3 py-2 flex items-center gap-2 shadow-lg">
@@ -136,11 +166,11 @@ const PostDetailModal = ({
                   onClick={onLikeToggle}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-full transition-all duration-300 ${
                     isLiked 
-                      ? 'bg-red-50 text-red-600 scale-105' 
-                      : 'bg-gray-50 text-gray-600 hover:bg-red-50 hover:text-red-600 hover:scale-105'
+                      ? `bg-orange-50 ${categoryColor} scale-105` 
+                      : `bg-gray-50 text-gray-600 hover:bg-orange-50 hover:${categoryColor} hover:scale-105`
                   }`}
                 >
-                  <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+                  <CategoryIcon className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
                   <span className="text-sm font-semibold">Like</span>
                 </button>
                 <button className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-gray-50 text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-all duration-300 hover:scale-105">
@@ -167,7 +197,7 @@ const PostDetailModal = ({
             {comments.map((comment) => (
               <div key={comment.id} className="flex items-start gap-3">
                 <Avatar className="w-7 h-7 flex-shrink-0">
-                  <AvatarImage src={`https://images.unsplash.com/photo-147209964578${comment.id}?w=28&h=28&fit=crop&crop=face`} />
+                  <AvatarImage src={comment.avatar} />
                   <AvatarFallback className="text-xs bg-gradient-to-br from-blue-400 to-purple-500 text-white font-medium">{comment.username[0].toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">

@@ -12,6 +12,7 @@ interface Post {
   caption: string;
   createdAt: string;
   totalSaves?: number;
+  category?: string;
 }
 
 const PostsGrid = () => {
@@ -29,7 +30,8 @@ const PostsGrid = () => {
       location: 'Milan, Italy',
       caption: 'Amazing pasta at this hidden gem! 🍝',
       createdAt: '2024-06-01',
-      totalSaves: 23
+      totalSaves: 23,
+      category: 'restaurant'
     },
     {
       id: '2',
@@ -39,7 +41,8 @@ const PostsGrid = () => {
       location: 'Paris, France',
       caption: 'Perfect evening at this rooftop bar ✨',
       createdAt: '2024-05-28',
-      totalSaves: 18
+      totalSaves: 18,
+      category: 'bar'
     },
     {
       id: '3',
@@ -49,7 +52,8 @@ const PostsGrid = () => {
       location: 'San Francisco, CA',
       caption: 'Best coffee in the city! ☕',
       createdAt: '2024-05-25',
-      totalSaves: 31
+      totalSaves: 31,
+      category: 'cafe'
     },
     {
       id: '4',
@@ -59,7 +63,8 @@ const PostsGrid = () => {
       location: 'New York, NY',
       caption: 'Incredible brunch spot 🥐',
       createdAt: '2024-05-20',
-      totalSaves: 45
+      totalSaves: 45,
+      category: 'restaurant'
     },
     {
       id: '5',
@@ -69,7 +74,8 @@ const PostsGrid = () => {
       location: 'Tokyo, Japan',
       caption: 'Traditional ramen house 🍜',
       createdAt: '2024-05-15',
-      totalSaves: 12
+      totalSaves: 12,
+      category: 'restaurant'
     },
     {
       id: '6',
@@ -79,7 +85,8 @@ const PostsGrid = () => {
       location: 'Barcelona, Spain',
       caption: 'Tapas and good vibes 🍤',
       createdAt: '2024-05-10',
-      totalSaves: 27
+      totalSaves: 27,
+      category: 'restaurant'
     }
   ];
 

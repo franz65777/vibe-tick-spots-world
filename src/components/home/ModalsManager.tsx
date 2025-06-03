@@ -111,7 +111,8 @@ const ModalsManager = ({
       <ShareModal
         isOpen={isShareModalOpen}
         onClose={onShareModalClose}
-        place={sharePlace}
+        item={sharePlace}
+        itemType="place"
         onShare={onShare}
       />
 
