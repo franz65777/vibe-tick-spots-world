@@ -3,9 +3,13 @@ import { useState } from 'react';
 import { ArrowLeft, MoreHorizontal, Bookmark, MapPin, Grid3X3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useProfile } from '@/hooks/useProfile';
+import { useAuth } from '@/contexts/AuthContext';
 
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('saved');
+  const { profile, loading, error } = useProfile();
+  const { user } = useAuth();
 
   const stats = [
     { label: 'Posts', value: '120' },
@@ -25,6 +29,43 @@ const ProfilePage = () => {
     { name: 'Explorer', level: 4, icon: '🧭', color: 'bg-green-100 border-green-200' },
   ];
 
+  if (loading) {
+    return (
+      <div className="flex flex-col h-full bg-white">
+        <div className="flex items-center justify-center h-64">
+          <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col h-full bg-white">
+        <div className="flex items-center justify-center h-64">
+          <p className="text-red-600">Error loading profile: {error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Generate initials from full name or username
+  const getInitials = () => {
+    if (profile?.full_name) {
+      return profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase();
+    }
+    if (profile?.username) {
+      return profile.username.substring(0, 2).toUpperCase();
+    }
+    if (user?.email) {
+      return user.email.substring(0, 2).toUpperCase();
+    }
+    return 'U';
+  };
+
+  const displayName = profile?.full_name || profile?.username || 'User';
+  const displayUsername = profile?.username || user?.email?.split('@')[0] || 'user';
+
   return (
     <div className="flex flex-col h-full bg-white">
       {/* Header */}
@@ -40,7 +81,15 @@ const ProfilePage = () => {
             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-400 to-purple-600 p-1">
               <div className="w-full h-full rounded-full bg-white p-1">
                 <div className="w-full h-full rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-                  <span className="text-lg font-semibold text-gray-600">FT</span>
+                  {profile?.avatar_url ? (
+                    <img 
+                      src={profile.avatar_url} 
+                      alt={displayName}
+                      className="w-full h-full object-cover rounded-full"
+                    />
+                  ) : (
+                    <span className="text-lg font-semibold text-gray-600">{getInitials()}</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -51,13 +100,15 @@ const ProfilePage = () => {
           
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-xl font-bold text-gray-900">Francesco Trinchera</h1>
+              <h1 className="text-xl font-bold text-gray-900">{displayName}</h1>
               <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-3 py-1 rounded-full">
                 Elite
               </Button>
             </div>
-            <p className="text-gray-600 text-sm mb-2">@fratrinky</p>
-            <p className="text-gray-700 text-sm">Travel Enthusiast | Food Lover | Photographer</p>
+            <p className="text-gray-600 text-sm mb-2">@{displayUsername}</p>
+            <p className="text-gray-700 text-sm">
+              {profile?.bio || 'Travel Enthusiast | Food Lover | Photographer'}
+            </p>
           </div>
         </div>
 
