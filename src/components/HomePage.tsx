@@ -502,7 +502,7 @@ const HomePage = () => {
   const locationOfTheWeek = getLocationOfTheWeek();
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-br from-blue-50/30 via-white to-purple-50/20 pt-12">
+    <div className="flex flex-col h-full bg-gradient-to-br from-blue-50/30 via-white to-purple-50/20 pt-16">
       {/* Header */}
       <Header
         searchQuery={searchQuery}
@@ -541,7 +541,7 @@ const HomePage = () => {
       />
 
       {/* Map Section */}
-      <div className="flex-1 relative">
+      <div className="flex-1 relative mb-20">
         <div className="absolute inset-0 bg-gradient-to-t from-white/20 via-transparent to-transparent pointer-events-none z-10"></div>
         <MapSection 
           places={filteredPlaces} 
@@ -552,7 +552,7 @@ const HomePage = () => {
 
       {/* Selected Place Card */}
       {selectedPlace && (
-        <div className="bg-white/95 backdrop-blur-lg p-6 sm:p-5 mx-4 mb-24 rounded-3xl shadow-2xl shadow-black/10 border border-white/20 relative">
+        <div className="bg-white/95 backdrop-blur-lg p-6 sm:p-5 mx-4 mb-20 rounded-3xl shadow-2xl shadow-black/10 border border-white/20 relative">
           <button
             onClick={handleCloseSelectedPlace}
             className="absolute top-4 right-4 w-12 h-12 sm:w-10 sm:h-10 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors z-10"

@@ -212,7 +212,7 @@ const ExplorePage = () => {
   }, [selectedCategory, searchQuery, activeFilters]);
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 pt-12">
+    <div className="flex flex-col h-full bg-gray-50 pt-16">
       {/* Search Header */}
       <div className="bg-white p-5 sm:p-4 border-b border-gray-100 shadow-sm flex-shrink-0">
         <div className="flex items-center gap-4 sm:gap-3">
@@ -351,7 +351,7 @@ const ExplorePage = () => {
       </div>
 
       {/* Places Grid */}
-      <div className="flex-1 overflow-y-auto px-5 py-4 sm:px-4 sm:py-3 pb-24">
+      <div className="flex-1 overflow-y-auto px-5 py-4 sm:px-4 sm:py-3 pb-20">
         {filteredPlaces.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 sm:py-12 text-center">
             <div className="w-16 h-16 sm:w-12 sm:h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">

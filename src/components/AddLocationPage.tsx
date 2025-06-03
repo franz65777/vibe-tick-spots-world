@@ -105,21 +105,21 @@ const AddLocationPage = () => {
   const canPost = selectedLocation && uploadedImages.length > 0;
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-white pt-12">
+    <div className="flex flex-col h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-white pt-16">
       {/* Header - Fixed */}
-      <div className="bg-white/95 backdrop-blur-lg px-6 py-4 border-b border-gray-100 shadow-sm flex-shrink-0">
+      <div className="bg-white/95 backdrop-blur-lg px-6 py-3 border-b border-gray-100 shadow-sm flex-shrink-0">
         <div className="text-center">
           <h1 className="text-xl font-bold text-gray-900">Share Your Experience</h1>
-          <p className="text-gray-500 text-sm mt-1">Create memories that inspire others</p>
+          <p className="text-gray-500 text-sm">Create memories that inspire others</p>
         </div>
       </div>
 
       {/* Main Content - Scrollable */}
       <div className="flex-1 overflow-y-auto">
-        <div className="p-6 space-y-6 pb-32">
+        <div className="p-4 space-y-4 pb-20">
           {/* Location Selection */}
-          <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
-            <div className="flex items-center gap-3 mb-4">
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-white/20">
+            <div className="flex items-center gap-3 mb-3">
               <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                 <MapPin className="w-4 h-4 text-white" />
               </div>
@@ -169,7 +169,7 @@ const AddLocationPage = () => {
                     </div>
                   )}
 
-                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
                     {nearbyPlaces.map((location, index) => (
                       <button
                         key={index}
@@ -212,7 +212,7 @@ const AddLocationPage = () => {
             {selectedLocation && (
               <button
                 onClick={() => setSelectedLocation('')}
-                className="mt-3 text-sm text-blue-600 hover:text-blue-800 flex items-center gap-2"
+                className="mt-2 text-sm text-blue-600 hover:text-blue-800 flex items-center gap-2"
               >
                 <X className="w-4 h-4" />
                 Clear selection
@@ -221,8 +221,8 @@ const AddLocationPage = () => {
           </div>
 
           {/* Photo Upload */}
-          <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
-            <div className="flex items-center gap-3 mb-4">
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-white/20">
+            <div className="flex items-center gap-3 mb-3">
               <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-teal-600 rounded-full flex items-center justify-center">
                 <Camera className="w-4 h-4 text-white" />
               </div>
@@ -235,14 +235,14 @@ const AddLocationPage = () => {
             </div>
             
             {uploadedImages.length === 0 ? (
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gradient-to-br from-gray-50 to-blue-50 hover:from-blue-50 hover:to-blue-100 transition-all group">
-                <div className="flex flex-col items-center gap-3">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition-colors">
-                    <Camera className="w-6 h-6 text-blue-600" />
+              <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gradient-to-br from-gray-50 to-blue-50 hover:from-blue-50 hover:to-blue-100 transition-all group">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                    <Camera className="w-4 h-4 text-blue-600" />
                   </div>
                   <div className="text-center">
-                    <span className="text-base font-medium text-blue-700">Add photos</span>
-                    <p className="text-sm text-gray-500 mt-1">Share what makes this place special</p>
+                    <span className="text-sm font-medium text-blue-700">Add photos</span>
+                    <p className="text-xs text-gray-500">Share what makes this place special</p>
                   </div>
                 </div>
                 <input
@@ -254,26 +254,26 @@ const AddLocationPage = () => {
                 />
               </label>
             ) : (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
                   {uploadedImages.map((image, index) => (
                     <div key={index} className="relative group">
                       <img
                         src={image}
                         alt={`Upload ${index + 1}`}
-                        className="w-full h-24 object-cover rounded-xl border border-gray-200"
+                        className="w-full h-20 object-cover rounded-xl border border-gray-200"
                       />
                       <button
                         onClick={() => removeImage(index)}
-                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-3 h-3" />
                       </button>
                     </div>
                   ))}
                 </div>
                 
-                <label className="flex items-center justify-center w-full h-12 border-2 border-dashed border-blue-300 rounded-xl cursor-pointer bg-blue-50 hover:bg-blue-100 transition-colors">
+                <label className="flex items-center justify-center w-full h-10 border-2 border-dashed border-blue-300 rounded-xl cursor-pointer bg-blue-50 hover:bg-blue-100 transition-colors">
                   <div className="flex items-center gap-2">
                     <Plus className="w-4 h-4 text-blue-600" />
                     <span className="text-sm font-medium text-blue-700">Add more photos</span>
@@ -291,8 +291,8 @@ const AddLocationPage = () => {
           </div>
 
           {/* Caption */}
-          <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
-            <div className="flex items-center gap-3 mb-4">
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-white/20">
+            <div className="flex items-center gap-3 mb-3">
               <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center">
                 <Sparkles className="w-4 h-4 text-white" />
               </div>
@@ -303,27 +303,27 @@ const AddLocationPage = () => {
               placeholder="What made this place special? Share your experience..."
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
-              className="min-h-[80px] resize-none text-sm border-2 border-gray-200 focus:border-purple-300 rounded-xl"
+              className="min-h-[60px] resize-none text-sm border-2 border-gray-200 focus:border-purple-300 rounded-xl"
             />
           </div>
         </div>
       </div>
 
       {/* Fixed Post Button */}
-      <div className="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 p-6">
+      <div className="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 p-4">
         <Button
           onClick={handlePost}
           disabled={!canPost}
           className={cn(
-            "w-full h-14 font-semibold rounded-2xl transition-all text-lg",
+            "w-full h-12 font-semibold rounded-2xl transition-all text-base",
             canPost 
               ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg" 
               : "bg-gray-100 text-gray-400 cursor-not-allowed"
           )}
         >
           {canPost ? (
-            <span className="flex items-center gap-3">
-              <Sparkles className="w-5 h-5" />
+            <span className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4" />
               Share Experience
             </span>
           ) : (

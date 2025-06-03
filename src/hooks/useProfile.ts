@@ -13,6 +13,9 @@ interface Profile {
   created_at: string;
   updated_at: string;
   posts_count: number;
+  followers_count?: number;
+  following_count?: number;
+  cities_visited?: number;
 }
 
 export const useProfile = () => {
