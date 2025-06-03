@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,8 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 interface AuthContextType {
   user: User | null;
   session: Session | null;
-  signUp: (email: string, password: string, fullName?: string) => Promise<{ error: any }>;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fullName?: string, username?: string) => Promise<{ error: any }>;
+  signIn: (emailOrUsername: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   loading: boolean;
 }
@@ -48,7 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, fullName?: string) => {
+  const signUp = async (email: string, password: string, fullName?: string, username?: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
     const { error } = await supabase.auth.signUp({
@@ -58,17 +57,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         emailRedirectTo: redirectUrl,
         data: {
           full_name: fullName,
+          username: username,
         }
       }
     });
     return { error };
   };
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
+  const signIn = async (emailOrUsername: string, password: string) => {
+    // First try to sign in with email
+    let { error } = await supabase.auth.signInWithPassword({
+      email: emailOrUsername,
       password,
     });
+
+    // If that fails and it looks like a username (no @ symbol), try to find the email by username
+    if (error && !emailOrUsername.includes('@')) {
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('username', emailOrUsername)
+          .single();
+
+        if (profile?.email) {
+          const { error: emailSignInError } = await supabase.auth.signInWithPassword({
+            email: profile.email,
+            password,
+          });
+          error = emailSignInError;
+        }
+      } catch (profileError) {
+        // If we can't find the username, keep the original error
+        console.log('Could not find user by username:', profileError);
+      }
+    }
+
     return { error };
   };
 
