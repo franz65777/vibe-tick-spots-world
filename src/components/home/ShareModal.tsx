@@ -17,14 +17,26 @@ interface Place {
   category: string;
 }
 
+interface Trip {
+  id: string;
+  name: string;
+}
+
+interface Post {
+  id: string;
+  caption: string;
+  location: string;
+}
+
 interface ShareModalProps {
   isOpen: boolean;
   onClose: () => void;
-  place: Place | null;
-  onShare: (friendIds: string[], place: Place) => void;
+  item: Place | Trip | Post | null;
+  itemType: 'place' | 'trip' | 'post';
+  onShare: (friendIds: string[], item: any) => void;
 }
 
-const ShareModal = ({ isOpen, onClose, place, onShare }: ShareModalProps) => {
+const ShareModal = ({ isOpen, onClose, item, itemType, onShare }: ShareModalProps) => {
   const [selectedFriends, setSelectedFriends] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -49,8 +61,8 @@ const ShareModal = ({ isOpen, onClose, place, onShare }: ShareModalProps) => {
   };
 
   const handleShare = () => {
-    if (place && selectedFriends.size > 0) {
-      onShare(Array.from(selectedFriends), place);
+    if (item && selectedFriends.size > 0) {
+      onShare(Array.from(selectedFriends), item);
       setSelectedFriends(new Set());
       onClose();
     }
@@ -60,14 +72,22 @@ const ShareModal = ({ isOpen, onClose, place, onShare }: ShareModalProps) => {
     friend.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  if (!isOpen || !place) return null;
+  const getItemName = () => {
+    if (!item) return '';
+    if (itemType === 'place') return (item as Place).name;
+    if (itemType === 'trip') return (item as Trip).name;
+    if (itemType === 'post') return (item as Post).location;
+    return '';
+  };
+
+  if (!isOpen || !item) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold">Share {place.name}</h2>
+          <h2 className="text-lg font-semibold">Share {getItemName()}</h2>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
             <X className="w-5 h-5" />
           </button>

@@ -1,4 +1,3 @@
-
 import { Heart, Share, MessageCircle, MapPin } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
@@ -61,16 +60,16 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
   return (
     <>
       <div 
-        className="relative cursor-pointer hover:scale-[1.02] transition-all duration-300 group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md"
+        className="relative cursor-pointer hover:scale-[1.03] transition-all duration-300 group bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl border border-gray-100"
         onClick={() => onCardClick(place)}
       >
         {/* Image Container */}
-        <div className="relative h-24 overflow-hidden">
+        <div className="relative h-28 overflow-hidden">
           {place.image ? (
             <img
               src={place.image}
               alt={place.name}
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none';
@@ -78,29 +77,29 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
               }}
             />
           ) : null}
-          <div className={`absolute inset-0 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 opacity-60 ${place.image ? 'hidden' : ''}`}></div>
+          <div className={`absolute inset-0 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 opacity-80 ${place.image ? 'hidden' : ''}`}></div>
           
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"></div>
 
           {place.isNew && (
-            <div className="absolute top-2 left-2 bg-gradient-to-r from-orange-400 to-red-500 text-white text-xs px-2 py-1 rounded-full font-semibold z-10 shadow-sm">
+            <div className="absolute top-3 left-3 bg-gradient-to-r from-orange-400 to-red-500 text-white text-xs px-3 py-1.5 rounded-full font-bold z-10 shadow-lg animate-pulse">
               NEW
             </div>
           )}
 
-          <div className="absolute top-2 right-2 flex gap-1">
+          <div className="absolute top-3 right-3 flex gap-2">
             <button
               onClick={handleSaveToggle}
-              className={`backdrop-blur-sm rounded-full p-1.5 shadow-sm transition-all duration-300 transform ${
+              className={`backdrop-blur-md rounded-full p-2 shadow-lg transition-all duration-300 transform ${
                 isSaved 
-                  ? 'bg-blue-500 scale-110 shadow-lg wiggle' 
-                  : 'bg-white/90 hover:bg-blue-50 hover:scale-110'
+                  ? 'bg-blue-500 scale-110 shadow-xl wiggle-animation' 
+                  : 'bg-white/95 hover:bg-blue-50 hover:scale-110'
               }`}
             >
               <MapPin 
                 className={`w-4 h-4 transition-all duration-300 ${
                   isSaved 
-                    ? 'fill-white text-white bounce-pin' 
+                    ? 'fill-white text-white bounce-animation' 
                     : 'text-blue-600'
                 }`} 
               />
@@ -110,16 +109,16 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
                 e.stopPropagation();
                 onLikeToggle(place.id);
               }}
-              className={`backdrop-blur-sm rounded-full p-1.5 shadow-sm transition-all duration-300 transform ${
+              className={`backdrop-blur-md rounded-full p-2 shadow-lg transition-all duration-300 transform ${
                 isLiked 
-                  ? 'bg-red-50 scale-110 heartbeat' 
-                  : 'bg-white/90 hover:scale-110 hover:bg-red-50'
+                  ? 'bg-red-50 scale-110 heartbeat-animation' 
+                  : 'bg-white/95 hover:scale-110 hover:bg-red-50'
               }`}
             >
               <Heart 
                 className={`w-4 h-4 transition-all duration-300 ${
                   isLiked 
-                    ? 'fill-red-500 text-red-500 pulse-heart' 
+                    ? 'fill-red-500 text-red-500 pulse-animation' 
                     : 'text-gray-600'
                 }`} 
               />
@@ -127,13 +126,13 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
           </div>
 
           {/* Total saves counter */}
-          <div className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1 shadow-sm">
+          <div className="absolute bottom-3 left-3 bg-black/80 backdrop-blur-md rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-lg">
             <MapPin className="w-3 h-3 text-white" />
-            <span className="text-xs text-white font-medium">{totalSaves} saved</span>
+            <span className="text-xs text-white font-bold">{totalSaves} saved</span>
           </div>
 
           {place.friendsWhoSaved && place.friendsWhoSaved.length > 0 && (
-            <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1 shadow-sm">
+            <div className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-md rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-lg">
               <div className="flex -space-x-1">
                 {place.friendsWhoSaved.slice(0, 2).map((friend, index) => (
                   <Avatar key={index} className="w-4 h-4 border border-white shadow-sm">
@@ -147,7 +146,7 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
                   </Avatar>
                 ))}
               </div>
-              <span className="text-xs text-gray-700 font-medium">
+              <span className="text-xs text-gray-700 font-semibold">
                 {place.friendsWhoSaved.length} friends
               </span>
             </div>
@@ -155,15 +154,15 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
         </div>
 
         {/* Content Container */}
-        <div className="p-3 space-y-2">
+        <div className="p-4 space-y-3">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
               <h3 className="text-sm font-bold text-gray-900 truncate">{place.name}</h3>
               <p className="text-xs text-gray-600 capitalize">{place.category}</p>
             </div>
-            <div className="flex items-center gap-1 ml-2">
+            <div className="flex items-center gap-1.5 ml-2">
               <Heart className="w-3 h-3 text-red-500" />
-              <span className="text-xs font-medium text-gray-700">{place.likes + (isLiked ? 1 : 0)}</span>
+              <span className="text-xs font-bold text-gray-700">{place.likes + (isLiked ? 1 : 0)}</span>
             </div>
           </div>
 
@@ -173,7 +172,7 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
                 e.stopPropagation();
                 onShare(place);
               }}
-              className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg px-3 py-2 flex items-center justify-center gap-1 text-xs font-semibold transition-colors duration-200"
+              className="flex-1 bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 text-blue-600 rounded-xl px-3 py-2.5 flex items-center justify-center gap-1.5 text-xs font-bold transition-all duration-300 hover:scale-105 shadow-sm"
             >
               <Share className="w-3 h-3" />
               <span>Share</span>
@@ -183,7 +182,7 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
                 e.stopPropagation();
                 onComment(place);
               }}
-              className="flex-1 bg-purple-50 hover:bg-purple-100 text-purple-600 rounded-lg px-3 py-2 flex items-center justify-center gap-1 text-xs font-semibold transition-colors duration-200"
+              className="flex-1 bg-gradient-to-r from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 text-purple-600 rounded-xl px-3 py-2.5 flex items-center justify-center gap-1.5 text-xs font-bold transition-all duration-300 hover:scale-105 shadow-sm"
             >
               <MessageCircle className="w-3 h-3" />
               <span>Comment</span>
@@ -194,43 +193,40 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
 
       <style>{`
         @keyframes wiggle {
-          0%, 100% { transform: rotate(0deg); }
-          20% { transform: rotate(-8deg); }
-          60% { transform: rotate(8deg); }
+          0%, 100% { transform: rotate(0deg) scale(1.1); }
+          25% { transform: rotate(-3deg) scale(1.15); }
+          75% { transform: rotate(3deg) scale(1.15); }
         }
         
-        @keyframes bounce-pin {
-          0%, 100% { transform: scale(1); }
-          25% { transform: scale(1.2) rotate(-5deg); }
-          75% { transform: scale(1.1) rotate(5deg); }
+        @keyframes bounce {
+          0%, 100% { transform: scale(1.1); }
+          50% { transform: scale(1.25); }
         }
         
         @keyframes heartbeat {
-          0%, 100% { transform: scale(1); }
-          20% { transform: scale(1.15); }
-          60% { transform: scale(1.1); }
+          0%, 100% { transform: scale(1.1); }
+          50% { transform: scale(1.2); }
         }
         
-        @keyframes pulse-heart {
+        @keyframes pulse {
           0%, 100% { transform: scale(1); }
-          30% { transform: scale(1.2); }
-          70% { transform: scale(1.1); }
+          50% { transform: scale(1.1); }
         }
         
-        .wiggle {
+        .wiggle-animation {
           animation: wiggle 0.6s ease-in-out;
         }
         
-        .bounce-pin {
-          animation: bounce-pin 0.6s ease-in-out;
+        .bounce-animation {
+          animation: bounce 0.6s ease-in-out;
         }
         
-        .heartbeat {
+        .heartbeat-animation {
           animation: heartbeat 0.8s ease-in-out;
         }
         
-        .pulse-heart {
-          animation: pulse-heart 0.8s ease-in-out;
+        .pulse-animation {
+          animation: pulse 0.8s ease-in-out;
         }
       `}</style>
     </>
