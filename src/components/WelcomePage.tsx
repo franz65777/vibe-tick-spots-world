@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -23,13 +22,9 @@ const WelcomePage = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-center">
               <div className="relative">
-                <h1 className="text-5xl font-semibold bg-gradient-to-br from-blue-800 via-blue-600 to-blue-400 bg-clip-text text-transparent relative">
-                  SP
-                  <span className="relative inline-block">
-                    O
-                    <MapPin className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 text-blue-600 fill-blue-600" />
-                  </span>
-                  TT
+                <h1 className="text-5xl font-semibold bg-gradient-to-br from-blue-800 via-blue-600 to-blue-400 bg-clip-text text-transparent relative flex items-baseline">
+                  SPOTT
+                  <MapPin className="w-3 h-3 text-blue-600 fill-blue-600 ml-1" />
                 </h1>
               </div>
             </div>
