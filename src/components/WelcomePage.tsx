@@ -28,7 +28,7 @@ const WelcomePage = () => {
                   <span className="relative inline-block">
                     O
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                      <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
                     </div>
                   </span>
                   TT
