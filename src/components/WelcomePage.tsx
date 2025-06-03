@@ -1,9 +1,8 @@
-
 import React, { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { LogIn, UserPlus } from 'lucide-react';
+import { LogIn, UserPlus, MapPin } from 'lucide-react';
 
 const WelcomePage = () => {
   const { user } = useAuth();
@@ -28,7 +27,7 @@ const WelcomePage = () => {
                   <span className="relative inline-block">
                     O
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                      <MapPin className="w-4 h-4 text-orange-500 fill-orange-500" />
                     </div>
                   </span>
                   TT
