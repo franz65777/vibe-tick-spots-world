@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,12 +8,21 @@ import { LogIn, UserPlus, MapPin } from 'lucide-react';
 const WelcomePage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [authMode, setAuthMode] = useState<'welcome' | 'login' | 'signup'>('welcome');
 
   useEffect(() => {
     if (user) {
       navigate('/');
     }
   }, [user, navigate]);
+
+  const handleSignUp = () => {
+    navigate('/auth?mode=signup');
+  };
+
+  const handleLogin = () => {
+    navigate('/auth?mode=login');
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -51,7 +61,7 @@ const WelcomePage = () => {
           {/* Action buttons */}
           <div className="space-y-4 pt-8">
             <Button
-              onClick={() => navigate('/auth')}
+              onClick={handleLogin}
               className="w-full h-12 bg-gradient-to-r from-blue-800 via-blue-600 to-blue-400 hover:from-blue-900 hover:via-blue-700 hover:to-blue-500 text-white font-medium"
             >
               <LogIn className="w-5 h-5 mr-2" />
@@ -59,7 +69,7 @@ const WelcomePage = () => {
             </Button>
 
             <Button
-              onClick={() => navigate('/auth')}
+              onClick={handleSignUp}
               variant="outline"
               className="w-full h-12 border-2 border-blue-200 text-blue-700 hover:bg-blue-50 font-medium"
             >

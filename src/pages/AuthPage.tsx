@@ -1,20 +1,25 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Eye, EyeOff, MapPin, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, MapPin, ArrowLeft, Building } from 'lucide-react';
 
 const AuthPage = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  const [searchParams] = useSearchParams();
+  const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : 'login';
+  const [isLogin, setIsLogin] = useState(initialMode === 'login');
+  const [accountType, setAccountType] = useState<'free' | 'business'>('free');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
+  const [businessName, setBusinessName] = useState('');
+  const [businessType, setBusinessType] = useState('');
   const [emailOrUsername, setEmailOrUsername] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -27,6 +32,15 @@ const AuthPage = () => {
       navigate('/');
     }
   }, [user, navigate]);
+
+  useEffect(() => {
+    const mode = searchParams.get('mode');
+    if (mode === 'signup') {
+      setIsLogin(false);
+    } else if (mode === 'login') {
+      setIsLogin(true);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,11 +69,32 @@ const AuthPage = () => {
           return;
         }
 
+        if (accountType === 'business' && (!businessName || !businessType)) {
+          toast.error('Please fill in all business information');
+          setLoading(false);
+          return;
+        }
+
+        const metadata: any = {
+          full_name: fullName,
+          username: username,
+          account_type: accountType,
+        };
+
+        if (accountType === 'business') {
+          metadata.business_name = businessName;
+          metadata.business_type = businessType;
+        }
+
         const { error } = await signUp(email, password, fullName, username);
         if (error) {
           toast.error(error.message);
         } else {
-          toast.success('Account created! Please check your email to verify your account.');
+          if (accountType === 'business') {
+            toast.success('Business account created! You will be redirected to complete your subscription.');
+          } else {
+            toast.success('Account created! Please check your email to verify your account.');
+          }
         }
       }
     } finally {
@@ -106,6 +141,41 @@ const AuthPage = () => {
             </p>
           </div>
 
+          {/* Account type selector for signup */}
+          {!isLogin && (
+            <div className="space-y-4">
+              <Label className="text-sm font-medium text-gray-700">Account Type</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setAccountType('free')}
+                  className={`p-4 rounded-xl border-2 transition-all ${
+                    accountType === 'free'
+                      ? 'border-blue-500 bg-blue-50 text-blue-700'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <MapPin className="w-6 h-6 mx-auto mb-2" />
+                  <div className="text-sm font-medium">Free User</div>
+                  <div className="text-xs text-gray-500">Discover & share places</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAccountType('business')}
+                  className={`p-4 rounded-xl border-2 transition-all ${
+                    accountType === 'business'
+                      ? 'border-blue-500 bg-blue-50 text-blue-700'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <Building className="w-6 h-6 mx-auto mb-2" />
+                  <div className="text-sm font-medium">Business</div>
+                  <div className="text-xs text-gray-500">Manage your location</div>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             {!isLogin && (
@@ -139,6 +209,47 @@ const AuthPage = () => {
                     placeholder="Choose a username"
                   />
                 </div>
+
+                {accountType === 'business' && (
+                  <>
+                    <div>
+                      <Label htmlFor="businessName" className="text-sm font-medium text-gray-700">
+                        Business Name
+                      </Label>
+                      <Input
+                        id="businessName"
+                        type="text"
+                        value={businessName}
+                        onChange={(e) => setBusinessName(e.target.value)}
+                        required={accountType === 'business'}
+                        className="mt-1 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        placeholder="Enter your business name"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="businessType" className="text-sm font-medium text-gray-700">
+                        Business Type
+                      </Label>
+                      <select
+                        id="businessType"
+                        value={businessType}
+                        onChange={(e) => setBusinessType(e.target.value)}
+                        required={accountType === 'business'}
+                        className="mt-1 h-12 w-full border border-gray-300 rounded-md px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
+                      >
+                        <option value="">Select business type</option>
+                        <option value="restaurant">Restaurant</option>
+                        <option value="hotel">Hotel</option>
+                        <option value="cafe">Cafe</option>
+                        <option value="bar">Bar</option>
+                        <option value="shop">Shop</option>
+                        <option value="attraction">Attraction</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                  </>
+                )}
 
                 <div>
                   <Label htmlFor="email" className="text-sm font-medium text-gray-700">
@@ -247,7 +358,10 @@ const AuthPage = () => {
               {isLogin ? "Don't have an account?" : 'Already have an account?'}
               <button
                 type="button"
-                onClick={() => setIsLogin(!isLogin)}
+                onClick={() => {
+                  setIsLogin(!isLogin);
+                  navigate(`/auth?mode=${!isLogin ? 'login' : 'signup'}`);
+                }}
                 className="ml-2 font-medium text-blue-600 hover:text-blue-500"
               >
                 {isLogin ? 'Sign up' : 'Sign in'}
