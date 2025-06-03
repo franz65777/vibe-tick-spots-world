@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Heart, Bell, MessageCircle, Users, TrendingUp, Sparkles, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -501,7 +502,7 @@ const HomePage = () => {
   const locationOfTheWeek = getLocationOfTheWeek();
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-br from-blue-50/30 via-white to-purple-50/20">
+    <div className="flex flex-col h-full bg-gradient-to-br from-blue-50/30 via-white to-purple-50/20 pt-12">
       {/* Header */}
       <Header
         searchQuery={searchQuery}
@@ -551,7 +552,7 @@ const HomePage = () => {
 
       {/* Selected Place Card */}
       {selectedPlace && (
-        <div className="bg-white/95 backdrop-blur-lg p-6 sm:p-5 mx-4 mb-4 rounded-3xl shadow-2xl shadow-black/10 border border-white/20 relative">
+        <div className="bg-white/95 backdrop-blur-lg p-6 sm:p-5 mx-4 mb-24 rounded-3xl shadow-2xl shadow-black/10 border border-white/20 relative">
           <button
             onClick={handleCloseSelectedPlace}
             className="absolute top-4 right-4 w-12 h-12 sm:w-10 sm:h-10 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors z-10"
@@ -573,7 +574,7 @@ const HomePage = () => {
 
       {/* No places found message */}
       {currentPlaces.length === 0 && (
-        <div className="flex-1 flex items-center justify-center p-6">
+        <div className="flex-1 flex items-center justify-center p-6 pb-24">
           <div className="text-center">
             <div className="text-gray-500 text-lg mb-2">No places found</div>
             <div className="text-gray-400 text-sm">Try searching for Milan, Paris, or San Francisco</div>

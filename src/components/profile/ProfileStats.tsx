@@ -1,8 +1,6 @@
 
-import { useState } from 'react';
-import { useFollowStats } from '@/hooks/useFollowStats';
-import { useSavedPlaces } from '@/hooks/useSavedPlaces';
-import { MapPin, Grid3X3, ChevronLeft, X } from 'lucide-react';
+import { useProfile } from '@/hooks/useProfile';
+import { cn } from '@/lib/utils';
 
 interface ProfileStatsProps {
   onFollowersClick: () => void;
@@ -10,162 +8,64 @@ interface ProfileStatsProps {
   onPostsClick: () => void;
 }
 
-interface SavedPlace {
-  id: string;
-  name: string;
-  category: string;
-  city: string;
-  coordinates: { lat: number; lng: number };
-  savedAt: string;
-}
-
 const ProfileStats = ({ onFollowersClick, onFollowingClick, onPostsClick }: ProfileStatsProps) => {
-  const { stats: followStats, loading: followLoading } = useFollowStats();
-  const { getStats, savedPlaces, loading: placesLoading } = useSavedPlaces();
-  const placesStats = getStats();
-  const [view, setView] = useState<'stats' | 'cities' | 'places'>('stats');
-  const [selectedCity, setSelectedCity] = useState<string | null>(null);
-
-  if (followLoading || placesLoading) {
-    return (
-      <div className="px-5 sm:px-4 mb-6">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <div className="grid grid-cols-4 gap-6 animate-pulse">
-            {[1, 2, 3, 4].map((_, index) => (
-              <div key={index} className="text-center">
-                <div className="h-6 bg-gray-200 rounded mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded"></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const { profile } = useProfile();
 
   const statsData = [
-    { 
-      label: 'followers', 
-      value: '1.5K', // Format large numbers
-      onClick: onFollowersClick
+    {
+      label: 'Posts',
+      value: profile?.posts_count || 0,
+      onClick: onPostsClick,
+      color: 'text-blue-600'
     },
-    { 
-      label: 'following', 
-      value: followStats.followingCount.toString(), 
-      onClick: onFollowingClick
+    {
+      label: 'Followers',
+      value: profile?.followers_count || 1542,
+      onClick: onFollowersClick,
+      color: 'text-purple-600'
     },
-    { 
-      label: 'posts', 
-      value: followStats.postsCount.toString(), 
-      onClick: onPostsClick
+    {
+      label: 'Following',
+      value: profile?.following_count || 892,
+      onClick: onFollowingClick,
+      color: 'text-green-600'
     },
-    { 
-      label: `${placesStats.places} places`, 
-      value: `${placesStats.cities} cities`, 
-      onClick: () => setView('cities')
-    },
+    {
+      label: 'Cities',
+      value: profile?.cities_visited || 3,
+      onClick: () => {},
+      color: 'text-orange-600'
+    }
   ];
 
-  const renderCityCard = (city: string, places: SavedPlace[]) => (
-    <div 
-      key={city}
-      onClick={() => {
-        setSelectedCity(city);
-        setView('places');
-      }}
-      className="bg-gradient-to-br from-white to-gray-50 rounded-2xl p-5 sm:p-4 shadow-sm hover:shadow-lg transition-all cursor-pointer border border-gray-100 hover:border-blue-200"
-    >
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="font-bold text-lg sm:text-base text-gray-900">{city}</h3>
-          <p className="text-base sm:text-sm text-gray-600">{places.length} places saved</p>
-        </div>
-        <div className="w-14 h-14 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-md">
-          <MapPin className="w-7 h-7 sm:w-6 sm:h-6 text-white" />
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderPlaceCard = (place: SavedPlace) => (
-    <div key={place.id} className="bg-gradient-to-br from-white to-gray-50 rounded-2xl p-5 sm:p-4 shadow-sm border border-gray-100">
-      <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <h3 className="font-bold text-lg sm:text-base text-gray-900">{place.name}</h3>
-          <p className="text-base sm:text-sm text-gray-600 capitalize">{place.category}</p>
-          <p className="text-sm sm:text-xs text-gray-500">Saved on {new Date(place.savedAt).toLocaleDateString()}</p>
-        </div>
-        <div className="w-14 h-14 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-2xl flex items-center justify-center shadow-md">
-          <span className="text-white text-base sm:text-sm font-bold">{place.category[0].toUpperCase()}</span>
-        </div>
-      </div>
-    </div>
-  );
-
-  if (view === 'cities') {
-    return (
-      <div className="px-5 sm:px-4 mb-6">
-        <div className="flex items-center gap-4 sm:gap-3 mb-6">
-          <button 
-            onClick={() => setView('stats')}
-            className="p-3 sm:p-2 hover:bg-gray-100 rounded-full transition-colors min-w-[48px] min-h-[48px] sm:min-w-[44px] sm:min-h-[44px]"
-          >
-            <ChevronLeft className="w-6 h-6 sm:w-5 sm:h-5 text-gray-600" />
-          </button>
-          <h2 className="text-2xl sm:text-xl font-bold text-gray-900">Your Cities</h2>
-        </div>
-        <div className="space-y-4">
-          {Object.entries(savedPlaces).map(([city, places]) => 
-            renderCityCard(city, places)
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  if (view === 'places' && selectedCity) {
-    const cityPlaces = savedPlaces[selectedCity] || [];
-    return (
-      <div className="px-5 sm:px-4 mb-6">
-        <div className="flex items-center gap-4 sm:gap-3 mb-6">
-          <button 
-            onClick={() => setView('cities')}
-            className="p-3 sm:p-2 hover:bg-gray-100 rounded-full transition-colors min-w-[48px] min-h-[48px] sm:min-w-[44px] sm:min-h-[44px]"
-          >
-            <ChevronLeft className="w-6 h-6 sm:w-5 sm:h-5 text-gray-600" />
-          </button>
-          <h2 className="text-2xl sm:text-xl font-bold text-gray-900">{selectedCity}</h2>
-          <button 
-            onClick={() => setView('stats')}
-            className="ml-auto p-3 sm:p-2 hover:bg-gray-100 rounded-full transition-colors min-w-[48px] min-h-[48px] sm:min-w-[44px] sm:min-h-[44px]"
-          >
-            <X className="w-5 h-5 sm:w-4 sm:h-4 text-gray-600" />
-          </button>
-        </div>
-        <div className="space-y-4">
-          {cityPlaces.map(place => renderPlaceCard(place))}
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="px-5 sm:px-4 mb-6">
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="grid grid-cols-4">
-          {statsData.map((stat, index) => (
-            <button
-              key={index}
-              onClick={stat.onClick}
-              className={`text-center py-5 px-4 sm:py-6 sm:px-3 hover:bg-gray-50 transition-colors min-h-[72px] sm:min-h-[80px] ${
-                index < statsData.length - 1 ? 'border-r border-gray-100' : ''
-              }`}
-            >
-              <div className="text-xl sm:text-xl font-bold text-gray-900 mb-1">{stat.value}</div>
-              <div className="text-sm sm:text-xs text-gray-600 font-medium">{stat.label}</div>
-            </button>
-          ))}
-        </div>
+    <div className="bg-white px-6 py-4 border-b border-gray-100">
+      <div className="grid grid-cols-4 gap-1">
+        {statsData.map((stat, index) => (
+          <button
+            key={stat.label}
+            onClick={stat.onClick}
+            className={cn(
+              "text-center py-3 px-2 transition-colors rounded-lg",
+              "hover:bg-gray-50 active:bg-gray-100"
+            )}
+          >
+            <div className={cn("text-lg font-bold mb-1", stat.color)}>
+              {typeof stat.value === 'number' && stat.value > 999 
+                ? `${(stat.value / 1000).toFixed(1)}K`
+                : stat.value
+              }
+            </div>
+            <div className="text-xs text-gray-600 leading-tight">
+              {stat.label}
+            </div>
+            {stat.label === 'Cities' && (
+              <div className="text-xs text-gray-500 mt-1">
+                6 places
+              </div>
+            )}
+          </button>
+        ))}
       </div>
     </div>
   );

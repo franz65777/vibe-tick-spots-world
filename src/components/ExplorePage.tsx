@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from 'react';
 import { Search, Filter, MapPin, Star, Users, Clock, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -11,16 +12,25 @@ interface Category {
   icon: React.ReactNode;
 }
 
+// Updated Place interface to match the one in PlaceCard
 interface Place {
   id: string;
   name: string;
   category: string;
   image: string;
+  likes: number;
+  visitors: string[];
+  isNew: boolean;
+  coordinates: { lat: number; lng: number };
   rating: number;
   reviewCount: number;
   tags: string[];
   openingHours: string;
-  coordinates: { lat: number; lng: number };
+  friendsWhoSaved?: { name: string; avatar: string }[];
+  addedBy?: string;
+  addedDate?: string;
+  isFollowing?: boolean;
+  popularity?: number;
 }
 
 const categories: Category[] = [
@@ -47,12 +57,23 @@ const demoPlaces: Place[] = [
     id: '1',
     name: 'The Cozy Corner Café',
     category: 'restaurants',
-    image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
+    image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400&h=300&fit=crop',
     rating: 4.5,
     reviewCount: 123,
     tags: ['cozy', 'coffee', 'pastries'],
     openingHours: '8:00 AM - 8:00 PM',
     coordinates: { lat: 37.7749, lng: -122.4194 },
+    likes: 24,
+    visitors: ['user1', 'user2'],
+    isNew: false,
+    friendsWhoSaved: [
+      { name: 'Sarah', avatar: 'photo-1494790108755-2616b5a5c75b' },
+      { name: 'Mike', avatar: 'photo-1507003211169-0a1dd7228f2d' }
+    ],
+    addedBy: 'user1',
+    addedDate: '2024-05-25',
+    isFollowing: true,
+    popularity: 85
   },
   {
     id: '2',
@@ -64,17 +85,34 @@ const demoPlaces: Place[] = [
     tags: ['seafood', 'sunset', 'romantic'],
     openingHours: '5:00 PM - 10:00 PM',
     coordinates: { lat: 37.7849, lng: -122.4094 },
+    likes: 18,
+    visitors: ['user3'],
+    isNew: true,
+    addedBy: 'user2',
+    addedDate: '2024-06-01',
+    isFollowing: true,
+    popularity: 92
   },
   {
     id: '3',
     name: 'Grand Plaza Hotel',
     category: 'cafes',
-    image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop',
+    image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=400&h=300&fit=crop',
     rating: 4.8,
     reviewCount: 234,
     tags: ['luxury', 'views', 'cocktails'],
     openingHours: 'Open 24 hours',
     coordinates: { lat: 37.7949, lng: -122.4294 },
+    likes: 45,
+    visitors: ['user4', 'user5'],
+    isNew: false,
+    friendsWhoSaved: [
+      { name: 'Emma', avatar: 'photo-1438761681033-6461ffad8d80' }
+    ],
+    addedBy: 'user5',
+    addedDate: '2024-05-15',
+    isFollowing: false,
+    popularity: 96
   },
   {
     id: '4',
@@ -86,6 +124,13 @@ const demoPlaces: Place[] = [
     tags: ['local', 'drinks', 'live music'],
     openingHours: '6:00 PM - 2:00 AM',
     coordinates: { lat: 37.8049, lng: -122.4394 },
+    likes: 28,
+    visitors: ['user6'],
+    isNew: false,
+    addedBy: 'user3',
+    addedDate: '2024-05-20',
+    isFollowing: true,
+    popularity: 82
   },
 ];
 
@@ -167,7 +212,7 @@ const ExplorePage = () => {
   }, [selectedCategory, searchQuery, activeFilters]);
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="flex flex-col h-full bg-gray-50 pt-12">
       {/* Search Header */}
       <div className="bg-white p-5 sm:p-4 border-b border-gray-100 shadow-sm flex-shrink-0">
         <div className="flex items-center gap-4 sm:gap-3">
@@ -306,7 +351,7 @@ const ExplorePage = () => {
       </div>
 
       {/* Places Grid */}
-      <div className="flex-1 overflow-y-auto px-5 py-4 sm:px-4 sm:py-3">
+      <div className="flex-1 overflow-y-auto px-5 py-4 sm:px-4 sm:py-3 pb-24">
         {filteredPlaces.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 sm:py-12 text-center">
             <div className="w-16 h-16 sm:w-12 sm:h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">

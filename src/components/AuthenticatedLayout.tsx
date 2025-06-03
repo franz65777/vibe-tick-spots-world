@@ -9,7 +9,7 @@ interface AuthenticatedLayoutProps {
 const AuthenticatedLayout: React.FC<AuthenticatedLayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="pb-20"> {/* Add padding bottom for fixed navigation */}
+      <div className="pb-20">
         {children}
       </div>
       <BottomNavigation />
