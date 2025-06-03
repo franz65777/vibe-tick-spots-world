@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,10 +36,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(session);
         setUser(session?.user ?? null);
         
-        // If user just signed up, ensure profile exists
+        // If user just signed in, ensure profile exists with timeout
         if (event === 'SIGNED_IN' && session?.user) {
           console.log('AuthProvider: User signed in, ensuring profile exists...');
-          await ensureProfileExists(session.user);
+          try {
+            await Promise.race([
+              ensureProfileExists(session.user),
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Profile creation timeout')), 5000)
+              )
+            ]);
+          } catch (error) {
+            console.warn('AuthProvider: Profile creation failed or timed out, continuing anyway:', error);
+          }
         }
         
         console.log('AuthProvider: Setting loading to false');
@@ -48,12 +56,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // Check for existing session
+    // Check for existing session with timeout
     console.log('AuthProvider: Checking for existing session...');
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    Promise.race([
+      supabase.auth.getSession(),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Session check timeout')), 3000)
+      )
+    ]).then(({ data: { session } }: any) => {
       console.log('AuthProvider: Existing session:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
+      setLoading(false);
+    }).catch((error) => {
+      console.warn('AuthProvider: Session check failed or timed out:', error);
       setLoading(false);
     });
 
@@ -96,6 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (error) {
           console.error('AuthProvider: Error creating profile:', error);
+          throw error;
         } else {
           console.log('AuthProvider: Profile created successfully');
         }
@@ -104,6 +121,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (error) {
       console.error('AuthProvider: Error checking/creating profile:', error);
+      throw error;
     }
   };
 
