@@ -1,6 +1,6 @@
 
-import { useState } from 'react';
-import { MapPin, Camera, Plus, X, Search, ChevronRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { MapPin, Camera, Plus, X, Search, ChevronRight, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,15 +14,64 @@ const AddLocationPage = () => {
   const [showLocationSearch, setShowLocationSearch] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [caption, setCaption] = useState('');
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [nearbyPlaces, setNearbyPlaces] = useState<string[]>([]);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(true);
+  const [locationError, setLocationError] = useState('');
 
-  // Mock location suggestions - in real app this would come from API
-  const locationSuggestions = [
-    'Restaurant Francesco - Downtown',
-    'Central Park - New York',
-    'Coffee Bean Café - Main St',
-    'Museum of Art - Cultural District',
-    'Beach Club - Santa Monica'
-  ];
+  // Get user's current location and suggest nearby places
+  useEffect(() => {
+    const getCurrentLocation = async () => {
+      try {
+        setIsLoadingLocation(true);
+        setLocationError('');
+
+        if (!navigator.geolocation) {
+          throw new Error('Geolocation is not supported by this browser');
+        }
+
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 300000
+          });
+        });
+
+        const { latitude, longitude } = position.coords;
+        setUserLocation({ lat: latitude, lng: longitude });
+
+        // Generate nearby places based on location (in a real app, this would use a places API)
+        const mockNearbyPlaces = [
+          'Current Location - Restaurant nearby',
+          'Coffee shop you just visited',
+          'Park you\'re at right now',
+          'Shopping center nearby',
+          'Your favorite local spot'
+        ];
+        
+        setNearbyPlaces(mockNearbyPlaces);
+        
+      } catch (error) {
+        console.error('Error getting location:', error);
+        setLocationError('Unable to get your location. You can still search manually.');
+        
+        // Fallback suggestions when location is not available
+        const fallbackSuggestions = [
+          'Restaurant Francesco - Downtown',
+          'Central Park - New York',
+          'Coffee Bean Café - Main St',
+          'Museum of Art - Cultural District',
+          'Beach Club - Santa Monica'
+        ];
+        setNearbyPlaces(fallbackSuggestions);
+      } finally {
+        setIsLoadingLocation(false);
+      }
+    };
+
+    getCurrentLocation();
+  }, []);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -47,7 +96,8 @@ const AddLocationPage = () => {
     console.log('Posting content:', {
       location: selectedLocation,
       images: uploadedImages,
-      caption
+      caption,
+      userLocation
     });
     // TODO: Implement actual posting logic
   };
@@ -75,43 +125,87 @@ const AddLocationPage = () => {
                   <MapPin className="w-4 h-4 text-blue-600" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900">Where are you?</h3>
+                {userLocation && (
+                  <div className="ml-auto flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                    <Navigation className="w-3 h-3" />
+                    <span>Located</span>
+                  </div>
+                )}
               </div>
               
               {!selectedLocation ? (
-                <div className="space-y-3">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <Input
-                      placeholder="Search for a location..."
-                      className="pl-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                      onFocus={() => setShowLocationSearch(true)}
-                    />
-                  </div>
-                  
-                  {showLocationSearch && (
-                    <div className="space-y-2">
-                      <p className="text-xs text-gray-500 font-medium px-1">Suggested locations:</p>
-                      {locationSuggestions.map((location, index) => (
-                        <button
-                          key={index}
-                          onClick={() => {
-                            setSelectedLocation(location);
-                            setShowLocationSearch(false);
-                          }}
-                          className="w-full text-left p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors border border-gray-100"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                <MapPin className="w-4 h-4 text-blue-600" />
-                              </div>
-                              <span className="text-sm font-medium text-gray-900">{location}</span>
-                            </div>
-                            <ChevronRight className="w-4 h-4 text-gray-400" />
-                          </div>
-                        </button>
-                      ))}
+                <div className="space-y-4">
+                  {isLoadingLocation ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="flex items-center gap-3">
+                        <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-sm text-gray-600">Finding places near you...</span>
+                      </div>
                     </div>
+                  ) : (
+                    <>
+                      {locationError && (
+                        <div className="text-xs text-orange-600 bg-orange-50 px-3 py-2 rounded-lg">
+                          {locationError}
+                        </div>
+                      )}
+                      
+                      {userLocation && (
+                        <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-xl border border-green-200">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Navigation className="w-4 h-4 text-green-600" />
+                            <span className="text-sm font-semibold text-green-900">Places near you</span>
+                          </div>
+                          <p className="text-xs text-green-700">Based on your current location</p>
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        {nearbyPlaces.map((location, index) => (
+                          <button
+                            key={index}
+                            onClick={() => {
+                              setSelectedLocation(location);
+                              setShowLocationSearch(false);
+                            }}
+                            className="w-full text-left p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl hover:from-blue-50 hover:to-blue-100 transition-all border border-gray-100 hover:border-blue-200 group"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className={cn(
+                                  "w-10 h-10 rounded-full flex items-center justify-center transition-colors",
+                                  index === 0 && userLocation ? "bg-green-100 group-hover:bg-green-200" : "bg-blue-100 group-hover:bg-blue-200"
+                                )}>
+                                  {index === 0 && userLocation ? (
+                                    <Navigation className="w-4 h-4 text-green-600" />
+                                  ) : (
+                                    <MapPin className="w-4 h-4 text-blue-600" />
+                                  )}
+                                </div>
+                                <div>
+                                  <span className="text-sm font-medium text-gray-900 block">{location}</span>
+                                  {index === 0 && userLocation && (
+                                    <span className="text-xs text-green-600">Tap to use current location</span>
+                                  )}
+                                </div>
+                              </div>
+                              <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="pt-2 border-t border-gray-100">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                          <Input
+                            placeholder="Or search for a different place..."
+                            className="pl-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                            onFocus={() => setShowLocationSearch(true)}
+                          />
+                        </div>
+                      </div>
+                    </>
                   )}
                 </div>
               ) : (
@@ -124,7 +218,7 @@ const AddLocationPage = () => {
                   </div>
                   <button
                     onClick={() => setSelectedLocation('')}
-                    className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-blue-600 hover:text-blue-800 shadow-sm"
+                    className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-blue-600 hover:text-blue-800 shadow-sm hover:shadow-md transition-all"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -139,18 +233,23 @@ const AddLocationPage = () => {
                   <Camera className="w-4 h-4 text-green-600" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900">Add Photos</h3>
+                {uploadedImages.length > 0 && (
+                  <div className="ml-auto text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                    {uploadedImages.length} photo{uploadedImages.length > 1 ? 's' : ''}
+                  </div>
+                )}
               </div>
               
               {uploadedImages.length === 0 ? (
-                <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors group">
+                <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gradient-to-br from-gray-50 to-blue-50 hover:from-blue-50 hover:to-blue-100 transition-all group">
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mb-4 group-hover:bg-gray-300 transition-colors">
-                      <Camera className="w-8 h-8 text-gray-500" />
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-green-100 rounded-full flex items-center justify-center mb-4 group-hover:from-blue-200 group-hover:to-green-200 transition-all">
+                      <Camera className="w-8 h-8 text-blue-600" />
                     </div>
-                    <p className="text-gray-600 text-center">
-                      <span className="font-semibold">Tap to add photos</span>
+                    <p className="text-gray-700 text-center">
+                      <span className="font-semibold text-lg">📸 Capture the moment</span>
                       <br />
-                      <span className="text-sm text-gray-500">Share what you loved about this place</span>
+                      <span className="text-sm text-gray-500">Share what made this place special</span>
                     </p>
                   </div>
                   <input
@@ -169,11 +268,11 @@ const AddLocationPage = () => {
                         <img
                           src={image}
                           alt={`Upload ${index + 1}`}
-                          className="w-full h-36 object-cover rounded-xl border border-gray-200"
+                          className="w-full h-36 object-cover rounded-xl border border-gray-200 shadow-sm"
                         />
                         <button
                           onClick={() => removeImage(index)}
-                          className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors"
+                          className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -181,7 +280,7 @@ const AddLocationPage = () => {
                     ))}
                   </div>
                   
-                  <label className="flex items-center justify-center w-full h-16 border-2 border-dashed border-blue-300 rounded-xl cursor-pointer bg-blue-50 hover:bg-blue-100 transition-colors">
+                  <label className="flex items-center justify-center w-full h-16 border-2 border-dashed border-blue-300 rounded-xl cursor-pointer bg-gradient-to-r from-blue-50 to-green-50 hover:from-blue-100 hover:to-green-100 transition-all">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                         <Plus className="w-4 h-4 text-white" />
@@ -215,6 +314,11 @@ const AddLocationPage = () => {
                 onChange={(e) => setCaption(e.target.value)}
                 className="min-h-[100px] resize-none border-gray-200 focus:border-purple-500 focus:ring-purple-500 placeholder:text-gray-400"
               />
+              {caption.length > 0 && (
+                <div className="mt-2 text-xs text-purple-600">
+                  {caption.length} characters
+                </div>
+              )}
             </div>
           </div>
         </ScrollArea>
