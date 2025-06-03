@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { X, Search, Send } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -34,11 +33,16 @@ interface ShareModalProps {
   item: Place | Trip | Post | null;
   itemType: 'place' | 'trip' | 'post';
   onShare: (friendIds: string[], item: any) => void;
+  // Legacy support for place prop
+  place?: Place;
 }
 
-const ShareModal = ({ isOpen, onClose, item, itemType, onShare }: ShareModalProps) => {
+const ShareModal = ({ isOpen, onClose, item, itemType, onShare, place }: ShareModalProps) => {
   const [selectedFriends, setSelectedFriends] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Use item or fallback to place for backward compatibility
+  const shareItem = item || place;
 
   const mockFriends: Friend[] = [
     { id: '1', name: 'Emma', avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png', isOnline: true },
@@ -61,8 +65,8 @@ const ShareModal = ({ isOpen, onClose, item, itemType, onShare }: ShareModalProp
   };
 
   const handleShare = () => {
-    if (item && selectedFriends.size > 0) {
-      onShare(Array.from(selectedFriends), item);
+    if (shareItem && selectedFriends.size > 0) {
+      onShare(Array.from(selectedFriends), shareItem);
       setSelectedFriends(new Set());
       onClose();
     }
@@ -73,14 +77,14 @@ const ShareModal = ({ isOpen, onClose, item, itemType, onShare }: ShareModalProp
   );
 
   const getItemName = () => {
-    if (!item) return '';
-    if (itemType === 'place') return (item as Place).name;
-    if (itemType === 'trip') return (item as Trip).name;
-    if (itemType === 'post') return (item as Post).location;
+    if (!shareItem) return '';
+    if (itemType === 'place' || place) return (shareItem as Place).name;
+    if (itemType === 'trip') return (shareItem as Trip).name;
+    if (itemType === 'post') return (shareItem as Post).location;
     return '';
   };
 
-  if (!isOpen || !item) return null;
+  if (!isOpen || !shareItem) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">

@@ -1,8 +1,7 @@
-
 import { useState } from 'react';
 import { useFollowStats } from '@/hooks/useFollowStats';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
-import { MapPin, Grid3X3, ChevronLeft, X } from 'lucide-react';
+import { MapPin, Grid3X3, ChevronLeft, X, Users, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ProfileStatsProps {
@@ -30,11 +29,12 @@ const ProfileStats = ({ onFollowersClick, onFollowingClick, onPostsClick }: Prof
   if (followLoading || placesLoading) {
     return (
       <div className="px-4 mb-6">
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-4 gap-3">
           {[1, 2, 3, 4].map((_, index) => (
-            <div key={index} className="text-center p-3 bg-gray-50 rounded-xl">
-              <div className="text-lg font-bold text-gray-300 animate-pulse">-</div>
-              <div className="text-xs text-gray-300 animate-pulse">Loading...</div>
+            <div key={index} className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl p-4 animate-pulse">
+              <div className="w-10 h-10 bg-gray-300 rounded-full mx-auto mb-3"></div>
+              <div className="h-6 bg-gray-300 rounded mb-1"></div>
+              <div className="h-4 bg-gray-300 rounded"></div>
             </div>
           ))}
         </div>
@@ -43,15 +43,38 @@ const ProfileStats = ({ onFollowersClick, onFollowingClick, onPostsClick }: Prof
   }
 
   const statsData = [
-    { label: 'Posts', value: followStats.postsCount.toString(), onClick: onPostsClick, icon: Grid3X3 },
-    { label: 'Followers', value: followStats.followersCount.toString(), onClick: onFollowersClick },
-    { label: 'Following', value: followStats.followingCount.toString(), onClick: onFollowingClick },
+    { 
+      label: 'Posts', 
+      value: followStats.postsCount.toString(), 
+      onClick: onPostsClick, 
+      icon: Grid3X3,
+      gradient: 'from-purple-500 to-pink-500',
+      bgGradient: 'from-purple-50 to-pink-50'
+    },
+    { 
+      label: 'Followers', 
+      value: followStats.followersCount.toString(), 
+      onClick: onFollowersClick,
+      icon: Users,
+      gradient: 'from-blue-500 to-cyan-500',
+      bgGradient: 'from-blue-50 to-cyan-50'
+    },
+    { 
+      label: 'Following', 
+      value: followStats.followingCount.toString(), 
+      onClick: onFollowingClick,
+      icon: Heart,
+      gradient: 'from-rose-500 to-orange-500',
+      bgGradient: 'from-rose-50 to-orange-50'
+    },
     { 
       label: 'Locations', 
       value: placesStats.cities.toString(), 
       onClick: () => setView('cities'),
       icon: MapPin,
-      subtitle: `${placesStats.places} places`
+      subtitle: `${placesStats.places} places`,
+      gradient: 'from-emerald-500 to-teal-500',
+      bgGradient: 'from-emerald-50 to-teal-50'
     },
   ];
 
@@ -62,30 +85,30 @@ const ProfileStats = ({ onFollowersClick, onFollowingClick, onPostsClick }: Prof
         setSelectedCity(city);
         setView('places');
       }}
-      className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer border border-gray-100"
+      className="bg-gradient-to-br from-white to-gray-50 rounded-2xl p-4 shadow-sm hover:shadow-lg transition-all cursor-pointer border border-gray-100 hover:border-blue-200"
     >
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-semibold text-gray-900">{city}</h3>
+          <h3 className="font-bold text-gray-900">{city}</h3>
           <p className="text-sm text-gray-600">{places.length} places saved</p>
         </div>
-        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-          <MapPin className="w-5 h-5 text-blue-600" />
+        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-md">
+          <MapPin className="w-6 h-6 text-white" />
         </div>
       </div>
     </div>
   );
 
   const renderPlaceCard = (place: SavedPlace) => (
-    <div key={place.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+    <div key={place.id} className="bg-gradient-to-br from-white to-gray-50 rounded-2xl p-4 shadow-sm border border-gray-100">
       <div className="flex items-center justify-between">
         <div className="flex-1">
-          <h3 className="font-semibold text-gray-900">{place.name}</h3>
+          <h3 className="font-bold text-gray-900">{place.name}</h3>
           <p className="text-sm text-gray-600 capitalize">{place.category}</p>
           <p className="text-xs text-gray-500">Saved on {new Date(place.savedAt).toLocaleDateString()}</p>
         </div>
-        <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
-          <span className="text-white text-xs font-bold">{place.category[0].toUpperCase()}</span>
+        <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-2xl flex items-center justify-center shadow-md">
+          <span className="text-white text-sm font-bold">{place.category[0].toUpperCase()}</span>
         </div>
       </div>
     </div>
@@ -94,16 +117,16 @@ const ProfileStats = ({ onFollowersClick, onFollowingClick, onPostsClick }: Prof
   if (view === 'cities') {
     return (
       <div className="px-4 mb-6">
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-6">
           <button 
             onClick={() => setView('stats')}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
           >
             <ChevronLeft className="w-5 h-5 text-gray-600" />
           </button>
-          <h2 className="text-lg font-semibold text-gray-900">Your Cities</h2>
+          <h2 className="text-xl font-bold text-gray-900">Your Cities</h2>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-4">
           {Object.entries(savedPlaces).map(([city, places]) => 
             renderCityCard(city, places)
           )}
@@ -116,14 +139,14 @@ const ProfileStats = ({ onFollowersClick, onFollowingClick, onPostsClick }: Prof
     const cityPlaces = savedPlaces[selectedCity] || [];
     return (
       <div className="px-4 mb-6">
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-6">
           <button 
             onClick={() => setView('cities')}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
           >
             <ChevronLeft className="w-5 h-5 text-gray-600" />
           </button>
-          <h2 className="text-lg font-semibold text-gray-900">{selectedCity}</h2>
+          <h2 className="text-xl font-bold text-gray-900">{selectedCity}</h2>
           <button 
             onClick={() => setView('stats')}
             className="ml-auto p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -131,7 +154,7 @@ const ProfileStats = ({ onFollowersClick, onFollowingClick, onPostsClick }: Prof
             <X className="w-4 h-4 text-gray-600" />
           </button>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-4">
           {cityPlaces.map(place => renderPlaceCard(place))}
         </div>
       </div>
@@ -140,21 +163,19 @@ const ProfileStats = ({ onFollowersClick, onFollowingClick, onPostsClick }: Prof
 
   return (
     <div className="px-4 mb-6">
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-4 gap-3">
         {statsData.map((stat, index) => (
           <button
             key={index}
             onClick={stat.onClick}
-            className="text-center hover:bg-gray-50 rounded-xl p-3 transition-all duration-200 hover:scale-105 bg-white shadow-sm border border-gray-100"
+            className={`relative overflow-hidden text-center hover:scale-105 rounded-2xl p-4 transition-all duration-300 bg-gradient-to-br ${stat.bgGradient} border border-white shadow-sm hover:shadow-lg`}
           >
-            <div className="flex flex-col items-center gap-1">
-              {stat.icon && (
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mb-1">
-                  <stat.icon className="w-4 h-4 text-blue-600" />
-                </div>
-              )}
-              <div className="text-lg font-bold text-gray-900">{stat.value}</div>
-              <div className="text-xs text-gray-600">{stat.label}</div>
+            <div className="flex flex-col items-center gap-2">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br ${stat.gradient} shadow-md`}>
+                <stat.icon className="w-5 h-5 text-white" />
+              </div>
+              <div className="text-xl font-bold text-gray-900">{stat.value}</div>
+              <div className="text-xs font-medium text-gray-700">{stat.label}</div>
               {stat.subtitle && (
                 <div className="text-xs text-gray-500">{stat.subtitle}</div>
               )}

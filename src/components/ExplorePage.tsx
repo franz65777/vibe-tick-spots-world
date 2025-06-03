@@ -1,9 +1,11 @@
-import { useState } from 'react';
-import { Search, MapPin, User, ArrowLeft, X, Heart, Share, MessageCircle } from 'lucide-react';
+
+import { useState, useEffect } from 'react';
+import { Search, MapPin, User, ArrowLeft, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { searchPlaces, searchUsers, getNearbyPlaces, SearchPlace, SearchUser } from '@/services/searchService';
 import PlaceCard from '@/components/home/PlaceCard';
 import ShareModal from '@/components/home/ShareModal';
 import CommentModal from '@/components/home/CommentModal';
@@ -30,7 +32,10 @@ const ExplorePage = () => {
   const [searchType, setSearchType] = useState<'locations' | 'users'>('locations');
   const [isSearching, setIsSearching] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [placeResults, setPlaceResults] = useState<SearchPlace[]>([]);
+  const [userResults, setUserResults] = useState<SearchUser[]>([]);
+  const [nearbyPlaces, setNearbyPlaces] = useState<SearchPlace[]>([]);
+  const [loading, setLoading] = useState(false);
   const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
@@ -42,273 +47,90 @@ const ExplorePage = () => {
   // User's current location (San Francisco as default)
   const userLocation = { lat: 37.7749, lng: -122.4194 };
 
-  // Sample data for locations with posts and comments containing keywords
-  const locations = [
-    {
-      id: '1',
-      name: "The Cozy Corner Café",
-      location: "San Francisco, CA",
-      description: "Best coffee in the city!",
-      likes: 24,
-      category: "cafe",
-      distance: 0.8,
-      image: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop",
-      friendsWhoSaved: [
-        { name: 'Sarah', avatar: '1649972904349-6e44c42644a7' },
-        { name: 'Mike', avatar: '1581091226825-a6a2a5aee158' }
-      ],
-      visitors: ['user1', 'user2'],
-      isNew: true,
-      coordinates: { lat: 37.7849, lng: -122.4094 },
-      posts: [
-        { content: "Amazing pizza here! The margherita is to die for", tags: ["pizza", "italian", "delicious"] },
-        { content: "Great coffee and pastries", tags: ["coffee", "pastries", "breakfast"] }
-      ],
-      comments: [
-        { content: "Love their pepperoni pizza!", author: "foodie123" },
-        { content: "Best espresso in town", author: "coffee_lover" }
-      ]
-    },
-    {
-      id: '2',
-      name: "Sunset View Restaurant",
-      location: "Monterey, CA",
-      description: "Stunning ocean views",
-      likes: 18,
-      category: "restaurant",
-      distance: 1.2,
-      image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop",
-      friendsWhoSaved: [
-        { name: 'Emma', avatar: '1581092795360-fd1ca04f0952' }
-      ],
-      visitors: ['user4', 'user5'],
-      isNew: false,
-      coordinates: { lat: 37.7749, lng: -122.4094 },
-      posts: [
-        { content: "Incredible seafood pasta and the sunset view is breathtaking", tags: ["seafood", "pasta", "sunset", "romantic"] },
-        { content: "Their wine selection is outstanding", tags: ["wine", "dinner", "date"] }
-      ],
-      comments: [
-        { content: "The lobster was amazing!", author: "seafood_fan" },
-        { content: "Perfect place for a romantic dinner", author: "couple_goals" }
-      ]
-    },
-    {
-      id: '3',
-      name: "Grand Plaza Hotel",
-      location: "Los Angeles, CA",
-      description: "Amazing cocktails with city view",
-      likes: 45,
-      category: "hotel",
-      distance: 0.5,
-      image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop",
-      visitors: ['user6'],
-      isNew: false,
-      coordinates: { lat: 37.7649, lng: -122.4194 },
-      posts: [
-        { content: "The rooftop bar serves incredible cocktails and has city views", tags: ["cocktails", "rooftop", "city", "drinks"] },
-        { content: "Room service has great burgers", tags: ["burgers", "room service", "comfort food"] }
-      ],
-      comments: [
-        { content: "Their signature martini is perfect", author: "cocktail_expert" },
-        { content: "Best hotel burger I've ever had", author: "burger_king" }
-      ]
-    },
-    {
-      id: '4',
-      name: "Neon Nights Bar",
-      location: "New York, NY",
-      description: "Contemporary art collection",
-      likes: 32,
-      category: "bar",
-      distance: 2.1,
-      image: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=300&fit=crop",
-      visitors: ['user7'],
-      isNew: true,
-      coordinates: { lat: 37.7549, lng: -122.4294 },
-      posts: [
-        { content: "Great craft beer selection and they serve pizza until late", tags: ["craft beer", "pizza", "late night"] },
-        { content: "The DJ plays amazing electronic music", tags: ["music", "electronic", "dancing"] }
-      ],
-      comments: [
-        { content: "Pizza here is surprisingly good for a bar!", author: "night_owl" },
-        { content: "Love the atmosphere and beer selection", author: "beer_enthusiast" }
-      ]
-    },
-    {
-      id: '5',
-      name: "Ocean Breeze Restaurant",
-      location: "Portland, OR",
-      description: "Unique fashion finds",
-      likes: 28,
-      category: "restaurant",
-      distance: 1.5,
-      image: "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400&h=300&fit=crop",
-      friendsWhoSaved: [
-        { name: 'Alex', avatar: '1535268647677-300dbf3d78d1' },
-        { name: 'Jordan', avatar: '1649972904349-6e44c42644a7' },
-        { name: 'Casey', avatar: '1581091226825-a6a2a5aee158' }
-      ],
-      visitors: ['user8'],
-      isNew: false,
-      coordinates: { lat: 37.7949, lng: -122.4294 },
-      posts: [
-        { content: "Their sushi is fresh and the ramen is authentic", tags: ["sushi", "ramen", "japanese", "authentic"] },
-        { content: "Amazing vegetarian options and organic ingredients", tags: ["vegetarian", "organic", "healthy"] }
-      ],
-      comments: [
-        { content: "Best sushi in the area!", author: "sushi_master" },
-        { content: "Love their vegan ramen", author: "plant_based" }
-      ]
-    },
-    {
-      id: '6',
-      name: "Artisan Coffee House",
-      location: "Denver, CO",
-      description: "Unforgettable hiking experience",
-      likes: 22,
-      category: "cafe",
-      distance: 3.2,
-      image: "https://images.unsplash.com/photo-1453614512568-c4024d13c247?w=400&h=300&fit=crop",
-      visitors: ['user9'],
-      isNew: false,
-      coordinates: { lat: 37.7849, lng: -122.4294 },
-      posts: [
-        { content: "They serve artisan donuts and the best latte art", tags: ["donuts", "latte", "artisan", "coffee"] },
-        { content: "Great study spot with free wifi", tags: ["study", "wifi", "quiet"] }
-      ],
-      comments: [
-        { content: "Their glazed donuts are heavenly", author: "sweet_tooth" },
-        { content: "Perfect place to work remotely", author: "digital_nomad" }
-      ]
-    }
-  ];
+  // Load nearby places on component mount
+  useEffect(() => {
+    const loadNearbyPlaces = async () => {
+      try {
+        const places = await getNearbyPlaces(userLocation.lat, userLocation.lng);
+        setNearbyPlaces(places);
+      } catch (error) {
+        console.error('Error loading nearby places:', error);
+      }
+    };
+    
+    loadNearbyPlaces();
+  }, []);
 
-  // Sample data for users
-  const users = [
-    {
-      id: 1,
-      username: "foodie_lover",
-      fullName: "Alex Johnson",
-      followers: 1250,
-      avatar: "/lovable-uploads/8a9fd2cf-e687-48ee-a40f-3dd4b19ba4ff.png"
-    },
-    {
-      id: 2,
-      username: "travel_guru",
-      fullName: "Emma Wilson",
-      followers: 3400,
-      avatar: "/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png"
-    },
-    {
-      id: 3,
-      username: "local_explorer",
-      fullName: "Ryan Chen",
-      followers: 890,
-      avatar: "/lovable-uploads/5bb15f7b-b3ba-4eae-88b1-7fa789eb67c4.png"
-    }
-  ];
-
-  // User search history
-  const userSearchHistory = [
-    {
-      username: "foodie_lover",
-      fullName: "Alex Johnson",
-      lastSearched: "2 days ago",
-      avatar: "/lovable-uploads/8a9fd2cf-e687-48ee-a40f-3dd4b19ba4ff.png"
-    },
-    {
-      username: "travel_guru",
-      fullName: "Emma Wilson",
-      lastSearched: "1 week ago",
-      avatar: "/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png"
-    }
-  ];
-
-  // Calculate distance between two coordinates (Haversine formula)
-  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-    const R = 6371; // Radius of the Earth in km
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    const distance = R * c; // Distance in km
-    return distance;
-  };
-
-  // Filter locations within 3km radius
-  const getNearbyLocations = (allLocations: any[]) => {
-    return allLocations.filter(location => {
-      const distance = calculateDistance(
-        userLocation.lat,
-        userLocation.lng,
-        location.coordinates.lat,
-        location.coordinates.lng
-      );
-      return distance <= 3;
-    });
-  };
-
-  const handleSearch = (query: string) => {
+  const handleSearch = async (query: string) => {
     setSearchQuery(query);
     
     if (query.trim() === '') {
       setIsSearching(false);
-      setSearchResults([]);
+      setPlaceResults([]);
+      setUserResults([]);
       return;
     }
 
     setIsSearching(true);
+    setLoading(true);
 
-    if (searchType === 'locations') {
-      const nearbyLocations = getNearbyLocations(locations);
-      const results = nearbyLocations.filter(location => {
-        const queryLower = query.toLowerCase();
-        
-        // Search in basic location info
-        const basicMatch = location.name.toLowerCase().includes(queryLower) ||
-          location.location.toLowerCase().includes(queryLower) ||
-          location.description.toLowerCase().includes(queryLower);
-        
-        // Search in posts content and tags
-        const postMatch = location.posts?.some(post => 
-          post.content.toLowerCase().includes(queryLower) ||
-          post.tags.some(tag => tag.toLowerCase().includes(queryLower))
-        );
-        
-        // Search in comments
-        const commentMatch = location.comments?.some(comment =>
-          comment.content.toLowerCase().includes(queryLower)
-        );
-        
-        return basicMatch || postMatch || commentMatch;
-      });
-      setSearchResults(results);
-    } else {
-      const results = users.filter(user =>
-        user.username.toLowerCase().includes(query.toLowerCase()) ||
-        user.fullName.toLowerCase().includes(query.toLowerCase())
-      );
-      setSearchResults(results);
+    try {
+      if (searchType === 'locations') {
+        const results = await searchPlaces(query, selectedCategory);
+        setPlaceResults(results);
+      } else {
+        const results = await searchUsers(query);
+        setUserResults(results);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleCategoryFilter = (category: string) => {
+  const handleCategoryFilter = async (category: string) => {
     setSelectedCategory(category);
+    
+    if (searchQuery.trim() !== '') {
+      setLoading(true);
+      try {
+        const results = await searchPlaces(searchQuery, category);
+        setPlaceResults(results);
+      } catch (error) {
+        console.error('Filter error:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
   };
 
   const clearSearch = () => {
     setSearchQuery('');
     setIsSearching(false);
-    setSearchResults([]);
+    setPlaceResults([]);
+    setUserResults([]);
   };
 
   const goBack = () => {
     clearSearch();
   };
+
+  // Convert SearchPlace to Place format for compatibility
+  const convertSearchPlaceToPlace = (searchPlace: SearchPlace): Place => ({
+    id: searchPlace.id,
+    name: searchPlace.name,
+    category: searchPlace.category,
+    likes: Math.floor(Math.random() * 50) + 10, // Mock likes
+    coordinates: searchPlace.coordinates,
+    visitors: [],
+    isNew: Math.random() > 0.7, // 30% chance of being new
+    image: searchPlace.image,
+    friendsWhoSaved: Math.random() > 0.5 ? [
+      { name: 'Alex', avatar: '1649972904349-6e44c42644a7' },
+      { name: 'Emma', avatar: '1581091226825-a6a2a5aee158' }
+    ] : undefined
+  });
 
   const handleLikeToggle = (placeId: string) => {
     setLikedPlaces(prev => {
@@ -350,180 +172,114 @@ const ExplorePage = () => {
     // TODO: Implement actual comment submission logic
   };
 
-  // Get filtered locations within 3km and by category
-  const getFilteredLocations = () => {
-    const nearbyLocations = getNearbyLocations(locations);
-    if (selectedCategory === 'all') {
-      return nearbyLocations;
-    }
-    return nearbyLocations.filter(location => location.category === selectedCategory);
-  };
-
-  const renderLocationSearchResults = () => {
-    const resultsToShow = isSearching ? searchResults : getFilteredLocations();
+  const renderPlaceResults = () => {
+    const placesToShow = isSearching ? placeResults : nearbyPlaces;
+    const filteredPlaces = selectedCategory === 'all' 
+      ? placesToShow 
+      : placesToShow.filter(place => place.category === selectedCategory);
     
-    if (resultsToShow.length === 0 && isSearching) {
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center py-20">
+          <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+        </div>
+      );
+    }
+
+    if (filteredPlaces.length === 0 && isSearching) {
       return (
         <div className="flex flex-col items-center justify-center py-20">
           <Search className="w-16 h-16 text-gray-400 mb-4" />
-          <p className="text-gray-600 text-lg">No results found</p>
+          <p className="text-gray-600 text-lg">No places found</p>
+          <p className="text-gray-500 text-sm">Try different keywords or categories</p>
         </div>
       );
     }
 
     return (
       <div className="space-y-3 px-4 pb-4">
-        {resultsToShow.map((location) => (
-          <PlaceCard
-            key={location.id}
-            place={location as Place}
-            isLiked={likedPlaces.has(location.id)}
-            onCardClick={handleCardClick}
-            onLikeToggle={handleLikeToggle}
-            onShare={handleShare}
-            onComment={handleComment}
-          />
-        ))}
+        {filteredPlaces.map((searchPlace) => {
+          const place = convertSearchPlaceToPlace(searchPlace);
+          return (
+            <PlaceCard
+              key={place.id}
+              place={place}
+              isLiked={likedPlaces.has(place.id)}
+              onCardClick={handleCardClick}
+              onLikeToggle={handleLikeToggle}
+              onShare={handleShare}
+              onComment={handleComment}
+            />
+          );
+        })}
       </div>
     );
   };
 
-  const renderUserSearchResults = () => {
-    if (searchResults.length === 0 && isSearching) {
+  const renderUserResults = () => {
+    if (loading) {
       return (
-        <div className="flex flex-col items-center justify-center py-20">
-          <Search className="w-16 h-16 text-gray-400 mb-4" />
-          <p className="text-gray-600 text-lg">No results found</p>
+        <div className="flex items-center justify-center py-20">
+          <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
         </div>
       );
     }
 
+    if (userResults.length === 0 && isSearching) {
+      return (
+        <div className="flex flex-col items-center justify-center py-20">
+          <Search className="w-16 h-16 text-gray-400 mb-4" />
+          <p className="text-gray-600 text-lg">No users found</p>
+          <p className="text-gray-500 text-sm">Try different usernames or names</p>
+        </div>
+      );
+    }
+
+    const usersToShow = isSearching ? userResults : [];
+
     return (
       <div className="space-y-3 p-4">
-        {searchResults.map((user) => (
-          <div key={user.id} className="flex items-center p-4 bg-white rounded-xl shadow-sm border border-gray-100">
-            <img
-              src={user.avatar}
-              alt={user.fullName}
-              className="w-12 h-12 rounded-full mr-4"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = '/placeholder.svg';
-              }}
-            />
+        {usersToShow.map((user) => (
+          <div key={user.id} className="flex items-center p-4 bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center mr-4">
+              {user.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt={user.fullName}
+                  className="w-full h-full rounded-full object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                  }}
+                />
+              ) : (
+                <span className="text-white font-semibold text-sm">
+                  {user.fullName[0]?.toUpperCase()}
+                </span>
+              )}
+            </div>
             <div className="flex-1">
-              <p className="font-semibold text-gray-900">{user.fullName}</p>
+              <div className="flex items-center gap-2">
+                <p className="font-semibold text-gray-900">{user.fullName}</p>
+                {user.isVerified && (
+                  <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs">✓</span>
+                  </div>
+                )}
+              </div>
               <p className="text-sm text-gray-600">@{user.username}</p>
+              {user.bio && (
+                <p className="text-xs text-gray-500 mt-1">{user.bio}</p>
+              )}
             </div>
             <div className="text-right">
-              <p className="font-semibold text-gray-900">{user.followers}</p>
+              <p className="font-semibold text-gray-900">{user.followersCount.toLocaleString()}</p>
               <p className="text-xs text-gray-500">followers</p>
             </div>
           </div>
         ))}
       </div>
     );
-  };
-
-  const renderUserSearchHistory = () => {
-    return (
-      <div className="p-4">
-        <h2 className="text-lg font-semibold mb-4 text-gray-900">Recent Searches</h2>
-        <div className="space-y-3">
-          {userSearchHistory.map((user, index) => (
-            <div
-              key={index}
-              className="flex items-center p-4 bg-white rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => handleSearch(user.username)}
-            >
-              <img
-                src={user.avatar}
-                alt={user.fullName}
-                className="w-10 h-10 rounded-full mr-3"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = '/placeholder.svg';
-                }}
-              />
-              <div className="flex-1">
-                <p className="font-semibold text-gray-900">{user.fullName}</p>
-                <p className="text-sm text-gray-600">@{user.username}</p>
-              </div>
-              <p className="text-xs text-gray-500">{user.lastSearched}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  const renderMainContent = () => {
-    if (searchType === 'locations') {
-      return (
-        <div className="space-y-4">
-          {/* Category Filter Buttons */}
-          <div className="bg-white px-4 py-3 border-b border-gray-100 flex-shrink-0">
-            <div className="flex space-x-3 overflow-x-auto pb-1">
-              <Button
-                variant={selectedCategory === 'all' ? 'default' : 'outline'}
-                onClick={() => handleCategoryFilter('all')}
-                className="whitespace-nowrap rounded-full"
-                size="sm"
-              >
-                All
-              </Button>
-              <Button
-                variant={selectedCategory === 'restaurant' ? 'default' : 'outline'}
-                onClick={() => handleCategoryFilter('restaurant')}
-                className="whitespace-nowrap rounded-full"
-                size="sm"
-              >
-                Restaurants
-              </Button>
-              <Button
-                variant={selectedCategory === 'hotel' ? 'default' : 'outline'}
-                onClick={() => handleCategoryFilter('hotel')}
-                className="whitespace-nowrap rounded-full"
-                size="sm"
-              >
-                Hotels
-              </Button>
-              <Button
-                variant={selectedCategory === 'cafe' ? 'default' : 'outline'}
-                onClick={() => handleCategoryFilter('cafe')}
-                className="whitespace-nowrap rounded-full"
-                size="sm"
-              >
-                Cafes
-              </Button>
-              <Button
-                variant={selectedCategory === 'bar' ? 'default' : 'outline'}
-                onClick={() => handleCategoryFilter('bar')}
-                className="whitespace-nowrap rounded-full"
-                size="sm"
-              >
-                Bars
-              </Button>
-            </div>
-          </div>
-
-          {/* Places Section Header */}
-          <div className="px-4 pt-4">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">
-              Nearby Places {!isSearching && `(${getFilteredLocations().length})`}
-            </h2>
-          </div>
-
-          {/* Places List */}
-          {renderLocationSearchResults()}
-        </div>
-      );
-    } else {
-      if (isSearching) {
-        return renderUserSearchResults();
-      }
-      return renderUserSearchHistory();
-    }
   };
 
   return (
@@ -544,7 +300,7 @@ const ExplorePage = () => {
             <Input
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
-              placeholder={searchType === 'locations' ? 'Search for places (e.g., pizza, sushi, coffee)' : 'Search for users'}
+              placeholder={searchType === 'locations' ? 'Search for places, restaurants, cafes...' : 'Search for users'}
               className="pl-10 pr-10 bg-gray-100 border-none rounded-full h-10"
             />
             {searchQuery && (
@@ -606,14 +362,6 @@ const ExplorePage = () => {
               Restaurants
             </Button>
             <Button
-              variant={selectedCategory === 'hotel' ? 'default' : 'outline'}
-              onClick={() => handleCategoryFilter('hotel')}
-              className="whitespace-nowrap rounded-full"
-              size="sm"
-            >
-              Hotels
-            </Button>
-            <Button
               variant={selectedCategory === 'cafe' ? 'default' : 'outline'}
               onClick={() => handleCategoryFilter('cafe')}
               className="whitespace-nowrap rounded-full"
@@ -629,6 +377,22 @@ const ExplorePage = () => {
             >
               Bars
             </Button>
+            <Button
+              variant={selectedCategory === 'landmark' ? 'default' : 'outline'}
+              onClick={() => handleCategoryFilter('landmark')}
+              className="whitespace-nowrap rounded-full"
+              size="sm"
+            >
+              Landmarks
+            </Button>
+            <Button
+              variant={selectedCategory === 'museum' ? 'default' : 'outline'}
+              onClick={() => handleCategoryFilter('museum')}
+              className="whitespace-nowrap rounded-full"
+              size="sm"
+            >
+              Museums
+            </Button>
           </div>
         </div>
       )}
@@ -641,15 +405,22 @@ const ExplorePage = () => {
               {/* Places Section Header */}
               <div className="px-4 pt-4">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">
-                  Nearby Places {!isSearching && `(${getFilteredLocations().length})`}
+                  {isSearching ? 'Search Results' : 'Nearby Places'}
                 </h2>
               </div>
 
               {/* Places List */}
-              {renderLocationSearchResults()}
+              {renderPlaceResults()}
             </div>
           ) : (
-            isSearching ? renderUserSearchResults() : renderUserSearchHistory()
+            <div className="space-y-4">
+              <div className="px-4 pt-4">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">
+                  {isSearching ? 'Users' : 'Search for users above'}
+                </h2>
+              </div>
+              {renderUserResults()}
+            </div>
           )}
         </ScrollArea>
       </div>
@@ -658,7 +429,8 @@ const ExplorePage = () => {
       <ShareModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
-        place={selectedPlaceToShare}
+        item={selectedPlaceToShare}
+        itemType="place"
         onShare={handleShareComplete}
       />
 
