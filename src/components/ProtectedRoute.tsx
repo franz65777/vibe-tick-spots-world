@@ -1,12 +1,16 @@
 
+import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import WelcomePage from '@/components/WelcomePage';
-import HomePage from '@/components/HomePage';
-import AuthenticatedLayout from '@/components/AuthenticatedLayout';
+import { Navigate } from 'react-router-dom';
+import AuthenticatedLayout from './AuthenticatedLayout';
 
-const Index = () => {
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, loading } = useAuth();
-  
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -18,17 +22,15 @@ const Index = () => {
     );
   }
 
-  // Show welcome page if user is not authenticated
   if (!user) {
-    return <WelcomePage />;
+    return <Navigate to="/auth" replace />;
   }
 
-  // Show main app if user is authenticated
   return (
     <AuthenticatedLayout>
-      <HomePage />
+      {children}
     </AuthenticatedLayout>
   );
 };
 
-export default Index;
+export default ProtectedRoute;
