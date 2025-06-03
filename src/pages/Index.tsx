@@ -7,7 +7,10 @@ import AuthenticatedLayout from '@/components/AuthenticatedLayout';
 const Index = () => {
   const { user, loading } = useAuth();
   
+  console.log('Index page: loading =', loading, 'user =', user?.email);
+  
   if (loading) {
+    console.log('Index page: Still loading, showing spinner');
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
@@ -20,9 +23,11 @@ const Index = () => {
 
   // Show welcome page if user is not authenticated
   if (!user) {
+    console.log('Index page: No user, showing welcome page');
     return <WelcomePage />;
   }
 
+  console.log('Index page: User authenticated, showing home page');
   // Show main app if user is authenticated
   return (
     <AuthenticatedLayout>

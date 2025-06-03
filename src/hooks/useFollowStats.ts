@@ -27,25 +27,31 @@ export const useFollowStats = () => {
 
   useEffect(() => {
     const fetchStats = async () => {
+      console.log('useFollowStats: Starting to fetch stats for user:', user?.id);
+      
       if (!user) {
+        console.log('useFollowStats: No user found, using default stats');
         setStats({ followersCount: 0, followingCount: 0, postsCount: 0 });
         setLoading(false);
         return;
       }
 
       try {
+        console.log('useFollowStats: Fetching followers count...');
         // Get followers count
         const { count: followersCount } = await supabase
           .from('follows')
           .select('*', { count: 'exact', head: true })
           .eq('following_id', user.id);
 
+        console.log('useFollowStats: Fetching following count...');
         // Get following count
         const { count: followingCount } = await supabase
           .from('follows')
           .select('*', { count: 'exact', head: true })
           .eq('follower_id', user.id);
 
+        console.log('useFollowStats: Fetching posts count...');
         // Get posts count from profile
         const { data: profile } = await supabase
           .from('profiles')
@@ -53,14 +59,20 @@ export const useFollowStats = () => {
           .eq('id', user.id)
           .single();
 
-        setStats({
+        const newStats = {
           followersCount: followersCount || 0,
           followingCount: followingCount || 0,
           postsCount: profile?.posts_count || 0
-        });
+        };
+
+        console.log('useFollowStats: Stats fetched:', newStats);
+        setStats(newStats);
       } catch (error) {
-        console.error('Error fetching follow stats:', error);
+        console.error('useFollowStats: Error fetching follow stats:', error);
+        // Set default stats on error
+        setStats({ followersCount: 0, followingCount: 0, postsCount: 0 });
       } finally {
+        console.log('useFollowStats: Setting loading to false');
         setLoading(false);
       }
     };
@@ -78,6 +90,8 @@ export const useFollowData = (type: 'followers' | 'following') => {
 
   useEffect(() => {
     const fetchFollowData = async () => {
+      console.log('useFollowData: Fetching', type, 'for user:', user?.id);
+      
       if (!user) {
         setUsers([]);
         setLoading(false);
@@ -106,14 +120,16 @@ export const useFollowData = (type: 'followers' | 'following') => {
         const { data, error } = await query;
 
         if (error) {
-          console.error('Error fetching follow data:', error);
+          console.error('useFollowData: Error fetching follow data:', error);
           setUsers([]);
         } else {
+          console.log('useFollowData: Raw data:', data);
           const followUsers = data?.map(item => item.profiles).filter(Boolean) || [];
+          console.log('useFollowData: Processed users:', followUsers);
           setUsers(followUsers);
         }
       } catch (error) {
-        console.error('Error fetching follow data:', error);
+        console.error('useFollowData: Error fetching follow data:', error);
         setUsers([]);
       } finally {
         setLoading(false);

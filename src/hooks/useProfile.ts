@@ -12,6 +12,7 @@ interface Profile {
   bio: string | null;
   created_at: string;
   updated_at: string;
+  posts_count: number;
 }
 
 export const useProfile = () => {
@@ -22,13 +23,17 @@ export const useProfile = () => {
 
   useEffect(() => {
     const fetchProfile = async () => {
+      console.log('useProfile: Starting to fetch profile for user:', user?.id);
+      
       if (!user) {
+        console.log('useProfile: No user found, setting loading to false');
         setProfile(null);
         setLoading(false);
         return;
       }
 
       try {
+        console.log('useProfile: Fetching profile from database...');
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -36,15 +41,17 @@ export const useProfile = () => {
           .single();
 
         if (error) {
-          console.error('Error fetching profile:', error);
+          console.error('useProfile: Error fetching profile:', error);
           setError(error.message);
         } else {
+          console.log('useProfile: Profile fetched successfully:', data);
           setProfile(data);
         }
       } catch (err) {
-        console.error('Unexpected error:', err);
+        console.error('useProfile: Unexpected error:', err);
         setError('An unexpected error occurred');
       } finally {
+        console.log('useProfile: Setting loading to false');
         setLoading(false);
       }
     };

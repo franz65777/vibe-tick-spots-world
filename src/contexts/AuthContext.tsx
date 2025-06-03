@@ -28,42 +28,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('AuthProvider: Setting up auth state listener...');
+    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
+        console.log('AuthProvider: Auth state changed:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
         // If user just signed up, ensure profile exists
         if (event === 'SIGNED_IN' && session?.user) {
+          console.log('AuthProvider: User signed in, ensuring profile exists...');
           await ensureProfileExists(session.user);
         }
         
+        console.log('AuthProvider: Setting loading to false');
         setLoading(false);
       }
     );
 
     // Check for existing session
+    console.log('AuthProvider: Checking for existing session...');
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('AuthProvider: Existing session:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log('AuthProvider: Cleaning up auth subscription');
+      subscription.unsubscribe();
+    };
   }, []);
 
   const ensureProfileExists = async (user: User) => {
     try {
+      console.log('AuthProvider: Checking if profile exists for user:', user.id);
+      
       // Check if profile already exists
-      const { data: existingProfile } = await supabase
+      const { data: existingProfile, error: fetchError } = await supabase
         .from('profiles')
         .select('id')
         .eq('id', user.id)
         .single();
 
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        // Error other than "not found"
+        console.error('AuthProvider: Error checking profile:', fetchError);
+        return;
+      }
+
       if (!existingProfile) {
+        console.log('AuthProvider: Profile does not exist, creating...');
         // Create profile if it doesn't exist
         const { error } = await supabase
           .from('profiles')
@@ -73,16 +91,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             username: user.user_metadata?.username || `user_${user.id.substring(0, 8)}`,
             full_name: user.user_metadata?.full_name,
             avatar_url: user.user_metadata?.avatar_url,
+            posts_count: 0
           });
 
         if (error) {
-          console.error('Error creating profile:', error);
+          console.error('AuthProvider: Error creating profile:', error);
         } else {
-          console.log('Profile created successfully');
+          console.log('AuthProvider: Profile created successfully');
         }
+      } else {
+        console.log('AuthProvider: Profile already exists');
       }
     } catch (error) {
-      console.error('Error checking/creating profile:', error);
+      console.error('AuthProvider: Error checking/creating profile:', error);
     }
   };
 
@@ -147,6 +168,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signOut,
     loading,
   };
+
+  console.log('AuthProvider: Rendering with loading:', loading, 'user:', user?.email);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
