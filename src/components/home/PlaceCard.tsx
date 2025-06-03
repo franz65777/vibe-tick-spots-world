@@ -1,6 +1,7 @@
 
 import { Heart, Share, MessageCircle } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 
 interface Friend {
   name: string;
@@ -17,6 +18,10 @@ interface Place {
   isNew: boolean;
   coordinates: { lat: number; lng: number };
   image?: string;
+  addedBy?: string;
+  addedDate?: string;
+  isFollowing?: boolean;
+  popularity?: number;
 }
 
 interface PlaceCardProps {
@@ -26,9 +31,29 @@ interface PlaceCardProps {
   onLikeToggle: (placeId: string) => void;
   onShare: (place: Place) => void;
   onComment: (place: Place) => void;
+  cityName?: string; // Add city name prop for saving
 }
 
-const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComment }: PlaceCardProps) => {
+const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComment, cityName = 'San Francisco' }: PlaceCardProps) => {
+  const { savePlace, unsavePlace, isPlaceSaved } = useSavedPlaces();
+  const isSaved = isPlaceSaved(place.id);
+
+  const handleSaveToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (isSaved) {
+      unsavePlace(place.id, cityName);
+    } else {
+      savePlace({
+        id: place.id,
+        name: place.name,
+        category: place.category,
+        city: cityName,
+        coordinates: place.coordinates
+      });
+    }
+  };
+
   return (
     <div 
       className="relative cursor-pointer hover:scale-[1.02] transition-all duration-300 group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md"
@@ -60,8 +85,16 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
           </div>
         )}
 
-        {/* Like button - smaller */}
-        <div className="absolute top-2 right-2">
+        {/* Save button and Like button - smaller */}
+        <div className="absolute top-2 right-2 flex gap-1">
+          <button
+            onClick={handleSaveToggle}
+            className="bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-sm hover:scale-105 transition-all duration-200"
+          >
+            <Heart 
+              className={`w-4 h-4 ${isSaved ? 'fill-blue-500 text-blue-500' : 'text-gray-600'} transition-colors duration-200`} 
+            />
+          </button>
           <button
             onClick={(e) => {
               e.stopPropagation();

@@ -566,6 +566,7 @@ const HomePage = () => {
             onLikeToggle={handleLikeToggle}
             onShare={handleShare}
             onComment={handleComment}
+            cityName={currentCity}
           />
         </div>
       )}
@@ -596,7 +597,7 @@ const HomePage = () => {
         currentStoryIndex={currentStoryIndex}
         onCreateStoryModalClose={() => setIsCreateStoryModalOpen(false)}
         onNotificationsModalClose={() => setIsNotificationsModalOpen(false)}
-        onMessagesModalClose={() => setIsMessagesModalOpen(false)}
+        onMessagesModalClose={() => setIsMessagesModalClose(false)}
         onShareModalClose={() => setIsShareModalOpen(false)}
         onCommentModalClose={() => setIsCommentModalOpen(false)}
         onLocationDetailClose={() => setIsLocationDetailOpen(false)}
