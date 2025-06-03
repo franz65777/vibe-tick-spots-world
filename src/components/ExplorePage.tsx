@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Search, MapPin, User, ArrowLeft, X, Heart, Share, MessageCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import PlaceCard from '@/components/home/PlaceCard';
 import ShareModal from '@/components/home/ShareModal';
@@ -461,7 +462,7 @@ const ExplorePage = () => {
       return (
         <div className="space-y-4">
           {/* Category Filter Buttons */}
-          <div className="bg-white px-4 py-4 border-b border-gray-100">
+          <div className="bg-white px-4 py-3 border-b border-gray-100 flex-shrink-0">
             <div className="flex space-x-3 overflow-x-auto pb-1">
               <Button
                 variant={selectedCategory === 'all' ? 'default' : 'outline'}
@@ -507,7 +508,7 @@ const ExplorePage = () => {
           </div>
 
           {/* Places Section Header */}
-          <div className="px-4">
+          <div className="px-4 pt-4">
             <h2 className="text-xl font-bold text-gray-900 mb-4">
               Nearby Places {!isSearching && `(${getFilteredLocations().length})`}
             </h2>
@@ -526,9 +527,9 @@ const ExplorePage = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
-      {/* Search Header */}
-      <div className="bg-white p-4 border-b border-gray-100 shadow-sm">
+    <div className="flex flex-col h-screen bg-gray-50">
+      {/* Search Header - Fixed height */}
+      <div className="bg-white p-4 border-b border-gray-100 shadow-sm flex-shrink-0">
         <div className="flex items-center gap-3">
           {/* Back button */}
           {isSearching && (
@@ -584,9 +585,73 @@ const ExplorePage = () => {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto">
-        {renderMainContent()}
+      {/* Category Filter Buttons - Fixed height for locations only */}
+      {searchType === 'locations' && (
+        <div className="bg-white px-4 py-3 border-b border-gray-100 flex-shrink-0">
+          <div className="flex space-x-3 overflow-x-auto pb-1">
+            <Button
+              variant={selectedCategory === 'all' ? 'default' : 'outline'}
+              onClick={() => handleCategoryFilter('all')}
+              className="whitespace-nowrap rounded-full"
+              size="sm"
+            >
+              All
+            </Button>
+            <Button
+              variant={selectedCategory === 'restaurant' ? 'default' : 'outline'}
+              onClick={() => handleCategoryFilter('restaurant')}
+              className="whitespace-nowrap rounded-full"
+              size="sm"
+            >
+              Restaurants
+            </Button>
+            <Button
+              variant={selectedCategory === 'hotel' ? 'default' : 'outline'}
+              onClick={() => handleCategoryFilter('hotel')}
+              className="whitespace-nowrap rounded-full"
+              size="sm"
+            >
+              Hotels
+            </Button>
+            <Button
+              variant={selectedCategory === 'cafe' ? 'default' : 'outline'}
+              onClick={() => handleCategoryFilter('cafe')}
+              className="whitespace-nowrap rounded-full"
+              size="sm"
+            >
+              Cafes
+            </Button>
+            <Button
+              variant={selectedCategory === 'bar' ? 'default' : 'outline'}
+              onClick={() => handleCategoryFilter('bar')}
+              className="whitespace-nowrap rounded-full"
+              size="sm"
+            >
+              Bars
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Scrollable Content Area - Takes remaining space */}
+      <div className="flex-1 overflow-hidden">
+        <ScrollArea className="h-full">
+          {searchType === 'locations' ? (
+            <div className="space-y-4">
+              {/* Places Section Header */}
+              <div className="px-4 pt-4">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">
+                  Nearby Places {!isSearching && `(${getFilteredLocations().length})`}
+                </h2>
+              </div>
+
+              {/* Places List */}
+              {renderLocationSearchResults()}
+            </div>
+          ) : (
+            isSearching ? renderUserSearchResults() : renderUserSearchHistory()
+          )}
+        </ScrollArea>
       </div>
 
       {/* Modals */}
