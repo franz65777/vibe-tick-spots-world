@@ -26,7 +26,7 @@ const WelcomePage = () => {
                   SP
                   <span className="relative inline-block">
                     O
-                    <MapPin className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2 h-2 text-orange-500 fill-orange-500 opacity-80" />
+                    <MapPin className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-3 h-3 text-blue-600" />
                   </span>
                   TT
                 </h1>
