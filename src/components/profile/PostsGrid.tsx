@@ -1,5 +1,7 @@
 
-import { Heart, MessageCircle, MapPin } from 'lucide-react';
+import { Heart, MessageCircle, MapPin, Grid3X3 } from 'lucide-react';
+import { useState } from 'react';
+import PostDetailModal from './PostDetailModal';
 
 interface Post {
   id: string;
@@ -9,9 +11,14 @@ interface Post {
   location: string;
   caption: string;
   createdAt: string;
+  totalSaves?: number;
 }
 
 const PostsGrid = () => {
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set(['1', '3'])); // Demo liked posts
+  const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set(['2', '4'])); // Demo saved posts
+
   // Demo posts - in real app this would come from props or hook
   const posts: Post[] = [
     {
@@ -21,7 +28,8 @@ const PostsGrid = () => {
       comments: 8,
       location: 'Milan, Italy',
       caption: 'Amazing pasta at this hidden gem! 🍝',
-      createdAt: '2024-06-01'
+      createdAt: '2024-06-01',
+      totalSaves: 23
     },
     {
       id: '2',
@@ -30,7 +38,8 @@ const PostsGrid = () => {
       comments: 5,
       location: 'Paris, France',
       caption: 'Perfect evening at this rooftop bar ✨',
-      createdAt: '2024-05-28'
+      createdAt: '2024-05-28',
+      totalSaves: 18
     },
     {
       id: '3',
@@ -39,7 +48,8 @@ const PostsGrid = () => {
       comments: 12,
       location: 'San Francisco, CA',
       caption: 'Best coffee in the city! ☕',
-      createdAt: '2024-05-25'
+      createdAt: '2024-05-25',
+      totalSaves: 31
     },
     {
       id: '4',
@@ -48,7 +58,8 @@ const PostsGrid = () => {
       comments: 15,
       location: 'New York, NY',
       caption: 'Incredible brunch spot 🥐',
-      createdAt: '2024-05-20'
+      createdAt: '2024-05-20',
+      totalSaves: 45
     },
     {
       id: '5',
@@ -57,7 +68,8 @@ const PostsGrid = () => {
       comments: 3,
       location: 'Tokyo, Japan',
       caption: 'Traditional ramen house 🍜',
-      createdAt: '2024-05-15'
+      createdAt: '2024-05-15',
+      totalSaves: 12
     },
     {
       id: '6',
@@ -66,9 +78,38 @@ const PostsGrid = () => {
       comments: 9,
       location: 'Barcelona, Spain',
       caption: 'Tapas and good vibes 🍤',
-      createdAt: '2024-05-10'
+      createdAt: '2024-05-10',
+      totalSaves: 27
     }
   ];
+
+  const handlePostClick = (post: Post) => {
+    setSelectedPost(post);
+  };
+
+  const handleLikeToggle = (postId: string) => {
+    setLikedPosts(prev => {
+      const newLiked = new Set(prev);
+      if (newLiked.has(postId)) {
+        newLiked.delete(postId);
+      } else {
+        newLiked.add(postId);
+      }
+      return newLiked;
+    });
+  };
+
+  const handleSaveToggle = (postId: string) => {
+    setSavedPosts(prev => {
+      const newSaved = new Set(prev);
+      if (newSaved.has(postId)) {
+        newSaved.delete(postId);
+      } else {
+        newSaved.add(postId);
+      }
+      return newSaved;
+    });
+  };
 
   if (posts.length === 0) {
     return (
@@ -89,6 +130,7 @@ const PostsGrid = () => {
           <div
             key={post.id}
             className="relative aspect-square bg-gray-100 rounded-xl overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-200"
+            onClick={() => handlePostClick(post)}
           >
             <img
               src={post.image}
@@ -124,6 +166,16 @@ const PostsGrid = () => {
           </div>
         ))}
       </div>
+
+      <PostDetailModal 
+        post={selectedPost}
+        isOpen={!!selectedPost}
+        onClose={() => setSelectedPost(null)}
+        isLiked={selectedPost ? likedPosts.has(selectedPost.id) : false}
+        isSaved={selectedPost ? savedPosts.has(selectedPost.id) : false}
+        onLikeToggle={() => selectedPost && handleLikeToggle(selectedPost.id)}
+        onSaveToggle={() => selectedPost && handleSaveToggle(selectedPost.id)}
+      />
     </div>
   );
 };

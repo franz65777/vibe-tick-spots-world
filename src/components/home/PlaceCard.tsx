@@ -22,6 +22,7 @@ interface Place {
   addedDate?: string;
   isFollowing?: boolean;
   popularity?: number;
+  totalSaves?: number;
 }
 
 interface PlaceCardProps {
@@ -53,6 +54,9 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
       });
     }
   };
+
+  // Calculate total saves (demo data + actual saves)
+  const totalSaves = (place.totalSaves || 23) + (isSaved ? 1 : 0);
 
   return (
     <div 
@@ -86,16 +90,16 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
         <div className="absolute top-2 right-2 flex gap-1">
           <button
             onClick={handleSaveToggle}
-            className={`backdrop-blur-sm rounded-full p-1.5 shadow-sm transition-all duration-300 transform ${
+            className={`backdrop-blur-sm rounded-full p-1.5 shadow-sm transition-all duration-500 transform ${
               isSaved 
-                ? 'bg-blue-500 scale-110 shadow-lg' 
-                : 'bg-white/90 hover:bg-blue-50 hover:scale-105'
+                ? 'bg-blue-500 scale-110 shadow-lg animate-[wiggle_0.8s_ease-in-out]' 
+                : 'bg-white/90 hover:bg-blue-50 hover:scale-110'
             }`}
           >
             <MapPin 
-              className={`w-4 h-4 transition-all duration-300 ${
+              className={`w-4 h-4 transition-all duration-500 ${
                 isSaved 
-                  ? 'fill-white text-white animate-[bounce_0.6s_ease-in-out_2]' 
+                  ? 'fill-white text-white animate-[tada_0.8s_ease-in-out]' 
                   : 'text-blue-600'
               }`} 
             />
@@ -105,20 +109,30 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
               e.stopPropagation();
               onLikeToggle(place.id);
             }}
-            className="bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-sm hover:scale-105 transition-all duration-200"
+            className={`backdrop-blur-sm rounded-full p-1.5 shadow-sm transition-all duration-500 transform ${
+              isLiked 
+                ? 'bg-red-50 scale-110 animate-[heartbeat_0.8s_ease-in-out]' 
+                : 'bg-white/90 hover:scale-110 hover:bg-red-50'
+            }`}
           >
             <Heart 
-              className={`w-4 h-4 transition-all duration-300 ${
+              className={`w-4 h-4 transition-all duration-500 ${
                 isLiked 
-                  ? 'fill-red-500 text-red-500 animate-[bounce_0.6s_ease-in-out_2]' 
+                  ? 'fill-red-500 text-red-500 animate-[pulse_0.8s_ease-in-out_2]' 
                   : 'text-gray-600'
               }`} 
             />
           </button>
         </div>
 
+        {/* Total saves counter */}
+        <div className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1 shadow-sm">
+          <MapPin className="w-3 h-3 text-white" />
+          <span className="text-xs text-white font-medium">{totalSaves} saved</span>
+        </div>
+
         {place.friendsWhoSaved && place.friendsWhoSaved.length > 0 && (
-          <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1 shadow-sm">
+          <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1 shadow-sm">
             <div className="flex -space-x-1">
               {place.friendsWhoSaved.slice(0, 2).map((friend, index) => (
                 <Avatar key={index} className="w-4 h-4 border border-white shadow-sm">
@@ -133,7 +147,7 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
               ))}
             </div>
             <span className="text-xs text-gray-700 font-medium">
-              {place.friendsWhoSaved.length}
+              {place.friendsWhoSaved.length} friends
             </span>
           </div>
         )}
@@ -175,6 +189,29 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
           </button>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes wiggle {
+          0%, 100% { transform: rotate(0deg); }
+          25% { transform: rotate(-10deg); }
+          75% { transform: rotate(10deg); }
+        }
+        
+        @keyframes tada {
+          0% { transform: scale(1); }
+          10%, 20% { transform: scale(0.9) rotate(-3deg); }
+          30%, 50%, 70%, 90% { transform: scale(1.1) rotate(3deg); }
+          40%, 60%, 80% { transform: scale(1.1) rotate(-3deg); }
+          100% { transform: scale(1) rotate(0deg); }
+        }
+        
+        @keyframes heartbeat {
+          0%, 100% { transform: scale(1); }
+          25% { transform: scale(1.2); }
+          50% { transform: scale(1.1); }
+          75% { transform: scale(1.15); }
+        }
+      `}</style>
     </div>
   );
 };
