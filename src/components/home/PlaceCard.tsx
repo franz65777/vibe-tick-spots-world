@@ -95,7 +95,7 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
             <MapPin 
               className={`w-4 h-4 transition-all duration-300 ${
                 isSaved 
-                  ? 'fill-white text-white animate-bounce' 
+                  ? 'fill-white text-white animate-[bounce_0.6s_ease-in-out_2]' 
                   : 'text-blue-600'
               }`} 
             />
@@ -108,7 +108,11 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
             className="bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-sm hover:scale-105 transition-all duration-200"
           >
             <Heart 
-              className={`w-4 h-4 ${isLiked ? 'fill-red-500 text-red-500' : 'text-gray-600'} transition-colors duration-200`} 
+              className={`w-4 h-4 transition-all duration-300 ${
+                isLiked 
+                  ? 'fill-red-500 text-red-500 animate-[bounce_0.6s_ease-in-out_2]' 
+                  : 'text-gray-600'
+              }`} 
             />
           </button>
         </div>

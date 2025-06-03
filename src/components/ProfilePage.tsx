@@ -6,11 +6,14 @@ import ProfileHeader from './profile/ProfileHeader';
 import ProfileStats from './profile/ProfileStats';
 import ProfileTabs from './profile/ProfileTabs';
 import Achievements from './profile/Achievements';
+import PostsGrid from './profile/PostsGrid';
+import TripsGrid from './profile/TripsGrid';
 import FollowersModal from './profile/FollowersModal';
 
 const ProfilePage = () => {
   const { profile, loading, error } = useProfile();
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState('posts');
   const [modalState, setModalState] = useState<{ isOpen: boolean; type: 'followers' | 'following' | null }>({
     isOpen: false,
     type: null
@@ -25,8 +28,7 @@ const ProfilePage = () => {
   };
 
   const handlePostsClick = () => {
-    // In a real app, this would navigate to a posts view or filter the content
-    console.log('Navigate to posts view');
+    setActiveTab('posts');
   };
 
   if (loading) {
@@ -49,6 +51,19 @@ const ProfilePage = () => {
     );
   }
 
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'posts':
+        return <PostsGrid />;
+      case 'trips':
+        return <TripsGrid />;
+      case 'badges':
+        return <Achievements />;
+      default:
+        return <PostsGrid />;
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-white">
       <ProfileHeader />
@@ -59,19 +74,11 @@ const ProfilePage = () => {
         onPostsClick={handlePostsClick}
       />
       
-      <ProfileTabs />
-      <Achievements />
-
-      {/* Content Area */}
-      <div className="flex-1 p-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-gray-100 rounded-xl h-32 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-blue-400 opacity-60"></div>
-          </div>
-          <div className="bg-gray-100 rounded-xl h-32 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 opacity-60"></div>
-          </div>
-        </div>
+      <ProfileTabs activeTab={activeTab} onTabChange={setActiveTab} />
+      
+      {/* Tab Content */}
+      <div className="flex-1 pb-4">
+        {renderTabContent()}
       </div>
 
       <FollowersModal 

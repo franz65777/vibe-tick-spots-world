@@ -1,28 +1,31 @@
 
 import { useState } from 'react';
-import { Bookmark, MapPin, Grid3X3 } from 'lucide-react';
+import { Award, MapPin, Grid3X3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const ProfileTabs = () => {
-  const [activeTab, setActiveTab] = useState('saved');
+interface ProfileTabsProps {
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+}
 
+const ProfileTabs = ({ activeTab, onTabChange }: ProfileTabsProps) => {
   return (
     <div className="px-4">
       <div className="flex bg-gray-100 rounded-xl p-1 mb-4">
         <button
-          onClick={() => setActiveTab('saved')}
+          onClick={() => onTabChange('posts')}
           className={cn(
             "flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2",
-            activeTab === 'saved'
+            activeTab === 'posts'
               ? "bg-blue-600 text-white shadow-sm"
               : "text-gray-600"
           )}
         >
-          <Bookmark className="w-4 h-4" />
-          Saved
+          <Grid3X3 className="w-4 h-4" />
+          Posts
         </button>
         <button
-          onClick={() => setActiveTab('trips')}
+          onClick={() => onTabChange('trips')}
           className={cn(
             "flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2",
             activeTab === 'trips'
@@ -34,16 +37,16 @@ const ProfileTabs = () => {
           Trips
         </button>
         <button
-          onClick={() => setActiveTab('posts')}
+          onClick={() => onTabChange('badges')}
           className={cn(
             "flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2",
-            activeTab === 'posts'
+            activeTab === 'badges'
               ? "bg-blue-600 text-white shadow-sm"
               : "text-gray-600"
           )}
         >
-          <Grid3X3 className="w-4 h-4" />
-          Posts
+          <Award className="w-4 h-4" />
+          Badges
         </button>
       </div>
     </div>
