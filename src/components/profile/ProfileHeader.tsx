@@ -3,6 +3,7 @@ import { ArrowLeft, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/contexts/AuthContext';
+import BadgeDisplay from './BadgeDisplay';
 
 const ProfileHeader = () => {
   const { profile } = useProfile();
@@ -54,11 +55,14 @@ const ProfileHeader = () => {
         </div>
         
         <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-xl font-bold text-gray-900">{displayUsername}</h1>
-            <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-3 py-1 rounded-full">
-              Elite
-            </Button>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold text-gray-900">{displayUsername}</h1>
+              <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-3 py-1 rounded-full">
+                Elite
+              </Button>
+            </div>
+            <BadgeDisplay />
           </div>
           {displayFullName && (
             <p className="text-gray-600 text-sm mb-2">{displayFullName}</p>

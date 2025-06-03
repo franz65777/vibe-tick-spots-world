@@ -1,3 +1,4 @@
+
 import { Heart, Share, MessageCircle, MapPin } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
@@ -30,7 +31,7 @@ interface PlaceCardProps {
   onLikeToggle: (placeId: string) => void;
   onShare: (place: Place) => void;
   onComment: (place: Place) => void;
-  cityName?: string; // Add city name prop for saving
+  cityName?: string;
 }
 
 const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComment, cityName = 'San Francisco' }: PlaceCardProps) => {
@@ -58,7 +59,7 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
       className="relative cursor-pointer hover:scale-[1.02] transition-all duration-300 group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md"
       onClick={() => onCardClick(place)}
     >
-      {/* Image Container - Much smaller */}
+      {/* Image Container */}
       <div className="relative h-24 overflow-hidden">
         {place.image ? (
           <img
@@ -74,30 +75,27 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
         ) : null}
         <div className={`absolute inset-0 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 opacity-60 ${place.image ? 'hidden' : ''}`}></div>
         
-        {/* Overlay gradient for better text readability */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
 
-        {/* NEW Badge - smaller */}
         {place.isNew && (
           <div className="absolute top-2 left-2 bg-gradient-to-r from-orange-400 to-red-500 text-white text-xs px-2 py-1 rounded-full font-semibold z-10 shadow-sm">
             NEW
           </div>
         )}
 
-        {/* Save button and Like button - smaller */}
         <div className="absolute top-2 right-2 flex gap-1">
           <button
             onClick={handleSaveToggle}
-            className={`backdrop-blur-sm rounded-full p-1.5 shadow-sm hover:scale-110 transition-all duration-200 ${
+            className={`backdrop-blur-sm rounded-full p-1.5 shadow-sm transition-all duration-300 transform ${
               isSaved 
-                ? 'bg-blue-500 animate-pulse' 
-                : 'bg-white/90 hover:bg-blue-50'
+                ? 'bg-blue-500 scale-110 shadow-lg' 
+                : 'bg-white/90 hover:bg-blue-50 hover:scale-105'
             }`}
           >
             <MapPin 
-              className={`w-4 h-4 transition-all duration-200 ${
+              className={`w-4 h-4 transition-all duration-300 ${
                 isSaved 
-                  ? 'fill-white text-white drop-shadow-sm' 
+                  ? 'fill-white text-white animate-bounce' 
                   : 'text-blue-600'
               }`} 
             />
@@ -115,7 +113,6 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
           </button>
         </div>
 
-        {/* Friends who saved - smaller and bottom left */}
         {place.friendsWhoSaved && place.friendsWhoSaved.length > 0 && (
           <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1 shadow-sm">
             <div className="flex -space-x-1">
@@ -138,9 +135,8 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
         )}
       </div>
 
-      {/* Content Container - Much more compact */}
+      {/* Content Container */}
       <div className="p-3 space-y-2">
-        {/* Location Info */}
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
             <h3 className="text-sm font-bold text-gray-900 truncate">{place.name}</h3>
@@ -152,7 +148,6 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
           </div>
         </div>
 
-        {/* Action Buttons - More compact */}
         <div className="flex items-center gap-2">
           <button
             onClick={(e) => {
