@@ -172,97 +172,85 @@ const CitySearch = ({
   };
 
   return (
-    <>
-      <div ref={searchRef} className="relative flex-1 max-w-md">
-        {/* Current City Display / Search Input */}
-        <div className="relative">
-          {!searchQuery || searchQuery.trim() === ' ' ? (
-            // Show current city when not searching
-            <div className="flex items-center gap-3 bg-white/90 border border-gray-200 rounded-2xl h-12 px-4 hover:bg-white transition-colors cursor-pointer"
-                 onClick={() => document.getElementById('city-search-input')?.focus()}>
-              <CurrentCityIcon className="w-5 h-5 text-blue-600 shrink-0" />
-              <span className="text-gray-900 font-medium">{currentCityData?.name || currentCity}</span>
-              <Search className="w-4 h-4 text-gray-400 ml-auto" />
-            </div>
-          ) : (
-            // Show search input when searching
-            <div className="relative">
-              <Input
-                id="city-search-input"
-                type="text"
-                placeholder="Search cities..."
-                value={searchQuery === ' ' ? '' : searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
-                onKeyPress={onSearchKeyPress}
-                onFocus={() => searchQuery && setIsOpen(true)}
-                className="pl-4 pr-10 bg-white/90 border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-2xl h-12"
-                autoFocus
-              />
-              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            </div>
-          )}
-        </div>
-
-        {/* Hidden input for focusing */}
-        {(!searchQuery || searchQuery.trim() === ' ') && (
-          <input
-            id="city-search-input"
-            type="text"
-            className="absolute inset-0 opacity-0 cursor-pointer"
-            onFocus={() => onSearchChange(' ')}
-            onChange={(e) => onSearchChange(e.target.value)}
-            onKeyPress={onSearchKeyPress}
-          />
+    <div ref={searchRef} className="relative flex-1 max-w-md z-[100]">
+      {/* Current City Display / Search Input */}
+      <div className="relative">
+        {!searchQuery || searchQuery.trim() === ' ' ? (
+          // Show current city when not searching
+          <div className="flex items-center gap-3 bg-white/90 border border-gray-200 rounded-2xl h-12 px-4 hover:bg-white transition-colors cursor-pointer"
+               onClick={() => document.getElementById('city-search-input')?.focus()}>
+            <CurrentCityIcon className="w-5 h-5 text-blue-600 shrink-0" />
+            <span className="text-gray-900 font-medium">{currentCityData?.name || currentCity}</span>
+            <Search className="w-4 h-4 text-gray-400 ml-auto" />
+          </div>
+        ) : (
+          // Show search input when searching
+          <div className="relative">
+            <Input
+              id="city-search-input"
+              type="text"
+              placeholder="Search cities..."
+              value={searchQuery === ' ' ? '' : searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              onKeyPress={onSearchKeyPress}
+              onFocus={() => searchQuery && setIsOpen(true)}
+              className="pl-4 pr-10 bg-white/90 border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-2xl h-12"
+              autoFocus
+            />
+            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          </div>
         )}
       </div>
 
-      {/* Portal-like dropdown that appears above everything */}
-      {isOpen && (
-        <div className="fixed inset-0 z-[9999] pointer-events-none">
-          <div 
-            className="absolute bg-white rounded-2xl shadow-2xl border border-gray-100 pointer-events-auto"
-            style={{
-              top: searchRef.current ? searchRef.current.getBoundingClientRect().bottom + 8 : 0,
-              left: searchRef.current ? searchRef.current.getBoundingClientRect().left : 0,
-              right: searchRef.current ? window.innerWidth - searchRef.current.getBoundingClientRect().right : 0,
-              maxHeight: '256px',
-              overflowY: 'auto'
-            }}
-          >
-            {filteredCities.length > 0 ? (
-              filteredCities.map(({ key, data, similarity }) => {
-                const IconComponent = data.icon;
-                return (
-                  <button
-                    key={key}
-                    onClick={() => handleCityClick(data.name)}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left border-b border-gray-50 last:border-b-0"
-                  >
-                    <IconComponent className="w-5 h-5 text-blue-600 shrink-0" />
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-900">{data.name}</div>
-                      <div className="text-xs text-gray-500">{data.description}</div>
-                    </div>
-                    {similarity > 0.8 && (
-                      <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                        Best match
-                      </div>
-                    )}
-                  </button>
-                );
-              })
-            ) : searchQuery.trim() && searchQuery.trim() !== ' ' ? (
-              <div className="p-4">
-                <div className="text-gray-500 text-sm text-center">
-                  <div className="mb-2">No cities found for "{searchQuery}"</div>
-                  <div className="text-xs">Try: Milan, Paris, New York, London, Tokyo</div>
+      {/* Hidden input for focusing */}
+      {(!searchQuery || searchQuery.trim() === ' ') && (
+        <input
+          id="city-search-input"
+          type="text"
+          className="absolute inset-0 opacity-0 cursor-pointer"
+          onFocus={() => onSearchChange(' ')}
+          onChange={(e) => onSearchChange(e.target.value)}
+          onKeyPress={onSearchKeyPress}
+        />
+      )}
+
+      {/* Dropdown Results - High z-index to appear above everything */}
+      {isOpen && filteredCities.length > 0 && (
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 max-h-64 overflow-y-auto z-[9999] backdrop-blur-sm">
+          {filteredCities.map(({ key, data, similarity }) => {
+            const IconComponent = data.icon;
+            return (
+              <button
+                key={key}
+                onClick={() => handleCityClick(data.name)}
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left border-b border-gray-50 last:border-b-0"
+              >
+                <IconComponent className="w-5 h-5 text-blue-600 shrink-0" />
+                <div className="flex-1">
+                  <div className="font-medium text-gray-900">{data.name}</div>
+                  <div className="text-xs text-gray-500">{data.description}</div>
                 </div>
-              </div>
-            ) : null}
+                {similarity > 0.8 && (
+                  <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                    Best match
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* No results - High z-index to appear above everything */}
+      {isOpen && searchQuery.trim() && searchQuery.trim() !== ' ' && filteredCities.length === 0 && (
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 z-[9999] backdrop-blur-sm">
+          <div className="text-gray-500 text-sm text-center">
+            <div className="mb-2">No cities found for "{searchQuery}"</div>
+            <div className="text-xs">Try: Milan, Paris, New York, London, Tokyo</div>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 
