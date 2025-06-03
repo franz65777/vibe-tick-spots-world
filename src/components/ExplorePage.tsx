@@ -25,6 +25,76 @@ interface Place {
   comments?: { content: string; author: string }[];
 }
 
+// Function to generate meaningful placeholder images based on category
+const getPlaceholderImage = (category: string, placeName: string) => {
+  const restaurantImages = [
+    'photo-1517248135467-4c7edcad34c4', // restaurant interior
+    'photo-1414235077428-338989a2e8c0', // fine dining
+    'photo-1555396273-367ea4eb4db5', // restaurant atmosphere
+    'photo-1467003909585-2f8a72700288', // restaurant food
+    'photo-1481833761820-0509d3217039', // cozy restaurant
+  ];
+  
+  const cafeImages = [
+    'photo-1501339847302-ac426a4a7cbb', // cafe interior
+    'photo-1453614512568-c4024d13c247', // coffee shop
+    'photo-1509440159596-0249088772ff', // modern cafe
+    'photo-1559339352-11d035aa65de', // cozy cafe
+    'photo-1445116572660-236099ec97a0', // coffee bar
+  ];
+  
+  const barImages = [
+    'photo-1514362545857-3bc16c4c7d1b', // bar interior
+    'photo-1470337458703-46ad1756a187', // cocktail bar
+    'photo-1572116469696-31de0f17cc34', // rooftop bar
+    'photo-1558618047-3c8c76ca7d13', // wine bar
+    'photo-1551218808-94e220e084d2', // modern bar
+  ];
+  
+  const hotelImages = [
+    'photo-1566073771259-6a8506099945', // luxury hotel
+    'photo-1578662996442-48f60103fc96', // hotel lobby
+    'photo-1520637836862-4d197d17c783', // boutique hotel
+    'photo-1582719478250-c89cae4dc85b', // hotel suite
+    'photo-1571896349842-33c89424de2d', // hotel exterior
+  ];
+  
+  const landmarkImages = [
+    'photo-1499856871958-5b9627545d1a', // famous landmark
+    'photo-1507003211169-0a1dd7228f2d', // city landmark
+    'photo-1444492417251-9c84a5fa18e0', // historic building
+    'photo-1513635269975-59663e0ac1ad', // monument
+    'photo-1449824913935-59a10b8d2000', // architecture
+  ];
+
+  let imagePool;
+  switch (category?.toLowerCase()) {
+    case 'restaurant':
+      imagePool = restaurantImages;
+      break;
+    case 'cafe':
+      imagePool = cafeImages;
+      break;
+    case 'bar':
+    case 'nightlife':
+      imagePool = barImages;
+      break;
+    case 'hotel':
+      imagePool = hotelImages;
+      break;
+    case 'landmark':
+    case 'museum':
+      imagePool = landmarkImages;
+      break;
+    default:
+      imagePool = restaurantImages;
+  }
+  
+  // Use place name to deterministically pick an image
+  const index = placeName.charCodeAt(0) % imagePool.length;
+  return `https://images.unsplash.com/${imagePool[index]}?w=400&h=300&fit=crop`;
+};
+
 const ExplorePage = () => {
   console.log('ExplorePage component rendering...');
   
@@ -125,10 +195,10 @@ const ExplorePage = () => {
     coordinates: searchPlace.coordinates,
     visitors: [],
     isNew: Math.random() > 0.7, // 30% chance of being new
-    image: searchPlace.image,
+    image: searchPlace.image || getPlaceholderImage(searchPlace.category, searchPlace.name),
     friendsWhoSaved: Math.random() > 0.5 ? [
-      { name: 'Alex', avatar: '1649972904349-6e44c42644a7' },
-      { name: 'Emma', avatar: '1581091226825-a6a2a5aee158' }
+      { name: 'Alex', avatar: 'photo-1507003211169-0a1dd7228f2d' },
+      { name: 'Emma', avatar: 'photo-1494790108755-2616b5a5c75b' }
     ] : undefined
   });
 

@@ -61,8 +61,8 @@ const cityData: Record<string, { coordinates: { lat: number; lng: number }; plac
         category: 'cafe',
         likes: 24,
         friendsWhoSaved: [
-          { name: 'Sarah', avatar: '1649972904349-6e44c42644a7' },
-          { name: 'Mike', avatar: '1581091226825-a6a2a5aee158' }
+          { name: 'Sarah', avatar: 'photo-1494790108755-2616b5a5c75b' },
+          { name: 'Mike', avatar: 'photo-1507003211169-0a1dd7228f2d' }
         ],
         visitors: ['user1', 'user2'],
         isNew: false,
@@ -93,7 +93,7 @@ const cityData: Record<string, { coordinates: { lat: number; lng: number }; plac
         category: 'hotel',
         likes: 45,
         friendsWhoSaved: [
-          { name: 'Emma', avatar: '1581092795360-fd1ca04f0952' }
+          { name: 'Emma', avatar: 'photo-1438761681033-6461ffad8d80' }
         ],
         visitors: ['user4', 'user5'],
         isNew: false,
@@ -115,8 +115,8 @@ const cityData: Record<string, { coordinates: { lat: number; lng: number }; plac
         category: 'cafe',
         likes: 32,
         friendsWhoSaved: [
-          { name: 'Marco', avatar: '1649972904349-6e44c42644a7' },
-          { name: 'Sofia', avatar: '1581091226825-a6a2a5aee158' }
+          { name: 'Marco', avatar: 'photo-1527980965255-d3b416303d12' },
+          { name: 'Sofia', avatar: 'photo-1534528741775-53994a69daeb' }
         ],
         visitors: ['user1', 'user2', 'user3'],
         isNew: true,
@@ -147,7 +147,7 @@ const cityData: Record<string, { coordinates: { lat: number; lng: number }; plac
         category: 'bar',
         likes: 28,
         friendsWhoSaved: [
-          { name: 'Giuseppe', avatar: '1581092795360-fd1ca04f0952' }
+          { name: 'Giuseppe', avatar: 'photo-1552058544-f2b08422138a' }
         ],
         visitors: ['user6'],
         isNew: true,
@@ -164,8 +164,8 @@ const cityData: Record<string, { coordinates: { lat: number; lng: number }; plac
         category: 'hotel',
         likes: 67,
         friendsWhoSaved: [
-          { name: 'Isabella', avatar: '1649972904349-6e44c42644a7' },
-          { name: 'Lorenzo', avatar: '1581091226825-a6a2a5aee158' }
+          { name: 'Isabella', avatar: 'photo-1487412720507-e7ab37603c6f' },
+          { name: 'Lorenzo', avatar: 'photo-1500648767791-00dcc994a43e' }
         ],
         visitors: ['user7', 'user8', 'user9'],
         isNew: false,
@@ -187,8 +187,8 @@ const cityData: Record<string, { coordinates: { lat: number; lng: number }; plac
         category: 'cafe',
         likes: 56,
         friendsWhoSaved: [
-          { name: 'Pierre', avatar: '1649972904349-6e44c42644a7' },
-          { name: 'Marie', avatar: '1581091226825-a6a2a5aee158' }
+          { name: 'Pierre', avatar: 'photo-1507003211169-0a1dd7228f2d' },
+          { name: 'Marie', avatar: 'photo-1494790108755-2616b5a5c75b' }
         ],
         visitors: ['user1', 'user2'],
         isNew: false,
@@ -225,7 +225,7 @@ const mockStories: Story[] = [
     id: '1',
     userId: 'user1',
     userName: 'Sarah',
-    userAvatar: '1649972904349-6e44c42644a7',
+    userAvatar: 'photo-1494790108755-2616b5a5c75b',
     isViewed: false,
     mediaUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=600&fit=crop',
     mediaType: 'image',
@@ -240,7 +240,7 @@ const mockStories: Story[] = [
     id: '4',
     userId: 'user1',
     userName: 'Sarah',
-    userAvatar: '1649972904349-6e44c42644a7',
+    userAvatar: 'photo-1494790108755-2616b5a5c75b',
     isViewed: false,
     mediaUrl: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=600&fit=crop',
     mediaType: 'image',
@@ -255,7 +255,7 @@ const mockStories: Story[] = [
     id: '5',
     userId: 'user1',
     userName: 'Sarah',
-    userAvatar: '1649972904349-6e44c42644a7',
+    userAvatar: 'photo-1494790108755-2616b5a5c75b',
     isViewed: false,
     mediaUrl: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=600&fit=crop',
     mediaType: 'image',
@@ -270,7 +270,7 @@ const mockStories: Story[] = [
     id: '6',
     userId: 'user1',
     userName: 'Sarah',
-    userAvatar: '1649972904349-6e44c42644a7',
+    userAvatar: 'photo-1494790108755-2616b5a5c75b',
     isViewed: false,
     mediaUrl: 'https://images.unsplash.com/photo-1453614512568-c4024d13c247?w=400&h=600&fit=crop',
     mediaType: 'image',
@@ -285,7 +285,7 @@ const mockStories: Story[] = [
     id: '2',
     userId: 'user2',
     userName: 'Mike',
-    userAvatar: '1581091226825-a6a2a5aee158',
+    userAvatar: 'photo-1507003211169-0a1dd7228f2d',
     isViewed: true,
     mediaUrl: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=600&fit=crop',
     mediaType: 'image',
@@ -300,7 +300,7 @@ const mockStories: Story[] = [
     id: '7',
     userId: 'user2',
     userName: 'Mike',
-    userAvatar: '1581091226825-a6a2a5aee158',
+    userAvatar: 'photo-1507003211169-0a1dd7228f2d',
     isViewed: false,
     mediaUrl: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=600&fit=crop',
     mediaType: 'image',
@@ -315,7 +315,7 @@ const mockStories: Story[] = [
     id: '3',
     userId: 'user3',
     userName: 'Emma',
-    userAvatar: '1581092795360-fd1ca04f0952',
+    userAvatar: 'photo-1438761681033-6461ffad8d80',
     isViewed: false,
     mediaUrl: 'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400&h=600&fit=crop',
     mediaType: 'image',
