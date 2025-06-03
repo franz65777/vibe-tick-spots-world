@@ -24,7 +24,7 @@ export interface SearchUser {
   isVerified?: boolean;
 }
 
-// Mock data for places (in a real app, this would come from a places API like Google Places)
+// Mock data for places with placeholder images
 const mockPlaces: SearchPlace[] = [
   {
     id: 'place-1',
@@ -34,6 +34,7 @@ const mockPlaces: SearchPlace[] = [
     country: 'USA',
     coordinates: { lat: 37.8199, lng: -122.4783 },
     description: 'Iconic suspension bridge',
+    image: 'https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=400&h=300&fit=crop',
     averageRating: 4.7,
     totalReviews: 15420
   },
@@ -45,6 +46,7 @@ const mockPlaces: SearchPlace[] = [
     country: 'USA',
     coordinates: { lat: 37.8267, lng: -122.4233 },
     description: 'Historic federal prison',
+    image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=300&fit=crop',
     averageRating: 4.5,
     totalReviews: 8230
   },
@@ -56,6 +58,7 @@ const mockPlaces: SearchPlace[] = [
     country: 'USA',
     coordinates: { lat: 37.8080, lng: -122.4177 },
     description: 'Popular waterfront destination',
+    image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=300&fit=crop',
     averageRating: 4.2,
     totalReviews: 12100
   },
@@ -67,6 +70,7 @@ const mockPlaces: SearchPlace[] = [
     country: 'USA',
     coordinates: { lat: 37.7849, lng: -122.4094 },
     description: 'Specialty coffee roaster',
+    image: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=300&fit=crop',
     averageRating: 4.4,
     totalReviews: 2340
   },
@@ -78,6 +82,7 @@ const mockPlaces: SearchPlace[] = [
     country: 'USA',
     coordinates: { lat: 37.7849, lng: -122.4194 },
     description: 'Michelin-starred restaurant',
+    image: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=400&h=300&fit=crop',
     averageRating: 4.6,
     totalReviews: 890
   },
@@ -89,6 +94,7 @@ const mockPlaces: SearchPlace[] = [
     country: 'USA',
     coordinates: { lat: 37.7849, lng: -122.4394 },
     description: 'Historic music venue',
+    image: 'https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=400&h=300&fit=crop',
     averageRating: 4.3,
     totalReviews: 1560
   }
