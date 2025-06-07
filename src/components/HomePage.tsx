@@ -348,8 +348,8 @@ const HomePage = () => {
 
   // Refresh pins when city or filter changes
   useEffect(() => {
-    refreshPins(currentCity);
-  }, [currentCity, activeFilter]);
+    refreshPins();
+  }, [currentCity, activeFilter, refreshPins]);
 
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
@@ -359,7 +359,6 @@ const HomePage = () => {
   const [commentPlace, setCommentPlace] = useState<Place | null>(null);
   const [isLocationDetailOpen, setIsLocationDetailOpen] = useState(false);
   const [locationDetailPlace, setLocationDetailPlace] = useState<Place | null>(null);
-  const [mapCenter, setMapCenter] = useState({ lat: 37.7749, lng: -122.4194 });
 
   const handleCreateStory = () => {
     console.log('Create story clicked');
@@ -476,8 +475,8 @@ const HomePage = () => {
     }
   };
 
-  // Use geolocation coordinates if available, otherwise use selected city
-  const mapCenter = location?.latitude && location?.longitude 
+  // Calculate map center based on geolocation or selected city
+  const currentMapCenter = location?.latitude && location?.longitude 
     ? { lat: location.latitude, lng: location.longitude }
     : cityData[currentCity.toLowerCase()]?.coordinates || { lat: 37.7749, lng: -122.4194 };
 
@@ -559,7 +558,7 @@ const HomePage = () => {
             isNew: false,
             popularity: pins.find(p => p.id === place.id)?.popularity
           })}
-          mapCenter={mapCenter}
+          mapCenter={currentMapCenter}
         />
         
         {pinsLoading && (
