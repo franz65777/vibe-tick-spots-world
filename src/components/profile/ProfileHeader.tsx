@@ -1,114 +1,75 @@
 
-import { Camera, Settings, Award } from 'lucide-react';
+import { ArrowLeft, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { useProfile } from '@/hooks/useProfile';
+import { useAuth } from '@/contexts/AuthContext';
+import BadgeDisplay from './BadgeDisplay';
 
-interface ProfileHeaderProps {
-  onBadgeClick: () => void;
-}
-
-const ProfileHeader = ({ onBadgeClick }: ProfileHeaderProps) => {
+const ProfileHeader = () => {
   const { profile } = useProfile();
+  const { user } = useAuth();
 
-  if (!profile) {
-    return (
-      <div className="bg-white border-b border-gray-200 p-6">
-        <div className="animate-pulse">
-          <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4"></div>
-          <div className="h-6 bg-gray-200 rounded w-32 mx-auto mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded w-24 mx-auto"></div>
-        </div>
-      </div>
-    );
-  }
+  const getInitials = () => {
+    if (profile?.username) {
+      return profile.username.substring(0, 2).toUpperCase();
+    }
+    if (profile?.full_name) {
+      return profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase();
+    }
+    if (user?.email) {
+      return user.email.substring(0, 2).toUpperCase();
+    }
+    return 'U';
+  };
 
-  const isBusinessUser = profile.is_business_user || false;
+  const displayUsername = profile?.username || user?.email?.split('@')[0] || 'user';
+  const displayFullName = profile?.full_name;
 
   return (
-    <div className="bg-white border-b border-gray-200">
-      {/* Cover Photo */}
-      <div className="h-32 bg-gradient-to-r from-blue-500 to-purple-600 relative">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute top-4 right-4 text-white hover:bg-white/20"
-        >
-          <Settings className="w-5 h-5" />
-        </Button>
+    <div className="px-5 py-5 sm:px-4 sm:py-4 bg-white border-b border-gray-100">
+      <div className="flex items-center justify-between mb-6">
+        <ArrowLeft className="w-7 h-7 sm:w-6 sm:h-6 text-gray-600" />
+        <MoreHorizontal className="w-7 h-7 sm:w-6 sm:h-6 text-gray-600" />
       </div>
 
-      {/* Profile Info */}
-      <div className="px-6 pb-4">
-        <div className="flex flex-col items-center -mt-12">
-          {/* Profile Picture */}
-          <div className="relative">
-            <Avatar className="w-24 h-24 border-4 border-white shadow-lg">
-              <AvatarImage 
-                src={profile.avatar_url || `https://images.unsplash.com/photo-1494790108755-2616b5a5c75b?w=96&h=96&fit=crop&crop=face`} 
-                alt={profile.full_name || 'Profile'} 
-              />
-              <AvatarFallback className="text-2xl font-bold bg-gradient-to-br from-blue-100 to-purple-100">
-                {(profile.full_name || profile.username || 'U')[0].toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <Button
-              variant="outline"
-              size="icon"
-              className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-white border-2 border-white shadow-md"
-            >
-              <Camera className="w-4 h-4" />
-            </Button>
+      <div className="flex items-start gap-5 sm:gap-4 mb-6">
+        <div className="relative">
+          <div className="w-24 h-24 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-blue-400 to-purple-600 p-1">
+            <div className="w-full h-full rounded-full bg-white p-1">
+              <div className="w-full h-full rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                {profile?.avatar_url ? (
+                  <img 
+                    src={profile.avatar_url} 
+                    alt={displayUsername}
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                ) : (
+                  <span className="text-xl sm:text-lg font-semibold text-gray-600">{getInitials()}</span>
+                )}
+              </div>
+            </div>
           </div>
-
-          {/* Name and Title */}
-          <div className="text-center mt-4">
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <h1 className="text-xl font-bold text-gray-900">
-                {profile.full_name || profile.username || 'Unknown User'}
-              </h1>
-              
-              {/* Business Badge */}
-              {isBusinessUser && (
-                <Badge variant="default" className="bg-blue-600 text-white text-xs">
-                  Business
-                </Badge>
-              )}
-              
-              {/* Badges Icon */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onBadgeClick}
-                className="w-6 h-6 p-0 hover:bg-gray-100"
-              >
-                <Award className="w-4 h-4 text-yellow-600" />
+          <div className="absolute bottom-1 right-1 w-6 h-6 sm:w-5 sm:h-5 bg-blue-600 rounded-full flex items-center justify-center">
+            <div className="w-3 h-3 sm:w-2 sm:h-2 bg-white rounded-full"></div>
+          </div>
+        </div>
+        
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-3 sm:mb-2">
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl sm:text-xl font-bold text-gray-900">{displayUsername}</h1>
+              <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-white text-sm sm:text-xs px-4 py-2 sm:px-3 sm:py-1 rounded-full min-h-[32px] sm:min-h-[28px]">
+                Elite
               </Button>
             </div>
-            
-            {profile.bio && (
-              <p className="text-gray-600 text-sm max-w-xs">
-                {profile.bio}
-              </p>
-            )}
-            
-            {profile.current_city && (
-              <p className="text-gray-500 text-sm mt-1">
-                📍 {profile.current_city}
-              </p>
-            )}
+            <BadgeDisplay />
           </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-3 mt-4 w-full max-w-xs">
-            <Button className="flex-1" size="sm">
-              Edit Profile
-            </Button>
-            <Button variant="outline" className="flex-1" size="sm">
-              Share Profile
-            </Button>
-          </div>
+          {displayFullName && (
+            <p className="text-gray-600 text-base sm:text-sm mb-3 sm:mb-2">{displayFullName}</p>
+          )}
+          <p className="text-gray-700 text-base sm:text-sm">
+            {profile?.bio || 'Travel Enthusiast | Food Lover | Photographer'}
+          </p>
         </div>
       </div>
     </div>

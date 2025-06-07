@@ -9,30 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      badges: {
-        Row: {
-          criteria: Json
-          description: string
-          icon: string
-          id: string
-          name: string
-        }
-        Insert: {
-          criteria: Json
-          description: string
-          icon: string
-          id?: string
-          name: string
-        }
-        Update: {
-          criteria?: Json
-          description?: string
-          icon?: string
-          id?: string
-          name?: string
-        }
-        Relationships: []
-      }
       business_notifications: {
         Row: {
           business_id: string | null
@@ -242,42 +218,6 @@ export type Database = {
           },
         ]
       }
-      location_likes: {
-        Row: {
-          created_at: string | null
-          id: string
-          location_id: string | null
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          location_id?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          location_id?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "location_likes_location_id_fkey"
-            columns: ["location_id"]
-            isOneToOne: false
-            referencedRelation: "locations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "location_likes_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       locations: {
         Row: {
           address: string | null
@@ -403,16 +343,10 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           business_verified: boolean | null
-          cities_visited: number | null
           created_at: string
-          current_city: string | null
           email: string | null
-          follower_count: number | null
-          following_count: number | null
           full_name: string | null
           id: string
-          is_business_user: boolean | null
-          places_visited: number | null
           posts_count: number | null
           subscription_status:
             | Database["public"]["Enums"]["subscription_status"]
@@ -425,16 +359,10 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           business_verified?: boolean | null
-          cities_visited?: number | null
           created_at?: string
-          current_city?: string | null
           email?: string | null
-          follower_count?: number | null
-          following_count?: number | null
           full_name?: string | null
           id: string
-          is_business_user?: boolean | null
-          places_visited?: number | null
           posts_count?: number | null
           subscription_status?:
             | Database["public"]["Enums"]["subscription_status"]
@@ -447,16 +375,10 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           business_verified?: boolean | null
-          cities_visited?: number | null
           created_at?: string
-          current_city?: string | null
           email?: string | null
-          follower_count?: number | null
-          following_count?: number | null
           full_name?: string | null
           id?: string
-          is_business_user?: boolean | null
-          places_visited?: number | null
           posts_count?: number | null
           subscription_status?:
             | Database["public"]["Enums"]["subscription_status"]
@@ -512,112 +434,6 @@ export type Database = {
           },
         ]
       }
-      search_history: {
-        Row: {
-          id: string
-          search_query: string
-          search_type: string
-          searched_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          id?: string
-          search_query: string
-          search_type: string
-          searched_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          id?: string
-          search_query?: string
-          search_type?: string
-          searched_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "search_history_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_badges: {
-        Row: {
-          badge_id: string | null
-          earned_at: string | null
-          id: string
-          user_id: string | null
-        }
-        Insert: {
-          badge_id?: string | null
-          earned_at?: string | null
-          id?: string
-          user_id?: string | null
-        }
-        Update: {
-          badge_id?: string | null
-          earned_at?: string | null
-          id?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_badges_badge_id_fkey"
-            columns: ["badge_id"]
-            isOneToOne: false
-            referencedRelation: "badges"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_badges_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_locations: {
-        Row: {
-          city: string | null
-          country: string | null
-          id: string
-          latitude: number
-          longitude: number
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          city?: string | null
-          country?: string | null
-          id?: string
-          latitude: number
-          longitude: number
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          city?: string | null
-          country?: string | null
-          id?: string
-          latitude?: number
-          longitude?: number
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_locations_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_notification_settings: {
         Row: {
           allowed_types: Json | null
@@ -669,38 +485,6 @@ export type Database = {
           },
           {
             foreignKeyName: "user_notification_settings_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_preferences: {
-        Row: {
-          category: string
-          id: string
-          last_searched: string | null
-          search_count: number | null
-          user_id: string | null
-        }
-        Insert: {
-          category: string
-          id?: string
-          last_searched?: string | null
-          search_count?: number | null
-          user_id?: string | null
-        }
-        Update: {
-          category?: string
-          id?: string
-          last_searched?: string | null
-          search_count?: number | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_preferences_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"

@@ -16,9 +16,6 @@ interface Profile {
   followers_count?: number;
   following_count?: number;
   cities_visited?: number;
-  places_visited?: number;
-  is_business_user?: boolean;
-  current_city?: string;
 }
 
 export const useProfile = () => {
@@ -68,13 +65,7 @@ export const useProfile = () => {
             bio: 'This is a demo profile',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-            posts_count: 5,
-            followers_count: 42,
-            following_count: 18,
-            cities_visited: 3,
-            places_visited: 6,
-            is_business_user: false,
-            current_city: 'San Francisco'
+            posts_count: 5
           };
           
           setProfile(demoProfile);
@@ -97,13 +88,7 @@ export const useProfile = () => {
           bio: 'This is a demo profile',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          posts_count: 5,
-          followers_count: 42,
-          following_count: 18,
-          cities_visited: 3,
-          places_visited: 6,
-          is_business_user: false,
-          current_city: 'San Francisco'
+          posts_count: 5
         };
         
         setProfile(demoProfile);
