@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from 'react';
 import { useLocation } from '@/hooks/useLocation';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
@@ -209,6 +208,11 @@ const HomePage = () => {
     console.log('Location of the week clicked');
   };
 
+  const handlePinClick = (place: Place) => {
+    console.log('Map pin clicked:', place.name);
+    setSelectedPlace(place);
+  };
+
   return (
     <div className="flex flex-col h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 overflow-hidden">
       <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg">
@@ -260,19 +264,20 @@ const HomePage = () => {
 
       <MapSection
         places={filteredPlaces}
+        onPinClick={handlePinClick}
       />
 
       <ModalsManager
-        isNotificationsOpen={modalState.notifications}
-        isMessagesOpen={modalState.messages}
-        isShareOpen={modalState.share}
-        isCommentOpen={modalState.comment}
-        isCreateStoryOpen={modalState.createStory}
-        onNotificationsClose={() => setModalState(prev => ({ ...prev, notifications: false }))}
-        onMessagesClose={() => setModalState(prev => ({ ...prev, messages: false }))}
-        onShareClose={() => setModalState(prev => ({ ...prev, share: false }))}
-        onCommentClose={() => setModalState(prev => ({ ...prev, comment: false }))}
-        onCreateStoryClose={() => setModalState(prev => ({ ...prev, createStory: false }))}
+        isNotificationsModalOpen={modalState.notifications}
+        isMessagesModalOpen={modalState.messages}
+        isShareModalOpen={modalState.share}
+        isCommentModalOpen={modalState.comment}
+        isCreateStoryModalOpen={modalState.createStory}
+        onNotificationsModalClose={() => setModalState(prev => ({ ...prev, notifications: false }))}
+        onMessagesModalClose={() => setModalState(prev => ({ ...prev, messages: false }))}
+        onShareModalClose={() => setModalState(prev => ({ ...prev, share: false }))}
+        onCommentModalClose={() => setModalState(prev => ({ ...prev, comment: false }))}
+        onCreateStoryModalClose={() => setModalState(prev => ({ ...prev, createStory: false }))}
       />
     </div>
   );
