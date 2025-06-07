@@ -8,6 +8,7 @@ import { Building2 } from 'lucide-react';
 import ProfileHeader from './profile/ProfileHeader';
 import ProfileStats from './profile/ProfileStats';
 import ProfileTabs from './profile/ProfileTabs';
+import TravelStats from './profile/TravelStats';
 import Achievements from './profile/Achievements';
 import PostsGrid from './profile/PostsGrid';
 import TripsGrid from './profile/TripsGrid';
@@ -17,7 +18,7 @@ const ProfilePage = () => {
   const { profile, loading, error } = useProfile();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('posts');
+  const [activeTab, setActiveTab] = useState('travel');
   const [modalState, setModalState] = useState<{ isOpen: boolean; type: 'followers' | 'following' | null }>({
     isOpen: false,
     type: null
@@ -57,6 +58,8 @@ const ProfilePage = () => {
 
   const renderTabContent = () => {
     switch (activeTab) {
+      case 'travel':
+        return <TravelStats />;
       case 'posts':
         return <PostsGrid />;
       case 'trips':
@@ -64,7 +67,7 @@ const ProfilePage = () => {
       case 'badges':
         return <Achievements />;
       default:
-        return <PostsGrid />;
+        return <TravelStats />;
     }
   };
 
@@ -72,17 +75,19 @@ const ProfilePage = () => {
     <div className="flex flex-col h-full bg-white">
       <ProfileHeader />
       
-      {/* Business Dashboard Link */}
-      <div className="px-4 py-2">
-        <Button
-          onClick={() => navigate('/business')}
-          variant="outline"
-          className="w-full border-blue-200 text-blue-700 hover:bg-blue-50"
-        >
-          <Building2 className="w-4 h-4 mr-2" />
-          Business Dashboard
-        </Button>
-      </div>
+      {/* Business Dashboard Link - Only show for business users */}
+      {profile?.is_business_user && (
+        <div className="px-4 py-2">
+          <Button
+            onClick={() => navigate('/business')}
+            variant="outline"
+            className="w-full border-blue-200 text-blue-700 hover:bg-blue-50 bg-gradient-to-r from-blue-50 to-indigo-50"
+          >
+            <Building2 className="w-4 h-4 mr-2" />
+            Business Dashboard
+          </Button>
+        </div>
+      )}
       
       <ProfileStats 
         onFollowersClick={() => openModal('followers')}

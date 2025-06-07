@@ -1,10 +1,12 @@
-
 import { useState, useMemo } from 'react';
-import { Search, Filter, MapPin, Star, Users, Clock, X } from 'lucide-react';
+import { Search, Filter, MapPin, Star, Users, Clock, X, UserSearch } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import PlaceCard from '@/components/home/PlaceCard';
+import { useSearchHistory } from '@/hooks/useSearchHistory';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
+import LocationDetailModal from './LocationDetailModal';
 
 interface Category {
   id: string;
@@ -136,16 +138,80 @@ const demoPlaces: Place[] = [
 
 const ExplorePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchType, setSearchType] = useState<'location' | 'user'>('location');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('popularity');
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [showSearchHistory, setShowSearchHistory] = useState(false);
   const [likedPlaces, setLikedPlaces] = useState(new Set());
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  
+  const { searchHistory, addToSearchHistory } = useSearchHistory();
+  const { preferences, updatePreference } = useUserPreferences();
+
+  // Create dynamic categories based on user preferences
+  const dynamicCategories = useMemo(() => {
+    const baseCategories = [
+      { id: 'all', name: 'All', icon: <MapPin /> },
+      { id: 'restaurants', name: 'Restaurants', icon: <Star /> },
+      { id: 'bars', name: 'Bars', icon: <Users /> }
+    ];
+    
+    const userCategories = preferences.slice(0, 3).map(pref => ({
+      id: pref.category.toLowerCase(),
+      name: pref.category,
+      icon: <Clock />
+    }));
+    
+    return [...baseCategories, ...userCategories];
+  }, [preferences]);
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);
+    if (value.trim()) {
+      setShowSearchHistory(false);
+      addToSearchHistory(value, searchType === 'location' ? 'category' : 'user');
+      if (searchType === 'location') {
+        updatePreference(value);
+      }
+    } else {
+      setShowSearchHistory(true);
+    }
   };
+
+  const handleSearchHistoryClick = (item: any) => {
+    setSearchQuery(item.search_query);
+    setShowSearchHistory(false);
+  };
+
+  // Smart search filtering
+  const filteredPlaces = useMemo(() => {
+    let filtered = demoPlaces;
+
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter((place) => place.category === selectedCategory);
+    }
+
+    if (searchQuery && searchType === 'location') {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((place) =>
+        place.name.toLowerCase().includes(query) ||
+        place.tags.some(tag => tag.toLowerCase().includes(query)) ||
+        place.category.toLowerCase().includes(query)
+      );
+    }
+
+    if (activeFilters.includes('open_now')) {
+      filtered = filtered.filter((place) => place.openingHours !== 'Closed');
+    }
+
+    if (activeFilters.includes('top_rated')) {
+      filtered = filtered.filter((place) => place.rating >= 4.5);
+    }
+
+    return filtered;
+  }, [selectedCategory, searchQuery, searchType, activeFilters]);
 
   const handleCategoryFilter = (categoryId: string) => {
     setSelectedCategory(categoryId);
@@ -187,41 +253,19 @@ const ExplorePage = () => {
     setSelectedPlace(place);
   };
 
-  const filteredPlaces = useMemo(() => {
-    let filtered = demoPlaces;
-
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter((place) => place.category === selectedCategory);
-    }
-
-    if (searchQuery) {
-      filtered = filtered.filter((place) =>
-        place.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    if (activeFilters.includes('open_now')) {
-      filtered = filtered.filter((place) => place.openingHours !== 'Closed');
-    }
-
-    if (activeFilters.includes('top_rated')) {
-      filtered = filtered.filter((place) => place.rating >= 4.5);
-    }
-
-    return filtered;
-  }, [selectedCategory, searchQuery, activeFilters]);
-
   return (
     <div className="flex flex-col h-full bg-gray-50 pt-16">
       {/* Search Header */}
       <div className="bg-white p-5 sm:p-4 border-b border-gray-100 shadow-sm flex-shrink-0">
-        <div className="flex items-center gap-4 sm:gap-3">
+        <div className="flex items-center gap-4 sm:gap-3 mb-4">
           <div className="relative flex-1">
             <Search className="absolute left-4 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 sm:w-4 sm:h-4" />
             <Input
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
-              placeholder="Search for places..."
+              onFocus={() => !searchQuery && setShowSearchHistory(true)}
+              onBlur={() => setTimeout(() => setShowSearchHistory(false), 200)}
+              placeholder={searchType === 'location' ? "Search places, categories..." : "Search users..."}
               className="pl-12 sm:pl-10 pr-12 sm:pr-10 bg-gray-100 border-none rounded-full h-12 sm:h-10 text-base sm:text-sm"
             />
             {searchQuery && (
@@ -232,7 +276,49 @@ const ExplorePage = () => {
                 <X className="w-full h-full" />
               </button>
             )}
+            
+            {/* Search History Dropdown */}
+            {showSearchHistory && searchHistory.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-gray-100 max-h-48 overflow-y-auto z-50">
+                {searchHistory.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => handleSearchHistoryClick(item)}
+                    className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-left text-sm"
+                  >
+                    <Clock className="w-4 h-4 text-gray-400" />
+                    <span>{item.search_query}</span>
+                    <span className="text-xs text-gray-400 ml-auto">{item.search_type}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
+          
+          {/* Search Type Toggle */}
+          <div className="flex bg-gray-100 rounded-full p-1">
+            <button
+              onClick={() => setSearchType('location')}
+              className={`px-4 py-2 rounded-full text-sm transition-colors ${
+                searchType === 'location' 
+                  ? 'bg-white text-blue-600 shadow-sm' 
+                  : 'text-gray-600'
+              }`}
+            >
+              <MapPin className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setSearchType('user')}
+              className={`px-4 py-2 rounded-full text-sm transition-colors ${
+                searchType === 'user' 
+                  ? 'bg-white text-blue-600 shadow-sm' 
+                  : 'text-gray-600'
+              }`}
+            >
+              <UserSearch className="w-4 h-4" />
+            </button>
+          </div>
+          
           <Button
             variant="outline"
             size="default"
@@ -243,13 +329,13 @@ const ExplorePage = () => {
           </Button>
         </div>
 
-        {/* Categories */}
-        <div className="flex gap-3 sm:gap-2 mt-4 overflow-x-auto pb-2">
-          {categories.map((category) => (
+        {/* Dynamic Categories */}
+        <div className="flex gap-3 sm:gap-2 overflow-x-auto pb-2">
+          {dynamicCategories.map((category) => (
             <Button
               key={category.id}
               variant={selectedCategory === category.id ? 'default' : 'outline'}
-              onClick={() => handleCategoryFilter(category.id)}
+              onClick={() => setSelectedCategory(category.id)}
               className="whitespace-nowrap rounded-full py-3 px-5 sm:py-2 sm:px-4 text-base sm:text-sm min-h-[48px] sm:min-h-[36px]"
               size="default"
             >
@@ -334,20 +420,11 @@ const ExplorePage = () => {
         </div>
       )}
 
-      {/* Results Header */}
+      {/* Results Header - Removed View on Map button */}
       <div className="bg-white px-5 py-3 sm:px-4 sm:py-2 border-b border-gray-100">
-        <div className="flex items-center justify-between">
-          <p className="text-base sm:text-sm text-gray-600">
-            {filteredPlaces.length} places found
-          </p>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-blue-600 hover:text-blue-800 p-2 text-base sm:text-sm min-h-[36px] sm:min-h-[28px]"
-          >
-            View on map
-          </Button>
-        </div>
+        <p className="text-base sm:text-sm text-gray-600">
+          {filteredPlaces.length} places found
+        </p>
       </div>
 
       {/* Places Grid */}
@@ -369,7 +446,7 @@ const ExplorePage = () => {
                 key={place.id}
                 place={place}
                 isLiked={likedPlaces.has(place.id)}
-                onCardClick={handlePlaceClick}
+                onCardClick={setSelectedPlace}
                 onLikeToggle={handleLikeToggle}
                 onShare={handleShare}
                 onComment={handleComment}
@@ -379,6 +456,15 @@ const ExplorePage = () => {
           </div>
         )}
       </div>
+      
+      {/* Location Detail Modal */}
+      {selectedPlace && (
+        <LocationDetailModal
+          place={selectedPlace}
+          isOpen={!!selectedPlace}
+          onClose={() => setSelectedPlace(null)}
+        />
+      )}
     </div>
   );
 };
