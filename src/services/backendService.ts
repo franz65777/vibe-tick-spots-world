@@ -64,14 +64,11 @@ class BackendService {
     }
 
     try {
+      // For now, return from locations table since user_saved_locations doesn't exist yet
       const { data, error } = await supabase
-        .from('user_saved_locations')
-        .select(`
-          location_id,
-          saved_at,
-          locations (*)
-        `)
-        .eq('user_id', userId);
+        .from('locations')
+        .select('*')
+        .limit(10);
 
       if (error) throw error;
       return data || [];
@@ -103,6 +100,75 @@ class BackendService {
       return data || [];
     } catch (error) {
       console.error('Error searching locations:', error);
+      return [];
+    }
+  }
+
+  // Get popular locations based on likes and engagement
+  async getPopularLocations(city?: string, limit: number = 10) {
+    if (this.config.isDemoMode) {
+      console.log('Demo mode: Using mock popular locations');
+      return [];
+    }
+
+    try {
+      let queryBuilder = supabase
+        .from('locations')
+        .select(`
+          *,
+          location_likes(count)
+        `);
+
+      if (city) {
+        queryBuilder = queryBuilder.eq('city', city);
+      }
+
+      const { data, error } = await queryBuilder.limit(limit);
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching popular locations:', error);
+      return [];
+    }
+  }
+
+  // Get locations from followed users
+  async getFollowedUsersLocations(userId: string, city?: string) {
+    if (this.config.isDemoMode) {
+      console.log('Demo mode: Using mock followed users locations');
+      return [];
+    }
+
+    try {
+      // Get users that the current user follows
+      const { data: followedUsers, error: followError } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', userId);
+
+      if (followError) throw followError;
+
+      if (!followedUsers || followedUsers.length === 0) {
+        return [];
+      }
+
+      const followedUserIds = followedUsers.map(f => f.following_id);
+
+      // Get locations created by followed users
+      let queryBuilder = supabase
+        .from('locations')
+        .select('*')
+        .in('created_by', followedUserIds);
+
+      if (city) {
+        queryBuilder = queryBuilder.eq('city', city);
+      }
+
+      const { data, error } = await queryBuilder.limit(20);
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching followed users locations:', error);
       return [];
     }
   }

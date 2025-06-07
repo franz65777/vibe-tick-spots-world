@@ -1,7 +1,8 @@
 
 import { useState, useRef, useEffect } from 'react';
-import { Search, MapPin, Building, Landmark, Building2, Clock, Mountain, Shield, Church, Waves, TreePine } from 'lucide-react';
+import { Search, MapPin, Building, Landmark, Building2, Clock, Mountain, Shield, Church, Waves, TreePine, Locate } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { useGeolocation } from '@/hooks/useGeolocation';
 
 interface CitySearchProps {
   searchQuery: string;
@@ -116,6 +117,15 @@ const CitySearch = ({
   const [isOpen, setIsOpen] = useState(false);
   const [filteredCities, setFilteredCities] = useState<Array<{key: string, data: typeof cityData[keyof typeof cityData], similarity: number}>>([]);
   const searchRef = useRef<HTMLDivElement>(null);
+  const { location, loading: geoLoading, getCurrentLocation } = useGeolocation();
+
+  // Update current city when geolocation detects a new city
+  useEffect(() => {
+    if (location?.city && location.city !== currentCity) {
+      console.log('Geolocation detected city:', location.city);
+      onCitySelect(location.city);
+    }
+  }, [location?.city, currentCity, onCitySelect]);
 
   // Get current city data
   const currentCityData = cityData[currentCity.toLowerCase() as keyof typeof cityData];
@@ -171,6 +181,10 @@ const CitySearch = ({
     setIsOpen(false);
   };
 
+  const handleLocationClick = () => {
+    getCurrentLocation();
+  };
+
   return (
     <div ref={searchRef} className="relative flex-1 max-w-md z-[100]">
       {/* Current City Display / Search Input */}
@@ -180,8 +194,22 @@ const CitySearch = ({
           <div className="flex items-center gap-3 bg-white/90 border border-gray-200 rounded-2xl h-12 px-4 hover:bg-white transition-colors cursor-pointer"
                onClick={() => document.getElementById('city-search-input')?.focus()}>
             <CurrentCityIcon className="w-5 h-5 text-blue-600 shrink-0" />
-            <span className="text-gray-900 font-medium">{currentCityData?.name || currentCity}</span>
-            <Search className="w-4 h-4 text-gray-400 ml-auto" />
+            <span className="text-gray-900 font-medium flex-1">
+              {location?.city || currentCityData?.name || currentCity}
+            </span>
+            <div className="flex items-center gap-2">
+              {geoLoading && (
+                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              )}
+              <button
+                onClick={handleLocationClick}
+                className="w-6 h-6 text-gray-400 hover:text-blue-600 transition-colors"
+                title="Detect current location"
+              >
+                <Locate className="w-4 h-4" />
+              </button>
+              <Search className="w-4 h-4 text-gray-400" />
+            </div>
           </div>
         ) : (
           // Show search input when searching

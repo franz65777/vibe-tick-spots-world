@@ -1,23 +1,15 @@
-
-import { useState } from 'react';
-import { Heart, Bell, MessageCircle, Users, TrendingUp, Sparkles, Search, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import MapSection from '@/components/home/MapSection';
 import StoriesSection from '@/components/home/StoriesSection';
 import PlaceCard from '@/components/home/PlaceCard';
-import CreateStoryModal from '@/components/CreateStoryModal';
-import NotificationsModal from '@/components/NotificationsModal';
-import MessagesModal from '@/components/MessagesModal';
-import StoriesViewer from '@/components/StoriesViewer';
-import ShareModal from '@/components/home/ShareModal';
-import CommentModal from '@/components/home/CommentModal';
 import LocationOfTheWeek from '@/components/home/LocationOfTheWeek';
-import LocationDetailSheet from '@/components/LocationDetailSheet';
 import Header from '@/components/home/Header';
 import FilterButtons from '@/components/home/FilterButtons';
 import ModalsManager from '@/components/home/ModalsManager';
+import { useGeolocation } from '@/hooks/useGeolocation';
+import { useMapPins } from '@/hooks/useMapPins';
 
 interface Place {
   id: string;
@@ -338,7 +330,27 @@ const HomePage = () => {
   const [isStoriesViewerOpen, setIsStoriesViewerOpen] = useState(false);
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const [stories, setStories] = useState(mockStories);
+  
   const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'new'>('following');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentCity, setCurrentCity] = useState('San Francisco');
+
+  // Use the new hooks
+  const { location } = useGeolocation();
+  const { pins, loading: pinsLoading, refreshPins } = useMapPins(activeFilter);
+
+  // Update current city when geolocation changes
+  useEffect(() => {
+    if (location?.city) {
+      setCurrentCity(location.city);
+    }
+  }, [location?.city]);
+
+  // Refresh pins when city or filter changes
+  useEffect(() => {
+    refreshPins(currentCity);
+  }, [currentCity, activeFilter]);
+
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -347,42 +359,7 @@ const HomePage = () => {
   const [commentPlace, setCommentPlace] = useState<Place | null>(null);
   const [isLocationDetailOpen, setIsLocationDetailOpen] = useState(false);
   const [locationDetailPlace, setLocationDetailPlace] = useState<Place | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentCity, setCurrentCity] = useState('San Francisco');
-  const [currentPlaces, setCurrentPlaces] = useState<Place[]>(defaultPlaces);
   const [mapCenter, setMapCenter] = useState({ lat: 37.7749, lng: -122.4194 });
-
-  // Get the most popular location based on total engagement (likes + visitors)
-  const getLocationOfTheWeek = () => {
-    if (currentPlaces.length === 0) {
-      return null;
-    }
-    
-    return currentPlaces.reduce((topPlace, currentPlace) => {
-      const currentEngagement = currentPlace.likes + currentPlace.visitors.length + (currentPlace.friendsWhoSaved?.length || 0);
-      const topEngagement = topPlace.likes + topPlace.visitors.length + (topPlace.friendsWhoSaved?.length || 0);
-      return currentEngagement > topEngagement ? currentPlace : topPlace;
-    });
-  };
-
-  const getFilteredPlaces = () => {
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-
-    switch (activeFilter) {
-      case 'following':
-        return currentPlaces.filter(place => place.isFollowing);
-      case 'popular':
-        return currentPlaces.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
-      case 'new':
-        return currentPlaces.filter(place => {
-          const addedDate = new Date(place.addedDate || '');
-          return place.isFollowing && addedDate >= oneWeekAgo;
-        });
-      default:
-        return currentPlaces;
-    }
-  };
 
   const handleCreateStory = () => {
     console.log('Create story clicked');
@@ -463,33 +440,34 @@ const HomePage = () => {
       const cityInfo = cityData[searchedCity];
       if (cityInfo) {
         setCurrentCity(searchQuery.trim());
-        setCurrentPlaces(cityInfo.places);
-        setMapCenter(cityInfo.coordinates);
-        console.log(`Updated to ${searchedCity}:`, cityInfo.places.length, 'places found');
       } else {
         // If city not found, show a default set or empty
         console.log('City not found in database, using default places');
         setCurrentCity(searchQuery.trim());
-        setCurrentPlaces([]);
       }
     }
   };
 
   const handleCitySelect = (cityName: string) => {
-    const searchedCity = cityName.toLowerCase();
-    console.log('City selected:', searchedCity);
+    console.log('City selected:', cityName);
+    setCurrentCity(cityName);
     
-    const cityInfo = cityData[searchedCity];
-    if (cityInfo) {
-      setCurrentCity(cityName);
-      setCurrentPlaces(cityInfo.places);
-      setMapCenter(cityInfo.coordinates);
-      console.log(`Updated to ${cityName}:`, cityInfo.places.length, 'places found');
-    } else {
-      console.log('City not found in database, using default places');
-      setCurrentCity(cityName);
-      setCurrentPlaces([]);
-    }
+    // Update map center based on city
+    const cityCoordinates: Record<string, { lat: number; lng: number }> = {
+      'san francisco': { lat: 37.7749, lng: -122.4194 },
+      'milan': { lat: 45.4642, lng: 9.1900 },
+      'paris': { lat: 48.8566, lng: 2.3522 },
+      'new york': { lat: 40.7128, lng: -74.0060 },
+      'london': { lat: 51.5074, lng: -0.1278 },
+      'tokyo': { lat: 35.6762, lng: 139.6503 },
+      'rome': { lat: 41.9028, lng: 12.4964 },
+      'barcelona': { lat: 41.3851, lng: 2.1734 },
+      'amsterdam': { lat: 52.3676, lng: 4.9041 },
+      'sydney': { lat: -33.8688, lng: 151.2093 }
+    };
+
+    const coords = cityCoordinates[cityName.toLowerCase()] || { lat: 37.7749, lng: -122.4194 };
+    setMapCenter(coords);
   };
 
   const handleSearchKeyPress = (e: React.KeyboardEvent) => {
@@ -498,7 +476,22 @@ const HomePage = () => {
     }
   };
 
-  const filteredPlaces = getFilteredPlaces();
+  // Use geolocation coordinates if available, otherwise use selected city
+  const mapCenter = location?.latitude && location?.longitude 
+    ? { lat: location.latitude, lng: location.longitude }
+    : cityData[currentCity.toLowerCase()]?.coordinates || { lat: 37.7749, lng: -122.4194 };
+
+  // Get the most popular location from pins
+  const getLocationOfTheWeek = () => {
+    if (pins.length === 0) return null;
+    
+    return pins.reduce((topPin, currentPin) => {
+      const currentEngagement = currentPin.likes + (currentPin.popularity || 0);
+      const topEngagement = topPin.likes + (topPin.popularity || 0);
+      return currentEngagement > topEngagement ? currentPin : topPin;
+    });
+  };
+
   const locationOfTheWeek = getLocationOfTheWeek();
 
   return (
@@ -528,7 +521,16 @@ const HomePage = () => {
       {/* Location of the Week - Compact */}
       {locationOfTheWeek && (
         <LocationOfTheWeek 
-          topLocation={locationOfTheWeek}
+          topLocation={{
+            id: locationOfTheWeek.id,
+            name: locationOfTheWeek.name,
+            category: locationOfTheWeek.category,
+            likes: locationOfTheWeek.likes,
+            visitors: [],
+            isNew: false,
+            coordinates: locationOfTheWeek.coordinates,
+            popularity: locationOfTheWeek.popularity
+          }}
           onLocationClick={handleCardClick}
         />
       )}
@@ -537,17 +539,37 @@ const HomePage = () => {
       <FilterButtons
         activeFilter={activeFilter}
         onFilterChange={setActiveFilter}
-        newCount={getFilteredPlaces().length}
+        newCount={pins.length}
       />
 
       {/* Map Section */}
       <div className="flex-1 relative mb-20">
         <div className="absolute inset-0 bg-gradient-to-t from-white/20 via-transparent to-transparent pointer-events-none z-10"></div>
         <MapSection 
-          places={filteredPlaces} 
-          onPinClick={handlePinClick}
+          places={pins.map(pin => ({
+            id: pin.id,
+            name: pin.name,
+            category: pin.category,
+            coordinates: pin.coordinates,
+            visitors: []
+          }))}
+          onPinClick={(place) => handlePinClick({
+            ...place,
+            likes: pins.find(p => p.id === place.id)?.likes || 0,
+            isNew: false,
+            popularity: pins.find(p => p.id === place.id)?.popularity
+          })}
           mapCenter={mapCenter}
         />
+        
+        {pinsLoading && (
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white/90 px-3 py-2 rounded-full shadow-lg z-20">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              Loading {activeFilter} pins...
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Selected Place Card */}
@@ -573,11 +595,15 @@ const HomePage = () => {
       )}
 
       {/* No places found message */}
-      {currentPlaces.length === 0 && (
+      {pins.length === 0 && !pinsLoading && (
         <div className="flex-1 flex items-center justify-center p-6 pb-24">
           <div className="text-center">
-            <div className="text-gray-500 text-lg mb-2">No places found</div>
-            <div className="text-gray-400 text-sm">Try searching for Milan, Paris, or San Francisco</div>
+            <div className="text-gray-500 text-lg mb-2">No {activeFilter} places found</div>
+            <div className="text-gray-400 text-sm">
+              {activeFilter === 'following' 
+                ? 'Follow some users to see their places' 
+                : `Try switching to ${activeFilter === 'popular' ? 'following' : 'popular'} places`}
+            </div>
           </div>
         </div>
       )}
