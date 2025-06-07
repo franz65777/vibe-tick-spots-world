@@ -27,7 +27,13 @@ export const useSearchHistory = () => {
           .limit(10);
 
         if (data) {
-          setSearchHistory(data);
+          const formattedData = data.map(item => ({
+            id: item.id,
+            search_query: item.search_query,
+            search_type: item.search_type as 'location' | 'user' | 'category',
+            searched_at: item.searched_at
+          }));
+          setSearchHistory(formattedData);
         }
       } catch (error) {
         console.error('Error fetching search history:', error);
@@ -52,7 +58,13 @@ export const useSearchHistory = () => {
         .single();
 
       if (data) {
-        setSearchHistory(prev => [data, ...prev.slice(0, 9)]);
+        const formattedData = {
+          id: data.id,
+          search_query: data.search_query,
+          search_type: data.search_type as 'location' | 'user' | 'category',
+          searched_at: data.searched_at
+        };
+        setSearchHistory(prev => [formattedData, ...prev.slice(0, 9)]);
       }
     } catch (error) {
       console.error('Error adding to search history:', error);

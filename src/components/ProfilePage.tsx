@@ -1,111 +1,91 @@
 
 import { useState } from 'react';
 import { useProfile } from '@/hooks/useProfile';
-import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Building2 } from 'lucide-react';
+import { useBadges } from '@/hooks/useBadges';
 import ProfileHeader from './profile/ProfileHeader';
 import ProfileStats from './profile/ProfileStats';
 import ProfileTabs from './profile/ProfileTabs';
 import TravelStats from './profile/TravelStats';
-import Achievements from './profile/Achievements';
 import PostsGrid from './profile/PostsGrid';
 import TripsGrid from './profile/TripsGrid';
+import BadgeModal from './profile/BadgeModal';
 import FollowersModal from './profile/FollowersModal';
+import { Button } from '@/components/ui/button';
+import { BarChart3 } from 'lucide-react';
 
 const ProfilePage = () => {
-  const { profile, loading, error } = useProfile();
-  const { user } = useAuth();
-  const navigate = useNavigate();
+  const { profile } = useProfile();
+  const { userBadges } = useBadges();
   const [activeTab, setActiveTab] = useState('travel');
-  const [modalState, setModalState] = useState<{ isOpen: boolean; type: 'followers' | 'following' | null }>({
-    isOpen: false,
-    type: null
-  });
+  const [showBadges, setShowBadges] = useState(false);
+  const [showFollowers, setShowFollowers] = useState(false);
+  const [showFollowing, setShowFollowing] = useState(false);
 
-  const openModal = (type: 'followers' | 'following') => {
-    setModalState({ isOpen: true, type });
+  const handleBusinessDashboard = () => {
+    console.log('Navigate to business dashboard');
   };
 
-  const closeModal = () => {
-    setModalState({ isOpen: false, type: null });
-  };
-
-  const handlePostsClick = () => {
-    setActiveTab('posts');
-  };
-
-  if (loading) {
-    return (
-      <div className="flex flex-col h-full bg-white">
-        <div className="flex items-center justify-center h-64">
-          <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col h-full bg-white">
-        <div className="flex items-center justify-center h-64">
-          <p className="text-red-600">Error loading profile: {error}</p>
-        </div>
-      </div>
-    );
-  }
-
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'travel':
-        return <TravelStats />;
-      case 'posts':
-        return <PostsGrid />;
-      case 'trips':
-        return <TripsGrid />;
-      case 'badges':
-        return <Achievements />;
-      default:
-        return <TravelStats />;
-    }
-  };
+  const isBusinessUser = profile?.is_business_user || false;
 
   return (
-    <div className="flex flex-col h-full bg-white">
-      <ProfileHeader />
+    <div className="flex flex-col h-screen bg-gray-50">
+      <ProfileHeader 
+        onBadgeClick={() => setShowBadges(true)} 
+      />
       
-      {/* Business Dashboard Link - Only show for business users */}
-      {profile?.is_business_user && (
-        <div className="px-4 py-2">
+      <ProfileStats
+        onFollowersClick={() => setShowFollowers(true)}
+        onFollowingClick={() => setShowFollowing(true)}
+        onPostsClick={() => setActiveTab('posts')}
+      />
+
+      {/* Business Dashboard Button */}
+      {isBusinessUser && (
+        <div className="px-6 py-3 bg-white border-b border-gray-100">
           <Button
-            onClick={() => navigate('/business')}
-            variant="outline"
-            className="w-full border-blue-200 text-blue-700 hover:bg-blue-50 bg-gradient-to-r from-blue-50 to-indigo-50"
+            onClick={handleBusinessDashboard}
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium py-3 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg"
           >
-            <Building2 className="w-4 h-4 mr-2" />
+            <BarChart3 className="w-5 h-5 mr-2" />
             Business Dashboard
           </Button>
         </div>
       )}
-      
-      <ProfileStats 
-        onFollowersClick={() => openModal('followers')}
-        onFollowingClick={() => openModal('following')}
-        onPostsClick={handlePostsClick}
+
+      <ProfileTabs 
+        activeTab={activeTab} 
+        onTabChange={setActiveTab} 
       />
-      
-      <ProfileTabs activeTab={activeTab} onTabChange={setActiveTab} />
-      
-      {/* Tab Content */}
-      <div className="flex-1 pb-4">
-        {renderTabContent()}
+
+      <div className="flex-1 overflow-y-auto pb-20">
+        {activeTab === 'travel' && <TravelStats />}
+        {activeTab === 'posts' && <PostsGrid />}
+        {activeTab === 'trips' && <TripsGrid />}
+        {activeTab === 'badges' && (
+          <div className="p-4">
+            <div className="text-center py-8">
+              <p className="text-gray-500">Badge achievements will be displayed here</p>
+            </div>
+          </div>
+        )}
       </div>
 
-      <FollowersModal 
-        isOpen={modalState.isOpen}
-        onClose={closeModal}
-        type={modalState.type || 'followers'}
+      <BadgeModal
+        isOpen={showBadges}
+        onClose={() => setShowBadges(false)}
+        badges={userBadges}
+      />
+
+      <FollowersModal
+        isOpen={showFollowers}
+        onClose={() => setShowFollowers(false)}
+        type="followers"
+      />
+
+      <FollowersModal
+        isOpen={showFollowing}
+        onClose={() => setShowFollowing(false)}
+        type="following"
       />
     </div>
   );

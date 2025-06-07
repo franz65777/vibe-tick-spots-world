@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from 'react';
 import { useLocation } from '@/hooks/useLocation';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
@@ -22,6 +23,17 @@ interface Place {
   addedBy?: string;
   addedDate?: string;
   isFollowing?: boolean;
+}
+
+interface Story {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  isViewed: boolean;
+  locationId: string;
+  locationName: string;
+  locationCategory?: string;
 }
 
 const demoPlaces: Place[] = [
@@ -85,6 +97,39 @@ const demoPlaces: Place[] = [
     isFollowing: true
   },
 ];
+
+const demoStories: Story[] = [
+  {
+    id: '1',
+    userId: 'user1',
+    userName: 'Sarah',
+    userAvatar: 'photo-1494790108755-2616b5a5c75b',
+    isViewed: false,
+    locationId: '1',
+    locationName: 'The Cozy Corner Café',
+    locationCategory: 'restaurant'
+  },
+  {
+    id: '2',
+    userId: 'user2',
+    userName: 'Mike',
+    userAvatar: 'photo-1507003211169-0a1dd7228f2d',
+    isViewed: true,
+    locationId: '2',
+    locationName: 'Sunset View Restaurant',
+    locationCategory: 'restaurant'
+  }
+];
+
+const topLocation = {
+  id: '1',
+  name: 'The Cozy Corner Café',
+  image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400&h=300&fit=crop',
+  category: 'restaurant',
+  likes: 24,
+  description: 'A cozy spot perfect for morning coffee and light bites.',
+  address: '123 Main St, San Francisco, CA'
+};
 
 const HomePage = () => {
   const { currentCity, updateUserLocation } = useLocation();
@@ -153,6 +198,14 @@ const HomePage = () => {
     setSelectedPlace(updatedPlace);
   };
 
+  const handleStoryClick = (index: number) => {
+    console.log('Story clicked:', index);
+  };
+
+  const handleLocationClick = () => {
+    console.log('Location of the week clicked');
+  };
+
   return (
     <div className="flex flex-col h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 overflow-hidden">
       <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg">
@@ -173,10 +226,17 @@ const HomePage = () => {
       </div>
 
       {/* Main content with proper top spacing */}
-      <div className="flex-1 overflow-y-auto pt-32 pb-20">
+      <div className="flex-1 overflow-y-auto pt-32 pb-24">
         <div className="px-4 space-y-6">
-          <StoriesSection onCreateStory={() => setModalState(prev => ({ ...prev, createStory: true }))} />
-          <LocationOfTheWeek />
+          <StoriesSection 
+            stories={demoStories}
+            onCreateStory={() => setModalState(prev => ({ ...prev, createStory: true }))}
+            onStoryClick={handleStoryClick}
+          />
+          <LocationOfTheWeek 
+            topLocation={topLocation}
+            onLocationClick={handleLocationClick}
+          />
           
           <div className="space-y-4">
             {filteredPlaces.map((place) => (
@@ -197,15 +257,22 @@ const HomePage = () => {
 
       <MapSection
         places={filteredPlaces}
-        activeFilter={activeFilter}
         onPlaceSelect={handlePlaceClick}
       />
 
       <ModalsManager
-        modalState={modalState}
-        setModalState={setModalState}
         selectedPlace={selectedPlace}
         onPlaceUpdate={handlePlaceUpdate}
+        isNotificationsOpen={modalState.notifications}
+        isMessagesOpen={modalState.messages}
+        isShareOpen={modalState.share}
+        isCommentOpen={modalState.comment}
+        isCreateStoryOpen={modalState.createStory}
+        onNotificationsClose={() => setModalState(prev => ({ ...prev, notifications: false }))}
+        onMessagesClose={() => setModalState(prev => ({ ...prev, messages: false }))}
+        onShareClose={() => setModalState(prev => ({ ...prev, share: false }))}
+        onCommentClose={() => setModalState(prev => ({ ...prev, comment: false }))}
+        onCreateStoryClose={() => setModalState(prev => ({ ...prev, createStory: false }))}
       />
     </div>
   );
