@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface Badge {
@@ -17,11 +16,49 @@ export const useBadges = () => {
   const [allBadges, setAllBadges] = useState<Badge[]>([]);
 
   useEffect(() => {
+    // Demo data for now
+    const demoBadges: Badge[] = [
+      {
+        id: '1',
+        name: 'Explorer',
+        description: 'Visited 5 different cities',
+        icon: '🌍',
+        earned_at: new Date().toISOString()
+      },
+      {
+        id: '2',
+        name: 'Foodie',
+        description: 'Saved 10 restaurants',
+        icon: '🍽️',
+        earned_at: new Date().toISOString()
+      }
+    ];
+
+    const allDemoBadges: Badge[] = [
+      ...demoBadges,
+      {
+        id: '3',
+        name: 'Social Butterfly',
+        description: 'Has 50 followers',
+        icon: '🦋'
+      },
+      {
+        id: '4',
+        name: 'Pioneer',
+        description: 'First to discover 3 new places',
+        icon: '🏴‍☠️'
+      }
+    ];
+
+    setUserBadges(demoBadges);
+    setAllBadges(allDemoBadges);
+
+    // Uncomment for production
+    /*
     const fetchBadges = async () => {
       if (!user) return;
 
       try {
-        // Fetch user's earned badges
         const { data: earnedBadges } = await supabase
           .from('user_badges')
           .select(`
@@ -35,7 +72,6 @@ export const useBadges = () => {
           `)
           .eq('user_id', user.id);
 
-        // Fetch all available badges
         const { data: badges } = await supabase
           .from('badges')
           .select('*');
@@ -57,6 +93,7 @@ export const useBadges = () => {
     };
 
     fetchBadges();
+    */
   }, [user]);
 
   return { userBadges, allBadges };

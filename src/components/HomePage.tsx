@@ -128,7 +128,10 @@ const topLocation = {
   category: 'restaurant',
   likes: 24,
   description: 'A cozy spot perfect for morning coffee and light bites.',
-  address: '123 Main St, San Francisco, CA'
+  address: '123 Main St, San Francisco, CA',
+  coordinates: { lat: 37.7749, lng: -122.4194 },
+  visitors: ['user1', 'user2'],
+  isNew: false
 };
 
 const HomePage = () => {
@@ -257,12 +260,9 @@ const HomePage = () => {
 
       <MapSection
         places={filteredPlaces}
-        onPlaceSelect={handlePlaceClick}
       />
 
       <ModalsManager
-        selectedPlace={selectedPlace}
-        onPlaceUpdate={handlePlaceUpdate}
         isNotificationsOpen={modalState.notifications}
         isMessagesOpen={modalState.messages}
         isShareOpen={modalState.share}

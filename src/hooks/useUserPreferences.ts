@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface UserPreference {
@@ -13,6 +12,16 @@ export const useUserPreferences = () => {
   const [preferences, setPreferences] = useState<UserPreference[]>([]);
 
   useEffect(() => {
+    // Demo data for now
+    const demoPreferences: UserPreference[] = [
+      { category: 'pizza', search_count: 5 },
+      { category: 'coffee', search_count: 3 },
+      { category: 'museums', search_count: 2 }
+    ];
+    setPreferences(demoPreferences);
+
+    // Uncomment for production
+    /*
     const fetchPreferences = async () => {
       if (!user) return;
 
@@ -33,9 +42,26 @@ export const useUserPreferences = () => {
     };
 
     fetchPreferences();
+    */
   }, [user]);
 
   const updatePreference = async (category: string) => {
+    // Update local state for demo
+    setPreferences(prev => {
+      const existing = prev.find(p => p.category === category);
+      if (existing) {
+        return prev.map(p => 
+          p.category === category 
+            ? { ...p, search_count: p.search_count + 1 }
+            : p
+        ).sort((a, b) => b.search_count - a.search_count);
+      } else {
+        return [{ category, search_count: 1 }, ...prev].slice(0, 5);
+      }
+    });
+
+    // Uncomment for production
+    /*
     if (!user) return;
 
     try {
@@ -50,7 +76,6 @@ export const useUserPreferences = () => {
           onConflict: 'user_id,category'
         });
 
-      // Refresh preferences
       const { data } = await supabase
         .from('user_preferences')
         .select('category, search_count')
@@ -64,6 +89,7 @@ export const useUserPreferences = () => {
     } catch (error) {
       console.error('Error updating preference:', error);
     }
+    */
   };
 
   return { preferences, updatePreference };

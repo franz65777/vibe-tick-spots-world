@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 export const useLocation = () => {
@@ -10,13 +9,19 @@ export const useLocation = () => {
 
   useEffect(() => {
     const getUserLocation = async () => {
+      // For demo mode, use fallback location
+      console.log('useLocation: Using demo location');
+      setCurrentCity('San Francisco');
+      setLoading(false);
+      
+      // Uncomment below for production with real backend
+      /*
       if (!user) {
         setLoading(false);
         return;
       }
 
       try {
-        // Try to get user's saved location first
         const { data: userLocation } = await supabase
           .from('user_locations')
           .select('city')
@@ -26,13 +31,11 @@ export const useLocation = () => {
         if (userLocation?.city) {
           setCurrentCity(userLocation.city);
         } else {
-          // Get browser location if available
           if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
               async (position) => {
                 const { latitude, longitude } = position.coords;
                 
-                // Reverse geocode to get city name (using a simple service)
                 try {
                   const response = await fetch(
                     `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
@@ -40,7 +43,6 @@ export const useLocation = () => {
                   const data = await response.json();
                   const city = data.city || data.locality || 'San Francisco';
                   
-                  // Save to database
                   await supabase
                     .from('user_locations')
                     .upsert({
@@ -67,12 +69,17 @@ export const useLocation = () => {
       } finally {
         setLoading(false);
       }
+      */
     };
 
     getUserLocation();
   }, [user]);
 
   const updateUserLocation = async (city: string) => {
+    setCurrentCity(city);
+    
+    // Uncomment for production
+    /*
     if (!user) return;
     
     try {
@@ -81,14 +88,13 @@ export const useLocation = () => {
         .upsert({
           user_id: user.id,
           city,
-          latitude: 0, // Will be updated when we have coordinates
+          latitude: 0,
           longitude: 0
         });
-      
-      setCurrentCity(city);
     } catch (error) {
       console.error('Error updating user location:', error);
     }
+    */
   };
 
   return { currentCity, loading, updateUserLocation };

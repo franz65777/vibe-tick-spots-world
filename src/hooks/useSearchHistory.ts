@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface SearchHistoryItem {
@@ -15,6 +14,16 @@ export const useSearchHistory = () => {
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
 
   useEffect(() => {
+    // Demo data for now
+    const demoHistory: SearchHistoryItem[] = [
+      { id: '1', search_query: 'pizza', search_type: 'category', searched_at: new Date().toISOString() },
+      { id: '2', search_query: 'coffee shops', search_type: 'category', searched_at: new Date().toISOString() },
+      { id: '3', search_query: 'Sarah Johnson', search_type: 'user', searched_at: new Date().toISOString() }
+    ];
+    setSearchHistory(demoHistory);
+
+    // Uncomment for production
+    /*
     const fetchSearchHistory = async () => {
       if (!user) return;
 
@@ -41,10 +50,24 @@ export const useSearchHistory = () => {
     };
 
     fetchSearchHistory();
+    */
   }, [user]);
 
   const addToSearchHistory = async (query: string, type: 'location' | 'user' | 'category') => {
-    if (!user || !query.trim()) return;
+    if (!query.trim()) return;
+
+    // Add to local state for demo
+    const newItem: SearchHistoryItem = {
+      id: Date.now().toString(),
+      search_query: query,
+      search_type: type,
+      searched_at: new Date().toISOString()
+    };
+    setSearchHistory(prev => [newItem, ...prev.slice(0, 9)]);
+
+    // Uncomment for production
+    /*
+    if (!user) return;
 
     try {
       const { data } = await supabase
@@ -69,6 +92,7 @@ export const useSearchHistory = () => {
     } catch (error) {
       console.error('Error adding to search history:', error);
     }
+    */
   };
 
   return { searchHistory, addToSearchHistory };

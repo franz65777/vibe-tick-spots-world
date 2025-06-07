@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useSearchHistory } from '@/hooks/useSearchHistory';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
-import LocationDetailModal from './LocationDetailModal';
 
 interface Place {
   id: string;
@@ -80,8 +79,6 @@ const ExplorePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchType, setSearchType] = useState<'location' | 'user'>('location');
   const [results, setResults] = useState<Place[] | User[]>([]);
-  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const { searchHistory, addToSearchHistory } = useSearchHistory();
   const { preferences, updatePreference } = useUserPreferences();
 
@@ -143,8 +140,7 @@ const ExplorePage = () => {
   };
 
   const handlePlaceClick = (place: Place) => {
-    setSelectedPlace(place);
-    setIsModalOpen(true);
+    console.log('Place clicked:', place.name);
   };
 
   const handleUserClick = (user: User) => {
@@ -178,10 +174,22 @@ const ExplorePage = () => {
             </Badge>
           ))}
         </div>
-        <div className="flex items-center justify-between text-sm text-gray-500">
+        <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
           <span>{place.openingHours}</span>
           <span>{place.reviewCount} reviews</span>
         </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="w-full"
+          onClick={(e) => {
+            e.stopPropagation();
+            console.log('View on map:', place.name);
+          }}
+        >
+          <MapPin className="w-4 h-4 mr-2" />
+          View on Map
+        </Button>
       </div>
     </div>
   );
@@ -307,15 +315,6 @@ const ExplorePage = () => {
           </div>
         )}
       </div>
-
-      {/* Location Detail Modal */}
-      {selectedPlace && (
-        <LocationDetailModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          location={selectedPlace}
-        />
-      )}
     </div>
   );
 };
