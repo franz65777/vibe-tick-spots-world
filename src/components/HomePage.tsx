@@ -450,23 +450,7 @@ const HomePage = () => {
   const handleCitySelect = (cityName: string) => {
     console.log('City selected:', cityName);
     setCurrentCity(cityName);
-    
-    // Update map center based on city
-    const cityCoordinates: Record<string, { lat: number; lng: number }> = {
-      'san francisco': { lat: 37.7749, lng: -122.4194 },
-      'milan': { lat: 45.4642, lng: 9.1900 },
-      'paris': { lat: 48.8566, lng: 2.3522 },
-      'new york': { lat: 40.7128, lng: -74.0060 },
-      'london': { lat: 51.5074, lng: -0.1278 },
-      'tokyo': { lat: 35.6762, lng: 139.6503 },
-      'rome': { lat: 41.9028, lng: 12.4964 },
-      'barcelona': { lat: 41.3851, lng: 2.1734 },
-      'amsterdam': { lat: 52.3676, lng: 4.9041 },
-      'sydney': { lat: -33.8688, lng: 151.2093 }
-    };
-
-    const coords = cityCoordinates[cityName.toLowerCase()] || { lat: 37.7749, lng: -122.4194 };
-    setMapCenter(coords);
+    // Map center will be automatically updated via the computed currentMapCenter value
   };
 
   const handleSearchKeyPress = (e: React.KeyboardEvent) => {
