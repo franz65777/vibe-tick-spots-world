@@ -1,7 +1,8 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { backendService } from '@/services/backendService';
+import { useBackendProfile } from './useBackendProfile';
 
 interface Profile {
   id: string;
@@ -20,109 +21,57 @@ interface Profile {
 
 export const useProfile = () => {
   const { user } = useAuth();
+  const { profile: backendProfile, loading: backendLoading, error: backendError, updateProfile: updateBackendProfile } = useBackendProfile();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      console.log('useProfile: Starting to fetch profile for user:', user?.id);
-      
+    const config = backendService.getConfig();
+    
+    if (config.enableRealDatabase && backendProfile) {
+      // Use backend data when available
+      setProfile(backendProfile);
+      setLoading(backendLoading);
+      setError(backendError);
+    } else {
+      // Use demo data
       if (!user) {
-        console.log('useProfile: No user found, setting loading to false');
         setProfile(null);
         setLoading(false);
         return;
       }
 
-      try {
-        console.log('useProfile: Fetching profile from database...');
-        
-        // Set a timeout for the profile fetch
-        const profilePromise = supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Profile fetch timeout')), 3000)
-        );
-
-        const { data, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
-
-        if (error) {
-          console.error('useProfile: Error fetching profile:', error);
-          
-          // For demo purposes, create a fallback profile
-          console.log('useProfile: Creating fallback demo profile');
-          const demoProfile: Profile = {
-            id: user.id,
-            username: user.user_metadata?.username || `user_${user.id.substring(0, 8)}`,
-            full_name: user.user_metadata?.full_name || 'Demo User',
-            avatar_url: user.user_metadata?.avatar_url || null,
-            email: user.email || 'demo@example.com',
-            bio: 'This is a demo profile',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            posts_count: 5
-          };
-          
-          setProfile(demoProfile);
-          setError(null);
-        } else {
-          console.log('useProfile: Profile fetched successfully:', data);
-          setProfile(data);
-        }
-      } catch (err: any) {
-        console.error('useProfile: Unexpected error or timeout:', err);
-        
-        // For demo purposes, create a fallback profile even on timeout
-        console.log('useProfile: Creating fallback demo profile due to timeout');
-        const demoProfile: Profile = {
-          id: user.id,
-          username: user.user_metadata?.username || `user_${user.id.substring(0, 8)}`,
-          full_name: user.user_metadata?.full_name || 'Demo User',
-          avatar_url: user.user_metadata?.avatar_url || null,
-          email: user.email || 'demo@example.com',
-          bio: 'This is a demo profile',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          posts_count: 5
-        };
-        
-        setProfile(demoProfile);
-        setError(null);
-      } finally {
-        console.log('useProfile: Setting loading to false');
-        setLoading(false);
-      }
-    };
-
-    fetchProfile();
-  }, [user]);
+      const demoProfile: Profile = {
+        id: user.id,
+        username: user.user_metadata?.username || `user_${user.id.substring(0, 8)}`,
+        full_name: user.user_metadata?.full_name || 'Travel Enthusiast',
+        avatar_url: user.user_metadata?.avatar_url || null,
+        email: user.email || 'demo@spott.app',
+        bio: 'Travel Enthusiast | Food Lover | Photographer',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        posts_count: 24,
+        followers_count: 1542,
+        following_count: 892,
+        cities_visited: 12
+      };
+      
+      setProfile(demoProfile);
+      setLoading(false);
+      setError(null);
+    }
+  }, [user, backendProfile, backendLoading, backendError]);
 
   const updateProfile = async (updates: Partial<Profile>) => {
-    if (!user || !profile) return { error: 'No user or profile found' };
-
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', user.id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error updating profile:', error);
-        return { error: error.message };
-      }
-
-      setProfile(data);
-      return { data };
-    } catch (err) {
-      console.error('Unexpected error:', err);
-      return { error: 'An unexpected error occurred' };
+    const config = backendService.getConfig();
+    
+    if (config.enableRealDatabase) {
+      return await updateBackendProfile(updates);
+    } else {
+      // Demo mode: just update local state
+      setProfile(prev => prev ? { ...prev, ...updates } : null);
+      return { data: profile };
     }
   };
 

@@ -9,7 +9,14 @@ const config: CapacitorConfig = {
     url: 'https://2e33e62e-d4d2-4f1b-adf5-a399d3ab359c.lovableproject.com?forceHideBadge=true',
     cleartext: true
   },
-  bundledWebRuntime: false
+  bundledWebRuntime: false,
+  plugins: {
+    SplashScreen: {
+      launchShowDuration: 2000,
+      backgroundColor: "#ffffff",
+      showSpinner: false
+    }
+  }
 };
 
 export default config;
