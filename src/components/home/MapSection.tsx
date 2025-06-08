@@ -48,26 +48,44 @@ const getCategoryGradient = (category: string) => {
   }
 };
 
-// Helper function to get category icon
+// Helper function to get category icon (using simple text instead of emojis)
 const getCategoryIcon = (category: string) => {
   switch (category.toLowerCase()) {
     case 'restaurant':
     case 'restaurants':
-      return '🍽️';
+      return 'R';
     case 'cafe':
     case 'cafes':
-      return '☕';
+      return 'C';
     case 'bar':
     case 'bars':
-      return '🍸';
+      return 'B';
     case 'hotel':
     case 'hotels':
-      return '🏨';
+      return 'H';
     case 'culture':
     case 'museum':
-      return '🎨';
+      return 'M';
     default:
-      return '📍';
+      return 'P';
+  }
+};
+
+// Safe base64 encoding for UTF-8 strings
+const safeBase64Encode = (str: string) => {
+  try {
+    // Use TextEncoder for proper UTF-8 encoding
+    const encoder = new TextEncoder();
+    const data = encoder.encode(str);
+    let binary = '';
+    for (let i = 0; i < data.length; i++) {
+      binary += String.fromCharCode(data[i]);
+    }
+    return btoa(binary);
+  } catch (error) {
+    console.error('Error encoding SVG:', error);
+    // Fallback to simple replacement
+    return btoa(str.replace(/[^\x00-\x7F]/g, ""));
   }
 };
 
@@ -234,17 +252,19 @@ const MapSection = ({ places, onPinClick, mapCenter, selectedPlace, onCloseSelec
 
     // Add user location marker only if not using a specific map center
     if (!mapCenter && userLocation) {
+      const userLocationSvg = `
+        <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="8" fill="#4285F4" stroke="white" stroke-width="2"/>
+          <circle cx="12" cy="12" r="3" fill="white"/>
+        </svg>
+      `;
+      
       const userMarker = new google.maps.Marker({
         map: mapInstanceRef.current,
         position: userLocation,
         title: 'Your Location',
         icon: {
-          url: 'data:image/svg+xml;base64,' + btoa(`
-            <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="12" cy="12" r="8" fill="#4285F4" stroke="white" stroke-width="2"/>
-              <circle cx="12" cy="12" r="3" fill="white"/>
-            </svg>
-          `),
+          url: 'data:image/svg+xml;base64,' + safeBase64Encode(userLocationSvg),
           scaledSize: new google.maps.Size(24, 24),
           anchor: new google.maps.Point(12, 12)
         }
@@ -258,29 +278,43 @@ const MapSection = ({ places, onPinClick, mapCenter, selectedPlace, onCloseSelec
       const gradient = getCategoryGradient(place.category);
       const icon = getCategoryIcon(place.category);
       const size = isSelected ? 48 : 36;
-      const glowEffect = isSelected ? 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.6))' : '';
+      const glowEffect = isSelected ? 'filter="drop-shadow(0 0 8px rgba(59, 130, 246, 0.6))"' : '';
+      
+      // Get gradient colors for the SVG
+      const getGradientColors = (gradient: string) => {
+        if (gradient.includes('orange')) return { start: 'f97316', end: 'ea580c' };
+        if (gradient.includes('red')) return { start: 'ef4444', end: 'dc2626' };
+        if (gradient.includes('purple')) return { start: '8b5cf6', end: 'ec4899' };
+        if (gradient.includes('blue')) return { start: '3b82f6', end: '4f46e5' };
+        if (gradient.includes('green')) return { start: '10b981', end: '0d9488' };
+        return { start: '6b7280', end: '4b5563' };
+      };
+
+      const colors = getGradientColors(gradient);
+      
+      const markerSvg = `
+        <svg width="${size}" height="${size}" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" ${glowEffect}>
+          <defs>
+            <linearGradient id="grad-${place.id}" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#${colors.start};stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#${colors.end};stop-opacity:1" />
+            </linearGradient>
+          </defs>
+          <circle cx="24" cy="24" r="18" fill="url(#grad-${place.id})" stroke="white" stroke-width="3"/>
+          <text x="24" y="28" text-anchor="middle" font-size="16" fill="white" font-family="Arial, sans-serif" font-weight="bold">${icon}</text>
+          ${place.friendsWhoSaved && place.friendsWhoSaved.length > 0 ? `
+            <circle cx="36" cy="12" r="8" fill="white" stroke="#e5e7eb" stroke-width="2"/>
+            <text x="36" y="16" text-anchor="middle" font-size="10" fill="#374151" font-family="Arial, sans-serif">${place.friendsWhoSaved.length}</text>
+          ` : ''}
+        </svg>
+      `;
       
       const marker = new google.maps.Marker({
         map: mapInstanceRef.current,
         position: place.coordinates,
         title: place.name,
         icon: {
-          url: 'data:image/svg+xml;base64,' + btoa(`
-            <svg width="${size}" height="${size}" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" style="filter: ${glowEffect}">
-              <defs>
-                <linearGradient id="grad-${place.id}" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" style="stop-color:#${gradient.includes('orange') ? 'f97316' : gradient.includes('red') ? 'ef4444' : gradient.includes('purple') ? '8b5cf6' : gradient.includes('blue') ? '3b82f6' : gradient.includes('green') ? '10b981' : '6b7280'};stop-opacity:1" />
-                  <stop offset="100%" style="stop-color:#${gradient.includes('red') ? 'dc2626' : gradient.includes('orange') ? 'ea580c' : gradient.includes('pink') ? 'ec4899' : gradient.includes('indigo') ? '4f46e5' : gradient.includes('teal') ? '0d9488' : '4b5563'};stop-opacity:1" />
-                </linearGradient>
-              </defs>
-              <circle cx="24" cy="24" r="18" fill="url(#grad-${place.id})" stroke="white" stroke-width="3"/>
-              <text x="24" y="28" text-anchor="middle" font-size="16" fill="white">${icon}</text>
-              ${place.friendsWhoSaved && place.friendsWhoSaved.length > 0 ? `
-                <circle cx="36" cy="12" r="8" fill="white" stroke="#e5e7eb" stroke-width="2"/>
-                <text x="36" y="16" text-anchor="middle" font-size="10" fill="#374151">${place.friendsWhoSaved.length}</text>
-              ` : ''}
-            </svg>
-          `),
+          url: 'data:image/svg+xml;base64,' + safeBase64Encode(markerSvg),
           scaledSize: new google.maps.Size(size, size),
           anchor: new google.maps.Point(size/2, size/2)
         }

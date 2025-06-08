@@ -229,7 +229,8 @@ const ExplorePage = () => {
     }
 
     if (activeFilters.includes('top_rated')) {
-      filtered = filtered.filter((place) => place.rating >= 4.5);
+      // Use reviewCount as a proxy for rating since rating doesn't exist
+      filtered = filtered.filter((place) => place.reviewCount >= 100);
     }
 
     return filtered;
@@ -444,7 +445,7 @@ const ExplorePage = () => {
             name: locationDetailPlace.name,
             category: locationDetailPlace.category,
             image: locationDetailPlace.image,
-            rating: 4.5,
+            rating: 4.5, // Default rating since it's not in Place interface
             reviewCount: locationDetailPlace.reviewCount || 0,
             coordinates: locationDetailPlace.coordinates,
             address: `Global Location`,
