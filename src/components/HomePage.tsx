@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -8,6 +9,7 @@ import LocationOfTheWeek from '@/components/home/LocationOfTheWeek';
 import Header from '@/components/home/Header';
 import FilterButtons from '@/components/home/FilterButtons';
 import ModalsManager from '@/components/home/ModalsManager';
+import PlacePostsModal from '@/components/home/PlacePostsModal';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useMapPins } from '@/hooks/useMapPins';
 
