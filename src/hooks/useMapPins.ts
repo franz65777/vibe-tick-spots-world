@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { backendService } from '@/services/backendService';
 import { supabase } from '@/integrations/supabase/client';
@@ -32,6 +32,7 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasFollowedUsers, setHasFollowedUsers] = useState(false);
+  const [lastRefreshCity, setLastRefreshCity] = useState<string>('');
 
   // Demo data for different cities when backend is in demo mode
   const getDemoPins = (filter: string, city?: string): MapPin[] => {
@@ -160,14 +161,13 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
     }
   };
 
-  // Check if user has followed users (for demo, assume they do have followed users)
+  // Memoize the checkFollowedUsers function
   const checkFollowedUsers = useCallback(async (): Promise<boolean> => {
     if (!user) return false;
 
     const config = backendService.getConfig();
     
     if (config.isDemoMode) {
-      // In demo mode, simulate having followed users
       return true;
     }
 
@@ -184,7 +184,7 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
       console.error('Error checking followed users:', error);
       return false;
     }
-  }, [user]);
+  }, [user?.id]); // Use user.id instead of user object
 
   const getFollowingPins = useCallback(async (city?: string): Promise<MapPin[]> => {
     if (!user) return [];
@@ -255,10 +255,20 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
     }
   }, [getDemoPins]);
 
+  // Optimize refreshPins to prevent unnecessary calls
   const refreshPins = useCallback(async (city?: string) => {
-    console.log('refreshPins called with filter:', activeFilter, 'city:', city);
+    const targetCity = city || 'current location';
+    
+    // Prevent duplicate calls for the same city
+    if (targetCity === lastRefreshCity && !loading) {
+      console.log('Skipping refresh for same city:', targetCity);
+      return;
+    }
+
+    console.log('refreshPins called with filter:', activeFilter, 'city:', targetCity);
     setLoading(true);
     setError(null);
+    setLastRefreshCity(targetCity);
 
     try {
       let newPins: MapPin[] = [];
@@ -266,7 +276,6 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
       switch (activeFilter) {
         case 'following':
         case 'new':
-          // For following and new filters, check if user has followed users first
           const hasFollowed = await checkFollowedUsers();
           setHasFollowedUsers(hasFollowed);
           
@@ -276,7 +285,6 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           } else if (activeFilter === 'following') {
             newPins = await getFollowingPins(city);
           } else {
-            // For 'new' filter, get demo data or implement new pins logic
             newPins = getDemoPins('new', city);
           }
           break;
@@ -288,11 +296,10 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
       }
 
       setPins(newPins);
-      console.log(`Loaded ${newPins.length} ${activeFilter} pins for ${city || 'current location'}`);
+      console.log(`Loaded ${newPins.length} ${activeFilter} pins for ${targetCity}`);
     } catch (error) {
       console.error('Error refreshing pins:', error);
       setError('Failed to load pins');
-      // Fallback to demo data only for popular filter
       if (activeFilter === 'popular') {
         setPins(getDemoPins(activeFilter, city));
       } else {
@@ -301,14 +308,15 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
     } finally {
       setLoading(false);
     }
-  }, [activeFilter, checkFollowedUsers, getFollowingPins, getPopularPins, getDemoPins]);
+  }, [activeFilter, lastRefreshCity, loading, checkFollowedUsers, getFollowingPins, getPopularPins, getDemoPins]);
 
-  // Only run when activeFilter or user changes - removed the immediate refreshPins call
+  // Only run when activeFilter or user changes
   useEffect(() => {
-    if (user) {
+    if (user?.id) {
+      setLastRefreshCity(''); // Reset to allow refresh with new filter
       refreshPins();
     }
-  }, [activeFilter, user?.id]); // Use user.id instead of user object to prevent unnecessary re-renders
+  }, [activeFilter, user?.id]);
 
   return {
     pins,

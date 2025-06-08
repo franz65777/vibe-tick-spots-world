@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import MapSection from '@/components/home/MapSection';
@@ -339,17 +339,31 @@ const HomePage = () => {
   const { location } = useGeolocation();
   const { pins, loading: pinsLoading, refreshPins, hasFollowedUsers } = useMapPins(activeFilter);
 
-  // Update current city when geolocation changes
-  useEffect(() => {
-    if (location?.city) {
-      setCurrentCity(location.city);
+  // Memoize the city update to prevent excessive calls
+  const updateCurrentCity = useCallback((newCity: string) => {
+    if (newCity !== currentCity) {
+      console.log('Updating current city from', currentCity, 'to', newCity);
+      setCurrentCity(newCity);
     }
-  }, [location?.city]);
+  }, [currentCity]);
 
-  // Refresh pins when city changes - and also refresh pins when activeFilter changes
+  // Update current city when geolocation changes - but only if different
   useEffect(() => {
-    refreshPins(currentCity);
-  }, [currentCity, activeFilter]); // Added activeFilter back to dependencies
+    if (location?.city && location.city !== currentCity) {
+      updateCurrentCity(location.city);
+    }
+  }, [location?.city, currentCity, updateCurrentCity]);
+
+  // Refresh pins when city changes - use callback to prevent excessive calls
+  const handleCityChange = useCallback((city: string) => {
+    console.log('handleCityChange called for city:', city);
+    refreshPins(city);
+  }, [refreshPins]);
+
+  // Only refresh pins when currentCity actually changes
+  useEffect(() => {
+    handleCityChange(currentCity);
+  }, [currentCity, handleCityChange]);
 
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
@@ -359,6 +373,10 @@ const HomePage = () => {
   const [commentPlace, setCommentPlace] = useState<Place | null>(null);
   const [isLocationDetailOpen, setIsLocationDetailOpen] = useState(false);
   const [locationDetailPlace, setLocationDetailPlace] = useState<Place | null>(null);
+
+  // Add state for scrollable posts modal
+  const [isPostsModalOpen, setIsPostsModalOpen] = useState(false);
+  const [selectedPlaceForPosts, setSelectedPlaceForPosts] = useState<Place | null>(null);
 
   const handleCreateStory = () => {
     console.log('Create story clicked');
@@ -424,35 +442,26 @@ const HomePage = () => {
     // TODO: Implement actual comment submission logic
   };
 
+  // Updated to show scrollable posts instead of location detail
   const handleCardClick = (place: Place) => {
-    console.log('Place card clicked:', place.name);
-    setLocationDetailPlace(place);
-    setIsLocationDetailOpen(true);
+    console.log('Place card clicked:', place.name, '- opening posts modal');
+    setSelectedPlaceForPosts(place);
+    setIsPostsModalOpen(true);
   };
 
   const handleCitySearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      const searchedCity = searchQuery.trim().toLowerCase();
+      const searchedCity = searchQuery.trim();
       console.log('Searching for city:', searchedCity);
-      
-      const cityInfo = cityData[searchedCity];
-      if (cityInfo) {
-        setCurrentCity(searchQuery.trim());
-      } else {
-        // If city not found, show a default set or empty
-        console.log('City not found in database, using default places');
-        setCurrentCity(searchQuery.trim());
-      }
+      updateCurrentCity(searchedCity);
     }
   };
 
-  const handleCitySelect = (cityName: string) => {
+  const handleCitySelect = useCallback((cityName: string) => {
     console.log('City selected:', cityName);
-    setCurrentCity(cityName);
-    // Force refresh pins for the new city
-    refreshPins(cityName);
-  };
+    updateCurrentCity(cityName);
+  }, [updateCurrentCity]);
 
   const handleSearchKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -460,10 +469,13 @@ const HomePage = () => {
     }
   };
 
-  // Calculate map center based on geolocation or selected city - FIXED to update properly
-  const currentMapCenter = location?.latitude && location?.longitude && location.city === currentCity
-    ? { lat: location.latitude, lng: location.longitude }
-    : cityData[currentCity.toLowerCase()]?.coordinates || { lat: 37.7749, lng: -122.4194 };
+  // Memoize map center calculation to prevent unnecessary re-renders
+  const currentMapCenter = useMemo(() => {
+    if (location?.latitude && location?.longitude && location.city === currentCity) {
+      return { lat: location.latitude, lng: location.longitude };
+    }
+    return cityData[currentCity.toLowerCase()]?.coordinates || { lat: 37.7749, lng: -122.4194 };
+  }, [location?.latitude, location?.longitude, location?.city, currentCity]);
 
   // Get the most popular location from pins
   const getLocationOfTheWeek = () => {
@@ -648,6 +660,18 @@ const HomePage = () => {
         onCommentSubmit={handleCommentSubmit}
         onStoryViewed={handleStoryViewed}
       />
+
+      {/* Posts Modal for scrolling through place posts */}
+      {isPostsModalOpen && selectedPlaceForPosts && (
+        <PlacePostsModal
+          isOpen={isPostsModalOpen}
+          onClose={() => {
+            setIsPostsModalOpen(false);
+            setSelectedPlaceForPosts(null);
+          }}
+          place={selectedPlaceForPosts}
+        />
+      )}
     </div>
   );
 };
