@@ -6,9 +6,20 @@ import { LocationRecommendation } from '@/services/searchService';
 interface LocationRecommendationsProps {
   recommendations: LocationRecommendation[];
   onLocationClick: (location: LocationRecommendation) => void;
+  onLocationShare: (location: LocationRecommendation) => void;
+  onLocationComment: (location: LocationRecommendation) => void;
+  onLocationLike: (locationId: string) => void;
+  likedPlaces: Set<string>;
 }
 
-const LocationRecommendations = ({ recommendations, onLocationClick }: LocationRecommendationsProps) => {
+const LocationRecommendations = ({ 
+  recommendations, 
+  onLocationClick, 
+  onLocationShare, 
+  onLocationComment, 
+  onLocationLike,
+  likedPlaces 
+}: LocationRecommendationsProps) => {
   if (recommendations.length === 0) {
     return (
       <div className="text-center py-8">
@@ -49,11 +60,11 @@ const LocationRecommendations = ({ recommendations, onLocationClick }: LocationR
           <div key={location.id} className="relative">
             <PlaceCard
               place={convertToPlace(location)}
-              isLiked={false}
+              isLiked={likedPlaces.has(location.id)}
               onCardClick={() => onLocationClick(location)}
-              onLikeToggle={() => {}}
-              onShare={() => {}}
-              onComment={() => {}}
+              onLikeToggle={() => onLocationLike(location.id)}
+              onShare={() => onLocationShare(location)}
+              onComment={() => onLocationComment(location)}
               cityName="Current City"
             />
             {/* Recommendation reason overlay */}
