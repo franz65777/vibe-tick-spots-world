@@ -4,6 +4,7 @@ import { Minimize, Maximize, Search, X, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import GoogleMapsSetup from '@/components/GoogleMapsSetup';
+
 interface Place {
   id: string;
   name: string;
@@ -21,6 +22,7 @@ interface Place {
     avatar: string;
   }[];
 }
+
 interface MapSectionProps {
   places: Place[];
   onPinClick: (place: Place) => void;
@@ -110,6 +112,7 @@ const getSavedByText = (place: Place): string => {
     return `Saved by ${place.friendsWhoSaved[0].name}, ${place.friendsWhoSaved[1].name} and ${friendCount - 2} others you follow`;
   }
 };
+
 const MapSection = ({
   places,
   onPinClick,
@@ -418,7 +421,8 @@ const MapSection = ({
     return <GoogleMapsSetup onApiKeySet={handleApiKeySet} />;
   }
   if (isFullscreen) {
-    return <div className="fixed inset-0 z-50 bg-white">
+    return (
+      <div className="fixed inset-0 z-50 bg-white">
         {/* Fullscreen Header */}
         <div className="absolute top-0 left-0 right-0 z-10 bg-white/95 backdrop-blur-sm border-b border-gray-200 p-4">
           <div className="flex items-center gap-3">
@@ -427,38 +431,57 @@ const MapSection = ({
             </Button>
             
             <div className="flex-1 relative">
-              {isSearching ? <div className="flex items-center gap-2">
-                  <Input ref={searchInputRef} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} onKeyPress={handleKeyPress} placeholder="Search for places..." className="flex-1" />
+              {isSearching ? (
+                <div className="flex items-center gap-2">
+                  <Input 
+                    ref={searchInputRef} 
+                    value={searchQuery} 
+                    onChange={e => setSearchQuery(e.target.value)} 
+                    onKeyPress={handleKeyPress} 
+                    placeholder="Search for places..." 
+                    className="flex-1" 
+                  />
                   <Button onClick={handleSearch} size="sm" disabled={apiKey === 'demo'}>
                     <Search className="w-4 h-4" />
                   </Button>
                   <Button variant="ghost" size="icon" onClick={toggleSearch}>
                     <X className="w-4 h-4" />
                   </Button>
-                </div> : <div className="flex items-center justify-between">
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
                   <h2 className="text-lg font-semibold">Explore Map</h2>
                   <Button variant="ghost" size="icon" onClick={toggleSearch}>
                     <Search className="w-5 h-5" />
                   </Button>
-                </div>}
+                </div>
+              )}
             </div>
           </div>
-          {apiKey === 'demo' && <div className="mt-2 text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
+          {apiKey === 'demo' && (
+            <div className="mt-2 text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
               Demo mode - Search functionality disabled. Add your Google Maps API key for full features.
-            </div>}
-          {locationPermissionDenied && <div className="mt-2 text-xs text-yellow-600 bg-yellow-50 px-2 py-1 rounded">
+            </div>
+          )}
+          {locationPermissionDenied && (
+            <div className="mt-2 text-xs text-yellow-600 bg-yellow-50 px-2 py-1 rounded">
               Location access denied - Showing default location. Enable location permissions for better experience.
-            </div>}
-          {mapError && <div className="mt-2 text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
+            </div>
+          )}
+          {mapError && (
+            <div className="mt-2 text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
               {mapError}
-            </div>}
+            </div>
+          )}
         </div>
 
         {/* Fullscreen Map */}
         <div ref={mapRef} className="w-full h-full pt-20" />
-      </div>;
+      </div>
+    );
   }
-  return <div className="px-4 pb-4 bg-white">
+  return (
+    <div className="px-4 pb-4 bg-white">
       <div className={`bg-gradient-to-br from-green-50 to-blue-50 rounded-2xl relative overflow-hidden shadow-lg transition-all duration-500 ${selectedPlace ? 'h-40' : 'h-64'}`}>
         {/* Google Map or Demo Map */}
         {apiKey === 'demo' ? (
@@ -478,22 +501,33 @@ const MapSection = ({
               const isSelected = selectedPlace?.id === place.id;
               const gradient = getCategoryGradient(place.category);
               const icon = getCategoryIcon(place.category);
-              return <div key={place.id} className="absolute group cursor-pointer" style={{
-                top: `${30 + index * 15}%`,
-                left: `${25 + index * 20}%`
-              }} onClick={() => onPinClick(place)}>
+              return (
+                <div 
+                  key={place.id} 
+                  className="absolute group cursor-pointer" 
+                  style={{
+                    top: `${30 + index * 15}%`,
+                    left: `${25 + index * 20}%`
+                  }} 
+                  onClick={() => onPinClick(place)}
+                >
                   <div className={`${isSelected ? 'w-12 h-12' : 'w-10 h-10'} bg-gradient-to-br ${gradient} rounded-full flex items-center justify-center shadow-lg border-2 border-white hover:scale-110 transition-all duration-200 ${isSelected ? 'ring-4 ring-blue-400 ring-opacity-50' : ''}`}>
                     <span className="text-white text-lg">{icon}</span>
                   </div>
-                  {place.friendsWhoSaved && place.friendsWhoSaved.length > 0 && <div className="absolute -top-2 -right-2 w-5 h-5 bg-white rounded-full border-2 border-gray-200 flex items-center justify-center text-xs font-semibold text-gray-600">
+                  {place.friendsWhoSaved && place.friendsWhoSaved.length > 0 && (
+                    <div className="absolute -top-2 -right-2 w-5 h-5 bg-white rounded-full border-2 border-gray-200 flex items-center justify-center text-xs font-semibold text-gray-600">
                       {place.friendsWhoSaved.length}
-                    </div>}
-                </div>;
+                    </div>
+                  )}
+                </div>
+              );
             })}
             <div className="absolute bottom-6 left-4 text-xs text-gray-600 bg-white/80 px-2 py-1 rounded">
               Demo Map - Add Google Maps API key for interactive features
             </div>
-          </div> : <div className="relative w-full h-full">
+          </div>
+        ) : (
+          <div className="relative w-full h-full">
             <div ref={mapRef} className="absolute inset-0 rounded-2xl" />
             {!isMapLoaded && (
               <div className="absolute inset-0 bg-gray-50 rounded-2xl flex items-center justify-center">
@@ -522,7 +556,8 @@ const MapSection = ({
                 Enable location for better experience
               </div>
             )}
-          </div>}
+          </div>
+        )}
 
         {/* Location Labels - only show if using demo mode */}
         {apiKey === 'demo' && (
@@ -542,14 +577,16 @@ const MapSection = ({
           </>
         )}
 
-        {/* Enhanced Selected Place Card */}
-        {selectedPlace}
-
         {/* Expand Map Button */}
-        <button onClick={toggleFullscreen} className="absolute bottom-4 right-4 w-10 h-10 bg-white rounded-lg shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors">
+        <button 
+          onClick={toggleFullscreen} 
+          className="absolute bottom-4 right-4 w-10 h-10 bg-white rounded-lg shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors"
+        >
           <Maximize className="w-5 h-5 text-gray-600" />
         </button>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default MapSection;
