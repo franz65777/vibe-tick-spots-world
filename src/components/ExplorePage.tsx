@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from 'react';
 import { Search, Filter, MapPin, Star, Users, Clock, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -413,7 +414,8 @@ const ExplorePage = () => {
             setIsShareModalOpen(false);
             setSharePlace(null);
           }}
-          place={sharePlace}
+          item={sharePlace}
+          itemType="place"
           onShare={(friendIds) => handleShareSubmit(friendIds, sharePlace)}
         />
       )}
@@ -427,7 +429,7 @@ const ExplorePage = () => {
             setCommentPlace(null);
           }}
           place={commentPlace}
-          onSubmit={(text) => handleCommentSubmit(text, commentPlace)}
+          onCommentSubmit={(text) => handleCommentSubmit(text, commentPlace)}
         />
       )}
     </div>
