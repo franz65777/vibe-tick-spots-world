@@ -13,9 +13,13 @@ const BottomNavigation = () => {
       icon: () => (
         <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <circle cx="12" cy="12" r="10"/>
-          <path d="M8 12h8"/>
-          <path d="M12 8v8"/>
-          <path d="M16 8l-4 4-4-4"/>
+          <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+          <line x1="9" y1="9" x2="9.01" y2="9"/>
+          <line x1="15" y1="9" x2="15.01" y2="9"/>
+          <circle cx="8" cy="4" r="1"/>
+          <circle cx="16" cy="4" r="1"/>
+          <circle cx="12" cy="2" r="1"/>
+          <path d="M6 6l12 0"/>
         </svg>
       ), 
       label: 'Explore', 

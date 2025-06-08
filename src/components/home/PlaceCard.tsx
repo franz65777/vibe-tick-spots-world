@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Heart, MessageSquare, Users, Compass } from 'lucide-react';
+import { Heart, MessageSquare, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import PlaceInteractionModal from './PlaceInteractionModal';
 
@@ -92,7 +92,16 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
           {/* Category badge */}
           <div className="absolute top-3 left-3">
             <div className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium text-gray-700 flex items-center gap-1">
-              <Compass className="w-3 h-3 text-blue-500" />
+              <svg className="w-3 h-3 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                <line x1="9" y1="9" x2="9.01" y2="9"/>
+                <line x1="15" y1="9" x2="15.01" y2="9"/>
+                <circle cx="8" cy="4" r="1"/>
+                <circle cx="16" cy="4" r="1"/>
+                <circle cx="12" cy="2" r="1"/>
+                <path d="M6 6l12 0"/>
+              </svg>
               {place.category}
             </div>
           </div>
@@ -140,7 +149,16 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
             </div>
             {place.distance && (
               <div className="flex items-center gap-1">
-                <Compass className="w-4 h-4 text-green-400" />
+                <svg className="w-4 h-4 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                  <line x1="9" y1="9" x2="9.01" y2="9"/>
+                  <line x1="15" y1="9" x2="15.01" y2="9"/>
+                  <circle cx="8" cy="4" r="1"/>
+                  <circle cx="16" cy="4" r="1"/>
+                  <circle cx="12" cy="2" r="1"/>
+                  <path d="M6 6l12 0"/>
+                </svg>
                 <span>{place.distance}</span>
               </div>
             )}
@@ -172,7 +190,7 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
                   : 'text-gray-600 hover:bg-purple-50 hover:text-purple-600'
               }`}
             >
-              <svg className={`w-4 h-4 mr-2 ${isSaved ? 'fill-current' : ''}`} viewBox="0 0 24 24" fill="currentColor">
+              <svg className={`w-4 h-4 mr-2 ${isSaved ? 'fill-current' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
               </svg>
               Save
@@ -195,10 +213,11 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
               className="flex-1 rounded-xl text-gray-600 hover:bg-orange-50 hover:text-orange-600 transition-all duration-200"
             >
               <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1.5-2s-1.5.62-1.5 2a2.5 2.5 0 0 0 2.5 2.5z"/>
-                <path d="M12 6V4a2 2 0 0 1 4 0v2"/>
-                <path d="M3 11v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3"/>
-                <path d="M12 16v2a2 2 0 0 1-4 0v-2"/>
+                <path d="M8 12h8"/>
+                <path d="M12 8l4 4-4 4"/>
+                <circle cx="5" cy="12" r="2"/>
+                <path d="M8 21c3 0 5-1 6-2"/>
+                <path d="M8 3c3 0 5 1 6 2"/>
               </svg>
               Suggest
             </Button>

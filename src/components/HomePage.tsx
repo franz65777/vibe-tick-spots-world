@@ -16,15 +16,21 @@ interface Place {
   name: string;
   category: string;
   likes: number;
-  friendsWhoSaved?: { name: string; avatar: string }[];
-  visitors: string[];
+  friendsWhoSaved?: { name: string; avatar: string }[] | number;
+  visitors: string[] | number;
   isNew: boolean;
   coordinates: { lat: number; lng: number };
-  image?: string;
-  addedBy?: string;
+  image: string;
+  addedBy?: {
+    name: string;
+    avatar: string;
+    isFollowing: boolean;
+  };
   addedDate?: string;
   isFollowing?: boolean;
   popularity?: number;
+  distance?: string;
+  totalSaves?: number;
 }
 
 interface Story {
@@ -61,10 +67,15 @@ const cityData: Record<string, { coordinates: { lat: number; lng: number }; plac
         isNew: false,
         coordinates: { lat: 37.7849, lng: -122.4094 },
         image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
-        addedBy: 'user1',
+        addedBy: {
+          name: 'Alex Johnson',
+          avatar: 'photo-1472099645785-5658abf4ff4e',
+          isFollowing: true
+        },
         addedDate: '2024-05-25',
         isFollowing: true,
-        popularity: 85
+        popularity: 85,
+        totalSaves: 12
       },
       {
         id: '2',
@@ -75,10 +86,15 @@ const cityData: Record<string, { coordinates: { lat: number; lng: number }; plac
         isNew: true,
         coordinates: { lat: 37.7849, lng: -122.4194 },
         image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop',
-        addedBy: 'user2',
+        addedBy: {
+          name: 'Sarah Chen',
+          avatar: 'photo-1494790108755-2616b5a5c75b',
+          isFollowing: true
+        },
         addedDate: '2024-06-01',
         isFollowing: true,
-        popularity: 92
+        popularity: 92,
+        totalSaves: 8
       },
       {
         id: '3',
@@ -92,10 +108,15 @@ const cityData: Record<string, { coordinates: { lat: number; lng: number }; plac
         isNew: false,
         coordinates: { lat: 37.7749, lng: -122.4094 },
         image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop',
-        addedBy: 'user5',
+        addedBy: {
+          name: 'Mike Rodriguez',
+          avatar: 'photo-1507003211169-0a1dd7228f2d',
+          isFollowing: false
+        },
         addedDate: '2024-05-15',
         isFollowing: false,
-        popularity: 96
+        popularity: 96,
+        totalSaves: 23
       }
     ]
   },
@@ -115,10 +136,15 @@ const cityData: Record<string, { coordinates: { lat: number; lng: number }; plac
         isNew: true,
         coordinates: { lat: 45.4642, lng: 9.1900 },
         image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=300&fit=crop',
-        addedBy: 'user1',
+        addedBy: {
+          name: 'Isabella Romano',
+          avatar: 'photo-1487412720507-e7ab37603c6f',
+          isFollowing: true
+        },
         addedDate: '2024-05-28',
         isFollowing: true,
-        popularity: 88
+        popularity: 88,
+        totalSaves: 15
       },
       {
         id: 'milan2',
@@ -129,10 +155,15 @@ const cityData: Record<string, { coordinates: { lat: number; lng: number }; plac
         isNew: false,
         coordinates: { lat: 45.4640, lng: 9.1896 },
         image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop',
-        addedBy: 'user2',
+        addedBy: {
+          name: 'Giuseppe Milano',
+          avatar: 'photo-1552058544-f2b08422138a',
+          isFollowing: true
+        },
         addedDate: '2024-05-20',
         isFollowing: true,
-        popularity: 94
+        popularity: 94,
+        totalSaves: 28
       },
       {
         id: 'milan3',
@@ -146,10 +177,15 @@ const cityData: Record<string, { coordinates: { lat: number; lng: number }; plac
         isNew: true,
         coordinates: { lat: 45.4583, lng: 9.1756 },
         image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=300&fit=crop',
-        addedBy: 'user3',
+        addedBy: {
+          name: 'Lorenzo Venetian',
+          avatar: 'photo-1500648767791-00dcc994a43e',
+          isFollowing: true
+        },
         addedDate: '2024-06-01',
         isFollowing: true,
-        popularity: 82
+        popularity: 82,
+        totalSaves: 11
       },
       {
         id: 'milan4',
@@ -164,10 +200,15 @@ const cityData: Record<string, { coordinates: { lat: number; lng: number }; plac
         isNew: false,
         coordinates: { lat: 45.4696, lng: 9.1965 },
         image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
-        addedBy: 'user4',
+        addedBy: {
+          name: 'Francesca Milano',
+          avatar: 'photo-1438761681033-6461ffad8d80',
+          isFollowing: false
+        },
         addedDate: '2024-05-10',
         isFollowing: false,
-        popularity: 96
+        popularity: 96,
+        totalSaves: 45
       }
     ]
   },
@@ -187,10 +228,15 @@ const cityData: Record<string, { coordinates: { lat: number; lng: number }; plac
         isNew: false,
         coordinates: { lat: 48.8542, lng: 2.3320 },
         image: 'https://images.unsplash.com/photo-1559925393-8be0ec4767c8?w=400&h=300&fit=crop',
-        addedBy: 'user1',
+        addedBy: {
+          name: 'Pierre Dubois',
+          avatar: 'photo-1507003211169-0a1dd7228f2d',
+          isFollowing: true
+        },
         addedDate: '2024-05-15',
         isFollowing: true,
-        popularity: 91
+        popularity: 91,
+        totalSaves: 34
       },
       {
         id: 'paris2',
@@ -201,10 +247,15 @@ const cityData: Record<string, { coordinates: { lat: number; lng: number }; plac
         isNew: true,
         coordinates: { lat: 48.8584, lng: 2.2945 },
         image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=300&fit=crop',
-        addedBy: 'user2',
+        addedBy: {
+          name: 'Marie Dubois',
+          avatar: 'photo-1494790108755-2616b5a5c75b',
+          isFollowing: true
+        },
         addedDate: '2024-05-30',
         isFollowing: true,
-        popularity: 98
+        popularity: 98,
+        totalSaves: 67
       }
     ]
   }
@@ -585,7 +636,8 @@ const HomePage = () => {
               coordinates: pin.coordinates,
               visitors: [],
               likes: pin.likes,
-              friendsWhoSaved: generateMockFriendsWhoSaved()
+              friendsWhoSaved: generateMockFriendsWhoSaved(),
+              image: pin.image || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop'
             }))}
             onPinClick={handlePinClick}
             mapCenter={currentMapCenter}

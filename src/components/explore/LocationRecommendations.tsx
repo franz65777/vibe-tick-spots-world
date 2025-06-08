@@ -40,7 +40,11 @@ const LocationRecommendations = ({
     isNew: rec.isNew,
     coordinates: rec.coordinates,
     image: rec.image,
-    addedBy: rec.addedBy,
+    addedBy: {
+      name: typeof rec.addedBy === 'string' ? rec.addedBy : 'Explorer',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
+      isFollowing: rec.isFollowing || false
+    },
     addedDate: rec.addedDate,
     isFollowing: rec.isFollowing,
     popularity: rec.popularity,
