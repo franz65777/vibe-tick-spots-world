@@ -69,7 +69,7 @@ const LocationRecommendations = ({
             />
             {/* Recommendation reason overlay */}
             {location.recommendationReason && (
-              <div className="absolute top-3 left-3 bg-blue-500/90 text-white text-xs px-2 py-1 rounded-full z-10">
+              <div className="absolute top-3 left-3 bg-gradient-to-r from-blue-500/90 to-purple-600/90 text-white text-xs px-3 py-1 rounded-full z-10 backdrop-blur-sm">
                 {location.recommendationReason}
               </div>
             )}
