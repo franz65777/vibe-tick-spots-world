@@ -23,6 +23,7 @@ interface UseMapPinsReturn {
   refreshPins: () => void;
   getFollowingPins: (city?: string) => Promise<MapPin[]>;
   getPopularPins: (city?: string) => Promise<MapPin[]>;
+  hasFollowedUsers: boolean;
 }
 
 export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'following'): UseMapPinsReturn => {
@@ -30,6 +31,7 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
   const [pins, setPins] = useState<MapPin[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasFollowedUsers, setHasFollowedUsers] = useState(false);
 
   // Demo data for different cities when backend is in demo mode
   const getDemoPins = (filter: string, city?: string): MapPin[] => {
@@ -158,8 +160,43 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
     }
   };
 
+  // Check if user has followed users (for demo, assume they do have followed users)
+  const checkFollowedUsers = async (): Promise<boolean> => {
+    if (!user) return false;
+
+    const config = backendService.getConfig();
+    
+    if (config.isDemoMode) {
+      // In demo mode, simulate having followed users
+      return true;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', user.id)
+        .limit(1);
+
+      if (error) throw error;
+      return (data && data.length > 0);
+    } catch (error) {
+      console.error('Error checking followed users:', error);
+      return false;
+    }
+  };
+
   const getFollowingPins = async (city?: string): Promise<MapPin[]> => {
     if (!user) return [];
+
+    // Check if user has followed users first
+    const hasFollowed = await checkFollowedUsers();
+    setHasFollowedUsers(hasFollowed);
+    
+    if (!hasFollowed) {
+      console.log('User has no followed users, returning empty array');
+      return [];
+    }
 
     const config = backendService.getConfig();
     
@@ -185,7 +222,7 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
       }));
     } catch (error) {
       console.error('Error fetching following pins:', error);
-      return getDemoPins('following', city);
+      return [];
     }
   };
 
@@ -227,13 +264,23 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
 
       switch (activeFilter) {
         case 'following':
-          newPins = await getFollowingPins(city);
+        case 'new':
+          // For following and new filters, check if user has followed users first
+          const hasFollowed = await checkFollowedUsers();
+          setHasFollowedUsers(hasFollowed);
+          
+          if (!hasFollowed) {
+            console.log(`User has no followed users, skipping ${activeFilter} pins fetch`);
+            newPins = [];
+          } else if (activeFilter === 'following') {
+            newPins = await getFollowingPins(city);
+          } else {
+            // For 'new' filter, get demo data or implement new pins logic
+            newPins = getDemoPins('new', city);
+          }
           break;
         case 'popular':
           newPins = await getPopularPins(city);
-          break;
-        case 'new':
-          newPins = getDemoPins('new', city);
           break;
         default:
           newPins = await getFollowingPins(city);
@@ -244,8 +291,12 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
     } catch (error) {
       console.error('Error refreshing pins:', error);
       setError('Failed to load pins');
-      // Fallback to demo data
-      setPins(getDemoPins(activeFilter, city));
+      // Fallback to demo data only for popular filter
+      if (activeFilter === 'popular') {
+        setPins(getDemoPins(activeFilter, city));
+      } else {
+        setPins([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -261,6 +312,7 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
     error,
     refreshPins,
     getFollowingPins,
-    getPopularPins
+    getPopularPins,
+    hasFollowedUsers
   };
 };

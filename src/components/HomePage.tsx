@@ -337,7 +337,7 @@ const HomePage = () => {
 
   // Use the new hooks
   const { location } = useGeolocation();
-  const { pins, loading: pinsLoading, refreshPins } = useMapPins(activeFilter);
+  const { pins, loading: pinsLoading, refreshPins, hasFollowedUsers } = useMapPins(activeFilter);
 
   // Update current city when geolocation changes
   useEffect(() => {
@@ -477,6 +477,13 @@ const HomePage = () => {
 
   const locationOfTheWeek = getLocationOfTheWeek();
 
+  // Check if we should show the empty state message
+  const shouldShowEmptyFollowingMessage = () => {
+    return (activeFilter === 'following' || activeFilter === 'new') && 
+           !hasFollowedUsers && 
+           !pinsLoading;
+  };
+
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-blue-50/30 via-white to-purple-50/20 pt-16">
       {/* Header */}
@@ -525,35 +532,60 @@ const HomePage = () => {
         newCount={pins.length}
       />
 
-      {/* Map Section */}
-      <div className="flex-1 relative mb-20">
-        <div className="absolute inset-0 bg-gradient-to-t from-white/20 via-transparent to-transparent pointer-events-none z-10"></div>
-        <MapSection 
-          places={pins.map(pin => ({
-            id: pin.id,
-            name: pin.name,
-            category: pin.category,
-            coordinates: pin.coordinates,
-            visitors: []
-          }))}
-          onPinClick={(place) => handlePinClick({
-            ...place,
-            likes: pins.find(p => p.id === place.id)?.likes || 0,
-            isNew: false,
-            popularity: pins.find(p => p.id === place.id)?.popularity
-          })}
-          mapCenter={currentMapCenter}
-        />
-        
-        {pinsLoading && (
-          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white/90 px-3 py-2 rounded-full shadow-lg z-20">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-              Loading {activeFilter} pins...
+      {/* Empty Following State Message */}
+      {shouldShowEmptyFollowingMessage() && (
+        <div className="flex-1 flex items-center justify-center p-6 pb-24">
+          <div className="text-center max-w-sm mx-auto">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4 mx-auto">
+              <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
             </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Start Following Others</h3>
+            <p className="text-gray-600 text-sm leading-relaxed">
+              Start following others to see where your friends go or save locations to begin curating your map.
+            </p>
+            <button
+              onClick={() => setActiveFilter('popular')}
+              className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-full text-sm font-medium hover:bg-blue-700 transition-colors"
+            >
+              Explore Popular Places
+            </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Map Section - Only show if not in empty following state */}
+      {!shouldShowEmptyFollowingMessage() && (
+        <div className="flex-1 relative mb-20">
+          <div className="absolute inset-0 bg-gradient-to-t from-white/20 via-transparent to-transparent pointer-events-none z-10"></div>
+          <MapSection 
+            places={pins.map(pin => ({
+              id: pin.id,
+              name: pin.name,
+              category: pin.category,
+              coordinates: pin.coordinates,
+              visitors: []
+            }))}
+            onPinClick={(place) => handlePinClick({
+              ...place,
+              likes: pins.find(p => p.id === place.id)?.likes || 0,
+              isNew: false,
+              popularity: pins.find(p => p.id === place.id)?.popularity
+            })}
+            mapCenter={currentMapCenter}
+          />
+          
+          {pinsLoading && (
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white/90 px-3 py-2 rounded-full shadow-lg z-20">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                Loading {activeFilter} pins...
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Selected Place Card */}
       {selectedPlace && (
@@ -577,15 +609,13 @@ const HomePage = () => {
         </div>
       )}
 
-      {/* No places found message */}
-      {pins.length === 0 && !pinsLoading && (
+      {/* No places found message - Only for popular filter */}
+      {pins.length === 0 && !pinsLoading && activeFilter === 'popular' && (
         <div className="flex-1 flex items-center justify-center p-6 pb-24">
           <div className="text-center">
-            <div className="text-gray-500 text-lg mb-2">No {activeFilter} places found</div>
+            <div className="text-gray-500 text-lg mb-2">No popular places found</div>
             <div className="text-gray-400 text-sm">
-              {activeFilter === 'following' 
-                ? 'Follow some users to see their places' 
-                : `Try switching to ${activeFilter === 'popular' ? 'following' : 'popular'} places`}
+              Try switching to a different city or check back later
             </div>
           </div>
         </div>
