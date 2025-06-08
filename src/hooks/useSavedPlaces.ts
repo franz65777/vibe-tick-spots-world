@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -25,7 +24,7 @@ export const useSavedPlaces = () => {
       console.log('useSavedPlaces: Loading saved places for user:', user?.id);
       
       if (!user) {
-        // Demo data for when no user is available
+        // Demo data for when no user is available - REMOVED the cozy corner cafe from saved places
         const demoSavedPlaces: SavedPlacesData = {
           "Milan": [
             { id: 'milan1', name: 'Café Milano', category: 'cafe', city: 'Milan', coordinates: { lat: 45.4642, lng: 9.1900 }, savedAt: '2024-05-28' },
@@ -35,10 +34,8 @@ export const useSavedPlaces = () => {
           "Paris": [
             { id: 'paris1', name: 'Café de Flore', category: 'cafe', city: 'Paris', coordinates: { lat: 48.8542, lng: 2.3320 }, savedAt: '2024-05-15' },
             { id: 'paris2', name: 'Le Jules Verne', category: 'restaurant', city: 'Paris', coordinates: { lat: 48.8584, lng: 2.2945 }, savedAt: '2024-05-30' }
-          ],
-          "San Francisco": [
-            { id: '1', name: 'The Cozy Corner Café', category: 'cafe', city: 'San Francisco', coordinates: { lat: 37.7849, lng: -122.4094 }, savedAt: '2024-05-25' }
           ]
+          // Removed San Francisco entry that had the cozy corner cafe
         };
         setSavedPlaces(demoSavedPlaces);
         setLoading(false);
@@ -46,7 +43,7 @@ export const useSavedPlaces = () => {
       }
 
       // In a real app, this would fetch from Supabase
-      // For demo purposes, use the same demo data
+      // For demo purposes, use the same demo data but without cozy corner cafe
       const demoSavedPlaces: SavedPlacesData = {
         "Milan": [
           { id: 'milan1', name: 'Café Milano', category: 'cafe', city: 'Milan', coordinates: { lat: 45.4642, lng: 9.1900 }, savedAt: '2024-05-28' },
@@ -56,10 +53,8 @@ export const useSavedPlaces = () => {
         "Paris": [
           { id: 'paris1', name: 'Café de Flore', category: 'cafe', city: 'Paris', coordinates: { lat: 48.8542, lng: 2.3320 }, savedAt: '2024-05-15' },
           { id: 'paris2', name: 'Le Jules Verne', category: 'restaurant', city: 'Paris', coordinates: { lat: 48.8584, lng: 2.2945 }, savedAt: '2024-05-30' }
-        ],
-        "San Francisco": [
-          { id: '1', name: 'The Cozy Corner Café', category: 'cafe', city: 'San Francisco', coordinates: { lat: 37.7849, lng: -122.4094 }, savedAt: '2024-05-25' }
         ]
+        // Removed San Francisco entry that had the cozy corner cafe
       };
       setSavedPlaces(demoSavedPlaces);
       setLoading(false);

@@ -346,10 +346,10 @@ const HomePage = () => {
     }
   }, [location?.city]);
 
-  // Refresh pins when city changes - but use refreshPins from the hook properly
+  // Refresh pins when city changes - and also refresh pins when activeFilter changes
   useEffect(() => {
     refreshPins(currentCity);
-  }, [currentCity]); // Remove refreshPins from dependencies to prevent infinite loop
+  }, [currentCity, activeFilter]); // Added activeFilter back to dependencies
 
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
@@ -450,7 +450,8 @@ const HomePage = () => {
   const handleCitySelect = (cityName: string) => {
     console.log('City selected:', cityName);
     setCurrentCity(cityName);
-    // Map center will be automatically updated via the computed currentMapCenter value
+    // Force refresh pins for the new city
+    refreshPins(cityName);
   };
 
   const handleSearchKeyPress = (e: React.KeyboardEvent) => {
@@ -459,8 +460,8 @@ const HomePage = () => {
     }
   };
 
-  // Calculate map center based on geolocation or selected city
-  const currentMapCenter = location?.latitude && location?.longitude 
+  // Calculate map center based on geolocation or selected city - FIXED to update properly
+  const currentMapCenter = location?.latitude && location?.longitude && location.city === currentCity
     ? { lat: location.latitude, lng: location.longitude }
     : cityData[currentCity.toLowerCase()]?.coordinates || { lat: 37.7749, lng: -122.4194 };
 

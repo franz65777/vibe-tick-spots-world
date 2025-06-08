@@ -1,10 +1,11 @@
-
 import { useState, useMemo } from 'react';
 import { Search, Filter, MapPin, Star, Users, Clock, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import PlaceCard from '@/components/home/PlaceCard';
+import ShareModal from '@/components/home/ShareModal';
+import CommentModal from '@/components/home/CommentModal';
 
 interface Category {
   id: string;
@@ -142,6 +143,12 @@ const ExplorePage = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [likedPlaces, setLikedPlaces] = useState(new Set());
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  
+  // Add modal states for share and comment
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
+  const [sharePlace, setSharePlace] = useState<Place | null>(null);
+  const [commentPlace, setCommentPlace] = useState<Place | null>(null);
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);
@@ -177,10 +184,28 @@ const ExplorePage = () => {
 
   const handleShare = (place: Place) => {
     console.log('Share place:', place.name);
+    setSharePlace(place);
+    setIsShareModalOpen(true);
   };
 
   const handleComment = (place: Place) => {
     console.log('Comment on place:', place.name);
+    setCommentPlace(place);
+    setIsCommentModalOpen(true);
+  };
+
+  const handleShareSubmit = (friendIds: string[], place: Place) => {
+    console.log('Sharing place:', place.name, 'with friends:', friendIds);
+    setIsShareModalOpen(false);
+    setSharePlace(null);
+    // TODO: Implement actual sharing logic
+  };
+
+  const handleCommentSubmit = (text: string, place: Place) => {
+    console.log('Adding comment:', text, 'to place:', place.name);
+    setIsCommentModalOpen(false);
+    setCommentPlace(null);
+    // TODO: Implement actual comment submission logic
   };
 
   const handlePlaceClick = (place: Place) => {
@@ -379,6 +404,32 @@ const ExplorePage = () => {
           </div>
         )}
       </div>
+
+      {/* Share Modal */}
+      {isShareModalOpen && sharePlace && (
+        <ShareModal
+          isOpen={isShareModalOpen}
+          onClose={() => {
+            setIsShareModalOpen(false);
+            setSharePlace(null);
+          }}
+          place={sharePlace}
+          onShare={(friendIds) => handleShareSubmit(friendIds, sharePlace)}
+        />
+      )}
+
+      {/* Comment Modal */}
+      {isCommentModalOpen && commentPlace && (
+        <CommentModal
+          isOpen={isCommentModalOpen}
+          onClose={() => {
+            setIsCommentModalOpen(false);
+            setCommentPlace(null);
+          }}
+          place={commentPlace}
+          onSubmit={(text) => handleCommentSubmit(text, commentPlace)}
+        />
+      )}
     </div>
   );
 };
