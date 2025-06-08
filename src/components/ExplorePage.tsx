@@ -449,7 +449,7 @@ const ExplorePage = () => {
             name: locationDetailPlace.name,
             category: locationDetailPlace.category,
             image: locationDetailPlace.image,
-            rating: locationDetailPlace.rating || 4.5,
+            rating: locationDetailPlace.reviewCount ? 4.5 : 4.0,
             reviewCount: locationDetailPlace.reviewCount || 0,
             coordinates: locationDetailPlace.coordinates,
             address: `Global Location`,

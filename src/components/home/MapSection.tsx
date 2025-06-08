@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
-import { Minimize, Maximize, Search, X } from 'lucide-react';
+import { Minimize, Maximize, Search, X, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import GoogleMapsSetup from '@/components/GoogleMapsSetup';
@@ -13,15 +13,19 @@ interface Place {
   visitors: string[];
   rating?: number;
   price?: string;
+  likes?: number;
+  friendsWhoSaved?: { name: string; avatar: string }[];
 }
 
 interface MapSectionProps {
   places: Place[];
   onPinClick: (place: Place) => void;
   mapCenter?: { lat: number; lng: number };
+  selectedPlace?: Place | null;
+  onCloseSelectedPlace?: () => void;
 }
 
-const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
+const MapSection = ({ places, onPinClick, mapCenter, selectedPlace, onCloseSelectedPlace }: MapSectionProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
@@ -188,19 +192,20 @@ const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
 
     // Add markers for places
     places.forEach((place) => {
+      const isSelected = selectedPlace?.id === place.id;
       const marker = new google.maps.Marker({
         map: mapInstanceRef.current,
         position: place.coordinates,
         title: place.name,
         icon: {
           url: 'data:image/svg+xml;base64,' + btoa(`
-            <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="16" cy="16" r="12" fill="#EF4444" stroke="white" stroke-width="2"/>
+            <svg width="${isSelected ? '40' : '32'}" height="${isSelected ? '40' : '32'}" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="16" cy="16" r="12" fill="${isSelected ? '#3B82F6' : '#EF4444'}" stroke="white" stroke-width="2"/>
               <circle cx="16" cy="16" r="4" fill="white"/>
             </svg>
           `),
-          scaledSize: new google.maps.Size(32, 32),
-          anchor: new google.maps.Point(16, 16)
+          scaledSize: new google.maps.Size(isSelected ? 40 : 32, isSelected ? 40 : 32),
+          anchor: new google.maps.Point(isSelected ? 20 : 16, isSelected ? 20 : 16)
         }
       });
 
@@ -213,7 +218,7 @@ const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
 
     markersRef.current = newMarkers;
     console.log('Markers updated, total:', newMarkers.length);
-  }, [places, onPinClick, userLocation, mapCenter, isMapLoaded]);
+  }, [places, onPinClick, userLocation, mapCenter, isMapLoaded, selectedPlace]);
 
   // Handle search functionality
   const handleSearch = async () => {
@@ -365,7 +370,11 @@ const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
 
   return (
     <div className="px-4 pb-4 bg-white">
-      <div className="h-64 bg-gradient-to-br from-green-50 to-blue-50 rounded-2xl relative overflow-hidden shadow-lg">
+      <div 
+        className={`bg-gradient-to-br from-green-50 to-blue-50 rounded-2xl relative overflow-hidden shadow-lg transition-all duration-500 ${
+          selectedPlace ? 'h-40' : 'h-64'
+        }`}
+      >
         {/* Google Map or Demo Map */}
         {apiKey === 'demo' ? (
           // Demo map fallback
@@ -380,21 +389,24 @@ const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
               <rect width="100%" height="100%" fill="url(#streets)" opacity="0.3"/>
             </svg>
             {/* Demo pins */}
-            {places.map((place, index) => (
-              <div 
-                key={place.id}
-                className="absolute group cursor-pointer"
-                style={{
-                  top: `${30 + index * 15}%`,
-                  left: `${25 + index * 20}%`
-                }}
-                onClick={() => onPinClick(place)}
-              >
-                <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white hover:scale-110 transition-transform">
-                  <div className="w-3 h-3 bg-white rounded-full"></div>
+            {places.map((place, index) => {
+              const isSelected = selectedPlace?.id === place.id;
+              return (
+                <div 
+                  key={place.id}
+                  className="absolute group cursor-pointer"
+                  style={{
+                    top: `${30 + index * 15}%`,
+                    left: `${25 + index * 20}%`
+                  }}
+                  onClick={() => onPinClick(place)}
+                >
+                  <div className={`${isSelected ? 'w-10 h-10 bg-blue-500' : 'w-8 h-8 bg-red-500'} rounded-full flex items-center justify-center shadow-lg border-2 border-white hover:scale-110 transition-transform`}>
+                    <div className={`${isSelected ? 'w-4 h-4' : 'w-3 h-3'} bg-white rounded-full`}></div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             <div className="absolute bottom-6 left-4 text-xs text-gray-600 bg-white/80 px-2 py-1 rounded">
               Demo Map - Add Google Maps API key for interactive features
             </div>
@@ -451,6 +463,57 @@ const MapSection = ({ places, onPinClick, mapCenter }: MapSectionProps) => {
               UNION SQUARE
             </div>
           </>
+        )}
+
+        {/* Selected Place Card */}
+        {selectedPlace && (
+          <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-lg rounded-2xl shadow-xl p-4 border border-white/20">
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex-1">
+                <h3 className="font-bold text-gray-900 text-lg">{selectedPlace.name}</h3>
+                <p className="text-gray-600 text-sm capitalize">{selectedPlace.category}</p>
+              </div>
+              <button
+                onClick={onCloseSelectedPlace}
+                className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
+              >
+                <X className="w-4 h-4 text-gray-600" />
+              </button>
+            </div>
+            
+            {/* Saved By Context */}
+            <div className="flex items-center gap-2 mb-3">
+              <Users className="w-4 h-4 text-blue-600" />
+              <span className="text-sm text-gray-700">{getSavedByText(selectedPlace)}</span>
+            </div>
+
+            {/* Friend Avatars */}
+            {selectedPlace.friendsWhoSaved && selectedPlace.friendsWhoSaved.length > 0 && (
+              <div className="flex items-center gap-2 mb-3">
+                <div className="flex -space-x-2">
+                  {selectedPlace.friendsWhoSaved.slice(0, 3).map((friend, index) => (
+                    <div
+                      key={index}
+                      className="w-6 h-6 rounded-full border-2 border-white bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-xs font-medium text-white shadow-sm"
+                      title={friend.name}
+                    >
+                      {friend.name[0]}
+                    </div>
+                  ))}
+                </div>
+                <span className="text-xs text-gray-500">
+                  and {Math.max(0, (selectedPlace.friendsWhoSaved.length - 3))} others
+                </span>
+              </div>
+            )}
+
+            <button
+              onClick={() => onPinClick(selectedPlace)}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-2 px-4 text-sm font-medium transition-colors"
+            >
+              View Details
+            </button>
+          </div>
         )}
 
         {/* Expand Map Button */}

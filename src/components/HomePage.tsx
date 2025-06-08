@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -557,15 +556,14 @@ const HomePage = () => {
               name: pin.name,
               category: pin.category,
               coordinates: pin.coordinates,
-              visitors: []
+              visitors: [],
+              likes: pin.likes,
+              friendsWhoSaved: generateMockFriendsWhoSaved()
             }))}
-            onPinClick={(place) => handlePinClick({
-              ...place,
-              likes: pins.find(p => p.id === place.id)?.likes || 0,
-              isNew: false,
-              popularity: pins.find(p => p.id === place.id)?.popularity
-            })}
+            onPinClick={handlePinClick}
             mapCenter={currentMapCenter}
+            selectedPlace={selectedPlace}
+            onCloseSelectedPlace={handleCloseSelectedPlace}
           />
           
           {pinsLoading && (
@@ -641,6 +639,19 @@ const HomePage = () => {
       />
     </div>
   );
+};
+
+// Helper function to generate mock friends data
+const generateMockFriendsWhoSaved = () => {
+  const mockFriends = [
+    { name: 'Sarah', avatar: 'photo-1494790108755-2616b5a5c75b' },
+    { name: 'Mike', avatar: 'photo-1507003211169-0a1dd7228f2d' },
+    { name: 'Emma', avatar: 'photo-1438761681033-6461ffad8d80' },
+    { name: 'Alex', avatar: 'photo-1472099645785-5658abf4ff4e' },
+  ];
+  
+  const count = Math.floor(Math.random() * 3) + 1;
+  return mockFriends.slice(0, count);
 };
 
 export default HomePage;
