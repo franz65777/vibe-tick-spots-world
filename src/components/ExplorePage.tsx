@@ -1,10 +1,13 @@
-
-import { useState, useEffect } from 'react';
-import { Search, MapPin, Users, SlidersHorizontal, Heart, UserCheck, Navigation } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Search, MapPin, Users, SlidersHorizontal, Heart, UserCheck, Navigation, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useGeolocation } from '@/hooks/useGeolocation';
+import { useSearch } from '@/hooks/useSearch';
 import PlaceCard from '@/components/home/PlaceCard';
+import SearchSuggestions from '@/components/explore/SearchSuggestions';
+import LocationRecommendations from '@/components/explore/LocationRecommendations';
+import UserRecommendations from '@/components/explore/UserRecommendations';
 
 interface Place {
   id: string;
@@ -126,11 +129,22 @@ const ExplorePage = () => {
   const [searchMode, setSearchMode] = useState<SearchMode>('locations');
   const [sortBy, setSortBy] = useState<SortBy>('proximity');
   const [showFilters, setShowFilters] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredLocations, setFilteredLocations] = useState<Place[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   
   const { location } = useGeolocation();
+  const { 
+    searchHistory, 
+    locationRecommendations, 
+    userRecommendations, 
+    loading, 
+    saveSearch, 
+    getSearchSuggestions 
+  } = useSearch();
+  
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Filter and sort locations based on search query and filters
   useEffect(() => {
@@ -179,10 +193,51 @@ const ExplorePage = () => {
     return () => clearTimeout(timer);
   }, [searchQuery, searchMode, sortBy]);
 
-  const handleSearch = (e: React.FormEvent) => {
+  // Handle search with history saving
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Search is handled by useEffect
+    if (!searchQuery.trim()) return;
+    
+    // Save to search history
+    await saveSearch(searchQuery, searchMode);
+    setShowSuggestions(false);
+    
+    // Trigger existing search logic
+    // ... existing search logic remains the same
   };
+
+  // Handle suggestion click
+  const handleSuggestionClick = (suggestion: string) => {
+    setSearchQuery(suggestion);
+    setShowSuggestions(false);
+    // Trigger search automatically
+    setTimeout(() => {
+      saveSearch(suggestion, searchMode);
+    }, 100);
+  };
+
+  // Handle recommendation clicks
+  const handleLocationRecommendationClick = (location: any) => {
+    console.log('Location recommendation clicked:', location);
+    // Here you could navigate to location details or add to search
+  };
+
+  const handleUserRecommendationClick = (user: any) => {
+    console.log('User recommendation clicked:', user);
+    // Here you could navigate to user profile
+  };
+
+  const handleFollowUser = (userId: string) => {
+    console.log('Follow user:', userId);
+    // Here you would implement follow logic
+  };
+
+  // Get current search suggestions
+  const currentSuggestions = getSearchSuggestions(searchQuery, searchMode);
+  const recentSearches = searchHistory
+    .filter(item => item.search_type === searchMode)
+    .map(item => item.search_query)
+    .slice(0, 3);
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-blue-50/30 via-white to-purple-50/20 pt-16">
@@ -220,10 +275,13 @@ const ExplorePage = () => {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <Input
+                ref={searchInputRef}
                 type="text"
                 placeholder={searchMode === 'locations' ? 'Search for places, food, cafes...' : 'Search for users...'}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                 className="pl-10 pr-12 h-12 bg-white border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-xl text-base"
               />
               <Button
@@ -235,6 +293,15 @@ const ExplorePage = () => {
               >
                 <SlidersHorizontal className="w-4 h-4" />
               </Button>
+              
+              {/* Search Suggestions */}
+              {showSuggestions && (
+                <SearchSuggestions
+                  suggestions={currentSuggestions}
+                  searchHistory={recentSearches}
+                  onSuggestionClick={handleSuggestionClick}
+                />
+              )}
             </div>
           </form>
 
@@ -287,20 +354,27 @@ const ExplorePage = () => {
       {/* Results */}
       <div className="flex-1 overflow-y-auto pb-20">
         {!searchQuery.trim() ? (
-          // Empty state
-          <div className="flex flex-col items-center justify-center h-full px-6 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <Search className="w-8 h-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Explore {searchMode === 'locations' ? 'Locations' : 'Users'}
-            </h3>
-            <p className="text-gray-600 text-sm max-w-sm">
-              {searchMode === 'locations' 
-                ? 'Search for restaurants, cafes, bars, and more. Discover new places based on what your friends have saved.'
-                : 'Find and follow other users to see their favorite places and recommendations.'
-              }
-            </p>
+          // Recommendations when not searching
+          <div className="px-4 py-6">
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-gray-600">Loading recommendations...</span>
+                </div>
+              </div>
+            ) : searchMode === 'locations' ? (
+              <LocationRecommendations
+                recommendations={locationRecommendations}
+                onLocationClick={handleLocationRecommendationClick}
+              />
+            ) : (
+              <UserRecommendations
+                recommendations={userRecommendations}
+                onUserClick={handleUserRecommendationClick}
+                onFollowUser={handleFollowUser}
+              />
+            )}
           </div>
         ) : isSearching ? (
           // Loading state

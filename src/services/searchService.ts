@@ -1,193 +1,351 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { backendService } from './backendService';
 
-export interface SearchPlace {
+export interface SearchHistoryItem {
+  id: string;
+  search_query: string;
+  search_type: 'locations' | 'users';
+  searched_at: string;
+}
+
+export interface LocationRecommendation {
   id: string;
   name: string;
   category: string;
-  city: string;
-  country: string;
+  likes: number;
+  friendsWhoSaved?: { name: string; avatar: string }[];
+  visitors: string[];
+  isNew: boolean;
   coordinates: { lat: number; lng: number };
-  description?: string;
   image?: string;
-  averageRating?: number;
-  totalReviews?: number;
+  addedBy?: string;
+  addedDate?: string;
+  isFollowing?: boolean;
+  popularity?: number;
+  distance?: number;
+  recommendationReason?: string;
 }
 
-export interface SearchUser {
+export interface UserRecommendation {
   id: string;
+  name: string;
   username: string;
-  fullName: string;
-  avatar?: string;
-  bio?: string;
-  followersCount: number;
-  isVerified?: boolean;
+  avatar: string;
+  followers: number;
+  following: number;
+  savedPlaces: number;
+  isFollowing: boolean;
+  recommendationReason?: string;
+  mutualFollowers?: number;
+  sharedInterests?: string[];
 }
 
-// Mock data for places with placeholder images
-const mockPlaces: SearchPlace[] = [
-  {
-    id: 'place-1',
-    name: 'Golden Gate Bridge',
-    category: 'landmark',
-    city: 'San Francisco',
-    country: 'USA',
-    coordinates: { lat: 37.8199, lng: -122.4783 },
-    description: 'Iconic suspension bridge',
-    image: 'https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=400&h=300&fit=crop',
-    averageRating: 4.7,
-    totalReviews: 15420
-  },
-  {
-    id: 'place-2',
-    name: 'Alcatraz Island',
-    category: 'museum',
-    city: 'San Francisco',
-    country: 'USA',
-    coordinates: { lat: 37.8267, lng: -122.4233 },
-    description: 'Historic federal prison',
-    image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=300&fit=crop',
-    averageRating: 4.5,
-    totalReviews: 8230
-  },
-  {
-    id: 'place-3',
-    name: 'Fisherman\'s Wharf',
-    category: 'attraction',
-    city: 'San Francisco',
-    country: 'USA',
-    coordinates: { lat: 37.8080, lng: -122.4177 },
-    description: 'Popular waterfront destination',
-    image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=300&fit=crop',
-    averageRating: 4.2,
-    totalReviews: 12100
-  },
-  {
-    id: 'place-4',
-    name: 'Blue Bottle Coffee',
-    category: 'cafe',
-    city: 'San Francisco',
-    country: 'USA',
-    coordinates: { lat: 37.7849, lng: -122.4094 },
-    description: 'Specialty coffee roaster',
-    image: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=300&fit=crop',
-    averageRating: 4.4,
-    totalReviews: 2340
-  },
-  {
-    id: 'place-5',
-    name: 'State Bird Provisions',
-    category: 'restaurant',
-    city: 'San Francisco',
-    country: 'USA',
-    coordinates: { lat: 37.7849, lng: -122.4194 },
-    description: 'Michelin-starred restaurant',
-    image: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=400&h=300&fit=crop',
-    averageRating: 4.6,
-    totalReviews: 890
-  },
-  {
-    id: 'place-6',
-    name: 'The Fillmore',
-    category: 'bar',
-    city: 'San Francisco',
-    country: 'USA',
-    coordinates: { lat: 37.7849, lng: -122.4394 },
-    description: 'Historic music venue',
-    image: 'https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=400&h=300&fit=crop',
-    averageRating: 4.3,
-    totalReviews: 1560
-  }
-];
-
-export const searchPlaces = async (query: string, category?: string): Promise<SearchPlace[]> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 300));
-  
-  const queryLower = query.toLowerCase();
-  
-  let results = mockPlaces.filter(place => 
-    place.name.toLowerCase().includes(queryLower) ||
-    place.description?.toLowerCase().includes(queryLower) ||
-    place.category.toLowerCase().includes(queryLower)
-  );
-  
-  if (category && category !== 'all') {
-    results = results.filter(place => place.category === category);
-  }
-  
-  return results;
-};
-
-export const searchUsers = async (query: string): Promise<SearchUser[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, username, full_name, avatar_url, bio')
-      .or(`username.ilike.%${query}%, full_name.ilike.%${query}%`)
-      .limit(20);
-
-    if (error) {
-      console.error('Error searching users:', error);
-      // Return mock data as fallback
-      return getMockUsers(query);
+class SearchService {
+  // Get search history for user
+  async getSearchHistory(userId: string): Promise<SearchHistoryItem[]> {
+    const config = backendService.getConfig();
+    
+    if (config.isDemoMode) {
+      // Demo search history
+      return [
+        {
+          id: '1',
+          search_query: 'pizza',
+          search_type: 'locations',
+          searched_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          id: '2',
+          search_query: 'coffee',
+          search_type: 'locations',
+          searched_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          id: '3',
+          search_query: 'sarah',
+          search_type: 'users',
+          searched_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+        }
+      ];
     }
 
-    return data?.map(profile => ({
-      id: profile.id,
-      username: profile.username || 'user',
-      fullName: profile.full_name || 'User',
-      avatar: profile.avatar_url || undefined,
-      bio: profile.bio || undefined,
-      followersCount: Math.floor(Math.random() * 1000), // Mock followers count
-      isVerified: Math.random() > 0.8 // 20% chance of being verified
-    })) || [];
-  } catch (error) {
-    console.error('Search users error:', error);
-    return getMockUsers(query);
-  }
-};
+    try {
+      const { data, error } = await supabase
+        .from('search_history')
+        .select('*')
+        .eq('user_id', userId)
+        .order('searched_at', { ascending: false })
+        .limit(10);
 
-const getMockUsers = (query: string): SearchUser[] => {
-  const mockUsers: SearchUser[] = [
-    {
-      id: 'user-1',
-      username: 'foodie_explorer',
-      fullName: 'Alex Thompson',
-      avatar: '/lovable-uploads/8a9fd2cf-e687-48ee-a40f-3dd4b19ba4ff.png',
-      bio: 'Food lover exploring SF',
-      followersCount: 1250,
-      isVerified: true
-    },
-    {
-      id: 'user-2',
-      username: 'sf_wanderer',
-      fullName: 'Emma Rodriguez',
-      avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png',
-      bio: 'Local SF guide',
-      followersCount: 890,
-      isVerified: false
-    },
-    {
-      id: 'user-3',
-      username: 'coffee_addict',
-      fullName: 'Michael Chen',
-      avatar: '/lovable-uploads/5bb15f7b-b3ba-4eae-88b1-7fa789eb67c4.png',
-      bio: 'Coffee shop hunter',
-      followersCount: 567,
-      isVerified: false
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching search history:', error);
+      return [];
     }
-  ];
+  }
 
-  const queryLower = query.toLowerCase();
-  return mockUsers.filter(user =>
-    user.username.toLowerCase().includes(queryLower) ||
-    user.fullName.toLowerCase().includes(queryLower)
-  );
-};
+  // Save search to history
+  async saveSearchHistory(userId: string, query: string, type: 'locations' | 'users'): Promise<void> {
+    const config = backendService.getConfig();
+    
+    if (config.isDemoMode) {
+      console.log('Demo mode: Would save search history:', { userId, query, type });
+      return;
+    }
 
-export const getNearbyPlaces = async (lat: number, lng: number, radius: number = 5): Promise<SearchPlace[]> => {
-  // In a real app, this would use the user's location and a places API
-  // For now, return all mock places as "nearby"
-  return mockPlaces;
-};
+    try {
+      // Check if this exact search already exists recently
+      const { data: existing } = await supabase
+        .from('search_history')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('search_query', query)
+        .eq('search_type', type)
+        .gte('searched_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+        .single();
+
+      if (!existing) {
+        await supabase
+          .from('search_history')
+          .insert({
+            user_id: userId,
+            search_query: query,
+            search_type: type
+          });
+      }
+    } catch (error) {
+      console.error('Error saving search history:', error);
+    }
+  }
+
+  // Get location recommendations based on user interests
+  async getLocationRecommendations(userId: string): Promise<LocationRecommendation[]> {
+    const config = backendService.getConfig();
+    
+    if (config.isDemoMode) {
+      // Demo recommendations based on mock user preferences
+      return [
+        {
+          id: 'rec-1',
+          name: 'Artisan Coffee House',
+          category: 'cafe',
+          likes: 184,
+          friendsWhoSaved: [
+            { name: 'Emma', avatar: 'photo-1438761681033-6461ffad8d80' },
+            { name: 'James', avatar: 'photo-1507003211169-0a1dd7228f2d' }
+          ],
+          visitors: ['user1', 'user2', 'user3', 'user4'],
+          isNew: true,
+          coordinates: { lat: 37.7849, lng: -122.4194 },
+          image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
+          addedBy: 'user3',
+          addedDate: '2024-06-05',
+          isFollowing: false,
+          popularity: 92,
+          distance: 0.5,
+          recommendationReason: 'Popular among coffee lovers you follow'
+        },
+        {
+          id: 'rec-2',
+          name: 'Gourmet Burger Joint',
+          category: 'restaurant',
+          likes: 267,
+          friendsWhoSaved: [
+            { name: 'Alex', avatar: 'photo-1472099645785-5658abf4ff4e' }
+          ],
+          visitors: ['user5', 'user6', 'user7'],
+          isNew: false,
+          coordinates: { lat: 37.7749, lng: -122.4094 },
+          image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=300&fit=crop',
+          addedBy: 'user4',
+          addedDate: '2024-05-28',
+          isFollowing: true,
+          popularity: 88,
+          distance: 0.8,
+          recommendationReason: 'Trending in your area'
+        },
+        {
+          id: 'rec-3',
+          name: 'Rooftop Cocktail Bar',
+          category: 'bar',
+          likes: 156,
+          friendsWhoSaved: [
+            { name: 'Sofia', avatar: 'photo-1534528741775-53994a69daeb' },
+            { name: 'Mike', avatar: 'photo-1507003211169-0a1dd7228f2d' },
+            { name: 'Lisa', avatar: 'photo-1494790108755-2616b5a5c75b' }
+          ],
+          visitors: ['user8', 'user9'],
+          isNew: false,
+          coordinates: { lat: 37.7649, lng: -122.4294 },
+          image: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=400&h=300&fit=crop',
+          addedBy: 'user5',
+          addedDate: '2024-05-20',
+          isFollowing: false,
+          popularity: 85,
+          distance: 1.1,
+          recommendationReason: 'Saved by 3 people you follow'
+        }
+      ];
+    }
+
+    try {
+      // In production, this would use complex recommendation algorithms
+      // For now, get popular locations with some intelligence
+      const { data, error } = await supabase
+        .from('locations')
+        .select(`
+          *,
+          location_likes(count),
+          user_saved_locations!inner(user_id)
+        `)
+        .limit(10);
+
+      if (error) throw error;
+      
+      // Transform to match interface
+      return (data || []).map(location => ({
+        id: location.id,
+        name: location.name,
+        category: location.category,
+        likes: location.location_likes?.[0]?.count || 0,
+        visitors: [],
+        isNew: new Date(location.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        coordinates: { lat: parseFloat(location.latitude), lng: parseFloat(location.longitude) },
+        image: location.image_url,
+        addedBy: location.created_by,
+        addedDate: location.created_at,
+        isFollowing: false,
+        popularity: 75,
+        distance: Math.random() * 2,
+        recommendationReason: 'Popular in your area'
+      }));
+    } catch (error) {
+      console.error('Error fetching location recommendations:', error);
+      return [];
+    }
+  }
+
+  // Get user recommendations
+  async getUserRecommendations(userId: string): Promise<UserRecommendation[]> {
+    const config = backendService.getConfig();
+    
+    if (config.isDemoMode) {
+      return [
+        {
+          id: 'user-rec-1',
+          name: 'Jessica Martinez',
+          username: '@jessm',
+          avatar: 'photo-1534528741775-53994a69daeb',
+          followers: 2340,
+          following: 567,
+          savedPlaces: 234,
+          isFollowing: false,
+          recommendationReason: 'Popular food blogger',
+          mutualFollowers: 5,
+          sharedInterests: ['coffee', 'restaurants', 'photography']
+        },
+        {
+          id: 'user-rec-2',
+          name: 'David Park',
+          username: '@davidp',
+          avatar: 'photo-1472099645785-5658abf4ff4e',
+          followers: 1890,
+          following: 423,
+          savedPlaces: 189,
+          isFollowing: false,
+          recommendationReason: 'Shares similar taste in cafes',
+          mutualFollowers: 3,
+          sharedInterests: ['cafe', 'culture', 'travel']
+        },
+        {
+          id: 'user-rec-3',
+          name: 'Emma Thompson',
+          username: '@emmat',
+          avatar: 'photo-1438761681033-6461ffad8d80',
+          followers: 3456,
+          following: 789,
+          savedPlaces: 345,
+          isFollowing: false,
+          recommendationReason: 'Local influencer in your city',
+          mutualFollowers: 8,
+          sharedInterests: ['bars', 'nightlife', 'events']
+        }
+      ];
+    }
+
+    try {
+      // In production, this would use recommendation algorithms
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .neq('id', userId)
+        .limit(10);
+
+      if (error) throw error;
+      
+      return (data || []).map(profile => ({
+        id: profile.id,
+        name: profile.full_name || 'User',
+        username: profile.username || '@user',
+        avatar: profile.avatar_url || 'photo-1472099645785-5658abf4ff4e',
+        followers: profile.follower_count || 0,
+        following: profile.following_count || 0,
+        savedPlaces: profile.posts_count || 0,
+        isFollowing: false,
+        recommendationReason: 'Suggested for you',
+        mutualFollowers: Math.floor(Math.random() * 10),
+        sharedInterests: ['travel', 'food']
+      }));
+    } catch (error) {
+      console.error('Error fetching user recommendations:', error);
+      return [];
+    }
+  }
+
+  // Update user preferences based on search patterns
+  async updateUserPreferences(userId: string, category: string): Promise<void> {
+    const config = backendService.getConfig();
+    
+    if (config.isDemoMode) {
+      console.log('Demo mode: Would update user preferences:', { userId, category });
+      return;
+    }
+
+    try {
+      // Check if preference exists
+      const { data: existing } = await supabase
+        .from('user_preferences')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('category', category)
+        .single();
+
+      if (existing) {
+        // Update search count
+        await supabase
+          .from('user_preferences')
+          .update({
+            search_count: existing.search_count + 1,
+            last_searched: new Date().toISOString()
+          })
+          .eq('id', existing.id);
+      } else {
+        // Create new preference
+        await supabase
+          .from('user_preferences')
+          .insert({
+            user_id: userId,
+            category: category,
+            search_count: 1,
+            last_searched: new Date().toISOString()
+          });
+      }
+    } catch (error) {
+      console.error('Error updating user preferences:', error);
+    }
+  }
+}
+
+export const searchService = new SearchService();
