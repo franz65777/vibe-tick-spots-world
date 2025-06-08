@@ -548,8 +548,7 @@ const HomePage = () => {
 
       {/* Map Section - Only show if not in empty following state */}
       {!shouldShowEmptyFollowingMessage() && (
-        <div className="flex-1 relative mb-20">
-          <div className="absolute inset-0 bg-gradient-to-t from-white/20 via-transparent to-transparent pointer-events-none z-10"></div>
+        <div className="relative">
           <MapSection 
             places={pins.map(pin => ({
               id: pin.id,
@@ -577,16 +576,9 @@ const HomePage = () => {
         </div>
       )}
 
-      {/* Selected Place Card */}
+      {/* Enhanced Selected Place Card - Show below map */}
       {selectedPlace && (
-        <div className="bg-white/95 backdrop-blur-lg p-6 sm:p-5 mx-4 mb-20 rounded-3xl shadow-2xl shadow-black/10 border border-white/20 relative">
-          <button
-            onClick={handleCloseSelectedPlace}
-            className="absolute top-4 right-4 w-12 h-12 sm:w-10 sm:h-10 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors z-10"
-            aria-label="Close place details"
-          >
-            <X className="w-6 h-6 sm:w-5 sm:h-5 text-gray-600" />
-          </button>
+        <div className="mx-4 mb-20">
           <PlaceCard
             place={selectedPlace}
             isLiked={likedPlaces.has(selectedPlace.id)}
@@ -629,7 +621,7 @@ const HomePage = () => {
         onNotificationsModalClose={() => setIsNotificationsModalOpen(false)}
         onMessagesModalClose={() => setIsMessagesModalOpen(false)}
         onShareModalClose={() => setIsShareModalOpen(false)}
-        onCommentModalClose={() => setIsCommentModalOpen(false)}
+        onCommentModalClose={() => setIsCommentModalClose(false)}
         onLocationDetailClose={() => setIsLocationDetailOpen(false)}
         onStoriesViewerClose={() => setIsStoriesViewerOpen(false)}
         onStoryCreated={handleStoryCreated}

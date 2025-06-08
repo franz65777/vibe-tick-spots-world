@@ -461,9 +461,9 @@ const MapSection = ({
   return <div className="px-4 pb-4 bg-white">
       <div className={`bg-gradient-to-br from-green-50 to-blue-50 rounded-2xl relative overflow-hidden shadow-lg transition-all duration-500 ${selectedPlace ? 'h-40' : 'h-64'}`}>
         {/* Google Map or Demo Map */}
-        {apiKey === 'demo' ?
-      // Demo map fallback with gradient pins
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-100 via-green-50 to-blue-200">
+        {apiKey === 'demo' ? (
+          // Demo map fallback with gradient pins
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-100 via-green-50 to-blue-200">
             <svg className="absolute inset-0 w-full h-full">
               <defs>
                 <pattern id="streets" patternUnits="userSpaceOnUse" width="40" height="40">
@@ -475,13 +475,13 @@ const MapSection = ({
             </svg>
             {/* Demo pins with gradient styling */}
             {places.map((place, index) => {
-          const isSelected = selectedPlace?.id === place.id;
-          const gradient = getCategoryGradient(place.category);
-          const icon = getCategoryIcon(place.category);
-          return <div key={place.id} className="absolute group cursor-pointer" style={{
-            top: `${30 + index * 15}%`,
-            left: `${25 + index * 20}%`
-          }} onClick={() => onPinClick(place)}>
+              const isSelected = selectedPlace?.id === place.id;
+              const gradient = getCategoryGradient(place.category);
+              const icon = getCategoryIcon(place.category);
+              return <div key={place.id} className="absolute group cursor-pointer" style={{
+                top: `${30 + index * 15}%`,
+                left: `${25 + index * 20}%`
+              }} onClick={() => onPinClick(place)}>
                   <div className={`${isSelected ? 'w-12 h-12' : 'w-10 h-10'} bg-gradient-to-br ${gradient} rounded-full flex items-center justify-center shadow-lg border-2 border-white hover:scale-110 transition-all duration-200 ${isSelected ? 'ring-4 ring-blue-400 ring-opacity-50' : ''}`}>
                     <span className="text-white text-lg">{icon}</span>
                   </div>
@@ -489,37 +489,44 @@ const MapSection = ({
                       {place.friendsWhoSaved.length}
                     </div>}
                 </div>;
-        })}
+            })}
             <div className="absolute bottom-6 left-4 text-xs text-gray-600 bg-white/80 px-2 py-1 rounded">
               Demo Map - Add Google Maps API key for interactive features
             </div>
           </div> : <div className="relative w-full h-full">
             <div ref={mapRef} className="absolute inset-0 rounded-2xl" />
-            {!isMapLoaded && <div className="absolute inset-0 bg-gray-50 rounded-2xl flex items-center justify-center">
+            {!isMapLoaded && (
+              <div className="absolute inset-0 bg-gray-50 rounded-2xl flex items-center justify-center">
                 <div className="text-center p-4">
                   <div className="text-gray-600 text-sm font-medium mb-2">Loading Map...</div>
                   <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
                 </div>
-              </div>}
-            {mapError && <div className="absolute inset-0 bg-gray-50 rounded-2xl flex items-center justify-center">
+              </div>
+            )}
+            {mapError && (
+              <div className="absolute inset-0 bg-gray-50 rounded-2xl flex items-center justify-center">
                 <div className="text-center p-4">
                   <div className="text-red-600 text-sm font-medium mb-2">Map Error</div>
                   <div className="text-red-500 text-xs mb-3">{mapError}</div>
                   <Button size="sm" onClick={() => {
-              setIsMapLoaded(false);
-              setMapError(null);
-            }}>
+                    setIsMapLoaded(false);
+                    setMapError(null);
+                  }}>
                     Retry
                   </Button>
                 </div>
-              </div>}
-            {locationPermissionDenied && !mapCenter && <div className="absolute bottom-6 left-4 text-xs text-yellow-600 bg-yellow-50/90 px-2 py-1 rounded">
+              </div>
+            )}
+            {locationPermissionDenied && !mapCenter && (
+              <div className="absolute bottom-6 left-4 text-xs text-yellow-600 bg-yellow-50/90 px-2 py-1 rounded">
                 Enable location for better experience
-              </div>}
+              </div>
+            )}
           </div>}
 
         {/* Location Labels - only show if using demo mode */}
-        {apiKey === 'demo' && <>
+        {apiKey === 'demo' && (
+          <>
             <div className="absolute top-4 left-4 text-xs font-medium text-gray-600 bg-white/80 px-2 py-1 rounded">
               PACIFIC HEIGHTS
             </div>
@@ -532,7 +539,8 @@ const MapSection = ({
             <div className="absolute bottom-20 right-8 text-xs font-medium text-gray-600 bg-white/80 px-2 py-1 rounded">
               UNION SQUARE
             </div>
-          </>}
+          </>
+        )}
 
         {/* Enhanced Selected Place Card */}
         {selectedPlace}
