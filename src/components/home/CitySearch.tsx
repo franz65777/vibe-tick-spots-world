@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { Search, MapPin, Building, Landmark, Building2, Clock, Mountain, Shield, Church, Waves, TreePine, Locate } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -11,66 +12,76 @@ interface CitySearchProps {
   onCitySelect: (city: string) => void;
 }
 
-// City data with more appropriate landmark icons and search variations
+// City data with coordinates and more appropriate landmark icons and search variations
 const cityData = {
   'san francisco': { 
     name: 'San Francisco', 
     icon: Building2,
     description: 'Golden Gate City',
+    coordinates: { lat: 37.7749, lng: -122.4194 },
     searchTerms: ['san francisco', 'sf', 'san fran', 'sanfrancisco']
   },
   'milan': { 
     name: 'Milan', 
     icon: Church,
     description: 'Fashion Capital',
+    coordinates: { lat: 45.4642, lng: 9.1900 },
     searchTerms: ['milan', 'milano', 'milaan', 'miland']
   },
   'paris': { 
     name: 'Paris', 
     icon: Landmark,
     description: 'City of Light',
+    coordinates: { lat: 48.8566, lng: 2.3522 },
     searchTerms: ['paris', 'paris', 'pariis', 'pariss']
   },
   'new york': { 
     name: 'New York', 
     icon: Building,
     description: 'The Big Apple',
+    coordinates: { lat: 40.7128, lng: -74.0060 },
     searchTerms: ['new york', 'ny', 'nyc', 'newyork', 'new yourk', 'new yor']
   },
   'london': { 
     name: 'London', 
     icon: Clock,
     description: 'Royal City',
+    coordinates: { lat: 51.5074, lng: -0.1278 },
     searchTerms: ['london', 'londdon', 'londn', 'lonon']
   },
   'tokyo': { 
     name: 'Tokyo', 
     icon: Mountain,
     description: 'Land of Rising Sun',
+    coordinates: { lat: 35.6762, lng: 139.6503 },
     searchTerms: ['tokyo', 'tokio', 'tokyio', 'tokya']
   },
   'rome': { 
     name: 'Rome', 
     icon: Shield,
     description: 'Eternal City',
+    coordinates: { lat: 41.9028, lng: 12.4964 },
     searchTerms: ['rome', 'roma', 'roome', 'rom']
   },
   'barcelona': { 
     name: 'Barcelona', 
     icon: Church,
     description: 'Gaudí\'s City',
+    coordinates: { lat: 41.3851, lng: 2.1734 },
     searchTerms: ['barcelona', 'barselona', 'barcellona', 'barca']
   },
   'amsterdam': { 
     name: 'Amsterdam', 
     icon: Waves,
     description: 'Venice of North',
+    coordinates: { lat: 52.3676, lng: 4.9041 },
     searchTerms: ['amsterdam', 'amsterdamm', 'amesterdam', 'amstrerdam']
   },
   'sydney': { 
     name: 'Sydney', 
     icon: Waves,
     description: 'Harbor City',
+    coordinates: { lat: -33.8688, lng: 151.2093 },
     searchTerms: ['sydney', 'sydny', 'sideny', 'sydey']
   }
 };
@@ -104,6 +115,12 @@ const getEditDistance = (str1: string, str2: string): number => {
   }
   
   return matrix[str2.length][str1.length];
+};
+
+// Helper function to get city coordinates
+export const getCityCoordinates = (cityName: string): { lat: number; lng: number } | null => {
+  const cityKey = cityName.toLowerCase();
+  return cityData[cityKey as keyof typeof cityData]?.coordinates || null;
 };
 
 const CitySearch = ({ 

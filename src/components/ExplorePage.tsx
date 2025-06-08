@@ -445,7 +445,6 @@ const ExplorePage = () => {
             name: locationDetailPlace.name,
             category: locationDetailPlace.category,
             image: locationDetailPlace.image,
-            rating: 4.5, // Default rating since it's not in Place interface
             reviewCount: locationDetailPlace.reviewCount || 0,
             coordinates: locationDetailPlace.coordinates,
             address: `Global Location`,
