@@ -9,7 +9,6 @@ import LocationOfTheWeek from '@/components/home/LocationOfTheWeek';
 import Header from '@/components/home/Header';
 import FilterButtons from '@/components/home/FilterButtons';
 import ModalsManager from '@/components/home/ModalsManager';
-import PlacePostsModal from '@/components/home/PlacePostsModal';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useMapPins } from '@/hooks/useMapPins';
 
@@ -341,31 +340,17 @@ const HomePage = () => {
   const { location } = useGeolocation();
   const { pins, loading: pinsLoading, refreshPins, hasFollowedUsers } = useMapPins(activeFilter);
 
-  // Memoize the city update to prevent excessive calls
-  const updateCurrentCity = useCallback((newCity: string) => {
-    if (newCity !== currentCity) {
-      console.log('Updating current city from', currentCity, 'to', newCity);
-      setCurrentCity(newCity);
-    }
-  }, [currentCity]);
-
-  // Update current city when geolocation changes - but only if different
+  // Update current city when geolocation changes
   useEffect(() => {
-    if (location?.city && location.city !== currentCity) {
-      updateCurrentCity(location.city);
+    if (location?.city) {
+      setCurrentCity(location.city);
     }
-  }, [location?.city, currentCity, updateCurrentCity]);
+  }, [location?.city]);
 
-  // Refresh pins when city changes - use callback to prevent excessive calls
-  const handleCityChange = useCallback((city: string) => {
-    console.log('handleCityChange called for city:', city);
-    refreshPins(city);
-  }, [refreshPins]);
-
-  // Only refresh pins when currentCity actually changes
+  // Refresh pins when city or filter changes
   useEffect(() => {
-    handleCityChange(currentCity);
-  }, [currentCity, handleCityChange]);
+    refreshPins(currentCity);
+  }, [currentCity, refreshPins]);
 
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
@@ -375,10 +360,6 @@ const HomePage = () => {
   const [commentPlace, setCommentPlace] = useState<Place | null>(null);
   const [isLocationDetailOpen, setIsLocationDetailOpen] = useState(false);
   const [locationDetailPlace, setLocationDetailPlace] = useState<Place | null>(null);
-
-  // Add state for scrollable posts modal
-  const [isPostsModalOpen, setIsPostsModalOpen] = useState(false);
-  const [selectedPlaceForPosts, setSelectedPlaceForPosts] = useState<Place | null>(null);
 
   const handleCreateStory = () => {
     console.log('Create story clicked');
@@ -444,26 +425,23 @@ const HomePage = () => {
     // TODO: Implement actual comment submission logic
   };
 
-  // Updated to show scrollable posts instead of location detail
   const handleCardClick = (place: Place) => {
-    console.log('Place card clicked:', place.name, '- opening posts modal');
-    setSelectedPlaceForPosts(place);
-    setIsPostsModalOpen(true);
+    console.log('Place card clicked:', place.name, '- opening location detail');
+    setLocationDetailPlace(place);
+    setIsLocationDetailOpen(true);
   };
 
   const handleCitySearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      const searchedCity = searchQuery.trim();
-      console.log('Searching for city:', searchedCity);
-      updateCurrentCity(searchedCity);
+      setCurrentCity(searchQuery.trim());
     }
   };
 
-  const handleCitySelect = useCallback((cityName: string) => {
+  const handleCitySelect = (cityName: string) => {
     console.log('City selected:', cityName);
-    updateCurrentCity(cityName);
-  }, [updateCurrentCity]);
+    setCurrentCity(cityName);
+  };
 
   const handleSearchKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -471,7 +449,6 @@ const HomePage = () => {
     }
   };
 
-  // Memoize map center calculation to prevent unnecessary re-renders
   const currentMapCenter = useMemo(() => {
     if (location?.latitude && location?.longitude && location.city === currentCity) {
       return { lat: location.latitude, lng: location.longitude };
@@ -662,18 +639,6 @@ const HomePage = () => {
         onCommentSubmit={handleCommentSubmit}
         onStoryViewed={handleStoryViewed}
       />
-
-      {/* Posts Modal for scrolling through place posts */}
-      {isPostsModalOpen && selectedPlaceForPosts && (
-        <PlacePostsModal
-          isOpen={isPostsModalOpen}
-          onClose={() => {
-            setIsPostsModalOpen(false);
-            setSelectedPlaceForPosts(null);
-          }}
-          place={selectedPlaceForPosts}
-        />
-      )}
     </div>
   );
 };
