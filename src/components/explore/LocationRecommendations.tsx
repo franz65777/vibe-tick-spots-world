@@ -1,6 +1,6 @@
 
-import { MapPin, Heart, Users } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { MapPin } from 'lucide-react';
+import PlaceCard from '@/components/home/PlaceCard';
 import { LocationRecommendation } from '@/services/searchService';
 
 interface LocationRecommendationsProps {
@@ -18,6 +18,25 @@ const LocationRecommendations = ({ recommendations, onLocationClick }: LocationR
     );
   }
 
+  // Convert recommendations to Place format for PlaceCard
+  const convertToPlace = (rec: LocationRecommendation) => ({
+    id: rec.id,
+    name: rec.name,
+    category: rec.category,
+    likes: rec.likes,
+    friendsWhoSaved: rec.friendsWhoSaved,
+    visitors: rec.visitors,
+    isNew: rec.isNew,
+    coordinates: rec.coordinates,
+    image: rec.image,
+    addedBy: rec.addedBy,
+    addedDate: rec.addedDate,
+    isFollowing: rec.isFollowing,
+    popularity: rec.popularity,
+    distance: rec.distance,
+    totalSaves: rec.likes || 23
+  });
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -25,64 +44,25 @@ const LocationRecommendations = ({ recommendations, onLocationClick }: LocationR
         <span className="text-sm text-gray-500">{recommendations.length} places</span>
       </div>
       
-      <div className="space-y-3">
+      <div className="space-y-4">
         {recommendations.map((location) => (
-          <Card 
-            key={location.id} 
-            className="cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => onLocationClick(location)}
-          >
-            <CardContent className="p-4">
-              <div className="flex gap-3">
-                {location.image && (
-                  <img
-                    src={location.image}
-                    alt={location.name}
-                    className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
-                  />
-                )}
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h4 className="font-semibold text-gray-900 truncate">{location.name}</h4>
-                      <p className="text-sm text-gray-600 capitalize">{location.category}</p>
-                      {location.recommendationReason && (
-                        <p className="text-xs text-blue-600 mt-1">{location.recommendationReason}</p>
-                      )}
-                    </div>
-                    
-                    {location.isNew && (
-                      <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                        New
-                      </span>
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-                    <div className="flex items-center gap-1">
-                      <Heart className="w-4 h-4" />
-                      {location.likes}
-                    </div>
-                    
-                    {location.friendsWhoSaved && location.friendsWhoSaved.length > 0 && (
-                      <div className="flex items-center gap-1">
-                        <Users className="w-4 h-4" />
-                        {location.friendsWhoSaved.length} friends saved
-                      </div>
-                    )}
-                    
-                    {location.distance !== undefined && (
-                      <div className="flex items-center gap-1">
-                        <MapPin className="w-4 h-4" />
-                        {location.distance}km away
-                      </div>
-                    )}
-                  </div>
-                </div>
+          <div key={location.id} className="relative">
+            <PlaceCard
+              place={convertToPlace(location)}
+              isLiked={false}
+              onCardClick={() => onLocationClick(location)}
+              onLikeToggle={() => {}}
+              onShare={() => {}}
+              onComment={() => {}}
+              cityName="Current City"
+            />
+            {/* Recommendation reason overlay */}
+            {location.recommendationReason && (
+              <div className="absolute top-3 left-3 bg-blue-500/90 text-white text-xs px-2 py-1 rounded-full z-10">
+                {location.recommendationReason}
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
         ))}
       </div>
     </div>

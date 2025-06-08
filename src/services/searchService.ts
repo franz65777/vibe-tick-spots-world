@@ -52,19 +52,19 @@ class SearchService {
         {
           id: '1',
           search_query: 'pizza',
-          search_type: 'locations',
+          search_type: 'locations' as const,
           searched_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
         },
         {
           id: '2',
           search_query: 'coffee',
-          search_type: 'locations',
+          search_type: 'locations' as const,
           searched_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString()
         },
         {
           id: '3',
           search_query: 'sarah',
-          search_type: 'users',
+          search_type: 'users' as const,
           searched_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
         }
       ];
@@ -79,7 +79,12 @@ class SearchService {
         .limit(10);
 
       if (error) throw error;
-      return data || [];
+      return (data || []).map(item => ({
+        id: item.id,
+        search_query: item.search_query,
+        search_type: item.search_type as 'locations' | 'users',
+        searched_at: item.searched_at
+      }));
     } catch (error) {
       console.error('Error fetching search history:', error);
       return [];
@@ -212,7 +217,7 @@ class SearchService {
         likes: location.location_likes?.[0]?.count || 0,
         visitors: [],
         isNew: new Date(location.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-        coordinates: { lat: parseFloat(location.latitude), lng: parseFloat(location.longitude) },
+        coordinates: { lat: parseFloat(location.latitude.toString()), lng: parseFloat(location.longitude.toString()) },
         image: location.image_url,
         addedBy: location.created_by,
         addedDate: location.created_at,

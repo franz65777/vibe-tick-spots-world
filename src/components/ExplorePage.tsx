@@ -1,10 +1,13 @@
+
 import { useState, useEffect, useRef } from 'react';
-import { Search, MapPin, Users, SlidersHorizontal, Heart, UserCheck, Navigation, X } from 'lucide-react';
+import { Search, MapPin, Users, SlidersHorizontal, Heart, UserCheck, Navigation } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useSearch } from '@/hooks/useSearch';
 import PlaceCard from '@/components/home/PlaceCard';
+import ShareModal from '@/components/home/ShareModal';
+import CommentModal from '@/components/home/CommentModal';
 import SearchSuggestions from '@/components/explore/SearchSuggestions';
 import LocationRecommendations from '@/components/explore/LocationRecommendations';
 import UserRecommendations from '@/components/explore/UserRecommendations';
@@ -24,6 +27,7 @@ interface Place {
   isFollowing?: boolean;
   popularity?: number;
   distance?: number;
+  totalSaves?: number;
 }
 
 interface User {
@@ -56,7 +60,8 @@ const mockLocations: Place[] = [
     addedDate: '2024-05-25',
     isFollowing: true,
     popularity: 89,
-    distance: 0.3
+    distance: 0.3,
+    totalSaves: 23
   },
   {
     id: '2',
@@ -74,7 +79,8 @@ const mockLocations: Place[] = [
     addedDate: '2024-06-01',
     isFollowing: false,
     popularity: 76,
-    distance: 0.8
+    distance: 0.8,
+    totalSaves: 15
   },
   {
     id: '3',
@@ -93,7 +99,8 @@ const mockLocations: Place[] = [
     addedDate: '2024-05-15',
     isFollowing: true,
     popularity: 94,
-    distance: 1.2
+    distance: 1.2,
+    totalSaves: 42
   }
 ];
 
@@ -133,6 +140,12 @@ const ExplorePage = () => {
   const [filteredLocations, setFilteredLocations] = useState<Place[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
+  
+  // Modals
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [commentModalOpen, setCommentModalOpen] = useState(false);
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   
   const { location } = useGeolocation();
   const { 
@@ -180,10 +193,6 @@ const ExplorePage = () => {
           user.username.toLowerCase().includes(searchQuery.toLowerCase())
         );
 
-        if (sortBy === 'followers') {
-          filtered.sort((a, b) => b.followers - a.followers);
-        }
-
         setFilteredUsers(filtered);
       }
       
@@ -201,9 +210,6 @@ const ExplorePage = () => {
     // Save to search history
     await saveSearch(searchQuery, searchMode);
     setShowSuggestions(false);
-    
-    // Trigger existing search logic
-    // ... existing search logic remains the same
   };
 
   // Handle suggestion click
@@ -216,10 +222,62 @@ const ExplorePage = () => {
     }, 100);
   };
 
+  // Handle place interactions
+  const handleCardClick = (place: Place) => {
+    setSelectedPlace(place);
+    // Navigate to place detail or show modal
+    console.log('Place clicked:', place);
+  };
+
+  const handleLikeToggle = (placeId: string) => {
+    setLikedPlaces(prev => {
+      const newLiked = new Set(prev);
+      if (newLiked.has(placeId)) {
+        newLiked.delete(placeId);
+      } else {
+        newLiked.add(placeId);
+      }
+      return newLiked;
+    });
+  };
+
+  const handleShare = (place: Place) => {
+    setSelectedPlace(place);
+    setShareModalOpen(true);
+  };
+
+  const handleComment = (place: Place) => {
+    setSelectedPlace(place);
+    setCommentModalOpen(true);
+  };
+
+  const handleShareModalShare = (friendIds: string[], place: Place) => {
+    console.log('Sharing place:', place, 'with friends:', friendIds);
+    // Implement share logic here
+  };
+
   // Handle recommendation clicks
   const handleLocationRecommendationClick = (location: any) => {
     console.log('Location recommendation clicked:', location);
-    // Here you could navigate to location details or add to search
+    // Convert recommendation to Place format and handle like regular place
+    const place: Place = {
+      id: location.id,
+      name: location.name,
+      category: location.category,
+      likes: location.likes,
+      friendsWhoSaved: location.friendsWhoSaved,
+      visitors: location.visitors,
+      isNew: location.isNew,
+      coordinates: location.coordinates,
+      image: location.image,
+      addedBy: location.addedBy,
+      addedDate: location.addedDate,
+      isFollowing: location.isFollowing,
+      popularity: location.popularity,
+      distance: location.distance,
+      totalSaves: location.likes || 23
+    };
+    handleCardClick(place);
   };
 
   const handleUserRecommendationClick = (user: any) => {
@@ -284,15 +342,18 @@ const ExplorePage = () => {
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                 className="pl-10 pr-12 h-12 bg-white border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-xl text-base"
               />
-              <Button
-                type="button"
-                onClick={() => setShowFilters(!showFilters)}
-                variant="ghost"
-                size="icon"
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8"
-              >
-                <SlidersHorizontal className="w-4 h-4" />
-              </Button>
+              {/* Only show filters button for locations */}
+              {searchMode === 'locations' && (
+                <Button
+                  type="button"
+                  onClick={() => setShowFilters(!showFilters)}
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8"
+                >
+                  <SlidersHorizontal className="w-4 h-4" />
+                </Button>
+              )}
               
               {/* Search Suggestions */}
               {showSuggestions && (
@@ -305,8 +366,8 @@ const ExplorePage = () => {
             </div>
           </form>
 
-          {/* Filters */}
-          {showFilters && (
+          {/* Filters - Only for locations */}
+          {showFilters && searchMode === 'locations' && (
             <div className="mt-4 p-4 bg-gray-50 rounded-xl">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-sm font-medium text-gray-700">Sort by:</span>
@@ -343,7 +404,7 @@ const ExplorePage = () => {
                   }`}
                 >
                   <UserCheck className="w-4 h-4" />
-                  {searchMode === 'locations' ? 'Friends Saved' : 'Followers'}
+                  Friends Saved
                 </button>
               </div>
             </div>
@@ -399,24 +460,16 @@ const ExplorePage = () => {
                 </div>
                 <div className="space-y-4">
                   {filteredLocations.map((place) => (
-                    <div key={place.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                      <PlaceCard
-                        place={place}
-                        isLiked={false}
-                        onCardClick={() => {}}
-                        onLikeToggle={() => {}}
-                        onShare={() => {}}
-                        onComment={() => {}}
-                        cityName="Current City"
-                      />
-                      {place.distance !== undefined && (
-                        <div className="px-4 pb-3">
-                          <span className="text-sm text-gray-500">
-                            {place.distance} km away
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                    <PlaceCard
+                      key={place.id}
+                      place={place}
+                      isLiked={likedPlaces.has(place.id)}
+                      onCardClick={handleCardClick}
+                      onLikeToggle={handleLikeToggle}
+                      onShare={handleShare}
+                      onComment={handleComment}
+                      cityName="Current City"
+                    />
                   ))}
                 </div>
               </>
@@ -491,6 +544,22 @@ const ExplorePage = () => {
           </div>
         )}
       </div>
+
+      {/* Modals */}
+      <ShareModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        item={selectedPlace}
+        itemType="place"
+        onShare={handleShareModalShare}
+      />
+
+      <CommentModal
+        isOpen={commentModalOpen}
+        onClose={() => setCommentModalOpen(false)}
+        place={selectedPlace}
+        onAddComment={(comment) => console.log('Comment added:', comment)}
+      />
     </div>
   );
 };
