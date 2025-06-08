@@ -346,10 +346,10 @@ const HomePage = () => {
     }
   }, [location?.city]);
 
-  // Refresh pins when city or filter changes
+  // Refresh pins when city changes - but use refreshPins from the hook properly
   useEffect(() => {
-    refreshPins();
-  }, [currentCity, activeFilter, refreshPins]);
+    refreshPins(currentCity);
+  }, [currentCity]); // Remove refreshPins from dependencies to prevent infinite loop
 
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
