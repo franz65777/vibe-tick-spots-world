@@ -76,7 +76,9 @@ const PlaceInteractionModal = ({ isOpen, onClose, mode, place }: PlaceInteractio
       <div className="bg-white w-full max-w-md h-[85vh] sm:h-[600px] sm:rounded-3xl rounded-t-3xl flex flex-col overflow-hidden shadow-2xl">
         {/* Header with travel-inspired design */}
         <div className="relative bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white">
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.1"%3E%3Cpath d="M30 30l15-15v30h-30v-15z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
+          <div className="absolute inset-0 opacity-20" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M30 30l15-15v30h-30v-15z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+          }}></div>
           <div className="relative flex items-center justify-between">
             <div className="flex items-center gap-3">
               {mode === 'comments' ? (
