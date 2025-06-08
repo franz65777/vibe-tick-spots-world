@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { Search, MapPin, Building, Landmark, Building2, Clock, Mountain, Shield, Church, Waves, TreePine, Locate } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -117,16 +116,20 @@ const CitySearch = ({
   const [isOpen, setIsOpen] = useState(false);
   const [filteredCities, setFilteredCities] = useState<Array<{key: string, data: typeof cityData[keyof typeof cityData], similarity: number}>>([]);
   const [userHasManuallySelectedCity, setUserHasManuallySelectedCity] = useState(false);
+  const [ignoreGeoLocation, setIgnoreGeoLocation] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const { location, loading: geoLoading, getCurrentLocation } = useGeolocation();
 
-  // Only update current city from geolocation if user hasn't manually selected one
+  // Only update current city from geolocation if user hasn't manually selected one AND not ignoring geo
   useEffect(() => {
-    if (location?.city && location.city !== currentCity && !userHasManuallySelectedCity) {
+    if (location?.city && 
+        location.city !== currentCity && 
+        !userHasManuallySelectedCity && 
+        !ignoreGeoLocation) {
       console.log('Geolocation detected city:', location.city);
       onCitySelect(location.city);
     }
-  }, [location?.city, currentCity, onCitySelect, userHasManuallySelectedCity]);
+  }, [location?.city, currentCity, onCitySelect, userHasManuallySelectedCity, ignoreGeoLocation]);
 
   // Get current city data
   const currentCityData = cityData[currentCity.toLowerCase() as keyof typeof cityData];
@@ -177,14 +180,18 @@ const CitySearch = ({
   }, []);
 
   const handleCityClick = (cityName: string) => {
+    console.log('Manual city selection:', cityName);
     setUserHasManuallySelectedCity(true);
+    setIgnoreGeoLocation(true);
     onCitySelect(cityName);
     onSearchChange('');
     setIsOpen(false);
   };
 
   const handleLocationClick = () => {
+    console.log('Location button clicked - resetting manual selection');
     setUserHasManuallySelectedCity(false);
+    setIgnoreGeoLocation(false);
     getCurrentLocation();
   };
 
@@ -198,7 +205,7 @@ const CitySearch = ({
                onClick={() => document.getElementById('city-search-input')?.focus()}>
             <CurrentCityIcon className="w-5 h-5 text-blue-600 shrink-0" />
             <span className="text-gray-900 font-medium flex-1">
-              {location?.city || currentCityData?.name || currentCity}
+              {currentCityData?.name || currentCity}
             </span>
             <div className="flex items-center gap-2">
               {geoLoading && (

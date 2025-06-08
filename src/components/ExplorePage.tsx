@@ -24,7 +24,6 @@ interface Place {
   visitors: string[];
   isNew: boolean;
   coordinates: { lat: number; lng: number };
-  rating: number;
   reviewCount: number;
   tags: string[];
   openingHours: string;
@@ -60,7 +59,6 @@ const demoPlaces: Place[] = [
     name: 'The Cozy Corner Café',
     category: 'restaurants',
     image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400&h=300&fit=crop',
-    rating: 4.5,
     reviewCount: 123,
     tags: ['cozy', 'coffee', 'pastries'],
     openingHours: '8:00 AM - 8:00 PM',
@@ -82,7 +80,6 @@ const demoPlaces: Place[] = [
     name: 'Sunset View Restaurant',
     category: 'restaurants',
     image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop',
-    rating: 4.2,
     reviewCount: 87,
     tags: ['seafood', 'sunset', 'romantic'],
     openingHours: '5:00 PM - 10:00 PM',
@@ -100,7 +97,6 @@ const demoPlaces: Place[] = [
     name: 'Grand Plaza Hotel',
     category: 'cafes',
     image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=400&h=300&fit=crop',
-    rating: 4.8,
     reviewCount: 234,
     tags: ['luxury', 'views', 'cocktails'],
     openingHours: 'Open 24 hours',
@@ -121,7 +117,6 @@ const demoPlaces: Place[] = [
     name: 'The Local Bar',
     category: 'bars',
     image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=300&fit=crop',
-    rating: 4.0,
     reviewCount: 56,
     tags: ['local', 'drinks', 'live music'],
     openingHours: '6:00 PM - 2:00 AM',
@@ -449,7 +444,7 @@ const ExplorePage = () => {
             name: locationDetailPlace.name,
             category: locationDetailPlace.category,
             image: locationDetailPlace.image,
-            rating: locationDetailPlace.reviewCount ? 4.5 : 4.0,
+            rating: 4.5,
             reviewCount: locationDetailPlace.reviewCount || 0,
             coordinates: locationDetailPlace.coordinates,
             address: `Global Location`,

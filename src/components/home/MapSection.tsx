@@ -25,6 +25,68 @@ interface MapSectionProps {
   onCloseSelectedPlace?: () => void;
 }
 
+// Helper function to get category gradient colors
+const getCategoryGradient = (category: string) => {
+  switch (category.toLowerCase()) {
+    case 'restaurant':
+    case 'restaurants':
+      return 'from-orange-500 to-red-500';
+    case 'cafe':
+    case 'cafes':
+      return 'from-amber-500 to-orange-500';
+    case 'bar':
+    case 'bars':
+      return 'from-purple-500 to-pink-500';
+    case 'hotel':
+    case 'hotels':
+      return 'from-blue-500 to-indigo-500';
+    case 'culture':
+    case 'museum':
+      return 'from-green-500 to-teal-500';
+    default:
+      return 'from-gray-500 to-gray-600';
+  }
+};
+
+// Helper function to get category icon
+const getCategoryIcon = (category: string) => {
+  switch (category.toLowerCase()) {
+    case 'restaurant':
+    case 'restaurants':
+      return '🍽️';
+    case 'cafe':
+    case 'cafes':
+      return '☕';
+    case 'bar':
+    case 'bars':
+      return '🍸';
+    case 'hotel':
+    case 'hotels':
+      return '🏨';
+    case 'culture':
+    case 'museum':
+      return '🎨';
+    default:
+      return '📍';
+  }
+};
+
+// Helper function to generate "Saved By" text
+const getSavedByText = (place: Place): string => {
+  if (!place.friendsWhoSaved || place.friendsWhoSaved.length === 0) {
+    return `Saved by ${place.visitors?.length || 0} people`;
+  }
+  
+  const friendCount = place.friendsWhoSaved.length;
+  if (friendCount === 1) {
+    return `Saved by ${place.friendsWhoSaved[0].name}`;
+  } else if (friendCount === 2) {
+    return `Saved by ${place.friendsWhoSaved[0].name} and ${place.friendsWhoSaved[1].name}`;
+  } else {
+    return `Saved by ${place.friendsWhoSaved[0].name}, ${place.friendsWhoSaved[1].name} and ${friendCount - 2} others you follow`;
+  }
+};
+
 const MapSection = ({ places, onPinClick, mapCenter, selectedPlace, onCloseSelectedPlace }: MapSectionProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
@@ -190,22 +252,37 @@ const MapSection = ({ places, onPinClick, mapCenter, selectedPlace, onCloseSelec
       newMarkers.push(userMarker);
     }
 
-    // Add markers for places
+    // Add markers for places with gradient styling
     places.forEach((place) => {
       const isSelected = selectedPlace?.id === place.id;
+      const gradient = getCategoryGradient(place.category);
+      const icon = getCategoryIcon(place.category);
+      const size = isSelected ? 48 : 36;
+      const glowEffect = isSelected ? 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.6))' : '';
+      
       const marker = new google.maps.Marker({
         map: mapInstanceRef.current,
         position: place.coordinates,
         title: place.name,
         icon: {
           url: 'data:image/svg+xml;base64,' + btoa(`
-            <svg width="${isSelected ? '40' : '32'}" height="${isSelected ? '40' : '32'}" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="16" cy="16" r="12" fill="${isSelected ? '#3B82F6' : '#EF4444'}" stroke="white" stroke-width="2"/>
-              <circle cx="16" cy="16" r="4" fill="white"/>
+            <svg width="${size}" height="${size}" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" style="filter: ${glowEffect}">
+              <defs>
+                <linearGradient id="grad-${place.id}" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style="stop-color:#${gradient.includes('orange') ? 'f97316' : gradient.includes('red') ? 'ef4444' : gradient.includes('purple') ? '8b5cf6' : gradient.includes('blue') ? '3b82f6' : gradient.includes('green') ? '10b981' : '6b7280'};stop-opacity:1" />
+                  <stop offset="100%" style="stop-color:#${gradient.includes('red') ? 'dc2626' : gradient.includes('orange') ? 'ea580c' : gradient.includes('pink') ? 'ec4899' : gradient.includes('indigo') ? '4f46e5' : gradient.includes('teal') ? '0d9488' : '4b5563'};stop-opacity:1" />
+                </linearGradient>
+              </defs>
+              <circle cx="24" cy="24" r="18" fill="url(#grad-${place.id})" stroke="white" stroke-width="3"/>
+              <text x="24" y="28" text-anchor="middle" font-size="16" fill="white">${icon}</text>
+              ${place.friendsWhoSaved && place.friendsWhoSaved.length > 0 ? `
+                <circle cx="36" cy="12" r="8" fill="white" stroke="#e5e7eb" stroke-width="2"/>
+                <text x="36" y="16" text-anchor="middle" font-size="10" fill="#374151">${place.friendsWhoSaved.length}</text>
+              ` : ''}
             </svg>
           `),
-          scaledSize: new google.maps.Size(isSelected ? 40 : 32, isSelected ? 40 : 32),
-          anchor: new google.maps.Point(isSelected ? 20 : 16, isSelected ? 20 : 16)
+          scaledSize: new google.maps.Size(size, size),
+          anchor: new google.maps.Point(size/2, size/2)
         }
       });
 
@@ -377,7 +454,7 @@ const MapSection = ({ places, onPinClick, mapCenter, selectedPlace, onCloseSelec
       >
         {/* Google Map or Demo Map */}
         {apiKey === 'demo' ? (
-          // Demo map fallback
+          // Demo map fallback with gradient pins
           <div className="absolute inset-0 bg-gradient-to-br from-blue-100 via-green-50 to-blue-200">
             <svg className="absolute inset-0 w-full h-full">
               <defs>
@@ -388,9 +465,11 @@ const MapSection = ({ places, onPinClick, mapCenter, selectedPlace, onCloseSelec
               </defs>
               <rect width="100%" height="100%" fill="url(#streets)" opacity="0.3"/>
             </svg>
-            {/* Demo pins */}
+            {/* Demo pins with gradient styling */}
             {places.map((place, index) => {
               const isSelected = selectedPlace?.id === place.id;
+              const gradient = getCategoryGradient(place.category);
+              const icon = getCategoryIcon(place.category);
               return (
                 <div 
                   key={place.id}
@@ -401,9 +480,14 @@ const MapSection = ({ places, onPinClick, mapCenter, selectedPlace, onCloseSelec
                   }}
                   onClick={() => onPinClick(place)}
                 >
-                  <div className={`${isSelected ? 'w-10 h-10 bg-blue-500' : 'w-8 h-8 bg-red-500'} rounded-full flex items-center justify-center shadow-lg border-2 border-white hover:scale-110 transition-transform`}>
-                    <div className={`${isSelected ? 'w-4 h-4' : 'w-3 h-3'} bg-white rounded-full`}></div>
+                  <div className={`${isSelected ? 'w-12 h-12' : 'w-10 h-10'} bg-gradient-to-br ${gradient} rounded-full flex items-center justify-center shadow-lg border-2 border-white hover:scale-110 transition-all duration-200 ${isSelected ? 'ring-4 ring-blue-400 ring-opacity-50' : ''}`}>
+                    <span className="text-white text-lg">{icon}</span>
                   </div>
+                  {place.friendsWhoSaved && place.friendsWhoSaved.length > 0 && (
+                    <div className="absolute -top-2 -right-2 w-5 h-5 bg-white rounded-full border-2 border-gray-200 flex items-center justify-center text-xs font-semibold text-gray-600">
+                      {place.friendsWhoSaved.length}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -465,9 +549,9 @@ const MapSection = ({ places, onPinClick, mapCenter, selectedPlace, onCloseSelec
           </>
         )}
 
-        {/* Selected Place Card */}
+        {/* Enhanced Selected Place Card */}
         {selectedPlace && (
-          <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-lg rounded-2xl shadow-xl p-4 border border-white/20">
+          <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-lg rounded-2xl shadow-xl p-4 border border-white/20 animate-scale-in">
             <div className="flex items-start justify-between mb-2">
               <div className="flex-1">
                 <h3 className="font-bold text-gray-900 text-lg">{selectedPlace.name}</h3>
@@ -501,9 +585,11 @@ const MapSection = ({ places, onPinClick, mapCenter, selectedPlace, onCloseSelec
                     </div>
                   ))}
                 </div>
-                <span className="text-xs text-gray-500">
-                  and {Math.max(0, (selectedPlace.friendsWhoSaved.length - 3))} others
-                </span>
+                {selectedPlace.friendsWhoSaved.length > 3 && (
+                  <span className="text-xs text-gray-500">
+                    and {selectedPlace.friendsWhoSaved.length - 3} others
+                  </span>
+                )}
               </div>
             )}
 
