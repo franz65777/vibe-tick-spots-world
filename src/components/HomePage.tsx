@@ -8,6 +8,7 @@ import FilterButtons from '@/components/home/FilterButtons';
 import MapSection from '@/components/home/MapSection';
 import PlaceCard from '@/components/home/PlaceCard';
 import ModalsManager from '@/components/home/ModalsManager';
+import StoriesViewer from '@/components/StoriesViewer';
 import { useMapPins } from '@/hooks/useMapPins';
 import { getCityCoordinates } from '@/components/home/CitySearch';
 
@@ -31,6 +32,49 @@ interface Place {
   popularity?: number;
 }
 
+// Mock data for stories
+const mockStories = [
+  {
+    id: '1',
+    userId: 'user1',
+    userName: 'Sarah',
+    userAvatar: 'photo-1494790108755-2616b5a5c75b',
+    mediaUrl: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400&h=600&fit=crop',
+    mediaType: 'image' as const,
+    locationId: 'loc1',
+    locationName: 'Duomo Restaurant',
+    locationAddress: 'Via del Corso, Milan',
+    locationCategory: 'restaurant',
+    timestamp: '2h ago',
+    isViewed: false,
+    bookingUrl: 'https://example.com/book'
+  },
+  {
+    id: '2',
+    userId: 'user2',
+    userName: 'Mike',
+    userAvatar: 'photo-1507003211169-0a1dd7228f2d',
+    mediaUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=600&fit=crop',
+    mediaType: 'image' as const,
+    locationId: 'loc2',
+    locationName: 'Sky Bar',
+    locationAddress: 'Piazza del Duomo, Milan',
+    locationCategory: 'bar',
+    timestamp: '4h ago',
+    isViewed: true
+  }
+];
+
+// Mock location of the week
+const mockLocationOfTheWeek = {
+  id: 'lotw1',
+  name: 'Castello Sforzesco',
+  description: 'Historic castle in the heart of Milan',
+  image: 'https://images.unsplash.com/photo-1513581166391-887c1f1d0355?w=400&h=300&fit=crop',
+  likes: 1250,
+  category: 'culture'
+};
+
 const HomePage = () => {
   console.log('HomePage rendering...');
   
@@ -40,6 +84,8 @@ const HomePage = () => {
   const [selectedFilter, setSelectedFilter] = useState<'following' | 'popular' | 'new'>('following');
   const [likedPlaces, setLikedPlaces] = useState(new Set());
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  const [storiesViewerIndex, setStoriesViewerIndex] = useState<number | null>(null);
+  const [viewedStories, setViewedStories] = useState(new Set<string>());
   
   // Modal states
   const [sharePlace, setSharePlace] = useState<Place | null>(null);
@@ -77,7 +123,7 @@ const HomePage = () => {
   const mapCenter = useMemo(() => {
     const coordinates = getCityCoordinates(currentCity);
     console.log('Map center for', currentCity, ':', coordinates);
-    return coordinates;
+    return coordinates || { lat: 37.7749, lng: -122.4194 };
   }, [currentCity]);
 
   // Update pins when city or filter changes
@@ -91,7 +137,6 @@ const HomePage = () => {
 
   const handleSearchKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      // Handle search logic here
       console.log('Search for:', searchQuery);
     }
   };
@@ -99,12 +144,12 @@ const HomePage = () => {
   const handleCitySelect = (city: string) => {
     console.log('City selected:', city);
     setCurrentCity(city);
-    setSelectedPlace(null); // Clear selected place when changing cities
+    setSelectedPlace(null);
   };
 
   const handleFilterChange = (filter: 'following' | 'popular' | 'new') => {
     setSelectedFilter(filter);
-    setSelectedPlace(null); // Clear selected place when changing filters
+    setSelectedPlace(null);
   };
 
   const handleLikeToggle = (placeId: string) => {
@@ -153,6 +198,31 @@ const HomePage = () => {
     setSelectedPlace(null);
   };
 
+  const handleNotificationsClick = () => {
+    console.log('Notifications clicked');
+  };
+
+  const handleMessagesClick = () => {
+    console.log('Messages clicked');
+  };
+
+  const handleCreateStory = () => {
+    console.log('Create story clicked');
+  };
+
+  const handleStoryClick = (index: number) => {
+    console.log('Story clicked at index:', index);
+    setStoriesViewerIndex(index);
+  };
+
+  const handleLocationClick = () => {
+    console.log('Location of the week clicked');
+  };
+
+  const handleStoryViewed = (storyId: string) => {
+    setViewedStories(prev => new Set([...prev, storyId]));
+  };
+
   if (!user) {
     return <div>Please log in to access the home page.</div>;
   }
@@ -166,17 +236,26 @@ const HomePage = () => {
         onSearchChange={handleSearchChange}
         onSearchKeyPress={handleSearchKeyPress}
         onCitySelect={handleCitySelect}
+        onNotificationsClick={handleNotificationsClick}
+        onMessagesClick={handleMessagesClick}
       />
 
       {/* Stories Section */}
-      <StoriesSection />
+      <StoriesSection 
+        stories={mockStories}
+        onCreateStory={handleCreateStory}
+        onStoryClick={handleStoryClick}
+      />
 
       {/* Location of the Week */}
-      <LocationOfTheWeek />
+      <LocationOfTheWeek 
+        topLocation={mockLocationOfTheWeek}
+        onLocationClick={handleLocationClick}
+      />
 
       {/* Filter Buttons */}
       <FilterButtons 
-        selectedFilter={selectedFilter}
+        activeFilter={selectedFilter}
         onFilterChange={handleFilterChange}
         hasFollowedUsers={hasFollowedUsers}
       />
@@ -245,12 +324,22 @@ const HomePage = () => {
         sharePlace={sharePlace}
         commentPlace={commentPlace}
         locationDetailPlace={locationDetailPlace}
-        onCloseShare={() => setSharePlace(null)}
-        onCloseComment={() => setCommentPlace(null)}
-        onCloseLocationDetail={() => setLocationDetailPlace(null)}
+        onShareClose={() => setSharePlace(null)}
+        onCommentClose={() => setCommentPlace(null)}
+        onLocationDetailClose={() => setLocationDetailPlace(null)}
         onShareSubmit={handleShareSubmit}
         onCommentSubmit={handleCommentSubmit}
       />
+
+      {/* Stories Viewer */}
+      {storiesViewerIndex !== null && (
+        <StoriesViewer
+          stories={mockStories}
+          initialStoryIndex={storiesViewerIndex}
+          onClose={() => setStoriesViewerIndex(null)}
+          onStoryViewed={handleStoryViewed}
+        />
+      )}
     </div>
   );
 };
