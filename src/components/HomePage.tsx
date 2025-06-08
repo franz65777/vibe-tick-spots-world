@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/home/Header';
@@ -64,26 +65,14 @@ const mockStories = [
   }
 ];
 
-// Mock location of the week - fixed to include all required Place properties
-const mockLocationOfTheWeek: Place = {
+// Mock location of the week
+const mockLocationOfTheWeek = {
   id: 'lotw1',
   name: 'Castello Sforzesco',
-  category: 'culture',
+  description: 'Historic castle in the heart of Milan',
   image: 'https://images.unsplash.com/photo-1513581166391-887c1f1d0355?w=400&h=300&fit=crop',
   likes: 1250,
-  visitors: ['user1', 'user2', 'user3'],
-  isNew: false,
-  coordinates: { lat: 45.4654, lng: 9.1859 },
-  reviewCount: 342,
-  tags: ['historic', 'culture', 'museum'],
-  openingHours: '9:00 AM - 5:30 PM',
-  friendsWhoSaved: [
-    { name: 'Sarah', avatar: 'photo-1494790108755-2616b5a5c75b' },
-    { name: 'Mike', avatar: 'photo-1507003211169-0a1dd7228f2d' }
-  ],
-  addedBy: 'admin',
-  addedDate: '2024-05-01',
-  popularity: 95
+  category: 'culture'
 };
 
 const HomePage = () => {
@@ -226,9 +215,8 @@ const HomePage = () => {
     setStoriesViewerIndex(index);
   };
 
-  const handleLocationClick = (place: Place) => {
-    console.log('Location of the week clicked:', place.name);
-    setLocationDetailPlace(place);
+  const handleLocationClick = () => {
+    console.log('Location of the week clicked');
   };
 
   const handleStoryViewed = (storyId: string) => {
@@ -269,6 +257,7 @@ const HomePage = () => {
       <FilterButtons 
         activeFilter={selectedFilter}
         onFilterChange={handleFilterChange}
+        hasFollowedUsers={hasFollowedUsers}
       />
 
       {/* Map Section */}
