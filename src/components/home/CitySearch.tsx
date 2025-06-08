@@ -116,16 +116,17 @@ const CitySearch = ({
 }: CitySearchProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [filteredCities, setFilteredCities] = useState<Array<{key: string, data: typeof cityData[keyof typeof cityData], similarity: number}>>([]);
+  const [userHasManuallySelectedCity, setUserHasManuallySelectedCity] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const { location, loading: geoLoading, getCurrentLocation } = useGeolocation();
 
-  // Update current city when geolocation detects a new city
+  // Only update current city from geolocation if user hasn't manually selected one
   useEffect(() => {
-    if (location?.city && location.city !== currentCity) {
+    if (location?.city && location.city !== currentCity && !userHasManuallySelectedCity) {
       console.log('Geolocation detected city:', location.city);
       onCitySelect(location.city);
     }
-  }, [location?.city, currentCity, onCitySelect]);
+  }, [location?.city, currentCity, onCitySelect, userHasManuallySelectedCity]);
 
   // Get current city data
   const currentCityData = cityData[currentCity.toLowerCase() as keyof typeof cityData];
@@ -176,12 +177,14 @@ const CitySearch = ({
   }, []);
 
   const handleCityClick = (cityName: string) => {
+    setUserHasManuallySelectedCity(true);
     onCitySelect(cityName);
     onSearchChange('');
     setIsOpen(false);
   };
 
   const handleLocationClick = () => {
+    setUserHasManuallySelectedCity(false);
     getCurrentLocation();
   };
 

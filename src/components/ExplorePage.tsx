@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from 'react';
 import { Search, Filter, MapPin, Star, Users, Clock, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -7,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import PlaceCard from '@/components/home/PlaceCard';
 import ShareModal from '@/components/home/ShareModal';
 import CommentModal from '@/components/home/CommentModal';
+import LocationDetailSheet from '@/components/LocationDetailSheet';
 
 interface Category {
   id: string;
@@ -143,13 +143,14 @@ const ExplorePage = () => {
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [likedPlaces, setLikedPlaces] = useState(new Set());
-  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   
-  // Add modal states for share and comment
+  // Add modal states for share, comment, and location detail
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
+  const [isLocationDetailOpen, setIsLocationDetailOpen] = useState(false);
   const [sharePlace, setSharePlace] = useState<Place | null>(null);
   const [commentPlace, setCommentPlace] = useState<Place | null>(null);
+  const [locationDetailPlace, setLocationDetailPlace] = useState<Place | null>(null);
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);
@@ -210,7 +211,9 @@ const ExplorePage = () => {
   };
 
   const handlePlaceClick = (place: Place) => {
-    setSelectedPlace(place);
+    console.log('Place card clicked:', place.name, '- opening location detail');
+    setLocationDetailPlace(place);
+    setIsLocationDetailOpen(true);
   };
 
   const filteredPlaces = useMemo(() => {
@@ -430,6 +433,31 @@ const ExplorePage = () => {
           }}
           place={commentPlace}
           onCommentSubmit={(text) => handleCommentSubmit(text, commentPlace)}
+        />
+      )}
+
+      {/* Location Detail Modal */}
+      {isLocationDetailOpen && locationDetailPlace && (
+        <LocationDetailSheet
+          isOpen={isLocationDetailOpen}
+          onClose={() => {
+            setIsLocationDetailOpen(false);
+            setLocationDetailPlace(null);
+          }}
+          location={{
+            id: locationDetailPlace.id,
+            name: locationDetailPlace.name,
+            category: locationDetailPlace.category,
+            image: locationDetailPlace.image,
+            rating: locationDetailPlace.rating || 4.5,
+            reviewCount: locationDetailPlace.reviewCount || 0,
+            coordinates: locationDetailPlace.coordinates,
+            address: `Global Location`,
+            openingHours: locationDetailPlace.openingHours || 'Hours not available',
+            priceRange: '$$',
+            description: `Experience ${locationDetailPlace.name}, a wonderful ${locationDetailPlace.category} with ${locationDetailPlace.likes} likes from the community.`,
+            tags: locationDetailPlace.tags || []
+          }}
         />
       )}
     </div>
