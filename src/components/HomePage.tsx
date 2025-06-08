@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -214,6 +213,7 @@ const cityData: Record<string, { coordinates: { lat: number; lng: number }; plac
 // Default to San Francisco places
 const defaultPlaces = cityData['san francisco'].places;
 
+// Enhanced demo stories with more social interactions
 const mockStories: Story[] = [
   {
     id: '1',
@@ -385,7 +385,12 @@ const HomePage = () => {
 
   const handlePinClick = (place: Place) => {
     console.log('Map pin clicked:', place.name);
-    setSelectedPlace(place);
+    setSelectedPlace({
+      ...place,
+      totalSaves: place.totalSaves || getSavesCount(place),
+      friendsWhoSaved: typeof place.friendsWhoSaved === 'number' ? place.friendsWhoSaved : place.friendsWhoSaved?.length || 0,
+      visitors: typeof place.visitors === 'number' ? place.visitors : place.visitors?.length || 0
+    });
   };
 
   const handleCloseSelectedPlace = () => {
@@ -406,12 +411,22 @@ const HomePage = () => {
   };
 
   const handleShare = (place: Place) => {
-    setSharePlace(place);
+    setSharePlace({
+      ...place,
+      totalSaves: place.totalSaves || getSavesCount(place),
+      friendsWhoSaved: typeof place.friendsWhoSaved === 'number' ? place.friendsWhoSaved : place.friendsWhoSaved?.length || 0,
+      visitors: typeof place.visitors === 'number' ? place.visitors : place.visitors?.length || 0
+    });
     setIsShareModalOpen(true);
   };
 
   const handleComment = (place: Place) => {
-    setCommentPlace(place);
+    setCommentPlace({
+      ...place,
+      totalSaves: place.totalSaves || getSavesCount(place),
+      friendsWhoSaved: typeof place.friendsWhoSaved === 'number' ? place.friendsWhoSaved : place.friendsWhoSaved?.length || 0,
+      visitors: typeof place.visitors === 'number' ? place.visitors : place.visitors?.length || 0
+    });
     setIsCommentModalOpen(true);
   };
 
@@ -427,7 +442,12 @@ const HomePage = () => {
 
   const handleCardClick = (place: Place) => {
     console.log('Place card clicked:', place.name, '- opening location detail');
-    setLocationDetailPlace(place);
+    setLocationDetailPlace({
+      ...place,
+      totalSaves: place.totalSaves || getSavesCount(place),
+      friendsWhoSaved: typeof place.friendsWhoSaved === 'number' ? place.friendsWhoSaved : place.friendsWhoSaved?.length || 0,
+      visitors: typeof place.visitors === 'number' ? place.visitors : place.visitors?.length || 0
+    });
     setIsLocationDetailOpen(true);
   };
 
@@ -474,6 +494,13 @@ const HomePage = () => {
     return (activeFilter === 'following' || activeFilter === 'new') && 
            !hasFollowedUsers && 
            !pinsLoading;
+  };
+
+  // Helper function to get saves count
+  const getSavesCount = (place: Place) => {
+    if (place.totalSaves) return place.totalSaves;
+    if (typeof place.friendsWhoSaved === 'number') return place.friendsWhoSaved;
+    return place.friendsWhoSaved?.length || 0;
   };
 
   return (
@@ -583,10 +610,10 @@ const HomePage = () => {
           <PlaceCard
             place={selectedPlace}
             isLiked={likedPlaces.has(selectedPlace.id)}
-            onCardClick={handleCardClick}
-            onLikeToggle={handleLikeToggle}
-            onShare={handleShare}
-            onComment={handleComment}
+            onCardClick={() => handleCardClick(selectedPlace)}
+            onLikeToggle={() => handleLikeToggle(selectedPlace.id)}
+            onShare={() => handleShare(selectedPlace)}
+            onComment={() => handleComment(selectedPlace)}
             cityName={currentCity}
           />
         </div>
