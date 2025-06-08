@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -510,7 +511,7 @@ const ExplorePage = () => {
               friendsWhoSaved: place.friendsWhoSaved
             }))}
             onPinClick={handlePinClick}
-            mapCenter={mapCenter}
+            mapCenter={currentMapCenter}
             selectedPlace={selectedPlace}
             onCloseSelectedPlace={handleCloseSelectedPlace}
           />
