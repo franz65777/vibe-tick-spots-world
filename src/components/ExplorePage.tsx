@@ -1,16 +1,10 @@
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { X } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import MapSection from '@/components/home/MapSection';
-import StoriesSection from '@/components/home/StoriesSection';
-import PlaceCard from '@/components/home/PlaceCard';
-import LocationOfTheWeek from '@/components/home/LocationOfTheWeek';
-import Header from '@/components/home/Header';
-import FilterButtons from '@/components/home/FilterButtons';
-import ModalsManager from '@/components/home/ModalsManager';
+import { useState, useEffect } from 'react';
+import { Search, MapPin, Users, SlidersHorizontal, Heart, UserCheck, Navigation } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { useGeolocation } from '@/hooks/useGeolocation';
-import { useMapPins } from '@/hooks/useMapPins';
+import PlaceCard from '@/components/home/PlaceCard';
 
 interface Place {
   id: string;
@@ -26,662 +20,405 @@ interface Place {
   addedDate?: string;
   isFollowing?: boolean;
   popularity?: number;
+  distance?: number;
 }
 
-interface Story {
+interface User {
   id: string;
-  userId: string;
-  userName: string;
-  userAvatar: string;
-  isViewed: boolean;
-  mediaUrl: string;
-  mediaType: 'image' | 'video';
-  locationId: string;
-  locationName: string;
-  locationAddress: string;
-  timestamp: string;
-  bookingUrl?: string;
-  locationCategory?: string;
+  name: string;
+  username: string;
+  avatar: string;
+  followers: number;
+  following: number;
+  savedPlaces: number;
+  isFollowing: boolean;
 }
 
-// City data with places for different cities
-const cityData: Record<string, { coordinates: { lat: number; lng: number }; places: Place[] }> = {
-  'san francisco': {
-    coordinates: { lat: 37.7749, lng: -122.4194 },
-    places: [
-      {
-        id: '1',
-        name: 'The Cozy Corner Café',
-        category: 'cafe',
-        likes: 24,
-        friendsWhoSaved: [
-          { name: 'Sarah', avatar: 'photo-1494790108755-2616b5a5c75b' },
-          { name: 'Mike', avatar: 'photo-1507003211169-0a1dd7228f2d' }
-        ],
-        visitors: ['user1', 'user2'],
-        isNew: false,
-        coordinates: { lat: 37.7849, lng: -122.4094 },
-        image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
-        addedBy: 'user1',
-        addedDate: '2024-05-25',
-        isFollowing: true,
-        popularity: 85
-      },
-      {
-        id: '2',
-        name: 'Sunset View Restaurant',
-        category: 'restaurant',
-        likes: 18,
-        visitors: ['user3'],
-        isNew: true,
-        coordinates: { lat: 37.7849, lng: -122.4194 },
-        image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop',
-        addedBy: 'user2',
-        addedDate: '2024-06-01',
-        isFollowing: true,
-        popularity: 92
-      },
-      {
-        id: '3',
-        name: 'Grand Plaza Hotel',
-        category: 'hotel',
-        likes: 45,
-        friendsWhoSaved: [
-          { name: 'Emma', avatar: 'photo-1438761681033-6461ffad8d80' }
-        ],
-        visitors: ['user4', 'user5'],
-        isNew: false,
-        coordinates: { lat: 37.7749, lng: -122.4094 },
-        image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop',
-        addedBy: 'user5',
-        addedDate: '2024-05-15',
-        isFollowing: false,
-        popularity: 96
-      }
-    ]
-  },
-  'milan': {
-    coordinates: { lat: 45.4642, lng: 9.1900 },
-    places: [
-      {
-        id: 'milan1',
-        name: 'Café Milano',
-        category: 'cafe',
-        likes: 32,
-        friendsWhoSaved: [
-          { name: 'Marco', avatar: 'photo-1527980965255-d3b416303d12' },
-          { name: 'Sofia', avatar: 'photo-1534528741775-53994a69daeb' }
-        ],
-        visitors: ['user1', 'user2', 'user3'],
-        isNew: true,
-        coordinates: { lat: 45.4642, lng: 9.1900 },
-        image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=300&fit=crop',
-        addedBy: 'user1',
-        addedDate: '2024-05-28',
-        isFollowing: true,
-        popularity: 88
-      },
-      {
-        id: 'milan2',
-        name: 'Duomo Restaurant',
-        category: 'restaurant',
-        likes: 45,
-        visitors: ['user4', 'user5'],
-        isNew: false,
-        coordinates: { lat: 45.4640, lng: 9.1896 },
-        image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop',
-        addedBy: 'user2',
-        addedDate: '2024-05-20',
-        isFollowing: true,
-        popularity: 94
-      },
-      {
-        id: 'milan3',
-        name: 'Navigli Bar',
-        category: 'bar',
-        likes: 28,
-        friendsWhoSaved: [
-          { name: 'Giuseppe', avatar: 'photo-1552058544-f2b08422138a' }
-        ],
-        visitors: ['user6'],
-        isNew: true,
-        coordinates: { lat: 45.4583, lng: 9.1756 },
-        image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=300&fit=crop',
-        addedBy: 'user3',
-        addedDate: '2024-06-01',
-        isFollowing: true,
-        popularity: 82
-      },
-      {
-        id: 'milan4',
-        name: 'Hotel Principe di Savoia',
-        category: 'hotel',
-        likes: 67,
-        friendsWhoSaved: [
-          { name: 'Isabella', avatar: 'photo-1487412720507-e7ab37603c6f' },
-          { name: 'Lorenzo', avatar: 'photo-1500648767791-00dcc994a43e' }
-        ],
-        visitors: ['user7', 'user8', 'user9'],
-        isNew: false,
-        coordinates: { lat: 45.4696, lng: 9.1965 },
-        image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
-        addedBy: 'user4',
-        addedDate: '2024-05-10',
-        isFollowing: false,
-        popularity: 96
-      }
-    ]
-  },
-  'paris': {
-    coordinates: { lat: 48.8566, lng: 2.3522 },
-    places: [
-      {
-        id: 'paris1',
-        name: 'Café de Flore',
-        category: 'cafe',
-        likes: 56,
-        friendsWhoSaved: [
-          { name: 'Pierre', avatar: 'photo-1507003211169-0a1dd7228f2d' },
-          { name: 'Marie', avatar: 'photo-1494790108755-2616b5a5c75b' }
-        ],
-        visitors: ['user1', 'user2'],
-        isNew: false,
-        coordinates: { lat: 48.8542, lng: 2.3320 },
-        image: 'https://images.unsplash.com/photo-1559925393-8be0ec4767c8?w=400&h=300&fit=crop',
-        addedBy: 'user1',
-        addedDate: '2024-05-15',
-        isFollowing: true,
-        popularity: 91
-      },
-      {
-        id: 'paris2',
-        name: 'Le Jules Verne',
-        category: 'restaurant',
-        likes: 89,
-        visitors: ['user3', 'user4'],
-        isNew: true,
-        coordinates: { lat: 48.8584, lng: 2.2945 },
-        image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=300&fit=crop',
-        addedBy: 'user2',
-        addedDate: '2024-05-30',
-        isFollowing: true,
-        popularity: 98
-      }
-    ]
-  }
-};
-
-// Default to San Francisco places
-const defaultPlaces = cityData['san francisco'].places;
-
-const mockStories: Story[] = [
+// Mock data for locations
+const mockLocations: Place[] = [
   {
     id: '1',
-    userId: 'user1',
-    userName: 'Sarah',
-    userAvatar: 'photo-1494790108755-2616b5a5c75b',
-    isViewed: false,
-    mediaUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=600&fit=crop',
-    mediaType: 'image',
-    locationId: '1',
-    locationName: 'The Cozy Corner Café',
-    locationAddress: '123 Main St, Downtown',
-    timestamp: '2 hours ago',
-    bookingUrl: 'https://www.opentable.com/booking',
-    locationCategory: 'restaurant'
-  },
-  {
-    id: '4',
-    userId: 'user1',
-    userName: 'Sarah',
-    userAvatar: 'photo-1494790108755-2616b5a5c75b',
-    isViewed: false,
-    mediaUrl: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=600&fit=crop',
-    mediaType: 'image',
-    locationId: '4',
-    locationName: 'Neon Nights Bar',
-    locationAddress: '789 Night St, Downtown',
-    timestamp: '1 hour ago',
-    bookingUrl: 'https://www.opentable.com/booking',
-    locationCategory: 'bar'
-  },
-  {
-    id: '5',
-    userId: 'user1',
-    userName: 'Sarah',
-    userAvatar: 'photo-1494790108755-2616b5a5c75b',
-    isViewed: false,
-    mediaUrl: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=600&fit=crop',
-    mediaType: 'image',
-    locationId: '3',
-    locationName: 'Grand Plaza Hotel',
-    locationAddress: '456 Park Ave, Midtown',
-    timestamp: '30 minutes ago',
-    bookingUrl: 'https://www.booking.com/hotel',
-    locationCategory: 'hotel'
-  },
-  {
-    id: '6',
-    userId: 'user1',
-    userName: 'Sarah',
-    userAvatar: 'photo-1494790108755-2616b5a5c75b',
-    isViewed: false,
-    mediaUrl: 'https://images.unsplash.com/photo-1453614512568-c4024d13c247?w=400&h=600&fit=crop',
-    mediaType: 'image',
-    locationId: '6',
-    locationName: 'Artisan Coffee House',
-    locationAddress: '789 Coffee St, Downtown',
-    timestamp: '15 minutes ago',
-    bookingUrl: 'https://www.opentable.com/booking',
-    locationCategory: 'cafe'
+    name: 'Mario\'s Pizza Palace',
+    category: 'restaurant',
+    likes: 156,
+    friendsWhoSaved: [
+      { name: 'Sarah', avatar: 'photo-1494790108755-2616b5a5c75b' },
+      { name: 'Mike', avatar: 'photo-1507003211169-0a1dd7228f2d' }
+    ],
+    visitors: ['user1', 'user2', 'user3'],
+    isNew: false,
+    coordinates: { lat: 37.7849, lng: -122.4094 },
+    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=300&fit=crop',
+    addedBy: 'user1',
+    addedDate: '2024-05-25',
+    isFollowing: true,
+    popularity: 89,
+    distance: 0.3
   },
   {
     id: '2',
-    userId: 'user2',
-    userName: 'Mike',
-    userAvatar: 'photo-1507003211169-0a1dd7228f2d',
-    isViewed: true,
-    mediaUrl: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=600&fit=crop',
-    mediaType: 'image',
-    locationId: '3',
-    locationName: 'Grand Plaza Hotel',
-    locationAddress: '456 Park Ave, Midtown',
-    timestamp: '4 hours ago',
-    bookingUrl: 'https://www.booking.com/hotel',
-    locationCategory: 'hotel'
-  },
-  {
-    id: '7',
-    userId: 'user2',
-    userName: 'Mike',
-    userAvatar: 'photo-1507003211169-0a1dd7228f2d',
-    isViewed: false,
-    mediaUrl: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=600&fit=crop',
-    mediaType: 'image',
-    locationId: '4',
-    locationName: 'Neon Nights Bar',
-    locationAddress: '789 Night St, Downtown',
-    timestamp: '3 hours ago',
-    bookingUrl: 'https://www.opentable.com/booking',
-    locationCategory: 'bar'
+    name: 'Tony\'s Authentic Pizza',
+    category: 'restaurant',
+    likes: 89,
+    friendsWhoSaved: [
+      { name: 'Emma', avatar: 'photo-1438761681033-6461ffad8d80' }
+    ],
+    visitors: ['user4', 'user5'],
+    isNew: true,
+    coordinates: { lat: 37.7749, lng: -122.4194 },
+    image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop',
+    addedBy: 'user2',
+    addedDate: '2024-06-01',
+    isFollowing: false,
+    popularity: 76,
+    distance: 0.8
   },
   {
     id: '3',
-    userId: 'user3',
-    userName: 'Emma',
-    userAvatar: 'photo-1438761681033-6461ffad8d80',
-    isViewed: false,
-    mediaUrl: 'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400&h=600&fit=crop',
-    mediaType: 'image',
-    locationId: '5',
-    locationName: 'Ocean Breeze Restaurant',
-    locationAddress: '789 Coastal Rd, Seafront',
-    timestamp: '6 hours ago',
-    bookingUrl: 'https://www.opentable.com/r/ocean-breeze',
-    locationCategory: 'restaurant'
+    name: 'Blue Bottle Coffee',
+    category: 'cafe',
+    likes: 234,
+    friendsWhoSaved: [
+      { name: 'Alex', avatar: 'photo-1472099645785-5658abf4ff4e' },
+      { name: 'Sofia', avatar: 'photo-1534528741775-53994a69daeb' }
+    ],
+    visitors: ['user6', 'user7', 'user8'],
+    isNew: false,
+    coordinates: { lat: 37.7649, lng: -122.4294 },
+    image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
+    addedBy: 'user3',
+    addedDate: '2024-05-15',
+    isFollowing: true,
+    popularity: 94,
+    distance: 1.2
   }
 ];
 
+// Mock data for users
+const mockUsers: User[] = [
+  {
+    id: 'user1',
+    name: 'Sarah Johnson',
+    username: '@sarahj',
+    avatar: 'photo-1494790108755-2616b5a5c75b',
+    followers: 1250,
+    following: 456,
+    savedPlaces: 89,
+    isFollowing: false
+  },
+  {
+    id: 'user2',
+    name: 'Mike Chen',
+    username: '@mikec',
+    avatar: 'photo-1507003211169-0a1dd7228f2d',
+    followers: 890,
+    following: 234,
+    savedPlaces: 156,
+    isFollowing: true
+  }
+];
+
+type SearchMode = 'locations' | 'users';
+type SortBy = 'proximity' | 'likes' | 'followers';
+
 const ExplorePage = () => {
-  console.log('ExplorePage rendering...');
-  
-  const [isCreateStoryModalOpen, setIsCreateStoryModalOpen] = useState(false);
-  const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
-  const [isMessagesModalOpen, setIsMessagesModalOpen] = useState(false);
-  const [isStoriesViewerOpen, setIsStoriesViewerOpen] = useState(false);
-  const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
-  const [stories, setStories] = useState(mockStories);
-  
-  const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'new'>('following');
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentCity, setCurrentCity] = useState('San Francisco');
-
-  // Use the new hooks
+  const [searchMode, setSearchMode] = useState<SearchMode>('locations');
+  const [sortBy, setSortBy] = useState<SortBy>('proximity');
+  const [showFilters, setShowFilters] = useState(false);
+  const [filteredLocations, setFilteredLocations] = useState<Place[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  
   const { location } = useGeolocation();
-  const { pins, loading: pinsLoading, refreshPins, hasFollowedUsers } = useMapPins(activeFilter);
 
-  // Update current city when geolocation changes
+  // Filter and sort locations based on search query and filters
   useEffect(() => {
-    if (location?.city) {
-      setCurrentCity(location.city);
+    if (!searchQuery.trim()) {
+      setFilteredLocations([]);
+      setFilteredUsers([]);
+      return;
     }
-  }, [location?.city]);
 
-  // Refresh pins when city or filter changes
-  useEffect(() => {
-    refreshPins(currentCity);
-  }, [currentCity, refreshPins]);
-
-  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
-  const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
-  const [sharePlace, setSharePlace] = useState<Place | null>(null);
-  const [commentPlace, setCommentPlace] = useState<Place | null>(null);
-  const [isLocationDetailOpen, setIsLocationDetailOpen] = useState(false);
-  const [locationDetailPlace, setLocationDetailPlace] = useState<Place | null>(null);
-
-  const handleCreateStory = () => {
-    console.log('Create story clicked');
-    setIsCreateStoryModalOpen(true);
-  };
-
-  const handleStoryCreated = () => {
-    console.log('Story created successfully');
-    // TODO: Refresh stories list
-  };
-
-  const handleStoryClick = (index: number) => {
-    console.log('Story clicked:', index);
-    setCurrentStoryIndex(index);
-    setIsStoriesViewerOpen(true);
-  };
-
-  const handleStoryViewed = (storyId: string) => {
-    setStories(prev => prev.map(story => 
-      story.id === storyId ? { ...story, isViewed: true } : story
-    ));
-  };
-
-  const handlePinClick = (place: Place) => {
-    console.log('Map pin clicked:', place.name);
-    setSelectedPlace(place);
-  };
-
-  const handleCloseSelectedPlace = () => {
-    console.log('Closing selected place card');
-    setSelectedPlace(null);
-  };
-
-  const handleLikeToggle = (placeId: string) => {
-    setLikedPlaces(prev => {
-      const newLiked = new Set(prev);
-      if (newLiked.has(placeId)) {
-        newLiked.delete(placeId);
-      } else {
-        newLiked.add(placeId);
-      }
-      return newLiked;
-    });
-  };
-
-  const handleShare = (place: Place) => {
-    setSharePlace(place);
-    setIsShareModalOpen(true);
-  };
-
-  const handleComment = (place: Place) => {
-    setCommentPlace(place);
-    setIsCommentModalOpen(true);
-  };
-
-  const handleShareSubmit = (friendIds: string[], place: Place) => {
-    console.log('Sharing place:', place.name, 'with friends:', friendIds);
-    // TODO: Implement actual sharing logic
-  };
-
-  const handleCommentSubmit = (text: string, place: Place) => {
-    console.log('Adding comment:', text, 'to place:', place.name);
-    // TODO: Implement actual comment submission logic
-  };
-
-  const handleCardClick = (place: Place) => {
-    console.log('Place card clicked:', place.name, '- opening location detail');
-    setLocationDetailPlace(place);
-    setIsLocationDetailOpen(true);
-  };
-
-  const handleCitySearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      setCurrentCity(searchQuery.trim());
-    }
-  };
-
-  const handleCitySelect = (cityName: string) => {
-    console.log('City selected:', cityName);
-    setCurrentCity(cityName);
-  };
-
-  const handleSearchKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleCitySearch(e);
-    }
-  };
-
-  const currentMapCenter = useMemo(() => {
-    if (location?.latitude && location?.longitude && location.city === currentCity) {
-      return { lat: location.latitude, lng: location.longitude };
-    }
-    return cityData[currentCity.toLowerCase()]?.coordinates || { lat: 37.7749, lng: -122.4194 };
-  }, [location?.latitude, location?.longitude, location?.city, currentCity]);
-
-  // Get the most popular location from pins
-  const getLocationOfTheWeek = () => {
-    if (pins.length === 0) return null;
+    setIsSearching(true);
     
-    return pins.reduce((topPin, currentPin) => {
-      const currentEngagement = currentPin.likes + (currentPin.popularity || 0);
-      const topEngagement = topPin.likes + (topPin.popularity || 0);
-      return currentEngagement > topEngagement ? currentPin : topPin;
-    });
-  };
-
-  const locationOfTheWeek = getLocationOfTheWeek();
-
-  // Check if we should show the empty state message
-  const shouldShowEmptyFollowingMessage = () => {
-    return (activeFilter === 'following' || activeFilter === 'new') && 
-           !hasFollowedUsers && 
-           !pinsLoading;
-  };
-
-    const filteredPlaces = useMemo(() => {
-        return defaultPlaces.filter(place =>
-            place.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            place.category.toLowerCase().includes(searchQuery.toLowerCase())
+    // Simulate API call delay
+    const timer = setTimeout(() => {
+      if (searchMode === 'locations') {
+        let filtered = mockLocations.filter(place =>
+          place.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          place.category.toLowerCase().includes(searchQuery.toLowerCase())
         );
-    }, [searchQuery]);
+
+        // Sort based on selected filter
+        if (sortBy === 'proximity') {
+          filtered.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+        } else if (sortBy === 'likes') {
+          filtered.sort((a, b) => b.likes - a.likes);
+        } else if (sortBy === 'followers') {
+          filtered.sort((a, b) => (b.friendsWhoSaved?.length || 0) - (a.friendsWhoSaved?.length || 0));
+        }
+
+        setFilteredLocations(filtered);
+      } else {
+        let filtered = mockUsers.filter(user =>
+          user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          user.username.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+
+        if (sortBy === 'followers') {
+          filtered.sort((a, b) => b.followers - a.followers);
+        }
+
+        setFilteredUsers(filtered);
+      }
+      
+      setIsSearching(false);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, searchMode, sortBy]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Search is handled by useEffect
+  };
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-blue-50/30 via-white to-purple-50/20 pt-16">
-      {/* Header */}
-      <Header
-        searchQuery={searchQuery}
-        currentCity={currentCity}
-        onSearchChange={setSearchQuery}
-        onSearchKeyPress={handleSearchKeyPress}
-        onNotificationsClick={() => setIsNotificationsModalOpen(true)}
-        onMessagesClick={() => setIsMessagesModalOpen(true)}
-        onCitySelect={handleCitySelect}
-      />
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto pb-20">
-        {/* Map Section */}
-        <div className="relative h-64">
-          <MapSection 
-            places={filteredPlaces.map(place => ({
-              id: place.id,
-              name: place.name,
-              category: place.category,
-              coordinates: place.coordinates,
-              visitors: place.visitors || [],
-              likes: place.likes || 0,
-              friendsWhoSaved: place.friendsWhoSaved
-            }))}
-            onPinClick={handlePinClick}
-            mapCenter={currentMapCenter}
-            selectedPlace={selectedPlace}
-            onCloseSelectedPlace={handleCloseSelectedPlace}
-          />
-        </div>
-
-        {/* Stories Section */}
-        <div className="bg-white/60 backdrop-blur-sm px-4 py-3 sm:px-6 sm:py-2">
-          <div className="overflow-x-auto">
-            <StoriesSection 
-              stories={stories}
-              onCreateStory={handleCreateStory}
-              onStoryClick={handleStoryClick}
-            />
+      {/* Header with Search */}
+      <div className="bg-white/95 backdrop-blur-lg px-4 py-4 shadow-sm border-b border-gray-100">
+        <div className="max-w-2xl mx-auto">
+          {/* Search Mode Toggle */}
+          <div className="flex bg-gray-100 rounded-xl p-1 mb-4">
+            <button
+              onClick={() => setSearchMode('locations')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+                searchMode === 'locations'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              <MapPin className="w-4 h-4" />
+              Locations
+            </button>
+            <button
+              onClick={() => setSearchMode('users')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+                searchMode === 'users'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              Users
+            </button>
           </div>
-        </div>
 
-        {/* Location of the Week - Compact */}
-        {locationOfTheWeek && (
-          <LocationOfTheWeek 
-            topLocation={{
-              id: locationOfTheWeek.id,
-              name: locationOfTheWeek.name,
-              category: locationOfTheWeek.category,
-              likes: locationOfTheWeek.likes,
-              visitors: [],
-              isNew: false,
-              coordinates: locationOfTheWeek.coordinates,
-              popularity: locationOfTheWeek.popularity
-            }}
-            onLocationClick={handleCardClick}
-          />
-        )}
-
-        {/* Filter Buttons */}
-        <FilterButtons
-          activeFilter={activeFilter}
-          onFilterChange={setActiveFilter}
-          newCount={pins.length}
-        />
-
-        {/* Empty Following State Message */}
-        {shouldShowEmptyFollowingMessage() && (
-          <div className="flex-1 flex items-center justify-center p-6 pb-24">
-            <div className="text-center max-w-sm mx-auto">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4 mx-auto">
-                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Start Following Others</h3>
-              <p className="text-gray-600 text-sm leading-relaxed">
-                Start following others to see where your friends go or save locations to begin curating your map.
-              </p>
-              <button
-                onClick={() => setActiveFilter('popular')}
-                className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-full text-sm font-medium hover:bg-blue-700 transition-colors"
+          {/* Search Bar */}
+          <form onSubmit={handleSearch} className="relative">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Input
+                type="text"
+                placeholder={searchMode === 'locations' ? 'Search for places, food, cafes...' : 'Search for users...'}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-12 h-12 bg-white border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-xl text-base"
+              />
+              <Button
+                type="button"
+                onClick={() => setShowFilters(!showFilters)}
+                variant="ghost"
+                size="icon"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8"
               >
-                Explore Popular Places
-              </button>
+                <SlidersHorizontal className="w-4 h-4" />
+              </Button>
+            </div>
+          </form>
+
+          {/* Filters */}
+          {showFilters && (
+            <div className="mt-4 p-4 bg-gray-50 rounded-xl">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-sm font-medium text-gray-700">Sort by:</span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setSortBy('proximity')}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    sortBy === 'proximity'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <Navigation className="w-4 h-4" />
+                  Proximity
+                </button>
+                <button
+                  onClick={() => setSortBy('likes')}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    sortBy === 'likes'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <Heart className="w-4 h-4" />
+                  Likes
+                </button>
+                <button
+                  onClick={() => setSortBy('followers')}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    sortBy === 'followers'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <UserCheck className="w-4 h-4" />
+                  {searchMode === 'locations' ? 'Friends Saved' : 'Followers'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Results */}
+      <div className="flex-1 overflow-y-auto pb-20">
+        {!searchQuery.trim() ? (
+          // Empty state
+          <div className="flex flex-col items-center justify-center h-full px-6 text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+              <Search className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Explore {searchMode === 'locations' ? 'Locations' : 'Users'}
+            </h3>
+            <p className="text-gray-600 text-sm max-w-sm">
+              {searchMode === 'locations' 
+                ? 'Search for restaurants, cafes, bars, and more. Discover new places based on what your friends have saved.'
+                : 'Find and follow other users to see their favorite places and recommendations.'
+              }
+            </p>
+          </div>
+        ) : isSearching ? (
+          // Loading state
+          <div className="flex items-center justify-center py-12">
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-gray-600">Searching...</span>
             </div>
           </div>
-        )}
-
-        {/* Map Section - Only show if not in empty following state */}
-        {!shouldShowEmptyFollowingMessage() && (
-          <div className="flex-1 relative mb-20">
-            <div className="absolute inset-0 bg-gradient-to-t from-white/20 via-transparent to-transparent pointer-events-none z-10"></div>
-            <MapSection 
-              places={pins.map(pin => ({
-                id: pin.id,
-                name: pin.name,
-                category: pin.category,
-                coordinates: pin.coordinates,
-                visitors: [],
-                likes: pin.likes,
-                friendsWhoSaved: generateMockFriendsWhoSaved()
-              }))}
-              onPinClick={handlePinClick}
-              mapCenter={currentMapCenter}
-              selectedPlace={selectedPlace}
-              onCloseSelectedPlace={handleCloseSelectedPlace}
-            />
-            
-            {pinsLoading && (
-              <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white/90 px-3 py-2 rounded-full shadow-lg z-20">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                  Loading {activeFilter} pins...
+        ) : searchMode === 'locations' ? (
+          // Location results
+          <div className="px-4 py-6">
+            {filteredLocations.length > 0 ? (
+              <>
+                <div className="mb-4">
+                  <p className="text-sm text-gray-600">
+                    Found {filteredLocations.length} {filteredLocations.length === 1 ? 'location' : 'locations'} 
+                    {sortBy === 'proximity' && ' sorted by proximity'}
+                    {sortBy === 'likes' && ' sorted by likes'}
+                    {sortBy === 'followers' && ' sorted by friends who saved'}
+                  </p>
                 </div>
+                <div className="space-y-4">
+                  {filteredLocations.map((place) => (
+                    <div key={place.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                      <PlaceCard
+                        place={place}
+                        isLiked={false}
+                        onCardClick={() => {}}
+                        onLikeToggle={() => {}}
+                        onShare={() => {}}
+                        onComment={() => {}}
+                        cityName="Current City"
+                      />
+                      {place.distance !== undefined && (
+                        <div className="px-4 pb-3">
+                          <span className="text-sm text-gray-500">
+                            {place.distance} km away
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-12">
+                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3 mx-auto">
+                  <MapPin className="w-6 h-6 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-1">No locations found</h3>
+                <p className="text-gray-600 text-sm">
+                  Try searching for something else or check your spelling
+                </p>
+              </div>
+            )}
+          </div>
+        ) : (
+          // User results
+          <div className="px-4 py-6">
+            {filteredUsers.length > 0 ? (
+              <>
+                <div className="mb-4">
+                  <p className="text-sm text-gray-600">
+                    Found {filteredUsers.length} {filteredUsers.length === 1 ? 'user' : 'users'}
+                  </p>
+                </div>
+                <div className="space-y-3">
+                  {filteredUsers.map((user) => (
+                    <div key={user.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={`https://images.unsplash.com/${user.avatar}?w=48&h=48&fit=crop&crop=face`}
+                            alt={user.name}
+                            className="w-12 h-12 rounded-full object-cover"
+                          />
+                          <div>
+                            <h3 className="font-semibold text-gray-900">{user.name}</h3>
+                            <p className="text-sm text-gray-600">{user.username}</p>
+                            <div className="flex items-center gap-4 mt-1">
+                              <span className="text-xs text-gray-500">
+                                {user.followers} followers
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {user.savedPlaces} saved places
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant={user.isFollowing ? "outline" : "default"}
+                          className="px-4"
+                        >
+                          {user.isFollowing ? 'Following' : 'Follow'}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-12">
+                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3 mx-auto">
+                  <Users className="w-6 h-6 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-1">No users found</h3>
+                <p className="text-gray-600 text-sm">
+                  Try searching for something else or check your spelling
+                </p>
               </div>
             )}
           </div>
         )}
-
-        {/* Selected Place Card */}
-        {selectedPlace && (
-          <div className="bg-white/95 backdrop-blur-lg p-6 sm:p-5 mx-4 mb-20 rounded-3xl shadow-2xl shadow-black/10 border border-white/20 relative">
-            <button
-              onClick={handleCloseSelectedPlace}
-              className="absolute top-4 right-4 w-12 h-12 sm:w-10 sm:h-10 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors z-10"
-              aria-label="Close place details"
-            >
-              <X className="w-6 h-6 sm:w-5 sm:h-5 text-gray-600" />
-            </button>
-            <PlaceCard
-              place={selectedPlace}
-              isLiked={likedPlaces.has(selectedPlace.id)}
-              onCardClick={handleCardClick}
-              onLikeToggle={handleLikeToggle}
-              onShare={handleShare}
-              onComment={handleComment}
-              cityName={currentCity}
-            />
-          </div>
-        )}
-
-        {/* No places found message - Only for popular filter */}
-        {pins.length === 0 && !pinsLoading && activeFilter === 'popular' && (
-          <div className="flex-1 flex items-center justify-center p-6 pb-24">
-            <div className="text-center">
-              <div className="text-gray-500 text-lg mb-2">No popular places found</div>
-              <div className="text-gray-400 text-sm">
-                Try switching to a different city or check back later
-              </div>
-            </div>
-          </div>
-        )}
       </div>
-
-      {/* Modals */}
-      <ModalsManager
-        isCreateStoryModalOpen={isCreateStoryModalOpen}
-        isNotificationsModalOpen={isNotificationsModalOpen}
-        isMessagesModalOpen={isMessagesModalOpen}
-        isShareModalOpen={isShareModalOpen}
-        isCommentModalOpen={isCommentModalOpen}
-        isLocationDetailOpen={isLocationDetailOpen}
-        isStoriesViewerOpen={isStoriesViewerOpen}
-        sharePlace={sharePlace}
-        commentPlace={commentPlace}
-        locationDetailPlace={locationDetailPlace}
-        stories={stories}
-        currentStoryIndex={currentStoryIndex}
-        onCreateStoryModalClose={() => setIsCreateStoryModalOpen(false)}
-        onNotificationsModalClose={() => setIsNotificationsModalOpen(false)}
-        onMessagesModalClose={() => setIsMessagesModalOpen(false)}
-        onShareModalClose={() => setIsShareModalOpen(false)}
-        onCommentModalClose={() => setIsCommentModalOpen(false)}
-        onLocationDetailClose={() => setIsLocationDetailOpen(false)}
-        onStoriesViewerClose={() => setIsStoriesViewerOpen(false)}
-        onStoryCreated={handleStoryCreated}
-        onShare={handleShareSubmit}
-        onCommentSubmit={handleCommentSubmit}
-        onStoryViewed={handleStoryViewed}
-      />
     </div>
   );
-};
-
-// Helper function to generate mock friends data
-const generateMockFriendsWhoSaved = () => {
-  const mockFriends = [
-    { name: 'Sarah', avatar: 'photo-1494790108755-2616b5a5c75b' },
-    { name: 'Mike', avatar: 'photo-1507003211169-0a1dd7228f2d' },
-    { name: 'Emma', avatar: 'photo-1438761681033-6461ffad8d80' },
-    { name: 'Alex', avatar: 'photo-1472099645785-5658abf4ff4e' },
-  ];
-  
-  const count = Math.floor(Math.random() * 3) + 1;
-  return mockFriends.slice(0, count);
 };
 
 export default ExplorePage;
