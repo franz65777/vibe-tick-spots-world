@@ -1,7 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { backendService } from '@/services/backendService';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MapPin {
   id: string;
