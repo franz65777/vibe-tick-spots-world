@@ -493,12 +493,15 @@ const HomePage = () => {
 
   const handleCardClick = (place: Place) => {
     console.log('Place card clicked:', place.name, '- opening location detail');
-    setLocationDetailPlace({
+    const normalizedPlace = {
       ...place,
       totalSaves: place.totalSaves || getSavesCount(place),
       friendsWhoSaved: typeof place.friendsWhoSaved === 'number' ? place.friendsWhoSaved : place.friendsWhoSaved?.length || 0,
-      visitors: typeof place.visitors === 'number' ? place.visitors : place.visitors?.length || 0
-    });
+      visitors: typeof place.visitors === 'number' ? place.visitors : place.visitors?.length || 0,
+      image: place.image || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
+      addedDate: place.addedDate || new Date().toISOString().split('T')[0]
+    };
+    setLocationDetailPlace(normalizedPlace);
     setIsLocationDetailOpen(true);
   };
 
