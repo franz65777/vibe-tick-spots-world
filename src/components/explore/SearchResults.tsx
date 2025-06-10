@@ -8,16 +8,16 @@ interface Place {
   name: string;
   category: string;
   likes: number;
-  friendsWhoSaved?: { name: string; avatar: string }[];
+  friendsWhoSaved: number;
   visitors: string[];
   isNew: boolean;
   coordinates: { lat: number; lng: number };
   image?: string;
-  addedBy?: string;
+  addedBy: { name: string; avatar: string; isFollowing: boolean; };
   addedDate?: string;
   isFollowing?: boolean;
   popularity?: number;
-  distance?: number;
+  distance?: string;
   totalSaves?: number;
 }
 
@@ -86,10 +86,10 @@ const SearchResults = ({
                 key={place.id}
                 place={place}
                 isLiked={likedPlaces.has(place.id)}
-                onCardClick={onCardClick}
-                onLikeToggle={onLikeToggle}
-                onShare={onShare}
-                onComment={onComment}
+                onCardClick={() => onCardClick(place)}
+                onLikeToggle={() => onLikeToggle(place.id)}
+                onShare={() => onShare(place)}
+                onComment={() => onComment(place)}
                 cityName="Current City"
               />
             ))}

@@ -22,7 +22,7 @@ interface Place {
   name: string;
   category: string;
   likes: number;
-  friendsWhoSaved: { name: string; avatar: string; }[];
+  friendsWhoSaved: number;
   visitors: string[];
   isNew: boolean;
   coordinates: { lat: number; lng: number; };
@@ -34,16 +34,6 @@ interface Place {
   totalSaves: number;
   addedDate?: string;
   popularity?: number;
-}
-
-interface MapPin {
-  id: string;
-  name: string;
-  coordinates: { lat: number; lng: number; };
-  category: string;
-  rating?: number;
-  description?: string;
-  addedBy: { name: string; avatar: string; isFollowing: boolean; };
 }
 
 interface Story {
@@ -80,10 +70,7 @@ const HomePage = () => {
       name: 'Central Park',
       category: 'Parks',
       likes: 124,
-      friendsWhoSaved: [
-        { name: 'Sarah', avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png' },
-        { name: 'Mike', avatar: '/lovable-uploads/5bb15f7b-b3ba-4eae-88b1-7fa789eb67c4.png' }
-      ],
+      friendsWhoSaved: 2,
       visitors: ['john_doe', 'sarah_wilson', 'mike_chen'],
       isNew: true,
       coordinates: { lat: 40.785091, lng: -73.968285 },
@@ -101,9 +88,7 @@ const HomePage = () => {
       name: 'Brooklyn Bridge',
       category: 'Landmarks',
       likes: 89,
-      friendsWhoSaved: [
-        { name: 'Alex', avatar: '/lovable-uploads/5df0be70-7240-4958-ba55-5921ab3785e9.png' }
-      ],
+      friendsWhoSaved: 1,
       visitors: ['alex_brown', 'emma_davis'],
       isNew: false,
       coordinates: { lat: 40.706086, lng: -73.996864 },
@@ -143,16 +128,6 @@ const HomePage = () => {
 
   const topLocation = places[0];
 
-  const mapPins: MapPin[] = places.map(place => ({
-    id: place.id,
-    name: place.name,
-    coordinates: place.coordinates,
-    category: place.category,
-    rating: place.rating,
-    description: place.description,
-    addedBy: place.addedBy
-  }));
-
   const handleLikePlace = (placeId: string) => {
     const newLikedPlaces = new Set(likedPlaces);
     if (likedPlaces.has(placeId)) {
@@ -180,12 +155,9 @@ const HomePage = () => {
     setShowCommentModal(true);
   };
 
-  const handlePinClick = (pin: MapPin) => {
-    const place = places.find(p => p.id === pin.id);
-    if (place) {
-      setSelectedPlace(place);
-      setShowLocationDetail(true);
-    }
+  const handlePinClick = (place: Place) => {
+    setSelectedPlace(place);
+    setShowLocationDetail(true);
   };
 
   const handlePlaceClick = (place: Place) => {
@@ -262,7 +234,7 @@ const HomePage = () => {
           </div>
 
           <MapSection 
-            pins={mapPins}
+            places={places}
             onPinClick={handlePinClick}
           />
         </div>
