@@ -107,13 +107,19 @@ const WelcomePage = () => {
           {/* Terms */}
           <div className="pt-8 text-center text-xs text-gray-500">
             By continuing, you agree to our{' '}
-            <a href="#" className="text-blue-600 hover:underline font-medium">
+            <button 
+              onClick={() => navigate('/terms')}
+              className="text-blue-600 hover:underline font-medium"
+            >
               Terms of Service
-            </a>{' '}
+            </button>{' '}
             &{' '}
-            <a href="#" className="text-blue-600 hover:underline font-medium">
+            <button 
+              onClick={() => navigate('/privacy')}
+              className="text-blue-600 hover:underline font-medium"
+            >
               Privacy Policy
-            </a>
+            </button>
           </div>
         </div>
       </div>
