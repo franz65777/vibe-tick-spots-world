@@ -32,6 +32,8 @@ interface Place {
   addedBy: { name: string; avatar: string; isFollowing: boolean; };
   distance: string;
   totalSaves: number;
+  addedDate?: string;
+  popularity?: number;
 }
 
 interface MapPin {
@@ -46,7 +48,7 @@ interface MapPin {
 
 const HomePage = () => {
   const { user } = useAuth();
-  const [activeFilter, setActiveFilter] = useState('All');
+  const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'new'>('popular');
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [showLocationDetail, setShowLocationDetail] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
@@ -56,6 +58,9 @@ const HomePage = () => {
   const [showCreateStory, setShowCreateStory] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMessages, setShowMessages] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentCity, setCurrentCity] = useState('San Francisco');
+  const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
 
   // Sample places data
   const places: Place[] = [
@@ -76,7 +81,9 @@ const HomePage = () => {
       description: 'A beautiful park in the heart of Manhattan',
       addedBy: { name: 'John Doe', avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png', isFollowing: false },
       distance: '0.5 km',
-      totalSaves: 89
+      totalSaves: 89,
+      addedDate: '2024-01-15',
+      popularity: 95
     },
     {
       id: '2',
@@ -94,9 +101,18 @@ const HomePage = () => {
       description: 'Iconic bridge connecting Manhattan and Brooklyn',
       addedBy: { name: 'Emma Davis', avatar: '/lovable-uploads/5df0be70-7240-4958-ba55-5921ab3785e9.png', isFollowing: true },
       distance: '1.2 km',
-      totalSaves: 156
+      totalSaves: 156,
+      addedDate: '2024-01-10',
+      popularity: 88
     }
   ];
+
+  const stories = [
+    { id: '1', user: 'John', avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png', isViewed: false },
+    { id: '2', user: 'Sarah', avatar: '/lovable-uploads/5bb15f7b-b3ba-4eae-88b1-7fa789eb67c4.png', isViewed: true }
+  ];
+
+  const topLocation = places[0];
 
   const mapPins: MapPin[] = places.map(place => ({
     id: place.id,
@@ -108,9 +124,16 @@ const HomePage = () => {
     addedBy: place.addedBy
   }));
 
-  const handleLikePlace = (place: Place) => {
-    console.log('Liked place:', place.name);
-    toast.success(`Liked ${place.name}!`);
+  const handleLikePlace = (placeId: string) => {
+    const newLikedPlaces = new Set(likedPlaces);
+    if (likedPlaces.has(placeId)) {
+      newLikedPlaces.delete(placeId);
+      toast.success('Removed from likes!');
+    } else {
+      newLikedPlaces.add(placeId);
+      toast.success('Added to likes!');
+    }
+    setLikedPlaces(newLikedPlaces);
   };
 
   const handleSavePlace = (placeId: string) => {
@@ -136,9 +159,16 @@ const HomePage = () => {
     }
   };
 
-  const filteredPlaces = activeFilter === 'All' 
-    ? places 
-    : places.filter(place => place.category === activeFilter);
+  const handlePlaceClick = (place: Place) => {
+    setSelectedPlace(place);
+    setShowLocationDetail(true);
+  };
+
+  const filteredPlaces = places.filter(place => {
+    if (activeFilter === 'new') return place.isNew;
+    if (activeFilter === 'following') return place.addedBy.isFollowing;
+    return true; // popular shows all
+  });
 
   const handleShareWithFriends = (friendIds: string[], place: Place) => {
     console.log('Sharing place with friends:', friendIds, place.name);
@@ -152,17 +182,35 @@ const HomePage = () => {
     setShowCommentModal(false);
   };
 
+  const handleSearchKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      console.log('Search for:', searchQuery);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header 
+        searchQuery={searchQuery}
+        currentCity={currentCity}
+        onSearchChange={setSearchQuery}
+        onSearchKeyPress={handleSearchKeyPress}
         onNotificationsClick={() => setShowNotifications(true)}
         onMessagesClick={() => setShowMessages(true)}
+        onCitySelect={setCurrentCity}
       />
       
       <div className="pt-16 pb-20">
         <div className="px-4 py-4">
-          <LocationOfTheWeek />
-          <StoriesSection onCreateStory={() => setShowCreateStory(true)} />
+          <LocationOfTheWeek 
+            topLocation={topLocation}
+            onLocationClick={() => handlePlaceClick(topLocation)}
+          />
+          <StoriesSection 
+            stories={stories}
+            onCreateStory={() => setShowCreateStory(true)}
+            onStoryClick={(storyId) => console.log('Story clicked:', storyId)}
+          />
           <FilterButtons activeFilter={activeFilter} onFilterChange={setActiveFilter} />
           
           <div className="space-y-4 mb-6">
@@ -170,14 +218,12 @@ const HomePage = () => {
               <PlaceCard
                 key={place.id}
                 place={place}
-                onLike={() => handleLikePlace(place)}
-                onSave={() => handleSavePlace(place.id)}
-                onSuggest={() => handleSuggestPlace(place)}
+                isLiked={likedPlaces.has(place.id)}
+                onCardClick={() => handlePlaceClick(place)}
+                onLikeToggle={() => handleLikePlace(place.id)}
+                onShare={() => handleSuggestPlace(place)}
                 onComment={() => handleCommentPlace(place)}
-                onMoreInfo={() => {
-                  setSelectedPlace(place);
-                  setShowPlaceInteraction(true);
-                }}
+                cityName={currentCity}
               />
             ))}
           </div>
@@ -208,13 +254,13 @@ const HomePage = () => {
       />
 
       <NotificationsModal 
-        open={showNotifications}
-        onOpenChange={setShowNotifications}
+        isOpen={showNotifications}
+        onClose={() => setShowNotifications(false)}
       />
 
       <MessagesModal 
-        open={showMessages}
-        onOpenChange={setShowMessages}
+        isOpen={showMessages}
+        onClose={() => setShowMessages(false)}
       />
     </div>
   );
