@@ -35,8 +35,8 @@ const LocationRecommendations = ({
     name: rec.name,
     category: rec.category,
     likes: rec.likes,
-    friendsWhoSaved: typeof rec.friendsWhoSaved === 'number' ? rec.friendsWhoSaved : 0,
-    visitors: rec.visitors || [],
+    friendsWhoSaved: rec.friendsWhoSaved || 0,
+    visitors: rec.visitors || 0,
     isNew: rec.isNew,
     coordinates: rec.coordinates,
     image: rec.image,
@@ -48,7 +48,7 @@ const LocationRecommendations = ({
     addedDate: rec.addedDate,
     isFollowing: rec.isFollowing,
     popularity: rec.popularity,
-    distance: typeof rec.distance === 'number' ? `${rec.distance} km` : (rec.distance || '0 km'),
+    distance: rec.distance,
     totalSaves: rec.likes || 23
   });
 

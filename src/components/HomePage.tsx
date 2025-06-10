@@ -22,7 +22,7 @@ interface Place {
   name: string;
   category: string;
   likes: number;
-  friendsWhoSaved: number;
+  friendsWhoSaved: { name: string; avatar: string; }[];
   visitors: string[];
   isNew: boolean;
   coordinates: { lat: number; lng: number; };
@@ -32,24 +32,21 @@ interface Place {
   addedBy: { name: string; avatar: string; isFollowing: boolean; };
   distance: string;
   totalSaves: number;
-  addedDate?: string;
-  popularity?: number;
 }
 
-interface Story {
+interface MapPin {
   id: string;
-  userId: string;
-  userName: string;
-  userAvatar: string;
-  isViewed: boolean;
-  locationId: string;
-  locationName: string;
-  locationCategory?: string;
+  name: string;
+  coordinates: { lat: number; lng: number; };
+  category: string;
+  rating?: number;
+  description?: string;
+  addedBy: { name: string; avatar: string; isFollowing: boolean; };
 }
 
 const HomePage = () => {
   const { user } = useAuth();
-  const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'new'>('popular');
+  const [activeFilter, setActiveFilter] = useState('All');
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [showLocationDetail, setShowLocationDetail] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
@@ -59,9 +56,6 @@ const HomePage = () => {
   const [showCreateStory, setShowCreateStory] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMessages, setShowMessages] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentCity, setCurrentCity] = useState('San Francisco');
-  const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
 
   // Sample places data
   const places: Place[] = [
@@ -70,7 +64,10 @@ const HomePage = () => {
       name: 'Central Park',
       category: 'Parks',
       likes: 124,
-      friendsWhoSaved: 2,
+      friendsWhoSaved: [
+        { name: 'Sarah', avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png' },
+        { name: 'Mike', avatar: '/lovable-uploads/5bb15f7b-b3ba-4eae-88b1-7fa789eb67c4.png' }
+      ],
       visitors: ['john_doe', 'sarah_wilson', 'mike_chen'],
       isNew: true,
       coordinates: { lat: 40.785091, lng: -73.968285 },
@@ -79,16 +76,16 @@ const HomePage = () => {
       description: 'A beautiful park in the heart of Manhattan',
       addedBy: { name: 'John Doe', avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png', isFollowing: false },
       distance: '0.5 km',
-      totalSaves: 89,
-      addedDate: '2024-01-15',
-      popularity: 95
+      totalSaves: 89
     },
     {
       id: '2',
       name: 'Brooklyn Bridge',
       category: 'Landmarks',
       likes: 89,
-      friendsWhoSaved: 1,
+      friendsWhoSaved: [
+        { name: 'Alex', avatar: '/lovable-uploads/5df0be70-7240-4958-ba55-5921ab3785e9.png' }
+      ],
       visitors: ['alex_brown', 'emma_davis'],
       isNew: false,
       coordinates: { lat: 40.706086, lng: -73.996864 },
@@ -97,47 +94,23 @@ const HomePage = () => {
       description: 'Iconic bridge connecting Manhattan and Brooklyn',
       addedBy: { name: 'Emma Davis', avatar: '/lovable-uploads/5df0be70-7240-4958-ba55-5921ab3785e9.png', isFollowing: true },
       distance: '1.2 km',
-      totalSaves: 156,
-      addedDate: '2024-01-10',
-      popularity: 88
+      totalSaves: 156
     }
   ];
 
-  const stories: Story[] = [
-    { 
-      id: '1', 
-      userId: 'john123',
-      userName: 'John', 
-      userAvatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png', 
-      isViewed: false,
-      locationId: '1',
-      locationName: 'Central Park',
-      locationCategory: 'Parks'
-    },
-    { 
-      id: '2', 
-      userId: 'sarah456',
-      userName: 'Sarah', 
-      userAvatar: '/lovable-uploads/5bb15f7b-b3ba-4eae-88b1-7fa789eb67c4.png', 
-      isViewed: true,
-      locationId: '2',
-      locationName: 'Brooklyn Bridge',
-      locationCategory: 'Landmarks'
-    }
-  ];
+  const mapPins: MapPin[] = places.map(place => ({
+    id: place.id,
+    name: place.name,
+    coordinates: place.coordinates,
+    category: place.category,
+    rating: place.rating,
+    description: place.description,
+    addedBy: place.addedBy
+  }));
 
-  const topLocation = places[0];
-
-  const handleLikePlace = (placeId: string) => {
-    const newLikedPlaces = new Set(likedPlaces);
-    if (likedPlaces.has(placeId)) {
-      newLikedPlaces.delete(placeId);
-      toast.success('Removed from likes!');
-    } else {
-      newLikedPlaces.add(placeId);
-      toast.success('Added to likes!');
-    }
-    setLikedPlaces(newLikedPlaces);
+  const handleLikePlace = (place: Place) => {
+    console.log('Liked place:', place.name);
+    toast.success(`Liked ${place.name}!`);
   };
 
   const handleSavePlace = (placeId: string) => {
@@ -155,21 +128,17 @@ const HomePage = () => {
     setShowCommentModal(true);
   };
 
-  const handlePinClick = (place: Place) => {
-    setSelectedPlace(place);
-    setShowLocationDetail(true);
+  const handlePinClick = (pin: MapPin) => {
+    const place = places.find(p => p.id === pin.id);
+    if (place) {
+      setSelectedPlace(place);
+      setShowLocationDetail(true);
+    }
   };
 
-  const handlePlaceClick = (place: Place) => {
-    setSelectedPlace(place);
-    setShowLocationDetail(true);
-  };
-
-  const filteredPlaces = places.filter(place => {
-    if (activeFilter === 'new') return place.isNew;
-    if (activeFilter === 'following') return place.addedBy.isFollowing;
-    return true; // popular shows all
-  });
+  const filteredPlaces = activeFilter === 'All' 
+    ? places 
+    : places.filter(place => place.category === activeFilter);
 
   const handleShareWithFriends = (friendIds: string[], place: Place) => {
     console.log('Sharing place with friends:', friendIds, place.name);
@@ -183,58 +152,38 @@ const HomePage = () => {
     setShowCommentModal(false);
   };
 
-  const handleSearchKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      console.log('Search for:', searchQuery);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Header 
-        searchQuery={searchQuery}
-        currentCity={currentCity}
-        onSearchChange={setSearchQuery}
-        onSearchKeyPress={handleSearchKeyPress}
         onNotificationsClick={() => setShowNotifications(true)}
         onMessagesClick={() => setShowMessages(true)}
-        onCitySelect={setCurrentCity}
       />
       
       <div className="pt-16 pb-20">
         <div className="px-4 py-4">
-          <LocationOfTheWeek 
-            topLocation={topLocation}
-            onLocationClick={() => handlePlaceClick(topLocation)}
-          />
-          <StoriesSection 
-            stories={stories}
-            onCreateStory={() => setShowCreateStory(true)}
-            onStoryClick={(storyIndex) => console.log('Story clicked:', storyIndex)}
-          />
-          <FilterButtons 
-            activeFilter={activeFilter} 
-            onFilterChange={setActiveFilter}
-            newCount={filteredPlaces.filter(p => p.isNew).length}
-          />
+          <LocationOfTheWeek />
+          <StoriesSection onCreateStory={() => setShowCreateStory(true)} />
+          <FilterButtons activeFilter={activeFilter} onFilterChange={setActiveFilter} />
           
           <div className="space-y-4 mb-6">
             {filteredPlaces.map((place) => (
               <PlaceCard
                 key={place.id}
                 place={place}
-                isLiked={likedPlaces.has(place.id)}
-                onCardClick={() => handlePlaceClick(place)}
-                onLikeToggle={() => handleLikePlace(place.id)}
-                onShare={() => handleSuggestPlace(place)}
+                onLike={() => handleLikePlace(place)}
+                onSave={() => handleSavePlace(place.id)}
+                onSuggest={() => handleSuggestPlace(place)}
                 onComment={() => handleCommentPlace(place)}
-                cityName={currentCity}
+                onMoreInfo={() => {
+                  setSelectedPlace(place);
+                  setShowPlaceInteraction(true);
+                }}
               />
             ))}
           </div>
 
           <MapSection 
-            places={places}
+            pins={mapPins}
             onPinClick={handlePinClick}
           />
         </div>
@@ -259,13 +208,13 @@ const HomePage = () => {
       />
 
       <NotificationsModal 
-        isOpen={showNotifications}
-        onClose={() => setShowNotifications(false)}
+        open={showNotifications}
+        onOpenChange={setShowNotifications}
       />
 
       <MessagesModal 
-        isOpen={showMessages}
-        onClose={() => setShowMessages(false)}
+        open={showMessages}
+        onOpenChange={setShowMessages}
       />
     </div>
   );
