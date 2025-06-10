@@ -1,4 +1,3 @@
-
 import { Plus, Utensils, Hotel, Wine, MoreHorizontal } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
@@ -21,6 +20,12 @@ interface StoriesSectionProps {
 
 // Generate profile picture based on user name
 const getProfilePicture = (userName: string, userAvatar: string) => {
+  // Add safety check for undefined userName
+  if (!userName || typeof userName !== 'string') {
+    console.warn('getProfilePicture called with invalid userName:', userName);
+    return 'photo-1507003211169-0a1dd7228f2d'; // default fallback
+  }
+
   const profilePics = [
     'photo-1507003211169-0a1dd7228f2d', // man with beard
     'photo-1494790108755-2616b5a5c75b', // woman with curly hair
@@ -68,8 +73,33 @@ const getCategoryColor = (category: string) => {
 };
 
 const StoriesSection = ({ stories, onCreateStory, onStoryClick }: StoriesSectionProps) => {
+  // Add safety check for stories array
+  if (!stories || !Array.isArray(stories)) {
+    console.warn('StoriesSection received invalid stories:', stories);
+    return (
+      <div className="flex gap-5 sm:gap-4 px-2 py-1">
+        {/* Add Story Button */}
+        <div className="flex flex-col items-center gap-3 sm:gap-2 min-w-[80px] sm:min-w-[70px]">
+          <div className="relative">
+            <div 
+              className="w-20 h-20 sm:w-16 sm:h-16 border-2 border-dashed border-gray-300 rounded-full flex items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all duration-300 hover:scale-105"
+              onClick={onCreateStory}
+            >
+              <Plus className="w-7 h-7 sm:w-6 sm:h-6 text-gray-400" />
+            </div>
+          </div>
+          <span className="text-sm sm:text-xs text-gray-500 font-medium text-center">Add</span>
+        </div>
+      </div>
+    );
+  }
+
   // Group stories by user
   const groupedStories = stories.reduce((acc, story) => {
+    if (!story || !story.userId) {
+      console.warn('Invalid story object:', story);
+      return acc;
+    }
     if (!acc[story.userId]) {
       acc[story.userId] = [];
     }
@@ -95,7 +125,12 @@ const StoriesSection = ({ stories, onCreateStory, onStoryClick }: StoriesSection
       {/* User Stories */}
       {Object.entries(groupedStories).map(([userId, userStories]) => {
         const mainStory = userStories[0];
-        const uniqueCategories = [...new Set(userStories.map(story => story.locationCategory))];
+        if (!mainStory || !mainStory.userName) {
+          console.warn('Invalid main story:', mainStory);
+          return null;
+        }
+
+        const uniqueCategories = [...new Set(userStories.map(story => story.locationCategory).filter(Boolean))];
         const displayCategories = uniqueCategories.slice(0, 2);
         const hasMoreCategories = uniqueCategories.length > 2;
         const profilePic = getProfilePicture(mainStory.userName, mainStory.userAvatar);
@@ -120,7 +155,7 @@ const StoriesSection = ({ stories, onCreateStory, onStoryClick }: StoriesSection
                       className="object-cover rounded-full"
                     />
                     <AvatarFallback className="text-sm font-semibold bg-gradient-to-br from-blue-100 to-purple-100 rounded-full">
-                      {mainStory.userName[0]}
+                      {mainStory.userName[0]?.toUpperCase() || 'U'}
                     </AvatarFallback>
                   </Avatar>
                 </div>

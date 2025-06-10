@@ -48,7 +48,7 @@ const LocationRecommendations = ({
     addedDate: rec.addedDate,
     isFollowing: rec.isFollowing,
     popularity: rec.popularity,
-    distance: rec.distance || '0 km',
+    distance: typeof rec.distance === 'number' ? `${rec.distance} km` : (rec.distance || '0 km'),
     totalSaves: rec.likes || 23
   });
 

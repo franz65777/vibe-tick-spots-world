@@ -46,6 +46,17 @@ interface MapPin {
   addedBy: { name: string; avatar: string; isFollowing: boolean; };
 }
 
+interface Story {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  isViewed: boolean;
+  locationId: string;
+  locationName: string;
+  locationCategory?: string;
+}
+
 const HomePage = () => {
   const { user } = useAuth();
   const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'new'>('popular');
@@ -107,9 +118,27 @@ const HomePage = () => {
     }
   ];
 
-  const stories = [
-    { id: '1', user: 'John', avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png', isViewed: false },
-    { id: '2', user: 'Sarah', avatar: '/lovable-uploads/5bb15f7b-b3ba-4eae-88b1-7fa789eb67c4.png', isViewed: true }
+  const stories: Story[] = [
+    { 
+      id: '1', 
+      userId: 'john123',
+      userName: 'John', 
+      userAvatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png', 
+      isViewed: false,
+      locationId: '1',
+      locationName: 'Central Park',
+      locationCategory: 'Parks'
+    },
+    { 
+      id: '2', 
+      userId: 'sarah456',
+      userName: 'Sarah', 
+      userAvatar: '/lovable-uploads/5bb15f7b-b3ba-4eae-88b1-7fa789eb67c4.png', 
+      isViewed: true,
+      locationId: '2',
+      locationName: 'Brooklyn Bridge',
+      locationCategory: 'Landmarks'
+    }
   ];
 
   const topLocation = places[0];
@@ -209,9 +238,13 @@ const HomePage = () => {
           <StoriesSection 
             stories={stories}
             onCreateStory={() => setShowCreateStory(true)}
-            onStoryClick={(storyId) => console.log('Story clicked:', storyId)}
+            onStoryClick={(storyIndex) => console.log('Story clicked:', storyIndex)}
           />
-          <FilterButtons activeFilter={activeFilter} onFilterChange={setActiveFilter} />
+          <FilterButtons 
+            activeFilter={activeFilter} 
+            onFilterChange={setActiveFilter}
+            newCount={filteredPlaces.filter(p => p.isNew).length}
+          />
           
           <div className="space-y-4 mb-6">
             {filteredPlaces.map((place) => (
