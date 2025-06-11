@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearch } from '@/hooks/useSearch';
 import SearchHeader from '@/components/explore/SearchHeader';
 import SearchResults from '@/components/explore/SearchResults';
@@ -12,17 +12,17 @@ interface Place {
   name: string;
   category: string;
   likes: number;
-  friendsWhoSaved?: { name: string; avatar: string }[];
+  friendsWhoSaved: { name: string; avatar: string }[];
   visitors: string[];
   isNew: boolean;
   coordinates: { lat: number; lng: number };
-  image?: string;
+  image: string;
   addedBy?: string;
-  addedDate?: string;
+  addedDate: string;
   isFollowing?: boolean;
   popularity?: number;
-  distance?: number;
-  totalSaves?: number;
+  distance?: string;
+  totalSaves: number;
 }
 
 interface User {
@@ -55,7 +55,7 @@ const mockLocations: Place[] = [
     addedDate: '2024-05-25',
     isFollowing: true,
     popularity: 89,
-    distance: 0.3,
+    distance: '0.3 km',
     totalSaves: 23
   },
   {
@@ -74,7 +74,7 @@ const mockLocations: Place[] = [
     addedDate: '2024-06-01',
     isFollowing: false,
     popularity: 76,
-    distance: 0.8,
+    distance: '0.8 km',
     totalSaves: 15
   },
   {
@@ -94,7 +94,7 @@ const mockLocations: Place[] = [
     addedDate: '2024-05-15',
     isFollowing: true,
     popularity: 94,
-    distance: 1.2,
+    distance: '1.2 km',
     totalSaves: 42
   }
 ];
@@ -255,16 +255,16 @@ const ExplorePage = () => {
       name: location.name,
       category: location.category,
       likes: location.likes,
-      friendsWhoSaved: location.friendsWhoSaved,
-      visitors: location.visitors,
+      friendsWhoSaved: Array.isArray(location.friendsWhoSaved) ? location.friendsWhoSaved : [],
+      visitors: Array.isArray(location.visitors) ? location.visitors : [],
       isNew: location.isNew,
       coordinates: location.coordinates,
-      image: location.image,
-      addedBy: location.addedBy,
-      addedDate: location.addedDate,
+      image: location.image || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=300&fit=crop',
+      addedBy: typeof location.addedBy === 'string' ? location.addedBy : 'Explorer',
+      addedDate: location.addedDate || new Date().toISOString(),
       isFollowing: location.isFollowing,
       popularity: location.popularity,
-      distance: location.distance,
+      distance: location.distance?.toString() || '0.0 km',
       totalSaves: location.likes || 23
     };
     handleCardClick(place);
@@ -276,16 +276,16 @@ const ExplorePage = () => {
       name: location.name,
       category: location.category,
       likes: location.likes,
-      friendsWhoSaved: location.friendsWhoSaved,
-      visitors: location.visitors,
+      friendsWhoSaved: Array.isArray(location.friendsWhoSaved) ? location.friendsWhoSaved : [],
+      visitors: Array.isArray(location.visitors) ? location.visitors : [],
       isNew: location.isNew,
       coordinates: location.coordinates,
-      image: location.image,
-      addedBy: location.addedBy,
-      addedDate: location.addedDate,
+      image: location.image || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=300&fit=crop',
+      addedBy: typeof location.addedBy === 'string' ? location.addedBy : 'Explorer',
+      addedDate: location.addedDate || new Date().toISOString(),
       isFollowing: location.isFollowing,
       popularity: location.popularity,
-      distance: location.distance,
+      distance: location.distance?.toString() || '0.0 km',
       totalSaves: location.likes || 23
     };
     handleShare(place);
@@ -297,16 +297,16 @@ const ExplorePage = () => {
       name: location.name,
       category: location.category,
       likes: location.likes,
-      friendsWhoSaved: location.friendsWhoSaved,
-      visitors: location.visitors,
+      friendsWhoSaved: Array.isArray(location.friendsWhoSaved) ? location.friendsWhoSaved : [],
+      visitors: Array.isArray(location.visitors) ? location.visitors : [],
       isNew: location.isNew,
       coordinates: location.coordinates,
-      image: location.image,
-      addedBy: location.addedBy,
-      addedDate: location.addedDate,
+      image: location.image || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=300&fit=crop',
+      addedBy: typeof location.addedBy === 'string' ? location.addedBy : 'Explorer',
+      addedDate: location.addedDate || new Date().toISOString(),
       isFollowing: location.isFollowing,
       popularity: location.popularity,
-      distance: location.distance,
+      distance: location.distance?.toString() || '0.0 km',
       totalSaves: location.likes || 23
     };
     handleComment(place);

@@ -8,8 +8,8 @@ interface Place {
   name: string;
   category: string;
   likes: number;
-  friendsWhoSaved?: number | { name: string; avatar: string; }[];
-  visitors: number | string[];
+  friendsWhoSaved: { name: string; avatar: string; }[];
+  visitors: string[];
   isNew: boolean;
   coordinates: { lat: number; lng: number };
   image: string;
@@ -17,7 +17,7 @@ interface Place {
   addedDate: string;
   isFollowing?: boolean;
   popularity?: number;
-  distance?: number;
+  distance?: string;
   totalSaves: number;
 }
 
@@ -94,9 +94,7 @@ const SearchResults = ({
                 name: typeof place.addedBy === 'string' ? place.addedBy : 'Explorer',
                 avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
                 isFollowing: place.isFollowing || false
-              },
-              friendsWhoSaved: Array.isArray(place.friendsWhoSaved) ? place.friendsWhoSaved : [],
-              visitors: Array.isArray(place.visitors) ? place.visitors : []
+              }
             };
 
             return (

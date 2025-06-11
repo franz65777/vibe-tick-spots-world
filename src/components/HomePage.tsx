@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -14,17 +15,17 @@ interface Place {
   name: string;
   category: string;
   likes: number;
-  friendsWhoSaved?: { name: string; avatar: string }[];
+  friendsWhoSaved: { name: string; avatar: string }[];
   visitors: string[];
   isNew: boolean;
   coordinates: { lat: number; lng: number };
-  image?: string;
+  image: string;
   addedBy?: string;
-  addedDate?: string;
+  addedDate: string;
   isFollowing?: boolean;
   popularity?: number;
-  distance?: number;
-  totalSaves?: number;
+  distance?: string;
+  totalSaves: number;
 }
 
 // Mock data for locations
@@ -46,7 +47,7 @@ const mockLocations: Place[] = [
     addedDate: '2024-05-25',
     isFollowing: true,
     popularity: 89,
-    distance: 0.3,
+    distance: '0.3 km',
     totalSaves: 23
   },
   {
@@ -65,7 +66,7 @@ const mockLocations: Place[] = [
     addedDate: '2024-06-01',
     isFollowing: false,
     popularity: 76,
-    distance: 0.8,
+    distance: '0.8 km',
     totalSaves: 15
   },
   {
@@ -85,8 +86,32 @@ const mockLocations: Place[] = [
     addedDate: '2024-05-15',
     isFollowing: true,
     popularity: 94,
-    distance: 1.2,
+    distance: '1.2 km',
     totalSaves: 42
+  }
+];
+
+// Mock stories data
+const mockStories = [
+  {
+    id: '1',
+    userId: 'user1',
+    userName: 'Sarah',
+    userAvatar: 'photo-1494790108755-2616b5a5c75b',
+    isViewed: false,
+    locationId: '1',
+    locationName: 'Mario\'s Pizza Palace',
+    locationCategory: 'restaurant'
+  },
+  {
+    id: '2',
+    userId: 'user2',
+    userName: 'Mike',
+    userAvatar: 'photo-1507003211169-0a1dd7228f2d',
+    isViewed: true,
+    locationId: '2',
+    locationName: 'Tony\'s Pizza',
+    locationCategory: 'restaurant'
   }
 ];
 
@@ -168,107 +193,86 @@ const HomePage = () => {
     <div className="flex flex-col h-screen bg-gradient-to-br from-blue-50/30 via-white to-purple-50/20">
       <Header
         onCitySelect={handleCitySelect}
-        selectedCity={selectedCity}
         onMessagesClick={() => setMessagesModalOpen(true)}
         onNotificationsClick={() => setNotificationsModalOpen(true)}
         onCreateStoryClick={() => setCreateStoryModalOpen(true)}
       />
       
       <div className="flex-1 overflow-y-auto pb-20">
-        <StoriesSection onCreateStoryClick={() => setCreateStoryModalOpen(true)} />
-        <FilterButtons selectedFilter={selectedFilter} onFilterChange={handleFilterChange} />
+        <StoriesSection 
+          stories={mockStories}
+          onCreateStory={() => setCreateStoryModalOpen(true)}
+          onStoryClick={(index) => console.log('Story clicked:', index)}
+        />
+        <FilterButtons 
+          activeFilter={selectedFilter} 
+          onFilterChange={handleFilterChange} 
+        />
         
         <MapSection
           places={filteredPlaces.map(place => ({
             ...place,
-            image: place.image || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=300&fit=crop',
-            addedDate: place.addedDate || new Date().toISOString(),
-            friendsWhoSaved: Array.isArray(place.friendsWhoSaved) ? place.friendsWhoSaved : [],
-            visitors: Array.isArray(place.visitors) ? place.visitors : [],
-            totalSaves: place.totalSaves || place.likes
+            addedBy: {
+              name: typeof place.addedBy === 'string' ? place.addedBy : 'Explorer',
+              avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
+              isFollowing: place.isFollowing || false
+            }
           }))}
           selectedPlace={selectedPlace}
-          onPlaceSelect={handlePlaceSelect}
           onPlaceClick={handlePlaceClick}
           cityName={selectedCity}
         />
         
-        <LocationOfTheWeek 
-          place={{
-            ...filteredPlaces[0],
-            image: filteredPlaces[0]?.image || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=300&fit=crop',
-            addedDate: filteredPlaces[0]?.addedDate || new Date().toISOString(),
-            friendsWhoSaved: Array.isArray(filteredPlaces[0]?.friendsWhoSaved) ? filteredPlaces[0].friendsWhoSaved : [],
-            visitors: Array.isArray(filteredPlaces[0]?.visitors) ? filteredPlaces[0].visitors : [],
-            totalSaves: filteredPlaces[0]?.totalSaves || filteredPlaces[0]?.likes || 0
-          }}
-          onCardClick={(place) => handlePlaceClick({
-            ...place,
-            image: place.image || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=300&fit=crop',
-            addedDate: place.addedDate || new Date().toISOString(),
-            friendsWhoSaved: Array.isArray(place.friendsWhoSaved) ? place.friendsWhoSaved : [],
-            visitors: Array.isArray(place.visitors) ? place.visitors : [],
-            totalSaves: place.totalSaves || place.likes
-          })}
-          onLikeToggle={handleLikeToggle}
-          onShare={(place) => handleShare({
-            ...place,
-            image: place.image || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=300&fit=crop',
-            addedDate: place.addedDate || new Date().toISOString(),
-            friendsWhoSaved: Array.isArray(place.friendsWhoSaved) ? place.friendsWhoSaved : [],
-            visitors: Array.isArray(place.visitors) ? place.visitors : [],
-            totalSaves: place.totalSaves || place.likes
-          })}
-          onComment={(place) => handleComment({
-            ...place,
-            image: place.image || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=300&fit=crop',
-            addedDate: place.addedDate || new Date().toISOString(),
-            friendsWhoSaved: Array.isArray(place.friendsWhoSaved) ? place.friendsWhoSaved : [],
-            visitors: Array.isArray(place.visitors) ? place.visitors : [],
-            totalSaves: place.totalSaves || place.likes
-          })}
-          isLiked={likedPlaces.has(filteredPlaces[0]?.id || '')}
-          cityName={selectedCity}
-        />
+        {filteredPlaces[0] && (
+          <LocationOfTheWeek 
+            onCardClick={(place) => handlePlaceClick({
+              ...place,
+              totalSaves: place.totalSaves || place.likes
+            })}
+            onLikeToggle={handleLikeToggle}
+            onShare={(place) => handleShare({
+              ...place,
+              totalSaves: place.totalSaves || place.likes
+            })}
+            onComment={(place) => handleComment({
+              ...place,
+              totalSaves: place.totalSaves || place.likes
+            })}
+            isLiked={likedPlaces.has(filteredPlaces[0]?.id || '')}
+            cityName={selectedCity}
+          />
+        )}
       </div>
 
       <BottomNavigation />
 
       <ModalsManager
-        messagesModalOpen={messagesModalOpen}
+        isMessagesModalOpen={messagesModalOpen}
         setMessagesModalOpen={setMessagesModalOpen}
-        notificationsModalOpen={notificationsModalOpen}
+        isNotificationsModalOpen={notificationsModalOpen}
         setNotificationsModalOpen={setNotificationsModalOpen}
-        createStoryModalOpen={createStoryModalOpen}
+        isCreateStoryModalOpen={createStoryModalOpen}
         setCreateStoryModalOpen={setCreateStoryModalOpen}
-        shareModalOpen={shareModalOpen}
+        isShareModalOpen={shareModalOpen}
         setShareModalOpen={setShareModalOpen}
-        commentModalOpen={commentModalOpen}
+        isCommentModalOpen={commentModalOpen}
         setCommentModalOpen={setCommentModalOpen}
-        placeInteractionModalOpen={placeInteractionModalOpen}
+        isPlaceInteractionModalOpen={placeInteractionModalOpen}
         setPlaceInteractionModalOpen={setPlaceInteractionModalOpen}
         selectedPlace={selectedPlace ? {
           ...selectedPlace,
-          image: selectedPlace.image || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=300&fit=crop',
-          addedDate: selectedPlace.addedDate || new Date().toISOString(),
-          friendsWhoSaved: Array.isArray(selectedPlace.friendsWhoSaved) ? selectedPlace.friendsWhoSaved : [],
-          visitors: Array.isArray(selectedPlace.visitors) ? selectedPlace.visitors : [],
-          totalSaves: selectedPlace.totalSaves || selectedPlace.likes
+          addedBy: {
+            name: typeof selectedPlace.addedBy === 'string' ? selectedPlace.addedBy : 'Explorer',
+            avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
+            isFollowing: selectedPlace.isFollowing || false
+          }
         } : null}
         onShareModalShare={(friendIds, place) => handleShareModalShare(friendIds, {
           ...place,
-          image: place.image || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=300&fit=crop',
-          addedDate: place.addedDate || new Date().toISOString(),
-          friendsWhoSaved: Array.isArray(place.friendsWhoSaved) ? place.friendsWhoSaved : [],
-          visitors: Array.isArray(place.visitors) ? place.visitors : [],
           totalSaves: place.totalSaves || place.likes
         })}
         onCommentSubmit={(text, place) => handleCommentSubmit(text, {
           ...place,
-          image: place.image || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=300&fit=crop',
-          addedDate: place.addedDate || new Date().toISOString(),
-          friendsWhoSaved: Array.isArray(place.friendsWhoSaved) ? place.friendsWhoSaved : [],
-          visitors: Array.isArray(place.visitors) ? place.visitors : [],
           totalSaves: place.totalSaves || place.likes
         })}
       />
