@@ -35,11 +35,11 @@ const LocationRecommendations = ({
     name: rec.name,
     category: rec.category,
     likes: rec.likes,
-    friendsWhoSaved: rec.friendsWhoSaved || 0,
-    visitors: rec.visitors || 0,
+    friendsWhoSaved: Array.isArray(rec.friendsWhoSaved) ? rec.friendsWhoSaved : [],
+    visitors: Array.isArray(rec.visitors) ? rec.visitors : [],
     isNew: rec.isNew,
     coordinates: rec.coordinates,
-    image: rec.image,
+    image: rec.image || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
     addedBy: {
       name: typeof rec.addedBy === 'string' ? rec.addedBy : 'Explorer',
       avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
@@ -48,7 +48,7 @@ const LocationRecommendations = ({
     addedDate: rec.addedDate,
     isFollowing: rec.isFollowing,
     popularity: rec.popularity,
-    distance: rec.distance,
+    distance: typeof rec.distance === 'number' ? `${rec.distance} km` : rec.distance || '0 km',
     totalSaves: rec.likes || 23
   });
 

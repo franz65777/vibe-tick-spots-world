@@ -16,7 +16,7 @@ import ModalsManager from './home/ModalsManager';
 import NotificationsModal from './NotificationsModal';
 import MessagesModal from './MessagesModal';
 
-// Define consistent Place interface
+// Define consistent Place interface that matches PlaceCard expectations
 interface Place {
   id: string;
   name: string;
@@ -46,7 +46,7 @@ interface MapPin {
 
 const HomePage = () => {
   const { user } = useAuth();
-  const [activeFilter, setActiveFilter] = useState('All');
+  const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'new'>('following');
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [showLocationDetail, setShowLocationDetail] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
@@ -56,8 +56,9 @@ const HomePage = () => {
   const [showCreateStory, setShowCreateStory] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMessages, setShowMessages] = useState(false);
+  const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
 
-  // Sample places data
+  // Sample places data that matches the PlaceCard interface
   const places: Place[] = [
     {
       id: '1',
@@ -98,6 +99,24 @@ const HomePage = () => {
     }
   ];
 
+  const topLocation = places[0]; // Get the top location for Location of the Week
+
+  const stories = [
+    {
+      id: '1',
+      userId: 'user1',
+      userName: 'Sarah Wilson',
+      userAvatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png',
+      isViewed: false,
+      mediaUrl: '/lovable-uploads/8a9fd2cf-e687-48ee-a40f-3dd4b19ba4ff.png',
+      mediaType: 'image' as const,
+      locationId: '1',
+      locationName: 'Central Park',
+      locationAddress: 'Manhattan, NY',
+      timestamp: '2024-06-01T10:30:00Z'
+    }
+  ];
+
   const mapPins: MapPin[] = places.map(place => ({
     id: place.id,
     name: place.name,
@@ -108,17 +127,24 @@ const HomePage = () => {
     addedBy: place.addedBy
   }));
 
-  const handleLikePlace = (place: Place) => {
-    console.log('Liked place:', place.name);
-    toast.success(`Liked ${place.name}!`);
+  const handleLikeToggle = (placeId: string) => {
+    setLikedPlaces(prev => {
+      const newLiked = new Set(prev);
+      if (newLiked.has(placeId)) {
+        newLiked.delete(placeId);
+      } else {
+        newLiked.add(placeId);
+      }
+      return newLiked;
+    });
+    const place = places.find(p => p.id === placeId);
+    if (place) {
+      console.log('Liked place:', place.name);
+      toast.success(`Liked ${place.name}!`);
+    }
   };
 
-  const handleSavePlace = (placeId: string) => {
-    console.log('Saved place:', placeId);
-    toast.success('Place saved to your collection!');
-  };
-
-  const handleSuggestPlace = (place: Place) => {
+  const handleSharePlace = (place: Place) => {
     setSelectedPlace(place);
     setShowShareModal(true);
   };
@@ -128,15 +154,17 @@ const HomePage = () => {
     setShowCommentModal(true);
   };
 
-  const handlePinClick = (pin: MapPin) => {
-    const place = places.find(p => p.id === pin.id);
-    if (place) {
-      setSelectedPlace(place);
-      setShowLocationDetail(true);
-    }
+  const handleCardClick = () => {
+    // Handle card click
+    console.log('Card clicked');
   };
 
-  const filteredPlaces = activeFilter === 'All' 
+  const handlePinClick = (place: Place) => {
+    setSelectedPlace(place);
+    setShowLocationDetail(true);
+  };
+
+  const filteredPlaces = activeFilter === 'following' 
     ? places 
     : places.filter(place => place.category === activeFilter);
 
@@ -152,17 +180,47 @@ const HomePage = () => {
     setShowCommentModal(false);
   };
 
+  const handleLocationClick = (place: Place) => {
+    setSelectedPlace(place);
+    setShowLocationDetail(true);
+  };
+
+  const handleStoryClick = (storyId: string) => {
+    console.log('Story clicked:', storyId);
+  };
+
+  const handleStoryCreated = () => {
+    console.log('Story created');
+    setShowCreateStory(false);
+    toast.success('Story created successfully!');
+  };
+
+  const handleStoryViewed = (storyId: string) => {
+    console.log('Story viewed:', storyId);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header 
         onNotificationsClick={() => setShowNotifications(true)}
         onMessagesClick={() => setShowMessages(true)}
+        searchQuery=""
+        currentCity="San Francisco"
+        onSearchChange={() => {}}
+        onSearchKeyPress={() => {}}
       />
       
       <div className="pt-16 pb-20">
         <div className="px-4 py-4">
-          <LocationOfTheWeek />
-          <StoriesSection onCreateStory={() => setShowCreateStory(true)} />
+          <LocationOfTheWeek 
+            topLocation={topLocation}
+            onLocationClick={handleLocationClick}
+          />
+          <StoriesSection 
+            onCreateStory={() => setShowCreateStory(true)}
+            stories={stories}
+            onStoryClick={handleStoryClick}
+          />
           <FilterButtons activeFilter={activeFilter} onFilterChange={setActiveFilter} />
           
           <div className="space-y-4 mb-6">
@@ -170,14 +228,12 @@ const HomePage = () => {
               <PlaceCard
                 key={place.id}
                 place={place}
-                onLike={() => handleLikePlace(place)}
-                onSave={() => handleSavePlace(place.id)}
-                onSuggest={() => handleSuggestPlace(place)}
+                isLiked={likedPlaces.has(place.id)}
+                onCardClick={handleCardClick}
+                onLikeToggle={() => handleLikeToggle(place.id)}
+                onShare={() => handleSharePlace(place)}
                 onComment={() => handleCommentPlace(place)}
-                onMoreInfo={() => {
-                  setSelectedPlace(place);
-                  setShowPlaceInteraction(true);
-                }}
+                cityName="San Francisco"
               />
             ))}
           </div>
@@ -190,31 +246,39 @@ const HomePage = () => {
       </div>
 
       <ModalsManager
-        selectedPlace={selectedPlace}
-        showLocationDetail={showLocationDetail}
-        showSaveDialog={showSaveDialog}
-        showCommentModal={showCommentModal}
-        showShareModal={showShareModal}
-        showPlaceInteraction={showPlaceInteraction}
-        showCreateStory={showCreateStory}
-        onCloseLocationDetail={() => setShowLocationDetail(false)}
-        onCloseSaveDialog={() => setShowSaveDialog(false)}
-        onCloseCommentModal={() => setShowCommentModal(false)}
-        onCloseShareModal={() => setShowShareModal(false)}
-        onClosePlaceInteraction={() => setShowPlaceInteraction(false)}
-        onCloseCreateStory={() => setShowCreateStory(false)}
-        onShareWithFriends={handleShareWithFriends}
-        onAddComment={handleAddComment}
+        isCreateStoryModalOpen={showCreateStory}
+        isNotificationsModalOpen={showNotifications}
+        isMessagesModalOpen={showMessages}
+        isShareModalOpen={showShareModal}
+        isCommentModalOpen={showCommentModal}
+        isLocationDetailOpen={showLocationDetail}
+        isStoriesViewerOpen={false}
+        sharePlace={selectedPlace}
+        commentPlace={selectedPlace}
+        locationDetailPlace={selectedPlace}
+        stories={stories}
+        currentStoryIndex={0}
+        onCreateStoryModalClose={() => setShowCreateStory(false)}
+        onNotificationsModalClose={() => setShowNotifications(false)}
+        onMessagesModalClose={() => setShowMessages(false)}
+        onShareModalClose={() => setShowShareModal(false)}
+        onCommentModalClose={() => setShowCommentModal(false)}
+        onLocationDetailClose={() => setShowLocationDetail(false)}
+        onStoriesViewerClose={() => {}}
+        onStoryCreated={handleStoryCreated}
+        onShare={handleShareWithFriends}
+        onCommentSubmit={handleAddComment}
+        onStoryViewed={handleStoryViewed}
       />
 
       <NotificationsModal 
-        open={showNotifications}
-        onOpenChange={setShowNotifications}
+        isOpen={showNotifications}
+        onClose={() => setShowNotifications(false)}
       />
 
       <MessagesModal 
-        open={showMessages}
-        onOpenChange={setShowMessages}
+        isOpen={showMessages}
+        onClose={() => setShowMessages(false)}
       />
     </div>
   );
