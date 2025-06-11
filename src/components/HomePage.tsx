@@ -1,258 +1,220 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import Header from '@/components/home/Header';
-import StoriesSection from '@/components/home/StoriesSection';
-import FilterButtons from '@/components/home/FilterButtons';
-import MapSection from '@/components/home/MapSection';
-import LocationOfTheWeek from '@/components/home/LocationOfTheWeek';
-import ModalsManager from '@/components/home/ModalsManager';
-import BottomNavigation from '@/components/BottomNavigation';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Search, Plus, Filter, MoreHorizontal, Heart, MapPin as MapPinIcon, MessageSquare, Bell } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import Header from './home/Header';
+import FilterButtons from './home/FilterButtons';
+import LocationOfTheWeek from './home/LocationOfTheWeek';
+import StoriesSection from './home/StoriesSection';
+import PlaceCard from './home/PlaceCard';
+import MapSection from './home/MapSection';
+import ModalsManager from './home/ModalsManager';
+import NotificationsModal from './NotificationsModal';
+import MessagesModal from './MessagesModal';
 
+// Define consistent Place interface
 interface Place {
   id: string;
   name: string;
   category: string;
   likes: number;
-  friendsWhoSaved: { name: string; avatar: string }[];
+  friendsWhoSaved: { name: string; avatar: string; }[];
   visitors: string[];
   isNew: boolean;
-  coordinates: { lat: number; lng: number };
+  coordinates: { lat: number; lng: number; };
+  rating?: number;
   image: string;
-  addedBy?: string;
-  addedDate: string;
-  isFollowing?: boolean;
-  popularity?: number;
-  distance?: string;
+  description?: string;
+  addedBy: { name: string; avatar: string; isFollowing: boolean; };
+  distance: string;
   totalSaves: number;
 }
 
-// Mock data for locations
-const mockLocations: Place[] = [
-  {
-    id: '1',
-    name: 'Mario\'s Pizza Palace',
-    category: 'restaurant',
-    likes: 156,
-    friendsWhoSaved: [
-      { name: 'Sarah', avatar: 'photo-1494790108755-2616b5a5c75b' },
-      { name: 'Mike', avatar: 'photo-1507003211169-0a1dd7228f2d' }
-    ],
-    visitors: ['user1', 'user2', 'user3'],
-    isNew: false,
-    coordinates: { lat: 37.7849, lng: -122.4094 },
-    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=300&fit=crop',
-    addedBy: 'user1',
-    addedDate: '2024-05-25',
-    isFollowing: true,
-    popularity: 89,
-    distance: '0.3 km',
-    totalSaves: 23
-  },
-  {
-    id: '2',
-    name: 'Tony\'s Authentic Pizza',
-    category: 'restaurant',
-    likes: 89,
-    friendsWhoSaved: [
-      { name: 'Emma', avatar: 'photo-1438761681033-6461ffad8d80' }
-    ],
-    visitors: ['user4', 'user5'],
-    isNew: true,
-    coordinates: { lat: 37.7749, lng: -122.4194 },
-    image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop',
-    addedBy: 'user2',
-    addedDate: '2024-06-01',
-    isFollowing: false,
-    popularity: 76,
-    distance: '0.8 km',
-    totalSaves: 15
-  },
-  {
-    id: '3',
-    name: 'Blue Bottle Coffee',
-    category: 'cafe',
-    likes: 234,
-    friendsWhoSaved: [
-      { name: 'Alex', avatar: 'photo-1472099645785-5658abf4ff4e' },
-      { name: 'Sofia', avatar: 'photo-1534528741775-53994a69daeb' }
-    ],
-    visitors: ['user6', 'user7', 'user8'],
-    isNew: false,
-    coordinates: { lat: 37.7649, lng: -122.4294 },
-    image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
-    addedBy: 'user3',
-    addedDate: '2024-05-15',
-    isFollowing: true,
-    popularity: 94,
-    distance: '1.2 km',
-    totalSaves: 42
-  }
-];
-
-// Mock stories data
-const mockStories = [
-  {
-    id: '1',
-    userId: 'user1',
-    userName: 'Sarah',
-    userAvatar: 'photo-1494790108755-2616b5a5c75b',
-    isViewed: false,
-    locationId: '1',
-    locationName: 'Mario\'s Pizza Palace',
-    locationCategory: 'restaurant'
-  },
-  {
-    id: '2',
-    userId: 'user2',
-    userName: 'Mike',
-    userAvatar: 'photo-1507003211169-0a1dd7228f2d',
-    isViewed: true,
-    locationId: '2',
-    locationName: 'Tony\'s Pizza',
-    locationCategory: 'restaurant'
-  }
-];
+interface MapPin {
+  id: string;
+  name: string;
+  coordinates: { lat: number; lng: number; };
+  category: string;
+  rating?: number;
+  description?: string;
+  addedBy: { name: string; avatar: string; isFollowing: boolean; };
+}
 
 const HomePage = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const [selectedCity, setSelectedCity] = useState('San Francisco');
-  const [selectedFilter, setSelectedFilter] = useState('All');
-  const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
-  const [messagesModalOpen, setMessagesModalOpen] = useState(false);
-  const [notificationsModalOpen, setNotificationsModalOpen] = useState(false);
-  const [createStoryModalOpen, setCreateStoryModalOpen] = useState(false);
-  const [shareModalOpen, setShareModalOpen] = useState(false);
-  const [commentModalOpen, setCommentModalOpen] = useState(false);
-  const [placeInteractionModalOpen, setPlaceInteractionModalOpen] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('All');
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  const [showLocationDetail, setShowLocationDetail] = useState(false);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showPlaceInteraction, setShowPlaceInteraction] = useState(false);
+  const [showCreateStory, setShowCreateStory] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showMessages, setShowMessages] = useState(false);
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/welcome');
+  // Sample places data
+  const places: Place[] = [
+    {
+      id: '1',
+      name: 'Central Park',
+      category: 'Parks',
+      likes: 124,
+      friendsWhoSaved: [
+        { name: 'Sarah', avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png' },
+        { name: 'Mike', avatar: '/lovable-uploads/5bb15f7b-b3ba-4eae-88b1-7fa789eb67c4.png' }
+      ],
+      visitors: ['john_doe', 'sarah_wilson', 'mike_chen'],
+      isNew: true,
+      coordinates: { lat: 40.785091, lng: -73.968285 },
+      rating: 4.8,
+      image: '/lovable-uploads/8a9fd2cf-e687-48ee-a40f-3dd4b19ba4ff.png',
+      description: 'A beautiful park in the heart of Manhattan',
+      addedBy: { name: 'John Doe', avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png', isFollowing: false },
+      distance: '0.5 km',
+      totalSaves: 89
+    },
+    {
+      id: '2',
+      name: 'Brooklyn Bridge',
+      category: 'Landmarks',
+      likes: 89,
+      friendsWhoSaved: [
+        { name: 'Alex', avatar: '/lovable-uploads/5df0be70-7240-4958-ba55-5921ab3785e9.png' }
+      ],
+      visitors: ['alex_brown', 'emma_davis'],
+      isNew: false,
+      coordinates: { lat: 40.706086, lng: -73.996864 },
+      rating: 4.9,
+      image: '/lovable-uploads/5bb15f7b-b3ba-4eae-88b1-7fa789eb67c4.png',
+      description: 'Iconic bridge connecting Manhattan and Brooklyn',
+      addedBy: { name: 'Emma Davis', avatar: '/lovable-uploads/5df0be70-7240-4958-ba55-5921ab3785e9.png', isFollowing: true },
+      distance: '1.2 km',
+      totalSaves: 156
     }
-  }, [user, navigate]);
+  ];
 
-  const handleCitySelect = (city: string) => {
-    setSelectedCity(city);
+  const mapPins: MapPin[] = places.map(place => ({
+    id: place.id,
+    name: place.name,
+    coordinates: place.coordinates,
+    category: place.category,
+    rating: place.rating,
+    description: place.description,
+    addedBy: place.addedBy
+  }));
+
+  const handleLikePlace = (place: Place) => {
+    console.log('Liked place:', place.name);
+    toast.success(`Liked ${place.name}!`);
   };
 
-  const handleFilterChange = (filter: string) => {
-    setSelectedFilter(filter);
+  const handleSavePlace = (placeId: string) => {
+    console.log('Saved place:', placeId);
+    toast.success('Place saved to your collection!');
   };
 
-  const handleLikeToggle = (placeId: string) => {
-    setLikedPlaces(prev => {
-      const newLiked = new Set(prev);
-      if (newLiked.has(placeId)) {
-        newLiked.delete(placeId);
-      } else {
-        newLiked.add(placeId);
-      }
-      return newLiked;
-    });
-  };
-
-  const handleShare = (place: Place) => {
+  const handleSuggestPlace = (place: Place) => {
     setSelectedPlace(place);
-    setShareModalOpen(true);
+    setShowShareModal(true);
   };
 
-  const handleComment = (place: Place) => {
+  const handleCommentPlace = (place: Place) => {
     setSelectedPlace(place);
-    setCommentModalOpen(true);
+    setShowCommentModal(true);
   };
 
-  const handleShareModalShare = (friendIds: string[], place: Place) => {
-    console.log('Sharing place:', place, 'with friends:', friendIds);
-    // Implement share logic here
+  const handlePinClick = (pin: MapPin) => {
+    const place = places.find(p => p.id === pin.id);
+    if (place) {
+      setSelectedPlace(place);
+      setShowLocationDetail(true);
+    }
   };
 
-  const handleCommentSubmit = (text: string, place: Place) => {
-    console.log('Comment added:', text, 'to place:', place);
-    // Implement comment submission logic here
+  const filteredPlaces = activeFilter === 'All' 
+    ? places 
+    : places.filter(place => place.category === activeFilter);
+
+  const handleShareWithFriends = (friendIds: string[], place: Place) => {
+    console.log('Sharing place with friends:', friendIds, place.name);
+    toast.success(`Suggested ${place.name} to ${friendIds.length} friends!`);
+    setShowShareModal(false);
   };
 
-  const handlePlaceClick = (place: Place) => {
-    setSelectedPlace(place);
-    setPlaceInteractionModalOpen(true);
+  const handleAddComment = (text: string, place: Place) => {
+    console.log('Adding comment:', text, 'to place:', place.name);
+    toast.success('Comment added!');
+    setShowCommentModal(false);
   };
-
-  const filteredPlaces = mockLocations.filter(place => {
-    if (selectedFilter === 'All') return true;
-    return place.category === selectedFilter;
-  });
-
-  const topLocation = filteredPlaces.length > 0 ? filteredPlaces[0] : null;
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-blue-50/30 via-white to-purple-50/20">
-      <Header
-        onCitySelect={handleCitySelect}
-        onMessagesClick={() => setMessagesModalOpen(true)}
-        onNotificationsClick={() => setNotificationsModalOpen(true)}
-        onCreateStoryClick={() => setCreateStoryModalOpen(true)}
+    <div className="min-h-screen bg-gray-50">
+      <Header 
+        onNotificationsClick={() => setShowNotifications(true)}
+        onMessagesClick={() => setShowMessages(true)}
       />
       
-      <div className="flex-1 overflow-y-auto pb-20">
-        <StoriesSection 
-          stories={mockStories}
-          onCreateStory={() => setCreateStoryModalOpen(true)}
-          onStoryClick={(index) => console.log('Story clicked:', index)}
-        />
-        <FilterButtons 
-          activeFilter={selectedFilter} 
-          onFilterChange={handleFilterChange} 
-        />
-        
-        <MapSection
-          places={filteredPlaces.map(place => ({
-            ...place,
-            addedBy: {
-              name: typeof place.addedBy === 'string' ? place.addedBy : 'Explorer',
-              avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
-              isFollowing: place.isFollowing || false
-            }
-          }))}
-          selectedPlace={selectedPlace}
-          onPlaceClick={handlePlaceClick}
-          cityName={selectedCity}
-        />
-        
-        {topLocation && (
-          <LocationOfTheWeek 
-            topLocation={topLocation}
-            onLocationClick={handlePlaceClick}
+      <div className="pt-16 pb-20">
+        <div className="px-4 py-4">
+          <LocationOfTheWeek />
+          <StoriesSection onCreateStory={() => setShowCreateStory(true)} />
+          <FilterButtons activeFilter={activeFilter} onFilterChange={setActiveFilter} />
+          
+          <div className="space-y-4 mb-6">
+            {filteredPlaces.map((place) => (
+              <PlaceCard
+                key={place.id}
+                place={place}
+                onLike={() => handleLikePlace(place)}
+                onSave={() => handleSavePlace(place.id)}
+                onSuggest={() => handleSuggestPlace(place)}
+                onComment={() => handleCommentPlace(place)}
+                onMoreInfo={() => {
+                  setSelectedPlace(place);
+                  setShowPlaceInteraction(true);
+                }}
+              />
+            ))}
+          </div>
+
+          <MapSection 
+            pins={mapPins}
+            onPinClick={handlePinClick}
           />
-        )}
+        </div>
       </div>
 
-      <BottomNavigation />
-
       <ModalsManager
-        isMessagesModalOpen={messagesModalOpen}
-        setMessagesModalOpen={setMessagesModalOpen}
-        isNotificationsModalOpen={notificationsModalOpen}
-        setNotificationsModalOpen={setNotificationsModalOpen}
-        isCreateStoryModalOpen={createStoryModalOpen}
-        setCreateStoryModalOpen={setCreateStoryModalOpen}
-        isShareModalOpen={shareModalOpen}
-        setShareModalOpen={setShareModalOpen}
-        isCommentModalOpen={commentModalOpen}
-        setCommentModalOpen={setCommentModalOpen}
-        isPlaceInteractionModalOpen={placeInteractionModalOpen}
-        setPlaceInteractionModalOpen={setPlaceInteractionModalOpen}
-        selectedPlace={selectedPlace ? {
-          ...selectedPlace,
-          addedBy: {
-            name: typeof selectedPlace.addedBy === 'string' ? selectedPlace.addedBy : 'Explorer',
-            avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
-            isFollowing: selectedPlace.isFollowing || false
-          }
-        } : null}
-        onShareModalShare={(friendIds, place) => handleShareModalShare(friendIds, place)}
-        onCommentSubmit={(text, place) => handleCommentSubmit(text, place)}
+        selectedPlace={selectedPlace}
+        showLocationDetail={showLocationDetail}
+        showSaveDialog={showSaveDialog}
+        showCommentModal={showCommentModal}
+        showShareModal={showShareModal}
+        showPlaceInteraction={showPlaceInteraction}
+        showCreateStory={showCreateStory}
+        onCloseLocationDetail={() => setShowLocationDetail(false)}
+        onCloseSaveDialog={() => setShowSaveDialog(false)}
+        onCloseCommentModal={() => setShowCommentModal(false)}
+        onCloseShareModal={() => setShowShareModal(false)}
+        onClosePlaceInteraction={() => setShowPlaceInteraction(false)}
+        onCloseCreateStory={() => setShowCreateStory(false)}
+        onShareWithFriends={handleShareWithFriends}
+        onAddComment={handleAddComment}
+      />
+
+      <NotificationsModal 
+        open={showNotifications}
+        onOpenChange={setShowNotifications}
+      />
+
+      <MessagesModal 
+        open={showMessages}
+        onOpenChange={setShowMessages}
       />
     </div>
   );

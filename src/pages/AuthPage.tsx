@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -74,29 +75,17 @@ const AuthPage = () => {
           return;
         }
 
-        const metadata: any = {
-          full_name: fullName,
-          username: username,
-          account_type: accountType,
-        };
-
-        if (accountType === 'business') {
-          metadata.business_name = businessName;
-          metadata.business_type = businessType;
-        }
-
         const { error } = await signUp(email, password, fullName, username);
         if (error) {
           toast.error(error.message);
         } else {
           if (accountType === 'business') {
             toast.success('Business account created! Redirecting to subscription setup...');
-            // Redirect to subscription page for business accounts
-            setTimeout(() => {
-              navigate('/subscription');
-            }, 1500);
+            // Redirect to business subscription page
+            navigate(`/business-subscription?from=signup&email=${encodeURIComponent(email)}`);
           } else {
             toast.success('Account created! Please check your email to verify your account.');
+            navigate('/');
           }
         }
       }
@@ -173,13 +162,13 @@ const AuthPage = () => {
                 >
                   <Building className="w-6 h-6 mx-auto mb-2" />
                   <div className="text-sm font-medium">Business</div>
-                  <div className="text-xs text-gray-500">60 days free, then €29.99/mo</div>
+                  <div className="text-xs text-gray-500">60 days free trial</div>
                 </button>
               </div>
               {accountType === 'business' && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <p className="text-sm text-blue-700">
-                    <strong>Business Trial:</strong> Start with 60 days free! After your trial, continue for just €29.99/month or downgrade to a free account.
+                    🎉 <strong>60-day free trial!</strong> Full access to all business features, then €29.99/month or downgrade to free.
                   </p>
                 </div>
               )}

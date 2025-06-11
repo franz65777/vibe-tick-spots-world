@@ -1,18 +1,21 @@
 
-import React from 'react';
-import { ArrowLeft, Filter, MoreHorizontal } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState, useRef } from 'react';
+import { Search, MapPin, Users, SlidersHorizontal } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import SearchFilters from './SearchFilters';
+import { Button } from '@/components/ui/button';
 import SearchSuggestions from './SearchSuggestions';
+import SearchFilters from './SearchFilters';
+
+type SearchMode = 'locations' | 'users';
+type SortBy = 'proximity' | 'likes' | 'followers';
 
 interface SearchHeaderProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  searchMode: 'locations' | 'users';
-  setSearchMode: (mode: 'locations' | 'users') => void;
-  sortBy: 'proximity' | 'likes' | 'followers';
-  setSortBy: (sortBy: 'proximity' | 'likes' | 'followers') => void;
+  searchMode: SearchMode;
+  setSearchMode: (mode: SearchMode) => void;
+  sortBy: SortBy;
+  setSortBy: (sort: SortBy) => void;
   showFilters: boolean;
   setShowFilters: (show: boolean) => void;
   showSuggestions: boolean;
@@ -39,93 +42,76 @@ const SearchHeader = ({
   recentSearches,
   onSuggestionClick
 }: SearchHeaderProps) => {
-  // Instagram-style message icon
-  const MessageIcon = () => (
-    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
-    </svg>
-  );
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-b border-gray-200">
-      <div className="px-4 py-3">
-        {/* Header Row */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <ArrowLeft className="w-6 h-6 text-gray-600" />
-            <h1 className="text-xl font-semibold text-gray-900">Search</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
-              <MessageIcon />
-            </button>
-            <MoreHorizontal className="w-6 h-6 text-gray-600" />
-          </div>
-        </div>
-
+    <div className="bg-white/95 backdrop-blur-lg px-4 py-4 shadow-sm border-b border-gray-100">
+      <div className="max-w-2xl mx-auto">
         {/* Search Mode Toggle */}
-        <div className="flex bg-gray-100 rounded-lg p-1 mb-4">
+        <div className="flex bg-gray-100 rounded-xl p-1 mb-4">
           <button
             onClick={() => setSearchMode('locations')}
-            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ${
+            className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
               searchMode === 'locations'
                 ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+                : 'text-gray-600 hover:text-gray-800'
             }`}
           >
-            Places
+            <MapPin className="w-4 h-4" />
+            Locations
           </button>
           <button
             onClick={() => setSearchMode('users')}
-            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ${
+            className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
               searchMode === 'users'
                 ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+                : 'text-gray-600 hover:text-gray-800'
             }`}
           >
-            People
+            <Users className="w-4 h-4" />
+            Users
           </button>
         </div>
 
-        {/* Search Input */}
-        <div className="relative">
-          <form onSubmit={onSearch} className="relative">
+        {/* Search Bar */}
+        <form onSubmit={onSearch} className="relative">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <Input
+              ref={searchInputRef}
               type="text"
-              placeholder={`Search for ${searchMode === 'locations' ? 'places' : 'people'}...`}
+              placeholder={searchMode === 'locations' ? 'Search for places, food, cafes...' : 'Search for users...'}
               value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setShowSuggestions(true);
-              }}
+              onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setShowSuggestions(true)}
               onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-              className="w-full pl-4 pr-12 py-3 bg-gray-50 border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="pl-10 pr-12 h-12 bg-white border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-xl text-base"
             />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+            {/* Only show filters button for locations */}
+            {searchMode === 'locations' && (
               <Button
                 type="button"
                 onClick={() => setShowFilters(!showFilters)}
                 variant="ghost"
-                size="sm"
-                className="p-1 h-auto"
+                size="icon"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8"
               >
-                <Filter className="w-4 h-4" />
+                <SlidersHorizontal className="w-4 h-4" />
               </Button>
-            </div>
-          </form>
+            )}
+            
+            {/* Search Suggestions */}
+            {showSuggestions && (
+              <SearchSuggestions
+                suggestions={suggestions}
+                searchHistory={recentSearches}
+                onSuggestionClick={onSuggestionClick}
+              />
+            )}
+          </div>
+        </form>
 
-          {/* Search Suggestions */}
-          {showSuggestions && (
-            <SearchSuggestions
-              suggestions={suggestions}
-              onSuggestionClick={onSuggestionClick}
-              searchHistory={recentSearches}
-            />
-          )}
-        </div>
-
-        {/* Filters */}
+        {/* Filters - Only for locations */}
         {searchMode === 'locations' && (
           <SearchFilters
             sortBy={sortBy}
