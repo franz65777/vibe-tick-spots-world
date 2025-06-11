@@ -418,7 +418,7 @@ const HomePage = () => {
     id: pin.id,
     name: pin.name,
     category: pin.category,
-    likes: pin.likes,
+    likes: pin.likes || 0,
     friendsWhoSaved: Array.isArray(pin.friendsWhoSaved) ? pin.friendsWhoSaved : generateMockFriendsWhoSaved(),
     visitors: Array.isArray(pin.visitors) ? pin.visitors : [],
     isNew: pin.isNew || false,
