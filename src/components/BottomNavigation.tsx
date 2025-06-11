@@ -8,20 +8,28 @@ const BottomNavigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const WorldWithPinsIcon = () => (
+    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      {/* World circle */}
+      <circle cx="12" cy="12" r="10"/>
+      {/* Continents outline */}
+      <path d="M8 3c1 0 2 1 3 1s2-1 3-1"/>
+      <path d="M8 21c1 0 2-1 3-1s2 1 3 1"/>
+      <path d="M3 8c0 1 1 2 1 3s-1 2-1 3"/>
+      <path d="M21 8c0 1-1 2-1 3s1 2 1 3"/>
+      {/* Map pins */}
+      <circle cx="9" cy="8" r="1" fill="currentColor"/>
+      <path d="M9 7v2" strokeWidth="1"/>
+      <circle cx="15" cy="14" r="1" fill="currentColor"/>
+      <path d="M15 13v2" strokeWidth="1"/>
+      <circle cx="7" cy="16" r="1" fill="currentColor"/>
+      <path d="M7 15v2" strokeWidth="1"/>
+    </svg>
+  );
+
   const navItems = [
     { 
-      icon: () => (
-        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
-          <line x1="9" y1="9" x2="9.01" y2="9"/>
-          <line x1="15" y1="9" x2="15.01" y2="9"/>
-          <circle cx="8" cy="4" r="1"/>
-          <circle cx="16" cy="4" r="1"/>
-          <circle cx="12" cy="2" r="1"/>
-          <path d="M6 6l12 0"/>
-        </svg>
-      ), 
+      icon: WorldWithPinsIcon, 
       label: 'Explore', 
       path: '/' 
     },

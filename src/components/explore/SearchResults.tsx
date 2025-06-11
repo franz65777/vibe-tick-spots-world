@@ -1,24 +1,24 @@
 
 import { MapPin, Users } from 'lucide-react';
 import PlaceCard from '@/components/home/PlaceCard';
-import { Button } from '@/components/ui/button';
+import UserCard from './UserCard';
 
 interface Place {
   id: string;
   name: string;
   category: string;
   likes: number;
-  friendsWhoSaved?: { name: string; avatar: string }[];
-  visitors: string[];
+  friendsWhoSaved?: number | { name: string; avatar: string; }[];
+  visitors: number | string[];
   isNew: boolean;
   coordinates: { lat: number; lng: number };
-  image?: string;
+  image: string;
   addedBy?: string;
-  addedDate?: string;
+  addedDate: string;
   isFollowing?: boolean;
   popularity?: number;
   distance?: number;
-  totalSaves?: number;
+  totalSaves: number;
 }
 
 interface User {
@@ -69,105 +69,78 @@ const SearchResults = ({
   }
 
   if (searchMode === 'locations') {
-    if (filteredLocations.length > 0) {
+    if (filteredLocations.length === 0) {
       return (
-        <div className="px-4 py-6">
-          <div className="mb-4">
-            <p className="text-sm text-gray-600">
-              Found {filteredLocations.length} {filteredLocations.length === 1 ? 'location' : 'locations'} 
-              {sortBy === 'proximity' && ' sorted by proximity'}
-              {sortBy === 'likes' && ' sorted by likes'}
-              {sortBy === 'followers' && ' sorted by friends who saved'}
-            </p>
-          </div>
-          <div className="space-y-4">
-            {filteredLocations.map((place) => (
+        <div className="text-center py-8">
+          <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-600">No places found</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="px-4 py-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">Places</h3>
+          <span className="text-sm text-gray-500">{filteredLocations.length} results</span>
+        </div>
+        
+        <div className="space-y-4">
+          {filteredLocations.map((place) => {
+            // Convert place to the expected format
+            const convertedPlace = {
+              ...place,
+              addedBy: {
+                name: typeof place.addedBy === 'string' ? place.addedBy : 'Explorer',
+                avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
+                isFollowing: place.isFollowing || false
+              },
+              friendsWhoSaved: Array.isArray(place.friendsWhoSaved) ? place.friendsWhoSaved : [],
+              visitors: Array.isArray(place.visitors) ? place.visitors : []
+            };
+
+            return (
               <PlaceCard
                 key={place.id}
-                place={place}
+                place={convertedPlace}
                 isLiked={likedPlaces.has(place.id)}
-                onCardClick={onCardClick}
-                onLikeToggle={onLikeToggle}
-                onShare={onShare}
-                onComment={onComment}
+                onCardClick={() => onCardClick(place)}
+                onLikeToggle={() => onLikeToggle(place.id)}
+                onShare={() => onShare(place)}
+                onComment={() => onComment(place)}
                 cityName="Current City"
               />
-            ))}
-          </div>
+            );
+          })}
         </div>
-      );
-    } else {
-      return (
-        <div className="text-center py-12">
-          <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3 mx-auto">
-            <MapPin className="w-6 h-6 text-gray-400" />
-          </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-1">No locations found</h3>
-          <p className="text-gray-600 text-sm">
-            Try searching for something else or check your spelling
-          </p>
-        </div>
-      );
-    }
-  } else {
-    if (filteredUsers.length > 0) {
-      return (
-        <div className="px-4 py-6">
-          <div className="mb-4">
-            <p className="text-sm text-gray-600">
-              Found {filteredUsers.length} {filteredUsers.length === 1 ? 'user' : 'users'}
-            </p>
-          </div>
-          <div className="space-y-3">
-            {filteredUsers.map((user) => (
-              <div key={user.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={`https://images.unsplash.com/${user.avatar}?w=48&h=48&fit=crop&crop=face`}
-                      alt={user.name}
-                      className="w-12 h-12 rounded-full object-cover"
-                    />
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{user.name}</h3>
-                      <p className="text-sm text-gray-600">{user.username}</p>
-                      <div className="flex items-center gap-4 mt-1">
-                        <span className="text-xs text-gray-500">
-                          {user.followers} followers
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {user.savedPlaces} saved places
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant={user.isFollowing ? "outline" : "default"}
-                    className="px-4"
-                  >
-                    {user.isFollowing ? 'Following' : 'Follow'}
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    } else {
-      return (
-        <div className="text-center py-12">
-          <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3 mx-auto">
-            <Users className="w-6 h-6 text-gray-400" />
-          </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-1">No users found</h3>
-          <p className="text-gray-600 text-sm">
-            Try searching for something else or check your spelling
-          </p>
-        </div>
-      );
-    }
+      </div>
+    );
   }
+
+  // Users results
+  if (filteredUsers.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+        <p className="text-gray-600">No users found</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-4 py-6">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-gray-900">People</h3>
+        <span className="text-sm text-gray-500">{filteredUsers.length} results</span>
+      </div>
+      
+      <div className="space-y-3">
+        {filteredUsers.map((user) => (
+          <UserCard key={user.id} user={user} />
+        ))}
+      </div>
+    </div>
+  );
 };
 
 export default SearchResults;
