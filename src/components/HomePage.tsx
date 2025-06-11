@@ -36,7 +36,7 @@ const HomePage = () => {
   const { location, loading: locationLoading } = useGeolocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [currentCity, setCurrentCity] = useState('Stockholm');
-  const [selectedFilter, setSelectedFilter] = useState('All');
+  const [selectedFilter, setSelectedFilter] = useState<'following' | 'popular' | 'new'>('following');
   const [places, setPlaces] = useState<Place[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [isDetailSheetOpen, setIsDetailSheetOpen] = useState(false);
@@ -111,7 +111,7 @@ const HomePage = () => {
     console.log('Selected city:', city);
   };
 
-  const handleFilterChange = (filter: string) => {
+  const handleFilterChange = (filter: 'following' | 'popular' | 'new') => {
     setSelectedFilter(filter);
     console.log('Selected filter:', filter);
   };
@@ -162,10 +162,13 @@ const HomePage = () => {
   const topLocation = places.length > 0 ? places[0] : null;
 
   const filteredPlaces = places.filter(place => {
-    const matchesFilter = selectedFilter === 'All' || place.category === selectedFilter;
+    const matchesFilter = selectedFilter === 'following' || place.category === selectedFilter;
     const matchesSearch = place.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesFilter && matchesSearch;
   });
+
+  // Count new places for the filter button
+  const newCount = places.filter(place => place.isNew).length;
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
@@ -202,8 +205,9 @@ const HomePage = () => {
           )}
           
           <FilterButtons 
-            selectedFilter={selectedFilter}
+            activeFilter={selectedFilter}
             onFilterChange={handleFilterChange}
+            newCount={newCount}
           />
           
           <div className="space-y-4">

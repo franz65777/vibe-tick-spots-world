@@ -179,19 +179,24 @@ const ExplorePage = () => {
             onSavePlace={handleSavePlace}
           />
         ) : (
-          <RecommendationsSection
-            searchMode={searchMode}
-            loading={false}
-            locationRecommendations={recommendations}
-            userRecommendations={[]}
-            onLocationClick={handlePlaceClick}
-            onUserClick={handleUserClick}
-            onFollowUser={handleFollowUser}
-            onLocationShare={handleLocationShare}
-            onLocationComment={handleLocationComment}
-            onLocationLike={handleLocationLike}
-            likedPlaces={likedPlaces}
-          />
+          <div className="px-4 py-6">
+            {searchMode === 'locations' ? (
+              <LocationRecommendations
+                recommendations={recommendations}
+                onLocationClick={handlePlaceClick}
+                onLocationShare={handleLocationShare}
+                onLocationComment={handleLocationComment}
+                onLocationLike={handleLocationLike}
+                likedPlaces={likedPlaces}
+              />
+            ) : (
+              <UserRecommendations
+                recommendations={[]}
+                onUserClick={handleUserClick}
+                onFollowUser={handleFollowUser}
+              />
+            )}
+          </div>
         )}
       </div>
 
