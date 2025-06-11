@@ -508,14 +508,19 @@ const HomePage = () => {
     return cityData[currentCity.toLowerCase()]?.coordinates || { lat: 37.7749, lng: -122.4194 };
   }, [location?.latitude, location?.longitude, location?.city, currentCity]);
 
-  // Get the most popular location from pins
+  // Convert pins to places with proper type safety
+  const convertedPlaces = useMemo(() => {
+    return pins.map(pin => convertMapPinToPlace(pin));
+  }, [pins]);
+
+  // Get the most popular location from converted places
   const getLocationOfTheWeek = () => {
-    if (pins.length === 0) return null;
+    if (convertedPlaces.length === 0) return null;
     
-    return pins.reduce((topPin, currentPin) => {
-      const currentEngagement = currentPin.likes + (currentPin.popularity || 0);
-      const topEngagement = topPin.likes + (topPin.popularity || 0);
-      return currentEngagement > topEngagement ? currentPin : topPin;
+    return convertedPlaces.reduce((topPlace, currentPlace) => {
+      const currentEngagement = currentPlace.likes + (currentPlace.popularity || 0);
+      const topEngagement = topPlace.likes + (topPlace.popularity || 0);
+      return currentEngagement > topEngagement ? currentPlace : topPlace;
     });
   };
 
@@ -527,11 +532,6 @@ const HomePage = () => {
            !hasFollowedUsers && 
            !pinsLoading;
   };
-
-  // Convert pins to places with proper type safety
-  const convertedPlaces = useMemo(() => {
-    return pins.map(pin => convertMapPinToPlace(pin));
-  }, [pins]);
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-blue-50/30 via-white to-purple-50/20 pt-14">
@@ -560,7 +560,7 @@ const HomePage = () => {
       {/* Location of the Week - Compact */}
       {locationOfTheWeek && (
         <LocationOfTheWeek 
-          topLocation={convertMapPinToPlace(locationOfTheWeek)}
+          topLocation={locationOfTheWeek}
           onLocationClick={handleCardClick}
         />
       )}

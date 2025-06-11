@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { X, Heart, MessageSquare, UserPlus, MapPin, Clock } from 'lucide-react';
+import { X, Heart, MessageSquare, UserPlus, MapPin, Clock, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Notification {
