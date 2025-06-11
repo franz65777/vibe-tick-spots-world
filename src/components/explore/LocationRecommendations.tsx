@@ -1,82 +1,88 @@
 
-import { MapPin } from 'lucide-react';
-import PlaceCard from '@/components/home/PlaceCard';
-import { LocationRecommendation } from '@/services/searchService';
+import React from 'react';
+import { Star, Users, MapPin } from 'lucide-react';
 
-interface LocationRecommendationsProps {
-  recommendations: LocationRecommendation[];
-  onLocationClick: (location: LocationRecommendation) => void;
-  onLocationShare: (location: LocationRecommendation) => void;
-  onLocationComment: (location: LocationRecommendation) => void;
-  onLocationLike: (locationId: string) => void;
-  likedPlaces: Set<string>;
+interface Place {
+  id: string;
+  name: string;
+  category: string;
+  likes: number;
+  friendsWhoSaved: { name: string; avatar: string; }[];
+  visitors: string[];
+  isNew: boolean;
+  coordinates: { lat: number; lng: number };
+  rating: number;
+  reviews: number;
+  distance: string;
+  addedBy: { name: string; avatar: string; isFollowing: boolean };
+  addedDate: string;
+  image: string;
+  description?: string;
+  totalSaves: number;
 }
 
-const LocationRecommendations = ({ 
-  recommendations, 
-  onLocationClick, 
-  onLocationShare, 
-  onLocationComment, 
-  onLocationLike,
-  likedPlaces 
-}: LocationRecommendationsProps) => {
-  if (recommendations.length === 0) {
-    return (
-      <div className="text-center py-8">
-        <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-        <p className="text-gray-600">No recommendations available</p>
-      </div>
-    );
-  }
-
-  // Convert recommendations to Place format for PlaceCard
-  const convertToPlace = (rec: LocationRecommendation) => ({
-    id: rec.id,
-    name: rec.name,
-    category: rec.category,
-    likes: rec.likes,
-    friendsWhoSaved: rec.friendsWhoSaved || 0,
-    visitors: rec.visitors || 0,
-    isNew: rec.isNew,
-    coordinates: rec.coordinates,
-    image: rec.image,
-    addedBy: {
-      name: typeof rec.addedBy === 'string' ? rec.addedBy : 'Explorer',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
-      isFollowing: rec.isFollowing || false
-    },
-    addedDate: rec.addedDate,
-    isFollowing: rec.isFollowing,
-    popularity: rec.popularity,
-    distance: rec.distance,
-    totalSaves: rec.likes || 23
-  });
+const LocationRecommendations = () => {
+  const recommendations: Place[] = [
+    {
+      id: 'rec-1',
+      name: 'ABBA The Museum',
+      category: 'Museum',
+      likes: 298,
+      friendsWhoSaved: [
+        { name: 'Lisa', avatar: '/api/placeholder/32/32' },
+        { name: 'Mike', avatar: '/api/placeholder/32/32' }
+      ],
+      visitors: ['Lisa', 'Mike', 'Sarah'],
+      isNew: false,
+      coordinates: { lat: 59.3267, lng: 18.0955 },
+      rating: 4.5,
+      reviews: 187,
+      distance: '1.8 km',
+      addedBy: { name: 'Lisa', avatar: '/api/placeholder/32/32', isFollowing: true },
+      addedDate: '2024-01-12',
+      image: '/api/placeholder/300/200',
+      description: 'Interactive museum about the famous Swedish pop group',
+      totalSaves: 298
+    }
+  ];
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">Recommended for you</h3>
-        <span className="text-sm text-gray-500">{recommendations.length} places</span>
+    <div className="px-4 py-6">
+      <div className="flex items-center gap-2 mb-4">
+        <MapPin className="w-5 h-5 text-blue-600" />
+        <h2 className="text-lg font-semibold text-gray-900">
+          Recommended for You
+        </h2>
       </div>
       
       <div className="space-y-4">
-        {recommendations.map((location) => (
-          <div key={location.id} className="relative">
-            <PlaceCard
-              place={convertToPlace(location)}
-              isLiked={likedPlaces.has(location.id)}
-              onCardClick={() => onLocationClick(location)}
-              onLikeToggle={() => onLocationLike(location.id)}
-              onShare={() => onLocationShare(location)}
-              onComment={() => onLocationComment(location)}
-              cityName="Current City"
-            />
-            {/* Recommendation reason overlay */}
-            {location.recommendationReason && (
-              <div className="absolute top-3 left-3 bg-gradient-to-r from-blue-500/90 to-purple-600/90 text-white text-xs px-3 py-1 rounded-full z-10 backdrop-blur-sm">
-                {location.recommendationReason}
+        {recommendations.map((place) => (
+          <div 
+            key={place.id}
+            className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+          >
+            <div className="flex">
+              <img 
+                src={place.image} 
+                alt={place.name}
+                className="w-24 h-24 object-cover flex-shrink-0"
+              />
+              <div className="flex-1 p-3">
+                <h3 className="font-semibold text-gray-900 text-sm mb-1">{place.name}</h3>
+                <p className="text-gray-600 text-xs mb-2">{place.category} • {place.distance}</p>
+                
+                <div className="flex items-center gap-3 text-xs text-gray-600">
+                  <div className="flex items-center gap-1">
+                    <Star className="w-3 h-3 text-yellow-500 fill-current" />
+                    <span>{place.rating}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Users className="w-3 h-3" />
+                    <span>{place.totalSaves}</span>
+                  </div>
+                </div>
               </div>
-            )}
+            </div>
           </div>
         ))}
       </div>
