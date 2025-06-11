@@ -35,16 +35,18 @@ interface Place {
     instagram?: string;
     facebook?: string;
   };
+  likes: number;
 }
 
 interface Story {
   id: string;
-  user: {
-    name: string;
-    avatar: string;
-  };
-  preview: string;
-  timestamp: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  isViewed: boolean;
+  locationId: string;
+  locationName: string;
+  locationCategory?: string;
 }
 
 const HomePage = () => {
@@ -53,7 +55,7 @@ const HomePage = () => {
   const { savedPlaces, savePlace, unsavePlace, isPlaceSaved } = useSavedPlaces();
   
   const [selectedCity, setSelectedCity] = useState('Milan');
-  const [selectedFilter, setSelectedFilter] = useState('All');
+  const [selectedFilter, setSelectedFilter] = useState<'following' | 'popular' | 'new'>('popular');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [isLocationDetailOpen, setIsLocationDetailOpen] = useState(false);
@@ -69,21 +71,33 @@ const HomePage = () => {
   const stories: Story[] = [
     {
       id: '1',
-      user: { name: 'You', avatar: '/api/placeholder/40/40' },
-      preview: '/api/placeholder/100/100',
-      timestamp: 'Add Story'
+      userId: 'user1',
+      userName: 'Marco',
+      userAvatar: '/api/placeholder/40/40',
+      isViewed: false,
+      locationId: 'cafe-milano-1',
+      locationName: 'Café Milano',
+      locationCategory: 'cafe'
     },
     {
       id: '2',
-      user: { name: 'Marco', avatar: '/api/placeholder/40/40' },
-      preview: '/api/placeholder/100/100',
-      timestamp: '2h'
+      userId: 'user2',
+      userName: 'Sofia',
+      userAvatar: '/api/placeholder/40/40',
+      isViewed: true,
+      locationId: 'duomo-restaurant-1',
+      locationName: 'Duomo Restaurant',
+      locationCategory: 'restaurant'
     },
     {
       id: '3',
-      user: { name: 'Sofia', avatar: '/api/placeholder/40/40' },
-      preview: '/api/placeholder/100/100',
-      timestamp: '5h'
+      userId: 'user3',
+      userName: 'Luca',
+      userAvatar: '/api/placeholder/40/40',
+      isViewed: false,
+      locationId: 'navigli-bar-1',
+      locationName: 'Navigli Bar',
+      locationCategory: 'bar'
     }
   ];
 
@@ -107,7 +121,8 @@ const HomePage = () => {
       ],
       isNew: true,
       distance: '0.5 km',
-      estimatedTime: '2 min walk'
+      estimatedTime: '2 min walk',
+      likes: 24
     },
     {
       id: 'duomo-restaurant-1',
@@ -124,7 +139,8 @@ const HomePage = () => {
       visitors: ['Anna', 'Giuseppe'],
       friendsWhoSaved: [
         { name: 'Anna', avatar: '/api/placeholder/32/32' }
-      ]
+      ],
+      likes: 18
     },
     {
       id: 'navigli-bar-1',
@@ -142,12 +158,13 @@ const HomePage = () => {
       friendsWhoSaved: [
         { name: 'Matteo', avatar: '/api/placeholder/32/32' },
         { name: 'Giulia', avatar: '/api/placeholder/32/32' }
-      ]
+      ],
+      likes: 31
     }
   ];
 
   const filteredPlaces = demoPlaces.filter(place => {
-    const matchesFilter = selectedFilter === 'All' || place.category === selectedFilter.toLowerCase();
+    const matchesFilter = selectedFilter === 'popular' || place.category === selectedFilter.toLowerCase();
     const matchesSearch = searchQuery === '' || 
       place.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       place.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -183,30 +200,65 @@ const HomePage = () => {
     }
   };
 
+  const handleSearch = () => {
+    // Handle search functionality
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  const handleNotifications = () => {
+    // Handle notifications
+  };
+
+  const handleMessages = () => {
+    // Handle messages
+  };
+
+  const handleCreateStory = () => {
+    // Handle create story
+  };
+
+  // Get the top location for location of the week
+  const topLocation = demoPlaces.reduce((prev, current) => 
+    (prev.likes > current.likes) ? prev : current
+  );
+
   return (
     <div className="flex flex-col h-full bg-gray-50">
-      <Header />
+      <Header 
+        searchQuery={searchQuery}
+        currentCity={selectedCity}
+        onSearchChange={setSearchQuery}
+        onSearchKeyPress={handleKeyPress}
+        onNotificationsClick={handleNotifications}
+        onMessagesClick={handleMessages}
+        onCitySelect={setSelectedCity}
+      />
       
       <div className="flex-1 overflow-y-auto pb-20">
-        <CitySearch 
-          selectedCity={selectedCity}
-          onCityChange={setSelectedCity}
-        />
-        
         <FilterButtons 
-          selectedFilter={selectedFilter}
+          activeFilter={selectedFilter}
           onFilterChange={setSelectedFilter}
+          newCount={demoPlaces.filter(p => p.isNew).length}
         />
         
         <StoriesSection 
           stories={stories}
+          onCreateStory={handleCreateStory}
           onStoryClick={(index) => {
             setSelectedStoryIndex(index);
             setIsStoryViewerOpen(true);
           }}
         />
         
-        <LocationOfTheWeek />
+        <LocationOfTheWeek 
+          topLocation={topLocation}
+          onLocationClick={handlePlaceClick}
+        />
         
         <div className="px-4 space-y-4">
           {filteredPlaces.map((place) => (
@@ -222,10 +274,9 @@ const HomePage = () => {
         
         <MapSection 
           places={filteredPlaces}
+          onPinClick={handlePlaceClick}
           selectedPlace={selectedPlace}
-          isExpanded={isMapExpanded}
-          onToggleExpanded={() => setIsMapExpanded(!isMapExpanded)}
-          onPlaceSelect={handlePlaceClick}
+          onCloseSelectedPlace={() => setSelectedPlace(null)}
         />
       </div>
 
