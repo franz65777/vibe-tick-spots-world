@@ -8,6 +8,9 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
 import BusinessDashboardPage from "./pages/BusinessDashboardPage";
+import TermsPage from "./pages/TermsPage";
+import PrivacyPage from "./pages/PrivacyPage";
+import SubscriptionPage from "./pages/SubscriptionPage";
 import WelcomePage from "./components/WelcomePage";
 import ExplorePage from "./components/ExplorePage";
 import AddLocationPage from "./components/AddLocationPage";
@@ -30,6 +33,13 @@ const App = () => {
             <Routes>
               <Route path="/welcome" element={<WelcomePage />} />
               <Route path="/auth" element={<AuthPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/subscription" element={
+                <ProtectedRoute>
+                  <SubscriptionPage />
+                </ProtectedRoute>
+              } />
               <Route path="/" element={<Index />} />
               <Route path="/explore" element={
                 <ProtectedRoute>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -91,7 +90,11 @@ const AuthPage = () => {
           toast.error(error.message);
         } else {
           if (accountType === 'business') {
-            toast.success('Business account created! You will be redirected to complete your subscription.');
+            toast.success('Business account created! Redirecting to subscription setup...');
+            // Redirect to subscription page for business accounts
+            setTimeout(() => {
+              navigate('/subscription');
+            }, 1500);
           } else {
             toast.success('Account created! Please check your email to verify your account.');
           }
@@ -170,9 +173,16 @@ const AuthPage = () => {
                 >
                   <Building className="w-6 h-6 mx-auto mb-2" />
                   <div className="text-sm font-medium">Business</div>
-                  <div className="text-xs text-gray-500">Manage your location</div>
+                  <div className="text-xs text-gray-500">60 days free, then €29.99/mo</div>
                 </button>
               </div>
+              {accountType === 'business' && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-sm text-blue-700">
+                    <strong>Business Trial:</strong> Start with 60 days free! After your trial, continue for just €29.99/month or downgrade to a free account.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -372,13 +382,19 @@ const AuthPage = () => {
           {/* Terms and Privacy */}
           <div className="text-center text-xs text-gray-500">
             By continuing, you agree to our{' '}
-            <a href="#" className="text-blue-600 hover:underline">
+            <button 
+              onClick={() => navigate('/terms')}
+              className="text-blue-600 hover:underline"
+            >
               Terms of Service
-            </a>{' '}
+            </button>{' '}
             and{' '}
-            <a href="#" className="text-blue-600 hover:underline">
+            <button 
+              onClick={() => navigate('/privacy')}
+              className="text-blue-600 hover:underline"
+            >
               Privacy Policy
-            </a>
+            </button>
           </div>
         </div>
       </div>
