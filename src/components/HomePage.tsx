@@ -685,5 +685,3 @@ const generateMockFriendsWhoSaved = () => {
 };
 
 export default HomePage;
-
-}
