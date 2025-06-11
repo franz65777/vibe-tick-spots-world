@@ -1,5 +1,6 @@
 
 import { useProfile } from '@/hooks/useProfile';
+import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { cn } from '@/lib/utils';
 
 interface ProfileStatsProps {
@@ -10,6 +11,8 @@ interface ProfileStatsProps {
 
 const ProfileStats = ({ onFollowersClick, onFollowingClick, onPostsClick }: ProfileStatsProps) => {
   const { profile } = useProfile();
+  const { getStats } = useSavedPlaces();
+  const stats = getStats();
 
   const statsData = [
     {
@@ -31,8 +34,8 @@ const ProfileStats = ({ onFollowersClick, onFollowingClick, onPostsClick }: Prof
       color: 'text-green-600'
     },
     {
-      label: 'Cities',
-      value: profile?.cities_visited || 3,
+      label: 'Places',
+      value: stats.places,
       onClick: () => {},
       color: 'text-orange-600'
     }
@@ -59,11 +62,6 @@ const ProfileStats = ({ onFollowersClick, onFollowingClick, onPostsClick }: Prof
             <div className="text-xs text-gray-600 leading-tight">
               {stat.label}
             </div>
-            {stat.label === 'Cities' && (
-              <div className="text-xs text-gray-500 mt-1">
-                6 places
-              </div>
-            )}
           </button>
         ))}
       </div>
