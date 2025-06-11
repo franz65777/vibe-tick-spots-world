@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -419,7 +420,11 @@ const HomePage = () => {
     name: pin.name,
     category: pin.category,
     likes: pin.likes,
-    friendsWhoSaved: Array.isArray(pin.friendsWhoSaved) ? pin.friendsWhoSaved : generateMockFriendsWhoSaved(),
+    friendsWhoSaved: Array.isArray(pin.friendsWhoSaved) 
+      ? pin.friendsWhoSaved 
+      : typeof pin.friendsWhoSaved === 'number' 
+        ? generateMockFriendsWhoSaved()
+        : generateMockFriendsWhoSaved(),
     visitors: Array.isArray(pin.visitors) ? pin.visitors : [],
     isNew: pin.isNew || false,
     coordinates: pin.coordinates,

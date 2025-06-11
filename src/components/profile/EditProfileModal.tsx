@@ -37,13 +37,13 @@ const EditProfileModal = ({ isOpen, onClose, currentProfile }: EditProfileModalP
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg w-full max-w-md shadow-xl">
+      <div className="bg-white rounded-2xl w-full max-w-md shadow-xl border border-gray-200">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">Edit Profile</h2>
           <button 
             onClick={onClose} 
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-gray-100 transition-colors border border-gray-200"
           >
             <X className="w-5 h-5 text-gray-600" />
           </button>
@@ -60,7 +60,7 @@ const EditProfileModal = ({ isOpen, onClose, currentProfile }: EditProfileModalP
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               placeholder="Enter username"
               maxLength={30}
             />
@@ -75,7 +75,7 @@ const EditProfileModal = ({ isOpen, onClose, currentProfile }: EditProfileModalP
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all"
               placeholder="Tell us about yourself..."
               maxLength={150}
             />
@@ -90,14 +90,14 @@ const EditProfileModal = ({ isOpen, onClose, currentProfile }: EditProfileModalP
           <Button
             variant="outline"
             onClick={onClose}
-            className="flex-1"
+            className="flex-1 rounded-lg border-gray-300"
             disabled={isLoading}
           >
             Cancel
           </Button>
           <Button
             onClick={handleSave}
-            className="flex-1"
+            className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-700"
             disabled={isLoading || (!username.trim() && !bio.trim())}
           >
             {isLoading ? (

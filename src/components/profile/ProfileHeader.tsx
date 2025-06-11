@@ -52,17 +52,17 @@ const ProfileHeader = () => {
       <div className="flex items-center justify-end mb-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="p-2">
-              <MoreHorizontal className="w-6 h-6 text-gray-600" />
+            <Button variant="ghost" size="sm" className="p-2 rounded-md border border-gray-200 hover:bg-gray-50">
+              <MoreHorizontal className="w-5 h-5 text-gray-600" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={() => setIsEditModalOpen(true)}>
+          <DropdownMenuContent align="end" className="w-48 rounded-lg border border-gray-200 shadow-md">
+            <DropdownMenuItem onClick={() => setIsEditModalOpen(true)} className="rounded-md">
               <Edit className="w-4 h-4 mr-2" />
               Edit Profile
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+            <DropdownMenuItem onClick={handleLogout} className="text-red-600 rounded-md">
               <LogOut className="w-4 h-4 mr-2" />
               Logout
             </DropdownMenuItem>
@@ -72,14 +72,14 @@ const ProfileHeader = () => {
 
       <div className="flex items-start gap-4 mb-4">
         <div className="relative">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-purple-600 p-1">
-            <div className="w-full h-full rounded-full bg-white p-1">
-              <div className="w-full h-full rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+          <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-400 to-purple-600 p-0.5">
+            <div className="w-full h-full rounded-xl bg-white p-0.5">
+              <div className="w-full h-full rounded-xl bg-gray-200 flex items-center justify-center overflow-hidden">
                 {profile?.avatar_url ? (
                   <img 
                     src={profile.avatar_url} 
                     alt={displayUsername}
-                    className="w-full h-full object-cover rounded-full"
+                    className="w-full h-full object-cover rounded-xl"
                   />
                 ) : (
                   <span className="text-sm font-semibold text-gray-600">{getInitials()}</span>
@@ -87,8 +87,8 @@ const ProfileHeader = () => {
               </div>
             </div>
           </div>
-          <div className="absolute bottom-0 right-0 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
-            <div className="w-2 h-2 bg-white rounded-full"></div>
+          <div className="absolute bottom-0 right-0 w-5 h-5 bg-green-500 rounded-md flex items-center justify-center border-2 border-white">
+            <div className="w-2 h-2 bg-white rounded-sm"></div>
           </div>
         </div>
         
@@ -97,7 +97,7 @@ const ProfileHeader = () => {
             <div className="flex items-center gap-2 min-w-0">
               <h1 className="text-lg font-bold text-gray-900 truncate">{displayUsername}</h1>
               {hasBusinessAccount && (
-                <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center shrink-0">
+                <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center shrink-0">
                   <Building2 className="w-3 h-3 text-white" />
                 </div>
               )}
