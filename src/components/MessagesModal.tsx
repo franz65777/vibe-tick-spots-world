@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { X, Search, Send, Camera, Smile, MapPin } from 'lucide-react';
+import { X, Search, Send, Paperclip, MoreHorizontal, ArrowLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
@@ -23,6 +23,7 @@ interface Chat {
     name: string;
     avatar: string;
     isOnline: boolean;
+    lastSeen?: string;
   };
   lastMessage: string;
   timestamp: string;
@@ -43,16 +44,20 @@ const MessagesModal = ({ isOpen, onClose }: MessagesModalProps) => {
   const mockChats: Chat[] = [
     {
       id: '1',
-      user: { name: 'Emma', avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png', isOnline: true },
+      user: { 
+        name: 'Emma Wilson', 
+        avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png', 
+        isOnline: true 
+      },
       lastMessage: 'Check out this place I found!',
-      timestamp: '2m',
+      timestamp: '2m ago',
       unreadCount: 2,
       messages: [
-        { id: '1', senderId: 'emma', text: 'Hey! How was that cafe you went to?', timestamp: '2m', isRead: false },
+        { id: '1', senderId: 'emma', text: 'Hey! How was that cafe you went to?', timestamp: '2:34 PM', isRead: false },
         { 
           id: '2', 
           senderId: 'emma', 
-          timestamp: '1m', 
+          timestamp: '2:35 PM', 
           isRead: false,
           sharedLocation: {
             name: 'Golden Gate Cafe',
@@ -64,23 +69,32 @@ const MessagesModal = ({ isOpen, onClose }: MessagesModalProps) => {
     },
     {
       id: '2',
-      user: { name: 'Michael', avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png', isOnline: false },
+      user: { 
+        name: 'Michael Chen', 
+        avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png', 
+        isOnline: false,
+        lastSeen: 'Last seen 1h ago'
+      },
       lastMessage: 'Thanks for the recommendation!',
-      timestamp: '1h',
+      timestamp: '1h ago',
       unreadCount: 0,
       messages: [
-        { id: '3', senderId: 'me', text: 'You should try the rooftop bar downtown', timestamp: '2h', isRead: true },
-        { id: '4', senderId: 'michael', text: 'Thanks for the recommendation!', timestamp: '1h', isRead: true },
+        { id: '3', senderId: 'me', text: 'You should try the rooftop bar downtown', timestamp: '1:15 PM', isRead: true },
+        { id: '4', senderId: 'michael', text: 'Thanks for the recommendation!', timestamp: '1:20 PM', isRead: true },
       ]
     },
     {
       id: '3',
-      user: { name: 'Sophia', avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png', isOnline: true },
+      user: { 
+        name: 'Sophia Rodriguez', 
+        avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png', 
+        isOnline: true 
+      },
       lastMessage: 'Are you free this weekend?',
-      timestamp: '3h',
+      timestamp: '3h ago',
       unreadCount: 1,
       messages: [
-        { id: '5', senderId: 'sophia', text: 'Are you free this weekend?', timestamp: '3h', isRead: false },
+        { id: '5', senderId: 'sophia', text: 'Are you free this weekend?', timestamp: '11:30 AM', isRead: false },
       ]
     },
   ];
@@ -98,36 +112,41 @@ const MessagesModal = ({ isOpen, onClose }: MessagesModalProps) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-start justify-center pt-16">
-      <div className="bg-white rounded-2xl w-full max-w-md mx-4 max-h-[80vh] overflow-hidden flex flex-col">
+      <div className="bg-white rounded-lg w-full max-w-md mx-4 max-h-[80vh] overflow-hidden flex flex-col shadow-xl">
         {selectedChat ? (
           // Chat View
           <>
             {/* Chat Header */}
-            <div className="flex items-center gap-3 p-4 border-b border-gray-100">
+            <div className="flex items-center gap-3 p-4 border-b border-gray-200 bg-gray-50">
               <button 
                 onClick={() => setSelectedChat(null)}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100"
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors"
               >
-                <X className="w-5 h-5" />
+                <ArrowLeft className="w-5 h-5 text-gray-600" />
               </button>
-              <div className="relative">
-                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                  <span className="text-sm font-medium">{selectedChatData?.user.name[0]}</span>
+              <div className="relative flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                  <span className="text-sm font-medium text-gray-600">
+                    {selectedChatData?.user.name.split(' ').map(n => n[0]).join('')}
+                  </span>
                 </div>
                 {selectedChatData?.user.isOnline && (
                   <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
                 )}
               </div>
-              <div className="flex-1">
-                <h3 className="font-medium">{selectedChatData?.user.name}</h3>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-medium text-gray-900 truncate">{selectedChatData?.user.name}</h3>
                 <p className="text-xs text-gray-500">
-                  {selectedChatData?.user.isOnline ? 'Active now' : 'Offline'}
+                  {selectedChatData?.user.isOnline ? 'Online' : selectedChatData?.user.lastSeen}
                 </p>
               </div>
+              <button className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors">
+                <MoreHorizontal className="w-5 h-5 text-gray-600" />
+              </button>
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
               {selectedChatData?.messages.map((message) => (
                 <div
                   key={message.id}
@@ -142,10 +161,7 @@ const MessagesModal = ({ isOpen, onClose }: MessagesModalProps) => {
                   )}>
                     {message.sharedLocation ? (
                       // Shared Location Message
-                      <div className={cn(
-                        "rounded-2xl overflow-hidden border border-gray-200",
-                        message.senderId === 'me' ? 'bg-blue-600' : 'bg-white'
-                      )}>
+                      <div className="rounded-lg overflow-hidden border border-gray-200 bg-white shadow-sm">
                         <div className="relative">
                           {message.sharedLocation.image && (
                             <img 
@@ -154,65 +170,57 @@ const MessagesModal = ({ isOpen, onClose }: MessagesModalProps) => {
                               className="w-full h-32 object-cover"
                             />
                           )}
-                          <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
-                            <MapPin className="w-6 h-6 text-white" />
-                          </div>
                         </div>
-                        <div className={cn(
-                          "p-3",
-                          message.senderId === 'me' ? 'text-white' : 'text-gray-900'
-                        )}>
-                          <h4 className="font-medium text-sm">{message.sharedLocation.name}</h4>
-                          <p className={cn(
-                            "text-xs",
-                            message.senderId === 'me' ? 'text-blue-100' : 'text-gray-500'
-                          )}>
-                            {message.sharedLocation.category}
-                          </p>
+                        <div className="p-3">
+                          <h4 className="font-medium text-sm text-gray-900">{message.sharedLocation.name}</h4>
+                          <p className="text-xs text-gray-500">{message.sharedLocation.category}</p>
                         </div>
                       </div>
                     ) : (
                       // Text Message
                       <div
                         className={cn(
-                          "px-4 py-2 rounded-2xl text-sm",
+                          "px-3 py-2 rounded-lg text-sm max-w-full break-words",
                           message.senderId === 'me'
                             ? 'bg-blue-600 text-white'
-                            : 'bg-gray-100 text-gray-900'
+                            : 'bg-white text-gray-900 border border-gray-200'
                         )}
                       >
                         {message.text}
                       </div>
                     )}
+                    <div className={cn(
+                      "text-xs text-gray-500 mt-1",
+                      message.senderId === 'me' ? 'text-right' : 'text-left'
+                    )}>
+                      {message.timestamp}
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
 
             {/* Message Input */}
-            <div className="p-4 border-t border-gray-100">
+            <div className="p-4 border-t border-gray-200 bg-white">
               <div className="flex items-center gap-3">
-                <button className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
-                  <Camera className="w-5 h-5 text-gray-600" />
+                <button className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
+                  <Paperclip className="w-4 h-4 text-gray-600" />
                 </button>
                 <div className="flex-1 relative">
                   <Input
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
-                    placeholder="Message..."
-                    className="pr-10 rounded-full border-gray-300"
+                    placeholder="Type a message..."
+                    className="pr-10 rounded-full border-gray-300 focus:border-blue-400 focus:ring-blue-400/20"
                     onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                   />
-                  <button className="absolute right-2 top-1/2 transform -translate-y-1/2 w-6 h-6 flex items-center justify-center">
-                    <Smile className="w-4 h-4 text-gray-500" />
-                  </button>
                 </div>
                 <button 
                   onClick={handleSendMessage}
                   disabled={!messageText.trim()}
-                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-50"
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  <Send className="w-5 h-5 text-blue-600" />
+                  <Send className="w-4 h-4 text-white" />
                 </button>
               </div>
             </div>
@@ -221,22 +229,27 @@ const MessagesModal = ({ isOpen, onClose }: MessagesModalProps) => {
           // Chat List View
           <>
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-100">
-              <h2 className="text-lg font-semibold">Messages</h2>
-              <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
-                <X className="w-5 h-5" />
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-gray-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                <h2 className="text-lg font-semibold text-gray-900">Messages</h2>
+              </div>
+              <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors">
+                <X className="w-5 h-5 text-gray-600" />
               </button>
             </div>
 
             {/* Search */}
-            <div className="p-4 border-b border-gray-100">
+            <div className="p-4 border-b border-gray-200">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search"
-                  className="pl-10 rounded-full border-gray-300"
+                  placeholder="Search conversations..."
+                  className="pl-10 rounded-full border-gray-300 focus:border-blue-400 focus:ring-blue-400/20"
                 />
               </div>
             </div>
@@ -251,12 +264,14 @@ const MessagesModal = ({ isOpen, onClose }: MessagesModalProps) => {
                 <div
                   key={chat.id}
                   onClick={() => setSelectedChat(chat.id)}
-                  className="flex items-center gap-3 p-4 hover:bg-gray-50 cursor-pointer"
+                  className="flex items-center gap-3 p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
                 >
                   {/* User Avatar */}
-                  <div className="relative">
-                    <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
-                      <span className="text-sm font-medium">{chat.user.name[0]}</span>
+                  <div className="relative flex-shrink-0">
+                    <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                      <span className="text-sm font-medium text-gray-600">
+                        {chat.user.name.split(' ').map(n => n[0]).join('')}
+                      </span>
                     </div>
                     {chat.user.isOnline && (
                       <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
@@ -265,16 +280,16 @@ const MessagesModal = ({ isOpen, onClose }: MessagesModalProps) => {
 
                   {/* Chat Info */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-medium text-sm truncate">{chat.user.name}</h3>
-                      <span className="text-xs text-gray-500">{chat.timestamp}</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="font-medium text-sm text-gray-900 truncate">{chat.user.name}</h3>
+                      <span className="text-xs text-gray-500 flex-shrink-0">{chat.timestamp}</span>
                     </div>
-                    <p className="text-sm text-gray-600 truncate mt-1">{chat.lastMessage}</p>
+                    <p className="text-sm text-gray-600 truncate">{chat.lastMessage}</p>
                   </div>
 
                   {/* Unread Count */}
                   {chat.unreadCount > 0 && (
-                    <div className="w-5 h-5 bg-blue-600 text-white text-xs rounded-full flex items-center justify-center">
+                    <div className="w-5 h-5 bg-blue-600 text-white text-xs rounded-full flex items-center justify-center flex-shrink-0">
                       {chat.unreadCount}
                     </div>
                   )}

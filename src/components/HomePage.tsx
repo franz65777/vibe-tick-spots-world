@@ -413,7 +413,7 @@ const HomePage = () => {
     ));
   };
 
-  // Convert MapPin to Place with proper defaults
+  // Convert MapPin to Place with proper defaults and type safety
   const convertMapPinToPlace = (pin: any): Place => ({
     id: pin.id,
     name: pin.name,
@@ -424,10 +424,15 @@ const HomePage = () => {
     isNew: pin.isNew || false,
     coordinates: pin.coordinates,
     image: pin.image || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
-    addedDate: '2024-06-01',
-    isFollowing: false,
-    popularity: pin.popularity,
-    totalSaves: pin.likes || 0
+    addedBy: pin.addedBy || {
+      name: 'Anonymous',
+      avatar: 'photo-1472099645785-5658abf4ff4e',
+      isFollowing: false
+    },
+    addedDate: pin.addedDate || '2024-06-01',
+    isFollowing: pin.isFollowing || false,
+    popularity: pin.popularity || 50,
+    totalSaves: pin.totalSaves || pin.likes || 0
   });
 
   const handlePinClick = (place: Place) => {
@@ -523,24 +528,10 @@ const HomePage = () => {
            !pinsLoading;
   };
 
-  // Helper function to get saves count
-  const getSavesCount = (place: Place) => {
-    if (place.totalSaves) return place.totalSaves;
-    if (typeof place.friendsWhoSaved === 'number') return place.friendsWhoSaved;
-    return Array.isArray(place.friendsWhoSaved) ? place.friendsWhoSaved.length : 0;
-  };
-
-  // Helper function to ensure visitors is always an array for display
-  const getVisitorsArray = (visitors: string[] | number): string[] => {
-    if (typeof visitors === 'number') return [];
-    return visitors;
-  };
-
-  // Helper function to ensure friendsWhoSaved is always an array for display
-  const getFriendsWhoSavedArray = (friendsWhoSaved?: { name: string; avatar: string }[] | number): { name: string; avatar: string }[] => {
-    if (!friendsWhoSaved || typeof friendsWhoSaved === 'number') return [];
-    return friendsWhoSaved;
-  };
+  // Convert pins to places with proper type safety
+  const convertedPlaces = useMemo(() => {
+    return pins.map(pin => convertMapPinToPlace(pin));
+  }, [pins]);
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-blue-50/30 via-white to-purple-50/20 pt-14">
@@ -610,7 +601,7 @@ const HomePage = () => {
       {!shouldShowEmptyFollowingMessage() && (
         <div className="relative">
           <MapSection 
-            places={pins.map(pin => convertMapPinToPlace(pin))}
+            places={convertedPlaces}
             onPinClick={handlePinClick}
             mapCenter={currentMapCenter}
             selectedPlace={selectedPlace}
