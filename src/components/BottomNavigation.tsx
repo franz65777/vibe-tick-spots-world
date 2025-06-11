@@ -31,7 +31,7 @@ const BottomNavigation = () => {
               key={item.path}
               onClick={() => navigate(item.path)}
               className={cn(
-                "flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-all duration-150 min-h-[52px] min-w-[52px]",
+                "flex flex-col items-center justify-center py-2 px-3 rounded-full transition-all duration-150 min-h-[52px] min-w-[52px]",
                 isActive 
                   ? "text-blue-600 bg-blue-50 border border-blue-200 scale-105" 
                   : "text-gray-500 hover:text-gray-700 hover:bg-gray-50 border border-transparent"
