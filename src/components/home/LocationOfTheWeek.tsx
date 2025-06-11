@@ -1,22 +1,7 @@
 
 import { Heart, Users, MapPin, Sparkles } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-
-interface Place {
-  id: string;
-  name: string;
-  category: string;
-  likes: number;
-  friendsWhoSaved?: { name: string; avatar: string }[];
-  visitors: string[];
-  isNew: boolean;
-  coordinates: { lat: number; lng: number };
-  image?: string;
-  addedBy?: string;
-  addedDate?: string;
-  isFollowing?: boolean;
-  popularity?: number;
-}
+import { Place } from '@/types/place';
 
 interface LocationOfTheWeekProps {
   topLocation: Place;
@@ -24,6 +9,18 @@ interface LocationOfTheWeekProps {
 }
 
 const LocationOfTheWeek = ({ topLocation, onLocationClick }: LocationOfTheWeekProps) => {
+  // Helper function to ensure visitors is always an array for display
+  const getVisitorsCount = () => {
+    if (typeof topLocation.visitors === 'number') return topLocation.visitors;
+    return topLocation.visitors.length;
+  };
+
+  // Helper function to ensure friendsWhoSaved is always an array for display
+  const getFriendsWhoSavedArray = () => {
+    if (!topLocation.friendsWhoSaved || typeof topLocation.friendsWhoSaved === 'number') return [];
+    return topLocation.friendsWhoSaved;
+  };
+
   return (
     <div className="mx-4 my-1">
       <div 
@@ -66,16 +63,16 @@ const LocationOfTheWeek = ({ topLocation, onLocationClick }: LocationOfTheWeekPr
               </div>
               <div className="flex items-center gap-1">
                 <Users className="w-3 h-3 text-blue-500" />
-                <span className="font-medium">{topLocation.visitors.length}</span>
+                <span className="font-medium">{getVisitorsCount()}</span>
               </div>
               <span className="text-yellow-600 font-medium">Location of the Week</span>
             </div>
           </div>
 
           {/* Friends who saved (compact) */}
-          {topLocation.friendsWhoSaved && topLocation.friendsWhoSaved.length > 0 && (
+          {getFriendsWhoSavedArray().length > 0 && (
             <div className="flex -space-x-1">
-              {topLocation.friendsWhoSaved.slice(0, 2).map((friend, index) => (
+              {getFriendsWhoSavedArray().slice(0, 2).map((friend, index) => (
                 <Avatar key={index} className="w-6 h-6 border-2 border-white shadow-sm">
                   <AvatarImage 
                     src={`https://images.unsplash.com/photo-${friend.avatar}?w=32&h=32&fit=crop&crop=face`} 

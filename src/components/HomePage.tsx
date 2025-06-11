@@ -421,7 +421,7 @@ const HomePage = () => {
     likes: pin.likes,
     friendsWhoSaved: generateMockFriendsWhoSaved(),
     visitors: [],
-    isNew: false,
+    isNew: pin.isNew || false,
     coordinates: pin.coordinates,
     image: pin.image || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
     addedDate: '2024-06-01',
@@ -528,6 +528,18 @@ const HomePage = () => {
     if (place.totalSaves) return place.totalSaves;
     if (typeof place.friendsWhoSaved === 'number') return place.friendsWhoSaved;
     return Array.isArray(place.friendsWhoSaved) ? place.friendsWhoSaved.length : 0;
+  };
+
+  // Helper function to ensure visitors is always an array for display
+  const getVisitorsArray = (visitors: string[] | number): string[] => {
+    if (typeof visitors === 'number') return [];
+    return visitors;
+  };
+
+  // Helper function to ensure friendsWhoSaved is always an array for display
+  const getFriendsWhoSavedArray = (friendsWhoSaved?: { name: string; avatar: string }[] | number): { name: string; avatar: string }[] => {
+    if (!friendsWhoSaved || typeof friendsWhoSaved === 'number') return [];
+    return friendsWhoSaved;
   };
 
   return (
@@ -685,3 +697,5 @@ const generateMockFriendsWhoSaved = () => {
 };
 
 export default HomePage;
+
+}
