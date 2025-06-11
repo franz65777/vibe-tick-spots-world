@@ -180,10 +180,6 @@ const HomePage = () => {
     setPlaceInteractionModalOpen(true);
   };
 
-  const handlePlaceSelect = (place: Place) => {
-    setSelectedPlace(place);
-  };
-
   const filteredPlaces = mockLocations.filter(place => {
     if (selectedFilter === 'All') return true;
     return place.category === selectedFilter;
@@ -225,19 +221,10 @@ const HomePage = () => {
         
         {filteredPlaces[0] && (
           <LocationOfTheWeek 
-            onCardClick={(place) => handlePlaceClick({
-              ...place,
-              totalSaves: place.totalSaves || place.likes
-            })}
+            onCardClick={(place) => handlePlaceClick(place)}
             onLikeToggle={handleLikeToggle}
-            onShare={(place) => handleShare({
-              ...place,
-              totalSaves: place.totalSaves || place.likes
-            })}
-            onComment={(place) => handleComment({
-              ...place,
-              totalSaves: place.totalSaves || place.likes
-            })}
+            onShare={(place) => handleShare(place)}
+            onComment={(place) => handleComment(place)}
             isLiked={likedPlaces.has(filteredPlaces[0]?.id || '')}
             cityName={selectedCity}
           />
@@ -267,14 +254,8 @@ const HomePage = () => {
             isFollowing: selectedPlace.isFollowing || false
           }
         } : null}
-        onShareModalShare={(friendIds, place) => handleShareModalShare(friendIds, {
-          ...place,
-          totalSaves: place.totalSaves || place.likes
-        })}
-        onCommentSubmit={(text, place) => handleCommentSubmit(text, {
-          ...place,
-          totalSaves: place.totalSaves || place.likes
-        })}
+        onShareModalShare={(friendIds, place) => handleShareModalShare(friendIds, place)}
+        onCommentSubmit={(text, place) => handleCommentSubmit(text, place)}
       />
     </div>
   );

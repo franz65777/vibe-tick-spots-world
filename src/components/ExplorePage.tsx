@@ -1,11 +1,11 @@
 
 import { useState, useEffect } from 'react';
 import { useSearch } from '@/hooks/useSearch';
-import SearchHeader from '@/components/explore/SearchHeader';
-import SearchResults from '@/components/explore/SearchResults';
-import RecommendationsSection from '@/components/explore/RecommendationsSection';
-import ShareModal from '@/components/home/ShareModal';
-import CommentModal from '@/components/home/CommentModal';
+import SearchHeader from './explore/SearchHeader';
+import SearchSuggestions from './explore/SearchSuggestions';
+import RecommendationsSection from './explore/RecommendationsSection';
+import SearchResults from './explore/SearchResults';
+import BottomNavigation from './BottomNavigation';
 
 interface Place {
   id: string;
@@ -36,188 +36,128 @@ interface User {
   isFollowing: boolean;
 }
 
-// Mock data for locations
-const mockLocations: Place[] = [
+// Mock data for demonstration
+const mockPlaces: Place[] = [
   {
     id: '1',
-    name: 'Mario\'s Pizza Palace',
+    name: 'Tartine Bakery',
     category: 'restaurant',
-    likes: 156,
+    likes: 342,
     friendsWhoSaved: [
       { name: 'Sarah', avatar: 'photo-1494790108755-2616b5a5c75b' },
       { name: 'Mike', avatar: 'photo-1507003211169-0a1dd7228f2d' }
     ],
     visitors: ['user1', 'user2', 'user3'],
-    isNew: false,
+    isNew: true,
     coordinates: { lat: 37.7849, lng: -122.4094 },
-    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=300&fit=crop',
+    image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop',
     addedBy: 'user1',
-    addedDate: '2024-05-25',
+    addedDate: '2024-06-01',
     isFollowing: true,
-    popularity: 89,
-    distance: '0.3 km',
-    totalSaves: 23
+    popularity: 95,
+    distance: '0.2 km',
+    totalSaves: 67
   },
   {
     id: '2',
-    name: 'Tony\'s Authentic Pizza',
-    category: 'restaurant',
-    likes: 89,
+    name: 'Mission Dolores Park',
+    category: 'park',
+    likes: 156,
     friendsWhoSaved: [
       { name: 'Emma', avatar: 'photo-1438761681033-6461ffad8d80' }
     ],
     visitors: ['user4', 'user5'],
-    isNew: true,
-    coordinates: { lat: 37.7749, lng: -122.4194 },
-    image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop',
-    addedBy: 'user2',
-    addedDate: '2024-06-01',
-    isFollowing: false,
-    popularity: 76,
-    distance: '0.8 km',
-    totalSaves: 15
-  },
-  {
-    id: '3',
-    name: 'Blue Bottle Coffee',
-    category: 'cafe',
-    likes: 234,
-    friendsWhoSaved: [
-      { name: 'Alex', avatar: 'photo-1472099645785-5658abf4ff4e' },
-      { name: 'Sofia', avatar: 'photo-1534528741775-53994a69daeb' }
-    ],
-    visitors: ['user6', 'user7', 'user8'],
     isNew: false,
-    coordinates: { lat: 37.7649, lng: -122.4294 },
-    image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
-    addedBy: 'user3',
-    addedDate: '2024-05-15',
-    isFollowing: true,
-    popularity: 94,
-    distance: '1.2 km',
-    totalSaves: 42
+    coordinates: { lat: 37.7594, lng: -122.4269 },
+    image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=300&fit=crop',
+    addedBy: 'user2',
+    addedDate: '2024-05-28',
+    isFollowing: false,
+    popularity: 88,
+    distance: '0.8 km',
+    totalSaves: 34
   }
 ];
 
-// Mock data for users
 const mockUsers: User[] = [
   {
-    id: 'user1',
+    id: '1',
     name: 'Sarah Johnson',
-    username: '@sarahj',
+    username: 'sarah_travels',
     avatar: 'photo-1494790108755-2616b5a5c75b',
-    followers: 1250,
-    following: 456,
+    followers: 1234,
+    following: 567,
     savedPlaces: 89,
     isFollowing: false
   },
   {
-    id: 'user2',
+    id: '2',
     name: 'Mike Chen',
-    username: '@mikec',
+    username: 'mike_foodie',
     avatar: 'photo-1507003211169-0a1dd7228f2d',
-    followers: 890,
-    following: 234,
+    followers: 2341,
+    following: 432,
     savedPlaces: 156,
     isFollowing: true
   }
 ];
 
-type SearchMode = 'locations' | 'users';
-type SortBy = 'proximity' | 'likes' | 'followers';
-
 const ExplorePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchMode, setSearchMode] = useState<SearchMode>('locations');
-  const [sortBy, setSortBy] = useState<SortBy>('proximity');
-  const [showFilters, setShowFilters] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [filteredLocations, setFilteredLocations] = useState<Place[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [searchMode, setSearchMode] = useState<'locations' | 'users'>('locations');
+  const [sortBy, setSortBy] = useState<'proximity' | 'likes' | 'followers'>('proximity');
   const [isSearching, setIsSearching] = useState(false);
   const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
-  
-  // Modals
-  const [shareModalOpen, setShareModalOpen] = useState(false);
-  const [commentModalOpen, setCommentModalOpen] = useState(false);
-  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
-  
-  const { 
-    searchHistory, 
-    locationRecommendations, 
-    userRecommendations, 
-    loading, 
-    saveSearch, 
-    getSearchSuggestions 
+
+  const {
+    searchHistory,
+    locationRecommendations,
+    userRecommendations,
+    saveSearch,
+    getSearchSuggestions
   } = useSearch();
 
-  // Filter and sort locations based on search query and filters
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredLocations([]);
-      setFilteredUsers([]);
-      return;
+  // Filter and sort results
+  const filteredLocations = mockPlaces.filter(place =>
+    place.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    place.category.toLowerCase().includes(searchQuery.toLowerCase())
+  ).sort((a, b) => {
+    switch (sortBy) {
+      case 'proximity':
+        // Convert distance strings to numbers for comparison
+        const aDistance = parseFloat(a.distance?.replace(' km', '') || '0');
+        const bDistance = parseFloat(b.distance?.replace(' km', '') || '0');
+        return aDistance - bDistance;
+      case 'likes':
+        return b.likes - a.likes;
+      default:
+        return 0;
     }
+  });
 
+  const filteredUsers = mockUsers.filter(user =>
+    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.username.toLowerCase().includes(searchQuery.toLowerCase())
+  ).sort((a, b) => {
+    switch (sortBy) {
+      case 'followers':
+        return b.followers - a.followers;
+      default:
+        return 0;
+    }
+  });
+
+  const handleSearch = async (query: string) => {
+    if (!query.trim()) return;
+    
     setIsSearching(true);
     
-    // Simulate API call delay
-    const timer = setTimeout(() => {
-      if (searchMode === 'locations') {
-        let filtered = mockLocations.filter(place =>
-          place.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          place.category.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-
-        // Sort based on selected filter
-        if (sortBy === 'proximity') {
-          filtered.sort((a, b) => (a.distance || 0) - (b.distance || 0));
-        } else if (sortBy === 'likes') {
-          filtered.sort((a, b) => b.likes - a.likes);
-        } else if (sortBy === 'followers') {
-          filtered.sort((a, b) => (b.friendsWhoSaved?.length || 0) - (a.friendsWhoSaved?.length || 0));
-        }
-
-        setFilteredLocations(filtered);
-      } else {
-        let filtered = mockUsers.filter(user =>
-          user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          user.username.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-
-        setFilteredUsers(filtered);
-      }
-      
-      setIsSearching(false);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery, searchMode, sortBy]);
-
-  // Handle search with history saving
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-    
-    // Save to search history
-    await saveSearch(searchQuery, searchMode);
-    setShowSuggestions(false);
-  };
-
-  // Handle suggestion click
-  const handleSuggestionClick = (suggestion: string) => {
-    setSearchQuery(suggestion);
-    setShowSuggestions(false);
-    // Trigger search automatically
+    // Simulate search delay
     setTimeout(() => {
-      saveSearch(suggestion, searchMode);
-    }, 100);
-  };
-
-  // Handle place interactions
-  const handleCardClick = (place: Place) => {
-    setSelectedPlace(place);
-    console.log('Place clicked:', place);
+      setIsSearching(false);
+    }, 800);
+    
+    await saveSearch(query, searchMode);
   };
 
   const handleLikeToggle = (placeId: string) => {
@@ -233,139 +173,53 @@ const ExplorePage = () => {
   };
 
   const handleShare = (place: Place) => {
-    setSelectedPlace(place);
-    setShareModalOpen(true);
+    console.log('Sharing place:', place);
+    // Implement share logic
   };
 
   const handleComment = (place: Place) => {
-    setSelectedPlace(place);
-    setCommentModalOpen(true);
+    console.log('Comment on place:', place);
+    // Implement comment logic
   };
 
-  const handleShareModalShare = (friendIds: string[], place: Place) => {
-    console.log('Sharing place:', place, 'with friends:', friendIds);
-    // Implement share logic here
+  const handleCardClick = (place: Place) => {
+    console.log('Place clicked:', place);
+    // Implement navigation to place detail
   };
 
-  // Handle recommendation clicks
-  const handleLocationRecommendationClick = (location: any) => {
-    console.log('Location recommendation clicked:', location);
-    const place: Place = {
-      id: location.id,
-      name: location.name,
-      category: location.category,
-      likes: location.likes,
-      friendsWhoSaved: Array.isArray(location.friendsWhoSaved) ? location.friendsWhoSaved : [],
-      visitors: Array.isArray(location.visitors) ? location.visitors : [],
-      isNew: location.isNew,
-      coordinates: location.coordinates,
-      image: location.image || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=300&fit=crop',
-      addedBy: typeof location.addedBy === 'string' ? location.addedBy : 'Explorer',
-      addedDate: location.addedDate || new Date().toISOString(),
-      isFollowing: location.isFollowing,
-      popularity: location.popularity,
-      distance: location.distance?.toString() || '0.0 km',
-      totalSaves: location.likes || 23
-    };
-    handleCardClick(place);
-  };
-
-  const handleLocationRecommendationShare = (location: any) => {
-    const place: Place = {
-      id: location.id,
-      name: location.name,
-      category: location.category,
-      likes: location.likes,
-      friendsWhoSaved: Array.isArray(location.friendsWhoSaved) ? location.friendsWhoSaved : [],
-      visitors: Array.isArray(location.visitors) ? location.visitors : [],
-      isNew: location.isNew,
-      coordinates: location.coordinates,
-      image: location.image || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=300&fit=crop',
-      addedBy: typeof location.addedBy === 'string' ? location.addedBy : 'Explorer',
-      addedDate: location.addedDate || new Date().toISOString(),
-      isFollowing: location.isFollowing,
-      popularity: location.popularity,
-      distance: location.distance?.toString() || '0.0 km',
-      totalSaves: location.likes || 23
-    };
-    handleShare(place);
-  };
-
-  const handleLocationRecommendationComment = (location: any) => {
-    const place: Place = {
-      id: location.id,
-      name: location.name,
-      category: location.category,
-      likes: location.likes,
-      friendsWhoSaved: Array.isArray(location.friendsWhoSaved) ? location.friendsWhoSaved : [],
-      visitors: Array.isArray(location.visitors) ? location.visitors : [],
-      isNew: location.isNew,
-      coordinates: location.coordinates,
-      image: location.image || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=300&fit=crop',
-      addedBy: typeof location.addedBy === 'string' ? location.addedBy : 'Explorer',
-      addedDate: location.addedDate || new Date().toISOString(),
-      isFollowing: location.isFollowing,
-      popularity: location.popularity,
-      distance: location.distance?.toString() || '0.0 km',
-      totalSaves: location.likes || 23
-    };
-    handleComment(place);
-  };
-
-  const handleUserRecommendationClick = (user: any) => {
-    console.log('User recommendation clicked:', user);
-  };
-
-  const handleFollowUser = (userId: string) => {
-    console.log('Follow user:', userId);
-  };
-
-  // Get current search suggestions
-  const currentSuggestions = getSearchSuggestions(searchQuery, searchMode);
-  const recentSearches = searchHistory
-    .filter(item => item.search_type === searchMode)
-    .map(item => item.search_query)
-    .slice(0, 3);
+  // Get suggestions based on current query
+  const suggestions = getSearchSuggestions(searchQuery, searchMode);
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-br from-blue-50/30 via-white to-purple-50/20 pt-16">
-      {/* Header with Search */}
+    <div className="flex flex-col h-screen bg-white">
       <SearchHeader
         searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
+        onSearchChange={setSearchQuery}
         searchMode={searchMode}
-        setSearchMode={setSearchMode}
+        onSearchModeChange={setSearchMode}
         sortBy={sortBy}
-        setSortBy={setSortBy}
-        showFilters={showFilters}
-        setShowFilters={setShowFilters}
-        showSuggestions={showSuggestions}
-        setShowSuggestions={setShowSuggestions}
-        onSearch={handleSearch}
-        suggestions={currentSuggestions}
-        recentSearches={recentSearches}
-        onSuggestionClick={handleSuggestionClick}
+        onSortChange={setSortBy}
+        onSearch={() => handleSearch(searchQuery)}
       />
-
-      {/* Results */}
+      
       <div className="flex-1 overflow-y-auto pb-20">
-        {!searchQuery.trim() ? (
-          // Recommendations when not searching
-          <RecommendationsSection
-            searchMode={searchMode}
-            loading={loading}
-            locationRecommendations={locationRecommendations}
-            userRecommendations={userRecommendations}
-            onLocationClick={handleLocationRecommendationClick}
-            onUserClick={handleUserRecommendationClick}
-            onFollowUser={handleFollowUser}
-            onLocationShare={handleLocationRecommendationShare}
-            onLocationComment={handleLocationRecommendationComment}
-            onLocationLike={handleLikeToggle}
-            likedPlaces={likedPlaces}
-          />
+        {!searchQuery ? (
+          <>
+            <SearchSuggestions
+              suggestions={suggestions}
+              searchHistory={searchHistory}
+              onSuggestionClick={(suggestion) => {
+                setSearchQuery(suggestion);
+                handleSearch(suggestion);
+              }}
+            />
+            <RecommendationsSection
+              locationRecommendations={locationRecommendations}
+              userRecommendations={userRecommendations}
+              searchMode={searchMode}
+            />
+          </>
         ) : (
-          // Search results
           <SearchResults
             searchMode={searchMode}
             sortBy={sortBy}
@@ -381,21 +235,7 @@ const ExplorePage = () => {
         )}
       </div>
 
-      {/* Modals */}
-      <ShareModal
-        isOpen={shareModalOpen}
-        onClose={() => setShareModalOpen(false)}
-        item={selectedPlace}
-        itemType="place"
-        onShare={handleShareModalShare}
-      />
-
-      <CommentModal
-        isOpen={commentModalOpen}
-        onClose={() => setCommentModalOpen(false)}
-        place={selectedPlace}
-        onCommentSubmit={(comment) => console.log('Comment added:', comment)}
-      />
+      <BottomNavigation />
     </div>
   );
 };
