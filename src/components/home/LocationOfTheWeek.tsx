@@ -11,19 +11,27 @@ interface Place {
   visitors: string[];
   isNew: boolean;
   coordinates: { lat: number; lng: number };
-  image?: string;
-  addedBy?: string;
-  addedDate?: string;
-  isFollowing?: boolean;
-  popularity?: number;
+  rating: number;
+  reviews: number;
+  distance: string;
+  addedBy: { name: string; avatar: string; isFollowing: boolean };
+  addedDate: string;
+  image: string;
+  description?: string;
+  totalSaves: number;
 }
 
 interface LocationOfTheWeekProps {
-  topLocation: Place;
+  topLocation: Place | null;
   onLocationClick: (place: Place) => void;
 }
 
 const LocationOfTheWeek = ({ topLocation, onLocationClick }: LocationOfTheWeekProps) => {
+  // If no top location, don't render anything
+  if (!topLocation) {
+    return null;
+  }
+
   return (
     <div className="mx-4 my-1">
       <div 

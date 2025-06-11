@@ -190,18 +190,20 @@ const HomePage = () => {
         
         <div className="px-4 sm:px-6 space-y-6">
           <MapSection 
-            pins={mapPins}
+            mapPins={mapPins}
             onPinClick={handleMapPinClick}
             userLocation={location}
           />
           
-          <LocationOfTheWeek 
-            topLocation={topLocation}
-            onLocationClick={handlePlaceClick}
-          />
+          {topLocation && (
+            <LocationOfTheWeek 
+              topLocation={topLocation}
+              onLocationClick={handlePlaceClick}
+            />
+          )}
           
           <FilterButtons 
-            filters={['All', 'Historic', 'Museum', 'Restaurant', 'Park']}
+            categories={['All', 'Historic', 'Museum', 'Restaurant', 'Park']}
             selectedFilter={selectedFilter}
             onFilterChange={handleFilterChange}
           />
@@ -211,7 +213,7 @@ const HomePage = () => {
               <PlaceCard
                 key={place.id}
                 place={place}
-                onClick={() => handlePlaceClick(place)}
+                onPlaceClick={() => handlePlaceClick(place)}
                 onShare={() => {
                   setSelectedPlace(place);
                   setIsShareModalOpen(true);
