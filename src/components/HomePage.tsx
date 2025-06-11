@@ -190,7 +190,7 @@ const HomePage = () => {
         
         <div className="px-4 sm:px-6 space-y-6">
           <MapSection 
-            mapPins={mapPins}
+            places={places}
             onPinClick={handleMapPinClick}
             userLocation={location}
           />
@@ -203,7 +203,7 @@ const HomePage = () => {
           )}
           
           <FilterButtons 
-            categories={['All', 'Historic', 'Museum', 'Restaurant', 'Park']}
+            filters={['All', 'Historic', 'Museum', 'Restaurant', 'Park']}
             selectedFilter={selectedFilter}
             onFilterChange={handleFilterChange}
           />
@@ -213,7 +213,7 @@ const HomePage = () => {
               <PlaceCard
                 key={place.id}
                 place={place}
-                onPlaceClick={() => handlePlaceClick(place)}
+                onClick={() => handlePlaceClick(place)}
                 onShare={() => {
                   setSelectedPlace(place);
                   setIsShareModalOpen(true);

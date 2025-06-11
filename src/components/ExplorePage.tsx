@@ -1,11 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import BottomNavigation from './BottomNavigation';
 import SearchHeader from './explore/SearchHeader';
-import SearchFilters from './explore/SearchFilters';
 import SearchResults from './explore/SearchResults';
-import SearchSuggestions from './explore/SearchSuggestions';
+import LocationRecommendations from './explore/LocationRecommendations';
+import UserRecommendations from './explore/UserRecommendations';
 import RecommendationsSection from './explore/RecommendationsSection';
 
 // Define unified Place interface
@@ -31,120 +31,111 @@ interface Place {
 const ExplorePage = () => {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'proximity' | 'likes' | 'followers'>('proximity');
   const [searchResults, setSearchResults] = useState<Place[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [suggestions] = useState<string[]>(['Museums', 'Restaurants', 'Parks', 'Cafes']);
-  const [searchHistory] = useState<string[]>(['Gamla Stan', 'Vasa Museum']);
+  const [recommendations, setRecommendations] = useState<Place[]>([]);
 
-  const handleSearch = async (query: string) => {
-    if (!query.trim()) {
-      setSearchResults([]);
-      setIsSearching(false);
-      return;
-    }
+  // Demo data
+  useEffect(() => {
+    const demoRecommendations: Place[] = [
+      {
+        id: '1',
+        name: 'Central Park',
+        category: 'Park',
+        likes: 342,
+        friendsWhoSaved: [
+          { name: 'Emma', avatar: '/api/placeholder/32/32' },
+          { name: 'Alex', avatar: '/api/placeholder/32/32' }
+        ],
+        visitors: ['Emma', 'Alex', 'Sara'],
+        isNew: false,
+        coordinates: { lat: 40.7829, lng: -73.9654 },
+        rating: 4.9,
+        reviews: 1200,
+        distance: '2.1 km',
+        addedBy: { name: 'Emma', avatar: '/api/placeholder/32/32', isFollowing: true },
+        addedDate: '2024-01-10',
+        image: '/api/placeholder/400/300',
+        description: 'Beautiful urban park in Manhattan',
+        totalSaves: 342
+      },
+      {
+        id: '2',
+        name: 'Brooklyn Bridge',
+        category: 'Historic',
+        likes: 523,
+        friendsWhoSaved: [
+          { name: 'John', avatar: '/api/placeholder/32/32' }
+        ],
+        visitors: ['John', 'Lisa', 'Mike'],
+        isNew: true,
+        coordinates: { lat: 40.7061, lng: -73.9969 },
+        rating: 4.8,
+        reviews: 890,
+        distance: '3.5 km',
+        addedBy: { name: 'John', avatar: '/api/placeholder/32/32', isFollowing: false },
+        addedDate: '2024-01-20',
+        image: '/api/placeholder/400/300',
+        description: 'Iconic suspension bridge connecting Manhattan and Brooklyn',
+        totalSaves: 523
+      }
+    ];
+    setRecommendations(demoRecommendations);
+  }, []);
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    
     setIsSearching(true);
     
-    // Simulate search with demo data
-    const demoResults: Place[] = [
-      {
-        id: 'search-1',
-        name: 'Fotografiska',
-        category: 'Museum',
-        likes: 156,
-        friendsWhoSaved: [
-          { name: 'Anna', avatar: '/api/placeholder/32/32' }
-        ],
-        visitors: ['Anna', 'Erik'],
-        isNew: false,
-        coordinates: { lat: 59.3167, lng: 18.0844 },
-        rating: 4.6,
-        reviews: 78,
-        distance: '2.1 km',
-        addedBy: { name: 'Anna', avatar: '/api/placeholder/32/32', isFollowing: true },
-        addedDate: '2024-01-08',
-        image: '/api/placeholder/400/300',
-        description: 'Contemporary photography museum',
-        totalSaves: 156
-      }
-    ].filter(place => 
-      place.name.toLowerCase().includes(query.toLowerCase()) ||
-      place.category.toLowerCase().includes(query.toLowerCase())
-    );
-
+    // Simulate search
     setTimeout(() => {
-      setSearchResults(demoResults);
+      const results = recommendations.filter(place => 
+        place.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        place.category.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setSearchResults(results);
       setIsSearching(false);
-    }, 500);
-  };
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    handleSearch(searchQuery);
+    }, 1000);
   };
 
   const handlePlaceClick = (place: Place) => {
-    console.log('Place clicked:', place);
+    console.log('Place clicked:', place.name);
   };
 
-  const handleSavePlace = (placeId: string) => {
-    console.log('Saving place:', placeId);
-  };
-
-  const showResults = searchQuery.trim().length > 0;
-  const showSuggestions = !showResults && !isSearching;
+  const hasSearchQuery = searchQuery.trim().length > 0;
+  const showResults = hasSearchQuery && searchResults.length > 0;
 
   return (
-    <div className="flex flex-col h-screen bg-white">
-      <SearchHeader 
+    <div className="flex flex-col h-screen bg-gray-50">
+      <SearchHeader
         searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        onSearch={handleSearchSubmit}
+        onSearchQueryChange={setSearchQuery}
+        onSearch={handleSearch}
       />
       
       <div className="flex-1 overflow-auto pb-20">
-        {showSuggestions && (
+        {showResults ? (
+          <SearchResults 
+            results={searchResults}
+            isLoading={isSearching}
+            onPlaceClick={handlePlaceClick}
+          />
+        ) : (
           <>
-            <SearchSuggestions 
-              suggestions={suggestions}
-              searchHistory={searchHistory}
-              onSuggestionClick={setSearchQuery} 
-            />
-            <RecommendationsSection 
-              searchMode="locations"
-              loading={false}
-              locationRecommendations={[]}
-              userRecommendations={[]}
-              onLocationClick={() => {}}
-              onUserClick={() => {}}
-              onFollowUser={() => {}}
-              onLocationShare={() => {}}
-              onLocationComment={() => {}}
-              onLocationLike={() => {}}
-              likedPlaces={new Set()}
-            />
-          </>
-        )}
-        
-        {showResults && (
-          <>
-            <SearchFilters
-              sortBy={sortBy}
-              onSortChange={setSortBy}
-              showFilters={true}
+            <LocationRecommendations 
+              recommendations={recommendations}
+              onPlaceClick={handlePlaceClick}
             />
             
-            <SearchResults
-              results={searchResults}
-              isLoading={isSearching}
-              onPlaceClick={handlePlaceClick}
-              onSavePlace={handleSavePlace}
-            />
+            <UserRecommendations />
+            
+            <RecommendationsSection />
           </>
         )}
       </div>
-      
+
       <BottomNavigation />
     </div>
   );
