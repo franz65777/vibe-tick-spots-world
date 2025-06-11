@@ -45,6 +45,7 @@ const HomePage = () => {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
   const [isCreateStoryModalOpen, setIsCreateStoryModalOpen] = useState(false);
+  const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
 
   // Generate demo places data
   useEffect(() => {
@@ -146,6 +147,18 @@ const HomePage = () => {
     setIsCommentModalOpen(false);
   };
 
+  const handleLikeToggle = (placeId: string) => {
+    setLikedPlaces(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(placeId)) {
+        newSet.delete(placeId);
+      } else {
+        newSet.add(placeId);
+      }
+      return newSet;
+    });
+  };
+
   const topLocation = places.length > 0 ? places[0] : null;
 
   const filteredPlaces = places.filter(place => {
@@ -177,7 +190,8 @@ const HomePage = () => {
           <MapSection 
             places={places}
             onPinClick={handleMapPinClick}
-            location={location}
+            mapCenter={location ? { lat: location.latitude, lng: location.longitude } : undefined}
+            selectedPlace={selectedPlace}
           />
           
           {topLocation && (
@@ -197,7 +211,9 @@ const HomePage = () => {
               <PlaceCard
                 key={place.id}
                 place={place}
-                onPlaceClick={() => handlePlaceClick(place)}
+                isLiked={likedPlaces.has(place.id)}
+                onCardClick={() => handlePlaceClick(place)}
+                onLikeToggle={() => handleLikeToggle(place.id)}
                 onShare={() => {
                   setSelectedPlace(place);
                   setIsShareModalOpen(true);
@@ -206,6 +222,7 @@ const HomePage = () => {
                   setSelectedPlace(place);
                   setIsCommentModalOpen(true);
                 }}
+                cityName={currentCity}
               />
             ))}
           </div>
