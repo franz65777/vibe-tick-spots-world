@@ -12,6 +12,7 @@ import Achievements from './profile/Achievements';
 import PostsGrid from './profile/PostsGrid';
 import TripsGrid from './profile/TripsGrid';
 import FollowersModal from './profile/FollowersModal';
+import SavedLocationsPage from './profile/SavedLocationsPage';
 
 const ProfilePage = () => {
   const { profile, loading, error } = useProfile();
@@ -22,6 +23,7 @@ const ProfilePage = () => {
     isOpen: false,
     type: null
   });
+  const [showSavedLocations, setShowSavedLocations] = useState(false);
 
   const openModal = (type: 'followers' | 'following') => {
     setModalState({ isOpen: true, type });
@@ -33,6 +35,14 @@ const ProfilePage = () => {
 
   const handlePostsClick = () => {
     setActiveTab('posts');
+  };
+
+  const handleSavedLocationsClick = () => {
+    setShowSavedLocations(true);
+  };
+
+  const handleSavedLocationsClose = () => {
+    setShowSavedLocations(false);
   };
 
   if (loading) {
@@ -53,6 +63,11 @@ const ProfilePage = () => {
         </div>
       </div>
     );
+  }
+
+  // Show saved locations page if requested
+  if (showSavedLocations) {
+    return <SavedLocationsPage onClose={handleSavedLocationsClose} />;
   }
 
   const renderTabContent = () => {
@@ -88,6 +103,7 @@ const ProfilePage = () => {
         onFollowersClick={() => openModal('followers')}
         onFollowingClick={() => openModal('following')}
         onPostsClick={handlePostsClick}
+        onSavedLocationsClick={handleSavedLocationsClick}
       />
       
       <ProfileTabs activeTab={activeTab} onTabChange={setActiveTab} />
