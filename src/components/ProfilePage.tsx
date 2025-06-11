@@ -11,7 +11,6 @@ import ProfileTabs from './profile/ProfileTabs';
 import Achievements from './profile/Achievements';
 import PostsGrid from './profile/PostsGrid';
 import TripsGrid from './profile/TripsGrid';
-import TravelStats from './profile/TravelStats';
 import FollowersModal from './profile/FollowersModal';
 
 const ProfilePage = () => {
@@ -90,8 +89,6 @@ const ProfilePage = () => {
         onFollowingClick={() => openModal('following')}
         onPostsClick={handlePostsClick}
       />
-      
-      <TravelStats />
       
       <ProfileTabs activeTab={activeTab} onTabChange={setActiveTab} />
       
