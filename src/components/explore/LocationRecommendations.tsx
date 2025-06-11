@@ -2,6 +2,7 @@
 import { MapPin } from 'lucide-react';
 import PlaceCard from '@/components/home/PlaceCard';
 import { LocationRecommendation } from '@/services/searchService';
+import { Place } from '@/types/place';
 
 interface LocationRecommendationsProps {
   recommendations: LocationRecommendation[];
@@ -30,7 +31,7 @@ const LocationRecommendations = ({
   }
 
   // Convert recommendations to Place format for PlaceCard
-  const convertToPlace = (rec: LocationRecommendation) => ({
+  const convertToPlace = (rec: LocationRecommendation): Place => ({
     id: rec.id,
     name: rec.name,
     category: rec.category,
@@ -48,7 +49,7 @@ const LocationRecommendations = ({
     addedDate: rec.addedDate,
     isFollowing: rec.isFollowing,
     popularity: rec.popularity,
-    distance: rec.distance,
+    distance: typeof rec.distance === 'number' ? `${rec.distance}km` : rec.distance,
     totalSaves: rec.likes || 23
   });
 

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useSearch } from '@/hooks/useSearch';
 import SearchHeader from '@/components/explore/SearchHeader';
@@ -6,24 +5,7 @@ import SearchResults from '@/components/explore/SearchResults';
 import RecommendationsSection from '@/components/explore/RecommendationsSection';
 import ShareModal from '@/components/home/ShareModal';
 import CommentModal from '@/components/home/CommentModal';
-
-interface Place {
-  id: string;
-  name: string;
-  category: string;
-  likes: number;
-  friendsWhoSaved?: { name: string; avatar: string }[];
-  visitors: string[];
-  isNew: boolean;
-  coordinates: { lat: number; lng: number };
-  image?: string;
-  addedBy?: string;
-  addedDate?: string;
-  isFollowing?: boolean;
-  popularity?: number;
-  distance?: number;
-  totalSaves?: number;
-}
+import { Place } from '@/types/place';
 
 interface User {
   id: string;
@@ -55,7 +37,7 @@ const mockLocations: Place[] = [
     addedDate: '2024-05-25',
     isFollowing: true,
     popularity: 89,
-    distance: 0.3,
+    distance: '0.3km',
     totalSaves: 23
   },
   {
@@ -74,7 +56,7 @@ const mockLocations: Place[] = [
     addedDate: '2024-06-01',
     isFollowing: false,
     popularity: 76,
-    distance: 0.8,
+    distance: '0.8km',
     totalSaves: 15
   },
   {
@@ -94,7 +76,7 @@ const mockLocations: Place[] = [
     addedDate: '2024-05-15',
     isFollowing: true,
     popularity: 94,
-    distance: 1.2,
+    distance: '1.2km',
     totalSaves: 42
   }
 ];
@@ -171,11 +153,19 @@ const ExplorePage = () => {
 
         // Sort based on selected filter
         if (sortBy === 'proximity') {
-          filtered.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+          filtered.sort((a, b) => {
+            const aDistance = typeof a.distance === 'string' ? parseFloat(a.distance) : (a.distance || 0);
+            const bDistance = typeof b.distance === 'string' ? parseFloat(b.distance) : (b.distance || 0);
+            return aDistance - bDistance;
+          });
         } else if (sortBy === 'likes') {
           filtered.sort((a, b) => b.likes - a.likes);
         } else if (sortBy === 'followers') {
-          filtered.sort((a, b) => (b.friendsWhoSaved?.length || 0) - (a.friendsWhoSaved?.length || 0));
+          filtered.sort((a, b) => {
+            const aCount = Array.isArray(a.friendsWhoSaved) ? a.friendsWhoSaved.length : (a.friendsWhoSaved || 0);
+            const bCount = Array.isArray(b.friendsWhoSaved) ? b.friendsWhoSaved.length : (b.friendsWhoSaved || 0);
+            return bCount - aCount;
+          });
         }
 
         setFilteredLocations(filtered);

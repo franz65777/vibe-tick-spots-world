@@ -2,24 +2,7 @@
 import { MapPin, Users } from 'lucide-react';
 import PlaceCard from '@/components/home/PlaceCard';
 import { Button } from '@/components/ui/button';
-
-interface Place {
-  id: string;
-  name: string;
-  category: string;
-  likes: number;
-  friendsWhoSaved?: { name: string; avatar: string }[];
-  visitors: string[];
-  isNew: boolean;
-  coordinates: { lat: number; lng: number };
-  image?: string;
-  addedBy?: string;
-  addedDate?: string;
-  isFollowing?: boolean;
-  popularity?: number;
-  distance?: number;
-  totalSaves?: number;
-}
+import { Place } from '@/types/place';
 
 interface User {
   id: string;
@@ -86,10 +69,10 @@ const SearchResults = ({
                 key={place.id}
                 place={place}
                 isLiked={likedPlaces.has(place.id)}
-                onCardClick={onCardClick}
-                onLikeToggle={onLikeToggle}
-                onShare={onShare}
-                onComment={onComment}
+                onCardClick={() => onCardClick(place)}
+                onLikeToggle={() => onLikeToggle(place.id)}
+                onShare={() => onShare(place)}
+                onComment={() => onComment(place)}
                 cityName="Current City"
               />
             ))}

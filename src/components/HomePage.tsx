@@ -10,28 +10,7 @@ import FilterButtons from '@/components/home/FilterButtons';
 import ModalsManager from '@/components/home/ModalsManager';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useMapPins } from '@/hooks/useMapPins';
-
-interface Place {
-  id: string;
-  name: string;
-  category: string;
-  likes: number;
-  friendsWhoSaved?: { name: string; avatar: string }[] | number;
-  visitors: string[] | number;
-  isNew: boolean;
-  coordinates: { lat: number; lng: number };
-  image: string;
-  addedBy?: {
-    name: string;
-    avatar: string;
-    isFollowing: boolean;
-  };
-  addedDate?: string;
-  isFollowing?: boolean;
-  popularity?: number;
-  distance?: string;
-  totalSaves?: number;
-}
+import { Place } from '@/types/place';
 
 interface Story {
   id: string;
@@ -434,14 +413,26 @@ const HomePage = () => {
     ));
   };
 
+  // Convert MapPin to Place with proper defaults
+  const convertMapPinToPlace = (pin: any): Place => ({
+    id: pin.id,
+    name: pin.name,
+    category: pin.category,
+    likes: pin.likes,
+    friendsWhoSaved: generateMockFriendsWhoSaved(),
+    visitors: [],
+    isNew: false,
+    coordinates: pin.coordinates,
+    image: pin.image || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
+    addedDate: '2024-06-01',
+    isFollowing: false,
+    popularity: pin.popularity,
+    totalSaves: pin.likes || 0
+  });
+
   const handlePinClick = (place: Place) => {
     console.log('Map pin clicked:', place.name);
-    setSelectedPlace({
-      ...place,
-      totalSaves: place.totalSaves || getSavesCount(place),
-      friendsWhoSaved: typeof place.friendsWhoSaved === 'number' ? place.friendsWhoSaved : place.friendsWhoSaved?.length || 0,
-      visitors: typeof place.visitors === 'number' ? place.visitors : place.visitors?.length || 0
-    });
+    setSelectedPlace(place);
   };
 
   const handleCloseSelectedPlace = () => {
@@ -462,22 +453,12 @@ const HomePage = () => {
   };
 
   const handleShare = (place: Place) => {
-    setSharePlace({
-      ...place,
-      totalSaves: place.totalSaves || getSavesCount(place),
-      friendsWhoSaved: typeof place.friendsWhoSaved === 'number' ? place.friendsWhoSaved : place.friendsWhoSaved?.length || 0,
-      visitors: typeof place.visitors === 'number' ? place.visitors : place.visitors?.length || 0
-    });
+    setSharePlace(place);
     setIsShareModalOpen(true);
   };
 
   const handleComment = (place: Place) => {
-    setCommentPlace({
-      ...place,
-      totalSaves: place.totalSaves || getSavesCount(place),
-      friendsWhoSaved: typeof place.friendsWhoSaved === 'number' ? place.friendsWhoSaved : place.friendsWhoSaved?.length || 0,
-      visitors: typeof place.visitors === 'number' ? place.visitors : place.visitors?.length || 0
-    });
+    setCommentPlace(place);
     setIsCommentModalOpen(true);
   };
 
@@ -493,12 +474,7 @@ const HomePage = () => {
 
   const handleCardClick = (place: Place) => {
     console.log('Place card clicked:', place.name, '- opening location detail');
-    setLocationDetailPlace({
-      ...place,
-      totalSaves: place.totalSaves || getSavesCount(place),
-      friendsWhoSaved: typeof place.friendsWhoSaved === 'number' ? place.friendsWhoSaved : place.friendsWhoSaved?.length || 0,
-      visitors: typeof place.visitors === 'number' ? place.visitors : place.visitors?.length || 0
-    });
+    setLocationDetailPlace(place);
     setIsLocationDetailOpen(true);
   };
 
@@ -551,7 +527,7 @@ const HomePage = () => {
   const getSavesCount = (place: Place) => {
     if (place.totalSaves) return place.totalSaves;
     if (typeof place.friendsWhoSaved === 'number') return place.friendsWhoSaved;
-    return place.friendsWhoSaved?.length || 0;
+    return Array.isArray(place.friendsWhoSaved) ? place.friendsWhoSaved.length : 0;
   };
 
   return (
@@ -581,16 +557,7 @@ const HomePage = () => {
       {/* Location of the Week - Compact */}
       {locationOfTheWeek && (
         <LocationOfTheWeek 
-          topLocation={{
-            id: locationOfTheWeek.id,
-            name: locationOfTheWeek.name,
-            category: locationOfTheWeek.category,
-            likes: locationOfTheWeek.likes,
-            visitors: [],
-            isNew: false,
-            coordinates: locationOfTheWeek.coordinates,
-            popularity: locationOfTheWeek.popularity
-          }}
+          topLocation={convertMapPinToPlace(locationOfTheWeek)}
           onLocationClick={handleCardClick}
         />
       )}
@@ -629,16 +596,7 @@ const HomePage = () => {
       {!shouldShowEmptyFollowingMessage() && (
         <div className="relative">
           <MapSection 
-            places={pins.map(pin => ({
-              id: pin.id,
-              name: pin.name,
-              category: pin.category,
-              coordinates: pin.coordinates,
-              visitors: [],
-              likes: pin.likes,
-              friendsWhoSaved: generateMockFriendsWhoSaved(),
-              image: pin.image || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop'
-            }))}
+            places={pins.map(pin => convertMapPinToPlace(pin))}
             onPinClick={handlePinClick}
             mapCenter={currentMapCenter}
             selectedPlace={selectedPlace}
@@ -662,10 +620,10 @@ const HomePage = () => {
           <PlaceCard
             place={selectedPlace}
             isLiked={likedPlaces.has(selectedPlace.id)}
-            onCardClick={() => handleCardClick(selectedPlace)}
-            onLikeToggle={() => handleLikeToggle(selectedPlace.id)}
-            onShare={() => handleShare(selectedPlace)}
-            onComment={() => handleComment(selectedPlace)}
+            onCardClick={handleCardClick}
+            onLikeToggle={handleLikeToggle}
+            onShare={handleShare}
+            onComment={handleComment}
             cityName={currentCity}
           />
         </div>
@@ -703,7 +661,7 @@ const HomePage = () => {
         onShareModalClose={() => setIsShareModalOpen(false)}
         onCommentModalClose={() => setIsCommentModalOpen(false)}
         onLocationDetailClose={() => setIsLocationDetailOpen(false)}
-        onStoriesViewerClose={() => setIsStoriesViewerOpen(false)}
+        onStoriesViewerClose={() => setIsStoriesViewerClose(false)}
         onStoryCreated={handleStoryCreated}
         onShare={handleShareSubmit}
         onCommentSubmit={handleCommentSubmit}
@@ -727,3 +685,5 @@ const generateMockFriendsWhoSaved = () => {
 };
 
 export default HomePage;
+
+}

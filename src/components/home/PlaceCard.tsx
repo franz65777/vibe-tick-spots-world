@@ -3,34 +3,15 @@ import React, { useState } from 'react';
 import { Heart, MessageSquare, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import PlaceInteractionModal from './PlaceInteractionModal';
+import { Place } from '@/types/place';
 
 interface PlaceCardProps {
-  place: {
-    id: string;
-    name: string;
-    category: string;
-    likes: number;
-    friendsWhoSaved?: { name: string; avatar: string }[] | number;
-    visitors: string[] | number;
-    isNew: boolean;
-    coordinates: { lat: number; lng: number };
-    image: string;
-    addedBy?: {
-      name: string;
-      avatar: string;
-      isFollowing: boolean;
-    };
-    addedDate: string;
-    isFollowing?: boolean;
-    popularity?: number;
-    distance?: string;
-    totalSaves?: number;
-  };
+  place: Place;
   isLiked: boolean;
-  onCardClick: () => void;
-  onLikeToggle: () => void;
-  onShare: () => void;
-  onComment: () => void;
+  onCardClick: (place: Place) => void;
+  onLikeToggle: (placeId: string) => void;
+  onShare: (place: Place) => void;
+  onComment: (place: Place) => void;
   cityName: string;
 }
 
@@ -53,7 +34,7 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
 
   const handleLikeClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onLikeToggle();
+    onLikeToggle(place.id);
   };
 
   const handleSaveClick = (e: React.MouseEvent) => {
@@ -74,16 +55,28 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
     return place.friendsWhoSaved?.length || 0;
   };
 
+  // Helper to get distance string
+  const getDistanceString = () => {
+    if (!place.distance) return null;
+    if (typeof place.distance === 'string') return place.distance;
+    return `${place.distance}km`;
+  };
+
+  // Helper to get image with fallback
+  const getImageUrl = () => {
+    return place.image || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop';
+  };
+
   return (
     <>
       <div 
         className="bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 group"
-        onClick={onCardClick}
+        onClick={() => onCardClick(place)}
       >
         {/* Image section */}
         <div className="relative h-48 overflow-hidden">
           <img 
-            src={place.image} 
+            src={getImageUrl()} 
             alt={place.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
@@ -107,7 +100,7 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
           </div>
 
           {/* Explorer badge */}
-          {place.addedBy?.isFollowing && (
+          {((typeof place.addedBy === 'object' && place.addedBy?.isFollowing) || place.isFollowing) && (
             <div className="absolute top-3 right-3">
               <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
                 <Users className="w-3 h-3" />
@@ -147,7 +140,7 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
               <Users className="w-4 h-4 text-blue-400" />
               <span>{getVisitorCount()} visited</span>
             </div>
-            {place.distance && (
+            {getDistanceString() && (
               <div className="flex items-center gap-1">
                 <svg className="w-4 h-4 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="10"/>
@@ -159,7 +152,7 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
                   <circle cx="12" cy="2" r="1"/>
                   <path d="M6 6l12 0"/>
                 </svg>
-                <span>{place.distance}</span>
+                <span>{getDistanceString()}</span>
               </div>
             )}
           </div>
@@ -228,9 +221,15 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
             <div className="mt-3 pt-3 border-t border-gray-100">
               <div className="flex items-center gap-2 text-xs text-gray-500">
                 <span>Discovered by</span>
-                <span className="font-medium text-gray-700">{place.addedBy.name}</span>
-                <span>•</span>
-                <span>{place.addedDate}</span>
+                <span className="font-medium text-gray-700">
+                  {typeof place.addedBy === 'string' ? place.addedBy : place.addedBy.name}
+                </span>
+                {place.addedDate && (
+                  <>
+                    <span>•</span>
+                    <span>{place.addedDate}</span>
+                  </>
+                )}
               </div>
             </div>
           )}

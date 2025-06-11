@@ -1,0 +1,22 @@
+
+export interface Place {
+  id: string;
+  name: string;
+  category: string;
+  likes: number;
+  friendsWhoSaved?: { name: string; avatar: string }[] | number;
+  visitors: string[] | number;
+  isNew: boolean;
+  coordinates: { lat: number; lng: number };
+  image?: string;
+  addedBy?: {
+    name: string;
+    avatar: string;
+    isFollowing: boolean;
+  } | string;
+  addedDate?: string;
+  isFollowing?: boolean;
+  popularity?: number;
+  distance?: string | number;
+  totalSaves?: number;
+}
