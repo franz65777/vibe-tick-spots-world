@@ -1,26 +1,7 @@
 
-import React from 'react';
-import { Star, Users, MapPin, Heart, MessageSquare, Share2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-
-interface LocationRecommendation {
-  id: string;
-  name: string;
-  category: string;
-  likes: number;
-  friendsWhoSaved: { name: string; avatar: string; }[];
-  visitors: string[];
-  isNew: boolean;
-  coordinates: { lat: number; lng: number };
-  rating: number;
-  reviews: number;
-  distance: string;
-  addedBy: { name: string; avatar: string; isFollowing: boolean };
-  addedDate: string;
-  image: string;
-  description?: string;
-  totalSaves: number;
-}
+import { MapPin } from 'lucide-react';
+import PlaceCard from '@/components/home/PlaceCard';
+import { LocationRecommendation } from '@/services/searchService';
 
 interface LocationRecommendationsProps {
   recommendations: LocationRecommendation[];
@@ -32,123 +13,70 @@ interface LocationRecommendationsProps {
 }
 
 const LocationRecommendations = ({ 
-  recommendations = [], 
-  onLocationClick,
-  onLocationShare,
-  onLocationComment,
+  recommendations, 
+  onLocationClick, 
+  onLocationShare, 
+  onLocationComment, 
   onLocationLike,
-  likedPlaces
+  likedPlaces 
 }: LocationRecommendationsProps) => {
-  // Default recommendations if none provided
-  const defaultRecommendations: LocationRecommendation[] = [
-    {
-      id: 'rec-1',
-      name: 'ABBA The Museum',
-      category: 'Museum',
-      likes: 298,
-      friendsWhoSaved: [
-        { name: 'Lisa', avatar: '/api/placeholder/32/32' },
-        { name: 'Mike', avatar: '/api/placeholder/32/32' }
-      ],
-      visitors: ['Lisa', 'Mike', 'Sarah'],
-      isNew: false,
-      coordinates: { lat: 59.3267, lng: 18.0955 },
-      rating: 4.5,
-      reviews: 187,
-      distance: '1.8 km',
-      addedBy: { name: 'Lisa', avatar: '/api/placeholder/32/32', isFollowing: true },
-      addedDate: '2024-01-12',
-      image: '/api/placeholder/300/200',
-      description: 'Interactive museum about the famous Swedish pop group',
-      totalSaves: 298
-    }
-  ];
+  if (recommendations.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+        <p className="text-gray-600">No recommendations available</p>
+      </div>
+    );
+  }
 
-  const displayRecommendations = recommendations.length > 0 ? recommendations : defaultRecommendations;
+  // Convert recommendations to Place format for PlaceCard
+  const convertToPlace = (rec: LocationRecommendation) => ({
+    id: rec.id,
+    name: rec.name,
+    category: rec.category,
+    likes: rec.likes,
+    friendsWhoSaved: rec.friendsWhoSaved || 0,
+    visitors: rec.visitors || 0,
+    isNew: rec.isNew,
+    coordinates: rec.coordinates,
+    image: rec.image,
+    addedBy: {
+      name: typeof rec.addedBy === 'string' ? rec.addedBy : 'Explorer',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
+      isFollowing: rec.isFollowing || false
+    },
+    addedDate: rec.addedDate,
+    isFollowing: rec.isFollowing,
+    popularity: rec.popularity,
+    distance: rec.distance,
+    totalSaves: rec.likes || 23
+  });
 
   return (
-    <div className="px-4 py-6">
-      <div className="flex items-center gap-2 mb-4">
-        <MapPin className="w-5 h-5 text-blue-600" />
-        <h2 className="text-lg font-semibold text-gray-900">
-          Recommended for You
-        </h2>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-gray-900">Recommended for you</h3>
+        <span className="text-sm text-gray-500">{recommendations.length} places</span>
       </div>
       
       <div className="space-y-4">
-        {displayRecommendations.map((place) => (
-          <div 
-            key={place.id}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
-            onClick={() => onLocationClick(place)}
-          >
-            <div className="flex">
-              <img 
-                src={place.image} 
-                alt={place.name}
-                className="w-24 h-24 object-cover flex-shrink-0"
-              />
-              <div className="flex-1 p-3">
-                <h3 className="font-semibold text-gray-900 text-sm mb-1">{place.name}</h3>
-                <p className="text-gray-600 text-xs mb-2">{place.category} • {place.distance}</p>
-                
-                <div className="flex items-center gap-3 text-xs text-gray-600 mb-2">
-                  <div className="flex items-center gap-1">
-                    <Star className="w-3 h-3 text-yellow-500 fill-current" />
-                    <span>{place.rating}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Users className="w-3 h-3" />
-                    <span>{place.totalSaves}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={`text-xs px-2 py-1 h-auto ${
-                      likedPlaces.has(place.id)
-                        ? 'text-red-600 bg-red-50'
-                        : 'text-gray-600 hover:text-red-600 hover:bg-red-50'
-                    }`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onLocationLike(place.id);
-                    }}
-                  >
-                    <Heart className={`w-3 h-3 mr-1 ${likedPlaces.has(place.id) ? 'fill-current' : ''}`} />
-                    Like
-                  </Button>
-                  
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs px-2 py-1 h-auto text-gray-600 hover:text-blue-600 hover:bg-blue-50"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onLocationComment(place);
-                    }}
-                  >
-                    <MessageSquare className="w-3 h-3 mr-1" />
-                    Comment
-                  </Button>
-                  
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs px-2 py-1 h-auto text-gray-600 hover:text-green-600 hover:bg-green-50"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onLocationShare(place);
-                    }}
-                  >
-                    <Share2 className="w-3 h-3 mr-1" />
-                    Share
-                  </Button>
-                </div>
+        {recommendations.map((location) => (
+          <div key={location.id} className="relative">
+            <PlaceCard
+              place={convertToPlace(location)}
+              isLiked={likedPlaces.has(location.id)}
+              onCardClick={() => onLocationClick(location)}
+              onLikeToggle={() => onLocationLike(location.id)}
+              onShare={() => onLocationShare(location)}
+              onComment={() => onLocationComment(location)}
+              cityName="Current City"
+            />
+            {/* Recommendation reason overlay */}
+            {location.recommendationReason && (
+              <div className="absolute top-3 left-3 bg-gradient-to-r from-blue-500/90 to-purple-600/90 text-white text-xs px-3 py-1 rounded-full z-10 backdrop-blur-sm">
+                {location.recommendationReason}
               </div>
-            </div>
+            )}
           </div>
         ))}
       </div>
