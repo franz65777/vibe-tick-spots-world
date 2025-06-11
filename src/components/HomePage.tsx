@@ -11,7 +11,6 @@ import ModalsManager from './home/ModalsManager';
 import { useBackendPlaces } from '@/hooks/useBackendPlaces';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { useGeolocation } from '@/hooks/useGeolocation';
-import type { Place as BackendPlace } from '@/types/place';
 
 // Local interface for HomePage component - using a different name to avoid conflicts
 interface HomePlace {
@@ -48,7 +47,7 @@ const HomePage = () => {
   const [currentCity, setCurrentCity] = useState('New York');
 
   const { places: backendPlaces, loading } = useBackendPlaces();
-  const { savedPlaces, savePlace, unsavePlace, isPlaceSaved } = useSavedPlaces();
+  const { savedPlaces, savePlace, unsavePlace } = useSavedPlaces();
   const { location: userLocation } = useGeolocation();
 
   console.log('HomePage: user =', user?.email);
@@ -56,22 +55,25 @@ const HomePage = () => {
   console.log('HomePage: loading =', loading);
 
   // Convert backend places to local HomePlace format
-  const convertBackendPlace = (backendPlace: BackendPlace): HomePlace => {
+  const convertBackendPlace = (backendPlace: any): HomePlace => {
     return {
       id: backendPlace.id,
       name: backendPlace.name,
       category: backendPlace.category,
       rating: 4.5, // Default rating since BackendPlace doesn't have this
-      image: backendPlace.image || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop',
-      description: 'Great place to visit', // Default description
-      location: backendPlace.coordinates,
-      address: 'City Center', // Default address
-      visitors: Array.isArray(backendPlace.visitors) ? backendPlace.visitors.map(String) : [],
-      friendsWhoSaved: Array.isArray(backendPlace.friendsWhoSaved) ? backendPlace.friendsWhoSaved : [],
-      distance: typeof backendPlace.distance === 'number' ? `${backendPlace.distance}km` : backendPlace.distance,
-      tags: backendPlace.tags,
-      priceRange: backendPlace.priceRange,
-      openingHours: backendPlace.openingHours,
+      image: backendPlace.image_url || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop',
+      description: backendPlace.description || 'Great place to visit',
+      location: {
+        lat: backendPlace.latitude || 37.7749,
+        lng: backendPlace.longitude || -122.4194
+      },
+      address: backendPlace.address || 'City Center',
+      visitors: [],
+      friendsWhoSaved: [],
+      distance: '2.5km',
+      tags: [],
+      priceRange: '$',
+      openingHours: '9:00 AM - 10:00 PM',
       website: backendPlace.website,
       phone: backendPlace.phone,
     };
@@ -85,6 +87,21 @@ const HomePage = () => {
                          place.description.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesFilter && matchesSearch;
   });
+
+  // Check if a place is saved - handle both object and array formats
+  const isPlaceSaved = (placeId: string): boolean => {
+    if (!savedPlaces) return false;
+    
+    if (Array.isArray(savedPlaces)) {
+      return savedPlaces.some((saved: any) => saved.id === placeId);
+    } else if (typeof savedPlaces === 'object') {
+      return Object.values(savedPlaces).some((cityPlaces: any) => 
+        Array.isArray(cityPlaces) && cityPlaces.some((saved: any) => saved.id === placeId)
+      );
+    }
+    
+    return false;
+  };
 
   const handlePlaceSelect = (place: HomePlace) => {
     setSelectedPlace(place);
@@ -121,6 +138,30 @@ const HomePage = () => {
     setIsMapOpen(!isMapOpen);
   };
 
+  // Demo stories data
+  const demoStories = [
+    {
+      id: '1',
+      userId: 'user1',
+      userName: 'Sarah Chen',
+      userAvatar: 'https://images.unsplash.com/photo-1494790108755-2616b5a5c75b?w=100&h=100&fit=crop&crop=face',
+      isViewed: false,
+      locationId: '1',
+      locationName: 'The Cozy Corner Café',
+      locationCategory: 'cafe'
+    },
+    {
+      id: '2',
+      userId: 'user2',
+      userName: 'Mike Johnson',
+      userAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
+      isViewed: true,
+      locationId: '2',
+      locationName: 'Sunset View Restaurant',
+      locationCategory: 'restaurant'
+    }
+  ];
+
   useEffect(() => {
     if (userLocation) {
       console.log('User location updated:', userLocation);
@@ -144,16 +185,27 @@ const HomePage = () => {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         currentCity={currentCity}
-        onMapToggle={handleMapToggle}
       />
       
       <div className="px-4 space-y-4">
-        <StoriesSection />
+        <StoriesSection 
+          stories={demoStories}
+          onCreateStory={() => console.log('Create story clicked')}
+          onStoryClick={(index) => console.log('Story clicked:', index)}
+        />
         <FilterButtons 
-          selectedFilter={selectedFilter}
           onFilterChange={setSelectedFilter}
         />
-        <LocationOfTheWeek />
+        <LocationOfTheWeek 
+          topLocation={{
+            id: '1',
+            name: 'The Cozy Corner Café',
+            image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
+            description: 'A cozy neighborhood café with great coffee',
+            category: 'cafe'
+          }}
+          onLocationClick={(location) => console.log('Location clicked:', location)}
+        />
         
         <div className="space-y-4">
           {filteredPlaces.length === 0 ? (
@@ -170,7 +222,7 @@ const HomePage = () => {
                   category: place.category,
                   likes: 0,
                   friendsWhoSaved: place.friendsWhoSaved.length,
-                  visitors: place.visitors.length,
+                  visitors: [],
                   isNew: false,
                   coordinates: place.location,
                   image: place.image,
@@ -188,7 +240,6 @@ const HomePage = () => {
                 onCardClick={() => handlePlaceSelect(place)}
                 onShare={() => handleShare(place)}
                 onComment={() => handleComment(place)}
-                onSave={() => handleSave(place)}
                 isSaved={isPlaceSaved(place.id)}
                 cityName={currentCity}
               />
@@ -205,7 +256,7 @@ const HomePage = () => {
             category: place.category,
             likes: 0,
             friendsWhoSaved: place.friendsWhoSaved.length,
-            visitors: place.visitors.length,
+            visitors: [],
             isNew: false,
             coordinates: place.location,
             image: place.image,
@@ -227,7 +278,7 @@ const HomePage = () => {
             category: selectedPlace.category,
             likes: 0,
             friendsWhoSaved: selectedPlace.friendsWhoSaved.length,
-            visitors: selectedPlace.visitors.length,
+            visitors: [],
             isNew: false,
             coordinates: selectedPlace.location,
             image: selectedPlace.image,
