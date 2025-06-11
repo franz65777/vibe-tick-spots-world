@@ -34,6 +34,13 @@ const ExplorePage = () => {
   const [searchResults, setSearchResults] = useState<Place[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [recommendations, setRecommendations] = useState<Place[]>([]);
+  const [searchMode, setSearchMode] = useState<'locations' | 'users'>('locations');
+  const [sortBy, setSortBy] = useState<'proximity' | 'likes' | 'followers'>('proximity');
+  const [showFilters, setShowFilters] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions] = useState<string[]>(['Central Park', 'Brooklyn Bridge', 'Times Square']);
+  const [recentSearches] = useState<string[]>(['Museums', 'Parks']);
+  const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
 
   // Demo data
   useEffect(() => {
@@ -104,6 +111,43 @@ const ExplorePage = () => {
     console.log('Place clicked:', place.name);
   };
 
+  const handleSavePlace = (placeId: string) => {
+    console.log('Saving place:', placeId);
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setSearchQuery(suggestion);
+    setShowSuggestions(false);
+  };
+
+  const handleUserClick = (user: any) => {
+    console.log('User clicked:', user.name);
+  };
+
+  const handleFollowUser = (userId: string) => {
+    console.log('Following user:', userId);
+  };
+
+  const handleLocationShare = (location: any) => {
+    console.log('Sharing location:', location.name);
+  };
+
+  const handleLocationComment = (location: any) => {
+    console.log('Commenting on location:', location.name);
+  };
+
+  const handleLocationLike = (locationId: string) => {
+    setLikedPlaces(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(locationId)) {
+        newSet.delete(locationId);
+      } else {
+        newSet.add(locationId);
+      }
+      return newSet;
+    });
+  };
+
   const hasSearchQuery = searchQuery.trim().length > 0;
   const showResults = hasSearchQuery && searchResults.length > 0;
 
@@ -111,8 +155,19 @@ const ExplorePage = () => {
     <div className="flex flex-col h-screen bg-gray-50">
       <SearchHeader
         searchQuery={searchQuery}
-        onSearchQueryChange={setSearchQuery}
+        setSearchQuery={setSearchQuery}
+        searchMode={searchMode}
+        setSearchMode={setSearchMode}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
+        showFilters={showFilters}
+        setShowFilters={setShowFilters}
+        showSuggestions={showSuggestions}
+        setShowSuggestions={setShowSuggestions}
         onSearch={handleSearch}
+        suggestions={suggestions}
+        recentSearches={recentSearches}
+        onSuggestionClick={handleSuggestionClick}
       />
       
       <div className="flex-1 overflow-auto pb-20">
@@ -121,18 +176,22 @@ const ExplorePage = () => {
             results={searchResults}
             isLoading={isSearching}
             onPlaceClick={handlePlaceClick}
+            onSavePlace={handleSavePlace}
           />
         ) : (
-          <>
-            <LocationRecommendations 
-              recommendations={recommendations}
-              onPlaceClick={handlePlaceClick}
-            />
-            
-            <UserRecommendations />
-            
-            <RecommendationsSection />
-          </>
+          <RecommendationsSection
+            searchMode={searchMode}
+            loading={false}
+            locationRecommendations={recommendations}
+            userRecommendations={[]}
+            onLocationClick={handlePlaceClick}
+            onUserClick={handleUserClick}
+            onFollowUser={handleFollowUser}
+            onLocationShare={handleLocationShare}
+            onLocationComment={handleLocationComment}
+            onLocationLike={handleLocationLike}
+            likedPlaces={likedPlaces}
+          />
         )}
       </div>
 

@@ -31,12 +31,6 @@ interface Place {
   totalSaves: number;
 }
 
-interface MapPin {
-  id: string;
-  position: { lat: number; lng: number };
-  place: Place;
-}
-
 const HomePage = () => {
   const { user } = useAuth();
   const { location, loading: locationLoading } = useGeolocation();
@@ -44,7 +38,6 @@ const HomePage = () => {
   const [currentCity, setCurrentCity] = useState('Stockholm');
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [places, setPlaces] = useState<Place[]>([]);
-  const [mapPins, setMapPins] = useState<MapPin[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [isDetailSheetOpen, setIsDetailSheetOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -100,14 +93,6 @@ const HomePage = () => {
     ];
 
     setPlaces(demoPlaces);
-
-    // Generate map pins from places
-    const pins: MapPin[] = demoPlaces.map(place => ({
-      id: place.id,
-      position: place.coordinates,
-      place: place
-    }));
-    setMapPins(pins);
   }, []);
 
   const handleSearch = (query: string) => {
@@ -192,7 +177,7 @@ const HomePage = () => {
           <MapSection 
             places={places}
             onPinClick={handleMapPinClick}
-            userLocation={location}
+            location={location}
           />
           
           {topLocation && (
@@ -203,7 +188,6 @@ const HomePage = () => {
           )}
           
           <FilterButtons 
-            filters={['All', 'Historic', 'Museum', 'Restaurant', 'Park']}
             selectedFilter={selectedFilter}
             onFilterChange={handleFilterChange}
           />
@@ -213,7 +197,7 @@ const HomePage = () => {
               <PlaceCard
                 key={place.id}
                 place={place}
-                onClick={() => handlePlaceClick(place)}
+                onPlaceClick={() => handlePlaceClick(place)}
                 onShare={() => {
                   setSelectedPlace(place);
                   setIsShareModalOpen(true);
