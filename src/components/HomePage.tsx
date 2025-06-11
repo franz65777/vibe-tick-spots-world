@@ -17,18 +17,35 @@ interface Place {
   name: string;
   category: string;
   likes: number;
-  friendsWhoSaved: { name: string; avatar: string; }[];
+  friendsWhoSaved?: { name: string; avatar: string }[];
   visitors: string[];
   isNew: boolean;
   coordinates: { lat: number; lng: number };
   rating: number;
   reviews: number;
   distance: string;
-  addedBy: { name: string; avatar: string; isFollowing: boolean };
+  addedBy?: { name: string; avatar: string; isFollowing: boolean };
   addedDate: string;
   image: string;
   description?: string;
   totalSaves: number;
+  popularity?: number;
+}
+
+interface Story {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  isViewed: boolean;
+  mediaUrl: string;
+  mediaType: 'image' | 'video';
+  locationId: string;
+  locationName: string;
+  locationAddress: string;
+  timestamp: string;
+  bookingUrl?: string;
+  locationCategory?: string;
 }
 
 interface MapPin {
@@ -44,6 +61,8 @@ const HomePage = () => {
   const [currentCity, setCurrentCity] = useState('Stockholm');
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [places, setPlaces] = useState<Place[]>([]);
+  const [stories, setStories] = useState<Story[]>([]);
+  const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
   const [mapPins, setMapPins] = useState<MapPin[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [isDetailSheetOpen, setIsDetailSheetOpen] = useState(false);
@@ -52,8 +71,10 @@ const HomePage = () => {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
   const [isCreateStoryModalOpen, setIsCreateStoryModalOpen] = useState(false);
+  const [isStoriesViewerOpen, setIsStoriesViewerOpen] = useState(false);
+  const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
 
-  // Generate demo places data
+  // Generate demo places and stories data
   useEffect(() => {
     const demoPlaces: Place[] = [
       {
@@ -99,7 +120,39 @@ const HomePage = () => {
       }
     ];
 
+    const demoStories: Story[] = [
+      {
+        id: 'story-1',
+        userId: 'user-1',
+        userName: 'Emma',
+        userAvatar: '/api/placeholder/32/32',
+        isViewed: false,
+        mediaUrl: '/api/placeholder/400/600',
+        mediaType: 'image',
+        locationId: '1',
+        locationName: 'Gamla Stan',
+        locationAddress: 'Stockholm, Sweden',
+        timestamp: '2024-01-15T10:30:00Z',
+        locationCategory: 'restaurant'
+      },
+      {
+        id: 'story-2',
+        userId: 'user-2',
+        userName: 'Alex',
+        userAvatar: '/api/placeholder/32/32',
+        isViewed: true,
+        mediaUrl: '/api/placeholder/400/600',
+        mediaType: 'image',
+        locationId: '2',
+        locationName: 'Vasa Museum',
+        locationAddress: 'Stockholm, Sweden',
+        timestamp: '2024-01-14T15:45:00Z',
+        locationCategory: 'museum'
+      }
+    ];
+
     setPlaces(demoPlaces);
+    setStories(demoStories);
 
     // Generate map pins from places
     const pins: MapPin[] = demoPlaces.map(place => ({
@@ -109,6 +162,8 @@ const HomePage = () => {
     }));
     setMapPins(pins);
   }, []);
+
+  const topLocation = places.length > 0 ? places[0] : null;
 
   const handleSearch = (query: string) => {
     console.log('Search query:', query);
@@ -143,12 +198,28 @@ const HomePage = () => {
     handlePlaceClick(placeWithImage);
   };
 
-  const handleLike = (place: Place) => {
-    setPlaces(prev => prev.map(p => 
-      p.id === place.id 
-        ? { ...p, likes: p.likes + 1 }
-        : p
-    ));
+  const handlePlaceCardClick = (place: Place) => {
+    handlePlaceClick(place);
+  };
+
+  const handleLikeToggle = (place: Place) => {
+    const newLikedPlaces = new Set(likedPlaces);
+    if (likedPlaces.has(place.id)) {
+      newLikedPlaces.delete(place.id);
+      setPlaces(prev => prev.map(p => 
+        p.id === place.id 
+          ? { ...p, likes: p.likes - 1 }
+          : p
+      ));
+    } else {
+      newLikedPlaces.add(place.id);
+      setPlaces(prev => prev.map(p => 
+        p.id === place.id 
+          ? { ...p, likes: p.likes + 1 }
+          : p
+      ));
+    }
+    setLikedPlaces(newLikedPlaces);
   };
 
   const handleSave = (place: Place) => {
@@ -163,6 +234,24 @@ const HomePage = () => {
   const handleComment = (text: string, place: Place) => {
     console.log('Adding comment:', text, 'to place:', place.name);
     setIsCommentModalOpen(false);
+  };
+
+  const handleStoryClick = (index: number) => {
+    setCurrentStoryIndex(index);
+    setIsStoriesViewerOpen(true);
+  };
+
+  const handleStoryViewed = (storyId: string) => {
+    setStories(prev => prev.map(story => 
+      story.id === storyId 
+        ? { ...story, isViewed: true }
+        : story
+    ));
+  };
+
+  const handleStoryCreated = () => {
+    console.log('Story created');
+    setIsCreateStoryModalOpen(false);
   };
 
   const filteredPlaces = places.filter(place => {
@@ -184,18 +273,28 @@ const HomePage = () => {
       />
       
       <div className="flex-1 overflow-auto pb-20">
-        <StoriesSection onCreateStory={() => setIsCreateStoryModalOpen(true)} />
+        <StoriesSection 
+          stories={stories}
+          onCreateStory={() => setIsCreateStoryModalOpen(true)}
+          onStoryClick={handleStoryClick}
+        />
         
         <div className="px-4 sm:px-6 space-y-6">
           <MapSection 
-            pins={mapPins}
-            onPinClick={handleMapPinClick}
+            places={places}
+            onPinClick={handlePlaceClick}
             userLocation={location}
           />
           
-          <LocationOfTheWeek />
+          {topLocation && (
+            <LocationOfTheWeek 
+              topLocation={topLocation}
+              onLocationClick={handlePlaceClick}
+            />
+          )}
           
           <FilterButtons 
+            filters={['All', 'Historic', 'Museum', 'Restaurant', 'Bar']}
             selectedFilter={selectedFilter}
             onFilterChange={handleFilterChange}
           />
@@ -205,8 +304,9 @@ const HomePage = () => {
               <PlaceCard
                 key={place.id}
                 place={place}
-                onLike={handleLike}
-                onSave={handleSave}
+                isLiked={likedPlaces.has(place.id)}
+                onCardClick={() => handlePlaceCardClick(place)}
+                onLikeToggle={() => handleLikeToggle(place)}
                 onShare={() => {
                   setSelectedPlace(place);
                   setIsShareModalOpen(true);
@@ -215,7 +315,7 @@ const HomePage = () => {
                   setSelectedPlace(place);
                   setIsCommentModalOpen(true);
                 }}
-                onClick={() => handlePlaceClick(place)}
+                cityName={currentCity}
               />
             ))}
           </div>
@@ -225,21 +325,29 @@ const HomePage = () => {
       <BottomNavigation />
 
       <ModalsManager
-        selectedPlace={selectedPlace}
-        isDetailSheetOpen={isDetailSheetOpen}
-        isNotificationsOpen={isNotificationsOpen}
-        isMessagesOpen={isMessagesOpen}
+        isCreateStoryModalOpen={isCreateStoryModalOpen}
+        isNotificationsModalOpen={isNotificationsOpen}
+        isMessagesModalOpen={isMessagesOpen}
         isShareModalOpen={isShareModalOpen}
         isCommentModalOpen={isCommentModalOpen}
-        isCreateStoryModalOpen={isCreateStoryModalOpen}
-        onCloseDetailSheet={() => setIsDetailSheetOpen(false)}
-        onCloseNotifications={() => setIsNotificationsOpen(false)}
-        onCloseMessages={() => setIsMessagesOpen(false)}
-        onCloseShareModal={() => setIsShareModalOpen(false)}
-        onCloseCommentModal={() => setIsCommentModalOpen(false)}
-        onCloseCreateStoryModal={() => setIsCreateStoryModalOpen(false)}
+        isLocationDetailOpen={isDetailSheetOpen}
+        isStoriesViewerOpen={isStoriesViewerOpen}
+        sharePlace={selectedPlace}
+        commentPlace={selectedPlace}
+        locationDetailPlace={selectedPlace}
+        stories={stories}
+        currentStoryIndex={currentStoryIndex}
+        onCreateStoryModalClose={() => setIsCreateStoryModalOpen(false)}
+        onNotificationsModalClose={() => setIsNotificationsOpen(false)}
+        onMessagesModalClose={() => setIsMessagesOpen(false)}
+        onShareModalClose={() => setIsShareModalOpen(false)}
+        onCommentModalClose={() => setIsCommentModalOpen(false)}
+        onLocationDetailClose={() => setIsDetailSheetOpen(false)}
+        onStoriesViewerClose={() => setIsStoriesViewerOpen(false)}
+        onStoryCreated={handleStoryCreated}
         onShare={handleShare}
-        onComment={handleComment}
+        onCommentSubmit={handleComment}
+        onStoryViewed={handleStoryViewed}
       />
     </div>
   );

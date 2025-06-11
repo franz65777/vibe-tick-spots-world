@@ -67,9 +67,9 @@ const getCategoryColor = (category: string) => {
   }
 };
 
-const StoriesSection = ({ stories, onCreateStory, onStoryClick }: StoriesSectionProps) => {
-  // Group stories by user
-  const groupedStories = stories.reduce((acc, story) => {
+const StoriesSection = ({ stories = [], onCreateStory, onStoryClick }: StoriesSectionProps) => {
+  // Group stories by user - add safety check for undefined/null stories
+  const groupedStories = (stories || []).reduce((acc, story) => {
     if (!acc[story.userId]) {
       acc[story.userId] = [];
     }

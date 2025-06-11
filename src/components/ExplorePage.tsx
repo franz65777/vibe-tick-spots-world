@@ -79,6 +79,11 @@ const ExplorePage = () => {
     }, 500);
   };
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSearch(searchQuery);
+  };
+
   const handlePlaceClick = (place: Place) => {
     console.log('Place clicked:', place);
   };
@@ -90,25 +95,72 @@ const ExplorePage = () => {
   const showResults = searchQuery.trim().length > 0;
   const showSuggestions = !showResults && !isSearching;
 
+  // Demo data for suggestions
+  const suggestions = [
+    'Museums in Stockholm',
+    'Best restaurants',
+    'Historic places',
+    'Art galleries'
+  ];
+
+  const searchHistory = [
+    'Gamla Stan',
+    'Vasa Museum',
+    'ABBA Museum'
+  ];
+
   return (
     <div className="flex flex-col h-screen bg-white">
       <SearchHeader 
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        onSearch={handleSearch}
+        onSearch={handleSearchSubmit}
       />
       
       <div className="flex-1 overflow-auto pb-20">
         {showSuggestions && (
           <>
-            <SearchSuggestions onSuggestionClick={setSearchQuery} />
-            <RecommendationsSection />
+            <SearchSuggestions 
+              suggestions={suggestions}
+              searchHistory={searchHistory}
+              onSuggestionClick={setSearchQuery} 
+            />
+            <RecommendationsSection
+              searchMode="locations"
+              loading={false}
+              locationRecommendations={[]}
+              userRecommendations={[]}
+              onLocationClick={() => {}}
+              onUserClick={() => {}}
+              onFollowUser={() => {}}
+              onLocationShare={() => {}}
+              onLocationComment={() => {}}
+              onLocationLike={() => {}}
+              likedPlaces={new Set()}
+            />
           </>
         )}
         
         {showResults && (
           <>
             <SearchFilters
+              filters={[
+                { label: 'All', value: 'All' },
+                { label: 'Museums', value: 'Museum' },
+                { label: 'Restaurants', value: 'Restaurant' },
+                { label: 'Historic', value: 'Historic' }
+              ]}
+              priceRanges={[
+                { label: 'All', value: 'All' },
+                { label: '$', value: 'low' },
+                { label: '$$', value: 'medium' },
+                { label: '$$$', value: 'high' }
+              ]}
+              ratingOptions={[
+                { label: 'All', value: 'All' },
+                { label: '4+ stars', value: '4' },
+                { label: '3+ stars', value: '3' }
+              ]}
               selectedCategory={selectedCategory}
               selectedPrice={selectedPrice}
               selectedRating={selectedRating}

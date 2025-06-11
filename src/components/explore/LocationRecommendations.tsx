@@ -1,8 +1,9 @@
 
 import React from 'react';
-import { Star, Users, MapPin } from 'lucide-react';
+import { Star, Users, MapPin, Heart, MessageSquare, Share2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-interface Place {
+interface LocationRecommendation {
   id: string;
   name: string;
   category: string;
@@ -21,8 +22,25 @@ interface Place {
   totalSaves: number;
 }
 
-const LocationRecommendations = () => {
-  const recommendations: Place[] = [
+interface LocationRecommendationsProps {
+  recommendations: LocationRecommendation[];
+  onLocationClick: (location: LocationRecommendation) => void;
+  onLocationShare: (location: LocationRecommendation) => void;
+  onLocationComment: (location: LocationRecommendation) => void;
+  onLocationLike: (locationId: string) => void;
+  likedPlaces: Set<string>;
+}
+
+const LocationRecommendations = ({ 
+  recommendations = [], 
+  onLocationClick,
+  onLocationShare,
+  onLocationComment,
+  onLocationLike,
+  likedPlaces
+}: LocationRecommendationsProps) => {
+  // Default recommendations if none provided
+  const defaultRecommendations: LocationRecommendation[] = [
     {
       id: 'rec-1',
       name: 'ABBA The Museum',
@@ -46,6 +64,8 @@ const LocationRecommendations = () => {
     }
   ];
 
+  const displayRecommendations = recommendations.length > 0 ? recommendations : defaultRecommendations;
+
   return (
     <div className="px-4 py-6">
       <div className="flex items-center gap-2 mb-4">
@@ -56,10 +76,11 @@ const LocationRecommendations = () => {
       </div>
       
       <div className="space-y-4">
-        {recommendations.map((place) => (
+        {displayRecommendations.map((place) => (
           <div 
             key={place.id}
             className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+            onClick={() => onLocationClick(place)}
           >
             <div className="flex">
               <img 
@@ -71,7 +92,7 @@ const LocationRecommendations = () => {
                 <h3 className="font-semibold text-gray-900 text-sm mb-1">{place.name}</h3>
                 <p className="text-gray-600 text-xs mb-2">{place.category} • {place.distance}</p>
                 
-                <div className="flex items-center gap-3 text-xs text-gray-600">
+                <div className="flex items-center gap-3 text-xs text-gray-600 mb-2">
                   <div className="flex items-center gap-1">
                     <Star className="w-3 h-3 text-yellow-500 fill-current" />
                     <span>{place.rating}</span>
@@ -80,6 +101,51 @@ const LocationRecommendations = () => {
                     <Users className="w-3 h-3" />
                     <span>{place.totalSaves}</span>
                   </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`text-xs px-2 py-1 h-auto ${
+                      likedPlaces.has(place.id)
+                        ? 'text-red-600 bg-red-50'
+                        : 'text-gray-600 hover:text-red-600 hover:bg-red-50'
+                    }`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onLocationLike(place.id);
+                    }}
+                  >
+                    <Heart className={`w-3 h-3 mr-1 ${likedPlaces.has(place.id) ? 'fill-current' : ''}`} />
+                    Like
+                  </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs px-2 py-1 h-auto text-gray-600 hover:text-blue-600 hover:bg-blue-50"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onLocationComment(place);
+                    }}
+                  >
+                    <MessageSquare className="w-3 h-3 mr-1" />
+                    Comment
+                  </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs px-2 py-1 h-auto text-gray-600 hover:text-green-600 hover:bg-green-50"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onLocationShare(place);
+                    }}
+                  >
+                    <Share2 className="w-3 h-3 mr-1" />
+                    Share
+                  </Button>
                 </div>
               </div>
             </div>
