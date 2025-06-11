@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { useSearch } from '@/hooks/useSearch';
 import SearchHeader from '@/components/explore/SearchHeader';
@@ -6,23 +7,22 @@ import RecommendationsSection from '@/components/explore/RecommendationsSection'
 import ShareModal from '@/components/home/ShareModal';
 import CommentModal from '@/components/home/CommentModal';
 
-// Standardized Place interface to match PlaceCard expectations
 interface Place {
   id: string;
   name: string;
   category: string;
   likes: number;
-  friendsWhoSaved: { name: string; avatar: string }[];
+  friendsWhoSaved?: { name: string; avatar: string }[];
   visitors: string[];
   isNew: boolean;
   coordinates: { lat: number; lng: number };
-  image: string;
-  addedBy: { name: string; avatar: string; isFollowing: boolean };
+  image?: string;
+  addedBy?: string;
   addedDate?: string;
   isFollowing?: boolean;
   popularity?: number;
-  distance: string;
-  totalSaves: number;
+  distance?: number;
+  totalSaves?: number;
 }
 
 interface User {
@@ -36,7 +36,7 @@ interface User {
   isFollowing: boolean;
 }
 
-// Mock data for locations with correct types
+// Mock data for locations
 const mockLocations: Place[] = [
   {
     id: '1',
@@ -51,11 +51,11 @@ const mockLocations: Place[] = [
     isNew: false,
     coordinates: { lat: 37.7849, lng: -122.4094 },
     image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=300&fit=crop',
-    addedBy: { name: 'John Doe', avatar: 'photo-1472099645785-5658abf4ff4e', isFollowing: true },
+    addedBy: 'user1',
     addedDate: '2024-05-25',
     isFollowing: true,
     popularity: 89,
-    distance: '0.3 km',
+    distance: 0.3,
     totalSaves: 23
   },
   {
@@ -70,11 +70,11 @@ const mockLocations: Place[] = [
     isNew: true,
     coordinates: { lat: 37.7749, lng: -122.4194 },
     image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop',
-    addedBy: { name: 'Sarah Wilson', avatar: 'photo-1494790108755-2616b5a5c75b', isFollowing: false },
+    addedBy: 'user2',
     addedDate: '2024-06-01',
     isFollowing: false,
     popularity: 76,
-    distance: '0.8 km',
+    distance: 0.8,
     totalSaves: 15
   },
   {
@@ -90,11 +90,11 @@ const mockLocations: Place[] = [
     isNew: false,
     coordinates: { lat: 37.7649, lng: -122.4294 },
     image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
-    addedBy: { name: 'Mike Chen', avatar: 'photo-1507003211169-0a1dd7228f2d', isFollowing: true },
+    addedBy: 'user3',
     addedDate: '2024-05-15',
     isFollowing: true,
     popularity: 94,
-    distance: '1.2 km',
+    distance: 1.2,
     totalSaves: 42
   }
 ];
@@ -171,7 +171,7 @@ const ExplorePage = () => {
 
         // Sort based on selected filter
         if (sortBy === 'proximity') {
-          filtered.sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
+          filtered.sort((a, b) => (a.distance || 0) - (b.distance || 0));
         } else if (sortBy === 'likes') {
           filtered.sort((a, b) => b.likes - a.likes);
         } else if (sortBy === 'followers') {
@@ -255,16 +255,16 @@ const ExplorePage = () => {
       name: location.name,
       category: location.category,
       likes: location.likes,
-      friendsWhoSaved: location.friendsWhoSaved || [],
-      visitors: location.visitors || [],
+      friendsWhoSaved: location.friendsWhoSaved,
+      visitors: location.visitors,
       isNew: location.isNew,
       coordinates: location.coordinates,
-      image: location.image || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
-      addedBy: location.addedBy || { name: 'Explorer', avatar: 'photo-1472099645785-5658abf4ff4e', isFollowing: false },
+      image: location.image,
+      addedBy: location.addedBy,
       addedDate: location.addedDate,
       isFollowing: location.isFollowing,
       popularity: location.popularity,
-      distance: typeof location.distance === 'number' ? `${location.distance} km` : location.distance || '0 km',
+      distance: location.distance,
       totalSaves: location.likes || 23
     };
     handleCardClick(place);
@@ -276,16 +276,16 @@ const ExplorePage = () => {
       name: location.name,
       category: location.category,
       likes: location.likes,
-      friendsWhoSaved: location.friendsWhoSaved || [],
-      visitors: location.visitors || [],
+      friendsWhoSaved: location.friendsWhoSaved,
+      visitors: location.visitors,
       isNew: location.isNew,
       coordinates: location.coordinates,
-      image: location.image || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
-      addedBy: location.addedBy || { name: 'Explorer', avatar: 'photo-1472099645785-5658abf4ff4e', isFollowing: false },
+      image: location.image,
+      addedBy: location.addedBy,
       addedDate: location.addedDate,
       isFollowing: location.isFollowing,
       popularity: location.popularity,
-      distance: typeof location.distance === 'number' ? `${location.distance} km` : location.distance || '0 km',
+      distance: location.distance,
       totalSaves: location.likes || 23
     };
     handleShare(place);
@@ -297,16 +297,16 @@ const ExplorePage = () => {
       name: location.name,
       category: location.category,
       likes: location.likes,
-      friendsWhoSaved: location.friendsWhoSaved || [],
-      visitors: location.visitors || [],
+      friendsWhoSaved: location.friendsWhoSaved,
+      visitors: location.visitors,
       isNew: location.isNew,
       coordinates: location.coordinates,
-      image: location.image || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
-      addedBy: location.addedBy || { name: 'Explorer', avatar: 'photo-1472099645785-5658abf4ff4e', isFollowing: false },
+      image: location.image,
+      addedBy: location.addedBy,
       addedDate: location.addedDate,
       isFollowing: location.isFollowing,
       popularity: location.popularity,
-      distance: typeof location.distance === 'number' ? `${location.distance} km` : location.distance || '0 km',
+      distance: location.distance,
       totalSaves: location.likes || 23
     };
     handleComment(place);

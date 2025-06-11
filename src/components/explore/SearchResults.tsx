@@ -3,23 +3,22 @@ import { MapPin, Users } from 'lucide-react';
 import PlaceCard from '@/components/home/PlaceCard';
 import { Button } from '@/components/ui/button';
 
-// Standardized Place interface to match PlaceCard expectations
 interface Place {
   id: string;
   name: string;
   category: string;
   likes: number;
-  friendsWhoSaved: { name: string; avatar: string }[];
+  friendsWhoSaved?: { name: string; avatar: string }[];
   visitors: string[];
   isNew: boolean;
   coordinates: { lat: number; lng: number };
-  image: string;
-  addedBy: { name: string; avatar: string; isFollowing: boolean };
+  image?: string;
+  addedBy?: string;
   addedDate?: string;
   isFollowing?: boolean;
   popularity?: number;
-  distance: string;
-  totalSaves: number;
+  distance?: number;
+  totalSaves?: number;
 }
 
 interface User {
@@ -87,10 +86,10 @@ const SearchResults = ({
                 key={place.id}
                 place={place}
                 isLiked={likedPlaces.has(place.id)}
-                onCardClick={() => onCardClick(place)}
-                onLikeToggle={() => onLikeToggle(place.id)}
-                onShare={() => onShare(place)}
-                onComment={() => onComment(place)}
+                onCardClick={onCardClick}
+                onLikeToggle={onLikeToggle}
+                onShare={onShare}
+                onComment={onComment}
                 cityName="Current City"
               />
             ))}
