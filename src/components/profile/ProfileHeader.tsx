@@ -26,15 +26,15 @@ const ProfileHeader = () => {
   const displayFullName = profile?.full_name;
 
   return (
-    <div className="px-5 py-5 sm:px-4 sm:py-4 bg-white border-b border-gray-100">
-      <div className="flex items-center justify-between mb-6">
-        <ArrowLeft className="w-7 h-7 sm:w-6 sm:h-6 text-gray-600" />
-        <MoreHorizontal className="w-7 h-7 sm:w-6 sm:h-6 text-gray-600" />
+    <div className="px-4 py-4 bg-white border-b border-gray-100">
+      <div className="flex items-center justify-between mb-4">
+        <ArrowLeft className="w-6 h-6 text-gray-600" />
+        <MoreHorizontal className="w-6 h-6 text-gray-600" />
       </div>
 
-      <div className="flex items-start gap-5 sm:gap-4 mb-6">
+      <div className="flex items-start gap-4 mb-4">
         <div className="relative">
-          <div className="w-24 h-24 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-blue-400 to-purple-600 p-1">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-purple-600 p-1">
             <div className="w-full h-full rounded-full bg-white p-1">
               <div className="w-full h-full rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
                 {profile?.avatar_url ? (
@@ -44,30 +44,30 @@ const ProfileHeader = () => {
                     className="w-full h-full object-cover rounded-full"
                   />
                 ) : (
-                  <span className="text-xl sm:text-lg font-semibold text-gray-600">{getInitials()}</span>
+                  <span className="text-sm font-semibold text-gray-600">{getInitials()}</span>
                 )}
               </div>
             </div>
           </div>
-          <div className="absolute bottom-1 right-1 w-6 h-6 sm:w-5 sm:h-5 bg-blue-600 rounded-full flex items-center justify-center">
-            <div className="w-3 h-3 sm:w-2 sm:h-2 bg-white rounded-full"></div>
+          <div className="absolute bottom-0 right-0 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
+            <div className="w-2 h-2 bg-white rounded-full"></div>
           </div>
         </div>
         
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-3 sm:mb-2">
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl sm:text-xl font-bold text-gray-900">{displayUsername}</h1>
-              <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-white text-sm sm:text-xs px-4 py-2 sm:px-3 sm:py-1 rounded-full min-h-[32px] sm:min-h-[28px]">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <h1 className="text-lg font-bold text-gray-900 truncate">{displayUsername}</h1>
+              <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-3 py-1 rounded-full min-h-[24px] shrink-0">
                 Elite
               </Button>
             </div>
             <BadgeDisplay />
           </div>
           {displayFullName && (
-            <p className="text-gray-600 text-base sm:text-sm mb-3 sm:mb-2">{displayFullName}</p>
+            <p className="text-gray-600 text-sm mb-2 truncate">{displayFullName}</p>
           )}
-          <p className="text-gray-700 text-base sm:text-sm">
+          <p className="text-gray-700 text-sm line-clamp-2">
             {profile?.bio || 'Travel Enthusiast | Food Lover | Photographer'}
           </p>
         </div>
