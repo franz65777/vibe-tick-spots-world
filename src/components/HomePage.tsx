@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from './home/Header';
@@ -12,8 +13,8 @@ import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import type { Place as BackendPlace } from '@/types/place';
 
-// Local interface for HomePage component
-interface Place {
+// Local interface for HomePage component - using a different name to avoid conflicts
+interface HomePlace {
   id: string;
   name: string;
   category: string;
@@ -39,35 +40,35 @@ const HomePage = () => {
   const { user } = useAuth();
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
-  const [sharePlace, setSharePlace] = useState<Place | null>(null);
-  const [commentPlace, setCommentPlace] = useState<Place | null>(null);
+  const [selectedPlace, setSelectedPlace] = useState<HomePlace | null>(null);
+  const [sharePlace, setSharePlace] = useState<HomePlace | null>(null);
+  const [commentPlace, setCommentPlace] = useState<HomePlace | null>(null);
   const [showLocationDetail, setShowLocationDetail] = useState(false);
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [currentCity, setCurrentCity] = useState('New York');
 
   const { places: backendPlaces, loading } = useBackendPlaces();
-  const { savedPlaces, toggleSavePlace } = useSavedPlaces();
+  const { savedPlaces, savePlace, unsavePlace, isPlaceSaved } = useSavedPlaces();
   const { location: userLocation } = useGeolocation();
 
   console.log('HomePage: user =', user?.email);
   console.log('HomePage: backendPlaces =', backendPlaces);
   console.log('HomePage: loading =', loading);
 
-  // Convert backend places to local Place format
-  const convertBackendPlace = (backendPlace: BackendPlace): Place => {
+  // Convert backend places to local HomePlace format
+  const convertBackendPlace = (backendPlace: BackendPlace): HomePlace => {
     return {
       id: backendPlace.id,
       name: backendPlace.name,
       category: backendPlace.category,
-      rating: backendPlace.rating,
-      image: backendPlace.image,
-      description: backendPlace.description,
-      location: backendPlace.location,
-      address: backendPlace.address,
-      visitors: Array.isArray(backendPlace.visitors) ? backendPlace.visitors : [],
+      rating: 4.5, // Default rating since BackendPlace doesn't have this
+      image: backendPlace.image || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop',
+      description: 'Great place to visit', // Default description
+      location: backendPlace.coordinates,
+      address: 'City Center', // Default address
+      visitors: Array.isArray(backendPlace.visitors) ? backendPlace.visitors.map(String) : [],
       friendsWhoSaved: Array.isArray(backendPlace.friendsWhoSaved) ? backendPlace.friendsWhoSaved : [],
-      distance: backendPlace.distance,
+      distance: typeof backendPlace.distance === 'number' ? `${backendPlace.distance}km` : backendPlace.distance,
       tags: backendPlace.tags,
       priceRange: backendPlace.priceRange,
       openingHours: backendPlace.openingHours,
@@ -76,7 +77,7 @@ const HomePage = () => {
     };
   };
 
-  const places: Place[] = backendPlaces.map(convertBackendPlace);
+  const places: HomePlace[] = backendPlaces.map(convertBackendPlace);
 
   const filteredPlaces = places.filter(place => {
     const matchesFilter = selectedFilter === 'All' || place.category === selectedFilter;
@@ -85,21 +86,31 @@ const HomePage = () => {
     return matchesFilter && matchesSearch;
   });
 
-  const handlePlaceSelect = (place: Place) => {
+  const handlePlaceSelect = (place: HomePlace) => {
     setSelectedPlace(place);
     setShowLocationDetail(true);
   };
 
-  const handleShare = (place: Place) => {
+  const handleShare = (place: HomePlace) => {
     setSharePlace(place);
   };
 
-  const handleComment = (place: Place) => {
+  const handleComment = (place: HomePlace) => {
     setCommentPlace(place);
   };
 
-  const handleSave = (place: Place) => {
-    toggleSavePlace(place.id);
+  const handleSave = (place: HomePlace) => {
+    if (isPlaceSaved(place.id)) {
+      unsavePlace(place.id, currentCity);
+    } else {
+      savePlace({
+        id: place.id,
+        name: place.name,
+        category: place.category,
+        city: currentCity,
+        coordinates: place.location
+      });
+    }
   };
 
   const handleCityChange = (city: string) => {
@@ -108,11 +119,6 @@ const HomePage = () => {
 
   const handleMapToggle = () => {
     setIsMapOpen(!isMapOpen);
-  };
-
-  // Determine if a place is saved
-  const isPlaceSaved = (placeId: string) => {
-    return savedPlaces.some(p => p.id === placeId);
   };
 
   useEffect(() => {
@@ -138,7 +144,6 @@ const HomePage = () => {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         currentCity={currentCity}
-        onCityChange={handleCityChange}
         onMapToggle={handleMapToggle}
       />
       
@@ -159,12 +164,33 @@ const HomePage = () => {
             filteredPlaces.map((place) => (
               <PlaceCard
                 key={place.id}
-                place={place}
-                onSelect={handlePlaceSelect}
-                onShare={handleShare}
-                onComment={handleComment}
-                onSave={handleSave}
+                place={{
+                  id: place.id,
+                  name: place.name,
+                  category: place.category,
+                  likes: 0,
+                  friendsWhoSaved: place.friendsWhoSaved.length,
+                  visitors: place.visitors.length,
+                  isNew: false,
+                  coordinates: place.location,
+                  image: place.image,
+                  addedBy: {
+                    name: 'Explorer',
+                    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
+                    isFollowing: false
+                  },
+                  addedDate: new Date().toISOString(),
+                  isFollowing: false,
+                  popularity: 0,
+                  distance: place.distance,
+                  totalSaves: 0
+                }}
+                onCardClick={() => handlePlaceSelect(place)}
+                onShare={() => handleShare(place)}
+                onComment={() => handleComment(place)}
+                onSave={() => handleSave(place)}
                 isSaved={isPlaceSaved(place.id)}
+                cityName={currentCity}
               />
             ))
           )}
@@ -173,9 +199,49 @@ const HomePage = () => {
 
       {isMapOpen && (
         <MapSection
-          places={filteredPlaces}
-          onPlaceSelect={handlePlaceSelect}
-          selectedPlace={selectedPlace}
+          places={filteredPlaces.map(place => ({
+            id: place.id,
+            name: place.name,
+            category: place.category,
+            likes: 0,
+            friendsWhoSaved: place.friendsWhoSaved.length,
+            visitors: place.visitors.length,
+            isNew: false,
+            coordinates: place.location,
+            image: place.image,
+            addedBy: {
+              name: 'Explorer',
+              avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
+              isFollowing: false
+            },
+            addedDate: new Date().toISOString(),
+            isFollowing: false,
+            popularity: 0,
+            distance: place.distance,
+            totalSaves: 0
+          }))}
+          onPlaceSelect={(place) => handlePlaceSelect(filteredPlaces.find(p => p.id === place.id)!)}
+          selectedPlace={selectedPlace ? {
+            id: selectedPlace.id,
+            name: selectedPlace.name,
+            category: selectedPlace.category,
+            likes: 0,
+            friendsWhoSaved: selectedPlace.friendsWhoSaved.length,
+            visitors: selectedPlace.visitors.length,
+            isNew: false,
+            coordinates: selectedPlace.location,
+            image: selectedPlace.image,
+            addedBy: {
+              name: 'Explorer',
+              avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
+              isFollowing: false
+            },
+            addedDate: new Date().toISOString(),
+            isFollowing: false,
+            popularity: 0,
+            distance: selectedPlace.distance,
+            totalSaves: 0
+          } : null}
           onClose={() => setIsMapOpen(false)}
         />
       )}
