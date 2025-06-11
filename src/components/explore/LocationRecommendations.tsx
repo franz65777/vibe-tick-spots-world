@@ -21,8 +21,24 @@ interface Place {
   totalSaves: number;
 }
 
-const LocationRecommendations = () => {
-  const recommendations: Place[] = [
+interface LocationRecommendationsProps {
+  recommendations: any[];
+  onLocationClick: (location: any) => void;
+  onLocationShare: (location: any) => void;
+  onLocationComment: (location: any) => void;
+  onLocationLike: (locationId: string) => void;
+  likedPlaces: Set<string>;
+}
+
+const LocationRecommendations = ({ 
+  recommendations = [], 
+  onLocationClick, 
+  onLocationShare, 
+  onLocationComment, 
+  onLocationLike, 
+  likedPlaces 
+}: LocationRecommendationsProps) => {
+  const defaultRecommendations: Place[] = [
     {
       id: 'rec-1',
       name: 'ABBA The Museum',
@@ -46,6 +62,8 @@ const LocationRecommendations = () => {
     }
   ];
 
+  const displayRecommendations = recommendations.length > 0 ? recommendations : defaultRecommendations;
+
   return (
     <div className="px-4 py-6">
       <div className="flex items-center gap-2 mb-4">
@@ -56,10 +74,11 @@ const LocationRecommendations = () => {
       </div>
       
       <div className="space-y-4">
-        {recommendations.map((place) => (
+        {displayRecommendations.map((place) => (
           <div 
             key={place.id}
             className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+            onClick={() => onLocationClick(place)}
           >
             <div className="flex">
               <img 

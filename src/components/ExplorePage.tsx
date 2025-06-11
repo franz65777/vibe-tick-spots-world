@@ -31,11 +31,11 @@ interface Place {
 const ExplorePage = () => {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [selectedPrice, setSelectedPrice] = useState('All');
-  const [selectedRating, setSelectedRating] = useState('All');
+  const [sortBy, setSortBy] = useState<'proximity' | 'likes' | 'followers'>('proximity');
   const [searchResults, setSearchResults] = useState<Place[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [suggestions] = useState<string[]>(['Museums', 'Restaurants', 'Parks', 'Cafes']);
+  const [searchHistory] = useState<string[]>(['Gamla Stan', 'Vasa Museum']);
 
   const handleSearch = async (query: string) => {
     if (!query.trim()) {
@@ -79,6 +79,11 @@ const ExplorePage = () => {
     }, 500);
   };
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSearch(searchQuery);
+  };
+
   const handlePlaceClick = (place: Place) => {
     console.log('Place clicked:', place);
   };
@@ -95,26 +100,39 @@ const ExplorePage = () => {
       <SearchHeader 
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        onSearch={handleSearch}
+        onSearch={handleSearchSubmit}
       />
       
       <div className="flex-1 overflow-auto pb-20">
         {showSuggestions && (
           <>
-            <SearchSuggestions onSuggestionClick={setSearchQuery} />
-            <RecommendationsSection />
+            <SearchSuggestions 
+              suggestions={suggestions}
+              searchHistory={searchHistory}
+              onSuggestionClick={setSearchQuery} 
+            />
+            <RecommendationsSection 
+              searchMode="locations"
+              loading={false}
+              locationRecommendations={[]}
+              userRecommendations={[]}
+              onLocationClick={() => {}}
+              onUserClick={() => {}}
+              onFollowUser={() => {}}
+              onLocationShare={() => {}}
+              onLocationComment={() => {}}
+              onLocationLike={() => {}}
+              likedPlaces={new Set()}
+            />
           </>
         )}
         
         {showResults && (
           <>
             <SearchFilters
-              selectedCategory={selectedCategory}
-              selectedPrice={selectedPrice}
-              selectedRating={selectedRating}
-              onCategoryChange={setSelectedCategory}
-              onPriceChange={setSelectedPrice}
-              onRatingChange={setSelectedRating}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+              showFilters={true}
             />
             
             <SearchResults

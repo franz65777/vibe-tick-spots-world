@@ -135,12 +135,8 @@ const HomePage = () => {
     setIsDetailSheetOpen(true);
   };
 
-  const handleMapPinClick = (pin: MapPin) => {
-    const placeWithImage: Place = {
-      ...pin.place,
-      image: pin.place.image || '/api/placeholder/400/300'
-    };
-    handlePlaceClick(placeWithImage);
+  const handleMapPinClick = (place: Place) => {
+    handlePlaceClick(place);
   };
 
   const handleLike = (place: Place) => {
@@ -165,6 +161,8 @@ const HomePage = () => {
     setIsCommentModalOpen(false);
   };
 
+  const topLocation = places.length > 0 ? places[0] : null;
+
   const filteredPlaces = places.filter(place => {
     const matchesFilter = selectedFilter === 'All' || place.category === selectedFilter;
     const matchesSearch = place.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -184,7 +182,11 @@ const HomePage = () => {
       />
       
       <div className="flex-1 overflow-auto pb-20">
-        <StoriesSection onCreateStory={() => setIsCreateStoryModalOpen(true)} />
+        <StoriesSection 
+          stories={[]}
+          onStoryClick={() => {}}
+          onCreateStory={() => setIsCreateStoryModalOpen(true)} 
+        />
         
         <div className="px-4 sm:px-6 space-y-6">
           <MapSection 
@@ -193,9 +195,13 @@ const HomePage = () => {
             userLocation={location}
           />
           
-          <LocationOfTheWeek />
+          <LocationOfTheWeek 
+            topLocation={topLocation}
+            onLocationClick={handlePlaceClick}
+          />
           
           <FilterButtons 
+            filters={['All', 'Historic', 'Museum', 'Restaurant', 'Park']}
             selectedFilter={selectedFilter}
             onFilterChange={handleFilterChange}
           />
@@ -205,8 +211,7 @@ const HomePage = () => {
               <PlaceCard
                 key={place.id}
                 place={place}
-                onLike={handleLike}
-                onSave={handleSave}
+                onClick={() => handlePlaceClick(place)}
                 onShare={() => {
                   setSelectedPlace(place);
                   setIsShareModalOpen(true);
@@ -215,7 +220,6 @@ const HomePage = () => {
                   setSelectedPlace(place);
                   setIsCommentModalOpen(true);
                 }}
-                onClick={() => handlePlaceClick(place)}
               />
             ))}
           </div>
