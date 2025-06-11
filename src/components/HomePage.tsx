@@ -661,7 +661,7 @@ const HomePage = () => {
         onShareModalClose={() => setIsShareModalOpen(false)}
         onCommentModalClose={() => setIsCommentModalOpen(false)}
         onLocationDetailClose={() => setIsLocationDetailOpen(false)}
-        onStoriesViewerClose={() => setIsStoriesViewerClose(false)}
+        onStoriesViewerClose={() => setIsStoriesViewerOpen(false)}
         onStoryCreated={handleStoryCreated}
         onShare={handleShareSubmit}
         onCommentSubmit={handleCommentSubmit}
