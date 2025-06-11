@@ -31,13 +31,20 @@ interface Place {
   totalSaves: number;
 }
 
+interface MapPin {
+  id: string;
+  position: { lat: number; lng: number };
+  place: Place;
+}
+
 const HomePage = () => {
   const { user } = useAuth();
   const { location, loading: locationLoading } = useGeolocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [currentCity, setCurrentCity] = useState('Stockholm');
-  const [selectedFilter, setSelectedFilter] = useState<'following' | 'popular' | 'new'>('following');
+  const [selectedFilter, setSelectedFilter] = useState('All');
   const [places, setPlaces] = useState<Place[]>([]);
+  const [mapPins, setMapPins] = useState<MapPin[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [isDetailSheetOpen, setIsDetailSheetOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -45,7 +52,6 @@ const HomePage = () => {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
   const [isCreateStoryModalOpen, setIsCreateStoryModalOpen] = useState(false);
-  const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
 
   // Generate demo places data
   useEffect(() => {
@@ -94,6 +100,14 @@ const HomePage = () => {
     ];
 
     setPlaces(demoPlaces);
+
+    // Generate map pins from places
+    const pins: MapPin[] = demoPlaces.map(place => ({
+      id: place.id,
+      position: place.coordinates,
+      place: place
+    }));
+    setMapPins(pins);
   }, []);
 
   const handleSearch = (query: string) => {
@@ -111,7 +125,7 @@ const HomePage = () => {
     console.log('Selected city:', city);
   };
 
-  const handleFilterChange = (filter: 'following' | 'popular' | 'new') => {
+  const handleFilterChange = (filter: string) => {
     setSelectedFilter(filter);
     console.log('Selected filter:', filter);
   };
@@ -121,8 +135,12 @@ const HomePage = () => {
     setIsDetailSheetOpen(true);
   };
 
-  const handleMapPinClick = (place: Place) => {
-    handlePlaceClick(place);
+  const handleMapPinClick = (pin: MapPin) => {
+    const placeWithImage: Place = {
+      ...pin.place,
+      image: pin.place.image || '/api/placeholder/400/300'
+    };
+    handlePlaceClick(placeWithImage);
   };
 
   const handleLike = (place: Place) => {
@@ -147,28 +165,11 @@ const HomePage = () => {
     setIsCommentModalOpen(false);
   };
 
-  const handleLikeToggle = (placeId: string) => {
-    setLikedPlaces(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(placeId)) {
-        newSet.delete(placeId);
-      } else {
-        newSet.add(placeId);
-      }
-      return newSet;
-    });
-  };
-
-  const topLocation = places.length > 0 ? places[0] : null;
-
   const filteredPlaces = places.filter(place => {
-    const matchesFilter = selectedFilter === 'following' || place.category === selectedFilter;
+    const matchesFilter = selectedFilter === 'All' || place.category === selectedFilter;
     const matchesSearch = place.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesFilter && matchesSearch;
   });
-
-  // Count new places for the filter button
-  const newCount = places.filter(place => place.isNew).length;
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
@@ -183,31 +184,20 @@ const HomePage = () => {
       />
       
       <div className="flex-1 overflow-auto pb-20">
-        <StoriesSection 
-          stories={[]}
-          onStoryClick={() => {}}
-          onCreateStory={() => setIsCreateStoryModalOpen(true)} 
-        />
+        <StoriesSection onCreateStory={() => setIsCreateStoryModalOpen(true)} />
         
         <div className="px-4 sm:px-6 space-y-6">
           <MapSection 
-            places={places}
+            pins={mapPins}
             onPinClick={handleMapPinClick}
-            mapCenter={location ? { lat: location.latitude, lng: location.longitude } : undefined}
-            selectedPlace={selectedPlace}
+            userLocation={location}
           />
           
-          {topLocation && (
-            <LocationOfTheWeek 
-              topLocation={topLocation}
-              onLocationClick={handlePlaceClick}
-            />
-          )}
+          <LocationOfTheWeek />
           
           <FilterButtons 
-            activeFilter={selectedFilter}
+            selectedFilter={selectedFilter}
             onFilterChange={handleFilterChange}
-            newCount={newCount}
           />
           
           <div className="space-y-4">
@@ -215,9 +205,8 @@ const HomePage = () => {
               <PlaceCard
                 key={place.id}
                 place={place}
-                isLiked={likedPlaces.has(place.id)}
-                onCardClick={() => handlePlaceClick(place)}
-                onLikeToggle={() => handleLikeToggle(place.id)}
+                onLike={handleLike}
+                onSave={handleSave}
                 onShare={() => {
                   setSelectedPlace(place);
                   setIsShareModalOpen(true);
@@ -226,7 +215,7 @@ const HomePage = () => {
                   setSelectedPlace(place);
                   setIsCommentModalOpen(true);
                 }}
-                cityName={currentCity}
+                onClick={() => handlePlaceClick(place)}
               />
             ))}
           </div>

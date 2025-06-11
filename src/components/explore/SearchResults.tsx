@@ -64,7 +64,6 @@ const SearchResults = ({ results, isLoading, onPlaceClick, onSavePlace }: Search
           <div 
             key={place.id}
             className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
-            onClick={() => onPlaceClick(place)}
           >
             <div className="relative">
               <img 
@@ -77,10 +76,7 @@ const SearchResults = ({ results, isLoading, onPlaceClick, onSavePlace }: Search
                   size="sm"
                   variant="outline"
                   className="bg-white/90 backdrop-blur-sm hover:bg-white"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSavePlace(place.id);
-                  }}
+                  onClick={() => onSavePlace(place.id)}
                 >
                   <Bookmark className="w-4 h-4" />
                 </Button>
@@ -119,10 +115,7 @@ const SearchResults = ({ results, isLoading, onPlaceClick, onSavePlace }: Search
                 
                 <Button
                   size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onPlaceClick(place);
-                  }}
+                  onClick={() => onPlaceClick(place)}
                   className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   View Details
