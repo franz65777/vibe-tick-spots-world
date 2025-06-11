@@ -419,8 +419,8 @@ const HomePage = () => {
     name: pin.name,
     category: pin.category,
     likes: pin.likes,
-    friendsWhoSaved: generateMockFriendsWhoSaved(),
-    visitors: [],
+    friendsWhoSaved: Array.isArray(pin.friendsWhoSaved) ? pin.friendsWhoSaved : generateMockFriendsWhoSaved(),
+    visitors: Array.isArray(pin.visitors) ? pin.visitors : [],
     isNew: pin.isNew || false,
     coordinates: pin.coordinates,
     image: pin.image || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
@@ -543,7 +543,7 @@ const HomePage = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-br from-blue-50/30 via-white to-purple-50/20 pt-16">
+    <div className="flex flex-col h-full bg-gradient-to-br from-blue-50/30 via-white to-purple-50/20 pt-14">
       {/* Header */}
       <Header
         searchQuery={searchQuery}
@@ -556,7 +556,7 @@ const HomePage = () => {
       />
 
       {/* Stories Section */}
-      <div className="bg-white/60 backdrop-blur-sm px-4 py-3 sm:px-6 sm:py-2">
+      <div className="bg-white/60 backdrop-blur-sm px-2 py-2">
         <div className="overflow-x-auto">
           <StoriesSection 
             stories={stories}
@@ -569,34 +569,36 @@ const HomePage = () => {
       {/* Location of the Week - Compact */}
       {locationOfTheWeek && (
         <LocationOfTheWeek 
-          topLocation={convertMapPinToPlace(locationOfTheWeek)}
+          topLocation={locationOfTheWeek}
           onLocationClick={handleCardClick}
         />
       )}
 
       {/* Filter Buttons */}
-      <FilterButtons
-        activeFilter={activeFilter}
-        onFilterChange={setActiveFilter}
-        newCount={pins.length}
-      />
+      <div className="px-3 mb-2">
+        <FilterButtons
+          activeFilter={activeFilter}
+          onFilterChange={setActiveFilter}
+          newCount={pins.length}
+        />
+      </div>
 
       {/* Empty Following State Message */}
       {shouldShowEmptyFollowingMessage() && (
-        <div className="flex-1 flex items-center justify-center p-6 pb-24">
-          <div className="text-center max-w-sm mx-auto">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4 mx-auto">
-              <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="flex-1 flex items-center justify-center p-4 pb-20">
+          <div className="text-center max-w-xs mx-auto">
+            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-3 mx-auto">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Start Following Others</h3>
-            <p className="text-gray-600 text-sm leading-relaxed">
+            <h3 className="text-base font-semibold text-gray-900 mb-2">Start Following Others</h3>
+            <p className="text-gray-600 text-sm leading-relaxed mb-3">
               Start following others to see where your friends go or save locations to begin curating your map.
             </p>
             <button
               onClick={() => setActiveFilter('popular')}
-              className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-full text-sm font-medium hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 bg-blue-600 text-white rounded-full text-sm font-medium hover:bg-blue-700 transition-colors"
             >
               Explore Popular Places
             </button>
@@ -616,9 +618,9 @@ const HomePage = () => {
           />
           
           {pinsLoading && (
-            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white/90 px-3 py-2 rounded-full shadow-lg z-20">
+            <div className="absolute top-3 left-1/2 transform -translate-x-1/2 bg-white/90 px-3 py-2 rounded-full shadow-lg z-20">
               <div className="flex items-center gap-2 text-sm text-gray-600">
-                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                 Loading {activeFilter} pins...
               </div>
             </div>
@@ -628,7 +630,7 @@ const HomePage = () => {
 
       {/* Enhanced Selected Place Card - Show below map */}
       {selectedPlace && (
-        <div className="mx-4 mb-20">
+        <div className="mx-3 mb-16">
           <PlaceCard
             place={selectedPlace}
             isLiked={likedPlaces.has(selectedPlace.id)}
@@ -643,9 +645,9 @@ const HomePage = () => {
 
       {/* No places found message - Only for popular filter */}
       {pins.length === 0 && !pinsLoading && activeFilter === 'popular' && (
-        <div className="flex-1 flex items-center justify-center p-6 pb-24">
+        <div className="flex-1 flex items-center justify-center p-4 pb-20">
           <div className="text-center">
-            <div className="text-gray-500 text-lg mb-2">No popular places found</div>
+            <div className="text-gray-500 text-base mb-2">No popular places found</div>
             <div className="text-gray-400 text-sm">
               Try switching to a different city or check back later
             </div>
@@ -697,3 +699,5 @@ const generateMockFriendsWhoSaved = () => {
 };
 
 export default HomePage;
+
+}
