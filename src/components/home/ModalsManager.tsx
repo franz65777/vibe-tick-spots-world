@@ -12,15 +12,18 @@ interface Place {
   name: string;
   category: string;
   likes: number;
-  friendsWhoSaved?: { name: string; avatar: string }[];
+  friendsWhoSaved: { name: string; avatar: string; }[];
   visitors: string[];
   isNew: boolean;
   coordinates: { lat: number; lng: number };
-  image?: string;
-  addedBy?: string;
-  addedDate?: string;
-  isFollowing?: boolean;
-  popularity?: number;
+  rating: number;
+  reviews: number;
+  distance: string;
+  addedBy: { name: string; avatar: string; isFollowing: boolean };
+  addedDate: string;
+  image: string;
+  description?: string;
+  totalSaves: number;
 }
 
 interface Story {
@@ -40,103 +43,78 @@ interface Story {
 }
 
 interface ModalsManagerProps {
-  isCreateStoryModalOpen: boolean;
-  isNotificationsModalOpen: boolean;
-  isMessagesModalOpen: boolean;
+  selectedPlace: Place | null;
+  isDetailSheetOpen: boolean;
+  isNotificationsOpen: boolean;
+  isMessagesOpen: boolean;
   isShareModalOpen: boolean;
   isCommentModalOpen: boolean;
-  isLocationDetailOpen: boolean;
-  isStoriesViewerOpen: boolean;
-  sharePlace: Place | null;
-  commentPlace: Place | null;
-  locationDetailPlace: Place | null;
-  stories: Story[];
-  currentStoryIndex: number;
-  onCreateStoryModalClose: () => void;
-  onNotificationsModalClose: () => void;
-  onMessagesModalClose: () => void;
-  onShareModalClose: () => void;
-  onCommentModalClose: () => void;
-  onLocationDetailClose: () => void;
-  onStoriesViewerClose: () => void;
-  onStoryCreated: () => void;
+  isCreateStoryModalOpen: boolean;
+  onCloseDetailSheet: () => void;
+  onCloseNotifications: () => void;
+  onCloseMessages: () => void;
+  onCloseShareModal: () => void;
+  onCloseCommentModal: () => void;
+  onCloseCreateStoryModal: () => void;
   onShare: (friendIds: string[], place: Place) => void;
-  onCommentSubmit: (text: string, place: Place) => void;
-  onStoryViewed: (storyId: string) => void;
+  onComment: (text: string, place: Place) => void;
 }
 
 const ModalsManager = ({
-  isCreateStoryModalOpen,
-  isNotificationsModalOpen,
-  isMessagesModalOpen,
+  selectedPlace,
+  isDetailSheetOpen,
+  isNotificationsOpen,
+  isMessagesOpen,
   isShareModalOpen,
   isCommentModalOpen,
-  isLocationDetailOpen,
-  isStoriesViewerOpen,
-  sharePlace,
-  commentPlace,
-  locationDetailPlace,
-  stories,
-  currentStoryIndex,
-  onCreateStoryModalClose,
-  onNotificationsModalClose,
-  onMessagesModalClose,
-  onShareModalClose,
-  onCommentModalClose,
-  onLocationDetailClose,
-  onStoriesViewerClose,
-  onStoryCreated,
+  isCreateStoryModalOpen,
+  onCloseDetailSheet,
+  onCloseNotifications,
+  onCloseMessages,
+  onCloseShareModal,
+  onCloseCommentModal,
+  onCloseCreateStoryModal,
   onShare,
-  onCommentSubmit,
-  onStoryViewed
+  onComment
 }: ModalsManagerProps) => {
   return (
     <>
       <CreateStoryModal
         isOpen={isCreateStoryModalOpen}
-        onClose={onCreateStoryModalClose}
-        onStoryCreated={onStoryCreated}
+        onClose={onCloseCreateStoryModal}
+        onStoryCreated={() => {}}
       />
 
       <NotificationsModal
-        isOpen={isNotificationsModalOpen}
-        onClose={onNotificationsModalClose}
+        isOpen={isNotificationsOpen}
+        onClose={onCloseNotifications}
       />
 
       <MessagesModal
-        isOpen={isMessagesModalOpen}
-        onClose={onMessagesModalClose}
+        isOpen={isMessagesOpen}
+        onClose={onCloseMessages}
       />
 
       <ShareModal
         isOpen={isShareModalOpen}
-        onClose={onShareModalClose}
-        item={sharePlace}
+        onClose={onCloseShareModal}
+        item={selectedPlace}
         itemType="place"
         onShare={onShare}
       />
 
       <CommentModal
         isOpen={isCommentModalOpen}
-        onClose={onCommentModalClose}
-        place={commentPlace}
-        onCommentSubmit={onCommentSubmit}
+        onClose={onCloseCommentModal}
+        place={selectedPlace}
+        onCommentSubmit={onComment}
       />
 
       <LocationDetailSheet
-        isOpen={isLocationDetailOpen}
-        onClose={onLocationDetailClose}
-        location={locationDetailPlace}
+        isOpen={isDetailSheetOpen}
+        onClose={onCloseDetailSheet}
+        location={selectedPlace}
       />
-
-      {isStoriesViewerOpen && (
-        <StoriesViewer
-          stories={stories}
-          initialStoryIndex={currentStoryIndex}
-          onClose={onStoriesViewerClose}
-          onStoryViewed={onStoryViewed}
-        />
-      )}
     </>
   );
 };

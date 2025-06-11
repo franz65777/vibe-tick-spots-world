@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { X, Search, Send } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -14,6 +15,19 @@ interface Place {
   id: string;
   name: string;
   category: string;
+  likes: number;
+  friendsWhoSaved: { name: string; avatar: string; }[];
+  visitors: string[];
+  isNew: boolean;
+  coordinates: { lat: number; lng: number };
+  rating: number;
+  reviews: number;
+  distance: string;
+  addedBy: { name: string; avatar: string; isFollowing: boolean };
+  addedDate: string;
+  image: string;
+  description?: string;
+  totalSaves: number;
 }
 
 interface Trip {
