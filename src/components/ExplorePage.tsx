@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useSearch } from '@/hooks/useSearch';
 import SearchHeader from './explore/SearchHeader';
@@ -187,18 +186,34 @@ const ExplorePage = () => {
     // Implement navigation to place detail
   };
 
+  const handleUserClick = (user: User) => {
+    console.log('User clicked:', user);
+    // Implement navigation to user profile
+  };
+
+  const handleFollowUser = (userId: string) => {
+    console.log('Follow user:', userId);
+    // Implement follow logic
+  };
+
+  const handleLocationClick = (location: any) => {
+    console.log('Location clicked:', location);
+    // Implement location click logic
+  };
+
   // Get suggestions based on current query
   const suggestions = getSearchSuggestions(searchQuery, searchMode);
+  const searchHistoryStrings = searchHistory.map(item => item.query);
 
   return (
     <div className="flex flex-col h-screen bg-white">
       <SearchHeader
         searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
+        setSearchQuery={setSearchQuery}
         searchMode={searchMode}
-        onSearchModeChange={setSearchMode}
+        setSearchMode={setSearchMode}
         sortBy={sortBy}
-        onSortChange={setSortBy}
+        setSortBy={setSortBy}
         onSearch={() => handleSearch(searchQuery)}
       />
       
@@ -207,7 +222,7 @@ const ExplorePage = () => {
           <>
             <SearchSuggestions
               suggestions={suggestions}
-              searchHistory={searchHistory}
+              searchHistory={searchHistoryStrings}
               onSuggestionClick={(suggestion) => {
                 setSearchQuery(suggestion);
                 handleSearch(suggestion);
@@ -217,6 +232,14 @@ const ExplorePage = () => {
               locationRecommendations={locationRecommendations}
               userRecommendations={userRecommendations}
               searchMode={searchMode}
+              loading={false}
+              onLocationClick={handleLocationClick}
+              onUserClick={handleUserClick}
+              onFollowUser={handleFollowUser}
+              onLikeLocation={handleLikeToggle}
+              onShareLocation={handleShare}
+              onCommentLocation={handleComment}
+              likedPlaces={likedPlaces}
             />
           </>
         ) : (

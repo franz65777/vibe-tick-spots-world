@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -185,6 +184,8 @@ const HomePage = () => {
     return place.category === selectedFilter;
   });
 
+  const topLocation = filteredPlaces.length > 0 ? filteredPlaces[0] : null;
+
   return (
     <div className="flex flex-col h-screen bg-gradient-to-br from-blue-50/30 via-white to-purple-50/20">
       <Header
@@ -219,14 +220,10 @@ const HomePage = () => {
           cityName={selectedCity}
         />
         
-        {filteredPlaces[0] && (
+        {topLocation && (
           <LocationOfTheWeek 
-            onCardClick={(place) => handlePlaceClick(place)}
-            onLikeToggle={handleLikeToggle}
-            onShare={(place) => handleShare(place)}
-            onComment={(place) => handleComment(place)}
-            isLiked={likedPlaces.has(filteredPlaces[0]?.id || '')}
-            cityName={selectedCity}
+            topLocation={topLocation}
+            onLocationClick={handlePlaceClick}
           />
         )}
       </div>
