@@ -556,7 +556,7 @@ const HomePage = () => {
       />
 
       {/* Stories Section */}
-      <div className="bg-white/60 backdrop-blur-sm px-2 py-2">
+      <div className="bg-white/60 backdrop-blur-sm px-2 py-1.5">
         <div className="overflow-x-auto">
           <StoriesSection 
             stories={stories}
@@ -569,7 +569,7 @@ const HomePage = () => {
       {/* Location of the Week - Compact */}
       {locationOfTheWeek && (
         <LocationOfTheWeek 
-          topLocation={locationOfTheWeek}
+          topLocation={convertMapPinToPlace(locationOfTheWeek)}
           onLocationClick={handleCardClick}
         />
       )}
@@ -699,5 +699,3 @@ const generateMockFriendsWhoSaved = () => {
 };
 
 export default HomePage;
-
-}
