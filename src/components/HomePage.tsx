@@ -1,263 +1,219 @@
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import Header from './home/Header';
-import StoriesSection from './home/StoriesSection';
-import FilterButtons from './home/FilterButtons';
-import PlaceCard from './home/PlaceCard';
-import LocationOfTheWeek from './home/LocationOfTheWeek';
-import MapSection from './home/MapSection';
-import ModalsManager from './home/ModalsManager';
-import { PlaceInteractionModal } from './home/PlaceInteractionModal';
+import { useNavigate } from 'react-router-dom';
 import { useSearch } from '@/hooks/useSearch';
-
-interface Story {
-  id: string;
-  user: {
-    name: string;
-    avatar: string;
-  };
-  image: string;
-  title: string;
-}
-
-interface Place {
-  id: string;
-  name: string;
-  description: string;
-  location: string;
-  category: string;
-  image: string;
-  likes: number;
-  rating: number;
-  visitors: string[];
-  friendsWhoSaved: { name: string; avatar: string; }[];
-  savedCount: number;
-  stories?: Story[];
-  latitude?: number;
-  longitude?: number;
-}
-
-interface HomePlace {
-  id: string;
-  name: string;
-  description: string;
-  location: string;
-  category: string;
-  image: string;
-  likes: number;
-  rating: number;
-  visitors: string[]; // Changed to always be string[]
-  friendsWhoSaved: { name: string; avatar: string; }[]; // Changed to always be array
-  savedCount: number;
-  isNew: boolean;
-  stories?: Story[];
-  latitude?: number;
-  longitude?: number;
-}
-
-const demoStories: Story[] = [
-  {
-    id: 'story1',
-    user: { name: 'Alice', avatar: 'https://i.pravatar.cc/48?img=1' },
-    image: 'https://images.unsplash.com/photo-1517840901100-8179e982acb7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80',
-    title: 'My amazing trip to the mountains'
-  },
-  {
-    id: 'story2',
-    user: { name: 'Bob', avatar: 'https://i.pravatar.cc/48?img=2' },
-    image: 'https://images.unsplash.com/photo-1477959858617-67f85660d58e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2048&q=80',
-    title: 'Exploring the city at night'
-  },
-  {
-    id: 'story3',
-    user: { name: 'Charlie', avatar: 'https://i.pravatar.cc/48?img=3' },
-    image: 'https://images.unsplash.com/photo-1469474968028-56653f4e4262?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2074&q=80',
-    title: 'Adventures in the jungle'
-  },
-];
-
-const demoPlaces: HomePlace[] = [
-  {
-    id: '1',
-    name: 'Cozy Coffee Shop',
-    description: 'A warm and inviting place to enjoy a cup of coffee and a pastry.',
-    location: '123 Main St, Anytown',
-    category: 'Cafe',
-    image: 'https://images.unsplash.com/photo-1517436021523-54d496938ca1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80',
-    likes: 42,
-    rating: 4.5,
-    visitors: ['user1', 'user2', 'user3'],
-    friendsWhoSaved: [
-      { name: 'Alice', avatar: 'https://i.pravatar.cc/48?img=1' },
-      { name: 'Bob', avatar: 'https://i.pravatar.cc/48?img=2' }
-    ],
-    savedCount: 15,
-    isNew: true,
-    stories: demoStories.slice(0, 2),
-    latitude: 34.052235,
-    longitude: -118.243683
-  },
-  {
-    id: '2',
-    name: 'The Art Museum',
-    description: 'Explore a wide range of art from around the world.',
-    location: '456 Elm St, Anytown',
-    category: 'Museum',
-    image: 'https://images.unsplash.com/photo-1544920504-3d9e5ee149aa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
-    likes: 123,
-    rating: 4.8,
-    visitors: ['user4', 'user5'],
-    friendsWhoSaved: [
-      { name: 'Charlie', avatar: 'https://i.pravatar.cc/48?img=3' }
-    ],
-    savedCount: 42,
-    isNew: false,
-    stories: demoStories.slice(1, 3),
-    latitude: 34.052235,
-    longitude: -118.243683
-  },
-  {
-    id: '3',
-    name: 'Greenwood Park',
-    description: 'A beautiful park with walking trails and picnic areas.',
-    location: '789 Oak St, Anytown',
-    category: 'Park',
-    image: 'https://images.unsplash.com/photo-1497252689836-99c94e695c1e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
-    likes: 78,
-    rating: 4.6,
-    visitors: ['user6', 'user7', 'user8'],
-    friendsWhoSaved: [
-      { name: 'Alice', avatar: 'https://i.pravatar.cc/48?img=1' },
-      { name: 'Bob', avatar: 'https://i.pravatar.cc/48?img=2' },
-      { name: 'Charlie', avatar: 'https://i.pravatar.cc/48?img=3' }
-    ],
-    savedCount: 28,
-    isNew: false,
-    latitude: 34.052235,
-    longitude: -118.243683
-  },
-];
+import { useBackendPlaces } from '@/hooks/useBackendPlaces';
+import { useMapPins } from '@/hooks/useMapPins';
+import { useSavedPlaces } from '@/hooks/useSavedPlaces';
+import { useGeolocation } from '@/hooks/useGeolocation';
+import Header from './home/Header';
+import PlaceInteractionModal from './home/PlaceInteractionModal';
+import FilterButtons from './home/FilterButtons';
+import MapSection from './home/MapSection';
+import StoriesSection from './home/StoriesSection';
+import ModalsManager from './home/ModalsManager';
+import LocationOfTheWeek from './home/LocationOfTheWeek';
+import BottomNavigation from './BottomNavigation';
+import { toast } from 'sonner';
 
 const HomePage = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
-  const [places, setPlaces] = useState<HomePlace[]>(demoPlaces);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [isInteractionModalOpen, setIsInteractionModalOpen] = useState(false);
-  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
-  const { searchQuery } = useSearch();
+  const navigate = useNavigate();
+  const { 
+    searchQuery, 
+    setSearchQuery, 
+    currentCity, 
+    setCurrentCity,
+    searchHistory,
+    locationRecommendations,
+    userRecommendations,
+    refreshRecommendations 
+  } = useSearch();
+  
+  const { places, isLoading } = useBackendPlaces();
+  const { 
+    savedPlaces, 
+    savePlace, 
+    unsavePlace, 
+    isPlaceSaved 
+  } = useSavedPlaces();
+  const { location } = useGeolocation();
+  
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [isCreateStoryModalOpen, setIsCreateStoryModalOpen] = useState(false);
+  const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
+  const [isMessagesModalOpen, setIsMessagesModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
+  const [selectedPlace, setSelectedPlace] = useState(null);
+  const [isDetailSheetOpen, setIsDetailSheetOpen] = useState(false);
+  const [isSaveLocationDialogOpen, setIsSaveLocationDialogOpen] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [selectedStory, setSelectedStory] = useState(null);
+  const [isStoriesViewerOpen, setIsStoriesViewerOpen] = useState(false);
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/login');
+  // Mock stories data
+  const stories = [
+    {
+      id: '1',
+      userId: 'user1',
+      userName: 'Alice',
+      userAvatar: 'https://images.unsplash.com/photo-1494790108755-2616b332c26c?w=100&h=100&fit=crop&crop=face',
+      content: 'Amazing sunset at this rooftop restaurant! 🌅',
+      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
+      isViewed: false,
+      duration: 5000,
+      media: {
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=600&fit=crop'
+      }
     }
-  }, [user, navigate]);
+  ];
 
-  const handleCategoryClick = (category: string | null) => {
+  const { 
+    mapPins, 
+    selectedPin, 
+    setSelectedPin, 
+    handlePinClick 
+  } = useMapPins({
+    places: places.filter(place => 
+      selectedCategory === 'all' || place.category === selectedCategory
+    ),
+    onPlaceSelect: (place) => {
+      setSelectedPlace(place);
+      setIsDetailSheetOpen(true);
+    }
+  });
+
+  const handleSearch = async (query) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      const filtered = places.filter(place =>
+        place.name.toLowerCase().includes(query.toLowerCase()) ||
+        place.description?.toLowerCase().includes(query.toLowerCase())
+      );
+      setSearchResults(filtered);
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSearchKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch(searchQuery);
+    }
+  };
+
+  const handleCategoryClick = (category) => {
     setSelectedCategory(category);
   };
 
-  const handleLike = (placeId: string) => {
-    setPlaces(currentPlaces =>
-      currentPlaces.map(place =>
-        place.id === placeId ? { ...place, likes: place.likes + 1 } : place
-      )
-    );
-  };
-
-  const handleSave = (placeId: string) => {
-    setPlaces(currentPlaces =>
-      currentPlaces.map(place =>
-        place.id === placeId ? { ...place, savedCount: place.savedCount + 1 } : place
-      )
-    );
-  };
-
-  const handleComment = (place: Place) => {
-    console.log('Comment on:', place);
-  };
-
-  const handleShare = (place: Place) => {
-    console.log('Share:', place);
-  };
-
-  const filteredPlaces = React.useMemo(() => {
-    let filtered = places;
-
-    if (selectedCategory) {
-      filtered = filtered.filter(place => place.category === selectedCategory);
+  const handleSavePlace = async (place) => {
+    try {
+      if (isPlaceSaved(place.id)) {
+        await unsavePlace(place.id);
+        toast.success('Location removed from saved places');
+      } else {
+        await savePlace(place);
+        toast.success('Location saved successfully!');
+      }
+    } catch (error) {
+      toast.error('Failed to save location');
     }
+  };
 
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        place =>
-          place.name.toLowerCase().includes(query) ||
-          place.description.toLowerCase().includes(query) ||
-          place.location.toLowerCase().includes(query)
-      );
+  const handleStoryClick = (story) => {
+    setSelectedStory(story);
+    setIsStoriesViewerOpen(true);
+  };
+
+  // Redirect to auth if not authenticated
+  useEffect(() => {
+    if (!user) {
+      navigate('/auth');
     }
+  }, [user, navigate]);
 
-    return filtered;
-  }, [places, selectedCategory, searchQuery]);
-
-  const convertToPlace = (homePlace: HomePlace): Place => {
-    return {
-      id: homePlace.id,
-      name: homePlace.name,
-      description: homePlace.description,
-      location: homePlace.location,
-      category: homePlace.category,
-      image: homePlace.image,
-      likes: homePlace.likes,
-      rating: homePlace.rating,
-      visitors: homePlace.visitors,
-      friendsWhoSaved: homePlace.friendsWhoSaved,
-      savedCount: homePlace.savedCount,
-      stories: homePlace.stories,
-      latitude: homePlace.latitude,
-      longitude: homePlace.longitude
-    };
-  };
-
-  const handlePlaceInteraction = (place: HomePlace) => {
-    setSelectedPlace(convertToPlace(place));
-    setIsInteractionModalOpen(true);
-  };
+  if (!user) {
+    return null;
+  }
 
   return (
-    <div className="flex flex-col h-full bg-white">
-      <Header />
-      <StoriesSection stories={demoStories} />
-      <FilterButtons selectedCategory={selectedCategory} onCategoryClick={handleCategoryClick} />
-
-      {/* Places Grid */}
-      <div className="flex-1 px-4 pb-20 space-y-4">
-        {filteredPlaces.map((place) => (
-          <PlaceCard
-            key={place.id}
-            place={convertToPlace(place)}
-            onLike={handleLike}
-            onSave={handleSave}
-            onComment={() => handleComment(convertToPlace(place))}
-            onShare={() => handleShare(convertToPlace(place))}
-            onClick={() => handlePlaceInteraction(place)}
-          />
-        ))}
-      </div>
-
-      {/* Modals */}
-      <ModalsManager
-      />
-
-      {isInteractionModalOpen && selectedPlace && (
-        <PlaceInteractionModal
-          place={selectedPlace}
-          isOpen={isInteractionModalOpen}
-          onClose={() => setIsInteractionModalOpen(false)}
+    <div className="min-h-screen bg-gray-50">
+      <div className="relative h-screen overflow-hidden">
+        <Header 
+          searchQuery={searchQuery}
+          currentCity={currentCity}
+          onSearchChange={setSearchQuery}
+          onSearchKeyPress={handleSearchKeyPress}
+          onCityChange={setCurrentCity}
+          onCreateStory={() => setIsCreateStoryModalOpen(true)}
         />
-      )}
+        
+        <StoriesSection 
+          stories={stories}
+          onStoryClick={handleStoryClick}
+        />
+        
+        <FilterButtons 
+          onCategoryClick={handleCategoryClick}
+        />
+        
+        <div className="absolute inset-0 pt-32">
+          <MapSection
+            places={places.map(place => ({
+              ...place,
+              isNew: false,
+              coordinates: place.coordinates || { lat: 0, lng: 0 }
+            }))}
+            selectedCategory={selectedCategory}
+            onPlaceSelect={(place) => {
+              setSelectedPlace(place);
+              setIsDetailSheetOpen(true);
+            }}
+          />
+        </div>
+
+        <ModalsManager 
+          isCreateStoryModalOpen={isCreateStoryModalOpen}
+          isNotificationsModalOpen={isNotificationsModalOpen}
+          isMessagesModalOpen={isMessagesModalOpen}
+          isShareModalOpen={isShareModalOpen}
+          isCommentModalOpen={isCommentModalOpen}
+          isDetailSheetOpen={isDetailSheetOpen}
+          isSaveLocationDialogOpen={isSaveLocationDialogOpen}
+          isStoriesViewerOpen={isStoriesViewerOpen}
+          selectedPlace={selectedPlace}
+          selectedStory={selectedStory}
+          searchResults={searchResults}
+          isSearching={isSearching}
+          searchKeyword={searchKeyword}
+          onCreateStoryModalClose={() => setIsCreateStoryModalOpen(false)}
+          onNotificationsModalClose={() => setIsNotificationsModalOpen(false)}
+          onMessagesModalClose={() => setIsMessagesModalOpen(false)}
+          onShareModalClose={() => setIsShareModalOpen(false)}
+          onCommentModalClose={() => setIsCommentModalOpen(false)}
+          onDetailSheetClose={() => setIsDetailSheetOpen(false)}
+          onSaveLocationDialogClose={() => setIsSaveLocationDialogClose(false)}
+          onStoriesViewerClose={() => setIsStoriesViewerOpen(false)}
+          onSavePlace={handleSavePlace}
+          onSearchKeywordChange={setSearchKeyword}
+        />
+      </div>
+      
+      <BottomNavigation />
     </div>
   );
 };

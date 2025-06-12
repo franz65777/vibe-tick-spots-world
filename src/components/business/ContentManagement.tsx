@@ -83,56 +83,62 @@ const ContentManagement = ({ locationId }: ContentManagementProps) => {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-full">
       {/* Header */}
-      <Card className="bg-white shadow-sm border border-gray-200">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Star className="w-5 h-5 text-yellow-600" />
-            Content Management
-          </CardTitle>
-          <p className="text-sm text-gray-600">
-            Manage posts about your location. Promote high-quality content to increase visibility.
-          </p>
-        </CardHeader>
-      </Card>
+      <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-6 rounded-xl border border-yellow-200">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center">
+            <Star className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Content Management</h2>
+            <p className="text-sm text-gray-600">Manage posts about your location and promote high-quality content</p>
+          </div>
+        </div>
+      </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-white shadow-sm border border-gray-200">
+        <Card className="bg-gradient-to-br from-blue-50 to-white border border-blue-200">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Posts</p>
-                <p className="text-xl font-bold text-gray-900">{posts.length}</p>
+                <p className="text-sm font-medium text-blue-700">Total Posts</p>
+                <p className="text-2xl font-bold text-blue-900">{posts.length}</p>
               </div>
-              <MessageSquare className="w-6 h-6 text-blue-600" />
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <MessageSquare className="w-5 h-5 text-blue-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white shadow-sm border border-gray-200">
+        <Card className="bg-gradient-to-br from-yellow-50 to-white border border-yellow-200">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Promoted Posts</p>
-                <p className="text-xl font-bold text-yellow-600">{posts.filter(p => p.isPromoted).length}</p>
+                <p className="text-sm font-medium text-yellow-700">Promoted Posts</p>
+                <p className="text-2xl font-bold text-yellow-900">{posts.filter(p => p.isPromoted).length}</p>
               </div>
-              <Pin className="w-6 h-6 text-yellow-600" />
+              <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                <Pin className="w-5 h-5 text-yellow-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white shadow-sm border border-gray-200">
+        <Card className="bg-gradient-to-br from-green-50 to-white border border-green-200">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Avg. Engagement</p>
-                <p className="text-xl font-bold text-green-600">
+                <p className="text-sm font-medium text-green-700">Avg. Engagement</p>
+                <p className="text-2xl font-bold text-green-900">
                   {(posts.reduce((acc, post) => acc + post.engagementRate, 0) / posts.length).toFixed(1)}%
                 </p>
               </div>
-              <TrendingUp className="w-6 h-6 text-green-600" />
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-green-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -141,33 +147,39 @@ const ContentManagement = ({ locationId }: ContentManagementProps) => {
       {/* Posts List */}
       <div className="space-y-4">
         {sortedPosts.map((post) => (
-          <Card key={post.id} className={`bg-white shadow-sm border ${post.isPromoted ? 'border-yellow-300 bg-yellow-50' : 'border-gray-200'}`}>
-            <CardContent className="p-6">
+          <Card 
+            key={post.id} 
+            className={`${post.isPromoted 
+              ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-300 shadow-lg' 
+              : 'bg-white border-gray-200 shadow-sm'
+            } hover:shadow-md transition-all duration-200`}
+          >
+            <CardContent className="p-4">
               <div className="flex gap-4">
                 {/* Post Image */}
                 <div className="flex-shrink-0">
                   <img
                     src={post.imageUrl}
                     alt="Post content"
-                    className="w-24 h-24 rounded-lg object-cover"
+                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg object-cover shadow-sm"
                   />
                 </div>
 
                 {/* Post Content */}
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       <img
                         src={post.userAvatar}
                         alt={post.userName}
-                        className="w-8 h-8 rounded-full object-cover"
+                        className="w-8 h-8 rounded-full object-cover shadow-sm"
                       />
-                      <div>
-                        <p className="font-semibold text-gray-900">@{post.userName}</p>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-gray-900 truncate">@{post.userName}</p>
                         <p className="text-xs text-gray-500">{post.timestamp}</p>
                       </div>
                       {post.isPromoted && (
-                        <span className="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full flex items-center gap-1">
+                        <span className="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full flex items-center gap-1 whitespace-nowrap">
                           <Pin className="w-3 h-3" />
                           Promoted
                         </span>
@@ -176,27 +188,27 @@ const ContentManagement = ({ locationId }: ContentManagementProps) => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-gray-400 hover:text-gray-600"
+                      className="text-gray-400 hover:text-gray-600 flex-shrink-0"
                     >
                       <MoreVertical className="w-4 h-4" />
                     </Button>
                   </div>
 
-                  <p className="text-gray-700 mb-3">{post.content}</p>
+                  <p className="text-gray-700 mb-3 text-sm leading-relaxed">{post.content}</p>
 
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <span className="flex items-center gap-1">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4 text-sm text-gray-500 overflow-x-auto">
+                      <span className="flex items-center gap-1 whitespace-nowrap">
                         <Heart className="w-4 h-4" />
-                        {post.likes} likes
+                        {post.likes}
                       </span>
-                      <span className="flex items-center gap-1">
+                      <span className="flex items-center gap-1 whitespace-nowrap">
                         <MessageSquare className="w-4 h-4" />
-                        {post.comments} comments
+                        {post.comments}
                       </span>
-                      <span className="flex items-center gap-1">
+                      <span className="flex items-center gap-1 whitespace-nowrap">
                         <TrendingUp className="w-4 h-4" />
-                        {post.engagementRate}% engagement
+                        {post.engagementRate}%
                       </span>
                     </div>
 
@@ -204,7 +216,10 @@ const ContentManagement = ({ locationId }: ContentManagementProps) => {
                       onClick={() => handlePromotePost(post.id)}
                       variant={post.isPromoted ? "outline" : "default"}
                       size="sm"
-                      className={post.isPromoted ? "border-yellow-400 text-yellow-600 hover:bg-yellow-50" : ""}
+                      className={`flex-shrink-0 ${post.isPromoted 
+                        ? "border-yellow-400 text-yellow-600 hover:bg-yellow-50" 
+                        : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+                      }`}
                     >
                       <Pin className="w-4 h-4 mr-1" />
                       {post.isPromoted ? 'Unpromote' : 'Promote'}
