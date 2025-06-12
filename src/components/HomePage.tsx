@@ -40,15 +40,12 @@ const HomePage = () => {
   const { location } = useGeolocation();
   
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'new'>('following');
   const [isCreateStoryModalOpen, setIsCreateStoryModalOpen] = useState(false);
   const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
   const [isMessagesModalOpen, setIsMessagesModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState(null);
-  const [sharePlace, setSharePlace] = useState(null);
-  const [commentPlace, setCommentPlace] = useState(null);
   const [isDetailSheetOpen, setIsDetailSheetOpen] = useState(false);
   const [isSaveLocationDialogOpen, setIsSaveLocationDialogOpen] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
@@ -56,7 +53,6 @@ const HomePage = () => {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [selectedStory, setSelectedStory] = useState(null);
   const [isStoriesViewerOpen, setIsStoriesViewerOpen] = useState(false);
-  const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
 
   // Mock stories data
   const stories = [
@@ -71,11 +67,10 @@ const HomePage = () => {
       duration: 5000,
       locationId: '1',
       locationName: 'Sunset Restaurant',
-      locationAddress: '123 Main St, San Francisco',
-      mediaUrl: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=600&fit=crop',
-      mediaType: 'image' as const,
-      bookingUrl: 'https://example.com/book',
-      locationCategory: 'restaurant'
+      media: {
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=600&fit=crop'
+      }
     }
   ];
 
@@ -111,10 +106,6 @@ const HomePage = () => {
     setSelectedCategory(category);
   };
 
-  const handleFilterChange = (filter: 'following' | 'popular' | 'new') => {
-    setActiveFilter(filter);
-  };
-
   const handleSavePlace = async (place: any) => {
     try {
       if (isPlaceSaved(place.id)) {
@@ -131,29 +122,7 @@ const HomePage = () => {
 
   const handleStoryClick = (story: any) => {
     setSelectedStory(story);
-    setCurrentStoryIndex(stories.findIndex(s => s.id === story.id));
     setIsStoriesViewerOpen(true);
-  };
-
-  const handleShare = (friendIds: string[], place: any) => {
-    console.log('Sharing place:', place, 'with friends:', friendIds);
-    toast.success('Location shared successfully!');
-    setIsShareModalOpen(false);
-  };
-
-  const handleCommentSubmit = (text: string, place: any) => {
-    console.log('Comment submitted:', text, 'for place:', place);
-    toast.success('Comment added successfully!');
-    setIsCommentModalOpen(false);
-  };
-
-  const handleStoryViewed = (storyId: string) => {
-    console.log('Story viewed:', storyId);
-  };
-
-  const handleStoryCreated = () => {
-    console.log('Story created');
-    toast.success('Story created successfully!');
   };
 
   // Redirect to auth if not authenticated
@@ -183,13 +152,11 @@ const HomePage = () => {
         <StoriesSection 
           stories={stories}
           onStoryClick={handleStoryClick}
-          onCreateStory={() => setIsCreateStoryModalOpen(true)}
         />
         
         <FilterButtons 
-          activeFilter={activeFilter}
-          onFilterChange={handleFilterChange}
-          newCount={5}
+          selectedCategory={selectedCategory}
+          onCategorySelect={handleCategoryClick}
         />
         
         <div className="absolute inset-0 pt-32">
@@ -197,12 +164,13 @@ const HomePage = () => {
             places={places.map(place => ({
               ...place,
               isNew: false,
-              visitors: [],
+              visitors: 0,
               coordinates: place.latitude && place.longitude 
                 ? { lat: place.latitude, lng: place.longitude }
                 : { lat: 0, lng: 0 }
             }))}
-            onPinClick={(place) => {
+            selectedCategory={selectedCategory}
+            onPlaceSelect={(place) => {
               setSelectedPlace(place);
               setIsDetailSheetOpen(true);
             }}
@@ -216,23 +184,23 @@ const HomePage = () => {
           isShareModalOpen={isShareModalOpen}
           isCommentModalOpen={isCommentModalOpen}
           isLocationDetailOpen={isDetailSheetOpen}
+          isSaveLocationDialogOpen={isSaveLocationDialogOpen}
           isStoriesViewerOpen={isStoriesViewerOpen}
-          sharePlace={sharePlace}
-          commentPlace={commentPlace}
-          locationDetailPlace={selectedPlace}
-          stories={stories}
-          currentStoryIndex={currentStoryIndex}
+          selectedPlace={selectedPlace}
+          selectedStory={selectedStory}
+          searchResults={searchResults}
+          isSearching={isSearching}
+          searchKeyword={searchKeyword}
           onCreateStoryModalClose={() => setIsCreateStoryModalOpen(false)}
           onNotificationsModalClose={() => setIsNotificationsModalOpen(false)}
           onMessagesModalClose={() => setIsMessagesModalOpen(false)}
           onShareModalClose={() => setIsShareModalOpen(false)}
           onCommentModalClose={() => setIsCommentModalOpen(false)}
           onLocationDetailClose={() => setIsDetailSheetOpen(false)}
+          onSaveLocationDialogClose={() => setIsSaveLocationDialogOpen(false)}
           onStoriesViewerClose={() => setIsStoriesViewerOpen(false)}
-          onStoryCreated={handleStoryCreated}
-          onShare={handleShare}
-          onCommentSubmit={handleCommentSubmit}
-          onStoryViewed={handleStoryViewed}
+          onSavePlace={handleSavePlace}
+          onSearchKeywordChange={setSearchKeyword}
         />
       </div>
       
