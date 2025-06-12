@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { Search, MapPin, Building, Landmark, Building2, Clock, Mountain, Shield, Church, Waves, TreePine, Locate } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -132,8 +131,8 @@ const CitySearch = ({
     }
   }, [location?.city, currentCity, onCitySelect, userHasManuallySelectedCity, ignoreGeoLocation]);
 
-  // Get current city data - add null check
-  const currentCityData = currentCity ? cityData[currentCity.toLowerCase() as keyof typeof cityData] : null;
+  // Get current city data
+  const currentCityData = cityData[currentCity.toLowerCase() as keyof typeof cityData];
   const CurrentCityIcon = currentCityData?.icon || MapPin;
 
   useEffect(() => {
@@ -206,7 +205,7 @@ const CitySearch = ({
                onClick={() => document.getElementById('city-search-input')?.focus()}>
             <CurrentCityIcon className="w-5 h-5 text-blue-600 shrink-0" />
             <span className="text-gray-900 font-medium flex-1">
-              {currentCityData?.name || currentCity || 'Select City'}
+              {currentCityData?.name || currentCity}
             </span>
             <div className="flex items-center gap-2">
               {geoLoading && (

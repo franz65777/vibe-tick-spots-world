@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useSearch } from '@/hooks/useSearch';
 import { useBackendPlaces } from '@/hooks/useBackendPlaces';
+import { useMapPins } from '@/hooks/useMapPins';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import Header from './home/Header';
@@ -30,7 +31,7 @@ const HomePage = () => {
     refreshRecommendations 
   } = useSearch();
   
-  const { places, loading: isLoading } = useBackendPlaces();
+  const { places, isLoading } = useBackendPlaces();
   const { 
     savedPlaces, 
     savePlace, 
@@ -65,8 +66,6 @@ const HomePage = () => {
       timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
       isViewed: false,
       duration: 5000,
-      locationId: '1',
-      locationName: 'Sunset Restaurant',
       media: {
         type: 'image',
         url: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=600&fit=crop'
@@ -74,7 +73,22 @@ const HomePage = () => {
     }
   ];
 
-  const handleSearch = async (query: string) => {
+  const { 
+    mapPins, 
+    selectedPin, 
+    setSelectedPin, 
+    handlePinClick 
+  } = useMapPins({
+    places: places.filter(place => 
+      selectedCategory === 'all' || place.category === selectedCategory
+    ),
+    onPlaceSelect: (place) => {
+      setSelectedPlace(place);
+      setIsDetailSheetOpen(true);
+    }
+  });
+
+  const handleSearch = async (query) => {
     if (!query.trim()) {
       setSearchResults([]);
       setIsSearching(false);
@@ -96,20 +110,20 @@ const HomePage = () => {
     }
   };
 
-  const handleSearchKeyPress = (e: React.KeyboardEvent) => {
+  const handleSearchKeyPress = (e) => {
     if (e.key === 'Enter') {
       handleSearch(searchQuery);
     }
   };
 
-  const handleCategoryClick = (category: string) => {
+  const handleCategoryClick = (category) => {
     setSelectedCategory(category);
   };
 
-  const handleSavePlace = async (place: any) => {
+  const handleSavePlace = async (place) => {
     try {
       if (isPlaceSaved(place.id)) {
-        await unsavePlace(place.id, place.city || currentCity);
+        await unsavePlace(place.id);
         toast.success('Location removed from saved places');
       } else {
         await savePlace(place);
@@ -120,7 +134,7 @@ const HomePage = () => {
     }
   };
 
-  const handleStoryClick = (story: any) => {
+  const handleStoryClick = (story) => {
     setSelectedStory(story);
     setIsStoriesViewerOpen(true);
   };
@@ -144,9 +158,8 @@ const HomePage = () => {
           currentCity={currentCity}
           onSearchChange={setSearchQuery}
           onSearchKeyPress={handleSearchKeyPress}
-          onNotificationsClick={() => setIsNotificationsModalOpen(true)}
-          onMessagesClick={() => setIsMessagesModalOpen(true)}
-          onCitySelect={setCurrentCity}
+          onCityChange={setCurrentCity}
+          onCreateStory={() => setIsCreateStoryModalOpen(true)}
         />
         
         <StoriesSection 
@@ -155,8 +168,7 @@ const HomePage = () => {
         />
         
         <FilterButtons 
-          selectedCategory={selectedCategory}
-          onCategorySelect={handleCategoryClick}
+          onCategoryClick={handleCategoryClick}
         />
         
         <div className="absolute inset-0 pt-32">
@@ -164,10 +176,7 @@ const HomePage = () => {
             places={places.map(place => ({
               ...place,
               isNew: false,
-              visitors: 0,
-              coordinates: place.latitude && place.longitude 
-                ? { lat: place.latitude, lng: place.longitude }
-                : { lat: 0, lng: 0 }
+              coordinates: place.coordinates || { lat: 0, lng: 0 }
             }))}
             selectedCategory={selectedCategory}
             onPlaceSelect={(place) => {
@@ -183,7 +192,7 @@ const HomePage = () => {
           isMessagesModalOpen={isMessagesModalOpen}
           isShareModalOpen={isShareModalOpen}
           isCommentModalOpen={isCommentModalOpen}
-          isLocationDetailOpen={isDetailSheetOpen}
+          isDetailSheetOpen={isDetailSheetOpen}
           isSaveLocationDialogOpen={isSaveLocationDialogOpen}
           isStoriesViewerOpen={isStoriesViewerOpen}
           selectedPlace={selectedPlace}
@@ -196,8 +205,8 @@ const HomePage = () => {
           onMessagesModalClose={() => setIsMessagesModalOpen(false)}
           onShareModalClose={() => setIsShareModalOpen(false)}
           onCommentModalClose={() => setIsCommentModalOpen(false)}
-          onLocationDetailClose={() => setIsDetailSheetOpen(false)}
-          onSaveLocationDialogClose={() => setIsSaveLocationDialogOpen(false)}
+          onDetailSheetClose={() => setIsDetailSheetOpen(false)}
+          onSaveLocationDialogClose={() => setIsSaveLocationDialogClose(false)}
           onStoriesViewerClose={() => setIsStoriesViewerOpen(false)}
           onSavePlace={handleSavePlace}
           onSearchKeywordChange={setSearchKeyword}
