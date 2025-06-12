@@ -48,7 +48,7 @@ const HomePage = () => {
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
 
-  // Demo places data
+  // Demo places data with proper typing
   const [places, setPlaces] = useState<Place[]>([
     {
       id: '1',
@@ -206,6 +206,7 @@ const HomePage = () => {
         onSearchKeyPress={handleSearchKeyPress}
         onNotificationsClick={handleNotificationsClick}
         onMessagesClick={handleMessagesClick}
+        onCityChange={handleCityChange}
       />
       
       <div className="pt-16">
