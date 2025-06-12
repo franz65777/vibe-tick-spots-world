@@ -152,11 +152,12 @@ const HomePage = () => {
         <StoriesSection 
           stories={stories}
           onStoryClick={handleStoryClick}
+          onCreateStory={() => setIsCreateStoryModalOpen(true)}
         />
         
         <FilterButtons 
           selectedCategory={selectedCategory}
-          onCategorySelect={handleCategoryClick}
+          onCategoryClick={handleCategoryClick}
         />
         
         <div className="absolute inset-0 pt-32">
@@ -164,7 +165,7 @@ const HomePage = () => {
             places={places.map(place => ({
               ...place,
               isNew: false,
-              visitors: 0,
+              visitors: [],
               coordinates: place.latitude && place.longitude 
                 ? { lat: place.latitude, lng: place.longitude }
                 : { lat: 0, lng: 0 }
@@ -184,7 +185,6 @@ const HomePage = () => {
           isShareModalOpen={isShareModalOpen}
           isCommentModalOpen={isCommentModalOpen}
           isLocationDetailOpen={isDetailSheetOpen}
-          isSaveLocationDialogOpen={isSaveLocationDialogOpen}
           isStoriesViewerOpen={isStoriesViewerOpen}
           selectedPlace={selectedPlace}
           selectedStory={selectedStory}
@@ -194,10 +194,9 @@ const HomePage = () => {
           onCreateStoryModalClose={() => setIsCreateStoryModalOpen(false)}
           onNotificationsModalClose={() => setIsNotificationsModalOpen(false)}
           onMessagesModalClose={() => setIsMessagesModalOpen(false)}
-          onShareModalClose={() => setIsShareModalOpen(false)}
+          onShareModalClose={() => setIsShareModalClose(false)}
           onCommentModalClose={() => setIsCommentModalOpen(false)}
           onLocationDetailClose={() => setIsDetailSheetOpen(false)}
-          onSaveLocationDialogClose={() => setIsSaveLocationDialogOpen(false)}
           onStoriesViewerClose={() => setIsStoriesViewerOpen(false)}
           onSavePlace={handleSavePlace}
           onSearchKeywordChange={setSearchKeyword}
