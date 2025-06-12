@@ -10,7 +10,29 @@ import FilterButtons from '@/components/home/FilterButtons';
 import ModalsManager from '@/components/home/ModalsManager';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useMapPins } from '@/hooks/useMapPins';
-import { Place } from '@/types/place';
+
+// Local Place interface for HomePage to avoid conflicts
+interface HomePlace {
+  id: string;
+  name: string;
+  category: string;
+  likes: number;
+  friendsWhoSaved?: { name: string; avatar: string }[] | number;
+  visitors: string[] | number;
+  isNew: boolean;
+  coordinates: { lat: number; lng: number };
+  image?: string;
+  addedBy?: {
+    name: string;
+    avatar: string;
+    isFollowing: boolean;
+  } | string;
+  addedDate?: string;
+  isFollowing?: boolean;
+  popularity?: number;
+  distance?: string | number;
+  totalSaves?: number;
+}
 
 interface Story {
   id: string;
@@ -29,7 +51,7 @@ interface Story {
 }
 
 // City data with places for different cities
-const cityData: Record<string, { coordinates: { lat: number; lng: number }; places: Place[] }> = {
+const cityData: Record<string, { coordinates: { lat: number; lng: number }; places: HomePlace[] }> = {
   'san francisco': {
     coordinates: { lat: 37.7749, lng: -122.4194 },
     places: [
@@ -382,14 +404,14 @@ const HomePage = () => {
     refreshPins(currentCity);
   }, [currentCity, refreshPins]);
 
-  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  const [selectedPlace, setSelectedPlace] = useState<HomePlace | null>(null);
   const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
-  const [sharePlace, setSharePlace] = useState<Place | null>(null);
-  const [commentPlace, setCommentPlace] = useState<Place | null>(null);
+  const [sharePlace, setSharePlace] = useState<HomePlace | null>(null);
+  const [commentPlace, setCommentPlace] = useState<HomePlace | null>(null);
   const [isLocationDetailOpen, setIsLocationDetailOpen] = useState(false);
-  const [locationDetailPlace, setLocationDetailPlace] = useState<Place | null>(null);
+  const [locationDetailPlace, setLocationDetailPlace] = useState<HomePlace | null>(null);
 
   const handleCreateStory = () => {
     console.log('Create story clicked');
@@ -413,8 +435,8 @@ const HomePage = () => {
     ));
   };
 
-  // Convert MapPin to Place with proper defaults and type safety
-  const convertMapPinToPlace = (pin: any): Place => ({
+  // Convert MapPin to HomePlace with proper defaults and type safety
+  const convertMapPinToPlace = (pin: any): HomePlace => ({
     id: pin.id,
     name: pin.name,
     category: pin.category,
@@ -435,7 +457,7 @@ const HomePage = () => {
     totalSaves: pin.totalSaves || pin.likes || 0
   });
 
-  const handlePinClick = (place: Place) => {
+  const handlePinClick = (place: HomePlace) => {
     console.log('Map pin clicked:', place.name);
     setSelectedPlace(place);
   };
@@ -457,27 +479,27 @@ const HomePage = () => {
     });
   };
 
-  const handleShare = (place: Place) => {
+  const handleShare = (place: HomePlace) => {
     setSharePlace(place);
     setIsShareModalOpen(true);
   };
 
-  const handleComment = (place: Place) => {
+  const handleComment = (place: HomePlace) => {
     setCommentPlace(place);
     setIsCommentModalOpen(true);
   };
 
-  const handleShareSubmit = (friendIds: string[], place: Place) => {
+  const handleShareSubmit = (friendIds: string[], place: HomePlace) => {
     console.log('Sharing place:', place.name, 'with friends:', friendIds);
     // TODO: Implement actual sharing logic
   };
 
-  const handleCommentSubmit = (text: string, place: Place) => {
+  const handleCommentSubmit = (text: string, place: HomePlace) => {
     console.log('Adding comment:', text, 'to place:', place.name);
     // TODO: Implement actual comment submission logic
   };
 
-  const handleCardClick = (place: Place) => {
+  const handleCardClick = (place: HomePlace) => {
     console.log('Place card clicked:', place.name, '- opening location detail');
     setLocationDetailPlace(place);
     setIsLocationDetailOpen(true);

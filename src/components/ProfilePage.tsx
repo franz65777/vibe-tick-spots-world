@@ -12,6 +12,7 @@ import Achievements from './profile/Achievements';
 import PostsGrid from './profile/PostsGrid';
 import TripsGrid from './profile/TripsGrid';
 import FollowersModal from './profile/FollowersModal';
+import SavedLocationsList from './profile/SavedLocationsList';
 
 const ProfilePage = () => {
   const { profile, loading, error } = useProfile();
@@ -22,6 +23,7 @@ const ProfilePage = () => {
     isOpen: false,
     type: null
   });
+  const [isLocationsListOpen, setIsLocationsListOpen] = useState(false);
 
   const openModal = (type: 'followers' | 'following') => {
     setModalState({ isOpen: true, type });
@@ -33,6 +35,10 @@ const ProfilePage = () => {
 
   const handlePostsClick = () => {
     setActiveTab('posts');
+  };
+
+  const handleLocationsClick = () => {
+    setIsLocationsListOpen(true);
   };
 
   if (loading) {
@@ -88,6 +94,7 @@ const ProfilePage = () => {
         onFollowersClick={() => openModal('followers')}
         onFollowingClick={() => openModal('following')}
         onPostsClick={handlePostsClick}
+        onLocationsClick={handleLocationsClick}
       />
       
       <ProfileTabs activeTab={activeTab} onTabChange={setActiveTab} />
@@ -101,6 +108,11 @@ const ProfilePage = () => {
         isOpen={modalState.isOpen}
         onClose={closeModal}
         type={modalState.type || 'followers'}
+      />
+
+      <SavedLocationsList
+        isOpen={isLocationsListOpen}
+        onClose={() => setIsLocationsListOpen(false)}
       />
     </div>
   );
