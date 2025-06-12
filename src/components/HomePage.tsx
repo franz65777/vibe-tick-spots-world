@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from './home/Header';
@@ -30,7 +31,7 @@ const HomePage = () => {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [currentCity, setCurrentCity] = useState('San Francisco');
-  const [selectedFilter, setSelectedFilter] = useState('all');
+  const [selectedFilter, setSelectedFilter] = useState<'following' | 'popular' | 'new'>('popular');
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   const [stories, setStories] = useState<Story[]>([]);
@@ -119,7 +120,7 @@ const HomePage = () => {
     setCurrentCity(city);
   };
 
-  const handleFilterChange = (filter: string) => {
+  const handleFilterChange = (filter: 'following' | 'popular' | 'new') => {
     setSelectedFilter(filter);
   };
 
@@ -208,7 +209,7 @@ const HomePage = () => {
         <StoriesSection
           stories={stories}
           onStoryClick={handleStoryClick}
-          onCreateStoryClick={handleCreateStoryClick}
+          onCreateStory={handleCreateStoryClick}
         />
         
         <LocationOfTheWeek
@@ -221,8 +222,8 @@ const HomePage = () => {
             <PlaceCard
               key={place.id}
               place={place}
-              onShareClick={handleShareClick}
-              onCommentClick={handleCommentClick}
+              onShare={(place) => handleShareClick(place)}
+              onComment={(place) => handleCommentClick(place)}
               onLocationClick={handleLocationClick}
             />
           ))}
