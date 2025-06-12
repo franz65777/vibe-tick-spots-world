@@ -156,7 +156,6 @@ const HomePage = () => {
         />
         
         <FilterButtons 
-          selectedCategory={selectedCategory}
           onCategoryClick={handleCategoryClick}
         />
         
@@ -170,7 +169,6 @@ const HomePage = () => {
                 ? { lat: place.latitude, lng: place.longitude }
                 : { lat: 0, lng: 0 }
             }))}
-            selectedCategory={selectedCategory}
             onPlaceSelect={(place) => {
               setSelectedPlace(place);
               setIsDetailSheetOpen(true);
@@ -186,15 +184,13 @@ const HomePage = () => {
           isCommentModalOpen={isCommentModalOpen}
           isLocationDetailOpen={isDetailSheetOpen}
           isStoriesViewerOpen={isStoriesViewerOpen}
-          selectedPlace={selectedPlace}
-          selectedStory={selectedStory}
           searchResults={searchResults}
           isSearching={isSearching}
           searchKeyword={searchKeyword}
           onCreateStoryModalClose={() => setIsCreateStoryModalOpen(false)}
           onNotificationsModalClose={() => setIsNotificationsModalOpen(false)}
           onMessagesModalClose={() => setIsMessagesModalOpen(false)}
-          onShareModalClose={() => setIsShareModalClose(false)}
+          onShareModalClose={() => setIsShareModalOpen(false)}
           onCommentModalClose={() => setIsCommentModalOpen(false)}
           onLocationDetailClose={() => setIsDetailSheetOpen(false)}
           onStoriesViewerClose={() => setIsStoriesViewerOpen(false)}
