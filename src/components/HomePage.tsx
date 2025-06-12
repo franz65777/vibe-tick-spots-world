@@ -9,22 +9,7 @@ import LocationOfTheWeek from './home/LocationOfTheWeek';
 import PlaceCard from './home/PlaceCard';
 import MapSection from './home/MapSection';
 import ModalsManager from './home/ModalsManager';
-
-// Local Place interface to avoid type conflicts
-interface Place {
-  id: string;
-  name: string;
-  category: string;
-  likes: number;
-  friendsWhoSaved: { name: string; avatar: string }[];
-  visitors: string[];
-  isNew: boolean;
-  coordinates: { lat: number; lng: number };
-  image?: string;
-  addedBy: string;
-  addedDate: string;
-  isFollowing: boolean;
-}
+import { Place } from '@/types/place';
 
 interface Story {
   id: string;
@@ -122,7 +107,7 @@ const HomePage = () => {
   }, []);
 
   const handleSearchChange = (value: string) => {
-    setSearchQuery(value || ''); // Ensure value is never undefined
+    setSearchQuery(value);
   };
 
   const handleSearchKeyPress = (e: React.KeyboardEvent) => {
@@ -131,7 +116,7 @@ const HomePage = () => {
     }
   };
 
-  const handleCitySelect = (city: string) => {
+  const handleCityChange = (city: string) => {
     setCurrentCity(city);
   };
 
@@ -198,7 +183,6 @@ const HomePage = () => {
   };
 
   const topLocation = places[0] || null;
-  const newCount = places.filter(place => place.isNew).length;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -213,17 +197,13 @@ const HomePage = () => {
       
       <div className="pt-16">
         <CitySearch
-          searchQuery={searchQuery}
           currentCity={currentCity}
-          onSearchChange={handleSearchChange}
-          onSearchKeyPress={handleSearchKeyPress}
-          onCitySelect={handleCitySelect}
+          onCityChange={handleCityChange}
         />
         
         <FilterButtons
           activeFilter={selectedFilter}
           onFilterChange={handleFilterChange}
-          newCount={newCount}
         />
         
         <StoriesSection
@@ -244,6 +224,7 @@ const HomePage = () => {
               place={place}
               onShare={(place) => handleShareClick(place)}
               onComment={(place) => handleCommentClick(place)}
+              onLocationClick={handleLocationClick}
             />
           ))}
         </div>
@@ -271,7 +252,7 @@ const HomePage = () => {
         stories={stories}
         currentStoryIndex={currentStoryIndex}
         onCreateStoryModalClose={() => setIsCreateStoryModalOpen(false)}
-        onNotificationsModalClose={() => setIsNotificationsModalClose(false)}
+        onNotificationsModalClose={() => setIsNotificationsModalOpen(false)}
         onMessagesModalClose={() => setIsMessagesModalOpen(false)}
         onShareModalClose={() => setIsShareModalOpen(false)}
         onCommentModalClose={() => setIsCommentModalOpen(false)}
