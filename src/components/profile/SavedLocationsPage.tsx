@@ -1,9 +1,10 @@
 
 import { useState, useMemo } from 'react';
-import { ArrowLeft, Search, MapPin, Heart } from 'lucide-react';
+import { ArrowLeft, Search, Filter, MapPin, Heart } from 'lucide-react';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface SavedLocationsPageProps {
   onClose: () => void;
@@ -12,6 +13,8 @@ interface SavedLocationsPageProps {
 const SavedLocationsPage = ({ onClose }: SavedLocationsPageProps) => {
   const { savedPlaces, loading } = useSavedPlaces();
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCity, setSelectedCity] = useState('all');
+  const [sortBy, setSortBy] = useState('name');
 
   // Get all saved places as a flat array
   const allSavedPlaces = useMemo(() => {
@@ -22,7 +25,12 @@ const SavedLocationsPage = ({ onClose }: SavedLocationsPageProps) => {
     return places;
   }, [savedPlaces]);
 
-  // Filter places by search query
+  // Get unique cities for filter
+  const cities = useMemo(() => {
+    return Object.keys(savedPlaces);
+  }, [savedPlaces]);
+
+  // Filter and sort places
   const filteredPlaces = useMemo(() => {
     let filtered = allSavedPlaces;
 
@@ -35,11 +43,29 @@ const SavedLocationsPage = ({ onClose }: SavedLocationsPageProps) => {
       );
     }
 
-    // Sort by name by default
-    filtered.sort((a, b) => a.name.localeCompare(b.name));
+    // Filter by city
+    if (selectedCity && selectedCity !== 'all') {
+      filtered = filtered.filter(place => place.city === selectedCity);
+    }
+
+    // Sort places
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'city':
+          return a.city.localeCompare(b.city);
+        case 'date':
+          return new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime();
+        case 'category':
+          return a.category.localeCompare(b.category);
+        default:
+          return 0;
+      }
+    });
 
     return filtered;
-  }, [allSavedPlaces, searchQuery]);
+  }, [allSavedPlaces, searchQuery, selectedCity, sortBy]);
 
   const getCategoryIcon = (category: string) => {
     switch (category.toLowerCase()) {
@@ -98,8 +124,8 @@ const SavedLocationsPage = ({ onClose }: SavedLocationsPageProps) => {
           </div>
         </div>
 
-        {/* Search */}
-        <div className="p-4">
+        {/* Search and Filters */}
+        <div className="p-4 space-y-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
@@ -108,6 +134,32 @@ const SavedLocationsPage = ({ onClose }: SavedLocationsPageProps) => {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
             />
+          </div>
+
+          <div className="flex gap-2">
+            <Select value={selectedCity} onValueChange={setSelectedCity}>
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder="All cities" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All cities</SelectItem>
+                {cities.map(city => (
+                  <SelectItem key={city} value={city}>{city}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="city">City</SelectItem>
+                <SelectItem value="date">Date saved</SelectItem>
+                <SelectItem value="category">Category</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
@@ -119,8 +171,8 @@ const SavedLocationsPage = ({ onClose }: SavedLocationsPageProps) => {
             <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No locations found</h3>
             <p className="text-gray-600">
-              {searchQuery 
-                ? 'Try adjusting your search'
+              {searchQuery || selectedCity !== 'all' 
+                ? 'Try adjusting your search or filters'
                 : 'Start exploring and save your favorite places!'
               }
             </p>

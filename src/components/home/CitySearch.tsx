@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { Search, MapPin, Building, Landmark, Building2, Clock, Mountain, Shield, Church, Waves, TreePine, Locate } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -137,8 +136,7 @@ const CitySearch = ({
   const CurrentCityIcon = currentCityData?.icon || MapPin;
 
   useEffect(() => {
-    // Add null/undefined check and ensure searchQuery is a string
-    if (searchQuery && typeof searchQuery === 'string' && searchQuery.trim() && searchQuery.trim() !== ' ') {
+    if (searchQuery.trim() && searchQuery.trim() !== ' ') {
       const query = searchQuery.toLowerCase().trim();
       
       // Find matches with similarity scoring
@@ -230,7 +228,7 @@ const CitySearch = ({
               id="city-search-input"
               type="text"
               placeholder="Search cities..."
-              value={searchQuery === ' ' ? '' : searchQuery || ''}
+              value={searchQuery === ' ' ? '' : searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               onKeyPress={onSearchKeyPress}
               onFocus={() => searchQuery && setIsOpen(true)}
@@ -282,7 +280,7 @@ const CitySearch = ({
       )}
 
       {/* No results - High z-index to appear above everything */}
-      {isOpen && searchQuery && searchQuery.trim() && searchQuery.trim() !== ' ' && filteredCities.length === 0 && (
+      {isOpen && searchQuery.trim() && searchQuery.trim() !== ' ' && filteredCities.length === 0 && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 z-[9999] backdrop-blur-sm">
           <div className="text-gray-500 text-sm text-center">
             <div className="mb-2">No cities found for "{searchQuery}"</div>

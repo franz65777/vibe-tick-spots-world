@@ -30,7 +30,7 @@ const HomePage = () => {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [currentCity, setCurrentCity] = useState('San Francisco');
-  const [selectedFilter, setSelectedFilter] = useState<'following' | 'popular' | 'new'>('popular');
+  const [selectedFilter, setSelectedFilter] = useState('all');
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   const [stories, setStories] = useState<Story[]>([]);
@@ -45,7 +45,6 @@ const HomePage = () => {
   const [commentPlace, setCommentPlace] = useState<Place | null>(null);
   const [locationDetailPlace, setLocationDetailPlace] = useState<Place | null>(null);
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
-  const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
 
   // Demo places data
   const [places, setPlaces] = useState<Place[]>([
@@ -120,7 +119,7 @@ const HomePage = () => {
     setCurrentCity(city);
   };
 
-  const handleFilterChange = (filter: 'following' | 'popular' | 'new') => {
+  const handleFilterChange = (filter: string) => {
     setSelectedFilter(filter);
   };
 
@@ -164,22 +163,6 @@ const HomePage = () => {
     setIsLocationDetailOpen(true);
   };
 
-  const handleLikeToggle = (placeId: string) => {
-    setLikedPlaces(prev => {
-      const newLiked = new Set(prev);
-      if (newLiked.has(placeId)) {
-        newLiked.delete(placeId);
-      } else {
-        newLiked.add(placeId);
-      }
-      return newLiked;
-    });
-  };
-
-  const handleCardClick = (place: Place) => {
-    handleLocationClick(place);
-  };
-
   const handleStoryCreated = () => {
     console.log('Story created successfully');
   };
@@ -209,28 +192,23 @@ const HomePage = () => {
         onSearchKeyPress={handleSearchKeyPress}
         onNotificationsClick={handleNotificationsClick}
         onMessagesClick={handleMessagesClick}
-        onCitySelect={handleCityChange}
       />
       
       <div className="pt-16">
         <CitySearch
-          searchQuery={searchQuery}
           currentCity={currentCity}
-          onSearchChange={handleSearchChange}
-          onSearchKeyPress={handleSearchKeyPress}
-          onCitySelect={handleCityChange}
+          onCityChange={handleCityChange}
         />
         
         <FilterButtons
           activeFilter={selectedFilter}
           onFilterChange={handleFilterChange}
-          newCount={0}
         />
         
         <StoriesSection
           stories={stories}
           onStoryClick={handleStoryClick}
-          onCreateStory={handleCreateStoryClick}
+          onCreateStoryClick={handleCreateStoryClick}
         />
         
         <LocationOfTheWeek
@@ -243,12 +221,9 @@ const HomePage = () => {
             <PlaceCard
               key={place.id}
               place={place}
-              isLiked={likedPlaces.has(place.id)}
-              onCardClick={handleCardClick}
-              onLikeToggle={handleLikeToggle}
-              onShare={handleShareClick}
-              onComment={handleCommentClick}
-              cityName={currentCity}
+              onShareClick={handleShareClick}
+              onCommentClick={handleCommentClick}
+              onLocationClick={handleLocationClick}
             />
           ))}
         </div>
@@ -256,7 +231,7 @@ const HomePage = () => {
         <MapSection
           places={places}
           selectedPlace={selectedPlace}
-          isExpanded={isMapExpanded}
+          expanded={isMapExpanded}
           onToggleExpanded={handleToggleMap}
           onPlaceSelect={handlePlaceSelect}
         />
