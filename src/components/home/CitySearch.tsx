@@ -1,12 +1,14 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { Search, MapPin, Building, Landmark, Building2, Clock, Mountain, Shield, Church, Waves, TreePine, Locate } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useGeolocation } from '@/hooks/useGeolocation';
 
 interface CitySearchProps {
+  searchQuery: string;
   currentCity: string;
-  onCityChange: (city: string) => void;
+  onSearchChange: (value: string) => void;
+  onSearchKeyPress: (e: React.KeyboardEvent) => void;
+  onCitySelect: (city: string) => void;
 }
 
 // City data with more appropriate landmark icons and search variations
@@ -105,11 +107,13 @@ const getEditDistance = (str1: string, str2: string): number => {
 };
 
 const CitySearch = ({ 
+  searchQuery, 
   currentCity, 
-  onCityChange
+  onSearchChange, 
+  onSearchKeyPress,
+  onCitySelect 
 }: CitySearchProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [filteredCities, setFilteredCities] = useState<Array<{key: string, data: typeof cityData[keyof typeof cityData], similarity: number}>>([]);
   const [userHasManuallySelectedCity, setUserHasManuallySelectedCity] = useState(false);
   const [ignoreGeoLocation, setIgnoreGeoLocation] = useState(false);
@@ -123,17 +127,16 @@ const CitySearch = ({
         !userHasManuallySelectedCity && 
         !ignoreGeoLocation) {
       console.log('Geolocation detected city:', location.city);
-      onCityChange(location.city);
+      onCitySelect(location.city);
     }
-  }, [location?.city, currentCity, onCityChange, userHasManuallySelectedCity, ignoreGeoLocation]);
+  }, [location?.city, currentCity, onCitySelect, userHasManuallySelectedCity, ignoreGeoLocation]);
 
   // Get current city data
   const currentCityData = cityData[currentCity.toLowerCase() as keyof typeof cityData];
   const CurrentCityIcon = currentCityData?.icon || MapPin;
 
   useEffect(() => {
-    // Add null/undefined check for searchQuery
-    if (searchQuery && searchQuery.trim() && searchQuery.trim() !== ' ') {
+    if (searchQuery.trim() && searchQuery.trim() !== ' ') {
       const query = searchQuery.toLowerCase().trim();
       
       // Find matches with similarity scoring
@@ -180,8 +183,8 @@ const CitySearch = ({
     console.log('Manual city selection:', cityName);
     setUserHasManuallySelectedCity(true);
     setIgnoreGeoLocation(true);
-    onCityChange(cityName);
-    setSearchQuery('');
+    onCitySelect(cityName);
+    onSearchChange('');
     setIsOpen(false);
   };
 
@@ -190,16 +193,6 @@ const CitySearch = ({
     setUserHasManuallySelectedCity(false);
     setIgnoreGeoLocation(false);
     getCurrentLocation();
-  };
-
-  const handleSearchChange = (value: string) => {
-    setSearchQuery(value);
-  };
-
-  const handleSearchKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      console.log('Searching for:', searchQuery);
-    }
   };
 
   return (
@@ -236,8 +229,8 @@ const CitySearch = ({
               type="text"
               placeholder="Search cities..."
               value={searchQuery === ' ' ? '' : searchQuery}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              onKeyPress={handleSearchKeyPress}
+              onChange={(e) => onSearchChange(e.target.value)}
+              onKeyPress={onSearchKeyPress}
               onFocus={() => searchQuery && setIsOpen(true)}
               className="pl-4 pr-10 bg-white/90 border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-2xl h-12"
               autoFocus
@@ -253,9 +246,9 @@ const CitySearch = ({
           id="city-search-input"
           type="text"
           className="absolute inset-0 opacity-0 cursor-pointer"
-          onFocus={() => handleSearchChange(' ')}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          onKeyPress={handleSearchKeyPress}
+          onFocus={() => onSearchChange(' ')}
+          onChange={(e) => onSearchChange(e.target.value)}
+          onKeyPress={onSearchKeyPress}
         />
       )}
 
@@ -287,7 +280,7 @@ const CitySearch = ({
       )}
 
       {/* No results - High z-index to appear above everything */}
-      {isOpen && searchQuery && searchQuery.trim() && searchQuery.trim() !== ' ' && filteredCities.length === 0 && (
+      {isOpen && searchQuery.trim() && searchQuery.trim() !== ' ' && filteredCities.length === 0 && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 z-[9999] backdrop-blur-sm">
           <div className="text-gray-500 text-sm text-center">
             <div className="mb-2">No cities found for "{searchQuery}"</div>

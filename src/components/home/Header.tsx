@@ -9,7 +9,7 @@ interface HeaderProps {
   onSearchKeyPress: (e: React.KeyboardEvent) => void;
   onNotificationsClick: () => void;
   onMessagesClick: () => void;
-  onCityChange?: (city: string) => void;
+  onCitySelect?: (city: string) => void;
 }
 
 const Header = ({
@@ -19,14 +19,17 @@ const Header = ({
   onSearchKeyPress,
   onNotificationsClick,
   onMessagesClick,
-  onCityChange
+  onCitySelect
 }: HeaderProps) => {
   return (
     <div className="bg-white/95 backdrop-blur-lg px-4 py-4 sm:px-6 sm:py-3 shadow-sm relative z-50">
       <div className="flex items-center justify-between gap-4">
         <CitySearch
+          searchQuery={searchQuery}
           currentCity={currentCity}
-          onCityChange={onCityChange || (() => {})}
+          onSearchChange={onSearchChange}
+          onSearchKeyPress={onSearchKeyPress}
+          onCitySelect={onCitySelect || (() => {})}
         />
         
         <div className="flex items-center gap-3">

@@ -7,10 +7,9 @@ interface ProfileStatsProps {
   onFollowersClick: () => void;
   onFollowingClick: () => void;
   onPostsClick: () => void;
-  onSavedLocationsClick: () => void;
 }
 
-const ProfileStats = ({ onFollowersClick, onFollowingClick, onPostsClick, onSavedLocationsClick }: ProfileStatsProps) => {
+const ProfileStats = ({ onFollowersClick, onFollowingClick, onPostsClick }: ProfileStatsProps) => {
   const { profile } = useProfile();
   const { getStats, loading } = useSavedPlaces();
   const savedStats = getStats();
@@ -35,9 +34,9 @@ const ProfileStats = ({ onFollowersClick, onFollowingClick, onPostsClick, onSave
       color: 'text-green-600'
     },
     {
-      label: 'Locations',
+      label: 'Saved',
       value: loading ? '-' : savedStats.places,
-      onClick: onSavedLocationsClick,
+      onClick: () => {},
       color: 'text-orange-600'
     }
   ];
@@ -63,6 +62,11 @@ const ProfileStats = ({ onFollowersClick, onFollowingClick, onPostsClick, onSave
             <div className="text-xs text-gray-600 leading-tight">
               {stat.label}
             </div>
+            {stat.label === 'Saved' && !loading && (
+              <div className="text-xs text-gray-500 mt-1">
+                places
+              </div>
+            )}
           </button>
         ))}
       </div>
