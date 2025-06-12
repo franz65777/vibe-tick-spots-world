@@ -46,6 +46,7 @@ const HomePage = () => {
   const [commentPlace, setCommentPlace] = useState<Place | null>(null);
   const [locationDetailPlace, setLocationDetailPlace] = useState<Place | null>(null);
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
+  const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
 
   // Demo places data
   const [places, setPlaces] = useState<Place[]>([
@@ -182,6 +183,18 @@ const HomePage = () => {
     ));
   };
 
+  const handleLikeToggle = (placeId: string) => {
+    setLikedPlaces(prev => {
+      const newLiked = new Set(prev);
+      if (newLiked.has(placeId)) {
+        newLiked.delete(placeId);
+      } else {
+        newLiked.add(placeId);
+      }
+      return newLiked;
+    });
+  };
+
   const topLocation = places[0] || null;
 
   return (
@@ -204,6 +217,7 @@ const HomePage = () => {
         <FilterButtons
           activeFilter={selectedFilter}
           onFilterChange={handleFilterChange}
+          newCount={3}
         />
         
         <StoriesSection
@@ -222,9 +236,12 @@ const HomePage = () => {
             <PlaceCard
               key={place.id}
               place={place}
-              onShare={(place) => handleShareClick(place)}
-              onComment={(place) => handleCommentClick(place)}
-              onLocationClick={handleLocationClick}
+              isLiked={likedPlaces.has(place.id)}
+              onCardClick={handleLocationClick}
+              onLikeToggle={handleLikeToggle}
+              onShare={handleShareClick}
+              onComment={handleCommentClick}
+              cityName={currentCity}
             />
           ))}
         </div>
@@ -232,7 +249,7 @@ const HomePage = () => {
         <MapSection
           places={places}
           selectedPlace={selectedPlace}
-          expanded={isMapExpanded}
+          isExpanded={isMapExpanded}
           onToggleExpanded={handleToggleMap}
           onPlaceSelect={handlePlaceSelect}
         />
