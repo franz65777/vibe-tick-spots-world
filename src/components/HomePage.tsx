@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from './home/Header';
@@ -210,12 +209,16 @@ const HomePage = () => {
         onSearchKeyPress={handleSearchKeyPress}
         onNotificationsClick={handleNotificationsClick}
         onMessagesClick={handleMessagesClick}
+        onCitySelect={handleCityChange}
       />
       
       <div className="pt-16">
         <CitySearch
+          searchQuery={searchQuery}
           currentCity={currentCity}
-          onCityChange={handleCityChange}
+          onSearchChange={handleSearchChange}
+          onSearchKeyPress={handleSearchKeyPress}
+          onCitySelect={handleCityChange}
         />
         
         <FilterButtons
