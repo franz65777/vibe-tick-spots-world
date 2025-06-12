@@ -63,11 +63,6 @@ const ProfileStats = ({ onFollowersClick, onFollowingClick, onPostsClick, onLoca
             <div className="text-xs text-gray-600 leading-tight">
               {stat.label}
             </div>
-            {stat.label === 'Locations' && !loading && (
-              <div className="text-xs text-gray-500 mt-1">
-                saved
-              </div>
-            )}
           </button>
         ))}
       </div>
