@@ -10,6 +10,10 @@ export const useSearch = () => {
   const [userRecommendations, setUserRecommendations] = useState<UserRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Add missing state management
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentCity, setCurrentCity] = useState('San Francisco');
 
   // Load initial data
   useEffect(() => {
@@ -106,6 +110,10 @@ export const useSearch = () => {
     userRecommendations,
     loading,
     error,
+    searchQuery,
+    setSearchQuery,
+    currentCity,
+    setCurrentCity,
     saveSearch,
     getSearchSuggestions,
     refreshRecommendations
