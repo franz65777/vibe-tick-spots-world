@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,12 +8,14 @@ import PlaceCard from './home/PlaceCard';
 import LocationOfTheWeek from './home/LocationOfTheWeek';
 import MapSection from './home/MapSection';
 import PlaceInteractionModal from './home/PlaceInteractionModal';
+import CreateStoryModal from './CreateStoryModal';
 import NotificationsModal from './NotificationsModal';
 import MessagesModal from './MessagesModal';
 import { useMapPins } from '@/hooks/useMapPins';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
+import { useStories } from '@/hooks/useStories';
 import { Place } from '@/types/place';
 
 interface HomeStory {
@@ -67,6 +68,7 @@ const HomePage = () => {
   const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'new'>('following');
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [isInteractionModalOpen, setIsInteractionModalOpen] = useState(false);
+  const [isCreateStoryModalOpen, setIsCreateStoryModalOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
   const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
@@ -78,6 +80,7 @@ const HomePage = () => {
   const { trackUserAction, trackPlaceInteraction } = useAnalytics();
   const { location, getCurrentLocation } = useGeolocation();
   const { savedPlaces, savePlace, unsavePlace, isPlaceSaved } = useSavedPlaces();
+  const { refetch: refetchStories } = useStories();
 
   useEffect(() => {
     if (!user) {
@@ -114,6 +117,15 @@ const HomePage = () => {
     
     const coordinates = cityCoordinates[city] || cityCoordinates['San Francisco'];
     setMapCenter(coordinates);
+  };
+
+  const handleCreateStory = () => {
+    setIsCreateStoryModalOpen(true);
+  };
+
+  const handleStoryCreated = async () => {
+    await refetchStories();
+    setIsCreateStoryModalOpen(false);
   };
 
   const handleLikeToggle = (placeId: string) => {
@@ -275,7 +287,7 @@ const HomePage = () => {
       
       <StoriesSection 
         stories={demoStories}
-        onCreateStory={() => {}}
+        onCreateStory={handleCreateStory}
         onStoryClick={() => {}}
       />
       
@@ -348,6 +360,12 @@ const HomePage = () => {
       )}
 
       {/* Modals */}
+      <CreateStoryModal
+        isOpen={isCreateStoryModalOpen}
+        onClose={() => setIsCreateStoryModalOpen(false)}
+        onStoryCreated={handleStoryCreated}
+      />
+
       {isInteractionModalOpen && selectedPlace && (
         <PlaceInteractionModal
           place={selectedPlace}
