@@ -71,7 +71,7 @@ export const useSavedPlaces = () => {
               lat: Number(location.latitude) || 0,
               lng: Number(location.longitude) || 0
             },
-            savedAt: location.saved_at || new Date().toISOString()
+            savedAt: location.created_at || new Date().toISOString()
           });
         });
 

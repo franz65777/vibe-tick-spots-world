@@ -184,7 +184,11 @@ export const useMediaUpload = () => {
 
       if (mediaError) throw mediaError;
 
-      return { success: true, data: { ...mediaData, public_url: publicUrl } };
+      return { 
+        success: true, 
+        mediaId: mediaData.id,
+        url: publicUrl
+      };
     } catch (error) {
       console.error('Media upload error:', error);
       return {

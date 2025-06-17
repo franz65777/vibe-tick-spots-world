@@ -92,26 +92,16 @@ export const useLocationTagging = () => {
     try {
       if (!user) return;
 
-      // Use raw SQL query to work around type issues
-      const { data, error } = await supabase.rpc('get_user_saved_locations', {
-        user_id_param: user.id
-      });
+      // Fallback: get popular locations instead
+      const { data: popularData, error: popularError } = await supabase
+        .from('locations')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(5);
 
-      if (error) {
-        // Fallback: get popular locations instead
-        const { data: popularData, error: popularError } = await supabase
-          .from('locations')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(5);
-
-        if (!popularError && popularData) {
-          setRecentLocations(popularData);
-        }
-        return;
+      if (!popularError && popularData) {
+        setRecentLocations(popularData);
       }
-
-      setRecentLocations(data || []);
     } catch (error) {
       console.error('Error fetching recent locations:', error);
     }

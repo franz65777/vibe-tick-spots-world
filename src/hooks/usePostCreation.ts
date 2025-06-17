@@ -54,27 +54,20 @@ export const usePostCreation = () => {
 
       if (postError) throw postError;
 
-      // Update user's posts count using RPC function to avoid type issues
+      // Update user's posts count
       try {
-        await supabase.rpc('increment_user_posts_count', {
-          user_id_param: user.id
-        });
-      } catch (error) {
-        // If RPC doesn't exist, try direct update (might fail due to types)
-        console.warn('Could not update posts count:', error);
-      }
-
-      // If location is tagged, save it for the user if not already saved
-      if (locationId) {
-        try {
-          await supabase.rpc('save_user_location', {
-            user_id_param: user.id,
-            location_id_param: locationId
-          });
-        } catch (error) {
-          // Location might already be saved, which is fine
-          console.warn('Could not save location for user:', error);
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ 
+            posts_count: supabase.raw('posts_count + 1') 
+          })
+          .eq('id', user.id);
+        
+        if (updateError) {
+          console.warn('Could not update posts count:', updateError);
         }
+      } catch (error) {
+        console.warn('Could not update posts count:', error);
       }
 
       return { success: true, post };
