@@ -12,6 +12,9 @@ import TermsPage from '@/pages/TermsPage';
 import PrivacyPage from '@/pages/PrivacyPage';
 import NotFound from '@/pages/NotFound';
 import UserProfilePage from '@/components/UserProfilePage';
+import ExplorePage from '@/components/ExplorePage';
+import ProfilePage from '@/components/ProfilePage';
+import AddLocationPage from '@/components/AddLocationPage';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import './App.css';
@@ -34,6 +37,9 @@ function App() {
                   <AuthenticatedLayout>
                     <Routes>
                       <Route path="/" element={<Index />} />
+                      <Route path="/explore" element={<ExplorePage />} />
+                      <Route path="/add" element={<AddLocationPage />} />
+                      <Route path="/profile" element={<ProfilePage />} />
                       <Route path="/business" element={<BusinessDashboardPage />} />
                       <Route path="/subscription" element={<SubscriptionPage />} />
                       <Route path="/profile/:userId" element={<UserProfilePage />} />
