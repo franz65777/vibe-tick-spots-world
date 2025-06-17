@@ -150,8 +150,27 @@ const ExplorePage = () => {
     getSearchSuggestions 
   } = useSearch();
 
+  // Convert pins to Places format for compatibility
+  const convertedPins: Place[] = pins.map(pin => ({
+    id: pin.id,
+    name: pin.name,
+    category: pin.category,
+    likes: pin.likes || 0,
+    friendsWhoSaved: Array.isArray(pin.friendsWhoSaved) ? pin.friendsWhoSaved : [],
+    visitors: Array.isArray(pin.visitors) ? pin.visitors : [],
+    isNew: pin.isNew || false,
+    coordinates: pin.coordinates,
+    image: pin.image,
+    addedBy: pin.addedBy,
+    addedDate: pin.addedDate,
+    isFollowing: pin.isFollowing,
+    popularity: pin.popularity,
+    distance: pin.distance,
+    totalSaves: pin.totalSaves || pin.likes || 0
+  }));
+
   // Get top location for Location of the Week
-  const topLocation = pins.length > 0 ? pins.reduce((prev, current) => 
+  const topLocation = convertedPins.length > 0 ? convertedPins.reduce((prev, current) => 
     ((current.popularity || 0) > (prev.popularity || 0)) ? current : prev
   ) : null;
 
@@ -259,8 +278,8 @@ const ExplorePage = () => {
       name: place.name,
       category: place.category,
       likes: place.likes || 0,
-      friendsWhoSaved: place.friendsWhoSaved || [],
-      visitors: place.visitors || [],
+      friendsWhoSaved: Array.isArray(place.friendsWhoSaved) ? place.friendsWhoSaved : [],
+      visitors: Array.isArray(place.visitors) ? place.visitors : [],
       isNew: place.isNew || false,
       coordinates: place.coordinates,
       image: place.image,
@@ -384,6 +403,9 @@ const ExplorePage = () => {
   // Check if we're in search mode
   const isInSearchMode = searchQuery.trim().length > 0;
 
+  // Count new places for the filter button
+  const newPlacesCount = convertedPins.filter(place => place.isNew).length;
+
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-blue-50/30 via-white to-purple-50/20">
       {!isInSearchMode ? (
@@ -417,11 +439,12 @@ const ExplorePage = () => {
             <FilterButtons
               activeFilter={activeFilter}
               onFilterChange={setActiveFilter}
+              newCount={newPlacesCount}
             />
 
             {/* Map Section */}
             <MapSection
-              places={pins}
+              places={convertedPins}
               onPinClick={handlePinClick}
               mapCenter={mapCenter}
               selectedPlace={selectedPlace}
@@ -517,11 +540,13 @@ const ExplorePage = () => {
         onCommentSubmit={(comment) => console.log('Comment added:', comment)}
       />
 
-      <LocationDetailSheet
-        isOpen={showLocationDetail}
-        onClose={() => setShowLocationDetail(false)}
-        place={selectedPlace}
-      />
+      {selectedPlace && (
+        <LocationDetailSheet
+          isOpen={showLocationDetail}
+          onClose={() => setShowLocationDetail(false)}
+          location={selectedPlace}
+        />
+      )}
     </div>
   );
 };
