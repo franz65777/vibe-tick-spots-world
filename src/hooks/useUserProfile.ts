@@ -56,8 +56,20 @@ export const useUserProfile = (userId?: string) => {
           isFollowing = !!followData;
         }
 
+        // Map database field names to interface
         setProfile({
-          ...profileData,
+          id: profileData.id,
+          username: profileData.username,
+          full_name: profileData.full_name,
+          avatar_url: profileData.avatar_url,
+          email: profileData.email,
+          bio: profileData.bio,
+          created_at: profileData.created_at,
+          posts_count: profileData.posts_count || 0,
+          followers_count: profileData.follower_count || 0, // Map follower_count to followers_count
+          following_count: profileData.following_count || 0,
+          cities_visited: profileData.cities_visited || 0,
+          places_visited: profileData.places_visited || 0,
           is_following: isFollowing
         });
       } catch (err: any) {

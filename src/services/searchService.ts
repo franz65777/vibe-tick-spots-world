@@ -243,7 +243,7 @@ class SearchService {
             name: profile.full_name || profile.username || 'User',
             username: profile.username || `@user${profile.id.substring(0, 6)}`,
             avatar: profile.avatar_url || 'photo-1472099645785-5658abf4ff4e',
-            followers: profile.followers_count || 0,
+            followers: profile.follower_count || 0, // Use follower_count from database
             following: profile.following_count || 0,
             savedPlaces: profile.posts_count || 0,
             isFollowing: false,

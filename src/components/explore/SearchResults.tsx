@@ -81,9 +81,12 @@ const SearchResults = ({
               place={place}
               onCardClick={() => onCardClick(place)}
               onLikeToggle={() => onLikeToggle(place.id)}
+              onSaveToggle={() => {}} // Add empty handler for now
               onShare={() => onShare(place)}
               onComment={() => onComment(place)}
               isLiked={likedPlaces.has(place.id)}
+              isSaved={false} // Add default value
+              cityName="Unknown" // Add default city name
             />
           ))}
         </div>

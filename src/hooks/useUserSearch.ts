@@ -54,7 +54,14 @@ export const useUserSearch = () => {
           }
 
           return {
-            ...user,
+            id: user.id,
+            username: user.username,
+            full_name: user.full_name,
+            avatar_url: user.avatar_url,
+            bio: user.bio,
+            followers_count: user.follower_count || 0, // Map follower_count to followers_count
+            following_count: user.following_count || 0,
+            posts_count: user.posts_count || 0,
             is_following: isFollowing
           };
         })
@@ -97,7 +104,14 @@ export const useUserSearch = () => {
           }
 
           return {
-            ...user,
+            id: user.id,
+            username: user.username,
+            full_name: user.full_name,
+            avatar_url: user.avatar_url,
+            bio: user.bio,
+            followers_count: user.follower_count || 0, // Map follower_count to followers_count
+            following_count: user.following_count || 0,
+            posts_count: user.posts_count || 0,
             is_following: isFollowing
           };
         })
