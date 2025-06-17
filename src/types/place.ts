@@ -5,7 +5,7 @@ export interface Place {
   category: string;
   likes: number;
   friendsWhoSaved?: { name: string; avatar: string }[] | number;
-  visitors: string[] | number;
+  visitors: string[];
   isNew: boolean;
   coordinates: { lat: number; lng: number };
   image?: string;
