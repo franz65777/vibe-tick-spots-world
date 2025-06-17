@@ -29,70 +29,7 @@ interface User {
   isFollowing: boolean;
 }
 
-// Mock data for locations
-const mockLocations: Place[] = [
-  {
-    id: '1',
-    name: 'Mario\'s Pizza Palace',
-    category: 'restaurant',
-    likes: 156,
-    friendsWhoSaved: [
-      { name: 'Sarah', avatar: 'photo-1494790108755-2616b5a5c75b' },
-      { name: 'Mike', avatar: 'photo-1507003211169-0a1dd7228f2d' }
-    ],
-    visitors: ['user1', 'user2', 'user3'],
-    isNew: false,
-    coordinates: { lat: 37.7849, lng: -122.4094 },
-    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=300&fit=crop',
-    addedBy: 'user1',
-    addedDate: '2024-05-25',
-    isFollowing: true,
-    popularity: 89,
-    distance: '0.3km',
-    totalSaves: 23
-  },
-  {
-    id: '2',
-    name: 'Tony\'s Authentic Pizza',
-    category: 'restaurant',
-    likes: 89,
-    friendsWhoSaved: [
-      { name: 'Emma', avatar: 'photo-1438761681033-6461ffad8d80' }
-    ],
-    visitors: ['user4', 'user5'],
-    isNew: true,
-    coordinates: { lat: 37.7749, lng: -122.4194 },
-    image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop',
-    addedBy: 'user2',
-    addedDate: '2024-06-01',
-    isFollowing: false,
-    popularity: 76,
-    distance: '0.8km',
-    totalSaves: 15
-  },
-  {
-    id: '3',
-    name: 'Blue Bottle Coffee',
-    category: 'cafe',
-    likes: 234,
-    friendsWhoSaved: [
-      { name: 'Alex', avatar: 'photo-1472099645785-5658abf4ff4e' },
-      { name: 'Sofia', avatar: 'photo-1534528741775-53994a69daeb' }
-    ],
-    visitors: ['user6', 'user7', 'user8'],
-    isNew: false,
-    coordinates: { lat: 37.7649, lng: -122.4294 },
-    image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
-    addedBy: 'user3',
-    addedDate: '2024-05-15',
-    isFollowing: true,
-    popularity: 94,
-    distance: '1.2km',
-    totalSaves: 42
-  }
-];
-
-// Mock data for users
+// Mock data for users (for search functionality)
 const mockUsers: User[] = [
   {
     id: 'user1',
@@ -126,7 +63,6 @@ const ExplorePage = () => {
   const [sortBy, setSortBy] = useState<SortBy>('proximity');
   const [showFilters, setShowFilters] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [filteredLocations, setFilteredLocations] = useState<Place[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
@@ -156,8 +92,8 @@ const ExplorePage = () => {
     name: pin.name,
     category: pin.category,
     likes: pin.likes || 0,
-    friendsWhoSaved: Array.isArray(pin.friendsWhoSaved) ? pin.friendsWhoSaved : [],
-    visitors: Array.isArray(pin.visitors) ? pin.visitors : [],
+    friendsWhoSaved: pin.friendsWhoSaved || [],
+    visitors: pin.visitors || [],
     isNew: pin.isNew || false,
     coordinates: pin.coordinates,
     image: pin.image,
@@ -194,10 +130,9 @@ const ExplorePage = () => {
     }
   };
 
-  // Filter and sort locations based on search query and filters
+  // Filter users based on search query
   useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredLocations([]);
+    if (!searchQuery.trim() || searchMode !== 'users') {
       setFilteredUsers([]);
       return;
     }
@@ -206,44 +141,17 @@ const ExplorePage = () => {
     
     // Simulate API call delay
     const timer = setTimeout(() => {
-      if (searchMode === 'locations') {
-        let filtered = mockLocations.filter(place =>
-          place.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          place.category.toLowerCase().includes(searchQuery.toLowerCase())
-        );
+      let filtered = mockUsers.filter(user =>
+        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.username.toLowerCase().includes(searchQuery.toLowerCase())
+      );
 
-        // Sort based on selected filter
-        if (sortBy === 'proximity') {
-          filtered.sort((a, b) => {
-            const aDistance = typeof a.distance === 'string' ? parseFloat(a.distance) : (a.distance || 0);
-            const bDistance = typeof b.distance === 'string' ? parseFloat(b.distance) : (b.distance || 0);
-            return aDistance - bDistance;
-          });
-        } else if (sortBy === 'likes') {
-          filtered.sort((a, b) => b.likes - a.likes);
-        } else if (sortBy === 'followers') {
-          filtered.sort((a, b) => {
-            const aCount = Array.isArray(a.friendsWhoSaved) ? a.friendsWhoSaved.length : (a.friendsWhoSaved || 0);
-            const bCount = Array.isArray(b.friendsWhoSaved) ? b.friendsWhoSaved.length : (b.friendsWhoSaved || 0);
-            return bCount - aCount;
-          });
-        }
-
-        setFilteredLocations(filtered);
-      } else {
-        let filtered = mockUsers.filter(user =>
-          user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          user.username.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-
-        setFilteredUsers(filtered);
-      }
-      
+      setFilteredUsers(filtered);
       setIsSearching(false);
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, searchMode, sortBy]);
+  }, [searchQuery, searchMode]);
 
   // Handle search with history saving
   const handleSearch = async (e: React.FormEvent) => {
@@ -278,8 +186,8 @@ const ExplorePage = () => {
       name: place.name,
       category: place.category,
       likes: place.likes || 0,
-      friendsWhoSaved: Array.isArray(place.friendsWhoSaved) ? place.friendsWhoSaved : [],
-      visitors: Array.isArray(place.visitors) ? place.visitors : [],
+      friendsWhoSaved: place.friendsWhoSaved || [],
+      visitors: place.visitors || [],
       isNew: place.isNew || false,
       coordinates: place.coordinates,
       image: place.image,
@@ -320,7 +228,7 @@ const ExplorePage = () => {
     // Implement share logic here
   };
 
-  // Handle recommendation clicks
+  // Handle recommendation clicks for search mode
   const handleLocationRecommendationClick = (location: any) => {
     console.log('Location recommendation clicked:', location);
     const place: Place = {
@@ -510,7 +418,7 @@ const ExplorePage = () => {
               <SearchResults
                 searchMode={searchMode}
                 sortBy={sortBy}
-                filteredLocations={filteredLocations}
+                filteredLocations={locationRecommendations}
                 filteredUsers={filteredUsers}
                 isSearching={isSearching}
                 likedPlaces={likedPlaces}
