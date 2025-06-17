@@ -60,7 +60,7 @@ const SearchResults = ({
   if (searchMode === 'locations') {
     if (filteredLocations.length === 0) {
       return (
-        <div className="text-center py-12">
+        <div className="text-center py-12 px-4">
           <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-600">No locations found</p>
         </div>
@@ -68,7 +68,7 @@ const SearchResults = ({
     }
 
     return (
-      <div className="px-4 py-6 space-y-4">
+      <div className="px-4 py-4 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-900">Locations</h3>
           <span className="text-sm text-gray-500">{filteredLocations.length} results</span>
@@ -97,7 +97,7 @@ const SearchResults = ({
   // Users search results
   if (filteredUsers.length === 0) {
     return (
-      <div className="text-center py-12">
+      <div className="text-center py-12 px-4">
         <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
         <p className="text-gray-600">No users found</p>
       </div>
@@ -115,7 +115,7 @@ const SearchResults = ({
   };
 
   return (
-    <div className="px-4 py-6 space-y-4">
+    <div className="px-4 py-4 space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900">Users</h3>
         <span className="text-sm text-gray-500">{filteredUsers.length} results</span>
@@ -124,13 +124,13 @@ const SearchResults = ({
       <div className="space-y-3">
         {filteredUsers.map((user) => (
           <Card key={user.id} className="cursor-pointer hover:shadow-md transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between gap-3">
                 <div 
-                  className="flex items-center gap-3 flex-1 cursor-pointer"
+                  className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
                   onClick={() => onUserClick(user)}
                 >
-                  <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                  <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
                     {user.avatar_url ? (
                       <img 
                         src={user.avatar_url} 
@@ -145,7 +145,7 @@ const SearchResults = ({
                   </div>
                   
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-gray-900 truncate">
+                    <h4 className="font-semibold text-gray-900 truncate text-sm">
                       {user.username || 'Unknown User'}
                     </h4>
                     {user.full_name && (
@@ -155,7 +155,7 @@ const SearchResults = ({
                       <p className="text-xs text-gray-500 mt-1 line-clamp-2">{user.bio}</p>
                     )}
                     
-                    <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                    <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
                       <span>{user.followers_count || 0} followers</span>
                       <span>{user.posts_count || 0} posts</span>
                     </div>
@@ -165,9 +165,11 @@ const SearchResults = ({
                 <Button
                   size="sm"
                   variant={user.is_following ? "outline" : "default"}
-                  className="ml-3"
+                  className="ml-2 flex-shrink-0 px-3 py-1 text-xs"
                   onClick={(e) => {
+                    e.preventDefault();
                     e.stopPropagation();
+                    console.log('Following user:', user.id);
                     onFollowUser(user.id);
                   }}
                 >

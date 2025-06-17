@@ -32,7 +32,7 @@ const RecommendationsSection = ({
 }: RecommendationsSectionProps) => {
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
+      <div className="flex items-center justify-center py-12 px-4">
         <div className="flex items-center gap-3">
           <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
           <span className="text-gray-600">Loading recommendations...</span>
@@ -42,7 +42,7 @@ const RecommendationsSection = ({
   }
 
   return (
-    <div className="px-4 py-6">
+    <div className="px-4 py-4">
       {searchMode === 'locations' ? (
         <LocationRecommendations
           recommendations={locationRecommendations}

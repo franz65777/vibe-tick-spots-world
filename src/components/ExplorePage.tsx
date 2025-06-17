@@ -1,6 +1,8 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { useSearch } from '@/hooks/useSearch';
 import { useUserSearch } from '@/hooks/useUserSearch';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import SearchHeader from '@/components/explore/SearchHeader';
@@ -214,6 +216,37 @@ const ExplorePage = () => {
     console.log('Sharing place:', place, 'with friends:', friendIds);
   };
 
+  // Handle user interactions
+  const handleUserClick = (user: any) => {
+    console.log('User clicked:', user);
+    navigate(`/profile/${user.id}`);
+  };
+
+  const handleFollowUser = async (userId: string) => {
+    if (!user) {
+      console.log('No authenticated user');
+      return;
+    }
+    
+    console.log('Follow user action triggered for:', userId);
+    
+    // Here you would implement the actual follow logic
+    // For now, we'll just log and update the local state
+    try {
+      // TODO: Implement actual follow/unfollow API call
+      console.log('Following user:', userId);
+      
+      // Optionally refresh user search results to reflect the change
+      if (searchQuery.trim()) {
+        searchUsers(searchQuery);
+      } else {
+        getAllUsers();
+      }
+    } catch (error) {
+      console.error('Error following user:', error);
+    }
+  };
+
   // Handle recommendation clicks
   const handleLocationRecommendationClick = (location: any) => {
     console.log('Location recommendation clicked:', location);
@@ -283,13 +316,6 @@ const ExplorePage = () => {
     navigate(`/profile/${user.id}`);
   };
 
-  const handleFollowUser = async (userId: string) => {
-    if (!user) return;
-    
-    // Here you would implement the follow logic
-    console.log('Follow user:', userId);
-  };
-
   // Get current search suggestions
   const currentSuggestions = getSearchSuggestions(searchQuery, searchMode);
   const recentSearches = searchHistory
@@ -347,7 +373,7 @@ const ExplorePage = () => {
             onLikeToggle={handleLikeToggle}
             onShare={handleShare}
             onComment={handleComment}
-            onUserClick={(user) => navigate(`/profile/${user.id}`)}
+            onUserClick={handleUserClick}
             onFollowUser={handleFollowUser}
           />
         )}
