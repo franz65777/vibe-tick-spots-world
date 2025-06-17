@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface DirectMessage {
@@ -51,7 +50,7 @@ class MessageService {
         })
         .select(`
           *,
-          sender:profiles (
+          profiles!direct_messages_sender_id_fkey (
             username,
             full_name,
             avatar_url
@@ -60,7 +59,15 @@ class MessageService {
         .single();
 
       if (error) throw error;
-      return data as DirectMessage;
+      
+      return {
+        ...data,
+        sender: data.profiles ? {
+          username: data.profiles.username || 'Unknown',
+          full_name: data.profiles.full_name || 'Unknown User',
+          avatar_url: data.profiles.avatar_url || ''
+        } : undefined
+      } as DirectMessage;
     } catch (error) {
       console.error('Error sending place share:', error);
       return null;
@@ -82,7 +89,7 @@ class MessageService {
         })
         .select(`
           *,
-          sender:profiles (
+          profiles!direct_messages_sender_id_fkey (
             username,
             full_name,
             avatar_url
@@ -91,7 +98,15 @@ class MessageService {
         .single();
 
       if (error) throw error;
-      return data as DirectMessage;
+      
+      return {
+        ...data,
+        sender: data.profiles ? {
+          username: data.profiles.username || 'Unknown',
+          full_name: data.profiles.full_name || 'Unknown User',
+          avatar_url: data.profiles.avatar_url || ''
+        } : undefined
+      } as DirectMessage;
     } catch (error) {
       console.error('Error sending message:', error);
       return null;
@@ -159,7 +174,7 @@ class MessageService {
         .from('direct_messages')
         .select(`
           *,
-          sender:profiles (
+          profiles!direct_messages_sender_id_fkey (
             username,
             full_name,
             avatar_url
@@ -171,9 +186,24 @@ class MessageService {
       if (error) throw error;
 
       return (messages || []).map(message => ({
-        ...message,
+        id: message.id,
+        sender_id: message.sender_id,
+        receiver_id: message.receiver_id,
+        content: message.content,
         message_type: message.message_type as 'text' | 'place_share' | 'trip_share' | 'post_share',
-        sender: message.sender || { username: 'Unknown', full_name: 'Unknown User', avatar_url: '' }
+        shared_content: message.shared_content,
+        created_at: message.created_at,
+        read_at: message.read_at,
+        is_read: message.is_read,
+        sender: message.profiles ? {
+          username: message.profiles.username || 'Unknown',
+          full_name: message.profiles.full_name || 'Unknown User',
+          avatar_url: message.profiles.avatar_url || ''
+        } : {
+          username: 'Unknown',
+          full_name: 'Unknown User',
+          avatar_url: ''
+        }
       }));
     } catch (error) {
       console.error('Error fetching messages:', error);
