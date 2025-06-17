@@ -13,6 +13,8 @@ import NotificationsModal from './NotificationsModal';
 import MessagesModal from './MessagesModal';
 import { useMapPins } from '@/hooks/useMapPins';
 import { useAnalytics } from '@/hooks/useAnalytics';
+import { useGeolocation } from '@/hooks/useGeolocation';
+import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { Place } from '@/types/place';
 
 interface HomeStory {
@@ -74,6 +76,8 @@ const HomePage = () => {
   
   const { pins, loading, error, refreshPins, hasFollowedUsers } = useMapPins(activeFilter);
   const { trackUserAction, trackPlaceInteraction } = useAnalytics();
+  const { location, getCurrentLocation } = useGeolocation();
+  const { savedPlaces, savePlace, unsavePlace, isPlaceSaved } = useSavedPlaces();
 
   useEffect(() => {
     if (!user) {
@@ -128,6 +132,24 @@ const HomePage = () => {
     trackPlaceInteraction(placeId, 'like');
   };
 
+  const handleSaveToggle = (place: Place) => {
+    const isSaved = isPlaceSaved(place.id);
+    
+    if (isSaved) {
+      unsavePlace(place.id, currentCity);
+    } else {
+      savePlace({
+        id: place.id,
+        name: place.name,
+        category: place.category,
+        city: currentCity,
+        coordinates: place.coordinates
+      });
+    }
+    
+    trackPlaceInteraction(place.id, 'save');
+  };
+
   const handleComment = (place: Place) => {
     console.log('Comment on:', place);
     trackPlaceInteraction(place.id, 'comment');
@@ -144,7 +166,6 @@ const HomePage = () => {
   };
 
   const handlePinClick = (pin: any) => {
-    // Convert pin to Place format with proper type handling
     const place: Place = convertPinToPlace(pin);
     setSelectedPlace(place);
   };
@@ -157,14 +178,38 @@ const HomePage = () => {
     setIsMessagesOpen(true);
   };
 
+  // Calculate distance between two coordinates in km
+  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+    return distance;
+  };
+
   // Convert pins to places for PlaceCard display with proper type handling
   const convertPinToPlace = (pin: any): Place => {
+    // Calculate real distance from user location
+    let distance: string = '0km';
+    if (location && pin.coordinates) {
+      const dist = calculateDistance(
+        location.latitude,
+        location.longitude,
+        pin.coordinates.lat,
+        pin.coordinates.lng
+      );
+      distance = `${dist.toFixed(1)}km`;
+    }
+
     // Ensure visitors is always an array of strings
     let visitors: string[] = [];
     if (Array.isArray(pin.visitors)) {
       visitors = pin.visitors;
     } else if (typeof pin.visitors === 'number') {
-      // Convert number to array of placeholder visitor IDs
       visitors = Array.from({ length: pin.visitors }, (_, i) => `visitor_${i}`);
     }
 
@@ -188,7 +233,7 @@ const HomePage = () => {
       addedDate: pin.addedDate,
       isFollowing: pin.isFollowing,
       popularity: pin.popularity,
-      distance: pin.distance,
+      distance,
       totalSaves: pin.totalSaves || pin.likes || 0
     };
   };
@@ -282,11 +327,14 @@ const HomePage = () => {
               <PlaceCard
                 place={selectedPlace}
                 isLiked={likedPlaces.has(selectedPlace.id)}
+                isSaved={isPlaceSaved(selectedPlace.id)}
                 onCardClick={handleCardClick}
                 onLikeToggle={handleLikeToggle}
+                onSaveToggle={handleSaveToggle}
                 onComment={handleComment}
                 onShare={handleShare}
                 cityName={currentCity}
+                userLocation={location}
               />
             </div>
           )}

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Heart, MessageSquare, Users } from 'lucide-react';
+import { Heart, MessageSquare, Users, MapPin, Share2, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import PlaceInteractionModal from './PlaceInteractionModal';
 import { Place } from '@/types/place';
@@ -8,19 +8,32 @@ import { Place } from '@/types/place';
 interface PlaceCardProps {
   place: Place;
   isLiked: boolean;
+  isSaved: boolean;
   onCardClick: (place: Place) => void;
   onLikeToggle: (placeId: string) => void;
+  onSaveToggle: (place: Place) => void;
   onShare: (place: Place) => void;
   onComment: (place: Place) => void;
   cityName: string;
+  userLocation?: { latitude: number; longitude: number } | null;
 }
 
-const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComment, cityName }: PlaceCardProps) => {
+const PlaceCard = ({ 
+  place, 
+  isLiked, 
+  isSaved, 
+  onCardClick, 
+  onLikeToggle, 
+  onSaveToggle, 
+  onShare, 
+  onComment, 
+  cityName,
+  userLocation 
+}: PlaceCardProps) => {
   const [interactionModal, setInteractionModal] = useState<{ isOpen: boolean; mode: 'comments' | 'share' }>({
     isOpen: false,
     mode: 'comments'
   });
-  const [isSaved, setIsSaved] = useState(false);
 
   const handleCommentClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -29,7 +42,7 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
 
   const handleShareClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setInteractionModal({ isOpen: true, mode: 'share' });
+    onShare(place);
   };
 
   const handleLikeClick = (e: React.MouseEvent) => {
@@ -39,7 +52,7 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
 
   const handleSaveClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsSaved(!isSaved);
+    onSaveToggle(place);
   };
 
   // Helper to get visitor count
@@ -67,6 +80,11 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
     return place.image || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop';
   };
 
+  // Check if this is a business location
+  const isBusinessLocation = () => {
+    return typeof place.addedBy === 'object' && place.addedBy?.isFollowing === false;
+  };
+
   return (
     <>
       <div 
@@ -82,29 +100,12 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
           
-          {/* Category badge */}
-          <div className="absolute top-3 left-3">
-            <div className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium text-gray-700 flex items-center gap-1">
-              <svg className="w-3 h-3 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
-                <line x1="9" y1="9" x2="9.01" y2="9"/>
-                <line x1="15" y1="9" x2="15.01" y2="9"/>
-                <circle cx="8" cy="4" r="1"/>
-                <circle cx="16" cy="4" r="1"/>
-                <circle cx="12" cy="2" r="1"/>
-                <path d="M6 6l12 0"/>
-              </svg>
-              {place.category}
-            </div>
-          </div>
-
-          {/* Explorer badge */}
-          {((typeof place.addedBy === 'object' && place.addedBy?.isFollowing) || place.isFollowing) && (
+          {/* Business badge - only if owned by business */}
+          {isBusinessLocation() && (
             <div className="absolute top-3 right-3">
-              <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-                <Users className="w-3 h-3" />
-                Explorer
+              <div className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                <Building2 className="w-3 h-3" />
+                Business
               </div>
             </div>
           )}
@@ -116,9 +117,7 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
             <div className="flex-1">
               <h3 className="font-bold text-gray-900 text-lg leading-tight">{place.name}</h3>
               <div className="flex items-center gap-1 text-gray-500 mt-1">
-                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                </svg>
+                <MapPin className="w-3 h-3" />
                 <span className="text-sm">{cityName}</span>
               </div>
             </div>
@@ -132,7 +131,7 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
             </div>
             <div className="flex items-center gap-1">
               <svg className="w-4 h-4 text-purple-500" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                <path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
               </svg>
               <span>{getSavesCount()} saved</span>
             </div>
@@ -143,14 +142,7 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
             {getDistanceString() && (
               <div className="flex items-center gap-1">
                 <svg className="w-4 h-4 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
-                  <line x1="9" y1="9" x2="9.01" y2="9"/>
-                  <line x1="15" y1="9" x2="15.01" y2="9"/>
-                  <circle cx="8" cy="4" r="1"/>
-                  <circle cx="16" cy="4" r="1"/>
-                  <circle cx="12" cy="2" r="1"/>
-                  <path d="M6 6l12 0"/>
+                  <path d="M3 12h18m-9-9l9 9-9 9"/>
                 </svg>
                 <span>{getDistanceString()}</span>
               </div>
@@ -184,7 +176,7 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
               }`}
             >
               <svg className={`w-4 h-4 mr-2 ${isSaved ? 'fill-current' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                <path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
               </svg>
               Save
             </Button>
@@ -205,14 +197,8 @@ const PlaceCard = ({ place, isLiked, onCardClick, onLikeToggle, onShare, onComme
               size="sm"
               className="flex-1 rounded-xl text-gray-600 hover:bg-orange-50 hover:text-orange-600 transition-all duration-200"
             >
-              <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M8 12h8"/>
-                <path d="M12 8l4 4-4 4"/>
-                <circle cx="5" cy="12" r="2"/>
-                <path d="M8 21c3 0 5-1 6-2"/>
-                <path d="M8 3c3 0 5 1 6 2"/>
-              </svg>
-              Suggest
+              <Share2 className="w-4 h-4 mr-2" />
+              Share
             </Button>
           </div>
 
