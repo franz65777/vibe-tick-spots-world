@@ -3,91 +3,68 @@ import React, { useState, useEffect } from 'react';
 import { X, MessageCircle, Search, Users, Send, Phone, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { messageService, DirectMessage, MessageThread } from '@/services/messageService';
 
 interface MessagesModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialUserId?: string;
 }
 
-interface Message {
-  id: string;
-  senderId: string;
-  content: string;
-  timestamp: string;
-  isRead: boolean;
-}
-
-interface Conversation {
-  id: string;
-  participant: {
-    id: string;
-    name: string;
-    avatar: string;
-    isOnline: boolean;
-  };
-  lastMessage: Message;
-  unreadCount: number;
-}
-
-const MessagesModal = ({ isOpen, onClose }: MessagesModalProps) => {
-  const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
+const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) => {
+  const [selectedConversation, setSelectedConversation] = useState<string | null>(initialUserId || null);
   const [searchQuery, setSearchQuery] = useState('');
   const [newMessage, setNewMessage] = useState('');
+  const [conversations, setConversations] = useState<MessageThread[]>([]);
+  const [messages, setMessages] = useState<DirectMessage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
 
-  // Demo conversations data
-  const [conversations] = useState<Conversation[]>([
-    {
-      id: '1',
-      participant: {
-        id: 'user1',
-        name: 'Alice Johnson',
-        avatar: 'https://i.pravatar.cc/40?img=1',
-        isOnline: true
-      },
-      lastMessage: {
-        id: 'msg1',
-        senderId: 'user1',
-        content: 'Hey! I saw you visited that amazing café in Milan. How was it?',
-        timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-        isRead: false
-      },
-      unreadCount: 2
-    },
-    {
-      id: '2',
-      participant: {
-        id: 'user2',
-        name: 'Bob Smith',
-        avatar: 'https://i.pravatar.cc/40?img=2',
-        isOnline: false
-      },
-      lastMessage: {
-        id: 'msg2',
-        senderId: 'current',
-        content: 'Thanks for the recommendation!',
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        isRead: true
-      },
-      unreadCount: 0
-    },
-    {
-      id: '3',
-      participant: {
-        id: 'user3',
-        name: 'Emma Wilson',
-        avatar: 'https://i.pravatar.cc/40?img=3',
-        isOnline: true
-      },
-      lastMessage: {
-        id: 'msg3',
-        senderId: 'user3',
-        content: 'Let\'s explore Paris together next week!',
-        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-        isRead: false
-      },
-      unreadCount: 1
+  useEffect(() => {
+    if (isOpen) {
+      fetchConversations();
+      if (initialUserId) {
+        startConversationWithUser(initialUserId);
+      }
     }
-  ]);
+  }, [isOpen, initialUserId]);
+
+  useEffect(() => {
+    if (selectedConversation) {
+      fetchMessages(selectedConversation);
+    }
+  }, [selectedConversation]);
+
+  const fetchConversations = async () => {
+    try {
+      const threads = await messageService.getMessageThreads();
+      setConversations(threads);
+    } catch (error) {
+      console.error('Error fetching conversations:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchMessages = async (otherUserId: string) => {
+    try {
+      const threadMessages = await messageService.getMessagesInThread(otherUserId);
+      setMessages(threadMessages);
+      
+      // Mark messages as read
+      await messageService.markMessagesAsRead(otherUserId);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    }
+  };
+
+  const startConversationWithUser = async (userId: string) => {
+    const threadId = await messageService.startConversation(userId);
+    if (threadId) {
+      setSelectedConversation(userId);
+      await fetchConversations(); // Refresh conversations list
+    }
+  };
 
   const getTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
@@ -103,16 +80,26 @@ const MessagesModal = ({ isOpen, onClose }: MessagesModalProps) => {
   };
 
   const filteredConversations = conversations.filter(conv =>
-    conv.participant.name.toLowerCase().includes(searchQuery.toLowerCase())
+    conv.other_user?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    conv.other_user?.username?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const selectedConv = conversations.find(conv => conv.id === selectedConversation);
-  const totalUnread = conversations.reduce((sum, conv) => sum + conv.unreadCount, 0);
+  const selectedConv = conversations.find(conv => conv.other_user?.id === selectedConversation);
+  const totalUnread = conversations.reduce((sum, conv) => sum + (conv.last_message?.is_read ? 0 : 1), 0);
 
-  const handleSendMessage = () => {
-    if (newMessage.trim()) {
-      console.log('Sending message:', newMessage);
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !selectedConversation || sending) return;
+
+    setSending(true);
+    try {
+      await messageService.sendTextMessage(selectedConversation, newMessage.trim());
       setNewMessage('');
+      await fetchMessages(selectedConversation);
+      await fetchConversations(); // Refresh to update last message
+    } catch (error) {
+      console.error('Error sending message:', error);
+    } finally {
+      setSending(false);
     }
   };
 
@@ -160,7 +147,11 @@ const MessagesModal = ({ isOpen, onClose }: MessagesModalProps) => {
 
           {/* Conversations */}
           <div className="flex-1 overflow-y-auto">
-            {filteredConversations.length === 0 ? (
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            ) : filteredConversations.length === 0 ? (
               <div className="text-center py-12 px-6">
                 <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">No conversations</h3>
@@ -171,41 +162,47 @@ const MessagesModal = ({ isOpen, onClose }: MessagesModalProps) => {
                 {filteredConversations.map((conversation) => (
                   <div
                     key={conversation.id}
-                    onClick={() => setSelectedConversation(conversation.id)}
+                    onClick={() => setSelectedConversation(conversation.other_user?.id || '')}
                     className={`flex items-center gap-3 p-4 rounded-xl cursor-pointer transition-all duration-200 mb-2 ${
-                      selectedConversation === conversation.id
+                      selectedConversation === conversation.other_user?.id
                         ? 'bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200'
                         : 'hover:bg-gray-50'
                     }`}
                   >
                     <div className="relative">
-                      <img
-                        src={conversation.participant.avatar}
-                        alt={conversation.participant.name}
-                        className="w-12 h-12 rounded-full object-cover"
-                      />
-                      {conversation.participant.isOnline && (
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
-                      )}
+                      <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                        {conversation.other_user?.avatar_url ? (
+                          <img
+                            src={conversation.other_user.avatar_url}
+                            alt={conversation.other_user.full_name || 'User'}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-sm font-semibold text-gray-600">
+                            {(conversation.other_user?.full_name || conversation.other_user?.username || 'U')[0].toUpperCase()}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <h4 className="font-semibold text-gray-900 truncate">
-                          {conversation.participant.name}
+                          {conversation.other_user?.full_name || conversation.other_user?.username || 'Unknown User'}
                         </h4>
-                        <span className="text-xs text-gray-500">
-                          {getTimeAgo(conversation.lastMessage.timestamp)}
-                        </span>
+                        {conversation.last_message && (
+                          <span className="text-xs text-gray-500">
+                            {getTimeAgo(conversation.last_message.created_at)}
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center justify-between">
                         <p className="text-sm text-gray-600 truncate">
-                          {conversation.lastMessage.senderId === 'current' ? 'You: ' : ''}
-                          {conversation.lastMessage.content}
+                          {conversation.last_message?.content || 'No messages yet'}
                         </p>
-                        {conversation.unreadCount > 0 && (
+                        {conversation.last_message && !conversation.last_message.is_read && (
                           <span className="bg-blue-600 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
-                            {conversation.unreadCount}
+                            1
                           </span>
                         )}
                       </div>
@@ -230,20 +227,25 @@ const MessagesModal = ({ isOpen, onClose }: MessagesModalProps) => {
                   <X className="w-5 h-5 text-gray-600" />
                 </button>
                 <div className="relative">
-                  <img
-                    src={selectedConv.participant.avatar}
-                    alt={selectedConv.participant.name}
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                  {selectedConv.participant.isOnline && (
-                    <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
-                  )}
+                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                    {selectedConv.other_user?.avatar_url ? (
+                      <img
+                        src={selectedConv.other_user.avatar_url}
+                        alt={selectedConv.other_user.full_name || 'User'}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-sm font-semibold text-gray-600">
+                        {(selectedConv.other_user?.full_name || selectedConv.other_user?.username || 'U')[0].toUpperCase()}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">{selectedConv.participant.name}</h3>
-                  <p className="text-sm text-gray-500">
-                    {selectedConv.participant.isOnline ? 'Online' : 'Offline'}
-                  </p>
+                  <h3 className="font-semibold text-gray-900">
+                    {selectedConv.other_user?.full_name || selectedConv.other_user?.username || 'Unknown User'}
+                  </h3>
+                  <p className="text-sm text-gray-500">Online</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -265,19 +267,33 @@ const MessagesModal = ({ isOpen, onClose }: MessagesModalProps) => {
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
               <div className="space-y-4">
-                <div className="text-center">
-                  <span className="text-xs text-gray-500 bg-white px-3 py-1 rounded-full">
-                    Today
-                  </span>
-                </div>
-                <div className="flex">
-                  <div className="bg-white rounded-2xl rounded-bl-md px-4 py-3 max-w-xs shadow-sm">
-                    <p className="text-gray-900">{selectedConv.lastMessage.content}</p>
-                    <span className="text-xs text-gray-500 mt-1 block">
-                      {getTimeAgo(selectedConv.lastMessage.timestamp)}
-                    </span>
+                {messages.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No messages yet. Start the conversation!</p>
                   </div>
-                </div>
+                ) : (
+                  messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`flex ${message.sender_id === selectedConv.other_user?.id ? 'justify-start' : 'justify-end'}`}
+                    >
+                      <div className={`max-w-xs ${
+                        message.sender_id === selectedConv.other_user?.id
+                          ? 'bg-white rounded-2xl rounded-bl-md'
+                          : 'bg-blue-600 text-white rounded-2xl rounded-br-md'
+                      } px-4 py-3 shadow-sm`}>
+                        <p className={message.sender_id === selectedConv.other_user?.id ? 'text-gray-900' : 'text-white'}>
+                          {message.content}
+                        </p>
+                        <span className={`text-xs mt-1 block ${
+                          message.sender_id === selectedConv.other_user?.id ? 'text-gray-500' : 'text-blue-200'
+                        }`}>
+                          {getTimeAgo(message.created_at)}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
@@ -288,11 +304,13 @@ const MessagesModal = ({ isOpen, onClose }: MessagesModalProps) => {
                   placeholder="Type a message..."
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
                   className="flex-1 rounded-xl border-gray-200 focus:border-blue-300"
+                  disabled={sending}
                 />
                 <Button
                   onClick={handleSendMessage}
+                  disabled={sending || !newMessage.trim()}
                   className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl px-6"
                 >
                   <Send className="w-4 h-4" />

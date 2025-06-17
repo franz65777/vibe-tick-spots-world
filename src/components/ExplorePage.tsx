@@ -1,373 +1,282 @@
-
-import { useState, useEffect, useRef } from 'react';
-import { useSearch } from '@/hooks/useSearch';
-import { useUserSearch } from '@/hooks/useUserSearch';
-import { useUserProfile } from '@/hooks/useUserProfile';
-import { useAuth } from '@/contexts/AuthContext';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import SearchHeader from '@/components/explore/SearchHeader';
-import SearchResults from '@/components/explore/SearchResults';
-import RecommendationsSection from '@/components/explore/RecommendationsSection';
-import ShareModal from '@/components/home/ShareModal';
-import CommentModal from '@/components/home/CommentModal';
+import { useAuth } from '@/contexts/AuthContext';
+import { useUserSearch } from '@/hooks/useUserSearch';
+import { searchService, LocationRecommendation, UserRecommendation } from '@/services/searchService';
+import SearchHeader from './explore/SearchHeader';
+import SearchFilters from './explore/SearchFilters';
+import SearchResults from './explore/SearchResults';
+import SearchSuggestions from './explore/SearchSuggestions';
+import RecommendationsSection from './explore/RecommendationsSection';
+import LocationDetailSheet from './LocationDetailSheet';
+import ShareModal from './ShareModal';
+import CommentModal from './CommentModal';
+import MessagesModal from './MessagesModal';
 import { Place } from '@/types/place';
 
-interface User {
-  id: string;
-  name: string;
-  username: string;
-  avatar: string;
-  followers: number;
-  following: number;
-  savedPlaces: number;
-  isFollowing: boolean;
-}
-
-// Mock data for locations
-const mockLocations: Place[] = [
-  {
-    id: '1',
-    name: 'Mario\'s Pizza Palace',
-    category: 'restaurant',
-    likes: 156,
-    friendsWhoSaved: [
-      { name: 'Sarah', avatar: 'photo-1494790108755-2616b5a5c75b' },
-      { name: 'Mike', avatar: 'photo-1507003211169-0a1dd7228f2d' }
-    ],
-    visitors: ['user1', 'user2', 'user3'],
-    isNew: false,
-    coordinates: { lat: 37.7849, lng: -122.4094 },
-    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=300&fit=crop',
-    addedBy: 'user1',
-    addedDate: '2024-05-25',
-    isFollowing: true,
-    popularity: 89,
-    distance: '0.3km',
-    totalSaves: 23
-  },
-  {
-    id: '2',
-    name: 'Tony\'s Authentic Pizza',
-    category: 'restaurant',
-    likes: 89,
-    friendsWhoSaved: [
-      { name: 'Emma', avatar: 'photo-1438761681033-6461ffad8d80' }
-    ],
-    visitors: ['user4', 'user5'],
-    isNew: true,
-    coordinates: { lat: 37.7749, lng: -122.4194 },
-    image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop',
-    addedBy: 'user2',
-    addedDate: '2024-06-01',
-    isFollowing: false,
-    popularity: 76,
-    distance: '0.8km',
-    totalSaves: 15
-  },
-  {
-    id: '3',
-    name: 'Blue Bottle Coffee',
-    category: 'cafe',
-    likes: 234,
-    friendsWhoSaved: [
-      { name: 'Alex', avatar: 'photo-1472099645785-5658abf4ff4e' },
-      { name: 'Sofia', avatar: 'photo-1534528741775-53994a69daeb' }
-    ],
-    visitors: ['user6', 'user7', 'user8'],
-    isNew: false,
-    coordinates: { lat: 37.7649, lng: -122.4294 },
-    image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
-    addedBy: 'user3',
-    addedDate: '2024-05-15',
-    isFollowing: true,
-    popularity: 94,
-    distance: '1.2km',
-    totalSaves: 42
-  }
-];
-
-type SearchMode = 'locations' | 'users';
-type SortBy = 'proximity' | 'likes' | 'followers';
-
 const ExplorePage = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { users: searchUsers, loading: searchLoading, searchUsers: performSearch } = useUserSearch();
+  
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchMode, setSearchMode] = useState<SearchMode>('locations');
-  const [sortBy, setSortBy] = useState<SortBy>('proximity');
-  const [showFilters, setShowFilters] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [filteredLocations, setFilteredLocations] = useState<Place[]>([]);
+  const [searchMode, setSearchMode] = useState<'locations' | 'users'>('locations');
+  const [sortBy, setSortBy] = useState<'proximity' | 'likes' | 'followers'>('proximity');
   const [isSearching, setIsSearching] = useState(false);
+  const [filteredLocations, setFilteredLocations] = useState<Place[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(true);
+  const [locationRecommendations, setLocationRecommendations] = useState<LocationRecommendation[]>([]);
+  const [userRecommendations, setUserRecommendations] = useState<UserRecommendation[]>([]);
   const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
-  
-  // Modals
-  const [shareModalOpen, setShareModalOpen] = useState(false);
-  const [commentModalOpen, setCommentModalOpen] = useState(false);
-  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
-  
-  const { 
-    searchHistory, 
-    locationRecommendations, 
-    userRecommendations, 
-    loading, 
-    saveSearch, 
-    getSearchSuggestions 
-  } = useSearch();
+  const [selectedLocation, setSelectedLocation] = useState<Place | null>(null);
+  const [shareLocation, setShareLocation] = useState<Place | null>(null);
+  const [commentLocation, setCommentLocation] = useState<Place | null>(null);
+  const [isMessagesModalOpen, setIsMessagesModalOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
-  const { users: searchedUsers, loading: userSearchLoading, searchUsers, getAllUsers } = useUserSearch();
-
-  // Load all users when component mounts or when switching to users mode
   useEffect(() => {
-    if (searchMode === 'users' && !searchQuery.trim()) {
-      getAllUsers();
+    if (user) {
+      loadRecommendations();
     }
-  }, [searchMode, getAllUsers]);
+  }, [user]);
 
-  // Filter and sort locations based on search query and filters
   useEffect(() => {
-    if (!searchQuery.trim()) {
+    if (searchQuery.trim().length > 2) {
+      handleSearch();
+    } else {
       setFilteredLocations([]);
-      return;
+      setFilteredUsers([]);
     }
+  }, [searchQuery, searchMode]);
 
-    if (searchMode === 'users') {
-      // Search users using the hook
-      searchUsers(searchQuery);
-      return;
+  const loadRecommendations = async () => {
+    setRecommendationsLoading(true);
+    try {
+      if (user) {
+        const locationRecs = await searchService.getLocationRecommendations(user.id);
+        const userRecs = await searchService.getUserRecommendations(user.id);
+        
+        setLocationRecommendations(locationRecs);
+        setUserRecommendations(userRecs);
+      }
+    } catch (error) {
+      console.error('Error loading recommendations:', error);
+    } finally {
+      setRecommendationsLoading(false);
     }
+  };
 
+  const handleSearch = async () => {
     setIsSearching(true);
     
-    // Simulate API call delay for locations
-    const timer = setTimeout(() => {
-      let filtered = mockLocations.filter(place =>
-        place.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        place.category.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-
-      // Sort based on selected filter
-      if (sortBy === 'proximity') {
-        filtered.sort((a, b) => {
-          const aDistance = typeof a.distance === 'string' ? parseFloat(a.distance) : (a.distance || 0);
-          const bDistance = typeof b.distance === 'string' ? parseFloat(b.distance) : (b.distance || 0);
-          return aDistance - bDistance;
-        });
-      } else if (sortBy === 'likes') {
-        filtered.sort((a, b) => b.likes - a.likes);
+    try {
+      if (searchMode === 'locations') {
+        // Mock location search for now
+        const mockLocations = [
+          {
+            id: '1',
+            name: 'Coffee Shop Milano',
+            description: 'A cozy coffee shop in the heart of Milan',
+            address: 'Via Dante 15, Milan, Italy',
+            latitude: 45.4642,
+            longitude: 9.1900,
+            category: 'cafe',
+            rating: 4.5,
+            images: ['https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop'],
+            likes_count: 120,
+            comments_count: 45
+          },
+          {
+            id: '2',
+            name: 'Trattoria Bella Napoli',
+            description: 'Authentic Neapolitan cuisine',
+            address: 'Via Roma 23, Naples, Italy',
+            latitude: 40.8518,
+            longitude: 14.2681,
+            category: 'restaurant',
+            rating: 4.8,
+            images: ['https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop'],
+            likes_count: 210,
+            comments_count: 78
+          }
+        ];
+        
+        setFilteredLocations(mockLocations.filter(loc => 
+          loc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          loc.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          loc.address.toLowerCase().includes(searchQuery.toLowerCase())
+        ));
+        setFilteredUsers([]);
+      } else {
+        // Search users
+        await performSearch(searchQuery);
+        setFilteredLocations([]);
       }
-
-      setFilteredLocations(filtered);
+      
+      // Save search to history
+      if (user) {
+        await searchService.saveSearchHistory(user.id, searchQuery, searchMode);
+      }
+    } catch (error) {
+      console.error('Error during search:', error);
+    } finally {
       setIsSearching(false);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery, searchMode, sortBy, searchUsers]);
-
-  // Handle search with history saving
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-    
-    // Save to search history
-    await saveSearch(searchQuery, searchMode);
-    setShowSuggestions(false);
+    }
   };
 
-  // Handle suggestion click
-  const handleSuggestionClick = (suggestion: string) => {
-    setSearchQuery(suggestion);
-    setShowSuggestions(false);
-    // Trigger search automatically
-    setTimeout(() => {
-      saveSearch(suggestion, searchMode);
-    }, 100);
-  };
+  useEffect(() => {
+    if (searchMode === 'users') {
+      setFilteredUsers(searchUsers);
+    }
+  }, [searchUsers, searchMode]);
 
-  // Handle place interactions
   const handleCardClick = (place: Place) => {
-    setSelectedPlace(place);
-    console.log('Place clicked:', place);
+    setSelectedLocation(place);
+  };
+
+  const handleLocationClick = (location: LocationRecommendation) => {
+    const placeData: Place = {
+      id: location.id,
+      name: location.name,
+      description: location.recommendationReason || '',
+      address: '',
+      latitude: location.coordinates.lat,
+      longitude: location.coordinates.lng,
+      category: location.category,
+      rating: 4.5,
+      images: [location.image || ''],
+      likes_count: location.likes,
+      comments_count: 0
+    };
+    setSelectedLocation(placeData);
   };
 
   const handleLikeToggle = (placeId: string) => {
     setLikedPlaces(prev => {
-      const newLiked = new Set(prev);
-      if (newLiked.has(placeId)) {
-        newLiked.delete(placeId);
+      const newSet = new Set(prev);
+      if (newSet.has(placeId)) {
+        newSet.delete(placeId);
       } else {
-        newLiked.add(placeId);
+        newSet.add(placeId);
       }
-      return newLiked;
+      return newSet;
     });
   };
 
+  const handleLocationLike = (locationId: string) => {
+    handleLikeToggle(locationId);
+  };
+
   const handleShare = (place: Place) => {
-    setSelectedPlace(place);
-    setShareModalOpen(true);
+    setShareLocation(place);
+  };
+
+  const handleLocationShare = (location: LocationRecommendation) => {
+    const placeData: Place = {
+      id: location.id,
+      name: location.name,
+      description: location.recommendationReason || '',
+      address: '',
+      latitude: location.coordinates.lat,
+      longitude: location.coordinates.lng,
+      category: location.category,
+      rating: 4.5,
+      images: [location.image || ''],
+      likes_count: location.likes,
+      comments_count: 0
+    };
+    setShareLocation(placeData);
   };
 
   const handleComment = (place: Place) => {
-    setSelectedPlace(place);
-    setCommentModalOpen(true);
+    setCommentLocation(place);
   };
 
-  const handleShareModalShare = (friendIds: string[], place: Place) => {
-    console.log('Sharing place:', place, 'with friends:', friendIds);
-  };
-
-  // Handle user interactions
-  const handleUserClick = (user: any) => {
-    console.log('User clicked:', user);
-    navigate(`/profile/${user.id}`);
+  const handleLocationComment = (location: LocationRecommendation) => {
+    const placeData: Place = {
+      id: location.id,
+      name: location.name,
+      description: location.recommendationReason || '',
+      address: '',
+      latitude: location.coordinates.lat,
+      longitude: location.coordinates.lng,
+      category: location.category,
+      rating: 4.5,
+      images: [location.image || ''],
+      likes_count: location.likes,
+      comments_count: 0
+    };
+    setCommentLocation(placeData);
   };
 
   const handleFollowUser = async (userId: string) => {
-    if (!user) {
-      console.log('No authenticated user');
-      return;
-    }
-    
-    console.log('Follow user action triggered for:', userId);
-    
-    // Here you would implement the actual follow logic
-    // For now, we'll just log and update the local state
     try {
-      // TODO: Implement actual follow/unfollow API call
-      console.log('Following user:', userId);
-      
-      // Optionally refresh user search results to reflect the change
-      if (searchQuery.trim()) {
-        searchUsers(searchQuery);
+      // Toggle following status in the UI immediately for better UX
+      if (searchMode === 'users') {
+        setFilteredUsers(prev => 
+          prev.map(user => 
+            user.id === userId 
+              ? { ...user, is_following: !user.is_following }
+              : user
+          )
+        );
       } else {
-        getAllUsers();
+        setUserRecommendations(prev => 
+          prev.map(user => 
+            user.id === userId 
+              ? { ...user, isFollowing: !user.isFollowing }
+              : user
+          )
+        );
       }
+      
+      // Make API call to follow/unfollow
+      // This would be implemented in a real app
+      console.log('Following/unfollowing user:', userId);
     } catch (error) {
       console.error('Error following user:', error);
+      // Revert UI change if API call fails
     }
   };
 
-  // Handle recommendation clicks
-  const handleLocationRecommendationClick = (location: any) => {
-    console.log('Location recommendation clicked:', location);
-    const place: Place = {
-      id: location.id,
-      name: location.name,
-      category: location.category,
-      likes: location.likes,
-      friendsWhoSaved: location.friendsWhoSaved,
-      visitors: location.visitors,
-      isNew: location.isNew,
-      coordinates: location.coordinates,
-      image: location.image,
-      addedBy: location.addedBy,
-      addedDate: location.addedDate,
-      isFollowing: location.isFollowing,
-      popularity: location.popularity,
-      distance: location.distance,
-      totalSaves: location.likes || 23
-    };
-    handleCardClick(place);
+  const handleMessageUser = (userId: string) => {
+    setSelectedUserId(userId);
+    setIsMessagesModalOpen(true);
   };
 
-  const handleLocationRecommendationShare = (location: any) => {
-    const place: Place = {
-      id: location.id,
-      name: location.name,
-      category: location.category,
-      likes: location.likes,
-      friendsWhoSaved: location.friendsWhoSaved,
-      visitors: location.visitors,
-      isNew: location.isNew,
-      coordinates: location.coordinates,
-      image: location.image,
-      addedBy: location.addedBy,
-      addedDate: location.addedDate,
-      isFollowing: location.isFollowing,
-      popularity: location.popularity,
-      distance: location.distance,
-      totalSaves: location.likes || 23
-    };
-    handleShare(place);
-  };
-
-  const handleLocationRecommendationComment = (location: any) => {
-    const place: Place = {
-      id: location.id,
-      name: location.name,
-      category: location.category,
-      likes: location.likes,
-      friendsWhoSaved: location.friendsWhoSaved,
-      visitors: location.visitors,
-      isNew: location.isNew,
-      coordinates: location.coordinates,
-      image: location.image,
-      addedBy: location.addedBy,
-      addedDate: location.addedDate,
-      isFollowing: location.isFollowing,
-      popularity: location.popularity,
-      distance: location.distance,
-      totalSaves: location.likes || 23
-    };
-    handleComment(place);
-  };
-
-  const handleUserRecommendationClick = (user: any) => {
+  const handleUserClick = (user: UserRecommendation | any) => {
     navigate(`/profile/${user.id}`);
   };
 
-  // Get current search suggestions
-  const currentSuggestions = getSearchSuggestions(searchQuery, searchMode);
-  const recentSearches = searchHistory
-    .filter(item => item.search_type === searchMode)
-    .map(item => item.search_query)
-    .slice(0, 3);
-
   return (
-    <div className="flex flex-col h-full bg-gradient-to-br from-blue-50/30 via-white to-purple-50/20 pt-16">
-      {/* Header with Search */}
+    <div className="flex flex-col h-full bg-white">
       <SearchHeader
         searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
+        onSearchChange={setSearchQuery}
         searchMode={searchMode}
-        setSearchMode={setSearchMode}
-        sortBy={sortBy}
-        setSortBy={setSortBy}
-        showFilters={showFilters}
-        setShowFilters={setShowFilters}
-        showSuggestions={showSuggestions}
-        setShowSuggestions={setShowSuggestions}
-        onSearch={handleSearch}
-        suggestions={currentSuggestions}
-        recentSearches={recentSearches}
-        onSuggestionClick={handleSuggestionClick}
+        onSearchModeChange={setSearchMode}
+        onClearSearch={() => {
+          setSearchQuery('');
+          setFilteredLocations([]);
+          setFilteredUsers([]);
+        }}
       />
 
-      {/* Results */}
-      <div className="flex-1 overflow-y-auto pb-20">
-        {!searchQuery.trim() ? (
-          // Recommendations when not searching
-          <RecommendationsSection
-            searchMode={searchMode}
-            loading={loading}
-            locationRecommendations={locationRecommendations}
-            userRecommendations={userRecommendations}
-            onLocationClick={handleLocationRecommendationClick}
-            onUserClick={handleUserRecommendationClick}
-            onFollowUser={handleFollowUser}
-            onLocationShare={handleLocationRecommendationShare}
-            onLocationComment={handleLocationRecommendationComment}
-            onLocationLike={handleLikeToggle}
-            likedPlaces={likedPlaces}
-          />
-        ) : (
-          // Search results
+      <SearchFilters
+        searchMode={searchMode}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+      />
+
+      <div className="flex-1 overflow-y-auto">
+        {searchQuery ? (
           <SearchResults
             searchMode={searchMode}
             sortBy={sortBy}
             filteredLocations={filteredLocations}
-            filteredUsers={searchedUsers}
-            isSearching={searchMode === 'locations' ? isSearching : userSearchLoading}
+            filteredUsers={filteredUsers}
+            isSearching={isSearching}
             likedPlaces={likedPlaces}
             onCardClick={handleCardClick}
             onLikeToggle={handleLikeToggle}
@@ -375,24 +284,61 @@ const ExplorePage = () => {
             onComment={handleComment}
             onUserClick={handleUserClick}
             onFollowUser={handleFollowUser}
+            onMessageUser={handleMessageUser}
           />
+        ) : (
+          <div className="space-y-6">
+            <SearchSuggestions />
+            <RecommendationsSection
+              searchMode={searchMode}
+              loading={recommendationsLoading}
+              locationRecommendations={locationRecommendations}
+              userRecommendations={userRecommendations}
+              onLocationClick={handleLocationClick}
+              onUserClick={handleUserClick}
+              onFollowUser={handleFollowUser}
+              onLocationShare={handleLocationShare}
+              onLocationComment={handleLocationComment}
+              onLocationLike={handleLocationLike}
+              likedPlaces={likedPlaces}
+              onMessageUser={handleMessageUser}
+            />
+          </div>
         )}
       </div>
 
-      {/* Modals */}
+      <MessagesModal 
+        isOpen={isMessagesModalOpen}
+        onClose={() => {
+          setIsMessagesModalOpen(false);
+          setSelectedUserId(null);
+        }}
+        initialUserId={selectedUserId}
+      />
+
+      <LocationDetailSheet
+        place={selectedLocation}
+        isOpen={!!selectedLocation}
+        onClose={() => setSelectedLocation(null)}
+        onShare={handleShare}
+        onComment={handleComment}
+        onLike={() => selectedLocation && handleLikeToggle(selectedLocation.id)}
+        isLiked={selectedLocation ? likedPlaces.has(selectedLocation.id) : false}
+        onSave={() => {}}
+        isSaved={false}
+      />
+
       <ShareModal
-        isOpen={shareModalOpen}
-        onClose={() => setShareModalOpen(false)}
-        item={selectedPlace}
-        itemType="place"
-        onShare={handleShareModalShare}
+        isOpen={!!shareLocation}
+        onClose={() => setShareLocation(null)}
+        location={shareLocation}
+        onShare={() => setShareLocation(null)}
       />
 
       <CommentModal
-        isOpen={commentModalOpen}
-        onClose={() => setCommentModalOpen(false)}
-        place={selectedPlace}
-        onCommentSubmit={(comment) => console.log('Comment added:', comment)}
+        isOpen={!!commentLocation}
+        onClose={() => setCommentLocation(null)}
+        place={commentLocation}
       />
     </div>
   );

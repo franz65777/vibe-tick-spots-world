@@ -15,6 +15,7 @@ interface RecommendationsSectionProps {
   onLocationComment: (location: LocationRecommendation) => void;
   onLocationLike: (locationId: string) => void;
   likedPlaces: Set<string>;
+  onMessageUser?: (userId: string) => void;
 }
 
 const RecommendationsSection = ({
@@ -28,7 +29,8 @@ const RecommendationsSection = ({
   onLocationShare,
   onLocationComment,
   onLocationLike,
-  likedPlaces
+  likedPlaces,
+  onMessageUser
 }: RecommendationsSectionProps) => {
   if (loading) {
     return (
@@ -57,6 +59,7 @@ const RecommendationsSection = ({
           recommendations={userRecommendations}
           onUserClick={onUserClick}
           onFollowUser={onFollowUser}
+          onMessageUser={onMessageUser}
         />
       )}
     </div>

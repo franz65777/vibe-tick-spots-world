@@ -1,9 +1,10 @@
 
-import { Users, MapPin } from 'lucide-react';
+import { users, MapPin } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Place } from '@/types/place';
 import PlaceCard from '@/components/home/PlaceCard';
+import { useNavigate } from 'react-router-dom';
 
 interface User {
   id: string;
@@ -30,6 +31,7 @@ interface SearchResultsProps {
   onComment: (place: Place) => void;
   onUserClick: (user: User) => void;
   onFollowUser: (userId: string) => void;
+  onMessageUser?: (userId: string) => void;
 }
 
 const SearchResults = ({
@@ -44,8 +46,11 @@ const SearchResults = ({
   onShare,
   onComment,
   onUserClick,
-  onFollowUser
+  onFollowUser,
+  onMessageUser
 }: SearchResultsProps) => {
+  const navigate = useNavigate();
+
   if (isSearching) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -94,11 +99,11 @@ const SearchResults = ({
     );
   }
 
-  // Users search results - improved styling
+  // Users search results
   if (filteredUsers.length === 0) {
     return (
       <div className="text-center py-12 px-4">
-        <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+        <users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
         <p className="text-gray-600">No users found</p>
       </div>
     );
@@ -128,7 +133,7 @@ const SearchResults = ({
               <div className="flex items-start justify-between">
                 <div 
                   className="flex items-center gap-4 flex-1 min-w-0 cursor-pointer"
-                  onClick={() => onUserClick(user)}
+                  onClick={() => navigate(`/profile/${user.id}`)}
                 >
                   <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0 border-2 border-gray-100">
                     {user.avatar_url ? (
@@ -145,7 +150,7 @@ const SearchResults = ({
                   </div>
                   
                   <div className="flex-1 min-w-0">
-                    <div className="text-center mb-3">
+                    <div className="mb-3">
                       <h4 className="text-lg font-bold text-gray-900 mb-1">
                         {user.full_name || user.username || 'Unknown User'}
                       </h4>
@@ -155,10 +160,10 @@ const SearchResults = ({
                     </div>
                     
                     {user.bio && (
-                      <p className="text-sm text-gray-600 text-center mb-3 line-clamp-2">{user.bio}</p>
+                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">{user.bio}</p>
                     )}
                     
-                    <div className="flex items-center justify-center gap-6 text-sm text-gray-600">
+                    <div className="flex items-center gap-6 text-sm text-gray-600">
                       <div className="text-center">
                         <div className="font-semibold text-gray-900">{user.followers_count || 0}</div>
                         <div>followers</div>
@@ -171,23 +176,39 @@ const SearchResults = ({
                   </div>
                 </div>
                 
-                <Button
-                  size="lg"
-                  variant={user.is_following ? "outline" : "default"}
-                  className={`ml-4 px-6 py-2 rounded-full font-semibold ${
-                    user.is_following 
-                      ? 'border-gray-300 text-gray-700 hover:bg-gray-50' 
-                      : 'bg-gray-900 text-white hover:bg-gray-800'
-                  }`}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log('Following user:', user.id);
-                    onFollowUser(user.id);
-                  }}
-                >
-                  {user.is_following ? 'Following' : 'Follow'}
-                </Button>
+                <div className="flex flex-col gap-2 ml-4">
+                  <Button
+                    size="sm"
+                    variant={user.is_following ? "outline" : "default"}
+                    className={`px-4 py-2 rounded-full font-semibold ${
+                      user.is_following 
+                        ? 'border-gray-300 text-gray-700 hover:bg-gray-50' 
+                        : 'bg-gray-900 text-white hover:bg-gray-800'
+                    }`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onFollowUser(user.id);
+                    }}
+                  >
+                    {user.is_following ? 'Following' : 'Follow'}
+                  </Button>
+                  
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="px-4 py-2 rounded-full font-semibold border-blue-300 text-blue-700 hover:bg-blue-50"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (onMessageUser) {
+                        onMessageUser(user.id);
+                      }
+                    }}
+                  >
+                    Message
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
