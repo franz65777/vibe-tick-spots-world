@@ -11,9 +11,10 @@ import { toast } from 'sonner';
 interface CreateStoryModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onStoryCreated?: () => void;
 }
 
-const CreateStoryModal = ({ isOpen, onClose }: CreateStoryModalProps) => {
+const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalProps) => {
   const { user } = useAuth();
   const { uploadStory, uploading } = useStories();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -65,6 +66,12 @@ const CreateStoryModal = ({ isOpen, onClose }: CreateStoryModalProps) => {
       );
       
       toast.success('Story uploaded successfully!');
+      
+      // Call the callback if provided
+      if (onStoryCreated) {
+        onStoryCreated();
+      }
+      
       handleClose();
     } catch (error) {
       console.error('Error uploading story:', error);
