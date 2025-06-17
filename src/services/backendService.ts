@@ -44,7 +44,8 @@ class BackendService {
   // Get user's saved locations from real database
   async getUserSavedLocations(userId: string) {
     try {
-      const { data, error } = await supabase
+      // Use type assertion for newly created table
+      const { data, error } = await (supabase as any)
         .from('user_saved_locations')
         .select(`
           *,
@@ -70,7 +71,7 @@ class BackendService {
 
       if (error) throw error;
       
-      return data?.map(item => ({
+      return data?.map((item: any) => ({
         ...item.locations,
         saved_at: item.saved_at
       })) || [];
@@ -163,7 +164,8 @@ class BackendService {
   // Save a location for a user
   async saveLocation(userId: string, locationId: string) {
     try {
-      const { data, error } = await supabase
+      // Use type assertion for newly created table
+      const { data, error } = await (supabase as any)
         .from('user_saved_locations')
         .insert({
           user_id: userId,
@@ -183,7 +185,8 @@ class BackendService {
   // Unsave a location for a user
   async unsaveLocation(userId: string, locationId: string) {
     try {
-      const { error } = await supabase
+      // Use type assertion for newly created table
+      const { error } = await (supabase as any)
         .from('user_saved_locations')
         .delete()
         .eq('user_id', userId)
@@ -210,8 +213,8 @@ class BackendService {
 
       if (uploadError) throw uploadError;
 
-      // Create media record
-      const { data: mediaData, error: mediaError } = await supabase
+      // Create media record using type assertion
+      const { data: mediaData, error: mediaError } = await (supabase as any)
         .from('media')
         .insert({
           user_id: userId,
