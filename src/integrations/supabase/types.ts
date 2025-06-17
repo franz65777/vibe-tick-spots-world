@@ -9,6 +9,45 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      api_usage: {
+        Row: {
+          created_at: string
+          endpoint: string
+          id: string
+          ip_address: unknown | null
+          method: string
+          request_size: number | null
+          response_size: number | null
+          response_status: number
+          response_time_ms: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          id?: string
+          ip_address?: unknown | null
+          method: string
+          request_size?: number | null
+          response_size?: number | null
+          response_status: number
+          response_time_ms?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          id?: string
+          ip_address?: unknown | null
+          method?: string
+          request_size?: number | null
+          response_size?: number | null
+          response_status?: number
+          response_time_ms?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       badges: {
         Row: {
           criteria: Json
@@ -261,6 +300,48 @@ export type Database = {
           receiver_id?: string
           sender_id?: string
           shared_content?: Json | null
+        }
+        Relationships: []
+      }
+      error_logs: {
+        Row: {
+          created_at: string
+          error_message: string
+          error_type: string
+          id: string
+          metadata: Json | null
+          page_url: string | null
+          resolved: boolean | null
+          severity: string | null
+          stack_trace: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message: string
+          error_type: string
+          id?: string
+          metadata?: Json | null
+          page_url?: string | null
+          resolved?: boolean | null
+          severity?: string | null
+          stack_trace?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string
+          error_type?: string
+          id?: string
+          metadata?: Json | null
+          page_url?: string | null
+          resolved?: boolean | null
+          severity?: string | null
+          stack_trace?: string | null
+          user_agent?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -539,6 +620,39 @@ export type Database = {
           },
         ]
       }
+      performance_metrics: {
+        Row: {
+          created_at: string
+          endpoint: string | null
+          id: string
+          metadata: Json | null
+          metric_type: string
+          metric_unit: string
+          metric_value: number
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          endpoint?: string | null
+          id?: string
+          metadata?: Json | null
+          metric_type: string
+          metric_unit: string
+          metric_value: number
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string | null
+          id?: string
+          metadata?: Json | null
+          metric_type?: string
+          metric_unit?: string
+          metric_value?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -684,6 +798,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_analytics: {
+        Row: {
+          created_at: string
+          event_data: Json | null
+          event_type: string
+          id: string
+          ip_address: unknown | null
+          page_url: string | null
+          session_id: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          ip_address?: unknown | null
+          page_url?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          ip_address?: unknown | null
+          page_url?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       user_badges: {
         Row: {

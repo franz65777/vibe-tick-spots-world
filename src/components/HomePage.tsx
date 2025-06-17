@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,8 +9,9 @@ import PlaceCard from './home/PlaceCard';
 import LocationOfTheWeek from './home/LocationOfTheWeek';
 import MapSection from './home/MapSection';
 import ModalsManager from './home/ModalsManager';
-import { PlaceInteractionModal } from './home/PlaceInteractionModal';
+import PlaceInteractionModal from './home/PlaceInteractionModal';
 import { useSearch } from '@/hooks/useSearch';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 interface Story {
   id: string;
@@ -47,8 +49,8 @@ interface HomePlace {
   image: string;
   likes: number;
   rating: number;
-  visitors: string[]; // Changed to always be string[]
-  friendsWhoSaved: { name: string; avatar: string; }[]; // Changed to always be array
+  visitors: string[];
+  friendsWhoSaved: { name: string; avatar: string; }[];
   savedCount: number;
   isNew: boolean;
   stories?: Story[];
@@ -143,10 +145,11 @@ const HomePage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [places, setPlaces] = useState<HomePlace[]>(demoPlaces);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'new'>('popular');
   const [isInteractionModalOpen, setIsInteractionModalOpen] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
-  const { searchQuery } = useSearch();
+  const searchData = useSearch();
+  const { trackUserAction, trackPlaceInteraction } = useAnalytics();
 
   useEffect(() => {
     if (!user) {
@@ -154,8 +157,9 @@ const HomePage = () => {
     }
   }, [user, navigate]);
 
-  const handleCategoryClick = (category: string | null) => {
-    setSelectedCategory(category);
+  const handleFilterChange = (filter: 'following' | 'popular' | 'new') => {
+    setActiveFilter(filter);
+    trackUserAction('filter_change', { filter });
   };
 
   const handleLike = (placeId: string) => {
@@ -164,6 +168,7 @@ const HomePage = () => {
         place.id === placeId ? { ...place, likes: place.likes + 1 } : place
       )
     );
+    trackPlaceInteraction(placeId, 'like');
   };
 
   const handleSave = (placeId: string) => {
@@ -172,25 +177,24 @@ const HomePage = () => {
         place.id === placeId ? { ...place, savedCount: place.savedCount + 1 } : place
       )
     );
+    trackPlaceInteraction(placeId, 'save');
   };
 
   const handleComment = (place: Place) => {
     console.log('Comment on:', place);
+    trackPlaceInteraction(place.id, 'comment');
   };
 
   const handleShare = (place: Place) => {
     console.log('Share:', place);
+    trackPlaceInteraction(place.id, 'share');
   };
 
   const filteredPlaces = React.useMemo(() => {
     let filtered = places;
 
-    if (selectedCategory) {
-      filtered = filtered.filter(place => place.category === selectedCategory);
-    }
-
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
+    if (searchData.searchQuery) {
+      const query = searchData.searchQuery.toLowerCase();
       filtered = filtered.filter(
         place =>
           place.name.toLowerCase().includes(query) ||
@@ -199,8 +203,21 @@ const HomePage = () => {
       );
     }
 
+    // Apply filter logic
+    switch (activeFilter) {
+      case 'following':
+        // Filter places from followed users (demo logic)
+        break;
+      case 'popular':
+        filtered = filtered.sort((a, b) => b.likes - a.likes);
+        break;
+      case 'new':
+        filtered = filtered.filter(place => place.isNew);
+        break;
+    }
+
     return filtered;
-  }, [places, selectedCategory, searchQuery]);
+  }, [places, searchData.searchQuery, activeFilter]);
 
   const convertToPlace = (homePlace: HomePlace): Place => {
     return {
@@ -226,11 +243,24 @@ const HomePage = () => {
     setIsInteractionModalOpen(true);
   };
 
+  const newCount = places.filter(place => place.isNew).length;
+
   return (
     <div className="flex flex-col h-full bg-white">
-      <Header />
+      <Header 
+        searchQuery={searchData.searchQuery}
+        currentCity=""
+        onSearchChange={searchData.setSearchQuery}
+        onSearchKeyPress={() => {}}
+        onNotificationClick={() => {}}
+        onMessagesClick={() => {}}
+      />
       <StoriesSection stories={demoStories} />
-      <FilterButtons selectedCategory={selectedCategory} onCategoryClick={handleCategoryClick} />
+      <FilterButtons 
+        activeFilter={activeFilter} 
+        onFilterChange={handleFilterChange}
+        newCount={newCount}
+      />
 
       {/* Places Grid */}
       <div className="flex-1 px-4 pb-20 space-y-4">
@@ -246,10 +276,6 @@ const HomePage = () => {
           />
         ))}
       </div>
-
-      {/* Modals */}
-      <ModalsManager
-      />
 
       {isInteractionModalOpen && selectedPlace && (
         <PlaceInteractionModal
