@@ -8,8 +8,9 @@ import FilterButtons from './home/FilterButtons';
 import PlaceCard from './home/PlaceCard';
 import LocationOfTheWeek from './home/LocationOfTheWeek';
 import MapSection from './home/MapSection';
-import ModalsManager from './home/ModalsManager';
 import PlaceInteractionModal from './home/PlaceInteractionModal';
+import NotificationsModal from './NotificationsModal';
+import MessagesModal from './MessagesModal';
 import { useMapPins } from '@/hooks/useMapPins';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { Place } from '@/types/place';
@@ -64,6 +65,8 @@ const HomePage = () => {
   const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'new'>('following');
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [isInteractionModalOpen, setIsInteractionModalOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isMessagesOpen, setIsMessagesOpen] = useState(false);
   const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
   const [currentCity, setCurrentCity] = useState('San Francisco');
   const [searchQuery, setSearchQuery] = useState('');
@@ -101,7 +104,8 @@ const HomePage = () => {
       'Rome': { lat: 41.9028, lng: 12.4964 },
       'Barcelona': { lat: 41.3851, lng: 2.1734 },
       'Amsterdam': { lat: 52.3676, lng: 4.9041 },
-      'Sydney': { lat: -33.8688, lng: 151.2093 }
+      'Sydney': { lat: -33.8688, lng: 151.2093 },
+      'Dublin': { lat: 53.3498, lng: -6.2603 }
     };
     
     const coordinates = cityCoordinates[city] || cityCoordinates['San Francisco'];
@@ -140,12 +144,20 @@ const HomePage = () => {
   };
 
   const handlePinClick = (pin: any) => {
-    // Convert pin to Place format
+    // Convert pin to Place format with proper type handling
     const place: Place = convertPinToPlace(pin);
-    handleCardClick(place);
+    setSelectedPlace(place);
   };
 
-  // Convert pins to places for PlaceCard display
+  const handleNotificationsClick = () => {
+    setIsNotificationsOpen(true);
+  };
+
+  const handleMessagesClick = () => {
+    setIsMessagesOpen(true);
+  };
+
+  // Convert pins to places for PlaceCard display with proper type handling
   const convertPinToPlace = (pin: any): Place => ({
     id: pin.id,
     name: pin.name,
@@ -163,6 +175,9 @@ const HomePage = () => {
     distance: pin.distance,
     totalSaves: pin.totalSaves || pin.likes || 0
   });
+
+  // Convert pins to places with proper type handling
+  const convertedPlaces: Place[] = pins.map(pin => convertPinToPlace(pin));
 
   // Get top location for Location of the Week
   const getTopLocation = () => {
@@ -185,8 +200,8 @@ const HomePage = () => {
         currentCity={currentCity}
         onSearchChange={setSearchQuery}
         onSearchKeyPress={() => {}}
-        onNotificationsClick={() => {}}
-        onMessagesClick={() => {}}
+        onNotificationsClick={handleNotificationsClick}
+        onMessagesClick={handleMessagesClick}
         onCitySelect={handleCitySelect}
       />
       
@@ -196,12 +211,6 @@ const HomePage = () => {
         onStoryClick={() => {}}
       />
       
-      <FilterButtons 
-        activeFilter={activeFilter} 
-        onFilterChange={handleFilterChange}
-        newCount={newCount}
-      />
-
       {/* Location of the Week */}
       {topLocation && (
         <LocationOfTheWeek 
@@ -210,13 +219,10 @@ const HomePage = () => {
         />
       )}
 
-      {/* Map Section */}
-      <MapSection
-        places={pins.map(convertPinToPlace)}
-        onPinClick={handlePinClick}
-        mapCenter={mapCenter}
-        selectedPlace={selectedPlace}
-        onCloseSelectedPlace={() => setSelectedPlace(null)}
+      <FilterButtons 
+        activeFilter={activeFilter} 
+        onFilterChange={handleFilterChange}
+        newCount={newCount}
       />
 
       {/* No followed users message */}
@@ -239,43 +245,35 @@ const HomePage = () => {
         </div>
       )}
 
-      {/* Places Grid */}
+      {/* Map Section - Full height when no place selected */}
       {!showNoFollowedUsersMessage && (
-        <div className="flex-1 px-4 pb-20 space-y-4">
-          {loading && (
-            <div className="text-center py-8">
-              <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading places...</p>
+        <div className="flex-1 flex flex-col">
+          <MapSection
+            places={convertedPlaces}
+            onPinClick={handlePinClick}
+            mapCenter={mapCenter}
+            selectedPlace={selectedPlace}
+            onCloseSelectedPlace={() => setSelectedPlace(null)}
+          />
+
+          {/* Selected Place Card - Only show when a pin is selected */}
+          {selectedPlace && (
+            <div className="px-4 pb-20">
+              <PlaceCard
+                place={selectedPlace}
+                isLiked={likedPlaces.has(selectedPlace.id)}
+                onCardClick={handleCardClick}
+                onLikeToggle={handleLikeToggle}
+                onComment={handleComment}
+                onShare={handleShare}
+                cityName={currentCity}
+              />
             </div>
           )}
-          
-          {error && (
-            <div className="text-center py-8">
-              <p className="text-red-600">{error}</p>
-            </div>
-          )}
-          
-          {!loading && !error && pins.length === 0 && (
-            <div className="text-center py-8">
-              <p className="text-gray-600">No places found for the selected filter.</p>
-            </div>
-          )}
-          
-          {!loading && !error && pins.map((pin) => (
-            <PlaceCard
-              key={pin.id}
-              place={convertPinToPlace(pin)}
-              isLiked={likedPlaces.has(pin.id)}
-              onCardClick={handleCardClick}
-              onLikeToggle={handleLikeToggle}
-              onComment={handleComment}
-              onShare={handleShare}
-              cityName={currentCity}
-            />
-          ))}
         </div>
       )}
 
+      {/* Modals */}
       {isInteractionModalOpen && selectedPlace && (
         <PlaceInteractionModal
           place={selectedPlace}
@@ -284,6 +282,16 @@ const HomePage = () => {
           onClose={() => setIsInteractionModalOpen(false)}
         />
       )}
+
+      <NotificationsModal
+        isOpen={isNotificationsOpen}
+        onClose={() => setIsNotificationsOpen(false)}
+      />
+
+      <MessagesModal
+        isOpen={isMessagesOpen}
+        onClose={() => setIsMessagesOpen(false)}
+      />
     </div>
   );
 };
