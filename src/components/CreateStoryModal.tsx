@@ -28,14 +28,14 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { uploadStory, uploading } = useMediaUpload();
-  const { getCurrentLocation } = useGeolocation();
+  const { location, getCurrentLocation } = useGeolocation();
 
   // Extract location from photo EXIF data
   const extractLocationFromPhoto = async (file: File): Promise<{ lat: number; lng: number } | null> => {
     try {
       // For now, we'll use the device's current location as fallback
       // In a real implementation, you'd use an EXIF library to extract GPS data
-      const location = await getCurrentLocation();
+      getCurrentLocation();
       if (location) {
         return {
           lat: location.latitude,

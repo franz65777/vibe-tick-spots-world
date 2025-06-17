@@ -31,7 +31,13 @@ const PlacesSearchModal = ({ isOpen, onClose, onPlaceSelect }: PlacesSearchModal
     }
 
     searchTimeoutRef.current = setTimeout(async () => {
-      const places = await searchPlaces(query, location || undefined);
+      // Convert GeolocationData to expected format
+      const searchLocation = location ? {
+        lat: location.latitude,
+        lng: location.longitude
+      } : undefined;
+      
+      const places = await searchPlaces(query, searchLocation);
       setResults(places);
     }, 300);
 
