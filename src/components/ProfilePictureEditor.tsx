@@ -18,7 +18,7 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
   currentAvatarUrl
 }) => {
   const { user } = useAuth();
-  const { updateProfile } = useProfile();
+  const { updateProfile, refetch } = useProfile();
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -51,7 +51,7 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
     try {
       // Create unique filename
       const fileExt = selectedFile.name.split('.').pop();
-      const fileName = `${user.id}/avatar/avatar.${fileExt}`;
+      const fileName = `${user.id}/avatar/avatar-${Date.now()}.${fileExt}`;
 
       // Upload to Supabase storage
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -68,7 +68,18 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
         .getPublicUrl(uploadData.path);
 
       // Update profile with new avatar URL
-      await updateProfile({ avatar_url: publicUrl });
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ 
+          avatar_url: publicUrl,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      // Refresh the profile data
+      await refetch();
 
       onClose();
       setPreviewUrl(null);
@@ -86,7 +97,20 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
 
     setUploading(true);
     try {
-      await updateProfile({ avatar_url: null });
+      // Update profile to remove avatar URL
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ 
+          avatar_url: null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      // Refresh the profile data
+      await refetch();
+
       onClose();
       setPreviewUrl(null);
       setSelectedFile(null);

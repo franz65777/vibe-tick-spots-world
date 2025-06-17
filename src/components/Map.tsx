@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { MapPin } from 'lucide-react';
+import { MapPin, AlertCircle } from 'lucide-react';
 import { Location } from '@/services/locationService';
 
 interface MapProps {
@@ -25,6 +25,12 @@ const Map = ({ locations, selectedFilter, onLocationClick }: MapProps) => {
 
   return (
     <div className="rounded-lg overflow-hidden h-full relative min-h-96 bg-gradient-to-br from-blue-100 via-green-50 to-blue-50">
+      {/* Google Maps not available notice */}
+      <div className="absolute top-4 right-4 bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2 flex items-center gap-2 text-sm text-yellow-800 z-20">
+        <AlertCircle className="w-4 h-4" />
+        <span>Demo Map - Google Maps integration needed</span>
+      </div>
+
       {/* Map background with grid pattern to simulate map */}
       <div className="absolute inset-0 opacity-20">
         <svg className="w-full h-full" viewBox="0 0 400 300">
@@ -58,11 +64,11 @@ const Map = ({ locations, selectedFilter, onLocationClick }: MapProps) => {
       {locations.map((location, index) => {
         // Position pins in a more realistic pattern
         const positions = [
-          { top: '25%', left: '30%' }, // Central Park area
-          { top: '45%', left: '60%' }, // Golden Gate area  
-          { top: '65%', left: '25%' }, // Eiffel Tower area
-          { top: '35%', left: '75%' }, // Additional position
-          { top: '55%', left: '45%' }, // Additional position
+          { top: '25%', left: '30%' },
+          { top: '45%', left: '60%' },
+          { top: '65%', left: '25%' },
+          { top: '35%', left: '75%' },
+          { top: '55%', left: '45%' },
         ];
         
         const position = positions[index % positions.length];
@@ -93,7 +99,7 @@ const Map = ({ locations, selectedFilter, onLocationClick }: MapProps) => {
 
       {/* Map attribution (like Google Maps) */}
       <div className="absolute bottom-2 left-2 text-xs text-gray-500 bg-white px-2 py-1 rounded shadow-sm">
-        Map Data
+        Demo Map
       </div>
       
       {/* Zoom controls */}

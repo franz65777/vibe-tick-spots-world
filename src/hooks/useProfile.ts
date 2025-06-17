@@ -1,81 +1,108 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { backendService } from '@/services/backendService';
-import { useBackendProfile } from './useBackendProfile';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Profile {
   id: string;
-  username: string | null;
-  full_name: string | null;
-  avatar_url: string | null;
-  email: string | null;
-  bio: string | null;
-  created_at: string;
-  updated_at: string;
-  posts_count: number;
-  followers_count?: number;
+  username?: string;
+  full_name?: string;
+  avatar_url?: string;
+  bio?: string;
+  current_city?: string;
+  email?: string;
+  posts_count?: number;
+  follower_count?: number;
   following_count?: number;
   cities_visited?: number;
+  places_visited?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export const useProfile = () => {
   const { user } = useAuth();
-  const { profile: backendProfile, loading: backendLoading, error: backendError, updateProfile: updateBackendProfile } = useBackendProfile();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const config = backendService.getConfig();
-    
-    if (config.enableRealDatabase && backendProfile) {
-      // Use backend data when available
-      setProfile(backendProfile);
-      setLoading(backendLoading);
-      setError(backendError);
-    } else if (!user) {
-      setProfile(null);
-      setLoading(false);
-    } else {
-      // Demo data fallback
-      const demoProfile: Profile = {
-        id: user.id,
-        username: user.user_metadata?.username || `user_${user.id.substring(0, 8)}`,
-        full_name: user.user_metadata?.full_name || 'Travel Enthusiast',
-        avatar_url: user.user_metadata?.avatar_url || null,
-        email: user.email || 'demo@spott.app',
-        bio: 'Travel Enthusiast | Food Lover | Photographer',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        posts_count: 24,
-        followers_count: 1542,
-        following_count: 892,
-        cities_visited: 12
-      };
-      
-      setProfile(demoProfile);
-      setLoading(false);
-      setError(null);
-    }
-  }, [user, backendProfile, backendLoading, backendError]);
+  const fetchProfile = async () => {
+    if (!user?.id) return;
 
-  const updateProfile = async (updates: Partial<Profile>) => {
-    const config = backendService.getConfig();
-    
-    if (config.enableRealDatabase) {
-      return await updateBackendProfile(updates);
-    } else {
-      // Demo mode: just update local state
-      setProfile(prev => prev ? { ...prev, ...updates } : null);
-      return { data: profile };
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (fetchError) {
+        if (fetchError.code === 'PGRST116') {
+          // Profile doesn't exist, create one
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert({
+              id: user.id,
+              username: user.email?.split('@')[0] || 'user',
+              email: user.email,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .select()
+            .single();
+
+          if (createError) throw createError;
+          setProfile(newProfile);
+        } else {
+          throw fetchError;
+        }
+      } else {
+        setProfile(data);
+      }
+    } catch (err) {
+      console.error('Error fetching profile:', err);
+      setError('Failed to load profile');
+    } finally {
+      setLoading(false);
     }
   };
+
+  const updateProfile = async (updates: Partial<Profile>) => {
+    if (!user?.id) throw new Error('No user logged in');
+
+    try {
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      // Refresh profile data
+      await fetchProfile();
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      throw err;
+    }
+  };
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchProfile();
+    }
+  }, [user?.id]);
 
   return {
     profile,
     loading,
     error,
-    updateProfile
+    updateProfile,
+    refetch: fetchProfile
   };
 };
