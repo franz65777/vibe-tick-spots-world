@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { backendService } from '@/services/backendService';
@@ -14,12 +15,6 @@ interface MapPin {
   addedDate?: string;
   popularity?: number;
   city?: string;
-  isNew?: boolean;
-  visitors?: string[];
-  friendsWhoSaved?: { name: string; avatar: string }[];
-  image?: string;
-  distance?: string | number;
-  totalSaves?: number;
 }
 
 interface UseMapPinsReturn {

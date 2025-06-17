@@ -13,7 +13,6 @@ import PrivacyPage from "./pages/PrivacyPage";
 import SubscriptionPage from "./pages/SubscriptionPage";
 import WelcomePage from "./components/WelcomePage";
 import ExplorePage from "./components/ExplorePage";
-import SearchPage from "./components/SearchPage";
 import AddLocationPage from "./components/AddLocationPage";
 import ProfilePage from "./components/ProfilePage";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -45,11 +44,6 @@ const App = () => {
               <Route path="/explore" element={
                 <ProtectedRoute>
                   <ExplorePage />
-                </ProtectedRoute>
-              } />
-              <Route path="/search" element={
-                <ProtectedRoute>
-                  <SearchPage />
                 </ProtectedRoute>
               } />
               <Route path="/add" element={
