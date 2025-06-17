@@ -1,17 +1,29 @@
 
-import React from 'react';
-import { Calendar, MapPin, Grid3X3 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Calendar, MapPin, Grid3X3, Plus } from 'lucide-react';
 import { useUserTrips } from '@/hooks/useUserTrips';
 import { useProfile } from '@/hooks/useProfile';
 import { useParams } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import CreateTripModal from './CreateTripModal';
 
 const TripsGrid = () => {
   const { userId } = useParams<{ userId: string }>();
   const { profile } = useProfile();
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   
   // Use userId from params if viewing another user's profile, otherwise use current user's profile
   const targetUserId = userId || profile?.id;
   const { trips, loading } = useUserTrips(targetUserId);
+  
+  // Check if this is the current user's profile
+  const isOwnProfile = !userId || userId === profile?.id;
+
+  const handleCreateTrip = (tripData: any) => {
+    console.log('Creating trip:', tripData);
+    // TODO: Implement actual trip creation
+    setIsCreateModalOpen(false);
+  };
 
   if (loading) {
     return (
@@ -23,18 +35,46 @@ const TripsGrid = () => {
 
   if (trips.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-          <Grid3X3 className="w-8 h-8 text-gray-400" />
+      <div className="px-4">
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <Grid3X3 className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No trips yet</h3>
+          <p className="text-gray-600 text-sm mb-4">
+            {isOwnProfile ? 'Start planning your travel adventures!' : 'No trips to show'}
+          </p>
+          {isOwnProfile && (
+            <Button onClick={() => setIsCreateModalOpen(true)} className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Create Your First Trip
+            </Button>
+          )}
         </div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">No trips yet</h3>
-        <p className="text-gray-600 text-sm">Start planning your travel adventures!</p>
+
+        <CreateTripModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSave={handleCreateTrip}
+        />
       </div>
     );
   }
 
   return (
     <div className="px-4">
+      {isOwnProfile && (
+        <div className="mb-4">
+          <Button 
+            onClick={() => setIsCreateModalOpen(true)} 
+            className="w-full flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Create New Trip
+          </Button>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-4">
         {trips.map((trip) => (
           <div
@@ -79,6 +119,12 @@ const TripsGrid = () => {
           </div>
         ))}
       </div>
+
+      <CreateTripModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSave={handleCreateTrip}
+      />
     </div>
   );
 };
