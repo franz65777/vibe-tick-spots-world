@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,7 +17,7 @@ import { Place } from '@/types/place';
 const ExplorePage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { users: searchUsers, loading: searchLoading, searchUsers: performSearch } = useUserSearch();
+  const { users: searchUsers, loading: searchLoading, searchUsers: performUserSearch } = useUserSearch();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState<'locations' | 'users'>('locations');
@@ -43,7 +42,7 @@ const ExplorePage = () => {
   }, [user]);
 
   useEffect(() => {
-    if (searchQuery.trim().length > 2) {
+    if (searchQuery.trim().length > 0) {
       handleSearch();
     } else {
       setFilteredLocations([]);
@@ -104,7 +103,7 @@ const ExplorePage = () => {
         setFilteredUsers([]);
       } else {
         // Search users
-        await performSearch(searchQuery);
+        await performUserSearch(searchQuery);
         setFilteredLocations([]);
       }
       
@@ -266,7 +265,7 @@ const ExplorePage = () => {
             sortBy={sortBy}
             filteredLocations={filteredLocations}
             filteredUsers={filteredUsers}
-            isSearching={isSearching}
+            isSearching={isSearching || searchLoading}
             likedPlaces={likedPlaces}
             onCardClick={handleCardClick}
             onLikeToggle={handleLikeToggle}

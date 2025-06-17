@@ -49,7 +49,7 @@ export const useUserSearch = () => {
               .select('id')
               .eq('follower_id', currentUser.id)
               .eq('following_id', user.id)
-              .single();
+              .maybeSingle();
             
             isFollowing = !!followData;
           }
@@ -99,7 +99,7 @@ export const useUserSearch = () => {
               .select('id')
               .eq('follower_id', currentUser.id)
               .eq('following_id', user.id)
-              .single();
+              .maybeSingle();
             
             isFollowing = !!followData;
           }
@@ -126,6 +126,13 @@ export const useUserSearch = () => {
       setLoading(false);
     }
   };
+
+  // Auto-load all users when component mounts
+  useEffect(() => {
+    if (currentUser) {
+      getAllUsers();
+    }
+  }, [currentUser]);
 
   return {
     users,
