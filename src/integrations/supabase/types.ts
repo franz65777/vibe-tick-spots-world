@@ -516,6 +516,7 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           description: string | null
+          google_place_id: string | null
           id: string
           image_url: string | null
           latitude: number | null
@@ -523,6 +524,7 @@ export type Database = {
           metadata: Json | null
           name: string
           pioneer_user_id: string | null
+          place_types: string[] | null
           updated_at: string | null
         }
         Insert: {
@@ -533,6 +535,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           description?: string | null
+          google_place_id?: string | null
           id?: string
           image_url?: string | null
           latitude?: number | null
@@ -540,6 +543,7 @@ export type Database = {
           metadata?: Json | null
           name: string
           pioneer_user_id?: string | null
+          place_types?: string[] | null
           updated_at?: string | null
         }
         Update: {
@@ -550,6 +554,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           description?: string | null
+          google_place_id?: string | null
           id?: string
           image_url?: string | null
           latitude?: number | null
@@ -557,6 +562,7 @@ export type Database = {
           metadata?: Json | null
           name?: string
           pioneer_user_id?: string | null
+          place_types?: string[] | null
           updated_at?: string | null
         }
         Relationships: [
@@ -1239,6 +1245,35 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_saved_locations: {
+        Row: {
+          created_at: string
+          id: string
+          location_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          location_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_saved_locations_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
             referencedColumns: ["id"]
           },
         ]

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { backendService } from '@/services/backendService';
@@ -20,6 +21,8 @@ interface MapPin {
   visitors?: string[] | number;
   distance?: string | number;
   totalSaves?: number;
+  hasPost?: boolean; // New field to indicate if location has posts
+  postCount?: number; // Number of posts at this location
 }
 
 interface UseMapPinsReturn {
@@ -62,7 +65,9 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           ],
           visitors: ['user1', 'user2', 'user3'],
           distance: '0.5km',
-          totalSaves: 24
+          totalSaves: 24,
+          hasPost: true,
+          postCount: 3
         },
         {
           id: '2',
@@ -80,7 +85,9 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           friendsWhoSaved: 3,
           visitors: 12,
           distance: '1.2km',
-          totalSaves: 18
+          totalSaves: 18,
+          hasPost: true,
+          postCount: 1
         },
         {
           id: '3',
@@ -98,7 +105,9 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           friendsWhoSaved: 8,
           visitors: 25,
           distance: '2.1km',
-          totalSaves: 45
+          totalSaves: 45,
+          hasPost: false,
+          postCount: 0
         }
       ],
       'milan': [
@@ -118,7 +127,9 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           friendsWhoSaved: 5,
           visitors: 18,
           distance: '0.8km',
-          totalSaves: 32
+          totalSaves: 32,
+          hasPost: true,
+          postCount: 2
         },
         {
           id: 'milan2',
@@ -136,7 +147,9 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           friendsWhoSaved: 7,
           visitors: 22,
           distance: '1.5km',
-          totalSaves: 45
+          totalSaves: 45,
+          hasPost: true,
+          postCount: 1
         },
         {
           id: 'milan3',
@@ -154,7 +167,9 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           friendsWhoSaved: 4,
           visitors: 15,
           distance: '2.3km',
-          totalSaves: 28
+          totalSaves: 28,
+          hasPost: false,
+          postCount: 0
         }
       ],
       'paris': [
@@ -174,7 +189,9 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           friendsWhoSaved: 9,
           visitors: 34,
           distance: '0.3km',
-          totalSaves: 56
+          totalSaves: 56,
+          hasPost: true,
+          postCount: 4
         },
         {
           id: 'paris2',
@@ -192,7 +209,9 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           friendsWhoSaved: 15,
           visitors: 45,
           distance: '1.8km',
-          totalSaves: 89
+          totalSaves: 89,
+          hasPost: true,
+          postCount: 2
         }
       ]
     };
@@ -260,26 +279,75 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
     }
 
     try {
-      const data = await backendService.getFollowedUsersLocations(user.id, city);
-      return data.map(location => ({
-        id: location.id,
-        name: location.name,
-        category: location.category,
-        coordinates: { 
-          lat: Number(location.latitude), 
-          lng: Number(location.longitude) 
-        },
-        likes: 0, // Would come from location_likes count
-        isFollowing: true,
-        addedBy: location.created_by,
-        city: location.city,
-        popularity: 50, // Default value
-        isNew: false,
-        visitors: [],
-        friendsWhoSaved: [],
-        distance: '0km',
-        totalSaves: 0
-      }));
+      // Get locations with posts from followed users
+      const { data: postsData, error: postsError } = await supabase
+        .from('posts')
+        .select(`
+          location_id,
+          locations!inner (
+            id,
+            name,
+            category,
+            latitude,
+            longitude,
+            address,
+            created_by,
+            created_at
+          ),
+          profiles!inner (
+            id
+          )
+        `)
+        .not('location_id', 'is', null)
+        .in('profiles.id', 
+          // Subquery to get followed user IDs
+          supabase
+            .from('follows')
+            .select('following_id')
+            .eq('follower_id', user.id)
+        );
+
+      if (postsError) throw postsError;
+
+      // Convert to MapPin format
+      const locationMap = new Map<string, MapPin>();
+      
+      postsData?.forEach((post: any) => {
+        const location = post.locations;
+        if (!location || !location.latitude || !location.longitude) return;
+
+        const locationId = location.id;
+        if (locationMap.has(locationId)) {
+          // Increment post count
+          const existing = locationMap.get(locationId)!;
+          existing.postCount = (existing.postCount || 0) + 1;
+        } else {
+          locationMap.set(locationId, {
+            id: locationId,
+            name: location.name,
+            category: location.category,
+            coordinates: { 
+              lat: Number(location.latitude), 
+              lng: Number(location.longitude) 
+            },
+            likes: 0,
+            isFollowing: true,
+            addedBy: location.created_by,
+            addedDate: location.created_at,
+            city: city,
+            popularity: 50,
+            isNew: false,
+            visitors: [],
+            friendsWhoSaved: [],
+            distance: '0km',
+            totalSaves: 0,
+            hasPost: true,
+            postCount: 1
+          });
+        }
+      });
+
+      return Array.from(locationMap.values());
     } catch (error) {
       console.error('Error fetching following pins:', error);
       return getDemoPins('following', city);
@@ -294,8 +362,28 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
     }
 
     try {
-      const data = await backendService.getPopularLocations(city, 20);
-      return data.map(location => ({
+      // Get popular locations based on post count
+      const { data, error } = await supabase
+        .from('locations')
+        .select(`
+          id,
+          name,
+          category,
+          latitude,
+          longitude,
+          address,
+          created_by,
+          created_at,
+          posts (count)
+        `)
+        .not('latitude', 'is', null)
+        .not('longitude', 'is', null)
+        .order('posts.count', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+
+      return data?.map((location: any) => ({
         id: location.id,
         name: location.name,
         category: location.category,
@@ -303,17 +391,20 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           lat: Number(location.latitude), 
           lng: Number(location.longitude) 
         },
-        likes: 0, // Would come from location_likes count
+        likes: 0,
         isFollowing: false,
         addedBy: location.created_by,
-        city: location.city,
-        popularity: 75, // Would be calculated based on engagement
+        addedDate: location.created_at,
+        city: city,
+        popularity: 75,
         isNew: false,
         visitors: [],
         friendsWhoSaved: [],
         distance: '0km',
-        totalSaves: 0
-      }));
+        totalSaves: 0,
+        hasPost: location.posts.length > 0,
+        postCount: location.posts.length
+      })) || [];
     } catch (error) {
       console.error('Error fetching popular pins:', error);
       return getDemoPins('popular', city);

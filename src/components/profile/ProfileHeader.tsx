@@ -1,5 +1,5 @@
 
-import { MoreHorizontal, Building2, Edit, LogOut } from 'lucide-react';
+import { MoreHorizontal, Building2, Edit, LogOut, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -14,11 +14,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useState } from 'react';
 import BadgeDisplay from './BadgeDisplay';
 import EditProfileModal from './EditProfileModal';
+import ProfilePictureEditor from '../ProfilePictureEditor';
 
 const ProfileHeader = () => {
   const { profile } = useProfile();
   const { user } = useAuth();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isProfilePictureEditorOpen, setIsProfilePictureEditorOpen] = useState(false);
 
   // Mock business account status - in a real app, this would come from the backend
   const hasBusinessAccount = true; // This should be fetched from user's business status
@@ -87,9 +89,14 @@ const ProfileHeader = () => {
               </div>
             </div>
           </div>
-          <div className="absolute bottom-0 right-0 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
-            <div className="w-2 h-2 bg-white rounded-full"></div>
-          </div>
+          
+          {/* Camera icon for editing profile picture */}
+          <button
+            onClick={() => setIsProfilePictureEditorOpen(true)}
+            className="absolute bottom-0 right-0 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors"
+          >
+            <Camera className="w-3 h-3 text-white" />
+          </button>
         </div>
         
         <div className="flex-1 min-w-0">
@@ -117,6 +124,12 @@ const ProfileHeader = () => {
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         currentProfile={profile}
+      />
+
+      <ProfilePictureEditor
+        isOpen={isProfilePictureEditorOpen}
+        onClose={() => setIsProfilePictureEditorOpen(false)}
+        currentAvatarUrl={profile?.avatar_url || undefined}
       />
     </div>
   );

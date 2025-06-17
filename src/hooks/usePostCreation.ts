@@ -5,20 +5,63 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface CreatePostData {
   caption?: string;
-  locationId?: string;
   files: File[];
+  location?: {
+    google_place_id: string;
+    name: string;
+    address: string;
+    latitude: number;
+    longitude: number;
+    types: string[];
+  };
 }
 
 export const usePostCreation = () => {
   const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
 
-  const createPost = async ({ caption, locationId, files }: CreatePostData) => {
+  const createPost = async ({ caption, files, location }: CreatePostData) => {
     if (!user) throw new Error('User not authenticated');
     
     setUploading(true);
     
     try {
+      let locationId = null;
+
+      // Create or find location if provided
+      if (location) {
+        // First check if location already exists by Google Place ID
+        const { data: existingLocation } = await supabase
+          .from('locations')
+          .select('id')
+          .eq('google_place_id', location.google_place_id)
+          .single();
+
+        if (existingLocation) {
+          locationId = existingLocation.id;
+        } else {
+          // Create new location
+          const { data: newLocation, error: locationError } = await supabase
+            .from('locations')
+            .insert({
+              google_place_id: location.google_place_id,
+              name: location.name,
+              address: location.address,
+              latitude: location.latitude,
+              longitude: location.longitude,
+              category: location.types[0] || 'establishment',
+              place_types: location.types,
+              created_by: user.id,
+              pioneer_user_id: user.id
+            })
+            .select('id')
+            .single();
+
+          if (locationError) throw locationError;
+          locationId = newLocation.id;
+        }
+      }
+
       // Upload files to storage
       const mediaUrls: string[] = [];
       
@@ -45,7 +88,7 @@ export const usePostCreation = () => {
         .from('posts')
         .insert({
           user_id: user.id,
-          location_id: locationId || null,
+          location_id: locationId,
           caption: caption || null,
           media_urls: mediaUrls,
         })
@@ -54,27 +97,7 @@ export const usePostCreation = () => {
 
       if (postError) throw postError;
 
-      // Update user's posts count by fetching current count and incrementing
-      try {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('posts_count')
-          .eq('id', user.id)
-          .single();
-
-        const currentCount = profile?.posts_count || 0;
-        
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({ posts_count: currentCount + 1 })
-          .eq('id', user.id);
-        
-        if (updateError) {
-          console.warn('Could not update posts count:', updateError);
-        }
-      } catch (error) {
-        console.warn('Could not update posts count:', error);
-      }
+      // Note: Post count will be updated automatically by the database trigger
 
       return { success: true, post };
     } catch (error) {

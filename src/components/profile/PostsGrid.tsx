@@ -1,9 +1,10 @@
 
-import { Heart, MessageCircle, MapPin, Grid3X3 } from 'lucide-react';
+import { Heart, MessageCircle, MapPin, Grid3X3, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import PostDetailModal from './PostDetailModal';
 import { usePosts } from '@/hooks/usePosts';
 import { useProfile } from '@/hooks/useProfile';
+import { usePostDeletion } from '@/hooks/usePostDeletion';
 
 interface Post {
   id: string;
@@ -21,13 +22,38 @@ interface Post {
 
 const PostsGrid = () => {
   const { profile } = useProfile();
-  const { posts, loading } = usePosts(profile?.id);
+  const { posts, loading, refetch } = usePosts(profile?.id);
+  const { deletePost, deleting } = usePostDeletion();
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
 
   const handlePostClick = (post: Post) => {
     setSelectedPost(post);
+  };
+
+  const handleDeletePost = async (postId: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent opening the post modal
+    
+    if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+      return;
+    }
+
+    setDeletingPostId(postId);
+    try {
+      const result = await deletePost(postId);
+      if (result.success) {
+        await refetch(); // Refresh the posts list
+      } else {
+        alert('Failed to delete post. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      alert('Failed to delete post. Please try again.');
+    } finally {
+      setDeletingPostId(null);
+    }
   };
 
   const handleLikeToggle = (postId: string) => {
@@ -97,6 +123,19 @@ const PostsGrid = () => {
                 </span>
               </div>
             )}
+
+            {/* Delete button */}
+            <button
+              onClick={(e) => handleDeletePost(post.id, e)}
+              disabled={deletingPostId === post.id}
+              className="absolute top-2 left-2 w-8 h-8 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200"
+            >
+              {deletingPostId === post.id ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <Trash2 className="w-4 h-4 text-white" />
+              )}
+            </button>
             
             {/* Overlay with stats */}
             <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors duration-200 flex items-end">
