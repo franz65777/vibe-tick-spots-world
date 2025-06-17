@@ -93,7 +93,6 @@ const GoogleMapsSetup = ({
     if (mapInstanceRef.current && mapCenter && isLoaded) {
       console.log('Updating map center to:', mapCenter);
       mapInstanceRef.current.setCenter(mapCenter);
-      mapInstanceRef.current.setZoom(15); // Zoom in when searching for a specific place
     }
   }, [mapCenter, isLoaded]);
 
@@ -137,30 +136,31 @@ const GoogleMapsSetup = ({
     }
   }, [places, onPinClick, isLoaded]);
 
-  // Reset selected place marker appearance when selection changes
+  // Handle selected place highlighting
   useEffect(() => {
-    if (mapInstanceRef.current && isLoaded) {
-      // Reset all markers to default appearance
-      markersRef.current.forEach((marker, index) => {
-        const place = places[index];
-        if (place) {
-          const isSelected = selectedPlace && place.id === selectedPlace.id;
-          marker.setIcon({
-            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-              <svg width="${isSelected ? '40' : '32'}" height="${isSelected ? '40' : '32'}" viewBox="0 0 ${isSelected ? '40' : '32'} ${isSelected ? '40' : '32'}" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="${isSelected ? '20' : '16'}" cy="${isSelected ? '20' : '16'}" r="${isSelected ? '12' : '8'}" fill="${isSelected ? '#EF4444' : '#3B82F6'}" stroke="white" stroke-width="${isSelected ? '3' : '2'}"/>
-                <circle cx="${isSelected ? '20' : '16'}" cy="${isSelected ? '20' : '16'}" r="${isSelected ? '6' : '3'}" fill="white"/>
-              </svg>
-            `),
-            scaledSize: new window.google.maps.Size(isSelected ? 40 : 32, isSelected ? 40 : 32),
-            anchor: new window.google.maps.Point(isSelected ? 20 : 16, isSelected ? 20 : 16)
-          });
-        }
+    if (mapInstanceRef.current && selectedPlace && isLoaded) {
+      // Find the marker for the selected place and highlight it
+      const selectedMarker = markersRef.current.find((marker, index) => {
+        return places[index]?.id === selectedPlace.id;
       });
 
-      // Pan to selected place if one is selected
-      if (selectedPlace && selectedPlace.coordinates) {
-        mapInstanceRef.current.panTo(selectedPlace.coordinates);
+      if (selectedMarker) {
+        // Update marker icon to highlight selected state
+        selectedMarker.setIcon({
+          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="20" cy="20" r="12" fill="#EF4444" stroke="white" stroke-width="3"/>
+              <circle cx="20" cy="20" r="6" fill="white"/>
+            </svg>
+          `),
+          scaledSize: new window.google.maps.Size(40, 40),
+          anchor: new window.google.maps.Point(20, 20)
+        });
+
+        // Pan to the selected marker
+        if (selectedPlace.coordinates) {
+          mapInstanceRef.current.panTo(selectedPlace.coordinates);
+        }
       }
     }
   }, [selectedPlace, isLoaded, places]);

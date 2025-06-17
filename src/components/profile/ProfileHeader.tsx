@@ -1,4 +1,5 @@
-import { MoreHorizontal, Building2, Edit, LogOut, Camera } from 'lucide-react';
+
+import { MoreHorizontal, Building2, Edit, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -10,21 +11,17 @@ import {
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import BadgeDisplay from './BadgeDisplay';
 import EditProfileModal from './EditProfileModal';
-import { useMediaUpload } from '@/hooks/useMediaUpload';
 
 const ProfileHeader = () => {
-  const { profile, updateProfile } = useProfile();
+  const { profile } = useProfile();
   const { user } = useAuth();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const { uploadMedia } = useMediaUpload();
 
   // Mock business account status - in a real app, this would come from the backend
-  const hasBusinessAccount = true;
+  const hasBusinessAccount = true; // This should be fetched from user's business status
 
   const getInitials = () => {
     if (profile?.username) {
@@ -44,23 +41,6 @@ const ProfileHeader = () => {
       await supabase.auth.signOut();
     } catch (error) {
       console.error('Error logging out:', error);
-    }
-  };
-
-  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !user) return;
-
-    setIsUploadingAvatar(true);
-    try {
-      const result = await uploadMedia(file);
-      if (result.success && result.url) {
-        await updateProfile({ avatar_url: result.url });
-      }
-    } catch (error) {
-      console.error('Error uploading avatar:', error);
-    } finally {
-      setIsUploadingAvatar(false);
     }
   };
 
@@ -107,28 +87,6 @@ const ProfileHeader = () => {
               </div>
             </div>
           </div>
-          
-          {/* Avatar upload button */}
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isUploadingAvatar}
-            className="absolute bottom-0 right-0 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors"
-          >
-            {isUploadingAvatar ? (
-              <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <Camera className="w-3 h-3 text-white" />
-            )}
-          </button>
-          
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleAvatarUpload}
-            className="hidden"
-          />
-          
           <div className="absolute bottom-0 right-0 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
             <div className="w-2 h-2 bg-white rounded-full"></div>
           </div>

@@ -11,7 +11,6 @@ import PlaceInteractionModal from './home/PlaceInteractionModal';
 import CreateStoryModal from './CreateStoryModal';
 import NotificationsModal from './NotificationsModal';
 import MessagesModal from './MessagesModal';
-import PlacesSearchModal from './home/PlacesSearchModal';
 import { useMapPins } from '@/hooks/useMapPins';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useGeolocation } from '@/hooks/useGeolocation';
@@ -76,8 +75,7 @@ const HomePage = () => {
   const [currentCity, setCurrentCity] = useState('San Francisco');
   const [searchQuery, setSearchQuery] = useState('');
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 37.7749, lng: -122.4194 });
-  const [isPlacesSearchOpen, setIsPlacesSearchOpen] = useState(false);
-
+  
   const { pins, loading, error, refreshPins, hasFollowedUsers } = useMapPins(activeFilter);
   const { trackUserAction, trackPlaceInteraction } = useAnalytics();
   const { location, getCurrentLocation } = useGeolocation();
@@ -192,17 +190,6 @@ const HomePage = () => {
     setIsMessagesOpen(true);
   };
 
-  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && searchQuery.trim()) {
-      setIsPlacesSearchOpen(true);
-    }
-  };
-
-  const handlePlaceSearchSelect = (place: { coordinates: { lat: number; lng: number }; name: string }) => {
-    setMapCenter(place.coordinates);
-    setSearchQuery(place.name);
-  };
-
   // Calculate distance between two coordinates in km
   const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
     const R = 6371; // Earth's radius in km
@@ -292,7 +279,7 @@ const HomePage = () => {
         searchQuery={searchQuery}
         currentCity={currentCity}
         onSearchChange={setSearchQuery}
-        onSearchKeyPress={handleSearchKeyPress}
+        onSearchKeyPress={() => {}}
         onNotificationsClick={handleNotificationsClick}
         onMessagesClick={handleMessagesClick}
         onCitySelect={handleCitySelect}
@@ -396,12 +383,6 @@ const HomePage = () => {
       <MessagesModal
         isOpen={isMessagesOpen}
         onClose={() => setIsMessagesOpen(false)}
-      />
-
-      <PlacesSearchModal
-        isOpen={isPlacesSearchOpen}
-        onClose={() => setIsPlacesSearchOpen(false)}
-        onPlaceSelect={handlePlaceSearchSelect}
       />
     </div>
   );
