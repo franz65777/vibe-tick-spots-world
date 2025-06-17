@@ -10,10 +10,10 @@ export interface BackendConfig {
 
 class BackendService {
   private config: BackendConfig = {
-    isDemoMode: true, // Set to false for production
-    enableRealDatabase: false, // Set to true when ready for production
-    enablePushNotifications: false,
-    enableLocationServices: false
+    isDemoMode: false, // Now enabled for production
+    enableRealDatabase: true, // Real database enabled
+    enablePushNotifications: true,
+    enableLocationServices: true
   };
 
   getConfig(): BackendConfig {
@@ -41,50 +41,47 @@ class BackendService {
     }
   }
 
-  // Enable production mode (call this when ready to go live)
-  async enableProductionMode(): Promise<boolean> {
-    const isConnected = await this.testConnection();
-    if (isConnected) {
-      this.updateConfig({
-        isDemoMode: false,
-        enableRealDatabase: true,
-        enablePushNotifications: true,
-        enableLocationServices: true
-      });
-      return true;
-    }
-    return false;
-  }
-
-  // Get user's saved locations (demo-safe)
+  // Get user's saved locations from real database
   async getUserSavedLocations(userId: string) {
-    if (this.config.isDemoMode) {
-      console.log('Demo mode: Using mock saved locations');
-      return [];
-    }
-
     try {
-      // For now, return from locations table since user_saved_locations doesn't exist yet
       const { data, error } = await supabase
-        .from('locations')
-        .select('*')
-        .limit(10);
+        .from('user_saved_locations')
+        .select(`
+          *,
+          locations (
+            id,
+            name,
+            category,
+            address,
+            latitude,
+            longitude,
+            city,
+            country,
+            image_url,
+            description,
+            created_by,
+            pioneer_user_id,
+            created_at,
+            updated_at
+          )
+        `)
+        .eq('user_id', userId)
+        .order('saved_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      return data?.map(item => ({
+        ...item.locations,
+        saved_at: item.saved_at
+      })) || [];
     } catch (error) {
       console.error('Error fetching saved locations:', error);
       return [];
     }
   }
 
-  // Search locations (demo-safe)
+  // Search locations from real database
   async searchLocations(query: string, city?: string) {
-    if (this.config.isDemoMode) {
-      console.log('Demo mode: Using mock search results');
-      return [];
-    }
-
     try {
       let queryBuilder = supabase
         .from('locations')
@@ -106,11 +103,6 @@ class BackendService {
 
   // Get popular locations based on likes and engagement
   async getPopularLocations(city?: string, limit: number = 10) {
-    if (this.config.isDemoMode) {
-      console.log('Demo mode: Using mock popular locations');
-      return [];
-    }
-
     try {
       let queryBuilder = supabase
         .from('locations')
@@ -134,11 +126,6 @@ class BackendService {
 
   // Get locations from followed users
   async getFollowedUsersLocations(userId: string, city?: string) {
-    if (this.config.isDemoMode) {
-      console.log('Demo mode: Using mock followed users locations');
-      return [];
-    }
-
     try {
       // Get users that the current user follows
       const { data: followedUsers, error: followError } = await supabase
@@ -170,6 +157,78 @@ class BackendService {
     } catch (error) {
       console.error('Error fetching followed users locations:', error);
       return [];
+    }
+  }
+
+  // Save a location for a user
+  async saveLocation(userId: string, locationId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('user_saved_locations')
+        .insert({
+          user_id: userId,
+          location_id: locationId
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error saving location:', error);
+      return { success: false, error };
+    }
+  }
+
+  // Unsave a location for a user
+  async unsaveLocation(userId: string, locationId: string) {
+    try {
+      const { error } = await supabase
+        .from('user_saved_locations')
+        .delete()
+        .eq('user_id', userId)
+        .eq('location_id', locationId);
+
+      if (error) throw error;
+      return { success: true };
+    } catch (error) {
+      console.error('Error unsaving location:', error);
+      return { success: false, error };
+    }
+  }
+
+  // Upload media file
+  async uploadMedia(file: File, userId: string, locationId?: string) {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${userId}/${Date.now()}.${fileExt}`;
+      
+      // Upload to storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('media')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      // Create media record
+      const { data: mediaData, error: mediaError } = await supabase
+        .from('media')
+        .insert({
+          user_id: userId,
+          location_id: locationId,
+          file_path: uploadData.path,
+          file_type: file.type.startsWith('image/') ? 'image' : 'video',
+          file_size: file.size
+        })
+        .select()
+        .single();
+
+      if (mediaError) throw mediaError;
+
+      return { success: true, data: mediaData };
+    } catch (error) {
+      console.error('Error uploading media:', error);
+      return { success: false, error };
     }
   }
 }

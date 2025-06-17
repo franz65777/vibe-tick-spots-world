@@ -39,7 +39,7 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
   const [error, setError] = useState<string | null>(null);
   const [hasFollowedUsers, setHasFollowedUsers] = useState(false);
 
-  // Demo data for different cities when backend is in demo mode
+  // Demo data for fallback when backend has no data
   const getDemoPins = (filter: string, city?: string): MapPin[] => {
     const allDemoPins: Record<string, MapPin[]> = {
       'san francisco': [
@@ -222,8 +222,8 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
 
     const config = backendService.getConfig();
     
-    if (config.isDemoMode) {
-      return true;
+    if (!config.enableRealDatabase) {
+      return true; // Demo mode always has followed users
     }
 
     try {
@@ -255,7 +255,7 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
 
     const config = backendService.getConfig();
     
-    if (config.isDemoMode) {
+    if (!config.enableRealDatabase) {
       return getDemoPins('following', city);
     }
 
@@ -282,14 +282,14 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
       }));
     } catch (error) {
       console.error('Error fetching following pins:', error);
-      return [];
+      return getDemoPins('following', city);
     }
   }, [user, checkFollowedUsers]);
 
   const getPopularPins = useCallback(async (city?: string): Promise<MapPin[]> => {
     const config = backendService.getConfig();
     
-    if (config.isDemoMode) {
+    if (!config.enableRealDatabase) {
       return getDemoPins('popular', city);
     }
 
@@ -340,7 +340,14 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           } else if (activeFilter === 'following') {
             newPins = await getFollowingPins(city);
           } else {
-            newPins = getDemoPins('new', city);
+            // For new filter, get following pins and filter by date
+            const followingPins = await getFollowingPins(city);
+            const oneWeekAgo = new Date();
+            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+            newPins = followingPins.filter(pin => {
+              const addedDate = new Date(pin.addedDate || '');
+              return addedDate >= oneWeekAgo;
+            });
           }
           break;
         case 'popular':
@@ -355,11 +362,8 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
     } catch (error) {
       console.error('Error refreshing pins:', error);
       setError('Failed to load pins');
-      if (activeFilter === 'popular') {
-        setPins(getDemoPins(activeFilter, city));
-      } else {
-        setPins([]);
-      }
+      // Fallback to demo data on error
+      setPins(getDemoPins(activeFilter, city));
     } finally {
       setLoading(false);
     }

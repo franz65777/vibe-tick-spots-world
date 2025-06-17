@@ -34,14 +34,11 @@ export const useProfile = () => {
       setProfile(backendProfile);
       setLoading(backendLoading);
       setError(backendError);
+    } else if (!user) {
+      setProfile(null);
+      setLoading(false);
     } else {
-      // Use demo data
-      if (!user) {
-        setProfile(null);
-        setLoading(false);
-        return;
-      }
-
+      // Demo data fallback
       const demoProfile: Profile = {
         id: user.id,
         username: user.user_metadata?.username || `user_${user.id.substring(0, 8)}`,
