@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,8 +10,8 @@ import SearchResults from './explore/SearchResults';
 import SearchSuggestions from './explore/SearchSuggestions';
 import RecommendationsSection from './explore/RecommendationsSection';
 import LocationDetailSheet from './LocationDetailSheet';
-import ShareModal from './ShareModal';
-import CommentModal from './CommentModal';
+import ShareModal from './home/ShareModal';
+import CommentModal from './home/CommentModal';
 import MessagesModal from './MessagesModal';
 import { Place } from '@/types/place';
 
@@ -72,40 +73,33 @@ const ExplorePage = () => {
     
     try {
       if (searchMode === 'locations') {
-        // Mock location search for now
+        // Mock location search for now - convert to Place format
         const mockLocations = [
           {
             id: '1',
             name: 'Coffee Shop Milano',
-            description: 'A cozy coffee shop in the heart of Milan',
-            address: 'Via Dante 15, Milan, Italy',
-            latitude: 45.4642,
-            longitude: 9.1900,
             category: 'cafe',
-            rating: 4.5,
-            images: ['https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop'],
-            likes_count: 120,
-            comments_count: 45
+            likes: 120,
+            visitors: ['user1', 'user2'],
+            isNew: false,
+            coordinates: { lat: 45.4642, lng: 9.1900 },
+            image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop'
           },
           {
             id: '2',
             name: 'Trattoria Bella Napoli',
-            description: 'Authentic Neapolitan cuisine',
-            address: 'Via Roma 23, Naples, Italy',
-            latitude: 40.8518,
-            longitude: 14.2681,
             category: 'restaurant',
-            rating: 4.8,
-            images: ['https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop'],
-            likes_count: 210,
-            comments_count: 78
+            likes: 210,
+            visitors: ['user3', 'user4'],
+            isNew: false,
+            coordinates: { lat: 40.8518, lng: 14.2681 },
+            image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop'
           }
         ];
         
         setFilteredLocations(mockLocations.filter(loc => 
           loc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          loc.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          loc.address.toLowerCase().includes(searchQuery.toLowerCase())
+          loc.category.toLowerCase().includes(searchQuery.toLowerCase())
         ));
         setFilteredUsers([]);
       } else {
@@ -139,15 +133,12 @@ const ExplorePage = () => {
     const placeData: Place = {
       id: location.id,
       name: location.name,
-      description: location.recommendationReason || '',
-      address: '',
-      latitude: location.coordinates.lat,
-      longitude: location.coordinates.lng,
       category: location.category,
-      rating: 4.5,
-      images: [location.image || ''],
-      likes_count: location.likes,
-      comments_count: 0
+      likes: location.likes,
+      visitors: [],
+      isNew: false,
+      coordinates: location.coordinates,
+      image: location.image
     };
     setSelectedLocation(placeData);
   };
@@ -176,15 +167,12 @@ const ExplorePage = () => {
     const placeData: Place = {
       id: location.id,
       name: location.name,
-      description: location.recommendationReason || '',
-      address: '',
-      latitude: location.coordinates.lat,
-      longitude: location.coordinates.lng,
       category: location.category,
-      rating: 4.5,
-      images: [location.image || ''],
-      likes_count: location.likes,
-      comments_count: 0
+      likes: location.likes,
+      visitors: [],
+      isNew: false,
+      coordinates: location.coordinates,
+      image: location.image
     };
     setShareLocation(placeData);
   };
@@ -197,15 +185,12 @@ const ExplorePage = () => {
     const placeData: Place = {
       id: location.id,
       name: location.name,
-      description: location.recommendationReason || '',
-      address: '',
-      latitude: location.coordinates.lat,
-      longitude: location.coordinates.lng,
       category: location.category,
-      rating: 4.5,
-      images: [location.image || ''],
-      likes_count: location.likes,
-      comments_count: 0
+      likes: location.likes,
+      visitors: [],
+      isNew: false,
+      coordinates: location.coordinates,
+      image: location.image
     };
     setCommentLocation(placeData);
   };
@@ -253,7 +238,7 @@ const ExplorePage = () => {
     <div className="flex flex-col h-full bg-white">
       <SearchHeader
         searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
+        onSearchQueryChange={setSearchQuery}
         searchMode={searchMode}
         onSearchModeChange={setSearchMode}
         onClearSearch={() => {
@@ -264,7 +249,6 @@ const ExplorePage = () => {
       />
 
       <SearchFilters
-        searchMode={searchMode}
         sortBy={sortBy}
         onSortChange={setSortBy}
       />
@@ -288,7 +272,11 @@ const ExplorePage = () => {
           />
         ) : (
           <div className="space-y-6">
-            <SearchSuggestions />
+            <SearchSuggestions 
+              suggestions={[]}
+              onSuggestionClick={() => {}}
+              searchHistory={[]}
+            />
             <RecommendationsSection
               searchMode={searchMode}
               loading={recommendationsLoading}
@@ -317,7 +305,7 @@ const ExplorePage = () => {
       />
 
       <LocationDetailSheet
-        place={selectedLocation}
+        location={selectedLocation}
         isOpen={!!selectedLocation}
         onClose={() => setSelectedLocation(null)}
         onShare={handleShare}

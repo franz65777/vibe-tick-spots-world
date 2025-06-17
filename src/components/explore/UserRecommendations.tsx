@@ -1,5 +1,4 @@
-
-import { users, MapPin } from 'lucide-react';
+import { Users, MapPin } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { UserRecommendation } from '@/services/searchService';
@@ -18,7 +17,7 @@ const UserRecommendations = ({ recommendations, onUserClick, onFollowUser, onMes
   if (recommendations.length === 0) {
     return (
       <div className="text-center py-8 px-4">
-        <users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+        <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
         <p className="text-gray-600">No user recommendations available</p>
       </div>
     );

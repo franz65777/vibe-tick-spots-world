@@ -113,7 +113,8 @@ class MessageService {
             message_type,
             created_at,
             is_read,
-            sender_id
+            sender_id,
+            receiver_id
           )
         `)
         .or(`participant_1_id.eq.${user.id},participant_2_id.eq.${user.id}`)
@@ -137,7 +138,7 @@ class MessageService {
           return {
             ...thread,
             other_user: otherUser,
-            last_message: thread.direct_messages
+            last_message: thread.direct_messages as DirectMessage
           };
         })
       );
@@ -171,6 +172,7 @@ class MessageService {
 
       return (messages || []).map(message => ({
         ...message,
+        message_type: message.message_type as 'text' | 'place_share' | 'trip_share' | 'post_share',
         sender: message.profiles
       }));
     } catch (error) {
@@ -207,8 +209,8 @@ class MessageService {
       const { data: existingThread } = await supabase
         .from('message_threads')
         .select('id')
-        .eq('participant_1_id', Math.min(user.id, userId))
-        .eq('participant_2_id', Math.max(user.id, userId))
+        .eq('participant_1_id', user.id < userId ? user.id : userId)
+        .eq('participant_2_id', user.id < userId ? userId : user.id)
         .single();
 
       if (existingThread) {
@@ -219,8 +221,8 @@ class MessageService {
       const { data: newThread, error } = await supabase
         .from('message_threads')
         .insert({
-          participant_1_id: Math.min(user.id, userId),
-          participant_2_id: Math.max(user.id, userId)
+          participant_1_id: user.id < userId ? user.id : userId,
+          participant_2_id: user.id < userId ? userId : user.id
         })
         .select('id')
         .single();
