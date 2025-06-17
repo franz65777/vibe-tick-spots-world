@@ -28,7 +28,16 @@ export const useSearchHistory = () => {
         .limit(20);
 
       if (error) throw error;
-      setSearchHistory(data || []);
+      
+      // Properly type cast the data
+      const typedData: SearchHistoryItem[] = (data || []).map(item => ({
+        id: item.id,
+        search_query: item.search_query,
+        search_type: item.search_type as 'location' | 'user',
+        searched_at: item.searched_at
+      }));
+      
+      setSearchHistory(typedData);
     } catch (error) {
       console.error('Error fetching search history:', error);
     } finally {
