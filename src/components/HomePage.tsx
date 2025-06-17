@@ -12,6 +12,7 @@ import ModalsManager from './home/ModalsManager';
 import PlaceInteractionModal from './home/PlaceInteractionModal';
 import { useSearch } from '@/hooks/useSearch';
 import { useAnalytics } from '@/hooks/useAnalytics';
+import { Place } from '@/types/place';
 
 interface HomeStory {
   id: string;
@@ -24,36 +25,13 @@ interface HomeStory {
   locationCategory?: string;
 }
 
-interface Place {
-  id: string;
-  name: string;
+interface HomePlace extends Place {
   description: string;
   location: string;
-  category: string;
-  image: string;
-  likes: number;
   rating: number;
   visitors: string[];
   friendsWhoSaved: { name: string; avatar: string; }[];
   savedCount: number;
-  stories?: HomeStory[];
-  latitude?: number;
-  longitude?: number;
-}
-
-interface HomePlace {
-  id: string;
-  name: string;
-  description: string;
-  location: string;
-  category: string;
-  image: string;
-  likes: number;
-  rating: number;
-  visitors: string[];
-  friendsWhoSaved: { name: string; avatar: string; }[];
-  savedCount: number;
-  isNew: boolean;
   stories?: HomeStory[];
   latitude?: number;
   longitude?: number;
@@ -109,6 +87,7 @@ const demoPlaces: HomePlace[] = [
     ],
     savedCount: 15,
     isNew: true,
+    coordinates: { lat: 34.052235, lng: -118.243683 },
     stories: demoStories.slice(0, 2),
     latitude: 34.052235,
     longitude: -118.243683
@@ -128,6 +107,7 @@ const demoPlaces: HomePlace[] = [
     ],
     savedCount: 42,
     isNew: false,
+    coordinates: { lat: 34.052235, lng: -118.243683 },
     stories: demoStories.slice(1, 3),
     latitude: 34.052235,
     longitude: -118.243683
@@ -149,6 +129,7 @@ const demoPlaces: HomePlace[] = [
     ],
     savedCount: 28,
     isNew: false,
+    coordinates: { lat: 34.052235, lng: -118.243683 },
     latitude: 34.052235,
     longitude: -118.243683
   },
@@ -236,18 +217,13 @@ const HomePage = () => {
     return {
       id: homePlace.id,
       name: homePlace.name,
-      description: homePlace.description,
-      location: homePlace.location,
       category: homePlace.category,
-      image: homePlace.image,
       likes: homePlace.likes,
-      rating: homePlace.rating,
-      visitors: homePlace.visitors,
+      isNew: homePlace.isNew,
+      coordinates: homePlace.coordinates,
+      image: homePlace.image,
       friendsWhoSaved: homePlace.friendsWhoSaved,
-      savedCount: homePlace.savedCount,
-      stories: homePlace.stories,
-      latitude: homePlace.latitude,
-      longitude: homePlace.longitude
+      visitors: homePlace.visitors
     };
   };
 
@@ -297,7 +273,7 @@ const HomePage = () => {
       {isInteractionModalOpen && selectedPlace && (
         <PlaceInteractionModal
           place={selectedPlace}
-          mode="view"
+          mode="comments"
           isOpen={isInteractionModalOpen}
           onClose={() => setIsInteractionModalOpen(false)}
         />
