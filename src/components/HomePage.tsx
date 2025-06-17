@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -142,6 +141,7 @@ const HomePage = () => {
   const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'new'>('popular');
   const [isInteractionModalOpen, setIsInteractionModalOpen] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
   const searchData = useSearch();
   const { trackUserAction, trackPlaceInteraction } = useAnalytics();
 
@@ -156,22 +156,30 @@ const HomePage = () => {
     trackUserAction('filter_change', { filter });
   };
 
-  const handleLike = (placeId: string) => {
-    setPlaces(currentPlaces =>
-      currentPlaces.map(place =>
-        place.id === placeId ? { ...place, likes: place.likes + 1 } : place
-      )
-    );
+  const handleLikeToggle = (placeId: string) => {
+    const isCurrentlyLiked = likedPlaces.has(placeId);
+    
+    if (isCurrentlyLiked) {
+      setLikedPlaces(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(placeId);
+        return newSet;
+      });
+      setPlaces(currentPlaces =>
+        currentPlaces.map(place =>
+          place.id === placeId ? { ...place, likes: place.likes - 1 } : place
+        )
+      );
+    } else {
+      setLikedPlaces(prev => new Set(prev).add(placeId));
+      setPlaces(currentPlaces =>
+        currentPlaces.map(place =>
+          place.id === placeId ? { ...place, likes: place.likes + 1 } : place
+        )
+      );
+    }
+    
     trackPlaceInteraction(placeId, 'like');
-  };
-
-  const handleSave = (placeId: string) => {
-    setPlaces(currentPlaces =>
-      currentPlaces.map(place =>
-        place.id === placeId ? { ...place, savedCount: place.savedCount + 1 } : place
-      )
-    );
-    trackPlaceInteraction(placeId, 'save');
   };
 
   const handleComment = (place: Place) => {
@@ -182,6 +190,11 @@ const HomePage = () => {
   const handleShare = (place: Place) => {
     console.log('Share:', place);
     trackPlaceInteraction(place.id, 'share');
+  };
+
+  const handleCardClick = (place: Place) => {
+    setSelectedPlace(place);
+    setIsInteractionModalOpen(true);
   };
 
   const filteredPlaces = React.useMemo(() => {
@@ -227,11 +240,6 @@ const HomePage = () => {
     };
   };
 
-  const handlePlaceInteraction = (place: HomePlace) => {
-    setSelectedPlace(convertToPlace(place));
-    setIsInteractionModalOpen(true);
-  };
-
   const newCount = places.filter(place => place.isNew).length;
 
   return (
@@ -261,11 +269,12 @@ const HomePage = () => {
           <PlaceCard
             key={place.id}
             place={convertToPlace(place)}
-            onLike={handleLike}
-            onSave={handleSave}
-            onComment={() => handleComment(convertToPlace(place))}
-            onShare={() => handleShare(convertToPlace(place))}
-            onClick={() => handlePlaceInteraction(place)}
+            isLiked={likedPlaces.has(place.id)}
+            onCardClick={handleCardClick}
+            onLikeToggle={handleLikeToggle}
+            onComment={handleComment}
+            onShare={handleShare}
+            cityName="Anytown"
           />
         ))}
       </div>
