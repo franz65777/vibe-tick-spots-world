@@ -1,86 +1,83 @@
 
 import { useState, useEffect } from 'react';
-import { MapPin, Camera, Plus, X, Search, ChevronDown, Navigation, Sparkles } from 'lucide-react';
+import { MapPin, Camera, Plus, X, Search, ChevronDown, Navigation, Sparkles, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { useLocationTagging } from '@/hooks/useLocationTagging';
+import { usePostCreation } from '@/hooks/usePostCreation';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+
+interface Location {
+  id: string;
+  name: string;
+  address?: string;
+  category: string;
+}
 
 const AddLocationPage = () => {
-  console.log('AddLocationPage rendering...');
-  
-  const [selectedLocation, setSelectedLocation] = useState('');
+  const navigate = useNavigate();
+  const { 
+    nearbyPlaces, 
+    recentLocations, 
+    userLocation, 
+    loading: locationLoading,
+    searchLocations,
+    createNewLocation 
+  } = useLocationTagging();
+  const { createPost, uploading } = usePostCreation();
+
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
   const [showLocationSearch, setShowLocationSearch] = useState(false);
-  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<File[]>([]);
+  const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const [caption, setCaption] = useState('');
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [nearbyPlaces, setNearbyPlaces] = useState<string[]>([]);
-  const [isLoadingLocation, setIsLoadingLocation] = useState(true);
-  const [locationError, setLocationError] = useState('');
+  const [locationSearchQuery, setLocationSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Location[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
-  // Get user's current location and suggest nearby places
+  // Handle location search
+  const handleLocationSearch = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const results = await searchLocations(query);
+      setSearchResults(results);
+    } catch (error) {
+      console.error('Error searching locations:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Debounce location search
   useEffect(() => {
-    const getCurrentLocation = async () => {
-      try {
-        setIsLoadingLocation(true);
-        setLocationError('');
+    const timer = setTimeout(() => {
+      handleLocationSearch(locationSearchQuery);
+    }, 300);
 
-        if (!navigator.geolocation) {
-          throw new Error('Geolocation is not supported by this browser');
-        }
-
-        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 300000
-          });
-        });
-
-        const { latitude, longitude } = position.coords;
-        setUserLocation({ lat: latitude, lng: longitude });
-
-        // Generate nearby places based on location (in a real app, this would use a places API)
-        const mockNearbyPlaces = [
-          'Current Location - Restaurant nearby',
-          'Coffee shop you just visited',
-          'Park you\'re at right now',
-          'Shopping center nearby',
-          'Your favorite local spot'
-        ];
-        
-        setNearbyPlaces(mockNearbyPlaces);
-        
-      } catch (error) {
-        console.error('Error getting location:', error);
-        setLocationError('Unable to get your location. You can still search manually.');
-        
-        // Fallback suggestions when location is not available
-        const fallbackSuggestions = [
-          'Restaurant Francesco - Downtown',
-          'Central Park - New York',
-          'Coffee Bean Café - Main St',
-          'Museum of Art - Cultural District',
-          'Beach Club - Santa Monica'
-        ];
-        setNearbyPlaces(fallbackSuggestions);
-      } finally {
-        setIsLoadingLocation(false);
-      }
-    };
-
-    getCurrentLocation();
-  }, []);
+    return () => clearTimeout(timer);
+  }, [locationSearchQuery]);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
-      Array.from(files).forEach(file => {
+      const newFiles = Array.from(files);
+      setUploadedImages(prev => [...prev, ...newFiles]);
+      
+      // Create preview URLs
+      newFiles.forEach(file => {
         const reader = new FileReader();
         reader.onload = (e) => {
           if (e.target?.result) {
-            setUploadedImages(prev => [...prev, e.target!.result as string]);
+            setImagePreviewUrls(prev => [...prev, e.target!.result as string]);
           }
         };
         reader.readAsDataURL(file);
@@ -90,19 +87,64 @@ const AddLocationPage = () => {
 
   const removeImage = (index: number) => {
     setUploadedImages(prev => prev.filter((_, i) => i !== index));
+    setImagePreviewUrls(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handlePost = () => {
-    console.log('Posting content:', {
-      location: selectedLocation,
-      images: uploadedImages,
-      caption,
-      userLocation
-    });
-    // TODO: Implement actual posting logic
+  const handleLocationSelect = (location: Location) => {
+    setSelectedLocation(location);
+    setShowLocationSearch(false);
+    setLocationSearchQuery('');
+    setSearchResults([]);
   };
 
-  const canPost = selectedLocation && uploadedImages.length > 0;
+  const handleCreateNewLocation = async () => {
+    if (!locationSearchQuery.trim()) return;
+
+    try {
+      const newLocation = await createNewLocation({
+        name: locationSearchQuery,
+        category: 'other',
+        latitude: userLocation?.lat,
+        longitude: userLocation?.lng,
+        address: userLocation ? 'Current location' : undefined
+      });
+
+      if (newLocation) {
+        handleLocationSelect(newLocation);
+        toast.success('New location created successfully!');
+      }
+    } catch (error) {
+      console.error('Error creating location:', error);
+      toast.error('Failed to create location');
+    }
+  };
+
+  const handlePost = async () => {
+    if (!selectedLocation || uploadedImages.length === 0) {
+      toast.error('Please select a location and add at least one photo');
+      return;
+    }
+
+    try {
+      const result = await createPost({
+        caption,
+        locationId: selectedLocation.id,
+        files: uploadedImages
+      });
+
+      if (result.success) {
+        toast.success('Post created successfully!');
+        navigate('/');
+      } else {
+        toast.error('Failed to create post');
+      }
+    } catch (error) {
+      console.error('Error creating post:', error);
+      toast.error('Failed to create post');
+    }
+  };
+
+  const canPost = selectedLocation && uploadedImages.length > 0 && !uploading;
 
   return (
     <div className="flex flex-col h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-white pt-16">
@@ -137,15 +179,18 @@ const AddLocationPage = () => {
                 <Button
                   variant="outline"
                   className="w-full justify-between h-12 text-left border-2 border-dashed border-gray-300 hover:border-blue-400 hover:bg-blue-50/50 transition-all"
-                  disabled={isLoadingLocation}
+                  disabled={locationLoading}
                 >
-                  {isLoadingLocation ? (
+                  {locationLoading ? (
                     <span className="flex items-center gap-3 text-gray-500">
                       <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                       Finding places nearby...
                     </span>
                   ) : selectedLocation ? (
-                    <span className="text-gray-900 font-medium">{selectedLocation}</span>
+                    <span className="flex items-center gap-3 text-gray-900 font-medium">
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                      {selectedLocation.name}
+                    </span>
                   ) : (
                     <span className="text-gray-500">Choose a location to get started</span>
                   )}
@@ -154,64 +199,120 @@ const AddLocationPage = () => {
               </PopoverTrigger>
               <PopoverContent className="w-80 p-0" align="start">
                 <div className="p-4 space-y-3">
-                  {locationError && (
-                    <div className="text-sm text-orange-600 bg-orange-50 px-3 py-2 rounded-lg">
-                      {locationError}
+                  {/* Search Input */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      placeholder="Search for a place..."
+                      value={locationSearchQuery}
+                      onChange={(e) => setLocationSearchQuery(e.target.value)}
+                      className="pl-10 h-10 text-sm"
+                    />
+                  </div>
+
+                  {/* Search Results */}
+                  {locationSearchQuery && (
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {isSearching ? (
+                        <div className="text-center py-4">
+                          <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                        </div>
+                      ) : searchResults.length > 0 ? (
+                        searchResults.map((location) => (
+                          <button
+                            key={location.id}
+                            onClick={() => handleLocationSelect(location)}
+                            className="w-full text-left p-3 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors border border-gray-100 hover:border-blue-200"
+                          >
+                            <div className="flex items-center gap-3">
+                              <MapPin className="w-4 h-4 text-blue-600" />
+                              <div>
+                                <span className="text-sm font-medium text-gray-900">{location.name}</span>
+                                {location.address && (
+                                  <p className="text-xs text-gray-500">{location.address}</p>
+                                )}
+                              </div>
+                            </div>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="space-y-2">
+                          <button
+                            onClick={handleCreateNewLocation}
+                            className="w-full text-left p-3 bg-blue-50 rounded-xl border-2 border-dashed border-blue-300 hover:border-blue-400 transition-colors"
+                          >
+                            <div className="flex items-center gap-3">
+                              <Plus className="w-4 h-4 text-blue-600" />
+                              <span className="text-sm font-medium text-blue-700">
+                                Create "{locationSearchQuery}"
+                              </span>
+                            </div>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
-                  
-                  {userLocation && (
-                    <div className="bg-gradient-to-r from-green-50 to-blue-50 p-3 rounded-xl border border-green-200">
-                      <div className="flex items-center gap-2">
-                        <Navigation className="w-4 h-4 text-green-600" />
-                        <span className="text-sm font-medium text-green-900">Places near you</span>
+
+                  {/* Nearby Places */}
+                  {!locationSearchQuery && nearbyPlaces.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="bg-gradient-to-r from-green-50 to-blue-50 p-3 rounded-xl border border-green-200">
+                        <div className="flex items-center gap-2">
+                          <Navigation className="w-4 h-4 text-green-600" />
+                          <span className="text-sm font-medium text-green-900">Places near you</span>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {nearbyPlaces.map((place) => (
+                          <button
+                            key={place.id}
+                            onClick={() => handleLocationSelect(place)}
+                            className="w-full text-left p-3 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors border border-gray-100 hover:border-blue-200"
+                          >
+                            <div className="flex items-center gap-3">
+                              <Navigation className="w-4 h-4 text-green-600" />
+                              <div>
+                                <span className="text-sm font-medium text-gray-900">{place.name}</span>
+                                <p className="text-xs text-gray-500">{place.address}</p>
+                                {place.distance && (
+                                  <p className="text-xs text-green-600">{place.distance.toFixed(1)} km away</p>
+                                )}
+                              </div>
+                            </div>
+                          </button>
+                        ))}
                       </div>
                     </div>
                   )}
 
-                  <div className="space-y-2 max-h-40 overflow-y-auto">
-                    {nearbyPlaces.map((location, index) => (
-                      <button
-                        key={index}
-                        onClick={() => {
-                          setSelectedLocation(location);
-                          setShowLocationSearch(false);
-                        }}
-                        className="w-full text-left p-3 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors border border-gray-100 hover:border-blue-200"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={cn(
-                            "w-8 h-8 rounded-full flex items-center justify-center",
-                            index === 0 && userLocation ? "bg-green-100" : "bg-blue-100"
-                          )}>
-                            {index === 0 && userLocation ? (
-                              <Navigation className="w-4 h-4 text-green-600" />
-                            ) : (
+                  {/* Recent Locations */}
+                  {!locationSearchQuery && recentLocations.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium text-gray-700 px-1">Recent locations</div>
+                      <div className="space-y-2 max-h-32 overflow-y-auto">
+                        {recentLocations.map((location) => (
+                          <button
+                            key={location.id}
+                            onClick={() => handleLocationSelect(location)}
+                            className="w-full text-left p-3 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors border border-gray-100 hover:border-blue-200"
+                          >
+                            <div className="flex items-center gap-3">
                               <MapPin className="w-4 h-4 text-blue-600" />
-                            )}
-                          </div>
-                          <span className="text-sm font-medium text-gray-900">{location}</span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="pt-3 border-t border-gray-100">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                      <Input
-                        placeholder="Search for a place..."
-                        className="pl-10 h-10 text-sm"
-                      />
+                              <span className="text-sm font-medium text-gray-900">{location.name}</span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </PopoverContent>
             </Popover>
 
             {selectedLocation && (
               <button
-                onClick={() => setSelectedLocation('')}
+                onClick={() => setSelectedLocation(null)}
                 className="mt-2 text-sm text-blue-600 hover:text-blue-800 flex items-center gap-2"
               >
                 <X className="w-4 h-4" />
@@ -256,10 +357,10 @@ const AddLocationPage = () => {
             ) : (
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
-                  {uploadedImages.map((image, index) => (
+                  {imagePreviewUrls.map((url, index) => (
                     <div key={index} className="relative group">
                       <img
-                        src={image}
+                        src={url}
                         alt={`Upload ${index + 1}`}
                         className="w-full h-20 object-cover rounded-xl border border-gray-200"
                       />
@@ -321,7 +422,12 @@ const AddLocationPage = () => {
               : "bg-gray-100 text-gray-400 cursor-not-allowed"
           )}
         >
-          {canPost ? (
+          {uploading ? (
+            <span className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              Creating post...
+            </span>
+          ) : canPost ? (
             <span className="flex items-center gap-2">
               <Sparkles className="w-4 h-4" />
               Share Experience

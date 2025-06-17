@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface BackendConfig {
@@ -9,8 +10,8 @@ export interface BackendConfig {
 
 class BackendService {
   private config: BackendConfig = {
-    isDemoMode: false, // Now enabled for production
-    enableRealDatabase: true, // Real database enabled
+    isDemoMode: false,
+    enableRealDatabase: true,
     enablePushNotifications: true,
     enableLocationServices: true
   };
@@ -43,8 +44,7 @@ class BackendService {
   // Get user's saved locations from real database
   async getUserSavedLocations(userId: string) {
     try {
-      // Use type assertion for newly created table
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('user_saved_locations')
         .select(`
           *,
@@ -163,8 +163,7 @@ class BackendService {
   // Save a location for a user
   async saveLocation(userId: string, locationId: string) {
     try {
-      // Use type assertion for newly created table
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('user_saved_locations')
         .insert({
           user_id: userId,
@@ -184,8 +183,7 @@ class BackendService {
   // Unsave a location for a user
   async unsaveLocation(userId: string, locationId: string) {
     try {
-      // Use type assertion for newly created table
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('user_saved_locations')
         .delete()
         .eq('user_id', userId)
@@ -212,8 +210,13 @@ class BackendService {
 
       if (uploadError) throw uploadError;
 
-      // Create media record using type assertion
-      const { data: mediaData, error: mediaError } = await (supabase as any)
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('media')
+        .getPublicUrl(uploadData.path);
+
+      // Create media record
+      const { data: mediaData, error: mediaError } = await supabase
         .from('media')
         .insert({
           user_id: userId,
@@ -227,62 +230,37 @@ class BackendService {
 
       if (mediaError) throw mediaError;
 
-      return { success: true, data: mediaData };
+      return { success: true, data: { ...mediaData, public_url: publicUrl } };
     } catch (error) {
       console.error('Error uploading media:', error);
       return { success: false, error };
     }
   }
 
-  // Upload story with media
-  async uploadStory(
-    file: File,
-    caption?: string,
-    locationId?: string,
-    locationName?: string,
-    locationAddress?: string
-  ) {
+  // Get posts by location
+  async getPostsByLocation(locationId: string) {
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      if (caption) formData.append('caption', caption);
-      if (locationId) formData.append('locationId', locationId);
-      if (locationName) formData.append('locationName', locationName);
-      if (locationAddress) formData.append('locationAddress', locationAddress);
-
-      const { data, error } = await supabase.functions.invoke('upload-story', {
-        body: formData,
-      });
+      const { data, error } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          profiles!posts_user_id_fkey (
+            id,
+            username,
+            full_name,
+            avatar_url
+          ),
+          post_likes (count),
+          post_comments (count)
+        `)
+        .eq('location_id', locationId)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return { success: true, data: data.story };
+      return data || [];
     } catch (error) {
-      console.error('Error uploading story:', error);
-      return { success: false, error };
-    }
-  }
-
-  // Upload post with multiple media files
-  async uploadPost(
-    files: File[],
-    caption?: string,
-    locationId?: string
-  ) {
-    try {
-      const formData = new FormData();
-      files.forEach(file => formData.append('files', file));
-      if (caption) formData.append('caption', caption);
-      if (locationId) formData.append('locationId', locationId);
-
-      const { data, error } = await supabase.functions.invoke('upload-post', {
-        body: formData,
-      });
-
-      if (error) throw error;
-      return { success: true, data: data.post };
-    } catch (error) {
-      console.error('Error uploading post:', error);
-      return { success: false, error };
+      console.error('Error fetching location posts:', error);
+      return [];
     }
   }
 
@@ -291,7 +269,16 @@ class BackendService {
     try {
       const { data, error } = await supabase
         .from('posts')
-        .select('*')
+        .select(`
+          *,
+          locations (
+            id,
+            name,
+            address
+          ),
+          post_likes (count),
+          post_comments (count)
+        `)
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
@@ -308,7 +295,15 @@ class BackendService {
     try {
       const { data, error } = await supabase
         .from('stories')
-        .select('*')
+        .select(`
+          *,
+          profiles!stories_user_id_fkey (
+            id,
+            username,
+            full_name,
+            avatar_url
+          )
+        `)
         .gt('expires_at', new Date().toISOString())
         .order('created_at', { ascending: false });
 
@@ -329,7 +324,7 @@ class BackendService {
         .select('id')
         .eq('user_id', userId)
         .eq('post_id', postId)
-        .single();
+        .maybeSingle();
 
       if (existingLike) {
         // Unlike
@@ -365,7 +360,7 @@ class BackendService {
         .select('id')
         .eq('user_id', userId)
         .eq('post_id', postId)
-        .single();
+        .maybeSingle();
 
       if (existingSave) {
         // Unsave
@@ -388,6 +383,104 @@ class BackendService {
       }
     } catch (error) {
       console.error('Error toggling post save:', error);
+      return { success: false, error };
+    }
+  }
+
+  // Get post comments
+  async getPostComments(postId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('post_comments')
+        .select(`
+          *,
+          profiles!post_comments_user_id_fkey (
+            id,
+            username,
+            full_name,
+            avatar_url
+          ),
+          post_comment_likes (count)
+        `)
+        .eq('post_id', postId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching post comments:', error);
+      return [];
+    }
+  }
+
+  // Add comment to post
+  async addPostComment(postId: string, userId: string, content: string) {
+    try {
+      const { data, error } = await supabase
+        .from('post_comments')
+        .insert({
+          post_id: postId,
+          user_id: userId,
+          content
+        })
+        .select(`
+          *,
+          profiles!post_comments_user_id_fkey (
+            id,
+            username,
+            full_name,
+            avatar_url
+          )
+        `)
+        .single();
+
+      if (error) throw error;
+
+      // Update post comments count
+      await supabase
+        .from('posts')
+        .update({ comments_count: supabase.sql`comments_count + 1` })
+        .eq('id', postId);
+
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      return { success: false, error };
+    }
+  }
+
+  // Toggle comment like
+  async toggleCommentLike(commentId: string, userId: string) {
+    try {
+      // Check if already liked
+      const { data: existingLike } = await supabase
+        .from('post_comment_likes')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('comment_id', commentId)
+        .maybeSingle();
+
+      if (existingLike) {
+        // Unlike
+        const { error } = await supabase
+          .from('post_comment_likes')
+          .delete()
+          .eq('user_id', userId)
+          .eq('comment_id', commentId);
+
+        if (error) throw error;
+        return { success: true, liked: false };
+      } else {
+        // Like
+        const { error } = await supabase
+          .from('post_comment_likes')
+          .insert({ user_id: userId, comment_id: commentId });
+
+        if (error) throw error;
+        return { success: true, liked: true };
+      }
+    } catch (error) {
+      console.error('Error toggling comment like:', error);
       return { success: false, error };
     }
   }
