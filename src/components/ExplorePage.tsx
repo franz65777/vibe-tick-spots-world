@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSearch } from '@/hooks/useSearch';
+import { useUserSearch } from '@/hooks/useUserSearch';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import SearchHeader from '@/components/explore/SearchHeader';
 import SearchResults from '@/components/explore/SearchResults';
 import RecommendationsSection from '@/components/explore/RecommendationsSection';
@@ -81,41 +84,18 @@ const mockLocations: Place[] = [
   }
 ];
 
-// Mock data for users
-const mockUsers: User[] = [
-  {
-    id: 'user1',
-    name: 'Sarah Johnson',
-    username: '@sarahj',
-    avatar: 'photo-1494790108755-2616b5a5c75b',
-    followers: 1250,
-    following: 456,
-    savedPlaces: 89,
-    isFollowing: false
-  },
-  {
-    id: 'user2',
-    name: 'Mike Chen',
-    username: '@mikec',
-    avatar: 'photo-1507003211169-0a1dd7228f2d',
-    followers: 890,
-    following: 234,
-    savedPlaces: 156,
-    isFollowing: true
-  }
-];
-
 type SearchMode = 'locations' | 'users';
 type SortBy = 'proximity' | 'likes' | 'followers';
 
 const ExplorePage = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState<SearchMode>('locations');
   const [sortBy, setSortBy] = useState<SortBy>('proximity');
   const [showFilters, setShowFilters] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredLocations, setFilteredLocations] = useState<Place[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
   
@@ -133,56 +113,54 @@ const ExplorePage = () => {
     getSearchSuggestions 
   } = useSearch();
 
+  const { users: searchedUsers, loading: userSearchLoading, searchUsers, getAllUsers } = useUserSearch();
+
+  // Load all users when component mounts or when switching to users mode
+  useEffect(() => {
+    if (searchMode === 'users' && !searchQuery.trim()) {
+      getAllUsers();
+    }
+  }, [searchMode, getAllUsers]);
+
   // Filter and sort locations based on search query and filters
   useEffect(() => {
     if (!searchQuery.trim()) {
       setFilteredLocations([]);
-      setFilteredUsers([]);
+      return;
+    }
+
+    if (searchMode === 'users') {
+      // Search users using the hook
+      searchUsers(searchQuery);
       return;
     }
 
     setIsSearching(true);
     
-    // Simulate API call delay
+    // Simulate API call delay for locations
     const timer = setTimeout(() => {
-      if (searchMode === 'locations') {
-        let filtered = mockLocations.filter(place =>
-          place.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          place.category.toLowerCase().includes(searchQuery.toLowerCase())
-        );
+      let filtered = mockLocations.filter(place =>
+        place.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        place.category.toLowerCase().includes(searchQuery.toLowerCase())
+      );
 
-        // Sort based on selected filter
-        if (sortBy === 'proximity') {
-          filtered.sort((a, b) => {
-            const aDistance = typeof a.distance === 'string' ? parseFloat(a.distance) : (a.distance || 0);
-            const bDistance = typeof b.distance === 'string' ? parseFloat(b.distance) : (b.distance || 0);
-            return aDistance - bDistance;
-          });
-        } else if (sortBy === 'likes') {
-          filtered.sort((a, b) => b.likes - a.likes);
-        } else if (sortBy === 'followers') {
-          filtered.sort((a, b) => {
-            const aCount = Array.isArray(a.friendsWhoSaved) ? a.friendsWhoSaved.length : (a.friendsWhoSaved || 0);
-            const bCount = Array.isArray(b.friendsWhoSaved) ? b.friendsWhoSaved.length : (b.friendsWhoSaved || 0);
-            return bCount - aCount;
-          });
-        }
-
-        setFilteredLocations(filtered);
-      } else {
-        let filtered = mockUsers.filter(user =>
-          user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          user.username.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-
-        setFilteredUsers(filtered);
+      // Sort based on selected filter
+      if (sortBy === 'proximity') {
+        filtered.sort((a, b) => {
+          const aDistance = typeof a.distance === 'string' ? parseFloat(a.distance) : (a.distance || 0);
+          const bDistance = typeof b.distance === 'string' ? parseFloat(b.distance) : (b.distance || 0);
+          return aDistance - bDistance;
+        });
+      } else if (sortBy === 'likes') {
+        filtered.sort((a, b) => b.likes - a.likes);
       }
-      
+
+      setFilteredLocations(filtered);
       setIsSearching(false);
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, searchMode, sortBy]);
+  }, [searchQuery, searchMode, sortBy, searchUsers]);
 
   // Handle search with history saving
   const handleSearch = async (e: React.FormEvent) => {
@@ -234,7 +212,6 @@ const ExplorePage = () => {
 
   const handleShareModalShare = (friendIds: string[], place: Place) => {
     console.log('Sharing place:', place, 'with friends:', friendIds);
-    // Implement share logic here
   };
 
   // Handle recommendation clicks
@@ -303,10 +280,13 @@ const ExplorePage = () => {
   };
 
   const handleUserRecommendationClick = (user: any) => {
-    console.log('User recommendation clicked:', user);
+    navigate(`/profile/${user.id}`);
   };
 
-  const handleFollowUser = (userId: string) => {
+  const handleFollowUser = async (userId: string) => {
+    if (!user) return;
+    
+    // Here you would implement the follow logic
     console.log('Follow user:', userId);
   };
 
@@ -360,13 +340,15 @@ const ExplorePage = () => {
             searchMode={searchMode}
             sortBy={sortBy}
             filteredLocations={filteredLocations}
-            filteredUsers={filteredUsers}
-            isSearching={isSearching}
+            filteredUsers={searchedUsers}
+            isSearching={searchMode === 'locations' ? isSearching : userSearchLoading}
             likedPlaces={likedPlaces}
             onCardClick={handleCardClick}
             onLikeToggle={handleLikeToggle}
             onShare={handleShare}
             onComment={handleComment}
+            onUserClick={(user) => navigate(`/profile/${user.id}`)}
+            onFollowUser={handleFollowUser}
           />
         )}
       </div>

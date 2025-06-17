@@ -1,70 +1,73 @@
 
 import { useProfile } from '@/hooks/useProfile';
+import { useFollowStats } from '@/hooks/useFollowStats';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
-import { cn } from '@/lib/utils';
 
 interface ProfileStatsProps {
+  profile?: any;
   onFollowersClick: () => void;
   onFollowingClick: () => void;
   onPostsClick: () => void;
   onLocationsClick: () => void;
 }
 
-const ProfileStats = ({ onFollowersClick, onFollowingClick, onPostsClick, onLocationsClick }: ProfileStatsProps) => {
-  const { profile } = useProfile();
-  const { getStats, loading } = useSavedPlaces();
-  const savedStats = getStats();
+const ProfileStats = ({ 
+  profile: externalProfile,
+  onFollowersClick, 
+  onFollowingClick, 
+  onPostsClick, 
+  onLocationsClick 
+}: ProfileStatsProps) => {
+  const { profile: currentUserProfile } = useProfile();
+  const { stats } = useFollowStats();
+  const { getStats } = useSavedPlaces();
+  
+  // Use external profile if provided (for viewing other users), otherwise use current user profile
+  const profile = externalProfile || currentUserProfile;
+  const savedPlacesStats = getStats();
 
-  const statsData = [
-    {
-      label: 'Posts',
-      value: profile?.posts_count || 0,
-      onClick: onPostsClick,
-      color: 'text-blue-600'
-    },
-    {
-      label: 'Followers',
-      value: profile?.followers_count || 1542,
-      onClick: onFollowersClick,
-      color: 'text-purple-600'
-    },
-    {
-      label: 'Following',
-      value: profile?.following_count || 892,
-      onClick: onFollowingClick,
-      color: 'text-green-600'
-    },
-    {
-      label: 'Locations',
-      value: loading ? '-' : savedStats.places,
-      onClick: onLocationsClick,
-      color: 'text-orange-600'
-    }
-  ];
+  // Use profile data if available, otherwise fall back to stats
+  const displayStats = {
+    posts: profile?.posts_count || stats.postsCount,
+    followers: profile?.followers_count || stats.followersCount,
+    following: profile?.following_count || stats.followingCount,
+    locations: savedPlacesStats.places
+  };
 
   return (
-    <div className="bg-white px-6 py-4 border-b border-gray-100">
-      <div className="grid grid-cols-4 gap-1">
-        {statsData.map((stat, index) => (
-          <button
-            key={stat.label}
-            onClick={stat.onClick}
-            className={cn(
-              "text-center py-3 px-2 transition-colors rounded-lg",
-              "hover:bg-gray-50 active:bg-gray-100"
-            )}
-          >
-            <div className={cn("text-lg font-bold mb-1", stat.color)}>
-              {typeof stat.value === 'number' && stat.value > 999 
-                ? `${(stat.value / 1000).toFixed(1)}K`
-                : stat.value
-              }
-            </div>
-            <div className="text-xs text-gray-600 leading-tight">
-              {stat.label}
-            </div>
-          </button>
-        ))}
+    <div className="px-4 py-3 border-b border-gray-100">
+      <div className="flex justify-around">
+        <button 
+          className="text-center hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors"
+          onClick={onPostsClick}
+        >
+          <div className="text-xl font-bold text-gray-900">{displayStats.posts}</div>
+          <div className="text-sm text-gray-600">Posts</div>
+        </button>
+        
+        <button 
+          className="text-center hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors"
+          onClick={onFollowersClick}
+        >
+          <div className="text-xl font-bold text-gray-900">{displayStats.followers}</div>
+          <div className="text-sm text-gray-600">Followers</div>
+        </button>
+        
+        <button 
+          className="text-center hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors"
+          onClick={onFollowingClick}
+        >
+          <div className="text-xl font-bold text-gray-900">{displayStats.following}</div>
+          <div className="text-sm text-gray-600">Following</div>
+        </button>
+        
+        <button 
+          className="text-center hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors"
+          onClick={onLocationsClick}
+        >
+          <div className="text-xl font-bold text-gray-900">{displayStats.locations}</div>
+          <div className="text-sm text-gray-600">Saved</div>
+        </button>
       </div>
     </div>
   );

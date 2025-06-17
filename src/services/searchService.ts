@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { backendService } from './backendService';
 
@@ -151,59 +150,17 @@ class SearchService {
           popularity: 92,
           distance: 0.5,
           recommendationReason: 'Popular among coffee lovers you follow'
-        },
-        {
-          id: 'rec-2',
-          name: 'Gourmet Burger Joint',
-          category: 'restaurant',
-          likes: 267,
-          friendsWhoSaved: [
-            { name: 'Alex', avatar: 'photo-1472099645785-5658abf4ff4e' }
-          ],
-          visitors: ['user5', 'user6', 'user7'],
-          isNew: false,
-          coordinates: { lat: 37.7749, lng: -122.4094 },
-          image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=300&fit=crop',
-          addedBy: 'user4',
-          addedDate: '2024-05-28',
-          isFollowing: true,
-          popularity: 88,
-          distance: 0.8,
-          recommendationReason: 'Trending in your area'
-        },
-        {
-          id: 'rec-3',
-          name: 'Rooftop Cocktail Bar',
-          category: 'bar',
-          likes: 156,
-          friendsWhoSaved: [
-            { name: 'Sofia', avatar: 'photo-1534528741775-53994a69daeb' },
-            { name: 'Mike', avatar: 'photo-1507003211169-0a1dd7228f2d' },
-            { name: 'Lisa', avatar: 'photo-1494790108755-2616b5a5c75b' }
-          ],
-          visitors: ['user8', 'user9'],
-          isNew: false,
-          coordinates: { lat: 37.7649, lng: -122.4294 },
-          image: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=400&h=300&fit=crop',
-          addedBy: 'user5',
-          addedDate: '2024-05-20',
-          isFollowing: false,
-          popularity: 85,
-          distance: 1.1,
-          recommendationReason: 'Saved by 3 people you follow'
         }
       ];
     }
 
     try {
-      // In production, this would use complex recommendation algorithms
-      // For now, get popular locations with some intelligence
+      // In production, get real location recommendations
       const { data, error } = await supabase
         .from('locations')
         .select(`
           *,
-          location_likes(count),
-          user_saved_locations!inner(user_id)
+          location_likes(count)
         `)
         .limit(10);
 
@@ -217,7 +174,7 @@ class SearchService {
         likes: location.location_likes?.[0]?.count || 0,
         visitors: [],
         isNew: new Date(location.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-        coordinates: { lat: parseFloat(location.latitude.toString()), lng: parseFloat(location.longitude.toString()) },
+        coordinates: { lat: parseFloat(location.latitude?.toString() || '0'), lng: parseFloat(location.longitude?.toString() || '0') },
         image: location.image_url,
         addedBy: location.created_by,
         addedDate: location.created_at,
@@ -232,11 +189,12 @@ class SearchService {
     }
   }
 
-  // Get user recommendations
+  // Get user recommendations from real database
   async getUserRecommendations(userId: string): Promise<UserRecommendation[]> {
     const config = backendService.getConfig();
     
     if (config.isDemoMode) {
+      // Demo user recommendations
       return [
         {
           id: 'user-rec-1',
@@ -250,59 +208,53 @@ class SearchService {
           recommendationReason: 'Popular food blogger',
           mutualFollowers: 5,
           sharedInterests: ['coffee', 'restaurants', 'photography']
-        },
-        {
-          id: 'user-rec-2',
-          name: 'David Park',
-          username: '@davidp',
-          avatar: 'photo-1472099645785-5658abf4ff4e',
-          followers: 1890,
-          following: 423,
-          savedPlaces: 189,
-          isFollowing: false,
-          recommendationReason: 'Shares similar taste in cafes',
-          mutualFollowers: 3,
-          sharedInterests: ['cafe', 'culture', 'travel']
-        },
-        {
-          id: 'user-rec-3',
-          name: 'Emma Thompson',
-          username: '@emmat',
-          avatar: 'photo-1438761681033-6461ffad8d80',
-          followers: 3456,
-          following: 789,
-          savedPlaces: 345,
-          isFollowing: false,
-          recommendationReason: 'Local influencer in your city',
-          mutualFollowers: 8,
-          sharedInterests: ['bars', 'nightlife', 'events']
         }
       ];
     }
 
     try {
-      // In production, this would use recommendation algorithms
-      const { data, error } = await supabase
+      // Get users that the current user is NOT following
+      const { data: notFollowingUsers, error } = await supabase
         .from('profiles')
         .select('*')
         .neq('id', userId)
-        .limit(10);
+        .limit(20);
 
       if (error) throw error;
-      
-      return (data || []).map(profile => ({
-        id: profile.id,
-        name: profile.full_name || 'User',
-        username: profile.username || '@user',
-        avatar: profile.avatar_url || 'photo-1472099645785-5658abf4ff4e',
-        followers: profile.follower_count || 0,
-        following: profile.following_count || 0,
-        savedPlaces: profile.posts_count || 0,
-        isFollowing: false,
-        recommendationReason: 'Suggested for you',
-        mutualFollowers: Math.floor(Math.random() * 10),
-        sharedInterests: ['travel', 'food']
-      }));
+
+      // Check follow status for each user
+      const usersWithFollowStatus = await Promise.all(
+        (notFollowingUsers || []).map(async (profile) => {
+          // Check if already following
+          const { data: followData } = await supabase
+            .from('follows')
+            .select('id')
+            .eq('follower_id', userId)
+            .eq('following_id', profile.id)
+            .single();
+
+          const isFollowing = !!followData;
+
+          // Skip if already following
+          if (isFollowing) return null;
+
+          return {
+            id: profile.id,
+            name: profile.full_name || profile.username || 'User',
+            username: profile.username || `@user${profile.id.substring(0, 6)}`,
+            avatar: profile.avatar_url || 'photo-1472099645785-5658abf4ff4e',
+            followers: profile.followers_count || 0,
+            following: profile.following_count || 0,
+            savedPlaces: profile.posts_count || 0,
+            isFollowing: false,
+            recommendationReason: 'Suggested for you',
+            mutualFollowers: Math.floor(Math.random() * 5),
+            sharedInterests: ['travel', 'food']
+          };
+        })
+      );
+
+      return usersWithFollowStatus.filter(Boolean) as UserRecommendation[];
     } catch (error) {
       console.error('Error fetching user recommendations:', error);
       return [];
