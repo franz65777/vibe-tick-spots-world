@@ -195,8 +195,8 @@ const ExplorePage = () => {
           filtered.sort((a, b) => b.likes - a.likes);
         } else if (sortBy === 'followers') {
           filtered.sort((a, b) => {
-            const aCount = Array.isArray(a.friendsWhoSaved) ? a.friendsWhoSaved.length : (a.friendsWhoSaved || 0);
-            const bCount = Array.isArray(b.friendsWhoSaved) ? b.friendsWhoSaved.length : (b.friendsWhoSaved || 0);
+            const aCount = a.friendsWhoSaved.length;
+            const bCount = b.friendsWhoSaved.length;
             return bCount - aCount;
           });
         }
