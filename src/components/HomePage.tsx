@@ -158,23 +158,40 @@ const HomePage = () => {
   };
 
   // Convert pins to places for PlaceCard display with proper type handling
-  const convertPinToPlace = (pin: any): Place => ({
-    id: pin.id,
-    name: pin.name,
-    category: pin.category,
-    likes: pin.likes || 0,
-    friendsWhoSaved: Array.isArray(pin.friendsWhoSaved) ? pin.friendsWhoSaved : [],
-    visitors: Array.isArray(pin.visitors) ? pin.visitors : [],
-    isNew: pin.isNew || false,
-    coordinates: pin.coordinates,
-    image: pin.image,
-    addedBy: pin.addedBy,
-    addedDate: pin.addedDate,
-    isFollowing: pin.isFollowing,
-    popularity: pin.popularity,
-    distance: pin.distance,
-    totalSaves: pin.totalSaves || pin.likes || 0
-  });
+  const convertPinToPlace = (pin: any): Place => {
+    // Ensure visitors is always an array of strings
+    let visitors: string[] = [];
+    if (Array.isArray(pin.visitors)) {
+      visitors = pin.visitors;
+    } else if (typeof pin.visitors === 'number') {
+      // Convert number to array of placeholder visitor IDs
+      visitors = Array.from({ length: pin.visitors }, (_, i) => `visitor_${i}`);
+    }
+
+    // Ensure friendsWhoSaved is properly handled
+    let friendsWhoSaved: { name: string; avatar: string }[] = [];
+    if (Array.isArray(pin.friendsWhoSaved)) {
+      friendsWhoSaved = pin.friendsWhoSaved;
+    }
+
+    return {
+      id: pin.id,
+      name: pin.name,
+      category: pin.category,
+      likes: pin.likes || 0,
+      friendsWhoSaved,
+      visitors,
+      isNew: pin.isNew || false,
+      coordinates: pin.coordinates,
+      image: pin.image,
+      addedBy: pin.addedBy,
+      addedDate: pin.addedDate,
+      isFollowing: pin.isFollowing,
+      popularity: pin.popularity,
+      distance: pin.distance,
+      totalSaves: pin.totalSaves || pin.likes || 0
+    };
+  };
 
   // Convert pins to places with proper type handling
   const convertedPlaces: Place[] = pins.map(pin => convertPinToPlace(pin));
@@ -215,7 +232,10 @@ const HomePage = () => {
       {topLocation && (
         <LocationOfTheWeek 
           topLocation={topLocation}
-          onLocationClick={handleCardClick}
+          onLocationClick={() => {
+            const place = convertPinToPlace(topLocation);
+            handleCardClick(place);
+          }}
         />
       )}
 
