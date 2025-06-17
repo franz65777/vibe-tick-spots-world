@@ -34,6 +34,9 @@ const Header = ({
           <CitySearch 
             currentCity={currentCity}
             onCitySelect={onCitySelect}
+            searchQuery={searchQuery}
+            onSearchChange={onSearchChange}
+            onSearchKeyPress={onSearchKeyPress}
           />
 
           {/* Center: Search */}
@@ -43,8 +46,8 @@ const Header = ({
               <Input
                 type="text"
                 placeholder="Search places..."
-                value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
+                value={searchQuery || ''}
+                onChange={(e) => onSearchChange(e.target.value || '')}
                 onKeyPress={onSearchKeyPress}
                 className="pl-10 bg-gray-50 border-0 focus:bg-white focus:ring-2 focus:ring-blue-500"
               />
