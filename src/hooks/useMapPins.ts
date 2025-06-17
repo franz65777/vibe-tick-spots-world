@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { backendService } from '@/services/backendService';
@@ -9,17 +10,11 @@ interface MapPin {
   category: string;
   coordinates: { lat: number; lng: number };
   likes: number;
-  friendsWhoSaved?: { name: string; avatar: string }[];
-  visitors?: string[];
-  isNew?: boolean;
-  image?: string;
   isFollowing?: boolean;
   addedBy?: string;
   addedDate?: string;
   popularity?: number;
   city?: string;
-  distance?: string;
-  totalSaves?: number;
 }
 
 interface UseMapPinsReturn {
@@ -49,20 +44,11 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           category: 'cafe',
           coordinates: { lat: 37.7849, lng: -122.4094 },
           likes: 24,
-          friendsWhoSaved: [
-            { name: 'Sarah', avatar: 'photo-1494790108755-2616b5a5c75b' },
-            { name: 'Mike', avatar: 'photo-1507003211169-0a1dd7228f2d' }
-          ],
-          visitors: ['user1', 'user2', 'user3'],
-          isNew: false,
-          image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
           isFollowing: true,
           addedBy: 'user1',
           addedDate: '2024-05-25',
           popularity: 85,
-          city: 'San Francisco',
-          distance: '0.3km',
-          totalSaves: 24
+          city: 'San Francisco'
         },
         {
           id: '2',
@@ -70,19 +56,11 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           category: 'restaurant',
           coordinates: { lat: 37.7849, lng: -122.4194 },
           likes: 18,
-          friendsWhoSaved: [
-            { name: 'Emma', avatar: 'photo-1438761681033-6461ffad8d80' }
-          ],
-          visitors: ['user4', 'user5'],
-          isNew: true,
-          image: 'https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=400&h=600&fit=crop',
           isFollowing: true,
           addedBy: 'user2',
           addedDate: '2024-06-01',
           popularity: 92,
-          city: 'San Francisco',
-          distance: '0.8km',
-          totalSaves: 18
+          city: 'San Francisco'
         },
         {
           id: '3',
@@ -90,20 +68,11 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           category: 'hotel',
           coordinates: { lat: 37.7749, lng: -122.4094 },
           likes: 45,
-          friendsWhoSaved: [
-            { name: 'Alex', avatar: 'photo-1472099645785-5658abf4ff4e' },
-            { name: 'Sofia', avatar: 'photo-1534528741775-53994a69daeb' }
-          ],
-          visitors: ['user6', 'user7', 'user8'],
-          isNew: false,
-          image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop',
           isFollowing: false,
           addedBy: 'user5',
           addedDate: '2024-05-15',
           popularity: 96,
-          city: 'San Francisco',
-          distance: '1.2km',
-          totalSaves: 45
+          city: 'San Francisco'
         }
       ],
       'milan': [
@@ -113,19 +82,11 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           category: 'cafe',
           coordinates: { lat: 45.4642, lng: 9.1900 },
           likes: 32,
-          friendsWhoSaved: [
-            { name: 'Sarah', avatar: 'photo-1494790108755-2616b5a5c75b' }
-          ],
-          visitors: ['user1', 'user2'],
-          isNew: false,
-          image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
           isFollowing: true,
           addedBy: 'user1',
           addedDate: '2024-05-28',
           popularity: 88,
-          city: 'Milan',
-          distance: '0.5km',
-          totalSaves: 32
+          city: 'Milan'
         },
         {
           id: 'milan2',
@@ -133,20 +94,11 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           category: 'restaurant',
           coordinates: { lat: 45.4640, lng: 9.1896 },
           likes: 45,
-          friendsWhoSaved: [
-            { name: 'Mike', avatar: 'photo-1507003211169-0a1dd7228f2d' },
-            { name: 'Emma', avatar: 'photo-1438761681033-6461ffad8d80' }
-          ],
-          visitors: ['user2', 'user3', 'user4'],
-          isNew: false,
-          image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop',
           isFollowing: true,
           addedBy: 'user2',
           addedDate: '2024-05-20',
           popularity: 94,
-          city: 'Milan',
-          distance: '0.7km',
-          totalSaves: 45
+          city: 'Milan'
         },
         {
           id: 'milan3',
@@ -154,19 +106,11 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           category: 'bar',
           coordinates: { lat: 45.4583, lng: 9.1756 },
           likes: 28,
-          friendsWhoSaved: [
-            { name: 'Alex', avatar: 'photo-1472099645785-5658abf4ff4e' }
-          ],
-          visitors: ['user3', 'user5'],
-          isNew: true,
-          image: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=400&h=300&fit=crop',
           isFollowing: true,
           addedBy: 'user3',
           addedDate: '2024-06-01',
           popularity: 82,
-          city: 'Milan',
-          distance: '1.1km',
-          totalSaves: 28
+          city: 'Milan'
         }
       ],
       'paris': [
@@ -176,20 +120,11 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           category: 'cafe',
           coordinates: { lat: 48.8542, lng: 2.3320 },
           likes: 56,
-          friendsWhoSaved: [
-            { name: 'Sarah', avatar: 'photo-1494790108755-2616b5a5c75b' },
-            { name: 'Sofia', avatar: 'photo-1534528741775-53994a69daeb' }
-          ],
-          visitors: ['user1', 'user4', 'user6'],
-          isNew: false,
-          image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
           isFollowing: true,
           addedBy: 'user1',
           addedDate: '2024-05-15',
           popularity: 91,
-          city: 'Paris',
-          distance: '0.4km',
-          totalSaves: 56
+          city: 'Paris'
         },
         {
           id: 'paris2',
@@ -197,21 +132,11 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           category: 'restaurant',
           coordinates: { lat: 48.8584, lng: 2.2945 },
           likes: 89,
-          friendsWhoSaved: [
-            { name: 'Mike', avatar: 'photo-1507003211169-0a1dd7228f2d' },
-            { name: 'Emma', avatar: 'photo-1438761681033-6461ffad8d80' },
-            { name: 'Alex', avatar: 'photo-1472099645785-5658abf4ff4e' }
-          ],
-          visitors: ['user2', 'user5', 'user7', 'user8'],
-          isNew: false,
-          image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop',
           isFollowing: true,
           addedBy: 'user2',
           addedDate: '2024-05-30',
           popularity: 98,
-          city: 'Paris',
-          distance: '0.9km',
-          totalSaves: 89
+          city: 'Paris'
         }
       ]
     };
@@ -288,15 +213,11 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           lat: Number(location.latitude), 
           lng: Number(location.longitude) 
         },
-        likes: 0,
-        friendsWhoSaved: [],
-        visitors: [],
-        isNew: false,
+        likes: 0, // Would come from location_likes count
         isFollowing: true,
         addedBy: location.created_by,
         city: location.city,
-        popularity: 50,
-        totalSaves: 0
+        popularity: 50 // Default value
       }));
     } catch (error) {
       console.error('Error fetching following pins:', error);
@@ -321,15 +242,11 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           lat: Number(location.latitude), 
           lng: Number(location.longitude) 
         },
-        likes: 0,
-        friendsWhoSaved: [],
-        visitors: [],
-        isNew: false,
+        likes: 0, // Would come from location_likes count
         isFollowing: false,
         addedBy: location.created_by,
         city: location.city,
-        popularity: 75,
-        totalSaves: 0
+        popularity: 75 // Would be calculated based on engagement
       }));
     } catch (error) {
       console.error('Error fetching popular pins:', error);

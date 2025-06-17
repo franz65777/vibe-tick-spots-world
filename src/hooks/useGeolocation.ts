@@ -11,7 +11,6 @@ interface GeolocationData {
 
 interface UseGeolocationReturn {
   location: GeolocationData | null;
-  city: string | null;
   error: string | null;
   loading: boolean;
   getCurrentLocation: () => void;
@@ -140,7 +139,6 @@ export const useGeolocation = (): UseGeolocationReturn => {
 
   return {
     location,
-    city: location?.city || null,
     error,
     loading,
     getCurrentLocation,

@@ -5,10 +5,10 @@ import { cn } from '@/lib/utils';
 interface FilterButtonsProps {
   activeFilter: 'following' | 'popular' | 'new';
   onFilterChange: (filter: 'following' | 'popular' | 'new') => void;
-  newCount?: number;
+  newCount: number;
 }
 
-const FilterButtons = ({ activeFilter, onFilterChange, newCount = 0 }: FilterButtonsProps) => {
+const FilterButtons = ({ activeFilter, onFilterChange, newCount }: FilterButtonsProps) => {
   return (
     <div className="bg-white/60 backdrop-blur-sm px-2 py-2">
       <div className="flex gap-2">
