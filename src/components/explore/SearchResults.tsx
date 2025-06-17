@@ -81,12 +81,12 @@ const SearchResults = ({
               place={place}
               onCardClick={() => onCardClick(place)}
               onLikeToggle={() => onLikeToggle(place.id)}
-              onSaveToggle={() => {}} // Add empty handler for now
+              onSaveToggle={() => {}}
               onShare={() => onShare(place)}
               onComment={() => onComment(place)}
               isLiked={likedPlaces.has(place.id)}
-              isSaved={false} // Add default value
-              cityName="Unknown" // Add default city name
+              isSaved={false}
+              cityName="Unknown"
             />
           ))}
         </div>
@@ -94,7 +94,7 @@ const SearchResults = ({
     );
   }
 
-  // Users search results
+  // Users search results - improved styling
   if (filteredUsers.length === 0) {
     return (
       <div className="text-center py-12 px-4">
@@ -123,14 +123,14 @@ const SearchResults = ({
       
       <div className="space-y-3">
         {filteredUsers.map((user) => (
-          <Card key={user.id} className="cursor-pointer hover:shadow-md transition-shadow">
-            <CardContent className="p-3">
-              <div className="flex items-center justify-between gap-3">
+          <Card key={user.id} className="border border-gray-200 hover:shadow-lg transition-all duration-200">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between">
                 <div 
-                  className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
+                  className="flex items-center gap-4 flex-1 min-w-0 cursor-pointer"
                   onClick={() => onUserClick(user)}
                 >
-                  <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                  <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0 border-2 border-gray-100">
                     {user.avatar_url ? (
                       <img 
                         src={user.avatar_url} 
@@ -138,34 +138,47 @@ const SearchResults = ({
                         className="w-full h-full object-cover" 
                       />
                     ) : (
-                      <span className="text-sm font-semibold text-gray-600">
+                      <span className="text-lg font-bold text-gray-600">
                         {getInitials(user)}
                       </span>
                     )}
                   </div>
                   
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-gray-900 truncate text-sm">
-                      {user.username || 'Unknown User'}
-                    </h4>
-                    {user.full_name && (
-                      <p className="text-sm text-gray-600 truncate">{user.full_name}</p>
-                    )}
+                    <div className="text-center mb-3">
+                      <h4 className="text-lg font-bold text-gray-900 mb-1">
+                        {user.full_name || user.username || 'Unknown User'}
+                      </h4>
+                      {user.username && (
+                        <p className="text-blue-600 text-sm font-medium">@{user.username}</p>
+                      )}
+                    </div>
+                    
                     {user.bio && (
-                      <p className="text-xs text-gray-500 mt-1 line-clamp-2">{user.bio}</p>
+                      <p className="text-sm text-gray-600 text-center mb-3 line-clamp-2">{user.bio}</p>
                     )}
                     
-                    <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                      <span>{user.followers_count || 0} followers</span>
-                      <span>{user.posts_count || 0} posts</span>
+                    <div className="flex items-center justify-center gap-6 text-sm text-gray-600">
+                      <div className="text-center">
+                        <div className="font-semibold text-gray-900">{user.followers_count || 0}</div>
+                        <div>followers</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-semibold text-gray-900">{user.posts_count || 0}</div>
+                        <div>posts</div>
+                      </div>
                     </div>
                   </div>
                 </div>
                 
                 <Button
-                  size="sm"
+                  size="lg"
                   variant={user.is_following ? "outline" : "default"}
-                  className="ml-2 flex-shrink-0 px-3 py-1 text-xs"
+                  className={`ml-4 px-6 py-2 rounded-full font-semibold ${
+                    user.is_following 
+                      ? 'border-gray-300 text-gray-700 hover:bg-gray-50' 
+                      : 'bg-gray-900 text-white hover:bg-gray-800'
+                  }`}
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();

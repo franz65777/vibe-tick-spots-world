@@ -22,51 +22,66 @@ const UserRecommendations = ({ recommendations, onUserClick, onFollowUser }: Use
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">People you might like</h3>
+      <div className="flex items-center justify-between px-1">
+        <h3 className="text-xl font-bold text-gray-900">People you might like</h3>
         <span className="text-sm text-gray-500">{recommendations.length} users</span>
       </div>
       
       <div className="space-y-3">
         {recommendations.map((user) => (
-          <Card key={user.id} className="cursor-pointer hover:shadow-md transition-shadow">
-            <CardContent className="p-3">
-              <div className="flex items-center justify-between gap-3">
+          <Card key={user.id} className="border border-gray-200 hover:shadow-lg transition-all duration-200">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between">
                 <div 
-                  className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
+                  className="flex items-center gap-4 flex-1 min-w-0 cursor-pointer"
                   onClick={() => onUserClick(user)}
                 >
-                  <img
-                    src={`https://images.unsplash.com/${user.avatar}?w=48&h=48&fit=crop&crop=face`}
-                    alt={user.name}
-                    className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-                  />
+                  <div className="relative">
+                    <img
+                      src={`https://images.unsplash.com/${user.avatar}?w=80&h=80&fit=crop&crop=face`}
+                      alt={user.name}
+                      className="w-16 h-16 rounded-full object-cover border-2 border-gray-100"
+                    />
+                  </div>
                   
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-gray-900 truncate text-sm">{user.name}</h4>
-                    <p className="text-sm text-gray-600 truncate">{user.username}</p>
+                    <div className="text-center mb-3">
+                      <h4 className="text-lg font-bold text-gray-900 mb-1">{user.name}</h4>
+                      <p className="text-blue-600 text-sm font-medium">{user.username}</p>
+                    </div>
                     
                     {user.recommendationReason && (
-                      <p className="text-xs text-blue-600 mt-1 truncate">{user.recommendationReason}</p>
+                      <div className="text-center mb-3">
+                        <p className="text-blue-600 text-sm font-medium">{user.recommendationReason}</p>
+                      </div>
                     )}
                     
-                    <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                      <span>{user.followers} followers</span>
-                      <span>
-                        <MapPin className="w-3 h-3 inline mr-1" />
-                        {user.savedPlaces} places
-                      </span>
+                    <div className="flex items-center justify-center gap-6 text-sm text-gray-600 mb-3">
+                      <div className="text-center">
+                        <div className="font-semibold text-gray-900">{user.followers}</div>
+                        <div>followers</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-semibold text-gray-900 flex items-center justify-center">
+                          <MapPin className="w-4 h-4 mr-1" />
+                          {user.savedPlaces}
+                        </div>
+                        <div>places</div>
+                      </div>
                       {user.mutualFollowers && user.mutualFollowers > 0 && (
-                        <span>{user.mutualFollowers} mutual</span>
+                        <div className="text-center">
+                          <div className="font-semibold text-gray-900">{user.mutualFollowers}</div>
+                          <div>mutual</div>
+                        </div>
                       )}
                     </div>
                     
                     {user.sharedInterests && user.sharedInterests.length > 0 && (
-                      <div className="flex gap-1 mt-2 flex-wrap">
+                      <div className="flex gap-2 justify-center flex-wrap mb-3">
                         {user.sharedInterests.slice(0, 2).map((interest) => (
                           <span 
                             key={interest}
-                            className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full"
+                            className="bg-gray-100 text-gray-700 text-xs px-3 py-1 rounded-full font-medium"
                           >
                             {interest}
                           </span>
@@ -77,9 +92,13 @@ const UserRecommendations = ({ recommendations, onUserClick, onFollowUser }: Use
                 </div>
                 
                 <Button
-                  size="sm"
+                  size="lg"
                   variant={user.isFollowing ? "outline" : "default"}
-                  className="ml-2 flex-shrink-0 px-3 py-1 text-xs"
+                  className={`ml-4 px-6 py-2 rounded-full font-semibold ${
+                    user.isFollowing 
+                      ? 'border-gray-300 text-gray-700 hover:bg-gray-50' 
+                      : 'bg-gray-900 text-white hover:bg-gray-800'
+                  }`}
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();

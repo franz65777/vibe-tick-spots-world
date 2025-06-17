@@ -28,12 +28,13 @@ export const useUserSearch = () => {
 
     setLoading(true);
     try {
-      // Search users by username or full_name
+      // Search users by username or full_name with proper case insensitive search
       const { data: searchResults, error } = await supabase
         .from('profiles')
         .select('*')
         .or(`username.ilike.%${query}%,full_name.ilike.%${query}%`)
         .neq('id', currentUser?.id || '')
+        .order('username')
         .limit(20);
 
       if (error) throw error;
@@ -59,7 +60,7 @@ export const useUserSearch = () => {
             full_name: user.full_name,
             avatar_url: user.avatar_url,
             bio: user.bio,
-            followers_count: user.follower_count || 0, // Map follower_count to followers_count
+            followers_count: user.follower_count || 0,
             following_count: user.following_count || 0,
             posts_count: user.posts_count || 0,
             is_following: isFollowing
@@ -109,7 +110,7 @@ export const useUserSearch = () => {
             full_name: user.full_name,
             avatar_url: user.avatar_url,
             bio: user.bio,
-            followers_count: user.follower_count || 0, // Map follower_count to followers_count
+            followers_count: user.follower_count || 0,
             following_count: user.following_count || 0,
             posts_count: user.posts_count || 0,
             is_following: isFollowing

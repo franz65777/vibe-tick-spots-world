@@ -1,144 +1,134 @@
 
 import { useState } from 'react';
-import { X, MapPin, Camera, Video, Upload } from 'lucide-react';
+import { X, Camera, MapPin, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-
-interface Location {
-  id: string;
-  name: string;
-  address: string;
-  category: string;
-}
+import { Textarea } from '@/components/ui/textarea';
+import { useStories } from '@/hooks/useStories';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface CreateStoryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onStoryCreated: () => void;
 }
 
-const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalProps) => {
+const CreateStoryModal = ({ isOpen, onClose }: CreateStoryModalProps) => {
+  const { user } = useAuth();
+  const { uploadStory, uploading } = useStories();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const { toast } = useToast();
-
-  // Mock locations - in a real app this would come from your API
-  const mockLocations: Location[] = [
-    { id: '1', name: 'Cafe Central', address: '123 Main St', category: 'cafe' },
-    { id: '2', name: 'The Rooftop Bar', address: '456 High St', category: 'bar' },
-    { id: '3', name: 'Hotel Plaza', address: '789 Park Ave', category: 'hotel' },
-    { id: '4', name: 'Giuseppe\'s Restaurant', address: '321 Food St', category: 'restaurant' },
-  ];
-
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      // Validate file type
-      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'video/mp4', 'video/mov'];
-      if (!validTypes.includes(file.type)) {
-        toast({
-          title: "Invalid file type",
-          description: "Please select an image or video file.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Validate file size (max 50MB)
-      if (file.size > 50 * 1024 * 1024) {
-        toast({
-          title: "File too large",
-          description: "Please select a file smaller than 50MB.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setSelectedFile(file);
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!selectedFile || !selectedLocation) {
-      toast({
-        title: "Missing information",
-        description: "Please select a file and location.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsUploading(true);
-    try {
-      // Simulate upload - in a real app this would upload to your storage
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      toast({
-        title: "Story created!",
-        description: "Your story has been shared.",
-      });
-      
-      onStoryCreated();
-      onClose();
-      setSelectedFile(null);
-      setSelectedLocation(null);
-    } catch (error) {
-      toast({
-        title: "Upload failed",
-        description: "Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUploading(false);
-    }
-  };
+  const [caption, setCaption] = useState('');
+  const [locationName, setLocationName] = useState('');
+  const [locationAddress, setLocationAddress] = useState('');
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold">Create Story</h2>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="w-5 h-5" />
-            </Button>
-          </div>
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+        setSelectedFile(file);
+        const url = URL.createObjectURL(file);
+        setPreviewUrl(url);
+      } else {
+        toast.error('Please select an image or video file');
+      }
+    }
+  };
 
-          {/* File upload */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium mb-2">
-              Upload Photo or Video *
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedFile) {
+      toast.error('Please select a media file');
+      return;
+    }
+    
+    if (!locationName.trim()) {
+      toast.error('Please add a location to your story');
+      return;
+    }
+
+    if (!user) {
+      toast.error('You must be logged in to create a story');
+      return;
+    }
+
+    try {
+      await uploadStory(
+        selectedFile,
+        caption.trim() || undefined,
+        undefined, // locationId - can be undefined for now
+        locationName.trim(),
+        locationAddress.trim() || undefined
+      );
+      
+      toast.success('Story uploaded successfully!');
+      handleClose();
+    } catch (error) {
+      console.error('Error uploading story:', error);
+      toast.error('Failed to upload story. Please try again.');
+    }
+  };
+
+  const handleClose = () => {
+    setSelectedFile(null);
+    setCaption('');
+    setLocationName('');
+    setLocationAddress('');
+    setPreviewUrl(null);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-4 border-b">
+          <h2 className="text-lg font-semibold">Create Story</h2>
+          <Button variant="ghost" size="icon" onClick={handleClose}>
+            <X className="w-5 h-5" />
+          </Button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+          {/* File Upload */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Media File *
             </label>
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-              {selectedFile ? (
+              {previewUrl ? (
                 <div className="space-y-2">
-                  <div className="flex items-center justify-center gap-2">
-                    {selectedFile.type.startsWith('image/') ? (
-                      <Camera className="w-6 h-6 text-green-600" />
-                    ) : (
-                      <Video className="w-6 h-6 text-green-600" />
-                    )}
-                    <span className="text-sm font-medium">{selectedFile.name}</span>
-                  </div>
+                  {selectedFile?.type.startsWith('image/') ? (
+                    <img 
+                      src={previewUrl} 
+                      alt="Preview" 
+                      className="w-full h-48 object-cover rounded-lg"
+                    />
+                  ) : (
+                    <video 
+                      src={previewUrl} 
+                      className="w-full h-48 object-cover rounded-lg"
+                      controls
+                    />
+                  )}
                   <Button
+                    type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setSelectedFile(null)}
+                    onClick={() => {
+                      setSelectedFile(null);
+                      setPreviewUrl(null);
+                    }}
                   >
-                    Change file
+                    Change File
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  <Upload className="w-8 h-8 text-gray-400 mx-auto" />
-                  <p className="text-sm text-gray-500">
-                    Click to upload photo or video
-                  </p>
+                <>
+                  <Camera className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                  <p className="text-gray-600 mb-2">Select an image or video</p>
                   <input
                     type="file"
                     accept="image/*,video/*"
@@ -146,70 +136,63 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
                     className="hidden"
                     id="story-file"
                   />
-                  <label
-                    htmlFor="story-file"
-                    className="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-blue-700"
-                  >
-                    Choose File
+                  <label htmlFor="story-file">
+                    <Button type="button" variant="outline" size="sm" asChild>
+                      <span className="cursor-pointer">
+                        <Upload className="w-4 h-4 mr-2" />
+                        Choose File
+                      </span>
+                    </Button>
                   </label>
-                </div>
+                </>
               )}
             </div>
           </div>
 
-          {/* Location selection */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium mb-2">
-              Tag Location *
+          {/* Location (Required) */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              <MapPin className="w-4 h-4 inline mr-1" />
+              Location *
             </label>
-            <Select
-              value={selectedLocation?.id || ''}
-              onValueChange={(value) => {
-                const location = mockLocations.find(l => l.id === value);
-                setSelectedLocation(location || null);
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a location" />
-              </SelectTrigger>
-              <SelectContent>
-                {mockLocations.map((location) => (
-                  <SelectItem key={location.id} value={location.id}>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4" />
-                      <div>
-                        <p className="font-medium">{location.name}</p>
-                        <p className="text-xs text-gray-500">{location.address}</p>
-                      </div>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Submit button */}
-          <Button
-            onClick={handleSubmit}
-            disabled={!selectedFile || !selectedLocation || isUploading}
-            className="w-full bg-blue-600 hover:bg-blue-700"
-          >
-            {isUploading ? (
-              <span className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                Creating Story...
-              </span>
-            ) : (
-              'Share Story'
-            )}
-          </Button>
-
-          <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-            <p className="text-sm text-blue-700">
-              💡 Stories are only visible for 24 hours and require a location tag to help others discover amazing places!
+            <Input
+              placeholder="Enter location name"
+              value={locationName}
+              onChange={(e) => setLocationName(e.target.value)}
+              required
+            />
+            <Input
+              placeholder="Enter address (optional)"
+              value={locationAddress}
+              onChange={(e) => setLocationAddress(e.target.value)}
+            />
+            <p className="text-xs text-gray-500">
+              Location is required for all stories
             </p>
           </div>
-        </div>
+
+          {/* Caption */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Caption
+            </label>
+            <Textarea
+              placeholder="Write a caption for your story..."
+              value={caption}
+              onChange={(e) => setCaption(e.target.value)}
+              rows={3}
+            />
+          </div>
+
+          {/* Submit Button */}
+          <Button 
+            type="submit" 
+            className="w-full" 
+            disabled={uploading || !selectedFile || !locationName.trim()}
+          >
+            {uploading ? 'Uploading...' : 'Share Story'}
+          </Button>
+        </form>
       </div>
     </div>
   );
