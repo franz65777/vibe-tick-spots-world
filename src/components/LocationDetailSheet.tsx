@@ -37,9 +37,13 @@ interface LocationDetailSheetProps {
   isOpen: boolean;
   onClose: () => void;
   location: Place | null;
+  onLike: () => void;
+  isLiked: boolean;
+  onSave: () => void;
+  isSaved: boolean;
 }
 
-const LocationDetailSheet = ({ isOpen, onClose, location }: LocationDetailSheetProps) => {
+const LocationDetailSheet = ({ isOpen, onClose, location, onLike, isLiked, onSave, isSaved }: LocationDetailSheetProps) => {
   const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
 
   // Generate mock media data based on location category

@@ -51,7 +51,7 @@ class MessageService {
         })
         .select(`
           *,
-          profiles:sender_id (
+          sender:profiles!sender_id (
             username,
             full_name,
             avatar_url
@@ -82,7 +82,7 @@ class MessageService {
         })
         .select(`
           *,
-          profiles:sender_id (
+          sender:profiles!sender_id (
             username,
             full_name,
             avatar_url
@@ -107,7 +107,7 @@ class MessageService {
         .from('message_threads')
         .select(`
           *,
-          direct_messages:last_message_id (
+          last_message:direct_messages!last_message_id (
             id,
             content,
             message_type,
@@ -138,7 +138,7 @@ class MessageService {
           return {
             ...thread,
             other_user: otherUser,
-            last_message: thread.direct_messages as DirectMessage
+            last_message: thread.last_message as DirectMessage
           };
         })
       );
@@ -159,7 +159,7 @@ class MessageService {
         .from('direct_messages')
         .select(`
           *,
-          profiles:sender_id (
+          sender:profiles!sender_id (
             username,
             full_name,
             avatar_url
@@ -173,7 +173,7 @@ class MessageService {
       return (messages || []).map(message => ({
         ...message,
         message_type: message.message_type as 'text' | 'place_share' | 'trip_share' | 'post_share',
-        sender: message.profiles
+        sender: message.sender
       }));
     } catch (error) {
       console.error('Error fetching messages:', error);

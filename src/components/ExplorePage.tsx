@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -234,6 +233,11 @@ const ExplorePage = () => {
     navigate(`/profile/${user.id}`);
   };
 
+  const handleCommentSubmit = (comment: string) => {
+    console.log('Comment submitted:', comment);
+    setCommentLocation(null);
+  };
+
   return (
     <div className="flex flex-col h-full bg-white">
       <SearchHeader
@@ -251,6 +255,7 @@ const ExplorePage = () => {
       <SearchFilters
         sortBy={sortBy}
         onSortChange={setSortBy}
+        showFilters={true}
       />
 
       <div className="flex-1 overflow-y-auto">
@@ -308,8 +313,6 @@ const ExplorePage = () => {
         location={selectedLocation}
         isOpen={!!selectedLocation}
         onClose={() => setSelectedLocation(null)}
-        onShare={handleShare}
-        onComment={handleComment}
         onLike={() => selectedLocation && handleLikeToggle(selectedLocation.id)}
         isLiked={selectedLocation ? likedPlaces.has(selectedLocation.id) : false}
         onSave={() => {}}
@@ -319,7 +322,7 @@ const ExplorePage = () => {
       <ShareModal
         isOpen={!!shareLocation}
         onClose={() => setShareLocation(null)}
-        location={shareLocation}
+        place={shareLocation}
         onShare={() => setShareLocation(null)}
       />
 
@@ -327,6 +330,7 @@ const ExplorePage = () => {
         isOpen={!!commentLocation}
         onClose={() => setCommentLocation(null)}
         place={commentLocation}
+        onCommentSubmit={handleCommentSubmit}
       />
     </div>
   );
