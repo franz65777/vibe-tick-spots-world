@@ -406,6 +406,9 @@ const ExplorePage = () => {
   // Calculate new pins count
   const newPinsCount = pins.filter(pin => pin.isNew).length;
 
+  // Convert pins to places for MapSection
+  const placesForMap = pins.map(convertPinToPlace);
+
   // Determine if we're in search mode
   const isInSearchMode = searchQuery.trim().length > 0;
 
@@ -518,11 +521,8 @@ const ExplorePage = () => {
           {/* Map Section */}
           <div className="flex-1 relative">
             <MapSection
-              pins={pins}
-              loading={pinsLoading}
+              places={placesForMap}
               onPinClick={handlePinClick}
-              activeFilter={activeFilter}
-              hasFollowedUsers={hasFollowedUsers}
             />
           </div>
         </>
