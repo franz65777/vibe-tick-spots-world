@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface BackendConfig {
@@ -231,6 +230,164 @@ class BackendService {
       return { success: true, data: mediaData };
     } catch (error) {
       console.error('Error uploading media:', error);
+      return { success: false, error };
+    }
+  }
+
+  // Upload story with media
+  async uploadStory(
+    file: File,
+    caption?: string,
+    locationId?: string,
+    locationName?: string,
+    locationAddress?: string
+  ) {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      if (caption) formData.append('caption', caption);
+      if (locationId) formData.append('locationId', locationId);
+      if (locationName) formData.append('locationName', locationName);
+      if (locationAddress) formData.append('locationAddress', locationAddress);
+
+      const { data, error } = await supabase.functions.invoke('upload-story', {
+        body: formData,
+      });
+
+      if (error) throw error;
+      return { success: true, data: data.story };
+    } catch (error) {
+      console.error('Error uploading story:', error);
+      return { success: false, error };
+    }
+  }
+
+  // Upload post with multiple media files
+  async uploadPost(
+    files: File[],
+    caption?: string,
+    locationId?: string
+  ) {
+    try {
+      const formData = new FormData();
+      files.forEach(file => formData.append('files', file));
+      if (caption) formData.append('caption', caption);
+      if (locationId) formData.append('locationId', locationId);
+
+      const { data, error } = await supabase.functions.invoke('upload-post', {
+        body: formData,
+      });
+
+      if (error) throw error;
+      return { success: true, data: data.post };
+    } catch (error) {
+      console.error('Error uploading post:', error);
+      return { success: false, error };
+    }
+  }
+
+  // Get user's posts
+  async getUserPosts(userId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching user posts:', error);
+      return [];
+    }
+  }
+
+  // Get all stories (not expired)
+  async getStories() {
+    try {
+      const { data, error } = await supabase
+        .from('stories')
+        .select('*')
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching stories:', error);
+      return [];
+    }
+  }
+
+  // Like/Unlike post
+  async togglePostLike(postId: string, userId: string) {
+    try {
+      // Check if already liked
+      const { data: existingLike } = await supabase
+        .from('post_likes')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('post_id', postId)
+        .single();
+
+      if (existingLike) {
+        // Unlike
+        const { error } = await supabase
+          .from('post_likes')
+          .delete()
+          .eq('user_id', userId)
+          .eq('post_id', postId);
+
+        if (error) throw error;
+        return { success: true, liked: false };
+      } else {
+        // Like
+        const { error } = await supabase
+          .from('post_likes')
+          .insert({ user_id: userId, post_id: postId });
+
+        if (error) throw error;
+        return { success: true, liked: true };
+      }
+    } catch (error) {
+      console.error('Error toggling post like:', error);
+      return { success: false, error };
+    }
+  }
+
+  // Save/Unsave post
+  async togglePostSave(postId: string, userId: string) {
+    try {
+      // Check if already saved
+      const { data: existingSave } = await supabase
+        .from('post_saves')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('post_id', postId)
+        .single();
+
+      if (existingSave) {
+        // Unsave
+        const { error } = await supabase
+          .from('post_saves')
+          .delete()
+          .eq('user_id', userId)
+          .eq('post_id', postId);
+
+        if (error) throw error;
+        return { success: true, saved: false };
+      } else {
+        // Save
+        const { error } = await supabase
+          .from('post_saves')
+          .insert({ user_id: userId, post_id: postId });
+
+        if (error) throw error;
+        return { success: true, saved: true };
+      }
+    } catch (error) {
+      console.error('Error toggling post save:', error);
       return { success: false, error };
     }
   }
