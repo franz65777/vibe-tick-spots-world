@@ -53,6 +53,12 @@ const LocationRecommendations = ({
     totalSaves: rec.likes || 23
   });
 
+  // Mock saved state for recommendations
+  const isPlaceSaved = (placeId: string) => false;
+  const handleSaveToggle = (place: Place) => {
+    console.log('Save toggle for recommendation:', place.id);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -66,8 +72,10 @@ const LocationRecommendations = ({
             <PlaceCard
               place={convertToPlace(location)}
               isLiked={likedPlaces.has(location.id)}
+              isSaved={isPlaceSaved(location.id)}
               onCardClick={() => onLocationClick(location)}
               onLikeToggle={() => onLocationLike(location.id)}
+              onSaveToggle={handleSaveToggle}
               onShare={() => onLocationShare(location)}
               onComment={() => onLocationComment(location)}
               cityName="Current City"

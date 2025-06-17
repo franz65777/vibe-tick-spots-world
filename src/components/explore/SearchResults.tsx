@@ -40,6 +40,12 @@ const SearchResults = ({
   onShare,
   onComment
 }: SearchResultsProps) => {
+  // Mock saved state for search results
+  const isPlaceSaved = (placeId: string) => false;
+  const handleSaveToggle = (place: Place) => {
+    console.log('Save toggle for search result:', place.id);
+  };
+
   if (isSearching) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -69,8 +75,10 @@ const SearchResults = ({
                 key={place.id}
                 place={place}
                 isLiked={likedPlaces.has(place.id)}
+                isSaved={isPlaceSaved(place.id)}
                 onCardClick={() => onCardClick(place)}
                 onLikeToggle={() => onLikeToggle(place.id)}
+                onSaveToggle={handleSaveToggle}
                 onShare={() => onShare(place)}
                 onComment={() => onComment(place)}
                 cityName="Current City"
