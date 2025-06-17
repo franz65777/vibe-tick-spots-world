@@ -37,13 +37,24 @@ export interface ApiUsage {
 }
 
 class AnalyticsService {
+  // Get current user ID
+  private async getCurrentUserId(): Promise<string | null> {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user?.id || null;
+  }
+
   // Track user behavior events
   async trackEvent(event: UserAnalyticsEvent): Promise<void> {
     try {
+      const userId = await this.getCurrentUserId();
+      if (!userId) return; // Skip tracking if no user
+
       const { error } = await supabase
         .from('user_analytics')
         .insert({
-          ...event,
+          user_id: userId,
+          event_type: event.event_type,
+          event_data: event.event_data || {},
           user_agent: event.user_agent || navigator.userAgent,
           page_url: event.page_url || window.location.href,
           session_id: event.session_id || this.getSessionId()
@@ -58,9 +69,18 @@ class AnalyticsService {
   // Track performance metrics
   async trackPerformance(metric: PerformanceMetric): Promise<void> {
     try {
+      const userId = await this.getCurrentUserId();
+
       const { error } = await supabase
         .from('performance_metrics')
-        .insert(metric);
+        .insert({
+          user_id: userId,
+          metric_type: metric.metric_type,
+          metric_value: metric.metric_value,
+          metric_unit: metric.metric_unit,
+          endpoint: metric.endpoint,
+          metadata: metric.metadata || {}
+        });
 
       if (error) throw error;
     } catch (error) {
@@ -71,12 +91,19 @@ class AnalyticsService {
   // Log errors
   async logError(errorLog: ErrorLog): Promise<void> {
     try {
+      const userId = await this.getCurrentUserId();
+
       const { error } = await supabase
         .from('error_logs')
         .insert({
-          ...errorLog,
+          user_id: userId,
+          error_type: errorLog.error_type,
+          error_message: errorLog.error_message,
+          stack_trace: errorLog.stack_trace,
           user_agent: errorLog.user_agent || navigator.userAgent,
-          page_url: errorLog.page_url || window.location.href
+          page_url: errorLog.page_url || window.location.href,
+          severity: errorLog.severity || 'error',
+          metadata: errorLog.metadata || {}
         });
 
       if (error) throw error;
@@ -88,9 +115,19 @@ class AnalyticsService {
   // Track API usage
   async trackApiUsage(usage: ApiUsage): Promise<void> {
     try {
+      const userId = await this.getCurrentUserId();
+
       const { error } = await supabase
         .from('api_usage')
-        .insert(usage);
+        .insert({
+          user_id: userId,
+          endpoint: usage.endpoint,
+          method: usage.method,
+          response_status: usage.response_status,
+          response_time_ms: usage.response_time_ms,
+          request_size: usage.request_size,
+          response_size: usage.response_size
+        });
 
       if (error) throw error;
     } catch (error) {

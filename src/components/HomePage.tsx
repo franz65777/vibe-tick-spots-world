@@ -13,14 +13,15 @@ import PlaceInteractionModal from './home/PlaceInteractionModal';
 import { useSearch } from '@/hooks/useSearch';
 import { useAnalytics } from '@/hooks/useAnalytics';
 
-interface Story {
+interface HomeStory {
   id: string;
-  user: {
-    name: string;
-    avatar: string;
-  };
-  image: string;
-  title: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  isViewed: boolean;
+  locationId: string;
+  locationName: string;
+  locationCategory?: string;
 }
 
 interface Place {
@@ -35,7 +36,7 @@ interface Place {
   visitors: string[];
   friendsWhoSaved: { name: string; avatar: string; }[];
   savedCount: number;
-  stories?: Story[];
+  stories?: HomeStory[];
   latitude?: number;
   longitude?: number;
 }
@@ -53,29 +54,41 @@ interface HomePlace {
   friendsWhoSaved: { name: string; avatar: string; }[];
   savedCount: number;
   isNew: boolean;
-  stories?: Story[];
+  stories?: HomeStory[];
   latitude?: number;
   longitude?: number;
 }
 
-const demoStories: Story[] = [
+const demoStories: HomeStory[] = [
   {
     id: 'story1',
-    user: { name: 'Alice', avatar: 'https://i.pravatar.cc/48?img=1' },
-    image: 'https://images.unsplash.com/photo-1517840901100-8179e982acb7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80',
-    title: 'My amazing trip to the mountains'
+    userId: 'user1',
+    userName: 'Alice',
+    userAvatar: 'https://i.pravatar.cc/48?img=1',
+    isViewed: false,
+    locationId: '1',
+    locationName: 'Cozy Coffee Shop',
+    locationCategory: 'cafe'
   },
   {
     id: 'story2',
-    user: { name: 'Bob', avatar: 'https://i.pravatar.cc/48?img=2' },
-    image: 'https://images.unsplash.com/photo-1477959858617-67f85660d58e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2048&q=80',
-    title: 'Exploring the city at night'
+    userId: 'user2',
+    userName: 'Bob',
+    userAvatar: 'https://i.pravatar.cc/48?img=2',
+    isViewed: false,
+    locationId: '2',
+    locationName: 'The Art Museum',
+    locationCategory: 'museum'
   },
   {
     id: 'story3',
-    user: { name: 'Charlie', avatar: 'https://i.pravatar.cc/48?img=3' },
-    image: 'https://images.unsplash.com/photo-1469474968028-56653f4e4262?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2074&q=80',
-    title: 'Adventures in the jungle'
+    userId: 'user3',
+    userName: 'Charlie',
+    userAvatar: 'https://i.pravatar.cc/48?img=3',
+    isViewed: false,
+    locationId: '3',
+    locationName: 'Greenwood Park',
+    locationCategory: 'park'
   },
 ];
 
@@ -252,10 +265,14 @@ const HomePage = () => {
         currentCity=""
         onSearchChange={searchData.setSearchQuery}
         onSearchKeyPress={() => {}}
-        onNotificationClick={() => {}}
+        onNotificationsClick={() => {}}
         onMessagesClick={() => {}}
       />
-      <StoriesSection stories={demoStories} />
+      <StoriesSection 
+        stories={demoStories}
+        onCreateStory={() => {}}
+        onStoryClick={() => {}}
+      />
       <FilterButtons 
         activeFilter={activeFilter} 
         onFilterChange={handleFilterChange}
@@ -280,6 +297,7 @@ const HomePage = () => {
       {isInteractionModalOpen && selectedPlace && (
         <PlaceInteractionModal
           place={selectedPlace}
+          mode="view"
           isOpen={isInteractionModalOpen}
           onClose={() => setIsInteractionModalOpen(false)}
         />

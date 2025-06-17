@@ -5,6 +5,7 @@ import { searchService, SearchHistoryItem, LocationRecommendation, UserRecommend
 
 export const useSearch = () => {
   const { user } = useAuth();
+  const [searchQuery, setSearchQuery] = useState('');
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
   const [locationRecommendations, setLocationRecommendations] = useState<LocationRecommendation[]>([]);
   const [userRecommendations, setUserRecommendations] = useState<UserRecommendation[]>([]);
@@ -101,6 +102,8 @@ export const useSearch = () => {
   };
 
   return {
+    searchQuery,
+    setSearchQuery,
     searchHistory,
     locationRecommendations,
     userRecommendations,
