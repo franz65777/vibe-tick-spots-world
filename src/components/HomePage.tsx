@@ -213,10 +213,16 @@ const HomePage = () => {
       visitors = Array.from({ length: pin.visitors }, (_, i) => `visitor_${i}`);
     }
 
-    // Ensure friendsWhoSaved is properly handled
+    // Ensure friendsWhoSaved is properly handled - always convert to array format
     let friendsWhoSaved: { name: string; avatar: string }[] = [];
     if (Array.isArray(pin.friendsWhoSaved)) {
       friendsWhoSaved = pin.friendsWhoSaved;
+    } else if (typeof pin.friendsWhoSaved === 'number') {
+      // Convert number to array of mock friends
+      friendsWhoSaved = Array.from({ length: Math.min(pin.friendsWhoSaved, 3) }, (_, i) => ({
+        name: `Friend ${i + 1}`,
+        avatar: `https://i.pravatar.cc/40?img=${i + 1}`
+      }));
     }
 
     return {

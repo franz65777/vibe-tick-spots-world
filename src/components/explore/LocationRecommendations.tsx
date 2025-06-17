@@ -31,27 +31,48 @@ const LocationRecommendations = ({
   }
 
   // Convert recommendations to Place format for PlaceCard
-  const convertToPlace = (rec: LocationRecommendation): Place => ({
-    id: rec.id,
-    name: rec.name,
-    category: rec.category,
-    likes: rec.likes,
-    friendsWhoSaved: rec.friendsWhoSaved || 0,
-    visitors: rec.visitors || 0,
-    isNew: rec.isNew,
-    coordinates: rec.coordinates,
-    image: rec.image,
-    addedBy: {
-      name: typeof rec.addedBy === 'string' ? rec.addedBy : 'Explorer',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
-      isFollowing: rec.isFollowing || false
-    },
-    addedDate: rec.addedDate,
-    isFollowing: rec.isFollowing,
-    popularity: rec.popularity,
-    distance: typeof rec.distance === 'number' ? `${rec.distance}km` : rec.distance,
-    totalSaves: rec.likes || 23
-  });
+  const convertToPlace = (rec: LocationRecommendation): Place => {
+    // Ensure visitors is always a string array
+    let visitors: string[] = [];
+    if (Array.isArray(rec.visitors)) {
+      visitors = rec.visitors.map((v: any) => String(v));
+    } else if (typeof rec.visitors === 'number') {
+      visitors = Array.from({ length: rec.visitors }, (_, i) => `visitor_${i}`);
+    }
+
+    // Ensure friendsWhoSaved is always an array
+    let friendsWhoSaved: { name: string; avatar: string }[] = [];
+    if (Array.isArray(rec.friendsWhoSaved)) {
+      friendsWhoSaved = rec.friendsWhoSaved;
+    } else if (typeof rec.friendsWhoSaved === 'number') {
+      friendsWhoSaved = Array.from({ length: Math.min(rec.friendsWhoSaved, 3) }, (_, i) => ({
+        name: `Friend ${i + 1}`,
+        avatar: `https://i.pravatar.cc/40?img=${i + 1}`
+      }));
+    }
+
+    return {
+      id: rec.id,
+      name: rec.name,
+      category: rec.category,
+      likes: rec.likes,
+      friendsWhoSaved,
+      visitors,
+      isNew: rec.isNew,
+      coordinates: rec.coordinates,
+      image: rec.image,
+      addedBy: {
+        name: typeof rec.addedBy === 'string' ? rec.addedBy : 'Explorer',
+        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
+        isFollowing: rec.isFollowing || false
+      },
+      addedDate: rec.addedDate,
+      isFollowing: rec.isFollowing,
+      popularity: rec.popularity,
+      distance: typeof rec.distance === 'number' ? `${rec.distance}km` : rec.distance,
+      totalSaves: rec.likes || 23
+    };
+  };
 
   // Mock saved state for recommendations
   const isPlaceSaved = (placeId: string) => false;
@@ -94,3 +115,4 @@ const LocationRecommendations = ({
 };
 
 export default LocationRecommendations;
+

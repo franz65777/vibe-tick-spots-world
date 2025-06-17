@@ -1,10 +1,11 @@
 
+
 export interface Place {
   id: string;
   name: string;
   category: string;
   likes: number;
-  friendsWhoSaved?: { name: string; avatar: string }[] | number;
+  friendsWhoSaved?: { name: string; avatar: string }[];
   visitors: string[];
   isNew: boolean;
   coordinates: { lat: number; lng: number };
@@ -20,3 +21,4 @@ export interface Place {
   distance?: string | number;
   totalSaves?: number;
 }
+
