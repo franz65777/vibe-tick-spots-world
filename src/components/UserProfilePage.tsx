@@ -1,6 +1,6 @@
 
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Calendar, MoreHorizontal } from 'lucide-react';
+import { ArrowLeft, Calendar, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useAuth } from '@/contexts/AuthContext';
@@ -61,6 +61,35 @@ const UserProfilePage = () => {
 
   const displayUsername = profile.username || 'Unknown User';
   const displayFullName = profile.full_name;
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'posts':
+        return <PostsGrid userId={userId} />;
+      case 'trips':
+        return (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+              <span className="text-2xl">🗺️</span>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No trips yet</h3>
+            <p className="text-gray-600 text-sm">No trips to show</p>
+          </div>
+        );
+      case 'badges':
+        return (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+              <span className="text-2xl">🏆</span>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No badges yet</h3>
+            <p className="text-gray-600 text-sm">No badges to show</p>
+          </div>
+        );
+      default:
+        return <PostsGrid userId={userId} />;
+    }
+  };
 
   return (
     <div className="flex flex-col h-full bg-white pt-16">
@@ -140,7 +169,7 @@ const UserProfilePage = () => {
       
       {/* Tab Content */}
       <div className="flex-1 pb-4">
-        <PostsGrid />
+        {renderTabContent()}
       </div>
     </div>
   );

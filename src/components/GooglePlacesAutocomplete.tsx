@@ -21,46 +21,20 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
   className = ""
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const initializeGoogleMaps = async () => {
       try {
-        // Check if Google Maps is already loaded
-        if (typeof google !== 'undefined' && google.maps && google.maps.places) {
+        // Check if Google Maps is available
+        if (typeof window.google !== 'undefined' && window.google.maps && window.google.maps.places) {
           initializeAutocomplete();
           return;
         }
 
-        // If not loaded, try to load it
-        if (!window.google) {
-          // Check if script is already being loaded
-          const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
-          if (!existingScript) {
-            setError('Google Maps is not configured. Please contact support.');
-            return;
-          }
-        }
-
-        // Wait for Google Maps to load
-        const checkGoogleMaps = setInterval(() => {
-          if (typeof google !== 'undefined' && google.maps && google.maps.places) {
-            clearInterval(checkGoogleMaps);
-            initializeAutocomplete();
-          }
-        }, 100);
-
-        // Timeout after 10 seconds
-        setTimeout(() => {
-          clearInterval(checkGoogleMaps);
-          if (!isLoaded) {
-            setError('Google Maps failed to load. Please refresh the page.');
-          }
-        }, 10000);
-
-        return () => clearInterval(checkGoogleMaps);
+        // If Google Maps is not available, show error
+        setError('Google Maps API not configured. Location search is unavailable.');
       } catch (err) {
         console.error('Error initializing Google Maps:', err);
         setError('Failed to initialize Google Maps');
@@ -71,16 +45,16 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
   }, []);
 
   const initializeAutocomplete = () => {
-    if (!inputRef.current) return;
+    if (!inputRef.current || typeof window.google === 'undefined') return;
 
     try {
-      const autocompleteInstance = new google.maps.places.Autocomplete(inputRef.current, {
+      const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
         types: ['establishment', 'geocode'],
         fields: ['place_id', 'name', 'formatted_address', 'geometry', 'types']
       });
 
-      autocompleteInstance.addListener('place_changed', () => {
-        const place = autocompleteInstance.getPlace();
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
         
         if (place.geometry && place.geometry.location) {
           const selectedPlace = {
@@ -99,7 +73,6 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
         }
       });
 
-      setAutocomplete(autocompleteInstance);
       setIsLoaded(true);
       setError(null);
     } catch (err) {
@@ -112,15 +85,17 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
     return (
       <div className={`relative ${className}`}>
         <div className="relative">
-          <AlertCircle className="absolute left-3 top-1/2 transform -translate-y-1/2 text-red-400 w-5 h-5" />
+          <AlertCircle className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-400 w-5 h-5" />
           <input
             type="text"
-            placeholder="Location search unavailable"
-            className="w-full pl-10 pr-4 py-3 border border-red-300 rounded-xl bg-red-50 text-red-600 cursor-not-allowed"
+            placeholder="Location search requires Google Maps API"
+            className="w-full pl-10 pr-4 py-3 border border-orange-300 rounded-xl bg-orange-50 text-orange-700 cursor-not-allowed"
             disabled
           />
         </div>
-        <div className="text-xs text-red-600 mt-1">{error}</div>
+        <div className="text-xs text-orange-600 mt-1">
+          Google Maps API key required for location search
+        </div>
       </div>
     );
   }

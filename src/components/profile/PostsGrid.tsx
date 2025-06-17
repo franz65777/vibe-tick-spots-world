@@ -1,10 +1,11 @@
 
-import { Heart, MessageCircle, MapPin, Grid3X3, Trash2 } from 'lucide-react';
+import { Heart, MessageCircle, Grid3X3, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import PostDetailModal from './PostDetailModal';
 import { usePosts } from '@/hooks/usePosts';
 import { useProfile } from '@/hooks/useProfile';
-import { usePostDeletion } from '@/hooks/usePostDeletion';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Post {
   id: string;
@@ -20,21 +21,28 @@ interface Post {
   metadata: any;
 }
 
-const PostsGrid = () => {
+interface PostsGridProps {
+  userId?: string;
+}
+
+const PostsGrid = ({ userId }: PostsGridProps) => {
+  const { user } = useAuth();
   const { profile } = useProfile();
-  const { posts, loading, refetch } = usePosts(profile?.id);
-  const { deletePost, deleting } = usePostDeletion();
+  const targetUserId = userId || profile?.id;
+  const { posts, loading, refetch } = usePosts(targetUserId);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
+
+  const isOwnProfile = user?.id === targetUserId;
 
   const handlePostClick = (post: Post) => {
     setSelectedPost(post);
   };
 
   const handleDeletePost = async (postId: string, event: React.MouseEvent) => {
-    event.stopPropagation(); // Prevent opening the post modal
+    event.stopPropagation();
     
     if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
       return;
@@ -42,12 +50,15 @@ const PostsGrid = () => {
 
     setDeletingPostId(postId);
     try {
-      const result = await deletePost(postId);
-      if (result.success) {
-        await refetch(); // Refresh the posts list
-      } else {
-        alert('Failed to delete post. Please try again.');
-      }
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', postId)
+        .eq('user_id', user?.id);
+
+      if (error) throw error;
+      
+      await refetch();
     } catch (error) {
       console.error('Error deleting post:', error);
       alert('Failed to delete post. Please try again.');
@@ -95,7 +106,9 @@ const PostsGrid = () => {
           <Grid3X3 className="w-8 h-8 text-gray-400" />
         </div>
         <h3 className="text-lg font-semibold text-gray-900 mb-2">No posts yet</h3>
-        <p className="text-gray-600 text-sm">Start sharing your favorite places!</p>
+        <p className="text-gray-600 text-sm">
+          {isOwnProfile ? "Start sharing your favorite places!" : "No posts to show"}
+        </p>
       </div>
     );
   }
@@ -124,25 +137,27 @@ const PostsGrid = () => {
               </div>
             )}
 
-            {/* Delete button */}
-            <button
-              onClick={(e) => handleDeletePost(post.id, e)}
-              disabled={deletingPostId === post.id}
-              className="absolute top-2 left-2 w-8 h-8 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200"
-            >
-              {deletingPostId === post.id ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              ) : (
-                <Trash2 className="w-4 h-4 text-white" />
-              )}
-            </button>
+            {/* Delete button - only show for own posts */}
+            {isOwnProfile && (
+              <button
+                onClick={(e) => handleDeletePost(post.id, e)}
+                disabled={deletingPostId === post.id}
+                className="absolute top-2 left-2 w-8 h-8 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200"
+              >
+                {deletingPostId === post.id ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <Trash2 className="w-4 h-4 text-white" />
+                )}
+              </button>
+            )}
             
             {/* Overlay with stats */}
             <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors duration-200 flex items-end">
-              <div className="absolute top-2 right-2 opacity-0 hover:opacity-100 transition-opacity duration-200">
+              <div className="absolute bottom-2 right-2 opacity-0 hover:opacity-100 transition-opacity duration-200">
                 <div className="flex gap-1">
                   <div className="bg-black/50 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
-                    <Heart className="w-3 h-3 text-white fill-white" />
+                    <Heart className="w-3 h-3 text-white" />
                     <span className="text-xs text-white font-medium">{post.likes_count}</span>
                   </div>
                   <div className="bg-black/50 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
@@ -151,14 +166,6 @@ const PostsGrid = () => {
                   </div>
                 </div>
               </div>
-              
-              {post.caption && (
-                <div className="p-3 w-full opacity-0 hover:opacity-100 transition-opacity duration-200">
-                  <div className="bg-black/50 backdrop-blur-sm rounded-lg p-2">
-                    <p className="text-xs text-white line-clamp-2">{post.caption}</p>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         ))}
@@ -170,7 +177,7 @@ const PostsGrid = () => {
           image: selectedPost.media_urls[0],
           likes: selectedPost.likes_count,
           comments: selectedPost.comments_count,
-          location: 'Location', // TODO: Add location data
+          location: 'Location',
           caption: selectedPost.caption || '',
           createdAt: selectedPost.created_at,
           totalSaves: selectedPost.saves_count,

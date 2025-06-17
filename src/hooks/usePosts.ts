@@ -25,6 +25,7 @@ export const usePosts = (userId?: string) => {
 
   const fetchPosts = async () => {
     try {
+      setLoading(true);
       let query = supabase
         .from('posts')
         .select('*')
@@ -36,10 +37,15 @@ export const usePosts = (userId?: string) => {
 
       const { data, error } = await query;
 
-      if (error) throw error;
-      setPosts(data || []);
+      if (error) {
+        console.error('Error fetching posts:', error);
+        setPosts([]);
+      } else {
+        setPosts(data || []);
+      }
     } catch (error) {
       console.error('Error fetching posts:', error);
+      setPosts([]);
     } finally {
       setLoading(false);
     }
@@ -80,31 +86,35 @@ export const usePosts = (userId?: string) => {
     if (!user) return;
 
     try {
-      const { error } = await supabase
+      // Check if already liked
+      const { data: existingLike } = await supabase
         .from('post_likes')
-        .insert({ user_id: user.id, post_id: postId });
-
-      if (error) throw error;
-      await fetchPosts();
-    } catch (error) {
-      console.error('Error liking post:', error);
-    }
-  };
-
-  const unlikePost = async (postId: string) => {
-    if (!user) return;
-
-    try {
-      const { error } = await supabase
-        .from('post_likes')
-        .delete()
+        .select('id')
         .eq('user_id', user.id)
-        .eq('post_id', postId);
+        .eq('post_id', postId)
+        .single();
 
-      if (error) throw error;
+      if (existingLike) {
+        // Unlike
+        const { error } = await supabase
+          .from('post_likes')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('post_id', postId);
+
+        if (error) throw error;
+      } else {
+        // Like
+        const { error } = await supabase
+          .from('post_likes')
+          .insert({ user_id: user.id, post_id: postId });
+
+        if (error) throw error;
+      }
+
       await fetchPosts();
     } catch (error) {
-      console.error('Error unliking post:', error);
+      console.error('Error toggling like:', error);
     }
   };
 
@@ -112,31 +122,35 @@ export const usePosts = (userId?: string) => {
     if (!user) return;
 
     try {
-      const { error } = await supabase
+      // Check if already saved
+      const { data: existingSave } = await supabase
         .from('post_saves')
-        .insert({ user_id: user.id, post_id: postId });
-
-      if (error) throw error;
-      await fetchPosts();
-    } catch (error) {
-      console.error('Error saving post:', error);
-    }
-  };
-
-  const unsavePost = async (postId: string) => {
-    if (!user) return;
-
-    try {
-      const { error } = await supabase
-        .from('post_saves')
-        .delete()
+        .select('id')
         .eq('user_id', user.id)
-        .eq('post_id', postId);
+        .eq('post_id', postId)
+        .single();
 
-      if (error) throw error;
+      if (existingSave) {
+        // Unsave
+        const { error } = await supabase
+          .from('post_saves')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('post_id', postId);
+
+        if (error) throw error;
+      } else {
+        // Save
+        const { error } = await supabase
+          .from('post_saves')
+          .insert({ user_id: user.id, post_id: postId });
+
+        if (error) throw error;
+      }
+
       await fetchPosts();
     } catch (error) {
-      console.error('Error unsaving post:', error);
+      console.error('Error toggling save:', error);
     }
   };
 
@@ -150,9 +164,7 @@ export const usePosts = (userId?: string) => {
     uploading,
     uploadPost,
     likePost,
-    unlikePost,
     savePost,
-    unsavePost,
     refetch: fetchPosts,
   };
 };
