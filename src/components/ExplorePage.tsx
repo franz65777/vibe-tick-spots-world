@@ -1,11 +1,22 @@
-import { useState, useEffect, useRef } from 'react';
+
+import { useState, useEffect } from 'react';
 import { useSearch } from '@/hooks/useSearch';
+import { useGeolocation } from '@/hooks/useGeolocation';
+import { useMapPins } from '@/hooks/useMapPins';
 import SearchHeader from '@/components/explore/SearchHeader';
 import SearchResults from '@/components/explore/SearchResults';
 import RecommendationsSection from '@/components/explore/RecommendationsSection';
 import ShareModal from '@/components/home/ShareModal';
 import CommentModal from '@/components/home/CommentModal';
+import LocationDetailSheet from '@/components/LocationDetailSheet';
+import Header from '@/components/home/Header';
+import StoriesSection from '@/components/home/StoriesSection';
+import LocationOfTheWeek from '@/components/home/LocationOfTheWeek';
+import MapSection from '@/components/home/MapSection';
+import FilterButtons from '@/components/home/FilterButtons';
+import PlaceCard from '@/components/home/PlaceCard';
 import { Place } from '@/types/place';
+import { demoStories } from '@/data/demoData';
 
 interface User {
   id: string;
@@ -107,6 +118,7 @@ const mockUsers: User[] = [
 
 type SearchMode = 'locations' | 'users';
 type SortBy = 'proximity' | 'likes' | 'followers';
+type FilterType = 'following' | 'popular' | 'new';
 
 const ExplorePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -118,11 +130,16 @@ const ExplorePage = () => {
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
+  const [activeFilter, setActiveFilter] = useState<FilterType>('following');
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  const [showLocationDetail, setShowLocationDetail] = useState(false);
   
   // Modals
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [commentModalOpen, setCommentModalOpen] = useState(false);
-  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  
+  const { location, city } = useGeolocation();
+  const { pins, loading: pinsLoading, refreshPins } = useMapPins(activeFilter);
   
   const { 
     searchHistory, 
@@ -132,6 +149,31 @@ const ExplorePage = () => {
     saveSearch, 
     getSearchSuggestions 
   } = useSearch();
+
+  // Get top location for Location of the Week
+  const topLocation = pins.length > 0 ? pins.reduce((prev, current) => 
+    ((current.popularity || 0) > (prev.popularity || 0)) ? current : prev
+  ) : null;
+
+  // Convert map center based on location
+  const mapCenter = location ? { lat: location.latitude, lng: location.longitude } : undefined;
+
+  // Handle city change
+  const handleCitySelect = (newCity: string) => {
+    console.log('City selected:', newCity);
+    refreshPins(newCity);
+  };
+
+  // Handle search input
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+  };
+
+  const handleSearchKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch(e as any);
+    }
+  };
 
   // Filter and sort locations based on search query and filters
   useEffect(() => {
@@ -207,7 +249,29 @@ const ExplorePage = () => {
   // Handle place interactions
   const handleCardClick = (place: Place) => {
     setSelectedPlace(place);
-    console.log('Place clicked:', place);
+    setShowLocationDetail(true);
+  };
+
+  const handlePinClick = (place: any) => {
+    // Convert map pin to Place format if needed
+    const convertedPlace: Place = {
+      id: place.id,
+      name: place.name,
+      category: place.category,
+      likes: place.likes || 0,
+      friendsWhoSaved: place.friendsWhoSaved || [],
+      visitors: place.visitors || [],
+      isNew: place.isNew || false,
+      coordinates: place.coordinates,
+      image: place.image,
+      addedBy: place.addedBy,
+      addedDate: place.addedDate,
+      isFollowing: place.isFollowing,
+      popularity: place.popularity,
+      distance: place.distance,
+      totalSaves: place.totalSaves || place.likes || 0
+    };
+    setSelectedPlace(convertedPlace);
   };
 
   const handleLikeToggle = (placeId: string) => {
@@ -317,59 +381,125 @@ const ExplorePage = () => {
     .map(item => item.search_query)
     .slice(0, 3);
 
-  return (
-    <div className="flex flex-col h-full bg-gradient-to-br from-blue-50/30 via-white to-purple-50/20 pt-16">
-      {/* Header with Search */}
-      <SearchHeader
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        searchMode={searchMode}
-        setSearchMode={setSearchMode}
-        sortBy={sortBy}
-        setSortBy={setSortBy}
-        showFilters={showFilters}
-        setShowFilters={setShowFilters}
-        showSuggestions={showSuggestions}
-        setShowSuggestions={setShowSuggestions}
-        onSearch={handleSearch}
-        suggestions={currentSuggestions}
-        recentSearches={recentSearches}
-        onSuggestionClick={handleSuggestionClick}
-      />
+  // Check if we're in search mode
+  const isInSearchMode = searchQuery.trim().length > 0;
 
-      {/* Results */}
-      <div className="flex-1 overflow-y-auto pb-20">
-        {!searchQuery.trim() ? (
-          // Recommendations when not searching
-          <RecommendationsSection
-            searchMode={searchMode}
-            loading={loading}
-            locationRecommendations={locationRecommendations}
-            userRecommendations={userRecommendations}
-            onLocationClick={handleLocationRecommendationClick}
-            onUserClick={handleUserRecommendationClick}
-            onFollowUser={handleFollowUser}
-            onLocationShare={handleLocationRecommendationShare}
-            onLocationComment={handleLocationRecommendationComment}
-            onLocationLike={handleLikeToggle}
-            likedPlaces={likedPlaces}
+  return (
+    <div className="flex flex-col h-full bg-gradient-to-br from-blue-50/30 via-white to-purple-50/20">
+      {!isInSearchMode ? (
+        // Home page layout when not searching
+        <div className="flex flex-col h-full">
+          {/* Header with City Search */}
+          <Header
+            searchQuery={searchQuery}
+            currentCity={city || 'Current Location'}
+            onSearchChange={handleSearchChange}
+            onSearchKeyPress={handleSearchKeyPress}
+            onNotificationsClick={() => console.log('Notifications clicked')}
+            onMessagesClick={() => console.log('Messages clicked')}
+            onCitySelect={handleCitySelect}
           />
-        ) : (
-          // Search results
-          <SearchResults
+
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto pb-20">
+            {/* Stories Section */}
+            <StoriesSection stories={demoStories} />
+
+            {/* Location of the Week */}
+            {topLocation && (
+              <LocationOfTheWeek
+                topLocation={topLocation}
+                onLocationClick={handleCardClick}
+              />
+            )}
+
+            {/* Filter Buttons */}
+            <FilterButtons
+              activeFilter={activeFilter}
+              onFilterChange={setActiveFilter}
+            />
+
+            {/* Map Section */}
+            <MapSection
+              places={pins}
+              onPinClick={handlePinClick}
+              mapCenter={mapCenter}
+              selectedPlace={selectedPlace}
+              onCloseSelectedPlace={() => setSelectedPlace(null)}
+            />
+
+            {/* Selected Place Card */}
+            {selectedPlace && (
+              <div className="px-4 mt-4">
+                <PlaceCard
+                  place={selectedPlace}
+                  isLiked={likedPlaces.has(selectedPlace.id)}
+                  onCardClick={() => handleCardClick(selectedPlace)}
+                  onLikeToggle={() => handleLikeToggle(selectedPlace.id)}
+                  onShare={() => handleShare(selectedPlace)}
+                  onComment={() => handleComment(selectedPlace)}
+                  cityName={city || 'Current City'}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        // Search mode layout
+        <div className="flex flex-col h-full pt-16">
+          {/* Search Header */}
+          <SearchHeader
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
             searchMode={searchMode}
+            setSearchMode={setSearchMode}
             sortBy={sortBy}
-            filteredLocations={filteredLocations}
-            filteredUsers={filteredUsers}
-            isSearching={isSearching}
-            likedPlaces={likedPlaces}
-            onCardClick={handleCardClick}
-            onLikeToggle={handleLikeToggle}
-            onShare={handleShare}
-            onComment={handleComment}
+            setSortBy={setSortBy}
+            showFilters={showFilters}
+            setShowFilters={setShowFilters}
+            showSuggestions={showSuggestions}
+            setShowSuggestions={setShowSuggestions}
+            onSearch={handleSearch}
+            suggestions={currentSuggestions}
+            recentSearches={recentSearches}
+            onSuggestionClick={handleSuggestionClick}
           />
-        )}
-      </div>
+
+          {/* Search Results */}
+          <div className="flex-1 overflow-y-auto pb-20">
+            {!searchQuery.trim() ? (
+              // Recommendations when not searching
+              <RecommendationsSection
+                searchMode={searchMode}
+                loading={loading}
+                locationRecommendations={locationRecommendations}
+                userRecommendations={userRecommendations}
+                onLocationClick={handleLocationRecommendationClick}
+                onUserClick={handleUserRecommendationClick}
+                onFollowUser={handleFollowUser}
+                onLocationShare={handleLocationRecommendationShare}
+                onLocationComment={handleLocationRecommendationComment}
+                onLocationLike={handleLikeToggle}
+                likedPlaces={likedPlaces}
+              />
+            ) : (
+              // Search results
+              <SearchResults
+                searchMode={searchMode}
+                sortBy={sortBy}
+                filteredLocations={filteredLocations}
+                filteredUsers={filteredUsers}
+                isSearching={isSearching}
+                likedPlaces={likedPlaces}
+                onCardClick={handleCardClick}
+                onLikeToggle={handleLikeToggle}
+                onShare={handleShare}
+                onComment={handleComment}
+              />
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Modals */}
       <ShareModal
@@ -385,6 +515,12 @@ const ExplorePage = () => {
         onClose={() => setCommentModalOpen(false)}
         place={selectedPlace}
         onCommentSubmit={(comment) => console.log('Comment added:', comment)}
+      />
+
+      <LocationDetailSheet
+        isOpen={showLocationDetail}
+        onClose={() => setShowLocationDetail(false)}
+        place={selectedPlace}
       />
     </div>
   );
