@@ -127,6 +127,10 @@ const ModalsManager = ({
         isOpen={isLocationDetailOpen}
         onClose={onLocationDetailClose}
         location={locationDetailPlace}
+        onLike={() => {}}
+        isLiked={false}
+        onSave={() => {}}
+        isSaved={false}
       />
 
       {isStoriesViewerOpen && (

@@ -51,7 +51,7 @@ class MessageService {
         })
         .select(`
           *,
-          sender:profiles!sender_id (
+          sender:profiles (
             username,
             full_name,
             avatar_url
@@ -82,7 +82,7 @@ class MessageService {
         })
         .select(`
           *,
-          sender:profiles!sender_id (
+          sender:profiles (
             username,
             full_name,
             avatar_url
@@ -159,7 +159,7 @@ class MessageService {
         .from('direct_messages')
         .select(`
           *,
-          sender:profiles!sender_id (
+          sender:profiles (
             username,
             full_name,
             avatar_url
@@ -173,7 +173,7 @@ class MessageService {
       return (messages || []).map(message => ({
         ...message,
         message_type: message.message_type as 'text' | 'place_share' | 'trip_share' | 'post_share',
-        sender: message.sender
+        sender: message.sender || { username: 'Unknown', full_name: 'Unknown User', avatar_url: '' }
       }));
     } catch (error) {
       console.error('Error fetching messages:', error);

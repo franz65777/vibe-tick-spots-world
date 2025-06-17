@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -322,7 +323,8 @@ const ExplorePage = () => {
       <ShareModal
         isOpen={!!shareLocation}
         onClose={() => setShareLocation(null)}
-        place={shareLocation}
+        item={shareLocation}
+        itemType="place"
         onShare={() => setShareLocation(null)}
       />
 
