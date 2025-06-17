@@ -54,13 +54,19 @@ export const usePostCreation = () => {
 
       if (postError) throw postError;
 
-      // Update user's posts count
+      // Update user's posts count by fetching current count and incrementing
       try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('posts_count')
+          .eq('id', user.id)
+          .single();
+
+        const currentCount = profile?.posts_count || 0;
+        
         const { error: updateError } = await supabase
           .from('profiles')
-          .update({ 
-            posts_count: supabase.raw('posts_count + 1') 
-          })
+          .update({ posts_count: currentCount + 1 })
           .eq('id', user.id);
         
         if (updateError) {
