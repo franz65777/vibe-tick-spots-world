@@ -279,6 +279,17 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
     }
 
     try {
+      // First get the list of followed user IDs
+      const { data: followsData, error: followsError } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', user.id);
+
+      if (followsError) throw followsError;
+      if (!followsData || followsData.length === 0) return [];
+
+      const followedUserIds = followsData.map(f => f.following_id);
+
       // Get locations with posts from followed users
       const { data: postsData, error: postsError } = await supabase
         .from('posts')
@@ -299,13 +310,7 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           )
         `)
         .not('location_id', 'is', null)
-        .in('profiles.id', 
-          // Subquery to get followed user IDs
-          supabase
-            .from('follows')
-            .select('following_id')
-            .eq('follower_id', user.id)
-        );
+        .in('profiles.id', followedUserIds);
 
       if (postsError) throw postsError;
 
