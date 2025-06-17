@@ -141,23 +141,7 @@ const HomePage = () => {
 
   const handlePinClick = (pin: any) => {
     // Convert pin to Place format
-    const place: Place = {
-      id: pin.id,
-      name: pin.name,
-      category: pin.category,
-      likes: pin.likes || 0,
-      friendsWhoSaved: [],
-      visitors: [],
-      isNew: pin.isNew || false,
-      coordinates: pin.coordinates,
-      image: pin.image,
-      addedBy: pin.addedBy,
-      addedDate: pin.addedDate,
-      isFollowing: pin.isFollowing,
-      popularity: pin.popularity,
-      distance: pin.distance,
-      totalSaves: pin.likes || 0
-    };
+    const place: Place = convertPinToPlace(pin);
     handleCardClick(place);
   };
 
@@ -167,8 +151,8 @@ const HomePage = () => {
     name: pin.name,
     category: pin.category,
     likes: pin.likes || 0,
-    friendsWhoSaved: [],
-    visitors: [],
+    friendsWhoSaved: Array.isArray(pin.friendsWhoSaved) ? pin.friendsWhoSaved : [],
+    visitors: Array.isArray(pin.visitors) ? pin.visitors : [],
     isNew: pin.isNew || false,
     coordinates: pin.coordinates,
     image: pin.image,
@@ -177,7 +161,7 @@ const HomePage = () => {
     isFollowing: pin.isFollowing,
     popularity: pin.popularity,
     distance: pin.distance,
-    totalSaves: pin.likes || 0
+    totalSaves: pin.totalSaves || pin.likes || 0
   });
 
   // Get top location for Location of the Week

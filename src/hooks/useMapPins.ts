@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { backendService } from '@/services/backendService';
@@ -15,6 +14,12 @@ interface MapPin {
   addedDate?: string;
   popularity?: number;
   city?: string;
+  isNew?: boolean;
+  image?: string;
+  friendsWhoSaved?: { name: string; avatar: string }[] | number;
+  visitors?: string[] | number;
+  distance?: string | number;
+  totalSaves?: number;
 }
 
 interface UseMapPinsReturn {
@@ -48,7 +53,16 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           addedBy: 'user1',
           addedDate: '2024-05-25',
           popularity: 85,
-          city: 'San Francisco'
+          city: 'San Francisco',
+          isNew: false,
+          image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
+          friendsWhoSaved: [
+            { name: 'Alice', avatar: 'https://i.pravatar.cc/40?img=1' },
+            { name: 'Bob', avatar: 'https://i.pravatar.cc/40?img=2' }
+          ],
+          visitors: ['user1', 'user2', 'user3'],
+          distance: '0.5km',
+          totalSaves: 24
         },
         {
           id: '2',
@@ -60,7 +74,13 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           addedBy: 'user2',
           addedDate: '2024-06-01',
           popularity: 92,
-          city: 'San Francisco'
+          city: 'San Francisco',
+          isNew: true,
+          image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop',
+          friendsWhoSaved: 3,
+          visitors: 12,
+          distance: '1.2km',
+          totalSaves: 18
         },
         {
           id: '3',
@@ -72,7 +92,13 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           addedBy: 'user5',
           addedDate: '2024-05-15',
           popularity: 96,
-          city: 'San Francisco'
+          city: 'San Francisco',
+          isNew: false,
+          image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop',
+          friendsWhoSaved: 8,
+          visitors: 25,
+          distance: '2.1km',
+          totalSaves: 45
         }
       ],
       'milan': [
@@ -86,7 +112,13 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           addedBy: 'user1',
           addedDate: '2024-05-28',
           popularity: 88,
-          city: 'Milan'
+          city: 'Milan',
+          isNew: false,
+          image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
+          friendsWhoSaved: 5,
+          visitors: 18,
+          distance: '0.8km',
+          totalSaves: 32
         },
         {
           id: 'milan2',
@@ -98,7 +130,13 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           addedBy: 'user2',
           addedDate: '2024-05-20',
           popularity: 94,
-          city: 'Milan'
+          city: 'Milan',
+          isNew: false,
+          image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop',
+          friendsWhoSaved: 7,
+          visitors: 22,
+          distance: '1.5km',
+          totalSaves: 45
         },
         {
           id: 'milan3',
@@ -110,7 +148,13 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           addedBy: 'user3',
           addedDate: '2024-06-01',
           popularity: 82,
-          city: 'Milan'
+          city: 'Milan',
+          isNew: true,
+          image: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=400&h=300&fit=crop',
+          friendsWhoSaved: 4,
+          visitors: 15,
+          distance: '2.3km',
+          totalSaves: 28
         }
       ],
       'paris': [
@@ -124,7 +168,13 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           addedBy: 'user1',
           addedDate: '2024-05-15',
           popularity: 91,
-          city: 'Paris'
+          city: 'Paris',
+          isNew: false,
+          image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
+          friendsWhoSaved: 9,
+          visitors: 34,
+          distance: '0.3km',
+          totalSaves: 56
         },
         {
           id: 'paris2',
@@ -136,7 +186,13 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           addedBy: 'user2',
           addedDate: '2024-05-30',
           popularity: 98,
-          city: 'Paris'
+          city: 'Paris',
+          isNew: true,
+          image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop',
+          friendsWhoSaved: 15,
+          visitors: 45,
+          distance: '1.8km',
+          totalSaves: 89
         }
       ]
     };
@@ -217,7 +273,12 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
         isFollowing: true,
         addedBy: location.created_by,
         city: location.city,
-        popularity: 50 // Default value
+        popularity: 50, // Default value
+        isNew: false,
+        visitors: [],
+        friendsWhoSaved: [],
+        distance: '0km',
+        totalSaves: 0
       }));
     } catch (error) {
       console.error('Error fetching following pins:', error);
@@ -246,7 +307,12 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
         isFollowing: false,
         addedBy: location.created_by,
         city: location.city,
-        popularity: 75 // Would be calculated based on engagement
+        popularity: 75, // Would be calculated based on engagement
+        isNew: false,
+        visitors: [],
+        friendsWhoSaved: [],
+        distance: '0km',
+        totalSaves: 0
       }));
     } catch (error) {
       console.error('Error fetching popular pins:', error);
