@@ -260,8 +260,8 @@ const ExplorePage = () => {
     name: pin.name,
     category: pin.category,
     likes: pin.likes || 0,
-    friendsWhoSaved: pin.friendsWhoSaved || [],
-    visitors: pin.visitors || [],
+    friendsWhoSaved: Array.isArray(pin.friendsWhoSaved) ? pin.friendsWhoSaved : [],
+    visitors: Array.isArray(pin.visitors) ? pin.visitors : [],
     isNew: pin.isNew || false,
     coordinates: pin.coordinates,
     image: pin.image || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
@@ -403,6 +403,9 @@ const ExplorePage = () => {
 
   const topLocation = getTopLocation();
 
+  // Calculate new pins count
+  const newPinsCount = pins.filter(pin => pin.isNew).length;
+
   // Determine if we're in search mode
   const isInSearchMode = searchQuery.trim().length > 0;
 
@@ -509,13 +512,12 @@ const ExplorePage = () => {
           <FilterButtons
             activeFilter={activeFilter}
             onFilterChange={setActiveFilter}
-            newCount={pins.filter(pin => pin.isNew).length}
+            newCount={newPinsCount}
           />
 
           {/* Map Section */}
           <div className="flex-1 relative">
             <MapSection
-              currentCity={currentCity}
               pins={pins}
               loading={pinsLoading}
               onPinClick={handlePinClick}
