@@ -1,20 +1,7 @@
 
-import { useState } from 'react';
 import { X, Heart, MessageSquare, UserPlus, MapPin, Clock, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface Notification {
-  id: string;
-  type: 'like' | 'comment' | 'follow' | 'location';
-  user: {
-    name: string;
-    avatar: string;
-  };
-  message: string;
-  time: string;
-  isRead: boolean;
-  locationName?: string;
-}
+import { useNotifications } from '@/hooks/useNotifications';
 
 interface NotificationsModalProps {
   isOpen: boolean;
@@ -22,62 +9,34 @@ interface NotificationsModalProps {
 }
 
 const NotificationsModal = ({ isOpen, onClose }: NotificationsModalProps) => {
-  const [selectedTab, setSelectedTab] = useState<'all' | 'unread'>('all');
-
-  const mockNotifications: Notification[] = [
-    {
-      id: '1',
-      type: 'like',
-      user: { name: 'Emma Wilson', avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png' },
-      message: 'liked your location recommendation',
-      time: '2 minutes ago',
-      isRead: false,
-    },
-    {
-      id: '2',
-      type: 'follow',
-      user: { name: 'Michael Chen', avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png' },
-      message: 'started following you',
-      time: '1 hour ago',
-      isRead: false,
-    },
-    {
-      id: '3',
-      type: 'location',
-      user: { name: 'Sophia Rodriguez', avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png' },
-      message: 'saved your location',
-      time: '3 hours ago',
-      isRead: true,
-      locationName: 'Golden Gate Cafe',
-    },
-    {
-      id: '4',
-      type: 'comment',
-      user: { name: 'James Park', avatar: '/lovable-uploads/2fcc6da9-f1e0-4521-944b-853d770dcea9.png' },
-      message: 'commented on your post',
-      time: '1 day ago',
-      isRead: true,
-    },
-  ];
+  const { notifications, unreadCount, markAsRead, markAllAsRead, loading } = useNotifications();
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'like':
+      case 'friend_request':
+        return <UserPlus className="w-4 h-4 text-green-500" />;
+      case 'friend_accepted':
+        return <UserPlus className="w-4 h-4 text-blue-500" />;
+      case 'location_like':
         return <Heart className="w-4 h-4 text-red-500" />;
       case 'comment':
         return <MessageSquare className="w-4 h-4 text-blue-500" />;
-      case 'follow':
-        return <UserPlus className="w-4 h-4 text-green-500" />;
       case 'location':
         return <MapPin className="w-4 h-4 text-orange-500" />;
       default:
-        return null;
+        return <Bell className="w-4 h-4 text-gray-500" />;
     }
   };
 
-  const filteredNotifications = selectedTab === 'unread' 
-    ? mockNotifications.filter(n => !n.isRead)
-    : mockNotifications;
+  const handleNotificationClick = async (notification: any) => {
+    if (!notification.is_read) {
+      await markAsRead([notification.id]);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    await markAllAsRead();
+  };
 
   if (!isOpen) return null;
 
@@ -89,6 +48,11 @@ const NotificationsModal = ({ isOpen, onClose }: NotificationsModalProps) => {
           <div className="flex items-center gap-2">
             <Bell className="w-5 h-5 text-gray-700" />
             <h2 className="text-lg font-semibold text-gray-900">Notifications</h2>
+            {unreadCount > 0 && (
+              <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
+                {unreadCount}
+              </span>
+            )}
           </div>
           <button 
             onClick={onClose} 
@@ -98,80 +62,51 @@ const NotificationsModal = ({ isOpen, onClose }: NotificationsModalProps) => {
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="flex bg-gray-100 mx-4 mt-4 rounded-lg p-1">
-          <button
-            onClick={() => setSelectedTab('all')}
-            className={cn(
-              "flex-1 py-2 px-3 text-sm font-medium rounded-md transition-all",
-              selectedTab === 'all' 
-                ? "bg-white text-gray-900 shadow-sm" 
-                : "text-gray-600 hover:text-gray-900"
-            )}
-          >
-            All ({mockNotifications.length})
-          </button>
-          <button
-            onClick={() => setSelectedTab('unread')}
-            className={cn(
-              "flex-1 py-2 px-3 text-sm font-medium rounded-md transition-all",
-              selectedTab === 'unread' 
-                ? "bg-white text-gray-900 shadow-sm" 
-                : "text-gray-600 hover:text-gray-900"
-            )}
-          >
-            Unread ({mockNotifications.filter(n => !n.isRead).length})
-          </button>
-        </div>
-
         {/* Notifications List */}
         <div className="overflow-y-auto max-h-96 p-4">
-          {filteredNotifications.length === 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+            </div>
+          ) : notifications.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <Bell className="w-8 h-8 mx-auto mb-2 text-gray-400" />
               <p>No notifications yet</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredNotifications.map((notification) => (
+              {notifications.map((notification) => (
                 <div
                   key={notification.id}
+                  onClick={() => handleNotificationClick(notification)}
                   className={cn(
                     "flex items-start gap-3 p-3 rounded-lg border transition-colors cursor-pointer",
-                    !notification.isRead 
+                    !notification.is_read 
                       ? "bg-blue-50 border-blue-200 hover:bg-blue-100" 
                       : "bg-white border-gray-200 hover:bg-gray-50"
                   )}
                 >
-                  {/* User Avatar with Icon */}
-                  <div className="relative flex-shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-                      <span className="text-sm font-medium text-gray-600">
-                        {notification.user.name.split(' ').map(n => n[0]).join('')}
-                      </span>
-                    </div>
-                    <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center border-2 border-white">
-                      {getNotificationIcon(notification.type)}
-                    </div>
+                  {/* Icon */}
+                  <div className="flex-shrink-0 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                    {getNotificationIcon(notification.type)}
                   </div>
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="text-sm text-gray-900 mb-1">
-                      <span className="font-medium">{notification.user.name}</span>
-                      <span className="ml-1">{notification.message}</span>
-                      {notification.locationName && (
-                        <span className="font-medium text-blue-600 ml-1">"{notification.locationName}"</span>
-                      )}
+                      <span className="font-medium">{notification.title}</span>
+                    </div>
+                    <div className="text-sm text-gray-600 mb-2">
+                      {notification.message}
                     </div>
                     <div className="flex items-center gap-1 text-xs text-gray-500">
                       <Clock className="w-3 h-3" />
-                      {notification.time}
+                      {new Date(notification.created_at).toLocaleDateString()}
                     </div>
                   </div>
 
                   {/* Unread indicator */}
-                  {!notification.isRead && (
+                  {!notification.is_read && (
                     <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-2"></div>
                   )}
                 </div>
@@ -181,11 +116,16 @@ const NotificationsModal = ({ isOpen, onClose }: NotificationsModalProps) => {
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-200 bg-gray-50">
-          <button className="w-full text-center text-sm text-blue-600 hover:text-blue-700 font-medium">
-            Mark all as read
-          </button>
-        </div>
+        {notifications.length > 0 && unreadCount > 0 && (
+          <div className="p-4 border-t border-gray-200 bg-gray-50">
+            <button 
+              onClick={handleMarkAllAsRead}
+              className="w-full text-center text-sm text-blue-600 hover:text-blue-700 font-medium"
+            >
+              Mark all as read
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

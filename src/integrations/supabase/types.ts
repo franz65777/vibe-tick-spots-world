@@ -381,6 +381,48 @@ export type Database = {
           },
         ]
       }
+      friend_requests: {
+        Row: {
+          created_at: string
+          id: string
+          requested_id: string
+          requester_id: string
+          status: Database["public"]["Enums"]["friend_request_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          requested_id: string
+          requester_id: string
+          status?: Database["public"]["Enums"]["friend_request_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          requested_id?: string
+          requester_id?: string
+          status?: Database["public"]["Enums"]["friend_request_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "friend_requests_requested_id_fkey"
+            columns: ["requested_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friend_requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       location_claims: {
         Row: {
           business_id: string | null
@@ -616,6 +658,50 @@ export type Database = {
             columns: ["last_message_id"]
             isOneToOne: false
             referencedRelation: "direct_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          data: Json
+          expires_at: string | null
+          id: string
+          is_read: boolean
+          message: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          expires_at?: string | null
+          id?: string
+          is_read?: boolean
+          message: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          expires_at?: string | null
+          id?: string
+          is_read?: boolean
+          message?: string
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1008,6 +1094,7 @@ export type Database = {
     }
     Enums: {
       business_verification_status: "pending" | "verified" | "rejected"
+      friend_request_status: "pending" | "accepted" | "declined" | "blocked"
       notification_type: "event" | "discount" | "announcement" | "special_offer"
       subscription_status: "active" | "inactive" | "trial" | "cancelled"
       user_type: "free" | "business"
@@ -1127,6 +1214,7 @@ export const Constants = {
   public: {
     Enums: {
       business_verification_status: ["pending", "verified", "rejected"],
+      friend_request_status: ["pending", "accepted", "declined", "blocked"],
       notification_type: ["event", "discount", "announcement", "special_offer"],
       subscription_status: ["active", "inactive", "trial", "cancelled"],
       user_type: ["free", "business"],
