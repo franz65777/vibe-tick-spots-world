@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,7 +10,7 @@ import LocationOfTheWeek from './home/LocationOfTheWeek';
 import MapSection from './home/MapSection';
 import ModalsManager from './home/ModalsManager';
 import PlaceInteractionModal from './home/PlaceInteractionModal';
-import { useSearch } from '@/hooks/useSearch';
+import { useMapPins } from '@/hooks/useMapPins';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { Place } from '@/types/place';
 
@@ -22,18 +23,6 @@ interface HomeStory {
   locationId: string;
   locationName: string;
   locationCategory?: string;
-}
-
-interface HomePlace extends Place {
-  description: string;
-  location: string;
-  rating: number;
-  visitors: string[];
-  friendsWhoSaved: { name: string; avatar: string; }[];
-  savedCount: number;
-  stories?: HomeStory[];
-  latitude?: number;
-  longitude?: number;
 }
 
 const demoStories: HomeStory[] = [
@@ -69,91 +58,54 @@ const demoStories: HomeStory[] = [
   },
 ];
 
-const demoPlaces: HomePlace[] = [
-  {
-    id: '1',
-    name: 'Cozy Coffee Shop',
-    description: 'A warm and inviting place to enjoy a cup of coffee and a pastry.',
-    location: '123 Main St, Anytown',
-    category: 'Cafe',
-    image: 'https://images.unsplash.com/photo-1517436021523-54d496938ca1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80',
-    likes: 42,
-    rating: 4.5,
-    visitors: ['user1', 'user2', 'user3'],
-    friendsWhoSaved: [
-      { name: 'Alice', avatar: 'https://i.pravatar.cc/48?img=1' },
-      { name: 'Bob', avatar: 'https://i.pravatar.cc/48?img=2' }
-    ],
-    savedCount: 15,
-    isNew: true,
-    coordinates: { lat: 34.052235, lng: -118.243683 },
-    stories: demoStories.slice(0, 2),
-    latitude: 34.052235,
-    longitude: -118.243683
-  },
-  {
-    id: '2',
-    name: 'The Art Museum',
-    description: 'Explore a wide range of art from around the world.',
-    location: '456 Elm St, Anytown',
-    category: 'Museum',
-    image: 'https://images.unsplash.com/photo-1544920504-3d9e5ee149aa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
-    likes: 123,
-    rating: 4.8,
-    visitors: ['user4', 'user5'],
-    friendsWhoSaved: [
-      { name: 'Charlie', avatar: 'https://i.pravatar.cc/48?img=3' }
-    ],
-    savedCount: 42,
-    isNew: false,
-    coordinates: { lat: 34.052235, lng: -118.243683 },
-    stories: demoStories.slice(1, 3),
-    latitude: 34.052235,
-    longitude: -118.243683
-  },
-  {
-    id: '3',
-    name: 'Greenwood Park',
-    description: 'A beautiful park with walking trails and picnic areas.',
-    location: '789 Oak St, Anytown',
-    category: 'Park',
-    image: 'https://images.unsplash.com/photo-1497252689836-99c94e695c1e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
-    likes: 78,
-    rating: 4.6,
-    visitors: ['user6', 'user7', 'user8'],
-    friendsWhoSaved: [
-      { name: 'Alice', avatar: 'https://i.pravatar.cc/48?img=1' },
-      { name: 'Bob', avatar: 'https://i.pravatar.cc/48?img=2' },
-      { name: 'Charlie', avatar: 'https://i.pravatar.cc/48?img=3' }
-    ],
-    savedCount: 28,
-    isNew: false,
-    coordinates: { lat: 34.052235, lng: -118.243683 },
-    latitude: 34.052235,
-    longitude: -118.243683
-  },
-];
-
 const HomePage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [places, setPlaces] = useState<HomePlace[]>(demoPlaces);
-  const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'new'>('popular');
-  const [isInteractionModalOpen, setIsInteractionModalOpen] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'new'>('following');
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  const [isInteractionModalOpen, setIsInteractionModalOpen] = useState(false);
   const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
-  const searchData = useSearch();
+  const [currentCity, setCurrentCity] = useState('San Francisco');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 37.7749, lng: -122.4194 });
+  
+  const { pins, loading, error, refreshPins, hasFollowedUsers } = useMapPins(activeFilter);
   const { trackUserAction, trackPlaceInteraction } = useAnalytics();
 
   useEffect(() => {
     if (!user) {
-      navigate('/login');
+      navigate('/auth');
     }
   }, [user, navigate]);
+
+  useEffect(() => {
+    refreshPins(currentCity);
+  }, [currentCity, refreshPins]);
 
   const handleFilterChange = (filter: 'following' | 'popular' | 'new') => {
     setActiveFilter(filter);
     trackUserAction('filter_change', { filter });
+  };
+
+  const handleCitySelect = (city: string) => {
+    console.log('City selected:', city);
+    setCurrentCity(city);
+    // Update map center based on city
+    const cityCoordinates: Record<string, { lat: number; lng: number }> = {
+      'San Francisco': { lat: 37.7749, lng: -122.4194 },
+      'Milan': { lat: 45.4642, lng: 9.1900 },
+      'Paris': { lat: 48.8566, lng: 2.3522 },
+      'New York': { lat: 40.7128, lng: -74.0060 },
+      'London': { lat: 51.5074, lng: -0.1278 },
+      'Tokyo': { lat: 35.6762, lng: 139.6503 },
+      'Rome': { lat: 41.9028, lng: 12.4964 },
+      'Barcelona': { lat: 41.3851, lng: 2.1734 },
+      'Amsterdam': { lat: 52.3676, lng: 4.9041 },
+      'Sydney': { lat: -33.8688, lng: 151.2093 }
+    };
+    
+    const coordinates = cityCoordinates[city] || cityCoordinates['San Francisco'];
+    setMapCenter(coordinates);
   };
 
   const handleLikeToggle = (placeId: string) => {
@@ -165,18 +117,8 @@ const HomePage = () => {
         newSet.delete(placeId);
         return newSet;
       });
-      setPlaces(currentPlaces =>
-        currentPlaces.map(place =>
-          place.id === placeId ? { ...place, likes: place.likes - 1 } : place
-        )
-      );
     } else {
       setLikedPlaces(prev => new Set(prev).add(placeId));
-      setPlaces(currentPlaces =>
-        currentPlaces.map(place =>
-          place.id === placeId ? { ...place, likes: place.likes + 1 } : place
-        )
-      );
     }
     
     trackPlaceInteraction(placeId, 'like');
@@ -197,87 +139,158 @@ const HomePage = () => {
     setIsInteractionModalOpen(true);
   };
 
-  const filteredPlaces = React.useMemo(() => {
-    let filtered = places;
-
-    if (searchData.searchQuery) {
-      const query = searchData.searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        place =>
-          place.name.toLowerCase().includes(query) ||
-          place.description.toLowerCase().includes(query) ||
-          place.location.toLowerCase().includes(query)
-      );
-    }
-
-    // Apply filter logic
-    switch (activeFilter) {
-      case 'following':
-        // Filter places from followed users (demo logic)
-        break;
-      case 'popular':
-        filtered = filtered.sort((a, b) => b.likes - a.likes);
-        break;
-      case 'new':
-        filtered = filtered.filter(place => place.isNew);
-        break;
-    }
-
-    return filtered;
-  }, [places, searchData.searchQuery, activeFilter]);
-
-  const convertToPlace = (homePlace: HomePlace): Place => {
-    return {
-      id: homePlace.id,
-      name: homePlace.name,
-      category: homePlace.category,
-      likes: homePlace.likes,
-      isNew: homePlace.isNew,
-      coordinates: homePlace.coordinates,
-      image: homePlace.image,
-      friendsWhoSaved: homePlace.friendsWhoSaved,
-      visitors: homePlace.visitors
+  const handlePinClick = (pin: any) => {
+    // Convert pin to Place format
+    const place: Place = {
+      id: pin.id,
+      name: pin.name,
+      category: pin.category,
+      likes: pin.likes || 0,
+      friendsWhoSaved: [],
+      visitors: [],
+      isNew: pin.isNew || false,
+      coordinates: pin.coordinates,
+      image: pin.image,
+      addedBy: pin.addedBy,
+      addedDate: pin.addedDate,
+      isFollowing: pin.isFollowing,
+      popularity: pin.popularity,
+      distance: pin.distance,
+      totalSaves: pin.likes || 0
     };
+    handleCardClick(place);
   };
 
-  const newCount = places.filter(place => place.isNew).length;
+  // Convert pins to places for PlaceCard display
+  const convertPinToPlace = (pin: any): Place => ({
+    id: pin.id,
+    name: pin.name,
+    category: pin.category,
+    likes: pin.likes || 0,
+    friendsWhoSaved: [],
+    visitors: [],
+    isNew: pin.isNew || false,
+    coordinates: pin.coordinates,
+    image: pin.image,
+    addedBy: pin.addedBy,
+    addedDate: pin.addedDate,
+    isFollowing: pin.isFollowing,
+    popularity: pin.popularity,
+    distance: pin.distance,
+    totalSaves: pin.likes || 0
+  });
+
+  // Get top location for Location of the Week
+  const getTopLocation = () => {
+    if (pins.length === 0) return null;
+    
+    const sortedPins = [...pins].sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+    return sortedPins[0];
+  };
+
+  const topLocation = getTopLocation();
+  const newCount = pins.filter(pin => pin.isNew).length;
+
+  // Show message if no followed users for following filter
+  const showNoFollowedUsersMessage = activeFilter === 'following' && !hasFollowedUsers;
 
   return (
     <div className="flex flex-col h-full bg-white">
       <Header 
-        searchQuery={searchData.searchQuery}
-        currentCity=""
-        onSearchChange={searchData.setSearchQuery}
+        searchQuery={searchQuery}
+        currentCity={currentCity}
+        onSearchChange={setSearchQuery}
         onSearchKeyPress={() => {}}
         onNotificationsClick={() => {}}
         onMessagesClick={() => {}}
+        onCitySelect={handleCitySelect}
       />
+      
       <StoriesSection 
         stories={demoStories}
         onCreateStory={() => {}}
         onStoryClick={() => {}}
       />
+      
       <FilterButtons 
         activeFilter={activeFilter} 
         onFilterChange={handleFilterChange}
         newCount={newCount}
       />
 
+      {/* Location of the Week */}
+      {topLocation && (
+        <LocationOfTheWeek 
+          topLocation={topLocation}
+          onLocationClick={handleCardClick}
+        />
+      )}
+
+      {/* Map Section */}
+      <MapSection
+        places={pins.map(convertPinToPlace)}
+        onPinClick={handlePinClick}
+        mapCenter={mapCenter}
+        selectedPlace={selectedPlace}
+        onCloseSelectedPlace={() => setSelectedPlace(null)}
+      />
+
+      {/* No followed users message */}
+      {showNoFollowedUsersMessage && (
+        <div className="px-4 py-6 text-center">
+          <div className="bg-blue-50 rounded-2xl p-6 border border-blue-100">
+            <div className="text-blue-600 text-lg font-semibold mb-2">
+              Start following explorers!
+            </div>
+            <div className="text-blue-500 text-sm mb-4">
+              Follow other users to see their favorite places and discoveries in your feed.
+            </div>
+            <button
+              onClick={() => navigate('/explore')}
+              className="bg-blue-600 text-white px-6 py-2 rounded-xl font-medium hover:bg-blue-700 transition-colors"
+            >
+              Discover Users
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Places Grid */}
-      <div className="flex-1 px-4 pb-20 space-y-4">
-        {filteredPlaces.map((place) => (
-          <PlaceCard
-            key={place.id}
-            place={convertToPlace(place)}
-            isLiked={likedPlaces.has(place.id)}
-            onCardClick={handleCardClick}
-            onLikeToggle={handleLikeToggle}
-            onComment={handleComment}
-            onShare={handleShare}
-            cityName="Anytown"
-          />
-        ))}
-      </div>
+      {!showNoFollowedUsersMessage && (
+        <div className="flex-1 px-4 pb-20 space-y-4">
+          {loading && (
+            <div className="text-center py-8">
+              <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading places...</p>
+            </div>
+          )}
+          
+          {error && (
+            <div className="text-center py-8">
+              <p className="text-red-600">{error}</p>
+            </div>
+          )}
+          
+          {!loading && !error && pins.length === 0 && (
+            <div className="text-center py-8">
+              <p className="text-gray-600">No places found for the selected filter.</p>
+            </div>
+          )}
+          
+          {!loading && !error && pins.map((pin) => (
+            <PlaceCard
+              key={pin.id}
+              place={convertPinToPlace(pin)}
+              isLiked={likedPlaces.has(pin.id)}
+              onCardClick={handleCardClick}
+              onLikeToggle={handleLikeToggle}
+              onComment={handleComment}
+              onShare={handleShare}
+              cityName={currentCity}
+            />
+          ))}
+        </div>
+      )}
 
       {isInteractionModalOpen && selectedPlace && (
         <PlaceInteractionModal
