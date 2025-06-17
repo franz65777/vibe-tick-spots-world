@@ -208,7 +208,7 @@ const HomePage = () => {
     // Ensure visitors is always an array of strings
     let visitors: string[] = [];
     if (Array.isArray(pin.visitors)) {
-      visitors = pin.visitors;
+      visitors = pin.visitors.map((v: any) => String(v));
     } else if (typeof pin.visitors === 'number') {
       visitors = Array.from({ length: pin.visitors }, (_, i) => `visitor_${i}`);
     }
