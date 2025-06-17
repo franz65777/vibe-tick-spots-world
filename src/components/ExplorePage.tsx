@@ -1,11 +1,21 @@
-import { useState, useEffect, useRef } from 'react';
+
+import { useState, useEffect } from 'react';
 import { useSearch } from '@/hooks/useSearch';
+import { useGeolocation } from '@/hooks/useGeolocation';
+import { useMapPins } from '@/hooks/useMapPins';
 import SearchHeader from '@/components/explore/SearchHeader';
 import SearchResults from '@/components/explore/SearchResults';
 import RecommendationsSection from '@/components/explore/RecommendationsSection';
 import ShareModal from '@/components/home/ShareModal';
 import CommentModal from '@/components/home/CommentModal';
+import LocationDetailSheet from '@/components/LocationDetailSheet';
+import CitySearch from '@/components/home/CitySearch';
+import StoriesSection from '@/components/home/StoriesSection';
+import LocationOfTheWeek from '@/components/home/LocationOfTheWeek';
+import FilterButtons from '@/components/home/FilterButtons';
+import MapSection from '@/components/home/MapSection';
 import { Place } from '@/types/place';
+import { demoStories } from '@/data/demoData';
 
 interface User {
   id: string;
@@ -107,8 +117,10 @@ const mockUsers: User[] = [
 
 type SearchMode = 'locations' | 'users';
 type SortBy = 'proximity' | 'likes' | 'followers';
+type FilterType = 'following' | 'popular' | 'new';
 
 const ExplorePage = () => {
+  // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState<SearchMode>('locations');
   const [sortBy, setSortBy] = useState<SortBy>('proximity');
@@ -117,13 +129,22 @@ const ExplorePage = () => {
   const [filteredLocations, setFilteredLocations] = useState<Place[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  
+  // Home state
+  const [currentCity, setCurrentCity] = useState('San Francisco');
+  const [citySearchQuery, setCitySearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState<FilterType>('following');
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  const [detailSheetOpen, setDetailSheetOpen] = useState(false);
   const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
   
   // Modals
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [commentModalOpen, setCommentModalOpen] = useState(false);
-  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   
+  // Hooks
+  const { location } = useGeolocation();
+  const { pins, loading: pinsLoading, refreshPins, hasFollowedUsers } = useMapPins(activeFilter);
   const { 
     searchHistory, 
     locationRecommendations, 
@@ -132,6 +153,18 @@ const ExplorePage = () => {
     saveSearch, 
     getSearchSuggestions 
   } = useSearch();
+
+  // Auto-update city from geolocation
+  useEffect(() => {
+    if (location?.city && location.city !== currentCity) {
+      setCurrentCity(location.city);
+    }
+  }, [location?.city, currentCity]);
+
+  // Refresh pins when city changes
+  useEffect(() => {
+    refreshPins(currentCity);
+  }, [currentCity, refreshPins]);
 
   // Filter and sort locations based on search query and filters
   useEffect(() => {
@@ -204,10 +237,51 @@ const ExplorePage = () => {
     }, 100);
   };
 
-  // Handle place interactions
+  // City search handlers
+  const handleCitySearchChange = (value: string) => {
+    setCitySearchQuery(value);
+  };
+
+  const handleCitySearchKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && citySearchQuery.trim()) {
+      setCurrentCity(citySearchQuery.trim());
+      setCitySearchQuery('');
+    }
+  };
+
+  const handleCitySelect = (city: string) => {
+    setCurrentCity(city);
+    setCitySearchQuery('');
+  };
+
+  // Pin/Place handlers
+  const convertPinToPlace = (pin: any): Place => ({
+    id: pin.id,
+    name: pin.name,
+    category: pin.category,
+    likes: pin.likes || 0,
+    friendsWhoSaved: pin.friendsWhoSaved || [],
+    visitors: pin.visitors || [],
+    isNew: pin.isNew || false,
+    coordinates: pin.coordinates,
+    image: pin.image || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
+    addedBy: pin.addedBy,
+    addedDate: pin.addedDate,
+    isFollowing: pin.isFollowing || false,
+    popularity: pin.popularity || 50,
+    distance: typeof pin.distance === 'string' ? pin.distance : `${pin.distance || 0}km`,
+    totalSaves: pin.totalSaves || pin.likes || 0
+  });
+
+  const handlePinClick = (pin: any) => {
+    const place = convertPinToPlace(pin);
+    setSelectedPlace(place);
+    setDetailSheetOpen(true);
+  };
+
   const handleCardClick = (place: Place) => {
     setSelectedPlace(place);
-    console.log('Place clicked:', place);
+    setDetailSheetOpen(true);
   };
 
   const handleLikeToggle = (placeId: string) => {
@@ -317,59 +391,140 @@ const ExplorePage = () => {
     .map(item => item.search_query)
     .slice(0, 3);
 
+  // Get top location for Location of the Week
+  const getTopLocation = () => {
+    if (pins.length === 0) return null;
+    // Convert pin to place format for LocationOfTheWeek
+    const topPin = pins.reduce((prev, current) => 
+      (prev.popularity || 0) > (current.popularity || 0) ? prev : current
+    );
+    return convertPinToPlace(topPin);
+  };
+
+  const topLocation = getTopLocation();
+
+  // Determine if we're in search mode
+  const isInSearchMode = searchQuery.trim().length > 0;
+
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-blue-50/30 via-white to-purple-50/20 pt-16">
-      {/* Header with Search */}
-      <SearchHeader
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        searchMode={searchMode}
-        setSearchMode={setSearchMode}
-        sortBy={sortBy}
-        setSortBy={setSortBy}
-        showFilters={showFilters}
-        setShowFilters={setShowFilters}
-        showSuggestions={showSuggestions}
-        setShowSuggestions={setShowSuggestions}
-        onSearch={handleSearch}
-        suggestions={currentSuggestions}
-        recentSearches={recentSearches}
-        onSuggestionClick={handleSuggestionClick}
-      />
-
-      {/* Results */}
-      <div className="flex-1 overflow-y-auto pb-20">
-        {!searchQuery.trim() ? (
-          // Recommendations when not searching
-          <RecommendationsSection
+      {isInSearchMode ? (
+        // Search Mode - Show search interface
+        <>
+          {/* Header with Search */}
+          <SearchHeader
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
             searchMode={searchMode}
-            loading={loading}
-            locationRecommendations={locationRecommendations}
-            userRecommendations={userRecommendations}
-            onLocationClick={handleLocationRecommendationClick}
-            onUserClick={handleUserRecommendationClick}
-            onFollowUser={handleFollowUser}
-            onLocationShare={handleLocationRecommendationShare}
-            onLocationComment={handleLocationRecommendationComment}
-            onLocationLike={handleLikeToggle}
-            likedPlaces={likedPlaces}
-          />
-        ) : (
-          // Search results
-          <SearchResults
-            searchMode={searchMode}
+            setSearchMode={setSearchMode}
             sortBy={sortBy}
-            filteredLocations={filteredLocations}
-            filteredUsers={filteredUsers}
-            isSearching={isSearching}
-            likedPlaces={likedPlaces}
-            onCardClick={handleCardClick}
-            onLikeToggle={handleLikeToggle}
-            onShare={handleShare}
-            onComment={handleComment}
+            setSortBy={setSortBy}
+            showFilters={showFilters}
+            setShowFilters={setShowFilters}
+            showSuggestions={showSuggestions}
+            setShowSuggestions={setShowSuggestions}
+            onSearch={handleSearch}
+            suggestions={currentSuggestions}
+            recentSearches={recentSearches}
+            onSuggestionClick={handleSuggestionClick}
           />
-        )}
-      </div>
+
+          {/* Search Results */}
+          <div className="flex-1 overflow-y-auto pb-20">
+            {!searchQuery.trim() ? (
+              // Recommendations when not searching
+              <RecommendationsSection
+                searchMode={searchMode}
+                loading={loading}
+                locationRecommendations={locationRecommendations}
+                userRecommendations={userRecommendations}
+                onLocationClick={handleLocationRecommendationClick}
+                onUserClick={handleUserRecommendationClick}
+                onFollowUser={handleFollowUser}
+                onLocationShare={handleLocationRecommendationShare}
+                onLocationComment={handleLocationRecommendationComment}
+                onLocationLike={handleLikeToggle}
+                likedPlaces={likedPlaces}
+              />
+            ) : (
+              // Search results
+              <SearchResults
+                searchMode={searchMode}
+                sortBy={sortBy}
+                filteredLocations={filteredLocations}
+                filteredUsers={filteredUsers}
+                isSearching={isSearching}
+                likedPlaces={likedPlaces}
+                onCardClick={handleCardClick}
+                onLikeToggle={handleLikeToggle}
+                onShare={handleShare}
+                onComment={handleComment}
+              />
+            )}
+          </div>
+        </>
+      ) : (
+        // Home Mode - Show home layout with city search, stories, location of week, map
+        <>
+          {/* City Search Header */}
+          <div className="sticky top-16 z-40 bg-white/80 backdrop-blur-sm border-b border-gray-100/50 px-4 py-3">
+            <div className="flex items-center gap-3">
+              <CitySearch
+                searchQuery={citySearchQuery}
+                currentCity={currentCity}
+                onSearchChange={handleCitySearchChange}
+                onSearchKeyPress={handleCitySearchKeyPress}
+                onCitySelect={handleCitySelect}
+              />
+              <button
+                onClick={() => setSearchQuery(' ')}
+                className="p-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors"
+                aria-label="Search"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m21 21-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* Stories Section */}
+          <div className="px-4 py-4 bg-white/60 backdrop-blur-sm">
+            <StoriesSection 
+              stories={demoStories}
+              onCreateStory={() => console.log('Create story')}
+              onStoryClick={(index) => console.log('Story clicked:', index)}
+            />
+          </div>
+
+          {/* Location of the Week */}
+          {topLocation && (
+            <LocationOfTheWeek
+              topLocation={topLocation}
+              onLocationClick={handleCardClick}
+            />
+          )}
+
+          {/* Filter Buttons */}
+          <FilterButtons
+            activeFilter={activeFilter}
+            onFilterChange={setActiveFilter}
+            newCount={pins.filter(pin => pin.isNew).length}
+          />
+
+          {/* Map Section */}
+          <div className="flex-1 relative">
+            <MapSection
+              currentCity={currentCity}
+              pins={pins}
+              loading={pinsLoading}
+              onPinClick={handlePinClick}
+              activeFilter={activeFilter}
+              hasFollowedUsers={hasFollowedUsers}
+            />
+          </div>
+        </>
+      )}
 
       {/* Modals */}
       <ShareModal
@@ -385,6 +540,12 @@ const ExplorePage = () => {
         onClose={() => setCommentModalOpen(false)}
         place={selectedPlace}
         onCommentSubmit={(comment) => console.log('Comment added:', comment)}
+      />
+
+      <LocationDetailSheet
+        isOpen={detailSheetOpen}
+        onClose={() => setDetailSheetOpen(false)}
+        location={selectedPlace}
       />
     </div>
   );
