@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface DirectMessage {
@@ -48,25 +49,29 @@ class MessageService {
           shared_content: placeData,
           content: `Check out this place: ${placeData.name}`
         })
-        .select(`
-          *,
-          profiles!direct_messages_sender_id_fkey (
-            username,
-            full_name,
-            avatar_url
-          )
-        `)
+        .select('*')
         .single();
 
       if (error) throw error;
+
+      // Get sender profile separately
+      const { data: senderProfile } = await supabase
+        .from('profiles')
+        .select('username, full_name, avatar_url')
+        .eq('id', user.id)
+        .single();
       
       return {
         ...data,
-        sender: data.profiles ? {
-          username: data.profiles.username || 'Unknown',
-          full_name: data.profiles.full_name || 'Unknown User',
-          avatar_url: data.profiles.avatar_url || ''
-        } : undefined
+        sender: senderProfile ? {
+          username: senderProfile.username || 'Unknown',
+          full_name: senderProfile.full_name || 'Unknown User',
+          avatar_url: senderProfile.avatar_url || ''
+        } : {
+          username: 'Unknown',
+          full_name: 'Unknown User',
+          avatar_url: ''
+        }
       } as DirectMessage;
     } catch (error) {
       console.error('Error sending place share:', error);
@@ -87,25 +92,29 @@ class MessageService {
           message_type: 'text' as const,
           content
         })
-        .select(`
-          *,
-          profiles!direct_messages_sender_id_fkey (
-            username,
-            full_name,
-            avatar_url
-          )
-        `)
+        .select('*')
         .single();
 
       if (error) throw error;
+
+      // Get sender profile separately
+      const { data: senderProfile } = await supabase
+        .from('profiles')
+        .select('username, full_name, avatar_url')
+        .eq('id', user.id)
+        .single();
       
       return {
         ...data,
-        sender: data.profiles ? {
-          username: data.profiles.username || 'Unknown',
-          full_name: data.profiles.full_name || 'Unknown User',
-          avatar_url: data.profiles.avatar_url || ''
-        } : undefined
+        sender: senderProfile ? {
+          username: senderProfile.username || 'Unknown',
+          full_name: senderProfile.full_name || 'Unknown User',
+          avatar_url: senderProfile.avatar_url || ''
+        } : {
+          username: 'Unknown',
+          full_name: 'Unknown User',
+          avatar_url: ''
+        }
       } as DirectMessage;
     } catch (error) {
       console.error('Error sending message:', error);
@@ -172,39 +181,46 @@ class MessageService {
 
       const { data: messages, error } = await supabase
         .from('direct_messages')
-        .select(`
-          *,
-          profiles!direct_messages_sender_id_fkey (
-            username,
-            full_name,
-            avatar_url
-          )
-        `)
+        .select('*')
         .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
 
-      return (messages || []).map(message => ({
-        id: message.id,
-        sender_id: message.sender_id,
-        receiver_id: message.receiver_id,
-        content: message.content,
-        message_type: message.message_type as 'text' | 'place_share' | 'trip_share' | 'post_share',
-        shared_content: message.shared_content,
-        created_at: message.created_at,
-        read_at: message.read_at,
-        is_read: message.is_read,
-        sender: message.profiles ? {
-          username: message.profiles.username || 'Unknown',
-          full_name: message.profiles.full_name || 'Unknown User',
-          avatar_url: message.profiles.avatar_url || ''
-        } : {
-          username: 'Unknown',
-          full_name: 'Unknown User',
-          avatar_url: ''
-        }
-      }));
+      // Get all unique sender IDs
+      const senderIds = [...new Set(messages?.map(m => m.sender_id) || [])];
+      
+      // Get profiles for all senders
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .in('id', senderIds);
+
+      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+
+      return (messages || []).map(message => {
+        const senderProfile = profileMap.get(message.sender_id);
+        return {
+          id: message.id,
+          sender_id: message.sender_id,
+          receiver_id: message.receiver_id,
+          content: message.content,
+          message_type: message.message_type as 'text' | 'place_share' | 'trip_share' | 'post_share',
+          shared_content: message.shared_content,
+          created_at: message.created_at,
+          read_at: message.read_at,
+          is_read: message.is_read,
+          sender: senderProfile ? {
+            username: senderProfile.username || 'Unknown',
+            full_name: senderProfile.full_name || 'Unknown User',
+            avatar_url: senderProfile.avatar_url || ''
+          } : {
+            username: 'Unknown',
+            full_name: 'Unknown User',
+            avatar_url: ''
+          }
+        };
+      });
     } catch (error) {
       console.error('Error fetching messages:', error);
       return [];
