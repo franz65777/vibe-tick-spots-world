@@ -30,12 +30,8 @@ export const usePosts = (userId?: string) => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      // If userId is provided, fetch posts for that specific user
       if (userId) {
         query = query.eq('user_id', userId);
-      } else if (user?.id) {
-        // If no userId provided but user is logged in, fetch their posts
-        query = query.eq('user_id', user.id);
       }
 
       const { data, error } = await query;
@@ -146,7 +142,7 @@ export const usePosts = (userId?: string) => {
 
   useEffect(() => {
     fetchPosts();
-  }, [userId, user?.id]);
+  }, [userId]);
 
   return {
     posts,

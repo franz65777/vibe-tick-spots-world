@@ -25,53 +25,50 @@ const Map = ({ locations, selectedFilter, onLocationClick }: MapProps) => {
 
   return (
     <div className="rounded-lg overflow-hidden h-full relative min-h-96 bg-gradient-to-br from-blue-100 via-green-50 to-blue-50">
-      {/* Google Maps configuration notice */}
+      {/* Google Maps not available notice */}
       <div className="absolute top-4 right-4 bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2 flex items-center gap-2 text-sm text-yellow-800 z-20">
         <AlertCircle className="w-4 h-4" />
-        <span>Google Maps API key needed for real map</span>
+        <span>Demo Map - Google Maps integration needed</span>
       </div>
 
-      {/* Simulated map with enhanced styling */}
-      <div className="absolute inset-0">
-        <div 
-          className="w-full h-full bg-cover bg-center"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='grid' width='20' height='20' patternUnits='userSpaceOnUse'%3E%3Cpath d='M 20 0 L 0 0 0 20' fill='none' stroke='%23e5e7eb' stroke-width='1'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23grid)'/%3E%3C/svg%3E")`
-          }}
-        >
-          {/* Simulated map features */}
-          <svg className="w-full h-full opacity-30" viewBox="0 0 400 300">
-            {/* Rivers/water */}
-            <path d="M0 180 Q100 160 200 170 T400 165" stroke="#3B82F6" strokeWidth="8" fill="none" opacity="0.6" />
-            
-            {/* Parks */}
-            <circle cx="80" cy="100" r="30" fill="#10B981" opacity="0.4" />
-            <circle cx="320" cy="220" r="35" fill="#10B981" opacity="0.4" />
-            
-            {/* Buildings */}
-            <rect x="150" y="120" width="20" height="25" fill="#6B7280" opacity="0.3" />
-            <rect x="175" y="115" width="25" height="30" fill="#6B7280" opacity="0.3" />
-            <rect x="205" y="125" width="18" height="20" fill="#6B7280" opacity="0.3" />
-          </svg>
-        </div>
+      {/* Map background with grid pattern to simulate map */}
+      <div className="absolute inset-0 opacity-20">
+        <svg className="w-full h-full" viewBox="0 0 400 300">
+          <defs>
+            <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#4B5563" strokeWidth="0.5"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#grid)" />
+          
+          {/* Simulate roads/streets */}
+          <path d="M0 150 Q100 120 200 140 T400 130" stroke="#6B7280" strokeWidth="2" fill="none" />
+          <path d="M200 0 Q220 100 180 200 T160 300" stroke="#6B7280" strokeWidth="2" fill="none" />
+          <path d="M0 80 Q150 70 300 90 T400 85" stroke="#6B7280" strokeWidth="1.5" fill="none" />
+          
+          {/* Simulate parks/green areas */}
+          <circle cx="100" cy="80" r="25" fill="#10B981" opacity="0.3" />
+          <circle cx="320" cy="200" r="30" fill="#10B981" opacity="0.3" />
+          
+          {/* Simulate water */}
+          <path d="M350 250 Q370 260 390 250 Q380 270 350 275 Z" fill="#3B82F6" opacity="0.4" />
+        </svg>
       </div>
 
       {/* Filter indicator */}
-      <div className="absolute top-4 left-4 bg-white px-3 py-1 rounded-full text-sm font-medium capitalize shadow-md z-10 border">
+      <div className="absolute top-4 left-4 bg-white px-3 py-1 rounded-full text-sm font-medium capitalize shadow-sm z-10">
         {selectedFilter} ({locations.length})
       </div>
 
-      {/* Location pins with improved positioning */}
+      {/* Location pins */}
       {locations.map((location, index) => {
+        // Position pins in a more realistic pattern
         const positions = [
-          { top: '20%', left: '25%' },
-          { top: '40%', left: '65%' },
-          { top: '60%', left: '30%' },
-          { top: '30%', left: '80%' },
-          { top: '70%', left: '50%' },
-          { top: '45%', left: '15%' },
-          { top: '25%', left: '75%' },
-          { top: '65%', left: '70%' },
+          { top: '25%', left: '30%' },
+          { top: '45%', left: '60%' },
+          { top: '65%', left: '25%' },
+          { top: '35%', left: '75%' },
+          { top: '55%', left: '45%' },
         ];
         
         const position = positions[index % positions.length];
@@ -79,7 +76,7 @@ const Map = ({ locations, selectedFilter, onLocationClick }: MapProps) => {
         return (
           <div
             key={location.id}
-            className="absolute cursor-pointer z-20 transition-all duration-200 hover:scale-125 hover:z-30"
+            className="absolute cursor-pointer z-20 transition-transform hover:scale-110"
             style={{
               top: position.top,
               left: position.left,
@@ -87,12 +84,12 @@ const Map = ({ locations, selectedFilter, onLocationClick }: MapProps) => {
             }}
             onClick={() => onLocationClick(location)}
           >
-            <div className="relative group">
+            <div className="relative">
               <MapPin 
-                className={`w-8 h-8 ${getPinColor()} drop-shadow-lg filter`}
+                className={`w-8 h-8 ${getPinColor()} drop-shadow-lg`}
                 fill="currentColor"
               />
-              <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-white px-2 py-1 rounded-md text-xs font-medium shadow-lg whitespace-nowrap max-w-32 truncate opacity-0 group-hover:opacity-100 transition-opacity duration-200 border">
+              <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 bg-white px-2 py-1 rounded text-xs font-medium shadow-sm whitespace-nowrap max-w-24 truncate">
                 {location.name}
               </div>
             </div>
@@ -100,19 +97,19 @@ const Map = ({ locations, selectedFilter, onLocationClick }: MapProps) => {
         );
       })}
 
-      {/* Enhanced map controls */}
-      <div className="absolute bottom-16 right-4 bg-white rounded-lg shadow-lg border">
-        <button className="block p-3 border-b border-gray-200 hover:bg-gray-50 transition-colors">
-          <span className="text-lg font-bold text-gray-700">+</span>
-        </button>
-        <button className="block p-3 hover:bg-gray-50 transition-colors">
-          <span className="text-lg font-bold text-gray-700">−</span>
-        </button>
+      {/* Map attribution (like Google Maps) */}
+      <div className="absolute bottom-2 left-2 text-xs text-gray-500 bg-white px-2 py-1 rounded shadow-sm">
+        Demo Map
       </div>
-
-      {/* Map attribution */}
-      <div className="absolute bottom-2 left-2 text-xs text-gray-500 bg-white px-2 py-1 rounded shadow-sm border">
-        Demo Map - Configure Google Maps API for full functionality
+      
+      {/* Zoom controls */}
+      <div className="absolute bottom-16 right-4 bg-white rounded-lg shadow-lg">
+        <button className="block p-2 border-b border-gray-200 hover:bg-gray-50">
+          <span className="text-lg font-bold">+</span>
+        </button>
+        <button className="block p-2 hover:bg-gray-50">
+          <span className="text-lg font-bold">−</span>
+        </button>
       </div>
     </div>
   );
