@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { backendService } from '@/services/backendService';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MediaUploadResult {
   success: boolean;
@@ -40,25 +40,39 @@ export const useMediaUpload = () => {
     setUploading(true);
 
     try {
-      const result = await backendService.uploadStory(
-        file,
-        caption,
-        locationId,
-        locationName,
-        locationAddress
-      );
+      // Upload file to storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/stories/${Date.now()}.${fileExt}`;
       
-      if (result.success && result.data) {
-        return {
-          success: true,
-          story: result.data
-        };
-      } else {
-        return {
-          success: false,
-          error: result.error?.message || 'Upload failed'
-        };
-      }
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('media')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('media')
+        .getPublicUrl(uploadData.path);
+
+      // Create story record
+      const { data: story, error: storyError } = await supabase
+        .from('stories')
+        .insert({
+          user_id: user.id,
+          location_id: locationId || null,
+          location_name: locationName || null,
+          location_address: locationAddress || null,
+          caption: caption || null,
+          media_url: publicUrl,
+          media_type: file.type.startsWith('image/') ? 'image' : 'video'
+        })
+        .select()
+        .single();
+
+      if (storyError) throw storyError;
+
+      return { success: true, story };
     } catch (error) {
       console.error('Story upload error:', error);
       return {
@@ -82,19 +96,42 @@ export const useMediaUpload = () => {
     setUploading(true);
 
     try {
-      const result = await backendService.uploadPost(files, caption, locationId);
+      // Upload files to storage
+      const mediaUrls: string[] = [];
       
-      if (result.success && result.data) {
-        return {
-          success: true,
-          post: result.data
-        };
-      } else {
-        return {
-          success: false,
-          error: result.error?.message || 'Upload failed'
-        };
+      for (const file of files) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}/posts/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('media')
+          .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('media')
+          .getPublicUrl(uploadData.path);
+        
+        mediaUrls.push(publicUrl);
       }
+
+      // Create post record
+      const { data: post, error: postError } = await supabase
+        .from('posts')
+        .insert({
+          user_id: user.id,
+          location_id: locationId || null,
+          caption: caption || null,
+          media_urls: mediaUrls,
+        })
+        .select()
+        .single();
+
+      if (postError) throw postError;
+
+      return { success: true, post };
     } catch (error) {
       console.error('Post upload error:', error);
       return {
@@ -117,20 +154,37 @@ export const useMediaUpload = () => {
     setUploading(true);
 
     try {
-      const result = await backendService.uploadMedia(file, user.id, locationId);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
       
-      if (result.success && result.data) {
-        return {
-          success: true,
-          mediaId: result.data.id,
-          url: result.data.file_path
-        };
-      } else {
-        return {
-          success: false,
-          error: result.error?.message || 'Upload failed'
-        };
-      }
+      // Upload to storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('media')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('media')
+        .getPublicUrl(uploadData.path);
+
+      // Create media record
+      const { data: mediaData, error: mediaError } = await supabase
+        .from('media')
+        .insert({
+          user_id: user.id,
+          location_id: locationId,
+          file_path: uploadData.path,
+          file_type: file.type.startsWith('image/') ? 'image' : 'video',
+          file_size: file.size
+        })
+        .select()
+        .single();
+
+      if (mediaError) throw mediaError;
+
+      return { success: true, data: { ...mediaData, public_url: publicUrl } };
     } catch (error) {
       console.error('Media upload error:', error);
       return {

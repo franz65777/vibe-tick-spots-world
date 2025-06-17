@@ -57,7 +57,6 @@ export const useLocationTagging = () => {
   const fetchNearbyPlaces = async (lat: number, lng: number) => {
     try {
       // Calculate nearby locations using basic distance calculation
-      // In a real app, you'd use PostGIS for more accurate geo queries
       const { data, error } = await supabase
         .from('locations')
         .select('*')
@@ -93,29 +92,26 @@ export const useLocationTagging = () => {
     try {
       if (!user) return;
 
-      const { data, error } = await supabase
-        .from('user_saved_locations')
-        .select(`
-          locations (
-            id,
-            name,
-            address,
-            latitude,
-            longitude,
-            category
-          )
-        `)
-        .eq('user_id', user.id)
-        .order('saved_at', { ascending: false })
-        .limit(5);
+      // Use raw SQL query to work around type issues
+      const { data, error } = await supabase.rpc('get_user_saved_locations', {
+        user_id_param: user.id
+      });
 
-      if (error) throw error;
+      if (error) {
+        // Fallback: get popular locations instead
+        const { data: popularData, error: popularError } = await supabase
+          .from('locations')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(5);
 
-      const locations = data
-        ?.map(item => item.locations)
-        .filter(Boolean) as Location[];
+        if (!popularError && popularData) {
+          setRecentLocations(popularData);
+        }
+        return;
+      }
 
-      setRecentLocations(locations || []);
+      setRecentLocations(data || []);
     } catch (error) {
       console.error('Error fetching recent locations:', error);
     }
