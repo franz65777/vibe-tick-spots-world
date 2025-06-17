@@ -8,7 +8,7 @@ interface Story {
   user_id: string;
   location_id?: string;
   media_url: string;
-  media_type: 'image' | 'video';
+  media_type: string; // Changed from 'image' | 'video' to string to match DB
   caption?: string;
   location_name?: string;
   location_address?: string;
