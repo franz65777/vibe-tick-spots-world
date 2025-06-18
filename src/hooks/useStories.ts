@@ -15,11 +15,6 @@ export interface Story {
   created_at: string;
   expires_at: string;
   metadata?: any;
-  user?: {
-    username: string;
-    full_name: string;
-    avatar_url: string;
-  };
 }
 
 export const useStories = () => {
@@ -30,29 +25,23 @@ export const useStories = () => {
 
   const fetchStories = async () => {
     try {
+      console.log('Fetching stories...');
       const { data, error } = await supabase
         .from('stories')
-        .select(`
-          *,
-          profiles:user_id (
-            username,
-            full_name,
-            avatar_url
-          )
-        `)
+        .select('*')
         .gt('expires_at', new Date().toISOString())
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-
-      const formattedStories = (data || []).map((story: any) => ({
-        ...story,
-        user: story.profiles
-      }));
-
-      setStories(formattedStories);
+      if (error) {
+        console.error('Error fetching stories:', error);
+        setStories([]);
+      } else {
+        console.log('Stories fetched successfully:', data?.length || 0);
+        setStories(data || []);
+      }
     } catch (error) {
       console.error('Error fetching stories:', error);
+      setStories([]);
     } finally {
       setLoading(false);
     }
@@ -73,11 +62,8 @@ export const useStories = () => {
 
     setUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `stories/${fileName}`;
-
-      // Create a FormData object to send the file
+      console.log('Uploading story with location:', locationName);
+      
       const formData = new FormData();
       formData.append('file', file);
       formData.append('caption', caption || '');
@@ -89,7 +75,10 @@ export const useStories = () => {
         body: formData
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Story upload error:', error);
+        throw error;
+      }
 
       console.log('Story uploaded successfully:', data);
       

@@ -38,24 +38,33 @@ const PostsGrid = ({ userId }: PostsGridProps) => {
 
   const isOwnProfile = user?.id === targetUserId;
 
+  console.log('PostsGrid - Current user:', user?.id, 'Target user:', targetUserId, 'Is own profile:', isOwnProfile);
+  console.log('PostsGrid - Posts loaded:', posts.length);
+
   const handlePostClick = (post: Post) => {
+    console.log('Post clicked:', post.id);
     setSelectedPost(post);
   };
 
   const handleDeletePost = async (postId: string, event: React.MouseEvent) => {
     event.stopPropagation();
     
+    console.log('Delete post clicked:', postId);
+    
     if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
       return;
     }
 
     try {
+      console.log('Attempting to delete post:', postId);
       const result = await deletePost(postId);
       
       if (result.success) {
+        console.log('Post deleted successfully');
         toast.success('Post deleted successfully');
         await refetch(); // Refresh the posts list
       } else {
+        console.error('Failed to delete post:', result.error);
         toast.error(result.error?.message || 'Failed to delete post');
       }
     } catch (error) {
@@ -143,7 +152,7 @@ const PostsGrid = ({ userId }: PostsGridProps) => {
               <button
                 onClick={(e) => handleDeletePost(post.id, e)}
                 disabled={deleting}
-                className="absolute top-2 left-2 w-8 h-8 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg"
+                className="absolute top-2 left-2 w-8 h-8 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-10"
                 title="Delete post"
               >
                 {deleting ? (

@@ -27,14 +27,18 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
   useEffect(() => {
     const initializeGoogleMaps = async () => {
       try {
+        console.log('Initializing Google Places Autocomplete...');
+        
         // Check if Google Maps is available
         if (typeof window.google !== 'undefined' && window.google.maps && window.google.maps.places) {
+          console.log('Google Maps API is available');
           initializeAutocomplete();
           return;
         }
 
         // If Google Maps is not available, show error
-        setError('Google Maps API not configured. Location search is unavailable.');
+        console.warn('Google Maps API not available');
+        setError('Google Maps API not configured. Please set up your Google Maps API key.');
       } catch (err) {
         console.error('Error initializing Google Maps:', err);
         setError('Failed to initialize Google Maps');
@@ -48,6 +52,8 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
     if (!inputRef.current || typeof window.google === 'undefined') return;
 
     try {
+      console.log('Creating autocomplete instance...');
+      
       const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
         types: ['establishment', 'geocode'],
         fields: ['place_id', 'name', 'formatted_address', 'geometry', 'types']
@@ -55,6 +61,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
 
       autocomplete.addListener('place_changed', () => {
         const place = autocomplete.getPlace();
+        console.log('Place selected:', place);
         
         if (place.geometry && place.geometry.location) {
           const selectedPlace = {
@@ -66,15 +73,18 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
             types: place.types || []
           };
           
+          console.log('Calling onPlaceSelect with:', selectedPlace);
           onPlaceSelect(selectedPlace);
           setError(null);
         } else {
+          console.warn('No geometry found for place');
           setError('Please select a location from the dropdown');
         }
       });
 
       setIsLoaded(true);
       setError(null);
+      console.log('Autocomplete initialized successfully');
     } catch (err) {
       console.error('Error creating autocomplete:', err);
       setError('Failed to initialize location search');
@@ -94,7 +104,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
           />
         </div>
         <div className="text-xs text-orange-600 mt-1">
-          Google Maps API key required for location search
+          {error}
         </div>
       </div>
     );

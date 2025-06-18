@@ -41,6 +41,7 @@ export const usePosts = (userId?: string) => {
         console.error('Error fetching posts:', error);
         setPosts([]);
       } else {
+        console.log('Posts fetched successfully:', data?.length || 0);
         setPosts(data || []);
       }
     } catch (error) {

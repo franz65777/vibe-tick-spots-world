@@ -31,14 +31,13 @@ export const useNotifications = () => {
     fetchNotifications();
     setupRealtimeSubscription();
 
-    // Cleanup function
     return () => {
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };
-  }, [user?.id]); // Only depend on user.id to avoid unnecessary re-subscriptions
+  }, [user?.id]);
 
   useEffect(() => {
     const unread = notifications.filter(n => !n.is_read).length;
@@ -49,14 +48,25 @@ export const useNotifications = () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase.functions.invoke('notifications/user');
+      console.log('Fetching notifications for user:', user.id);
+      
+      // Fetch directly from the notifications table
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false })
+        .limit(50);
       
       if (error) {
         console.error('Error fetching notifications:', error);
-        return;
+        setNotifications([]);
+      } else {
+        console.log('Notifications fetched successfully:', data?.length || 0);
+        setNotifications(data || []);
       }
-
-      setNotifications(data.data || []);
+      
       setLoading(false);
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -113,16 +123,27 @@ export const useNotifications = () => {
     if (!user) return { success: false, error: 'Not authenticated' };
 
     try {
-      const { data, error } = await supabase.functions.invoke('notifications/read', {
-        body: { notificationIds }
-      });
+      console.log('Marking notifications as read:', notificationIds);
+      
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .in('id', notificationIds)
+        .eq('user_id', user.id);
 
       if (error) {
         console.error('Error marking notifications as read:', error);
         return { success: false, error: error.message };
       }
 
-      return { success: true, data: data.data };
+      // Update local state
+      setNotifications(prev => 
+        prev.map(n => 
+          notificationIds.includes(n.id) ? { ...n, is_read: true } : n
+        )
+      );
+
+      return { success: true };
     } catch (error) {
       console.error('Error marking notifications as read:', error);
       return { success: false, error: 'Failed to mark notifications as read' };
@@ -136,33 +157,12 @@ export const useNotifications = () => {
     return await markAsRead(unreadIds);
   };
 
-  const sendNotification = async (userId: string, type: string, title: string, message: string, data = {}) => {
-    if (!user) return { success: false, error: 'Not authenticated' };
-
-    try {
-      const { data: result, error } = await supabase.functions.invoke('notifications/send', {
-        body: { userId, type, title, message, data }
-      });
-
-      if (error) {
-        console.error('Error sending notification:', error);
-        return { success: false, error: error.message };
-      }
-
-      return { success: true, data: result.data };
-    } catch (error) {
-      console.error('Error sending notification:', error);
-      return { success: false, error: 'Failed to send notification' };
-    }
-  };
-
   return {
     notifications,
     unreadCount,
     loading,
     markAsRead,
     markAllAsRead,
-    sendNotification,
     refresh: fetchNotifications
   };
 };
