@@ -50,7 +50,6 @@ export const useNotifications = () => {
     try {
       console.log('Fetching notifications for user:', user.id);
       
-      // Fetch directly from the notifications table
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
@@ -64,7 +63,12 @@ export const useNotifications = () => {
         setNotifications([]);
       } else {
         console.log('Notifications fetched successfully:', data?.length || 0);
-        setNotifications(data || []);
+        // Transform the data to match our interface
+        const transformedData = (data || []).map(item => ({
+          ...item,
+          data: typeof item.data === 'string' ? JSON.parse(item.data) : (item.data || {})
+        }));
+        setNotifications(transformedData);
       }
       
       setLoading(false);
@@ -90,7 +94,11 @@ export const useNotifications = () => {
           },
           (payload) => {
             console.log('New notification received:', payload);
-            setNotifications(prev => [payload.new as Notification, ...prev]);
+            const newNotification = {
+              ...payload.new,
+              data: typeof payload.new.data === 'string' ? JSON.parse(payload.new.data) : (payload.new.data || {})
+            } as Notification;
+            setNotifications(prev => [newNotification, ...prev]);
           }
         )
         .on(
@@ -103,8 +111,12 @@ export const useNotifications = () => {
           },
           (payload) => {
             console.log('Notification updated:', payload);
+            const updatedNotification = {
+              ...payload.new,
+              data: typeof payload.new.data === 'string' ? JSON.parse(payload.new.data) : (payload.new.data || {})
+            } as Notification;
             setNotifications(prev => 
-              prev.map(n => n.id === payload.new.id ? payload.new as Notification : n)
+              prev.map(n => n.id === updatedNotification.id ? updatedNotification : n)
             );
           }
         );
@@ -116,6 +128,32 @@ export const useNotifications = () => {
       channelRef.current = channel;
     } catch (error) {
       console.error('Error setting up realtime subscription:', error);
+    }
+  };
+
+  const sendNotification = async (
+    userId: string,
+    type: string,
+    title: string,
+    message: string,
+    data: Record<string, any> = {}
+  ) => {
+    try {
+      console.log('Sending notification:', { userId, type, title, message });
+      
+      const { error } = await supabase.functions.invoke('notifications/send', {
+        body: { userId, type, title, message, data }
+      });
+
+      if (error) {
+        console.error('Error sending notification:', error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error sending notification:', error);
+      return { success: false, error: 'Failed to send notification' };
     }
   };
 
@@ -161,6 +199,7 @@ export const useNotifications = () => {
     notifications,
     unreadCount,
     loading,
+    sendNotification,
     markAsRead,
     markAllAsRead,
     refresh: fetchNotifications
