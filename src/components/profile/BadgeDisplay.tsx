@@ -1,11 +1,14 @@
 
-import { Badge } from '@/components/ui/badge';
-import { useBadges } from '@/hooks/useBadges';
 import { useState } from 'react';
+import { useUserBadges } from '@/hooks/useUserBadges';
 import AchievementDetailModal from './AchievementDetailModal';
 
-const BadgeDisplay = () => {
-  const { getTopBadges } = useBadges();
+interface BadgeDisplayProps {
+  userId?: string;
+}
+
+const BadgeDisplay = ({ userId }: BadgeDisplayProps) => {
+  const { getTopBadges, loading } = useUserBadges(userId);
   const topBadges = getTopBadges(3);
   const [selectedBadge, setSelectedBadge] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -14,6 +17,16 @@ const BadgeDisplay = () => {
     setSelectedBadge(badge);
     setIsModalOpen(true);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
+        <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
+        <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
+      </div>
+    );
+  }
 
   if (topBadges.length === 0) {
     return null;

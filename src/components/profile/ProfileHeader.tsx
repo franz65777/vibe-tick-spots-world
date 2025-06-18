@@ -109,7 +109,7 @@ const ProfileHeader = () => {
                 </div>
               )}
             </div>
-            <BadgeDisplay />
+            <BadgeDisplay userId={user?.id} />
           </div>
           {displayFullName && (
             <p className="text-gray-600 text-sm mb-2 truncate">{displayFullName}</p>

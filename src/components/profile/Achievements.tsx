@@ -1,10 +1,14 @@
 
 import { useState } from 'react';
-import { useBadges } from '@/hooks/useBadges';
+import { useUserBadges } from '@/hooks/useUserBadges';
 import AchievementDetailModal from './AchievementDetailModal';
 
-const Achievements = () => {
-  const { badges, getBadgeStats } = useBadges();
+interface AchievementsProps {
+  userId?: string;
+}
+
+const Achievements = ({ userId }: AchievementsProps) => {
+  const { badges, getBadgeStats, loading } = useUserBadges(userId);
   const { earned, total } = getBadgeStats();
   const [selectedBadge, setSelectedBadge] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -16,6 +20,26 @@ const Achievements = () => {
     setSelectedBadge(badge);
     setIsModalOpen(true);
   };
+
+  if (loading) {
+    return (
+      <div className="px-4 py-4 bg-white border-b border-gray-100">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Achievements</h2>
+          <div className="w-16 h-4 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+        
+        <div className="grid grid-cols-3 gap-3">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="flex flex-col items-center p-3 rounded-xl border-2 border-gray-200 bg-gray-50">
+              <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse mb-1"></div>
+              <div className="w-16 h-3 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

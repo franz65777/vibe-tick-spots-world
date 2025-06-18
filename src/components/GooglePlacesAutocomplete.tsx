@@ -1,6 +1,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { MapPin, Search, AlertCircle } from 'lucide-react';
+import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '@/lib/googleMaps';
 
 interface GooglePlacesAutocompleteProps {
   onPlaceSelect: (place: {
@@ -23,25 +24,25 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const initializeGoogleMaps = async () => {
       try {
-        console.log('Initializing Google Places Autocomplete...');
+        console.log('Loading Google Maps API...');
+        setIsLoading(true);
         
-        // Check if Google Maps is available
-        if (typeof window.google !== 'undefined' && window.google.maps && window.google.maps.places) {
-          console.log('Google Maps API is available');
-          initializeAutocomplete();
-          return;
-        }
-
-        // If Google Maps is not available, show error
-        console.warn('Google Maps API not available');
-        setError('Google Maps API not configured. Please set up your Google Maps API key.');
+        // Load Google Maps API
+        await loadGoogleMapsAPI();
+        
+        console.log('Google Maps API loaded, initializing autocomplete...');
+        initializeAutocomplete();
+        
       } catch (err) {
-        console.error('Error initializing Google Maps:', err);
-        setError('Failed to initialize Google Maps');
+        console.error('Error loading Google Maps:', err);
+        setError('Failed to load Google Maps. Please check your internet connection.');
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -49,7 +50,10 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
   }, []);
 
   const initializeAutocomplete = () => {
-    if (!inputRef.current || typeof window.google === 'undefined') return;
+    if (!inputRef.current || !isGoogleMapsLoaded()) {
+      console.error('Google Maps not loaded or input ref not available');
+      return;
+    }
 
     try {
       console.log('Creating autocomplete instance...');
@@ -66,7 +70,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
         if (place.geometry && place.geometry.location) {
           const selectedPlace = {
             place_id: place.place_id || '',
-            name: place.name || '',
+            name: place.name || place.formatted_address || '',
             address: place.formatted_address || '',
             lat: place.geometry.location.lat(),
             lng: place.geometry.location.lng(),
@@ -98,7 +102,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
           <AlertCircle className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-400 w-5 h-5" />
           <input
             type="text"
-            placeholder="Location search requires Google Maps API"
+            placeholder="Location search failed"
             className="w-full pl-10 pr-4 py-3 border border-orange-300 rounded-xl bg-orange-50 text-orange-700 cursor-not-allowed"
             disabled
           />
@@ -117,15 +121,18 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
         <input
           ref={inputRef}
           type="text"
-          placeholder={placeholder}
-          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          disabled={!isLoaded}
+          placeholder={isLoading ? "Loading..." : placeholder}
+          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+          disabled={!isLoaded || isLoading}
         />
         <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
       </div>
-      {!isLoaded && !error && (
+      {isLoading && (
         <div className="absolute inset-0 bg-gray-50 rounded-xl flex items-center justify-center">
-          <div className="text-sm text-gray-500">Loading location search...</div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <div className="text-sm text-gray-500">Loading location search...</div>
+          </div>
         </div>
       )}
     </div>

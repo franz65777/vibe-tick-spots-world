@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,8 @@ import { useState } from 'react';
 import ProfileStats from './profile/ProfileStats';
 import ProfileTabs from './profile/ProfileTabs';
 import PostsGrid from './profile/PostsGrid';
+import BadgeDisplay from './profile/BadgeDisplay';
+import Achievements from './profile/Achievements';
 
 const UserProfilePage = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -77,15 +78,7 @@ const UserProfilePage = () => {
           </div>
         );
       case 'badges':
-        return (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <span className="text-2xl">🏆</span>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No badges yet</h3>
-            <p className="text-gray-600 text-sm">No badges to show</p>
-          </div>
-        );
+        return <Achievements userId={userId} />;
       default:
         return <PostsGrid userId={userId} />;
     }
@@ -126,7 +119,10 @@ const UserProfilePage = () => {
           </div>
           
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-bold text-gray-900 truncate">{displayUsername}</h1>
+            <div className="flex items-center gap-2 mb-2">
+              <h1 className="text-lg font-bold text-gray-900 truncate">{displayUsername}</h1>
+              <BadgeDisplay userId={userId} />
+            </div>
             {displayFullName && (
               <p className="text-gray-600 text-sm mb-2 truncate">{displayFullName}</p>
             )}

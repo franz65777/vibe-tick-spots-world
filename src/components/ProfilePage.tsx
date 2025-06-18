@@ -68,7 +68,7 @@ const ProfilePage = () => {
       case 'trips':
         return <TripsGrid />;
       case 'badges':
-        return <Achievements />;
+        return <Achievements userId={user?.id} />;
       default:
         return <PostsGrid />;
     }
