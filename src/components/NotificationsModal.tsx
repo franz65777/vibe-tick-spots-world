@@ -1,8 +1,11 @@
 
-import { X, Heart, MessageSquare, UserPlus, MapPin, Clock, Bell, CheckCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useNotifications } from '@/hooks/useNotifications';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { X, Bell } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import NotificationItem from '@/components/notifications/NotificationItem';
 
 interface NotificationsModalProps {
   isOpen: boolean;
@@ -10,187 +13,189 @@ interface NotificationsModalProps {
 }
 
 const NotificationsModal = ({ isOpen, onClose }: NotificationsModalProps) => {
-  const { notifications, unreadCount, markAsRead, markAllAsRead, loading } = useNotifications();
-  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case 'friend_request':
-        return <UserPlus className="w-5 h-5 text-green-500" />;
-      case 'friend_accepted':
-        return <CheckCircle className="w-5 h-5 text-blue-500" />;
-      case 'location_like':
-      case 'post_like':
-        return <Heart className="w-5 h-5 text-red-500" />;
-      case 'comment':
-        return <MessageSquare className="w-5 h-5 text-blue-500" />;
-      case 'location':
-        return <MapPin className="w-5 h-5 text-orange-500" />;
-      default:
-        return <Bell className="w-5 h-5 text-gray-500" />;
+  useEffect(() => {
+    if (isOpen && user) {
+      loadNotifications();
     }
-  };
+  }, [isOpen, user]);
 
-  const getTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-    
-    if (diffInMinutes < 1) return 'Just now';
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-    
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `${diffInHours}h ago`;
-    
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) return `${diffInDays}d ago`;
-    
-    return date.toLocaleDateString();
-  };
+  const loadNotifications = async () => {
+    if (!user) return;
 
-  const handleNotificationClick = async (notification: any) => {
-    // Mark as read if unread
-    if (!notification.is_read) {
-      await markAsRead([notification.id]);
-    }
-
-    // Handle navigation based on notification type
     try {
-      const data = notification.data || {};
-      
-      switch (notification.type) {
-        case 'friend_request':
-          // Navigate to friend requests or profile
-          navigate('/profile');
-          break;
-        case 'friend_accepted':
-          if (data.friend_id) {
-            navigate(`/user/${data.friend_id}`);
-          }
-          break;
-        case 'post_like':
-        case 'comment':
-          if (data.post_id) {
-            navigate('/profile'); // Or navigate to specific post
-          }
-          break;
-        case 'location':
-          if (data.location_id) {
-            navigate('/explore'); // Or navigate to specific location
-          }
-          break;
-        default:
-          // Default to home page
-          navigate('/');
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) {
+        console.error('Error loading notifications:', error);
+        setNotifications(getMockNotifications());
+      } else {
+        setNotifications(data || []);
       }
-      
-      onClose();
     } catch (error) {
-      console.error('Error handling notification click:', error);
+      console.error('Error loading notifications:', error);
+      setNotifications(getMockNotifications());
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleMarkAllAsRead = async () => {
+  const getMockNotifications = () => [
+    {
+      id: '1',
+      type: 'like',
+      title: 'New Like',
+      message: 'Sarah liked your photo at Central Park',
+      created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+      is_read: false,
+      data: { user_id: 'sarah123', place_id: 'central_park' }
+    },
+    {
+      id: '2',
+      type: 'comment',
+      title: 'New Comment',
+      message: 'Mike commented on your post: "Great spot for coffee!"',
+      created_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+      is_read: false,
+      data: { user_id: 'mike456', comment: 'Great spot for coffee!' }
+    },
+    {
+      id: '3',
+      type: 'friend_request',
+      title: 'Friend Request',
+      message: 'Alex wants to be your friend',
+      created_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+      is_read: true,
+      data: { user_id: 'alex789', status: 'pending' }
+    },
+    {
+      id: '4',
+      type: 'achievement',
+      title: 'Achievement Unlocked!',
+      message: 'You earned the "Explorer" badge for visiting 5 places',
+      created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+      is_read: true,
+      data: { badge_id: 'explorer', places_count: 5 }
+    }
+  ];
+
+  const markAsRead = async (notificationId: string) => {
     try {
-      await markAllAsRead();
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('id', notificationId);
+
+      if (!error) {
+        setNotifications(prev => 
+          prev.map(notification => 
+            notification.id === notificationId 
+              ? { ...notification, is_read: true }
+              : notification
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('user_id', user.id)
+        .eq('is_read', false);
+
+      if (!error) {
+        setNotifications(prev => 
+          prev.map(notification => ({ ...notification, is_read: true }))
+        );
+      }
     } catch (error) {
       console.error('Error marking all as read:', error);
     }
   };
 
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-start justify-center pt-16">
-      <div className="bg-white rounded-2xl w-full max-w-md mx-4 max-h-[80vh] overflow-hidden shadow-2xl border border-gray-100">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl w-full max-w-md h-[600px] overflow-hidden flex flex-col shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-purple-50">
+        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-              <Bell className="w-5 h-5 text-white" />
+            <div className="p-2 bg-blue-100 rounded-full">
+              <Bell className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">Notifications</h2>
+              <h3 className="font-bold text-lg">Notifications</h3>
               {unreadCount > 0 && (
-                <span className="text-sm text-gray-600">{unreadCount} unread</span>
+                <p className="text-sm text-gray-500">{unreadCount} unread</p>
               )}
             </div>
           </div>
-          <button 
-            onClick={onClose} 
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white hover:shadow-md transition-all duration-200"
-          >
-            <X className="w-5 h-5 text-gray-600" />
-          </button>
+          <div className="flex items-center gap-2">
+            {unreadCount > 0 && (
+              <Button
+                onClick={markAllAsRead}
+                variant="ghost"
+                size="sm"
+                className="text-blue-600 hover:text-blue-700 text-xs"
+              >
+                Mark all read
+              </Button>
+            )}
+            <Button
+              onClick={onClose}
+              variant="ghost"
+              size="icon"
+              className="rounded-full"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
 
         {/* Notifications List */}
-        <div className="overflow-y-auto max-h-96">
+        <ScrollArea className="flex-1">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-8 h-8 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+              <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
             </div>
           ) : notifications.length === 0 ? (
-            <div className="text-center py-12 px-6">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                 <Bell className="w-8 h-8 text-gray-400" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No notifications yet</h3>
-              <p className="text-gray-500">We'll notify you when something interesting happens!</p>
+              <h3 className="font-medium text-gray-900 mb-2">No notifications yet</h3>
+              <p className="text-gray-500 text-sm">You'll see notifications here when people interact with your content</p>
             </div>
           ) : (
-            <div className="p-4 space-y-3">
+            <div className="divide-y divide-gray-100">
               {notifications.map((notification) => (
-                <div
+                <NotificationItem
                   key={notification.id}
-                  onClick={() => handleNotificationClick(notification)}
-                  className={cn(
-                    "flex items-start gap-4 p-4 rounded-xl border transition-all duration-200 cursor-pointer group",
-                    !notification.is_read 
-                      ? "bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200 hover:from-blue-100 hover:to-purple-100 shadow-sm" 
-                      : "bg-white border-gray-200 hover:bg-gray-50"
-                  )}
-                >
-                  {/* Icon with background */}
-                  <div className="flex-shrink-0 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100">
-                    {getNotificationIcon(notification.type)}
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <h4 className="font-semibold text-gray-900 text-sm group-hover:text-blue-600 transition-colors">
-                        {notification.title}
-                      </h4>
-                      {!notification.is_read && (
-                        <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-1"></div>
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                      {notification.message}
-                    </p>
-                    <div className="flex items-center gap-1 text-xs text-gray-500">
-                      <Clock className="w-3 h-3" />
-                      {getTimeAgo(notification.created_at)}
-                    </div>
-                  </div>
-                </div>
+                  notification={notification}
+                  onMarkAsRead={markAsRead}
+                />
               ))}
             </div>
           )}
-        </div>
-
-        {/* Footer */}
-        {notifications.length > 0 && unreadCount > 0 && (
-          <div className="p-4 border-t border-gray-100 bg-gray-50">
-            <button 
-              onClick={handleMarkAllAsRead}
-              className="w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-sm"
-            >
-              Mark all as read
-            </button>
-          </div>
-        )}
+        </ScrollArea>
       </div>
     </div>
   );

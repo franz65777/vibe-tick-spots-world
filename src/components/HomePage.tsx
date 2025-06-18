@@ -16,6 +16,7 @@ import { useAnalytics } from '@/hooks/useAnalytics';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { useStories } from '@/hooks/useStories';
+import { usePlaceLikes } from '@/hooks/usePlaceLikes';
 import { Place } from '@/types/place';
 
 interface HomeStory {
@@ -71,7 +72,6 @@ const HomePage = () => {
   const [isCreateStoryModalOpen, setIsCreateStoryModalOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
-  const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
   const [currentCity, setCurrentCity] = useState('San Francisco');
   const [searchQuery, setSearchQuery] = useState('');
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 37.7749, lng: -122.4194 });
@@ -81,6 +81,7 @@ const HomePage = () => {
   const { location, getCurrentLocation } = useGeolocation();
   const { savedPlaces, savePlace, unsavePlace, isPlaceSaved } = useSavedPlaces();
   const { refetch: refetchStories } = useStories();
+  const { likedPlaces, toggleLike, isLiked } = usePlaceLikes();
 
   useEffect(() => {
     if (!user) {
@@ -128,20 +129,11 @@ const HomePage = () => {
     setIsCreateStoryModalOpen(false);
   };
 
-  const handleLikeToggle = (placeId: string) => {
-    const isCurrentlyLiked = likedPlaces.has(placeId);
-    
-    if (isCurrentlyLiked) {
-      setLikedPlaces(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(placeId);
-        return newSet;
-      });
-    } else {
-      setLikedPlaces(prev => new Set(prev).add(placeId));
+  const handleLikeToggle = async (placeId: string) => {
+    const success = await toggleLike(placeId);
+    if (success) {
+      trackPlaceInteraction(placeId, 'like');
     }
-    
-    trackPlaceInteraction(placeId, 'like');
   };
 
   const handleSaveToggle = (place: Place) => {
@@ -344,7 +336,7 @@ const HomePage = () => {
             <div className="px-4 pb-20">
               <PlaceCard
                 place={selectedPlace}
-                isLiked={likedPlaces.has(selectedPlace.id)}
+                isLiked={isLiked(selectedPlace.id)}
                 isSaved={isPlaceSaved(selectedPlace.id)}
                 onCardClick={handleCardClick}
                 onLikeToggle={handleLikeToggle}
