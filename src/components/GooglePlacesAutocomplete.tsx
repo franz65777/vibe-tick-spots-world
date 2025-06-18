@@ -31,23 +31,28 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
   useEffect(() => {
     const initializeGoogleMaps = async () => {
       try {
-        console.log('Starting Google Maps initialization...');
+        console.log('Starting Google Maps Places initialization...');
         setIsLoading(true);
         setError(null);
         
-        // Load Google Maps API
+        // Load Google Maps API with Places
         await loadGoogleMapsAPI();
         
-        console.log('Google Maps API loaded, initializing autocomplete...');
+        console.log('Google Maps API loaded, checking Places API...');
+        
+        // Verify Places API is available
+        if (!window.google?.maps?.places?.Autocomplete) {
+          throw new Error('Google Places API not available');
+        }
         
         // Small delay to ensure everything is ready
         setTimeout(() => {
           initializeAutocomplete();
-        }, 100);
+        }, 200);
         
       } catch (err) {
         console.error('Error loading Google Maps:', err);
-        setError('Failed to load location search. Please refresh the page.');
+        setError('Failed to load location search. Please check your internet connection.');
       } finally {
         setIsLoading(false);
       }
@@ -57,8 +62,8 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
 
     // Cleanup on unmount
     return () => {
-      if (autocompleteRef.current) {
-        google.maps.event.clearInstanceListeners(autocompleteRef.current);
+      if (autocompleteRef.current && window.google?.maps?.event) {
+        window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
       }
     };
   }, []);
@@ -76,7 +81,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
       const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
         types: ['establishment', 'geocode'],
         fields: ['place_id', 'name', 'formatted_address', 'geometry', 'types'],
-        componentRestrictions: { country: [] } // Allow all countries
+        componentRestrictions: {} // Allow all countries
       });
 
       autocompleteRef.current = autocomplete;

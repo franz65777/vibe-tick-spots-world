@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Loader } from '@googlemaps/js-api-loader';
+import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '@/lib/googleMaps';
 import { Place } from '@/types/place';
 
 interface GoogleMapsSetupProps {
@@ -24,28 +24,23 @@ const GoogleMapsSetup = ({
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const initializeMap = async () => {
       console.log('Initializing Google Maps...');
       
-      const loader = new Loader({
-        apiKey: 'AIzaSyDGVKK3IvDz3N0vCDX7XHKa0wHkZl6kLOY',
-        version: 'weekly',
-        libraries: ['places', 'geometry']
-      });
-
       try {
-        const google = await loader.load();
+        await loadGoogleMapsAPI();
         console.log('Google Maps loaded successfully');
 
-        if (mapRef.current && !mapInstanceRef.current) {
+        if (mapRef.current && !mapInstanceRef.current && isGoogleMapsLoaded()) {
           console.log('Creating map instance...');
           
           const defaultCenter = mapCenter || { lat: 37.7749, lng: -122.4194 };
-          console.log('Using provided map center:', defaultCenter);
+          console.log('Using map center:', defaultCenter);
 
-          mapInstanceRef.current = new google.maps.Map(mapRef.current, {
+          mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
             center: defaultCenter,
             zoom: 13,
             styles: [
@@ -60,7 +55,7 @@ const GoogleMapsSetup = ({
             fullscreenControl: false,
             zoomControl: true,
             zoomControlOptions: {
-              position: google.maps.ControlPosition.RIGHT_BOTTOM
+              position: window.google.maps.ControlPosition.RIGHT_BOTTOM
             }
           });
 
@@ -79,9 +74,11 @@ const GoogleMapsSetup = ({
 
           console.log('Map is fully loaded and ready');
           setIsLoaded(true);
+          setError(null);
         }
       } catch (error) {
         console.error('Error loading Google Maps:', error);
+        setError('Failed to load Google Maps. Please check your internet connection.');
       }
     };
 
@@ -98,7 +95,7 @@ const GoogleMapsSetup = ({
 
   // Update markers when places change
   useEffect(() => {
-    if (mapInstanceRef.current && isLoaded) {
+    if (mapInstanceRef.current && isLoaded && window.google) {
       console.log('Updating markers for', places.length, 'places');
       
       // Clear existing markers
@@ -107,7 +104,7 @@ const GoogleMapsSetup = ({
 
       // Add new markers
       places.forEach((place) => {
-        if (place.coordinates && window.google) {
+        if (place.coordinates) {
           const marker = new window.google.maps.Marker({
             position: place.coordinates,
             map: mapInstanceRef.current,
@@ -138,7 +135,7 @@ const GoogleMapsSetup = ({
 
   // Handle selected place highlighting
   useEffect(() => {
-    if (mapInstanceRef.current && selectedPlace && isLoaded) {
+    if (mapInstanceRef.current && selectedPlace && isLoaded && window.google) {
       // Find the marker for the selected place and highlight it
       const selectedMarker = markersRef.current.find((marker, index) => {
         return places[index]?.id === selectedPlace.id;
@@ -165,8 +162,29 @@ const GoogleMapsSetup = ({
     }
   }, [selectedPlace, isLoaded, places]);
 
+  if (error) {
+    return (
+      <div className="w-full h-full min-h-[400px] rounded-lg bg-red-50 border border-red-200 flex items-center justify-center">
+        <div className="text-center p-6">
+          <div className="text-red-600 text-lg font-medium mb-2">Map Loading Error</div>
+          <div className="text-red-500 text-sm">{error}</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div ref={mapRef} className="w-full h-full min-h-[400px] rounded-lg" />
+    <div className="relative w-full h-full min-h-[400px]">
+      <div ref={mapRef} className="w-full h-full rounded-lg" />
+      {!isLoaded && (
+        <div className="absolute inset-0 bg-gray-100 rounded-lg flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+            <div className="text-gray-600">Loading map...</div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
