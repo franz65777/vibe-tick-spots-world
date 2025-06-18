@@ -5,7 +5,8 @@ import PostDetailModal from './PostDetailModal';
 import { usePosts } from '@/hooks/usePosts';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { usePostDeletion } from '@/hooks/usePostDeletion';
+import { toast } from 'sonner';
 
 interface Post {
   id: string;
@@ -30,10 +31,10 @@ const PostsGrid = ({ userId }: PostsGridProps) => {
   const { profile } = useProfile();
   const targetUserId = userId || profile?.id;
   const { posts, loading, refetch } = usePosts(targetUserId);
+  const { deletePost, deleting } = usePostDeletion();
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
-  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
 
   const isOwnProfile = user?.id === targetUserId;
 
@@ -48,22 +49,18 @@ const PostsGrid = ({ userId }: PostsGridProps) => {
       return;
     }
 
-    setDeletingPostId(postId);
     try {
-      const { error } = await supabase
-        .from('posts')
-        .delete()
-        .eq('id', postId)
-        .eq('user_id', user?.id);
-
-      if (error) throw error;
+      const result = await deletePost(postId);
       
-      await refetch();
+      if (result.success) {
+        toast.success('Post deleted successfully');
+        await refetch(); // Refresh the posts list
+      } else {
+        toast.error(result.error?.message || 'Failed to delete post');
+      }
     } catch (error) {
       console.error('Error deleting post:', error);
-      alert('Failed to delete post. Please try again.');
-    } finally {
-      setDeletingPostId(null);
+      toast.error('Failed to delete post. Please try again.');
     }
   };
 
@@ -119,13 +116,17 @@ const PostsGrid = ({ userId }: PostsGridProps) => {
         {posts.map((post) => (
           <div
             key={post.id}
-            className="relative aspect-square bg-gray-100 rounded-xl overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-200"
+            className="relative aspect-square bg-gray-100 rounded-xl overflow-hidden cursor-pointer group hover:scale-[1.02] transition-transform duration-200"
             onClick={() => handlePostClick(post)}
           >
             <img
               src={post.media_urls[0]}
               alt={post.caption || 'Post'}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = '/placeholder.svg';
+              }}
             />
             
             {/* Multiple images indicator */}
@@ -141,10 +142,11 @@ const PostsGrid = ({ userId }: PostsGridProps) => {
             {isOwnProfile && (
               <button
                 onClick={(e) => handleDeletePost(post.id, e)}
-                disabled={deletingPostId === post.id}
-                className="absolute top-2 left-2 w-8 h-8 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200"
+                disabled={deleting}
+                className="absolute top-2 left-2 w-8 h-8 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg"
+                title="Delete post"
               >
-                {deletingPostId === post.id ? (
+                {deleting ? (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 ) : (
                   <Trash2 className="w-4 h-4 text-white" />
@@ -153,16 +155,18 @@ const PostsGrid = ({ userId }: PostsGridProps) => {
             )}
             
             {/* Overlay with stats */}
-            <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors duration-200 flex items-end">
-              <div className="absolute bottom-2 right-2 opacity-0 hover:opacity-100 transition-opacity duration-200">
-                <div className="flex gap-1">
-                  <div className="bg-black/50 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
-                    <Heart className="w-3 h-3 text-white" />
-                    <span className="text-xs text-white font-medium">{post.likes_count}</span>
-                  </div>
-                  <div className="bg-black/50 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
-                    <MessageCircle className="w-3 h-3 text-white" />
-                    <span className="text-xs text-white font-medium">{post.comments_count}</span>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-end">
+              <div className="p-3 w-full">
+                <div className="flex justify-between items-center">
+                  <div className="flex gap-2">
+                    <div className="bg-black/50 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
+                      <Heart className="w-3 h-3 text-white" />
+                      <span className="text-xs text-white font-medium">{post.likes_count}</span>
+                    </div>
+                    <div className="bg-black/50 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
+                      <MessageCircle className="w-3 h-3 text-white" />
+                      <span className="text-xs text-white font-medium">{post.comments_count}</span>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { X, Camera, MapPin, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useStories } from '@/hooks/useStories';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import GooglePlacesAutocomplete from './GooglePlacesAutocomplete';
 
 interface CreateStoryModalProps {
   isOpen: boolean;
@@ -19,8 +20,14 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
   const { uploadStory, uploading } = useStories();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [caption, setCaption] = useState('');
-  const [locationName, setLocationName] = useState('');
-  const [locationAddress, setLocationAddress] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState<{
+    place_id: string;
+    name: string;
+    address: string;
+    lat: number;
+    lng: number;
+    types: string[];
+  } | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   if (!isOpen) return null;
@@ -38,6 +45,17 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
     }
   };
 
+  const handleLocationSelect = (place: {
+    place_id: string;
+    name: string;
+    address: string;
+    lat: number;
+    lng: number;
+    types: string[];
+  }) => {
+    setSelectedLocation(place);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -46,8 +64,8 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
       return;
     }
     
-    if (!locationName.trim()) {
-      toast.error('Please add a location to your story');
+    if (!selectedLocation) {
+      toast.error('Please select a location for your story');
       return;
     }
 
@@ -60,14 +78,13 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
       await uploadStory(
         selectedFile,
         caption.trim() || undefined,
-        undefined, // locationId - can be undefined for now
-        locationName.trim(),
-        locationAddress.trim() || undefined
+        undefined,
+        selectedLocation.name,
+        selectedLocation.address
       );
       
       toast.success('Story uploaded successfully!');
       
-      // Call the callback if provided
       if (onStoryCreated) {
         onStoryCreated();
       }
@@ -82,8 +99,7 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
   const handleClose = () => {
     setSelectedFile(null);
     setCaption('');
-    setLocationName('');
-    setLocationAddress('');
+    setSelectedLocation(null);
     setPreviewUrl(null);
     onClose();
   };
@@ -92,7 +108,7 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-semibold">Create Story</h2>
+          <h2 className="text-lg font-semibold">Add to Your Story</h2>
           <Button variant="ghost" size="icon" onClick={handleClose}>
             <X className="w-5 h-5" />
           </Button>
@@ -101,9 +117,6 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           {/* File Upload */}
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Media File *
-            </label>
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
               {previewUrl ? (
                 <div className="space-y-2">
@@ -135,7 +148,7 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
               ) : (
                 <>
                   <Camera className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-600 mb-2">Select an image or video</p>
+                  <p className="text-gray-600 mb-2">Add photo or video</p>
                   <input
                     type="file"
                     accept="image/*,video/*"
@@ -156,48 +169,54 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
             </div>
           </div>
 
-          {/* Location (Required) */}
+          {/* Location Selection */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
               <MapPin className="w-4 h-4 inline mr-1" />
-              Location *
+              Add Location
             </label>
-            <Input
-              placeholder="Enter location name"
-              value={locationName}
-              onChange={(e) => setLocationName(e.target.value)}
-              required
+            <GooglePlacesAutocomplete
+              onPlaceSelect={handleLocationSelect}
+              placeholder="Where was this taken?"
             />
-            <Input
-              placeholder="Enter address (optional)"
-              value={locationAddress}
-              onChange={(e) => setLocationAddress(e.target.value)}
-            />
-            <p className="text-xs text-gray-500">
-              Location is required for all stories
-            </p>
+            
+            {selectedLocation && (
+              <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-start gap-3">
+                  <MapPin className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-medium text-blue-900 truncate">{selectedLocation.name}</h3>
+                    <p className="text-sm text-blue-700 mt-1">{selectedLocation.address}</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Caption */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
-              Caption
+              Write a caption...
             </label>
             <Textarea
-              placeholder="Write a caption for your story..."
+              placeholder="What's happening?"
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
               rows={3}
+              maxLength={280}
             />
+            <div className="text-xs text-gray-500 text-right">
+              {caption.length}/280
+            </div>
           </div>
 
           {/* Submit Button */}
           <Button 
             type="submit" 
             className="w-full" 
-            disabled={uploading || !selectedFile || !locationName.trim()}
+            disabled={uploading || !selectedFile || !selectedLocation}
           >
-            {uploading ? 'Uploading...' : 'Share Story'}
+            {uploading ? 'Sharing...' : 'Share to Story'}
           </Button>
         </form>
       </div>

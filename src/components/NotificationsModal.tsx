@@ -2,6 +2,7 @@
 import { X, Heart, MessageSquare, UserPlus, MapPin, Clock, Bell, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useNavigate } from 'react-router-dom';
 
 interface NotificationsModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface NotificationsModalProps {
 
 const NotificationsModal = ({ isOpen, onClose }: NotificationsModalProps) => {
   const { notifications, unreadCount, markAsRead, markAllAsRead, loading } = useNotifications();
+  const navigate = useNavigate();
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -18,6 +20,7 @@ const NotificationsModal = ({ isOpen, onClose }: NotificationsModalProps) => {
       case 'friend_accepted':
         return <CheckCircle className="w-5 h-5 text-blue-500" />;
       case 'location_like':
+      case 'post_like':
         return <Heart className="w-5 h-5 text-red-500" />;
       case 'comment':
         return <MessageSquare className="w-5 h-5 text-blue-500" />;
@@ -31,23 +34,68 @@ const NotificationsModal = ({ isOpen, onClose }: NotificationsModalProps) => {
   const getTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
     
-    if (diffInHours < 1) return 'Just now';
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
     if (diffInHours < 24) return `${diffInHours}h ago`;
+    
     const diffInDays = Math.floor(diffInHours / 24);
     if (diffInDays < 7) return `${diffInDays}d ago`;
+    
     return date.toLocaleDateString();
   };
 
   const handleNotificationClick = async (notification: any) => {
+    // Mark as read if unread
     if (!notification.is_read) {
       await markAsRead([notification.id]);
+    }
+
+    // Handle navigation based on notification type
+    try {
+      const data = notification.data || {};
+      
+      switch (notification.type) {
+        case 'friend_request':
+          // Navigate to friend requests or profile
+          navigate('/profile');
+          break;
+        case 'friend_accepted':
+          if (data.friend_id) {
+            navigate(`/user/${data.friend_id}`);
+          }
+          break;
+        case 'post_like':
+        case 'comment':
+          if (data.post_id) {
+            navigate('/profile'); // Or navigate to specific post
+          }
+          break;
+        case 'location':
+          if (data.location_id) {
+            navigate('/explore'); // Or navigate to specific location
+          }
+          break;
+        default:
+          // Default to home page
+          navigate('/');
+      }
+      
+      onClose();
+    } catch (error) {
+      console.error('Error handling notification click:', error);
     }
   };
 
   const handleMarkAllAsRead = async () => {
-    await markAllAsRead();
+    try {
+      await markAllAsRead();
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+    }
   };
 
   if (!isOpen) return null;

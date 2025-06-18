@@ -1,10 +1,11 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Camera, Plus } from 'lucide-react';
+import { ArrowLeft, MapPin, Camera, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePostCreation } from '@/hooks/usePostCreation';
 import GooglePlacesAutocomplete from './GooglePlacesAutocomplete';
+import { toast } from 'sonner';
 
 const AddLocationPage = () => {
   const navigate = useNavigate();
@@ -29,11 +30,11 @@ const AddLocationPage = () => {
     // Validate files
     const validFiles = files.filter(file => {
       if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
-        alert(`${file.name} is not a valid image or video file`);
+        toast.error(`${file.name} is not a valid image or video file`);
         return false;
       }
       if (file.size > 50 * 1024 * 1024) { // 50MB limit
-        alert(`${file.name} is too large. Maximum file size is 50MB`);
+        toast.error(`${file.name} is too large. Maximum file size is 50MB`);
         return false;
       }
       return true;
@@ -66,16 +67,17 @@ const AddLocationPage = () => {
     types: string[];
   }) => {
     setSelectedLocation(place);
+    toast.success(`Location selected: ${place.name}`);
   };
 
   const handleSubmit = async () => {
     if (selectedFiles.length === 0) {
-      alert('Please select at least one photo or video');
+      toast.error('Please select at least one photo or video');
       return;
     }
 
     if (!selectedLocation) {
-      alert('Please select a location from Google Maps');
+      toast.error('Please select a location from the suggestions');
       return;
     }
 
@@ -96,13 +98,14 @@ const AddLocationPage = () => {
       if (result.success) {
         // Clean up preview URLs
         previewUrls.forEach(url => URL.revokeObjectURL(url));
+        toast.success('Post shared successfully!');
         navigate('/');
       } else {
-        alert('Failed to create post. Please try again.');
+        toast.error('Failed to create post. Please try again.');
       }
     } catch (error) {
       console.error('Error creating post:', error);
-      alert('Failed to create post. Please try again.');
+      toast.error('Failed to create post. Please try again.');
     }
   };
 
@@ -113,20 +116,20 @@ const AddLocationPage = () => {
         <button onClick={() => navigate(-1)} className="p-2">
           <ArrowLeft className="w-6 h-6 text-gray-600" />
         </button>
-        <h1 className="text-lg font-semibold">Add Post</h1>
+        <h1 className="text-lg font-semibold">New Post</h1>
         <Button
           onClick={handleSubmit}
           disabled={uploading || selectedFiles.length === 0 || !selectedLocation}
           className="px-6"
         >
-          {uploading ? 'Posting...' : 'Share'}
+          {uploading ? 'Sharing...' : 'Share'}
         </Button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
         {/* Media Upload Section */}
         <div>
-          <h2 className="text-lg font-semibold mb-3">Photos & Videos</h2>
+          <h2 className="text-lg font-semibold mb-3">Add Photos & Videos</h2>
           
           {selectedFiles.length === 0 ? (
             <div>
@@ -159,9 +162,9 @@ const AddLocationPage = () => {
                     )}
                     <button
                       onClick={() => removeFile(index)}
-                      className="absolute top-2 right-2 w-6 h-6 bg-black bg-opacity-50 rounded-full flex items-center justify-center"
+                      className="absolute top-2 right-2 w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center transition-colors"
                     >
-                      <Plus className="w-4 h-4 text-white rotate-45" />
+                      <X className="w-4 h-4 text-white" />
                     </button>
                   </div>
                 ))}
@@ -186,40 +189,51 @@ const AddLocationPage = () => {
           )}
         </div>
 
-        {/* Location Selection */}
+        {/* Location Selection - REQUIRED */}
         <div>
-          <h2 className="text-lg font-semibold mb-3">Location</h2>
+          <h2 className="text-lg font-semibold mb-3">
+            <MapPin className="w-5 h-5 inline mr-2" />
+            Tag Location *
+          </h2>
           <GooglePlacesAutocomplete
             onPlaceSelect={handleLocationSelect}
-            placeholder="Search for a location..."
+            placeholder="Search for a place..."
+            className="mb-3"
           />
           
           {selectedLocation && (
-            <div className="mt-3 p-3 bg-blue-50 rounded-xl border border-blue-200">
+            <div className="p-4 bg-green-50 rounded-xl border border-green-200">
               <div className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <MapPin className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-medium text-blue-900 truncate">{selectedLocation.name}</h3>
-                  <p className="text-sm text-blue-700 mt-1">{selectedLocation.address}</p>
+                  <h3 className="font-medium text-green-900 truncate">{selectedLocation.name}</h3>
+                  <p className="text-sm text-green-700 mt-1">{selectedLocation.address}</p>
+                  <p className="text-xs text-green-600 mt-1">
+                    {selectedLocation.lat.toFixed(6)}, {selectedLocation.lng.toFixed(6)}
+                  </p>
                 </div>
               </div>
             </div>
           )}
+          
+          <p className="text-xs text-gray-500 mt-2">
+            Location tagging is required. Select from the dropdown suggestions.
+          </p>
         </div>
 
         {/* Caption */}
         <div>
-          <h2 className="text-lg font-semibold mb-3">Caption</h2>
+          <h2 className="text-lg font-semibold mb-3">Write a Caption</h2>
           <textarea
             value={caption}
             onChange={(e) => setCaption(e.target.value)}
-            placeholder="Write a caption..."
+            placeholder="What's the story behind this place?"
             className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-            rows={3}
-            maxLength={500}
+            rows={4}
+            maxLength={1000}
           />
           <div className="text-xs text-gray-500 mt-1 text-right">
-            {caption.length}/500
+            {caption.length}/1000
           </div>
         </div>
       </div>
