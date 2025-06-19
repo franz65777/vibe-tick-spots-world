@@ -31,7 +31,8 @@ const HomePage = () => {
       visitors: ['user1', 'user2', 'user3'],
       isNew: true,
       coordinates: { lat: 40.7589, lng: -73.9851 },
-      image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop'
+      image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
+      addedBy: 'user1'
     },
     {
       id: '2',
@@ -41,12 +42,19 @@ const HomePage = () => {
       visitors: ['user4', 'user5'],
       isNew: false,
       coordinates: { lat: 40.7061, lng: -73.9969 },
-      image: 'https://images.unsplash.com/photo-1518391846015-55a9cc003b25?w=400&h=300&fit=crop'
+      image: 'https://images.unsplash.com/photo-1518391846015-55a9cc003b25?w=400&h=300&fit=crop',
+      addedBy: 'user2'
     }
   ]);
 
   const [currentCity] = useState('New York');
   const [mapCenter] = useState({ lat: 40.7589, lng: -73.9851 });
+
+  // Mock stories data
+  const [stories] = useState([
+    { id: '1', user: 'John', avatar: '', preview: '', timestamp: new Date() },
+    { id: '2', user: 'Sarah', avatar: '', preview: '', timestamp: new Date() }
+  ]);
 
   const filteredPlaces = selectedCategory === 'all' 
     ? places 
@@ -69,12 +77,20 @@ const HomePage = () => {
     setCommentPlace(null);
   };
 
+  // Mock categories for filter
+  const categories = [
+    { id: 'all', name: 'All', icon: '🌟' },
+    { id: 'cafe', name: 'Cafés', icon: '☕' },
+    { id: 'restaurant', name: 'Food', icon: '🍽️' },
+    { id: 'attraction', name: 'Sights', icon: '🏛️' },
+    { id: 'nature', name: 'Nature', icon: '🌲' }
+  ];
+
   return (
     <div className="flex flex-col h-full bg-gray-50">
       {/* Header */}
       <Header 
         currentCity={currentCity}
-        onCreateStory={() => setIsCreateStoryModalOpen(true)}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
       />
@@ -85,19 +101,33 @@ const HomePage = () => {
           <div className="h-full overflow-y-auto">
             {/* Stories Section */}
             <div className="bg-white px-4 py-3 border-b border-gray-100">
-              <StoriesSection onCreateStory={() => setIsCreateStoryModalOpen(true)} />
+              <StoriesSection 
+                stories={stories}
+                onCreateStory={() => setIsCreateStoryModalOpen(true)} 
+              />
             </div>
 
             {/* Location of the Week */}
             <div className="px-4 py-3">
-              <LocationOfTheWeek />
+              <LocationOfTheWeek 
+                topLocation={{
+                  id: '1',
+                  name: 'Central Park',
+                  image: 'https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=400&h=300&fit=crop',
+                  category: 'nature',
+                  likes: 245,
+                  saves: 89
+                }}
+                onLocationClick={(location) => console.log('Location clicked:', location)}
+              />
             </div>
 
             {/* Filter Buttons */}
             <div className="bg-white px-4 py-3 border-y border-gray-100 sticky top-0 z-10">
               <FilterButtons
-                selectedCategory={selectedCategory}
-                onCategoryChange={setSelectedCategory}
+                categories={categories}
+                activeCategory={selectedCategory}
+                onCategorySelect={setSelectedCategory}
               />
             </div>
 
@@ -107,7 +137,7 @@ const HomePage = () => {
                 <PlaceCard
                   key={place.id}
                   place={place}
-                  onLike={() => toggleLike(place.id)}
+                  onLikeToggle={() => toggleLike(place.id)}
                   isLiked={likedPlaces.has(place.id)}
                   onShare={() => handleShare(place)}
                   onComment={() => handleComment(place)}

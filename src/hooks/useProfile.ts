@@ -16,6 +16,8 @@ interface Profile {
   following_count?: number;
   cities_visited?: number;
   places_visited?: number;
+  is_private?: boolean;
+  default_location_privacy?: 'private' | 'followers' | 'public';
   created_at?: string;
   updated_at?: string;
 }
@@ -48,6 +50,8 @@ export const useProfile = () => {
               id: user.id,
               username: user.email?.split('@')[0] || 'user',
               email: user.email,
+              is_private: false,
+              default_location_privacy: 'followers',
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             })
