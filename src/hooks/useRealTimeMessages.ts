@@ -45,30 +45,47 @@ export const useRealTimeMessages = () => {
       // Get all conversations for the current user using direct_messages
       const { data: messagesData, error } = await supabase
         .from('direct_messages')
-        .select(`
-          *,
-          sender:profiles!direct_messages_sender_id_fkey(id, username, full_name, avatar_url),
-          receiver:profiles!direct_messages_receiver_id_fkey(id, username, full_name, avatar_url)
-        `)
+        .select('*')
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+
+      // Get unique user IDs to fetch profile information
+      const userIds = new Set<string>();
+      messagesData?.forEach((message: any) => {
+        const otherUserId = message.sender_id === user.id ? message.receiver_id : message.sender_id;
+        userIds.add(otherUserId);
+      });
+
+      // Fetch profiles for conversation partners
+      const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .in('id', Array.from(userIds));
+
+      if (profileError) throw profileError;
+
+      // Create a map of profiles for quick lookup
+      const profileMap = new Map();
+      profiles?.forEach(profile => {
+        profileMap.set(profile.id, profile);
+      });
 
       // Group messages by conversation partner
       const conversationMap = new Map<string, Conversation>();
       
       messagesData?.forEach((message: any) => {
         const isFromCurrentUser = message.sender_id === user.id;
-        const otherUser = isFromCurrentUser ? message.receiver : message.sender;
-        const otherUserId = otherUser.id;
+        const otherUserId = isFromCurrentUser ? message.receiver_id : message.sender_id;
+        const otherUser = profileMap.get(otherUserId);
 
-        if (!conversationMap.has(otherUserId)) {
+        if (!conversationMap.has(otherUserId) && otherUser) {
           conversationMap.set(otherUserId, {
             user_id: otherUserId,
-            username: otherUser.username,
-            full_name: otherUser.full_name,
-            avatar_url: otherUser.avatar_url,
+            username: otherUser.username || '',
+            full_name: otherUser.full_name || '',
+            avatar_url: otherUser.avatar_url || '',
             last_message: message.content || '',
             last_message_time: message.created_at,
             unread_count: 0
@@ -77,8 +94,10 @@ export const useRealTimeMessages = () => {
 
         // Count unread messages from other user
         if (!isFromCurrentUser && !message.is_read) {
-          const conv = conversationMap.get(otherUserId)!;
-          conv.unread_count += 1;
+          const conv = conversationMap.get(otherUserId);
+          if (conv) {
+            conv.unread_count += 1;
+          }
         }
       });
 
@@ -95,18 +114,34 @@ export const useRealTimeMessages = () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
+      const { data: messagesData, error } = await supabase
         .from('direct_messages')
-        .select(`
-          *,
-          sender:profiles!direct_messages_sender_id_fkey(id, username, full_name, avatar_url)
-        `)
+        .select('*')
         .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
 
-      setMessages(data || []);
+      // Get sender profiles
+      const senderIds = messagesData?.map(msg => msg.sender_id) || [];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .in('id', senderIds);
+
+      // Create profile map
+      const profileMap = new Map();
+      profiles?.forEach(profile => {
+        profileMap.set(profile.id, profile);
+      });
+
+      // Attach sender info to messages
+      const messagesWithSenders = messagesData?.map(message => ({
+        ...message,
+        sender: profileMap.get(message.sender_id)
+      })) || [];
+
+      setMessages(messagesWithSenders);
       setActiveConversation(otherUserId);
 
       // Mark messages as read

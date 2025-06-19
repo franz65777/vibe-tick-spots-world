@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,7 +23,7 @@ const ExplorePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState<'locations' | 'users'>('locations');
   const [sortBy, setSortBy] = useState<'proximity' | 'likes' | 'followers'>('proximity');
-  const [isSearching, setIsSearching] = useState(isSearching);
+  const [isSearching, setIsSearching] = useState(false);
   const [filteredLocations, setFilteredLocations] = useState<Place[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
   const [recommendationsLoading, setRecommendationsLoading] = useState(true);
