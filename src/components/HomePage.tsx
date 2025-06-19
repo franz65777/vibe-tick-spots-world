@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePlaceLikes } from '@/hooks/usePlaceLikes';
@@ -48,7 +47,7 @@ const HomePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentCity, setCurrentCity] = useState('New York');
 
-  // Convert pins to places format and filter by categories
+  // Convert pins to places format and filter by categories - FIXED FILTERING
   const places: Place[] = pins
     .map(pin => ({
       id: pin.id,
@@ -66,9 +65,14 @@ const HomePage = () => {
       distance: pin.distance,
       totalSaves: pin.totalSaves
     }))
-    .filter(place => 
-      selectedCategories.length === 0 || selectedCategories.includes(place.category)
-    );
+    .filter(place => {
+      // If no categories selected, show all places
+      if (selectedCategories.length === 0) {
+        return true;
+      }
+      // Only show places that match selected categories
+      return selectedCategories.includes(place.category);
+    });
 
   const [mapCenter] = useState({ lat: 40.7589, lng: -73.9851 });
 
@@ -140,10 +144,14 @@ const HomePage = () => {
   };
 
   const handleFilterChange = (filter: 'following' | 'popular') => {
+    console.log('Filter changed to:', filter);
     setActiveFilter(filter);
+    // Clear selected categories when switching filters
+    setSelectedCategories([]);
   };
 
   const handleCategoryChange = (categories: string[]) => {
+    console.log('Categories changed to:', categories);
     setSelectedCategories(categories);
   };
 

@@ -22,15 +22,15 @@ const FilterButtons = ({
 
   return (
     <div className="w-full">
-      <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide">
-        {/* Main Filter Buttons */}
-        <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2">
+        {/* Main Filter Buttons - More compact */}
+        <div className="flex items-center gap-1 flex-shrink-0">
           {filters.map((filter) => (
             <button
               key={filter.key}
               onClick={() => onFilterChange(filter.key)}
               className={`
-                flex items-center gap-2 px-4 py-2.5 rounded-full font-medium text-sm
+                flex items-center gap-1 px-3 py-2 rounded-full font-medium text-xs
                 whitespace-nowrap transition-all duration-200 min-w-fit
                 ${activeFilter === filter.key
                   ? 'bg-blue-600 text-white shadow-md'

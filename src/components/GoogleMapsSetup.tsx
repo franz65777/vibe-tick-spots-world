@@ -39,8 +39,8 @@ const GoogleMapsSetup = ({
         
         if (!mounted) return;
 
-        // Small delay to ensure DOM is ready
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // Ensure DOM is ready
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         if (mapRef.current && !mapInstanceRef.current && isGoogleMapsLoaded()) {
           console.log('Creating Google Maps instance...');
@@ -83,13 +83,13 @@ const GoogleMapsSetup = ({
           
           // Add places if available
           if (places && places.length > 0) {
-            setTimeout(() => addMarkersToMap(places), 100);
+            addMarkersToMap(places);
           }
         }
       } catch (error) {
         console.error('Error initializing Google Maps:', error);
         if (mounted) {
-          setError('Failed to load Google Maps. Please check your internet connection.');
+          setError('Failed to load Google Maps. Please check your API key.');
         }
       }
     };
@@ -103,8 +103,11 @@ const GoogleMapsSetup = ({
 
   const addMarkersToMap = (placesToAdd: Place[]) => {
     if (!mapInstanceRef.current || !isLoaded || !window.google) {
+      console.log('Map not ready for markers');
       return;
     }
+
+    console.log('Adding markers to map:', placesToAdd.length);
 
     // Clear existing markers
     markersRef.current.forEach(marker => marker.setMap(null));
@@ -158,6 +161,7 @@ const GoogleMapsSetup = ({
   // Update markers when places change
   useEffect(() => {
     if (isLoaded && places && places.length > 0) {
+      console.log('Places updated, refreshing markers:', places.length);
       addMarkersToMap(places);
     }
   }, [places, isLoaded, onPinClick]);
