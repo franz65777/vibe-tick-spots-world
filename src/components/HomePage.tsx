@@ -50,7 +50,7 @@ const HomePage = () => {
     visitors: Array.isArray(pin.visitors) ? pin.visitors : [],
     isNew: pin.isNew || false,
     image: pin.image,
-    addedBy: pin.addedBy || 'user',
+    addedBy: typeof pin.addedBy === 'string' ? pin.addedBy : (pin.addedBy || 'user'),
     addedDate: pin.addedDate,
     isFollowing: pin.isFollowing,
     popularity: pin.popularity,
