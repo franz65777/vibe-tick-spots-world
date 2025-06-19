@@ -38,8 +38,8 @@ const GoogleMapsSetup = ({
         
         if (!mounted) return;
 
-        // Small delay to ensure DOM is ready
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Ensure DOM is ready
+        await new Promise(resolve => setTimeout(resolve, 200));
 
         if (mapRef.current && !mapInstanceRef.current && isGoogleMapsLoaded()) {
           console.log('Creating Google Maps instance...');
@@ -48,7 +48,7 @@ const GoogleMapsSetup = ({
 
           const mapOptions: google.maps.MapOptions = {
             center: defaultCenter,
-            zoom: 14,
+            zoom: 13,
             styles: [
               {
                 featureType: 'poi',
@@ -63,15 +63,16 @@ const GoogleMapsSetup = ({
             zoomControlOptions: {
               position: window.google.maps.ControlPosition.RIGHT_BOTTOM
             },
-            gestureHandling: 'greedy', // Better for mobile
-            disableDefaultUI: false,
+            gestureHandling: 'greedy',
+            disableDefaultUI: true,
             clickableIcons: false
           };
 
           mapInstanceRef.current = new window.google.maps.Map(mapRef.current, mapOptions);
 
-          // Add right-click listener
+          // Add interaction listeners
           if (onMapRightClick) {
+            // Desktop right-click
             mapInstanceRef.current.addListener('rightclick', (event: google.maps.MapMouseEvent) => {
               if (event.latLng) {
                 const coords = {
@@ -81,25 +82,33 @@ const GoogleMapsSetup = ({
                 onMapRightClick(coords);
               }
             });
+
+            // Mobile long press
+            let longPressTimer: NodeJS.Timeout;
+            let isLongPress = false;
+
+            mapInstanceRef.current.addListener('mousedown', (event: google.maps.MapMouseEvent) => {
+              isLongPress = false;
+              longPressTimer = setTimeout(() => {
+                isLongPress = true;
+                if (event.latLng) {
+                  const coords = {
+                    lat: event.latLng.lat(),
+                    lng: event.latLng.lng()
+                  };
+                  onMapRightClick(coords);
+                }
+              }, 800);
+            });
+
+            mapInstanceRef.current.addListener('mouseup', () => {
+              clearTimeout(longPressTimer);
+            });
+
+            mapInstanceRef.current.addListener('mousemove', () => {
+              clearTimeout(longPressTimer);
+            });
           }
-
-          // Add mobile-friendly long press for adding locations
-          let longPressTimer: NodeJS.Timeout;
-          mapInstanceRef.current.addListener('mousedown', (event: google.maps.MapMouseEvent) => {
-            longPressTimer = setTimeout(() => {
-              if (event.latLng && onMapRightClick) {
-                const coords = {
-                  lat: event.latLng.lat(),
-                  lng: event.latLng.lng()
-                };
-                onMapRightClick(coords);
-              }
-            }, 800); // 800ms for long press
-          });
-
-          mapInstanceRef.current.addListener('mouseup', () => {
-            clearTimeout(longPressTimer);
-          });
 
           console.log('Google Maps initialized successfully');
           setIsLoaded(true);
@@ -107,7 +116,7 @@ const GoogleMapsSetup = ({
       } catch (error) {
         console.error('Error initializing Google Maps:', error);
         if (mounted) {
-          setError('Failed to load map. Please check your internet connection.');
+          setError('Failed to load map. Please refresh the page.');
         }
       }
     };
@@ -116,15 +125,11 @@ const GoogleMapsSetup = ({
 
     return () => {
       mounted = false;
+      if (mapInstanceRef.current) {
+        google.maps.event.clearInstanceListeners(mapInstanceRef.current);
+      }
     };
   }, [mapCenter, onMapRightClick]);
-
-  // Update map center when it changes
-  useEffect(() => {
-    if (mapInstanceRef.current && mapCenter && isLoaded) {
-      mapInstanceRef.current.setCenter(mapCenter);
-    }
-  }, [mapCenter, isLoaded]);
 
   // Update markers when places change
   useEffect(() => {
@@ -143,8 +148,8 @@ const GoogleMapsSetup = ({
             icon: {
               url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="12" cy="12" r="6" fill="#3B82F6" stroke="white" stroke-width="2"/>
-                  <circle cx="12" cy="12" r="2" fill="white"/>
+                  <circle cx="12" cy="12" r="8" fill="#3B82F6" stroke="white" stroke-width="2"/>
+                  <circle cx="12" cy="12" r="3" fill="white"/>
                 </svg>
               `),
               scaledSize: new window.google.maps.Size(24, 24),
@@ -172,8 +177,8 @@ const GoogleMapsSetup = ({
         selectedMarker.setIcon({
           url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
             <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="16" cy="16" r="10" fill="#EF4444" stroke="white" stroke-width="3"/>
-              <circle cx="16" cy="16" r="4" fill="white"/>
+              <circle cx="16" cy="16" r="12" fill="#EF4444" stroke="white" stroke-width="3"/>
+              <circle cx="16" cy="16" r="5" fill="white"/>
             </svg>
           `),
           scaledSize: new window.google.maps.Size(32, 32),
@@ -191,8 +196,8 @@ const GoogleMapsSetup = ({
           marker.setIcon({
             url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="6" fill="#3B82F6" stroke="white" stroke-width="2"/>
-                <circle cx="12" cy="12" r="2" fill="white"/>
+                <circle cx="12" cy="12" r="8" fill="#3B82F6" stroke="white" stroke-width="2"/>
+                <circle cx="12" cy="12" r="3" fill="white"/>
               </svg>
             `),
             scaledSize: new window.google.maps.Size(24, 24),
@@ -205,18 +210,15 @@ const GoogleMapsSetup = ({
 
   if (error) {
     return (
-      <div className="w-full h-full min-h-[300px] rounded-xl bg-red-50 border border-red-200 flex items-center justify-center">
+      <div className="w-full h-full min-h-[280px] rounded-lg bg-red-50 border border-red-200 flex items-center justify-center">
         <div className="text-center p-4">
-          <div className="text-red-600 text-sm font-medium mb-2">Map Loading Error</div>
+          <div className="text-red-600 text-sm font-medium mb-2">Map Error</div>
           <div className="text-red-500 text-xs mb-3">{error}</div>
           <button
-            onClick={() => {
-              setError(null);
-              window.location.reload();
-            }}
+            onClick={() => window.location.reload()}
             className="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-xs"
           >
-            Retry
+            Refresh Page
           </button>
         </div>
       </div>
@@ -224,10 +226,10 @@ const GoogleMapsSetup = ({
   }
 
   return (
-    <div className="relative w-full h-full min-h-[300px]">
-      <div ref={mapRef} className="w-full h-full rounded-xl" />
+    <div className="relative w-full h-full min-h-[280px]">
+      <div ref={mapRef} className="w-full h-full rounded-lg" />
       {!isLoaded && (
-        <div className="absolute inset-0 bg-gray-100 rounded-xl flex items-center justify-center z-10">
+        <div className="absolute inset-0 bg-gray-100 rounded-lg flex items-center justify-center z-10">
           <div className="text-center">
             <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-3"></div>
             <div className="text-gray-600 text-sm">Loading map...</div>

@@ -35,8 +35,8 @@ const MapSection = ({ places, onPinClick, mapCenter, selectedPlace, onCloseSelec
 
   return (
     <>
-      <div className="flex-1 relative px-4">
-        <div className="h-full min-h-[300px] relative">
+      <div className="flex-1 relative">
+        <div className="h-full min-h-[280px] w-full">
           <GoogleMapsSetup 
             places={places}
             onPinClick={onPinClick}
@@ -47,7 +47,7 @@ const MapSection = ({ places, onPinClick, mapCenter, selectedPlace, onCloseSelec
           />
           
           {/* Mobile-friendly instruction overlay */}
-          <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm rounded-lg px-3 py-2 shadow-sm border border-gray-200 max-w-[200px]">
+          <div className="absolute top-2 left-2 bg-white/95 backdrop-blur-sm rounded-lg px-2 py-1.5 shadow-sm border border-gray-200 max-w-[180px] z-10">
             <p className="text-xs text-gray-600">
               💡 Long press to add location
             </p>
