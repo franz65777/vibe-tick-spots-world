@@ -15,7 +15,7 @@ import { Place } from '@/types/place';
 const HomePage = () => {
   const { user } = useAuth();
   const { likedPlaces, toggleLike } = usePlaceLikes();
-  const { savedPlaces, toggleSave } = useSavedPlaces();
+  const { savedPlaces, isPlaceSaved, savePlace, unsavePlace } = useSavedPlaces();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'feed' | 'map'>('feed');
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
@@ -129,8 +129,18 @@ const HomePage = () => {
     setSelectedPlace(place);
   };
 
-  const handleSaveToggle = (place: Place) => {
-    toggleSave(place.id);
+  const handleSaveToggle = async (place: Place) => {
+    if (isPlaceSaved(place.id)) {
+      await unsavePlace(place.id, currentCity);
+    } else {
+      await savePlace({
+        id: place.id,
+        name: place.name,
+        category: place.category,
+        city: currentCity,
+        coordinates: place.coordinates
+      });
+    }
   };
 
   // Mock categories for filter
@@ -199,7 +209,7 @@ const HomePage = () => {
                   place={place}
                   onLikeToggle={() => toggleLike(place.id)}
                   isLiked={likedPlaces.has(place.id)}
-                  isSaved={savedPlaces.has(place.id)}
+                  isSaved={isPlaceSaved(place.id)}
                   onCardClick={handleCardClick}
                   onSaveToggle={handleSaveToggle}
                   onShare={() => handleShare(place)}
