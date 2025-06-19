@@ -1,3 +1,4 @@
+
 // Google Maps API configuration and loader
 declare global {
   interface Window {
@@ -10,19 +11,8 @@ declare global {
 // Updated with your actual Google Maps API key
 const GOOGLE_MAPS_API_KEY = 'AIzaSyDpY-PO8Gh6O1wZEQ4pkvr6U1kC-dq2uTg';
 
-// Check if API key is set
-if (GOOGLE_MAPS_API_KEY === 'YOUR_ACTUAL_GOOGLE_MAPS_API_KEY_HERE') {
-  console.error('⚠️ GOOGLE MAPS API KEY NOT SET! Please replace YOUR_ACTUAL_GOOGLE_MAPS_API_KEY_HERE with your actual API key in src/lib/googleMaps.ts');
-}
-
 export const loadGoogleMapsAPI = (): Promise<void> => {
   return new Promise((resolve, reject) => {
-    // Check if API key is properly configured
-    if (GOOGLE_MAPS_API_KEY === 'YOUR_ACTUAL_GOOGLE_MAPS_API_KEY_HERE') {
-      reject(new Error('Google Maps API key not configured. Please set your API key in src/lib/googleMaps.ts'));
-      return;
-    }
-
     // Check if Google Maps is already loaded and ready
     if (typeof window.google !== 'undefined' && 
         window.google.maps && 
