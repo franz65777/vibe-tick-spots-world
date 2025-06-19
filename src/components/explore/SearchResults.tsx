@@ -2,7 +2,7 @@
 import React from 'react';
 import UserCard from './UserCard';
 import { Place } from '@/types/place';
-import { MapPin, Users, Search, Heart, MessageCircle, Share2, Navigation, Star, Clock } from 'lucide-react';
+import { MapPin, Users, Search, Heart, MessageCircle, Share2, Navigation, Star, Clock, Bookmark } from 'lucide-react';
 
 interface SearchResultsProps {
   searchMode: 'locations' | 'users';
@@ -98,18 +98,18 @@ const SearchResults = ({
 
       {searchMode === 'locations' ? (
         <div className="px-4 pt-4 pb-4">
-          <div className="grid gap-4">
+          <div className="space-y-6">
             {filteredLocations.map((place) => (
               <div 
                 key={place.id} 
-                className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-300"
+                className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300"
               >
-                <div 
-                  className="cursor-pointer"
-                  onClick={() => onCardClick(place)}
-                >
-                  {/* Image Section */}
-                  <div className="relative aspect-[16/9] bg-gradient-to-br from-blue-100 to-indigo-100">
+                {/* Image section */}
+                <div className="relative">
+                  <div 
+                    className="aspect-[16/10] bg-gradient-to-br from-blue-100 to-indigo-100 cursor-pointer"
+                    onClick={() => onCardClick(place)}
+                  >
                     {place.image ? (
                       <img 
                         src={place.image} 
@@ -124,98 +124,78 @@ const SearchResults = ({
                       </div>
                     )}
                     
-                    {/* Badges */}
-                    <div className="absolute top-4 left-4 flex gap-2">
+                    {/* Category badge */}
+                    <div className="absolute top-4 left-4">
                       <div className="bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-medium text-gray-700 capitalize shadow-sm">
                         {place.category}
                       </div>
-                      {place.isNew && (
-                        <div className="bg-green-500 text-white px-3 py-1.5 rounded-full text-xs font-medium shadow-sm">
-                          New
-                        </div>
-                      )}
                     </div>
-                  </div>
 
-                  {/* Content Section */}
-                  <div className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-xl text-gray-900 mb-2 line-clamp-2 leading-tight">
-                          {place.name}
-                        </h3>
-                        
-                        {/* Stats Grid */}
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-red-50 rounded-lg flex items-center justify-center">
-                              <Heart className="w-4 h-4 text-red-500" />
-                            </div>
-                            <div>
-                              <div className="font-semibold text-gray-900">{place.likes || 0}</div>
-                              <div className="text-gray-500 text-xs">Likes</div>
-                            </div>
-                          </div>
-                          
-                          {place.distance && (
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
-                                <Navigation className="w-4 h-4 text-blue-500" />
-                              </div>
-                              <div>
-                                <div className="font-semibold text-gray-900">{place.distance}</div>
-                                <div className="text-gray-500 text-xs">Away</div>
-                              </div>
-                            </div>
-                          )}
-                          
-                          {place.visitors && (
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 bg-purple-50 rounded-lg flex items-center justify-center">
-                                <Users className="w-4 h-4 text-purple-500" />
-                              </div>
-                              <div>
-                                <div className="font-semibold text-gray-900">
-                                  {Array.isArray(place.visitors) ? place.visitors.length : place.visitors}
-                                </div>
-                                <div className="text-gray-500 text-xs">Visitors</div>
-                              </div>
-                            </div>
-                          )}
-                          
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-amber-50 rounded-lg flex items-center justify-center">
-                              <Star className="w-4 h-4 text-amber-500" />
-                            </div>
-                            <div>
-                              <div className="font-semibold text-gray-900">4.{Math.floor(Math.random() * 9) + 1}</div>
-                              <div className="text-gray-500 text-xs">Rating</div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                    {/* Save button */}
+                    <div className="absolute top-4 right-4">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Handle save functionality
+                        }}
+                        className="w-10 h-10 bg-white/95 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm hover:bg-white transition-colors"
+                      >
+                        <Bookmark className="w-5 h-5 text-gray-600" />
+                      </button>
                     </div>
                   </div>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="px-6 pb-6">
-                  <div className="grid grid-cols-3 gap-3">
+                {/* Content section */}
+                <div className="p-6">
+                  <div className="mb-4">
+                    <h3 className="font-bold text-xl text-gray-900 mb-2 leading-tight">
+                      {place.name}
+                    </h3>
+                    
+                    {/* Quick stats row */}
+                    <div className="flex items-center gap-6 text-sm text-gray-600">
+                      <div className="flex items-center gap-1">
+                        <Heart className="w-4 h-4 text-red-400" />
+                        <span className="font-medium">{place.likes}</span>
+                      </div>
+                      
+                      {place.distance && (
+                        <div className="flex items-center gap-1">
+                          <Navigation className="w-4 h-4 text-blue-400" />
+                          <span className="font-medium">{place.distance}</span>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center gap-1">
+                        <Users className="w-4 h-4 text-purple-400" />
+                        <span className="font-medium">
+                          {Array.isArray(place.visitors) ? place.visitors.length : place.visitors || 0}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center gap-1">
+                        <Star className="w-4 h-4 text-amber-400" />
+                        <span className="font-medium">4.{Math.floor(Math.random() * 9) + 1}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-3">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         onLikeToggle(place.id);
                       }}
-                      className={`flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-sm font-medium transition-all duration-200 ${
+                      className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-sm font-semibold transition-all duration-200 ${
                         likedPlaces.has(place.id)
                           ? 'bg-red-500 text-white shadow-lg shadow-red-200'
-                          : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
                       <Heart className={`w-4 h-4 ${likedPlaces.has(place.id) ? 'fill-current' : ''}`} />
-                      <span className="hidden sm:inline">
-                        {likedPlaces.has(place.id) ? 'Liked' : 'Like'}
-                      </span>
+                      {likedPlaces.has(place.id) ? 'Liked' : 'Like'}
                     </button>
                     
                     <button
@@ -223,10 +203,10 @@ const SearchResults = ({
                         e.stopPropagation();
                         onComment(place);
                       }}
-                      className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-sm font-medium bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200 transition-all duration-200"
+                      className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-sm font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-200"
                     >
                       <MessageCircle className="w-4 h-4" />
-                      <span className="hidden sm:inline">Comment</span>
+                      Comment
                     </button>
                     
                     <button
@@ -234,10 +214,10 @@ const SearchResults = ({
                         e.stopPropagation();
                         onShare(place);
                       }}
-                      className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-sm font-medium bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200 transition-all duration-200"
+                      className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-sm font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-200"
                     >
                       <Share2 className="w-4 h-4" />
-                      <span className="hidden sm:inline">Share</span>
+                      Share
                     </button>
                   </div>
                 </div>
