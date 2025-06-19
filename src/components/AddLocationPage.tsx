@@ -17,7 +17,7 @@ const AddLocationPage = () => {
     images: [] as File[]
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { getCurrentLocation, loading: geoLoading } = useGeolocation();
+  const { getCurrentLocation, loading: geoLoading, location } = useGeolocation();
 
   const categories = [
     { id: 'restaurant', name: '🍽️ Restaurant', color: 'bg-orange-100 text-orange-700' },
@@ -57,14 +57,17 @@ const AddLocationPage = () => {
 
   const handleCurrentLocation = async () => {
     try {
-      const position = await getCurrentLocation();
-      if (position) {
-        setFormData(prev => ({
-          ...prev,
-          coordinates: { lat: position.lat, lng: position.lng },
-          address: 'Current location'
-        }));
-      }
+      getCurrentLocation();
+      // Wait for location to be updated
+      setTimeout(() => {
+        if (location) {
+          setFormData(prev => ({
+            ...prev,
+            coordinates: { lat: location.latitude, lng: location.longitude },
+            address: location.city ? `Current location in ${location.city}` : 'Current location'
+          }));
+        }
+      }, 1000);
     } catch (error) {
       console.error('Error getting current location:', error);
     }
