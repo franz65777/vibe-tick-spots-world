@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Send, ArrowLeft, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,9 +10,10 @@ import { formatDistanceToNow } from 'date-fns';
 interface MessagesModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialUserId?: string | null;
 }
 
-const MessagesModal = ({ isOpen, onClose }: MessagesModalProps) => {
+const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) => {
   const {
     conversations,
     messages,
@@ -24,6 +25,13 @@ const MessagesModal = ({ isOpen, onClose }: MessagesModalProps) => {
   
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
+
+  // Load specific conversation if initialUserId is provided
+  useEffect(() => {
+    if (initialUserId && isOpen) {
+      loadMessages(initialUserId);
+    }
+  }, [initialUserId, isOpen, loadMessages]);
 
   const handleSendMessage = async () => {
     if (!activeConversation || !newMessage.trim() || sending) return;

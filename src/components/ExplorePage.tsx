@@ -22,7 +22,7 @@ const ExplorePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState<'locations' | 'users'>('locations');
   const [sortBy, setSortBy] = useState<'proximity' | 'likes' | 'followers'>('proximity');
-  const [isSearching, setIsSearching] = useState(false);
+  const [isSearching, setIsSearching] = useState(isSearching);
   const [filteredLocations, setFilteredLocations] = useState<Place[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
   const [recommendationsLoading, setRecommendationsLoading] = useState(true);
