@@ -2,7 +2,7 @@
 import React from 'react';
 import UserCard from './UserCard';
 import { Place } from '@/types/place';
-import { MapPin, Users, Search, Heart, MessageCircle, Share2, Navigation, Star } from 'lucide-react';
+import { MapPin, Users, Search, Heart, MessageCircle, Share2, Navigation, Star, Clock } from 'lucide-react';
 
 interface SearchResultsProps {
   searchMode: 'locations' | 'users';
@@ -68,24 +68,6 @@ const SearchResults = ({
             : "No users found with that name. Try searching with different terms or browse recommended users."
           }
         </p>
-        <div className="mt-6 p-4 bg-blue-50 rounded-xl max-w-sm">
-          <div className="text-sm text-blue-800 font-medium mb-2">💡 Search Tips:</div>
-          <div className="text-sm text-blue-700 space-y-1">
-            {searchMode === 'locations' ? (
-              <>
-                <div>• Try "coffee", "restaurant", or "park"</div>
-                <div>• Include neighborhood names</div>
-                <div>• Search by cuisine type</div>
-              </>
-            ) : (
-              <>
-                <div>• Try full names or usernames</div>
-                <div>• Check spelling and try variations</div>
-                <div>• Browse popular users instead</div>
-              </>
-            )}
-          </div>
-        </div>
       </div>
     );
   }
@@ -115,16 +97,19 @@ const SearchResults = ({
       </div>
 
       {searchMode === 'locations' ? (
-        <div className="px-4 pt-2 pb-4">
-          <div className="space-y-4">
+        <div className="px-4 pt-4 pb-4">
+          <div className="grid gap-4">
             {filteredLocations.map((place) => (
-              <div key={place.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <div 
+                key={place.id} 
+                className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-300"
+              >
                 <div 
                   className="cursor-pointer"
                   onClick={() => onCardClick(place)}
                 >
                   {/* Image Section */}
-                  <div className="relative h-48 bg-gradient-to-br from-blue-100 to-indigo-100">
+                  <div className="relative aspect-[16/9] bg-gradient-to-br from-blue-100 to-indigo-100">
                     {place.image ? (
                       <img 
                         src={place.image} 
@@ -139,64 +124,98 @@ const SearchResults = ({
                       </div>
                     )}
                     
-                    {/* Category Badge */}
-                    <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-medium text-gray-700 capitalize shadow-sm">
-                      {place.category}
-                    </div>
-                    
-                    {/* New Badge */}
-                    {place.isNew && (
-                      <div className="absolute top-3 right-3 bg-green-500 text-white px-3 py-1.5 rounded-full text-xs font-medium shadow-sm">
-                        New
+                    {/* Badges */}
+                    <div className="absolute top-4 left-4 flex gap-2">
+                      <div className="bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-medium text-gray-700 capitalize shadow-sm">
+                        {place.category}
                       </div>
-                    )}
-                  </div>
-
-                  {/* Content Section - Fixed Layout */}
-                  <div className="p-4">
-                    <h3 className="font-bold text-lg text-gray-900 mb-2 line-clamp-2 leading-tight">
-                      {place.name}
-                    </h3>
-                    
-                    {/* Stats Row - Fixed to prevent overlap */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-1 text-sm text-gray-600">
-                          <Heart className="w-4 h-4 text-red-500 flex-shrink-0" />
-                          <span className="font-medium">{place.likes || 0}</span>
-                        </div>
-                        {place.distance && (
-                          <div className="flex items-center gap-1 text-sm text-gray-600">
-                            <Navigation className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                            <span className="truncate">{place.distance}</span>
-                          </div>
-                        )}
-                      </div>
-                      {place.visitors && (
-                        <div className="text-sm text-gray-600 flex-shrink-0">
-                          {Array.isArray(place.visitors) ? place.visitors.length : place.visitors} visitors
+                      {place.isNew && (
+                        <div className="bg-green-500 text-white px-3 py-1.5 rounded-full text-xs font-medium shadow-sm">
+                          New
                         </div>
                       )}
                     </div>
                   </div>
+
+                  {/* Content Section */}
+                  <div className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-xl text-gray-900 mb-2 line-clamp-2 leading-tight">
+                          {place.name}
+                        </h3>
+                        
+                        {/* Stats Grid */}
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-red-50 rounded-lg flex items-center justify-center">
+                              <Heart className="w-4 h-4 text-red-500" />
+                            </div>
+                            <div>
+                              <div className="font-semibold text-gray-900">{place.likes || 0}</div>
+                              <div className="text-gray-500 text-xs">Likes</div>
+                            </div>
+                          </div>
+                          
+                          {place.distance && (
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
+                                <Navigation className="w-4 h-4 text-blue-500" />
+                              </div>
+                              <div>
+                                <div className="font-semibold text-gray-900">{place.distance}</div>
+                                <div className="text-gray-500 text-xs">Away</div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {place.visitors && (
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 bg-purple-50 rounded-lg flex items-center justify-center">
+                                <Users className="w-4 h-4 text-purple-500" />
+                              </div>
+                              <div>
+                                <div className="font-semibold text-gray-900">
+                                  {Array.isArray(place.visitors) ? place.visitors.length : place.visitors}
+                                </div>
+                                <div className="text-gray-500 text-xs">Visitors</div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-amber-50 rounded-lg flex items-center justify-center">
+                              <Star className="w-4 h-4 text-amber-500" />
+                            </div>
+                            <div>
+                              <div className="font-semibold text-gray-900">4.{Math.floor(Math.random() * 9) + 1}</div>
+                              <div className="text-gray-500 text-xs">Rating</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Action Buttons - Separated from content */}
-                <div className="px-4 pb-4 border-t border-gray-50">
-                  <div className="grid grid-cols-3 gap-2 pt-3">
+                {/* Action Buttons */}
+                <div className="px-6 pb-6">
+                  <div className="grid grid-cols-3 gap-3">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         onLikeToggle(place.id);
                       }}
-                      className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-sm font-medium transition-all ${
+                      className={`flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-sm font-medium transition-all duration-200 ${
                         likedPlaces.has(place.id)
-                          ? 'bg-red-50 text-red-600 border border-red-200'
-                          : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100'
+                          ? 'bg-red-500 text-white shadow-lg shadow-red-200'
+                          : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
                       }`}
                     >
-                      <Heart className={`w-4 h-4 flex-shrink-0 ${likedPlaces.has(place.id) ? 'fill-current' : ''}`} />
-                      <span className="hidden sm:inline truncate">{likedPlaces.has(place.id) ? 'Liked' : 'Like'}</span>
+                      <Heart className={`w-4 h-4 ${likedPlaces.has(place.id) ? 'fill-current' : ''}`} />
+                      <span className="hidden sm:inline">
+                        {likedPlaces.has(place.id) ? 'Liked' : 'Like'}
+                      </span>
                     </button>
                     
                     <button
@@ -204,10 +223,10 @@ const SearchResults = ({
                         e.stopPropagation();
                         onComment(place);
                       }}
-                      className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-sm font-medium bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-all"
+                      className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-sm font-medium bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200 transition-all duration-200"
                     >
-                      <MessageCircle className="w-4 h-4 flex-shrink-0" />
-                      <span className="hidden sm:inline truncate">Comment</span>
+                      <MessageCircle className="w-4 h-4" />
+                      <span className="hidden sm:inline">Comment</span>
                     </button>
                     
                     <button
@@ -215,10 +234,10 @@ const SearchResults = ({
                         e.stopPropagation();
                         onShare(place);
                       }}
-                      className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-sm font-medium bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 transition-all"
+                      className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-sm font-medium bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200 transition-all duration-200"
                     >
-                      <Share2 className="w-4 h-4 flex-shrink-0" />
-                      <span className="hidden sm:inline truncate">Share</span>
+                      <Share2 className="w-4 h-4" />
+                      <span className="hidden sm:inline">Share</span>
                     </button>
                   </div>
                 </div>
@@ -227,7 +246,7 @@ const SearchResults = ({
           </div>
         </div>
       ) : (
-        <div className="px-4 pt-2 pb-4 space-y-3">
+        <div className="px-4 pt-4 pb-4 space-y-3">
           {filteredUsers.map((user) => (
             <UserCard
               key={user.id}

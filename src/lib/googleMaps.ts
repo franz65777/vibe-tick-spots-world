@@ -1,4 +1,3 @@
-
 // Google Maps API configuration and loader
 declare global {
   interface Window {
@@ -8,9 +7,8 @@ declare global {
   }
 }
 
-// You need to replace this with your actual Google Maps API key
-// Get it from: https://console.developers.google.com/apis/credentials
-const GOOGLE_MAPS_API_KEY = 'YOUR_ACTUAL_GOOGLE_MAPS_API_KEY_HERE';
+// Updated with your actual Google Maps API key
+const GOOGLE_MAPS_API_KEY = 'AIzaSyDpY-PO8Gh6O1wZEQ4pkvr6U1kC-dq2uTg';
 
 // Check if API key is set
 if (GOOGLE_MAPS_API_KEY === 'YOUR_ACTUAL_GOOGLE_MAPS_API_KEY_HERE') {
