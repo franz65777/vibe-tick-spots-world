@@ -57,7 +57,7 @@ const HomePage = () => {
     visitors: Array.isArray(pin.visitors) ? pin.visitors : [],
     isNew: pin.isNew || false,
     image: pin.image,
-    addedBy: typeof pin.addedBy === 'string' ? pin.addedBy : (pin.addedBy || 'user'),
+    addedBy: typeof pin.addedBy === 'string' ? pin.addedBy : 'user',
     addedDate: pin.addedDate,
     isFollowing: pin.isFollowing,
     popularity: pin.popularity,
@@ -147,7 +147,8 @@ const HomePage = () => {
     category: 'park',
     likes: 245,
     saves: 89,
-    coordinates: { lat: 40.7829, lng: -73.9654 }
+    coordinates: { lat: 40.7829, lng: -73.9654 },
+    visitors: 156
   };
 
   return (
@@ -174,40 +175,10 @@ const HomePage = () => {
       {/* Location of the Week */}
       <div className="bg-white px-4 py-4 border-b border-gray-100">
         <LocationOfTheWeek 
-          location={locationOfTheWeek}
-          onLocationClick={() => {
-            const place: Place = {
-              id: locationOfTheWeek.id,
-              name: locationOfTheWeek.name,
-              category: locationOfTheWeek.category,
-              coordinates: locationOfTheWeek.coordinates,
-              likes: locationOfTheWeek.likes,
-              visitors: [],
-              isNew: false,
-              image: locationOfTheWeek.image,
-              addedBy: 'admin',
-              addedDate: new Date().toISOString(),
-              totalSaves: locationOfTheWeek.saves
-            };
+          topLocation={locationOfTheWeek}
+          onLocationClick={(place: Place) => {
             handlePinClick(place);
           }}
-          onLike={() => toggleLike(locationOfTheWeek.id)}
-          onSave={() => {
-            const place = {
-              id: locationOfTheWeek.id,
-              name: locationOfTheWeek.name,
-              category: locationOfTheWeek.category,
-              city: currentCity,
-              coordinates: locationOfTheWeek.coordinates
-            };
-            if (isPlaceSaved(locationOfTheWeek.id)) {
-              unsavePlace(locationOfTheWeek.id, currentCity);
-            } else {
-              savePlace(place);
-            }
-          }}
-          isLiked={likedPlaces.has(locationOfTheWeek.id)}
-          isSaved={isPlaceSaved(locationOfTheWeek.id)}
         />
       </div>
 
