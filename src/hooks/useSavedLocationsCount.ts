@@ -13,7 +13,7 @@ export const useSavedLocationsCount = () => {
       const stats = getStats();
       setCount(stats.places);
     }
-  }, [loading]);
+  }, [getStats, loading]);
 
   const updateCount = (increment: boolean) => {
     setCount(prev => increment ? prev + 1 : Math.max(0, prev - 1));

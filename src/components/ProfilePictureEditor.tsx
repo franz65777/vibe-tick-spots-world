@@ -18,7 +18,7 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
   currentAvatarUrl
 }) => {
   const { user } = useAuth();
-  const { updateProfile, refreshProfile } = useProfile();
+  const { updateProfile, refetch } = useProfile();
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -79,7 +79,7 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
       if (updateError) throw updateError;
 
       // Refresh the profile data
-      await refreshProfile();
+      await refetch();
 
       onClose();
       setPreviewUrl(null);
@@ -109,7 +109,7 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
       if (updateError) throw updateError;
 
       // Refresh the profile data
-      await refreshProfile();
+      await refetch();
 
       onClose();
       setPreviewUrl(null);

@@ -1,281 +1,380 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { usePlaceLikes } from '@/hooks/usePlaceLikes';
-import { useSavedPlaces } from '@/hooks/useSavedPlaces';
-import { useMapPins } from '@/hooks/useMapPins';
-import { useNotifications } from '@/hooks/useNotifications';
 import Header from './home/Header';
 import StoriesSection from './home/StoriesSection';
 import FilterButtons from './home/FilterButtons';
-import MapSection from './home/MapSection';
-import ModalsManager from './home/ModalsManager';
+import PlaceCard from './home/PlaceCard';
 import LocationOfTheWeek from './home/LocationOfTheWeek';
+import MapSection from './home/MapSection';
+import PlaceInteractionModal from './home/PlaceInteractionModal';
+import CreateStoryModal from './CreateStoryModal';
 import NotificationsModal from './NotificationsModal';
 import MessagesModal from './MessagesModal';
+import { useMapPins } from '@/hooks/useMapPins';
+import { useAnalytics } from '@/hooks/useAnalytics';
+import { useGeolocation } from '@/hooks/useGeolocation';
+import { useSavedPlaces } from '@/hooks/useSavedPlaces';
+import { useStories } from '@/hooks/useStories';
+import { usePlaceLikes } from '@/hooks/usePlaceLikes';
 import { Place } from '@/types/place';
 
-interface Story {
+interface HomeStory {
   id: string;
   userId: string;
   userName: string;
   userAvatar: string;
-  preview: string;
-  timestamp: Date;
   isViewed: boolean;
-  mediaType: 'image' | 'video';
-  mediaUrl: string;
   locationId: string;
   locationName: string;
+  locationCategory?: string;
 }
 
+const demoStories: HomeStory[] = [
+  {
+    id: 'story1',
+    userId: 'user1',
+    userName: 'Alice',
+    userAvatar: 'https://i.pravatar.cc/48?img=1',
+    isViewed: false,
+    locationId: '1',
+    locationName: 'Cozy Coffee Shop',
+    locationCategory: 'cafe'
+  },
+  {
+    id: 'story2',
+    userId: 'user2',
+    userName: 'Bob',
+    userAvatar: 'https://i.pravatar.cc/48?img=2',
+    isViewed: false,
+    locationId: '2',
+    locationName: 'The Art Museum',
+    locationCategory: 'museum'
+  },
+  {
+    id: 'story3',
+    userId: 'user3',
+    userName: 'Charlie',
+    userAvatar: 'https://i.pravatar.cc/48?img=3',
+    isViewed: false,
+    locationId: '3',
+    locationName: 'Greenwood Park',
+    locationCategory: 'park'
+  },
+];
+
 const HomePage = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
-  const { likedPlaces, toggleLike } = usePlaceLikes();
-  const { savedPlaces, savePlace, unsavePlace, isPlaceSaved } = useSavedPlaces();
-  const { notifications, unreadCount } = useNotifications();
-  const [activeFilter, setActiveFilter] = useState<'following' | 'popular'>('following');
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const { pins, loading, refreshPins, hasFollowedUsers } = useMapPins(activeFilter);
+  const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'new'>('following');
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
-  const [sharePlace, setSharePlace] = useState<Place | null>(null);
-  const [commentPlace, setCommentPlace] = useState<Place | null>(null);
+  const [isInteractionModalOpen, setIsInteractionModalOpen] = useState(false);
   const [isCreateStoryModalOpen, setIsCreateStoryModalOpen] = useState(false);
-  const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
-  const [isMessagesModalOpen, setIsMessagesModalOpen] = useState(false);
-  
-  // Add search state management
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isMessagesOpen, setIsMessagesOpen] = useState(false);
+  const [currentCity, setCurrentCity] = useState('San Francisco');
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentCity, setCurrentCity] = useState('New York');
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 37.7749, lng: -122.4194 });
+  
+  const { pins, loading, error, refreshPins, hasFollowedUsers } = useMapPins(activeFilter);
+  const { trackUserAction, trackPlaceInteraction } = useAnalytics();
+  const { location, getCurrentLocation } = useGeolocation();
+  const { savedPlaces, savePlace, unsavePlace, isPlaceSaved } = useSavedPlaces();
+  const { refetch: refetchStories } = useStories();
+  const { likedPlaces, toggleLike, isLiked } = usePlaceLikes();
 
-  // Convert pins to places format and filter by categories - FIXED FILTERING
-  const places: Place[] = pins
-    .map(pin => ({
-      id: pin.id,
-      name: pin.name,
-      category: pin.category,
-      coordinates: pin.coordinates,
-      likes: pin.likes,
-      visitors: Array.isArray(pin.visitors) ? pin.visitors : [],
-      isNew: pin.isNew || false,
-      image: pin.image,
-      addedBy: typeof pin.addedBy === 'string' ? pin.addedBy : 'user',
-      addedDate: pin.addedDate,
-      isFollowing: pin.isFollowing,
-      popularity: pin.popularity,
-      distance: pin.distance,
-      totalSaves: pin.totalSaves
-    }))
-    .filter(place => {
-      // If no categories selected, show all places
-      if (selectedCategories.length === 0) {
-        return true;
-      }
-      // Only show places that match selected categories
-      return selectedCategories.includes(place.category);
-    });
-
-  const [mapCenter] = useState({ lat: 40.7589, lng: -73.9851 });
-
-  // Mock stories data with correct Story interface
-  const [stories] = useState<Story[]>([
-    { 
-      id: '1', 
-      userId: 'user1',
-      userName: 'John', 
-      userAvatar: '', 
-      preview: '', 
-      timestamp: new Date(),
-      isViewed: false,
-      mediaType: 'image' as const,
-      mediaUrl: '',
-      locationId: '1',
-      locationName: 'Café Central'
-    },
-    { 
-      id: '2', 
-      userId: 'user2',
-      userName: 'Sarah', 
-      userAvatar: '', 
-      preview: '', 
-      timestamp: new Date(),
-      isViewed: false,
-      mediaType: 'image' as const,
-      mediaUrl: '',
-      locationId: '2',
-      locationName: 'Brooklyn Bridge'
+  useEffect(() => {
+    if (!user) {
+      navigate('/auth');
     }
-  ]);
+  }, [user, navigate]);
 
-  const handlePinClick = (place: Place) => {
-    setSelectedPlace(place);
-  };
+  useEffect(() => {
+    refreshPins(currentCity);
+  }, [currentCity, refreshPins]);
 
-  const handleShare = (place: Place) => {
-    setSharePlace(place);
-  };
-
-  const handleComment = (place: Place) => {
-    setCommentPlace(place);
-  };
-
-  const handleCommentSubmit = (comment: string) => {
-    console.log('Comment submitted:', comment);
-    setCommentPlace(null);
-  };
-
-  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      console.log('Search query:', searchQuery);
-    }
-  };
-
-  const handleNotificationsClick = () => {
-    setIsNotificationsModalOpen(true);
-  };
-
-  const handleMessagesClick = () => {
-    setIsMessagesModalOpen(true);
+  const handleFilterChange = (filter: 'following' | 'popular' | 'new') => {
+    setActiveFilter(filter);
+    trackUserAction('filter_change', { filter });
   };
 
   const handleCitySelect = (city: string) => {
+    console.log('City selected:', city);
     setCurrentCity(city);
-    setSearchQuery('');
-    refreshPins(city);
-  };
-
-  const handleFilterChange = (filter: 'following' | 'popular') => {
-    console.log('Filter changed to:', filter);
-    setActiveFilter(filter);
-    // Clear selected categories when switching filters
-    setSelectedCategories([]);
-  };
-
-  const handleCategoryChange = (categories: string[]) => {
-    console.log('Categories changed to:', categories);
-    setSelectedCategories(categories);
-  };
-
-  // Get location of the week based on current city
-  const getLocationOfTheWeek = () => {
-    const locationsByCity: Record<string, any> = {
-      'New York': {
-        id: 'lotw-ny',
-        name: 'Central Park Conservatory Garden',
-        image: 'https://images.unsplash.com/photo-1568515387631-8b650bbcdb90?w=400&h=300&fit=crop',
-        category: 'park',
-        likes: 245,
-        coordinates: { lat: 40.7829, lng: -73.9654 },
-        visitors: 156
-      },
-      'San Francisco': {
-        id: 'lotw-sf',
-        name: 'Golden Gate Park Japanese Tea Garden',
-        image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
-        category: 'park',
-        likes: 189,
-        coordinates: { lat: 37.7701, lng: -122.4696 },
-        visitors: 123
-      },
-      'Milan': {
-        id: 'lotw-milan',
-        name: 'Navigli District',
-        image: 'https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=400&h=300&fit=crop',
-        category: 'attraction',
-        likes: 167,
-        coordinates: { lat: 45.4583, lng: 9.1756 },
-        visitors: 89
-      },
-      'Paris': {
-        id: 'lotw-paris',
-        name: 'Jardin du Luxembourg',
-        image: 'https://images.unsplash.com/photo-1502602898536-47ad22581b52?w=400&h=300&fit=crop',
-        category: 'park',
-        likes: 298,
-        coordinates: { lat: 48.8462, lng: 2.3372 },
-        visitors: 201
-      }
+    // Update map center based on city
+    const cityCoordinates: Record<string, { lat: number; lng: number }> = {
+      'San Francisco': { lat: 37.7749, lng: -122.4194 },
+      'Milan': { lat: 45.4642, lng: 9.1900 },
+      'Paris': { lat: 48.8566, lng: 2.3522 },
+      'New York': { lat: 40.7128, lng: -74.0060 },
+      'London': { lat: 51.5074, lng: -0.1278 },
+      'Tokyo': { lat: 35.6762, lng: 139.6503 },
+      'Rome': { lat: 41.9028, lng: 12.4964 },
+      'Barcelona': { lat: 41.3851, lng: 2.1734 },
+      'Amsterdam': { lat: 52.3676, lng: 4.9041 },
+      'Sydney': { lat: -33.8688, lng: 151.2093 },
+      'Dublin': { lat: 53.3498, lng: -6.2603 }
     };
-
-    return locationsByCity[currentCity] || locationsByCity['New York'];
+    
+    const coordinates = cityCoordinates[city] || cityCoordinates['San Francisco'];
+    setMapCenter(coordinates);
   };
+
+  const handleCreateStory = () => {
+    setIsCreateStoryModalOpen(true);
+  };
+
+  const handleStoryCreated = async () => {
+    await refetchStories();
+    setIsCreateStoryModalOpen(false);
+  };
+
+  const handleLikeToggle = async (placeId: string) => {
+    const success = await toggleLike(placeId);
+    if (success) {
+      trackPlaceInteraction(placeId, 'like');
+    }
+  };
+
+  const handleSaveToggle = (place: Place) => {
+    const isSaved = isPlaceSaved(place.id);
+    
+    if (isSaved) {
+      unsavePlace(place.id, currentCity);
+    } else {
+      savePlace({
+        id: place.id,
+        name: place.name,
+        category: place.category,
+        city: currentCity,
+        coordinates: place.coordinates
+      });
+    }
+    
+    trackPlaceInteraction(place.id, 'save');
+  };
+
+  const handleComment = (place: Place) => {
+    console.log('Comment on:', place);
+    trackPlaceInteraction(place.id, 'comment');
+  };
+
+  const handleShare = (place: Place) => {
+    console.log('Share:', place);
+    trackPlaceInteraction(place.id, 'share');
+  };
+
+  const handleCardClick = (place: Place) => {
+    setSelectedPlace(place);
+    setIsInteractionModalOpen(true);
+  };
+
+  const handlePinClick = (pin: any) => {
+    const place: Place = convertPinToPlace(pin);
+    setSelectedPlace(place);
+  };
+
+  const handleNotificationsClick = () => {
+    setIsNotificationsOpen(true);
+  };
+
+  const handleMessagesClick = () => {
+    setIsMessagesOpen(true);
+  };
+
+  // Calculate distance between two coordinates in km
+  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+    return distance;
+  };
+
+  // Convert pins to places for PlaceCard display with proper type handling
+  const convertPinToPlace = (pin: any): Place => {
+    // Calculate real distance from user location
+    let distance: string = '0km';
+    if (location && pin.coordinates) {
+      const dist = calculateDistance(
+        location.latitude,
+        location.longitude,
+        pin.coordinates.lat,
+        pin.coordinates.lng
+      );
+      distance = `${dist.toFixed(1)}km`;
+    }
+
+    // Ensure visitors is always an array of strings
+    let visitors: string[] = [];
+    if (Array.isArray(pin.visitors)) {
+      visitors = pin.visitors.map((v: any) => String(v));
+    } else if (typeof pin.visitors === 'number') {
+      visitors = Array.from({ length: pin.visitors }, (_, i) => `visitor_${i}`);
+    }
+
+    // Ensure friendsWhoSaved is properly handled - always convert to array format
+    let friendsWhoSaved: { name: string; avatar: string }[] = [];
+    if (Array.isArray(pin.friendsWhoSaved)) {
+      friendsWhoSaved = pin.friendsWhoSaved;
+    } else if (typeof pin.friendsWhoSaved === 'number') {
+      // Convert number to array of mock friends
+      friendsWhoSaved = Array.from({ length: Math.min(pin.friendsWhoSaved, 3) }, (_, i) => ({
+        name: `Friend ${i + 1}`,
+        avatar: `https://i.pravatar.cc/40?img=${i + 1}`
+      }));
+    }
+
+    return {
+      id: pin.id,
+      name: pin.name,
+      category: pin.category,
+      likes: pin.likes || 0,
+      friendsWhoSaved,
+      visitors,
+      isNew: pin.isNew || false,
+      coordinates: pin.coordinates,
+      image: pin.image,
+      addedBy: pin.addedBy,
+      addedDate: pin.addedDate,
+      isFollowing: pin.isFollowing,
+      popularity: pin.popularity,
+      distance,
+      totalSaves: pin.totalSaves || pin.likes || 0
+    };
+  };
+
+  // Convert pins to places with proper type handling
+  const convertedPlaces: Place[] = pins.map(pin => convertPinToPlace(pin));
+
+  // Get top location for Location of the Week
+  const getTopLocation = () => {
+    if (pins.length === 0) return null;
+    
+    const sortedPins = [...pins].sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+    return sortedPins[0];
+  };
+
+  const topLocation = getTopLocation();
+  const newCount = pins.filter(pin => pin.isNew).length;
+
+  // Show message if no followed users for following filter
+  const showNoFollowedUsersMessage = activeFilter === 'following' && !hasFollowedUsers;
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
-      {/* Header */}
+    <div className="flex flex-col h-full bg-white">
       <Header 
         searchQuery={searchQuery}
         currentCity={currentCity}
         onSearchChange={setSearchQuery}
-        onSearchKeyPress={handleSearchKeyPress}
+        onSearchKeyPress={() => {}}
         onNotificationsClick={handleNotificationsClick}
         onMessagesClick={handleMessagesClick}
         onCitySelect={handleCitySelect}
       />
-
-      {/* Stories Section */}
-      <div className="bg-white px-4 py-3 border-b border-gray-100">
-        <StoriesSection 
-          stories={stories}
-          onCreateStory={() => setIsCreateStoryModalOpen(true)} 
-        />
-      </div>
-
+      
+      <StoriesSection 
+        stories={demoStories}
+        onCreateStory={handleCreateStory}
+        onStoryClick={() => {}}
+      />
+      
       {/* Location of the Week */}
-      <div className="bg-white px-4 py-4 border-b border-gray-100">
+      {topLocation && (
         <LocationOfTheWeek 
-          topLocation={getLocationOfTheWeek()}
-          onLocationClick={(place: Place) => {
-            handlePinClick(place);
+          topLocation={topLocation}
+          onLocationClick={() => {
+            const place = convertPinToPlace(topLocation);
+            handleCardClick(place);
           }}
         />
-      </div>
+      )}
 
-      {/* Filter Buttons */}
-      <div className="bg-white px-4 py-3 border-b border-gray-100 sticky top-0 z-10">
-        <FilterButtons
-          activeFilter={activeFilter}
-          onFilterChange={handleFilterChange}
-          selectedCategories={selectedCategories}
-          onCategoryChange={handleCategoryChange}
-        />
-      </div>
-      
-      {/* Map Section */}
-      <div className="flex-1 overflow-hidden">
-        <MapSection
-          places={places}
-          onPinClick={handlePinClick}
-          mapCenter={mapCenter}
-          selectedPlace={selectedPlace}
-          onCloseSelectedPlace={() => setSelectedPlace(null)}
-        />
-      </div>
+      <FilterButtons 
+        activeFilter={activeFilter} 
+        onFilterChange={handleFilterChange}
+        newCount={newCount}
+      />
+
+      {/* No followed users message */}
+      {showNoFollowedUsersMessage && (
+        <div className="px-4 py-6 text-center">
+          <div className="bg-blue-50 rounded-2xl p-6 border border-blue-100">
+            <div className="text-blue-600 text-lg font-semibold mb-2">
+              Start following explorers!
+            </div>
+            <div className="text-blue-500 text-sm mb-4">
+              Follow other users to see their favorite places and discoveries in your feed.
+            </div>
+            <button
+              onClick={() => navigate('/explore')}
+              className="bg-blue-600 text-white px-6 py-2 rounded-xl font-medium hover:bg-blue-700 transition-colors"
+            >
+              Discover Users
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Map Section - Full height when no place selected */}
+      {!showNoFollowedUsersMessage && (
+        <div className="flex-1 flex flex-col">
+          <MapSection
+            places={convertedPlaces}
+            onPinClick={handlePinClick}
+            mapCenter={mapCenter}
+            selectedPlace={selectedPlace}
+            onCloseSelectedPlace={() => setSelectedPlace(null)}
+          />
+
+          {/* Selected Place Card - Only show when a pin is selected */}
+          {selectedPlace && (
+            <div className="px-4 pb-20">
+              <PlaceCard
+                place={selectedPlace}
+                isLiked={isLiked(selectedPlace.id)}
+                isSaved={isPlaceSaved(selectedPlace.id)}
+                onCardClick={handleCardClick}
+                onLikeToggle={handleLikeToggle}
+                onSaveToggle={handleSaveToggle}
+                onComment={handleComment}
+                onShare={handleShare}
+                cityName={currentCity}
+                userLocation={location}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Modals */}
-      <ModalsManager
-        selectedPlace={selectedPlace}
-        onCloseSelectedPlace={() => setSelectedPlace(null)}
-        sharePlace={sharePlace}
-        onCloseShare={() => setSharePlace(null)}
-        commentPlace={commentPlace}
-        onCloseComment={() => setCommentPlace(null)}
-        onCommentSubmit={handleCommentSubmit}
-        isCreateStoryModalOpen={isCreateStoryModalOpen}
-        onCloseCreateStory={() => setIsCreateStoryModalOpen(false)}
-        likedPlaces={likedPlaces}
-        onToggleLike={toggleLike}
+      <CreateStoryModal
+        isOpen={isCreateStoryModalOpen}
+        onClose={() => setIsCreateStoryModalOpen(false)}
+        onStoryCreated={handleStoryCreated}
       />
 
-      {/* Notifications Modal */}
+      {isInteractionModalOpen && selectedPlace && (
+        <PlaceInteractionModal
+          place={selectedPlace}
+          mode="comments"
+          isOpen={isInteractionModalOpen}
+          onClose={() => setIsInteractionModalOpen(false)}
+        />
+      )}
+
       <NotificationsModal
-        isOpen={isNotificationsModalOpen}
-        onClose={() => setIsNotificationsModalOpen(false)}
+        isOpen={isNotificationsOpen}
+        onClose={() => setIsNotificationsOpen(false)}
       />
 
-      {/* Messages Modal */}
       <MessagesModal
-        isOpen={isMessagesModalOpen}
-        onClose={() => setIsMessagesModalOpen(false)}
+        isOpen={isMessagesOpen}
+        onClose={() => setIsMessagesOpen(false)}
       />
     </div>
   );

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Heart, MessageSquare, Users, MapPin, Share2, Building2, Star, Navigation, Bookmark } from 'lucide-react';
+import { Heart, MessageSquare, Users, MapPin, Share2, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import PlaceInteractionModal from './PlaceInteractionModal';
 import { Place } from '@/types/place';
@@ -55,28 +55,32 @@ const PlaceCard = ({
     onSaveToggle(place);
   };
 
-  // Helper functions
+  // Helper to get visitor count
   const getVisitorCount = () => {
     if (typeof place.visitors === 'number') return place.visitors;
     return place.visitors?.length || 0;
   };
 
+  // Helper to get saves count
   const getSavesCount = () => {
     if (place.totalSaves) return place.totalSaves;
     if (typeof place.friendsWhoSaved === 'number') return place.friendsWhoSaved;
     return place.friendsWhoSaved?.length || 0;
   };
 
+  // Helper to get distance string
   const getDistanceString = () => {
     if (!place.distance) return null;
     if (typeof place.distance === 'string') return place.distance;
     return `${place.distance}km`;
   };
 
+  // Helper to get image with fallback
   const getImageUrl = () => {
     return place.image || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop';
   };
 
+  // Check if this is a business location
   const isBusinessLocation = () => {
     return typeof place.addedBy === 'object' && place.addedBy?.isFollowing === false;
   };
@@ -84,124 +88,145 @@ const PlaceCard = ({
   return (
     <>
       <div 
-        className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 group"
+        className="bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 group"
         onClick={() => onCardClick(place)}
       >
         {/* Image section */}
-        <div className="relative">
-          <div className="aspect-[16/10] overflow-hidden cursor-pointer">
-            <img 
-              src={getImageUrl()} 
-              alt={place.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            />
-          </div>
-          
-          {/* Overlay content */}
+        <div className="relative h-48 overflow-hidden">
+          <img 
+            src={getImageUrl()} 
+            alt={place.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
           
-          {/* Top badges */}
-          <div className="absolute top-4 left-4 flex gap-2">
-            <div className="bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-medium text-gray-700 capitalize shadow-sm">
-              {place.category}
+          {/* Business badge - only if owned by business */}
+          {isBusinessLocation() && (
+            <div className="absolute top-3 right-3">
+              <div className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                <Building2 className="w-3 h-3" />
+                Business
+              </div>
             </div>
-            {place.isNew && (
-              <div className="bg-green-500 text-white px-3 py-1.5 rounded-full text-xs font-medium shadow-sm">
-                New
+          )}
+        </div>
+
+        {/* Content section */}
+        <div className="p-4">
+          <div className="flex items-start justify-between mb-2">
+            <div className="flex-1">
+              <h3 className="font-bold text-gray-900 text-lg leading-tight">{place.name}</h3>
+              <div className="flex items-center gap-1 text-gray-500 mt-1">
+                <MapPin className="w-3 h-3" />
+                <span className="text-sm">{cityName}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Stats with travel-inspired icons */}
+          <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
+            <div className="flex items-center gap-1">
+              <Heart className="w-4 h-4 text-red-400" />
+              <span>{place.likes}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <svg className="w-4 h-4 text-purple-500" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
+              </svg>
+              <span>{getSavesCount()} saved</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Users className="w-4 h-4 text-blue-400" />
+              <span>{getVisitorCount()} visited</span>
+            </div>
+            {getDistanceString() && (
+              <div className="flex items-center gap-1">
+                <svg className="w-4 h-4 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 12h18m-9-9l9 9-9 9"/>
+                </svg>
+                <span>{getDistanceString()}</span>
               </div>
             )}
           </div>
 
-          {/* Save button */}
-          <div className="absolute top-4 right-4">
-            <button
-              onClick={handleSaveClick}
-              className={`w-10 h-10 rounded-full flex items-center justify-center shadow-sm transition-all duration-200 ${
-                isSaved 
-                  ? 'bg-blue-500 text-white shadow-lg shadow-blue-200' 
-                  : 'bg-white/95 backdrop-blur-sm text-gray-600 hover:bg-white'
-              }`}
-            >
-              <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
-            </button>
-          </div>
-        </div>
-
-        {/* Content section */}
-        <div className="p-6">
-          <div className="mb-4">
-            <h3 className="font-bold text-xl text-gray-900 mb-2 leading-tight">
-              {place.name}
-            </h3>
-            <div className="flex items-center gap-1 text-gray-500 mb-3">
-              <MapPin className="w-4 h-4" />
-              <span className="text-sm">{cityName}</span>
-            </div>
-
-            {/* Stats row */}
-            <div className="flex items-center gap-6 text-sm text-gray-600">
-              <div className="flex items-center gap-1">
-                <Heart className="w-4 h-4 text-red-400" />
-                <span className="font-medium">{place.likes}</span>
-              </div>
-              
-              <div className="flex items-center gap-1">
-                <Bookmark className="w-4 h-4 text-purple-500" />
-                <span className="font-medium">{getSavesCount()}</span>
-              </div>
-              
-              <div className="flex items-center gap-1">
-                <Users className="w-4 h-4 text-blue-400" />
-                <span className="font-medium">{getVisitorCount()}</span>
-              </div>
-              
-              {getDistanceString() && (
-                <div className="flex items-center gap-1">
-                  <Navigation className="w-4 h-4 text-green-400" />
-                  <span className="font-medium">{getDistanceString()}</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Action buttons */}
-          <div className="flex items-center gap-3">
-            <button
+          {/* Action buttons with unique travel-inspired design */}
+          <div className="flex items-center gap-2">
+            <Button
               onClick={handleLikeClick}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-sm font-semibold transition-all duration-200 ${
+              variant="ghost"
+              size="sm"
+              className={`flex-1 rounded-xl transition-all duration-200 ${
                 isLiked 
-                  ? 'bg-red-500 text-white shadow-lg shadow-red-200'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-red-50 text-red-600 hover:bg-red-100' 
+                  : 'text-gray-600 hover:bg-red-50 hover:text-red-600'
               }`}
             >
-              <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-              {isLiked ? 'Liked' : 'Like'}
-            </button>
-            
-            <button
+              <Heart className={`w-4 h-4 mr-2 ${isLiked ? 'fill-current' : ''}`} />
+              Like
+            </Button>
+
+            <Button
+              onClick={handleSaveClick}
+              variant="ghost"
+              size="sm"
+              className={`flex-1 rounded-xl transition-all duration-200 ${
+                isSaved 
+                  ? 'bg-purple-50 text-purple-600 hover:bg-purple-100' 
+                  : 'text-gray-600 hover:bg-purple-50 hover:text-purple-600'
+              }`}
+            >
+              <svg className={`w-4 h-4 mr-2 ${isSaved ? 'fill-current' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
+              </svg>
+              Save
+            </Button>
+
+            <Button
               onClick={handleCommentClick}
-              className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-sm font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-200"
+              variant="ghost"
+              size="sm"
+              className="flex-1 rounded-xl text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200"
             >
-              <MessageSquare className="w-4 h-4" />
-              Comment
-            </button>
-            
-            <button
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Stories
+            </Button>
+
+            <Button
               onClick={handleShareClick}
-              className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-sm font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-200"
+              variant="ghost"
+              size="sm"
+              className="flex-1 rounded-xl text-gray-600 hover:bg-orange-50 hover:text-orange-600 transition-all duration-200"
             >
-              <Share2 className="w-4 h-4" />
+              <Share2 className="w-4 h-4 mr-2" />
               Share
-            </button>
+            </Button>
           </div>
+
+          {/* Added by section */}
+          {place.addedBy && (
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <span>Discovered by</span>
+                <span className="font-medium text-gray-700">
+                  {typeof place.addedBy === 'string' ? place.addedBy : place.addedBy.name}
+                </span>
+                {place.addedDate && (
+                  <>
+                    <span>•</span>
+                    <span>{place.addedDate}</span>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
       <PlaceInteractionModal
         isOpen={interactionModal.isOpen}
         onClose={() => setInteractionModal({ isOpen: false, mode: 'comments' })}
-        place={place}
         mode={interactionModal.mode}
+        place={place}
       />
     </>
   );
