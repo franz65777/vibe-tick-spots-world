@@ -83,21 +83,79 @@ const SearchResults = ({
       </div>
 
       {searchMode === 'locations' ? (
-        <div className="px-4 space-y-4">
+        <div className="px-2 space-y-3">
           {filteredLocations.map((place) => (
             <div key={place.id} className="w-full">
-              <PlaceCard
-                place={place}
-                isLiked={likedPlaces.has(place.id)}
-                isSaved={false}
-                onCardClick={onCardClick}
-                onLikeToggle={onLikeToggle}
-                onSaveToggle={() => {}}
-                onComment={onComment}
-                onShare={onShare}
-                cityName="Search Results"
-                userLocation={null}
-              />
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                {/* Mobile-optimized place card */}
+                <div className="flex p-3 gap-3">
+                  {/* Image */}
+                  <div className="flex-shrink-0">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-gray-100">
+                      {place.image ? (
+                        <img 
+                          src={place.image} 
+                          alt={place.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <MapPin className="w-6 h-6 text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div 
+                      className="cursor-pointer"
+                      onClick={() => onCardClick(place)}
+                    >
+                      <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate mb-1">
+                        {place.name}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-gray-500 capitalize mb-2">
+                        {place.category}
+                      </p>
+                      <div className="flex items-center gap-4 text-xs text-gray-500">
+                        <span className="flex items-center gap-1">
+                          ❤️ {place.likes || 0}
+                        </span>
+                        {place.distance && (
+                          <span>{place.distance}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="flex items-center gap-2 mt-3">
+                      <button
+                        onClick={() => onLikeToggle(place.id)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                          likedPlaces.has(place.id)
+                            ? 'bg-red-50 text-red-600 border border-red-200'
+                            : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100'
+                        }`}
+                      >
+                        {likedPlaces.has(place.id) ? '❤️ Liked' : '🤍 Like'}
+                      </button>
+                      <button
+                        onClick={() => onShare(place)}
+                        className="px-3 py-1.5 rounded-full text-xs font-medium bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 transition-colors"
+                      >
+                        Share
+                      </button>
+                      <button
+                        onClick={() => onComment(place)}
+                        className="px-3 py-1.5 rounded-full text-xs font-medium bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 transition-colors"
+                      >
+                        Comment
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           ))}
         </div>

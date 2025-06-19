@@ -11,6 +11,7 @@ const PrivacySettings = () => {
   const [isPrivateProfile, setIsPrivateProfile] = useState(false);
   const [defaultLocationPrivacy, setDefaultLocationPrivacy] = useState<'private' | 'followers' | 'public'>('followers');
   const [loading, setLoading] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
 
   // Update local state when profile loads
   useEffect(() => {
@@ -20,7 +21,25 @@ const PrivacySettings = () => {
     }
   }, [profile]);
 
+  // Track changes
+  useEffect(() => {
+    if (profile) {
+      const originalPrivate = profile.is_private || false;
+      const originalLocationPrivacy = (profile.default_location_privacy as 'private' | 'followers' | 'public') || 'followers';
+      
+      setHasChanges(
+        isPrivateProfile !== originalPrivate || 
+        defaultLocationPrivacy !== originalLocationPrivacy
+      );
+    }
+  }, [profile, isPrivateProfile, defaultLocationPrivacy]);
+
   const handleSaveSettings = async () => {
+    if (!hasChanges) {
+      toast.info('No changes to save');
+      return;
+    }
+
     setLoading(true);
     try {
       await updateProfile({
@@ -28,11 +47,20 @@ const PrivacySettings = () => {
         default_location_privacy: defaultLocationPrivacy
       });
       toast.success('Privacy settings updated successfully!');
+      setHasChanges(false);
     } catch (error) {
       console.error('Error updating privacy settings:', error);
       toast.error('Failed to update privacy settings');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.location.href = '/profile';
     }
   };
 
@@ -64,7 +92,7 @@ const PrivacySettings = () => {
         <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-4 z-10">
           <div className="flex items-center gap-3">
             <button 
-              onClick={() => window.history.back()}
+              onClick={handleBack}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
             >
               <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -79,12 +107,12 @@ const PrivacySettings = () => {
         {/* Content */}
         <div className="px-4 py-6 space-y-6">
           {/* Profile Privacy */}
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
             <div className="flex items-start gap-3 mb-4">
-              <div className="p-2 bg-blue-50 rounded-lg">
+              <div className="p-2 bg-blue-50 rounded-lg flex-shrink-0">
                 <Lock className="w-5 h-5 text-blue-600" />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <h3 className="font-medium text-gray-900 mb-1">Profile Privacy</h3>
                 <p className="text-sm text-gray-600 leading-relaxed">
                   When your account is private, only approved followers can see your posts and saved locations
@@ -93,7 +121,7 @@ const PrivacySettings = () => {
             </div>
             
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div>
+              <div className="flex-1 min-w-0">
                 <div className="font-medium text-gray-900 text-sm">Private Account</div>
                 <div className="text-xs text-gray-500 mt-0.5">
                   Require approval for new followers
@@ -102,17 +130,18 @@ const PrivacySettings = () => {
               <Switch
                 checked={isPrivateProfile}
                 onCheckedChange={setIsPrivateProfile}
+                className="flex-shrink-0"
               />
             </div>
           </div>
 
           {/* Location Sharing */}
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
             <div className="flex items-start gap-3 mb-4">
-              <div className="p-2 bg-green-50 rounded-lg">
+              <div className="p-2 bg-green-50 rounded-lg flex-shrink-0">
                 <MapPin className="w-5 h-5 text-green-600" />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <h3 className="font-medium text-gray-900 mb-1">Location Sharing</h3>
                 <p className="text-sm text-gray-600 leading-relaxed">
                   Choose your default privacy setting for saved locations
@@ -122,9 +151,9 @@ const PrivacySettings = () => {
 
             <div className="space-y-2">
               {privacyOptions.map((option) => (
-                <div
+                <button
                   key={option.value}
-                  className={`p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                  className={`w-full p-3 border-2 rounded-lg transition-all text-left ${
                     defaultLocationPrivacy === option.value
                       ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200 bg-white hover:border-gray-300'
@@ -132,7 +161,7 @@ const PrivacySettings = () => {
                   onClick={() => setDefaultLocationPrivacy(option.value)}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`p-1.5 rounded-md ${
+                    <div className={`p-1.5 rounded-md flex-shrink-0 ${
                       defaultLocationPrivacy === option.value
                         ? 'bg-blue-100'
                         : 'bg-gray-100'
@@ -155,7 +184,7 @@ const PrivacySettings = () => {
                       </div>
                     </div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -164,12 +193,30 @@ const PrivacySettings = () => {
           <div className="pt-4">
             <Button
               onClick={handleSaveSettings}
-              disabled={loading}
-              className="w-full py-3 text-base font-medium"
+              disabled={loading || !hasChanges}
+              className={`w-full py-3 text-base font-medium transition-all ${
+                hasChanges 
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              }`}
               size="lg"
             >
-              {loading ? 'Saving...' : 'Save Privacy Settings'}
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Saving...
+                </div>
+              ) : hasChanges ? (
+                'Save Privacy Settings'
+              ) : (
+                'No Changes to Save'
+              )}
             </Button>
+          </div>
+
+          {/* Info text */}
+          <div className="text-center text-xs text-gray-500 px-4">
+            Changes will take effect immediately after saving
           </div>
         </div>
 

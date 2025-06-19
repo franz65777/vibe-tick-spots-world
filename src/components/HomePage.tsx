@@ -4,11 +4,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePlaceLikes } from '@/hooks/usePlaceLikes';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { useMapPins } from '@/hooks/useMapPins';
+import { useNotifications } from '@/hooks/useNotifications';
 import Header from './home/Header';
 import StoriesSection from './home/StoriesSection';
 import FilterButtons from './home/FilterButtons';
 import MapSection from './home/MapSection';
 import ModalsManager from './home/ModalsManager';
+import LocationOfTheWeek from './home/LocationOfTheWeek';
+import NotificationsModal from './NotificationsModal';
+import MessagesModal from './MessagesModal';
 import { Place } from '@/types/place';
 
 interface Story {
@@ -29,12 +33,15 @@ const HomePage = () => {
   const { user } = useAuth();
   const { likedPlaces, toggleLike } = usePlaceLikes();
   const { savedPlaces, savePlace, unsavePlace, isPlaceSaved } = useSavedPlaces();
+  const { notifications, unreadCount } = useNotifications();
   const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'new'>('following');
   const { pins, loading, refreshPins, hasFollowedUsers } = useMapPins(activeFilter);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [sharePlace, setSharePlace] = useState<Place | null>(null);
   const [commentPlace, setCommentPlace] = useState<Place | null>(null);
   const [isCreateStoryModalOpen, setIsCreateStoryModalOpen] = useState(false);
+  const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
+  const [isMessagesModalOpen, setIsMessagesModalOpen] = useState(false);
   
   // Add search state management
   const [searchQuery, setSearchQuery] = useState('');
@@ -114,11 +121,11 @@ const HomePage = () => {
   };
 
   const handleNotificationsClick = () => {
-    console.log('Notifications clicked');
+    setIsNotificationsModalOpen(true);
   };
 
   const handleMessagesClick = () => {
-    console.log('Messages clicked');
+    setIsMessagesModalOpen(true);
   };
 
   const handleCitySelect = (city: string) => {
@@ -129,6 +136,18 @@ const HomePage = () => {
 
   const handleFilterChange = (filter: 'following' | 'popular' | 'new') => {
     setActiveFilter(filter);
+  };
+
+  // Sample location of the week data
+  const locationOfTheWeek = {
+    id: 'lotw-1',
+    name: 'Central Park Conservatory Garden',
+    image: 'https://images.unsplash.com/photo-1568515387631-8b650bbcdb90?w=400&h=300&fit=crop',
+    description: 'A hidden gem in Central Park featuring beautiful seasonal gardens and peaceful walking paths.',
+    category: 'park',
+    likes: 245,
+    saves: 89,
+    coordinates: { lat: 40.7829, lng: -73.9654 }
   };
 
   return (
@@ -149,6 +168,46 @@ const HomePage = () => {
         <StoriesSection 
           stories={stories}
           onCreateStory={() => setIsCreateStoryModalOpen(true)} 
+        />
+      </div>
+
+      {/* Location of the Week */}
+      <div className="bg-white px-4 py-4 border-b border-gray-100">
+        <LocationOfTheWeek 
+          location={locationOfTheWeek}
+          onLocationClick={() => {
+            const place: Place = {
+              id: locationOfTheWeek.id,
+              name: locationOfTheWeek.name,
+              category: locationOfTheWeek.category,
+              coordinates: locationOfTheWeek.coordinates,
+              likes: locationOfTheWeek.likes,
+              visitors: [],
+              isNew: false,
+              image: locationOfTheWeek.image,
+              addedBy: 'admin',
+              addedDate: new Date().toISOString(),
+              totalSaves: locationOfTheWeek.saves
+            };
+            handlePinClick(place);
+          }}
+          onLike={() => toggleLike(locationOfTheWeek.id)}
+          onSave={() => {
+            const place = {
+              id: locationOfTheWeek.id,
+              name: locationOfTheWeek.name,
+              category: locationOfTheWeek.category,
+              city: currentCity,
+              coordinates: locationOfTheWeek.coordinates
+            };
+            if (isPlaceSaved(locationOfTheWeek.id)) {
+              unsavePlace(locationOfTheWeek.id, currentCity);
+            } else {
+              savePlace(place);
+            }
+          }}
+          isLiked={likedPlaces.has(locationOfTheWeek.id)}
+          isSaved={isPlaceSaved(locationOfTheWeek.id)}
         />
       </div>
 
@@ -185,6 +244,18 @@ const HomePage = () => {
         onCloseCreateStory={() => setIsCreateStoryModalOpen(false)}
         likedPlaces={likedPlaces}
         onToggleLike={toggleLike}
+      />
+
+      {/* Notifications Modal */}
+      <NotificationsModal
+        isOpen={isNotificationsModalOpen}
+        onClose={() => setIsNotificationsModalOpen(false)}
+      />
+
+      {/* Messages Modal */}
+      <MessagesModal
+        isOpen={isMessagesModalOpen}
+        onClose={() => setIsMessagesModalOpen(false)}
       />
     </div>
   );
