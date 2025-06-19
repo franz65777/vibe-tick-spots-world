@@ -6,22 +6,7 @@ import ShareModal from '@/components/home/ShareModal';
 import CommentModal from '@/components/home/CommentModal';
 import LocationDetailSheet from '@/components/LocationDetailSheet';
 import StoriesViewer from '@/components/StoriesViewer';
-
-interface Place {
-  id: string;
-  name: string;
-  category: string;
-  likes: number;
-  friendsWhoSaved?: { name: string; avatar: string }[];
-  visitors: string[];
-  isNew: boolean;
-  coordinates: { lat: number; lng: number };
-  image?: string;
-  addedBy?: string;
-  addedDate?: string;
-  isFollowing?: boolean;
-  popularity?: number;
-}
+import { Place } from '@/types/place';
 
 interface Story {
   id: string;
@@ -40,107 +25,64 @@ interface Story {
 }
 
 interface ModalsManagerProps {
-  isCreateStoryModalOpen: boolean;
-  isNotificationsModalOpen: boolean;
-  isMessagesModalOpen: boolean;
-  isShareModalOpen: boolean;
-  isCommentModalOpen: boolean;
-  isLocationDetailOpen: boolean;
-  isStoriesViewerOpen: boolean;
+  selectedPlace: Place | null;
+  onCloseSelectedPlace: () => void;
   sharePlace: Place | null;
+  onCloseShare: () => void;
   commentPlace: Place | null;
-  locationDetailPlace: Place | null;
-  stories: Story[];
-  currentStoryIndex: number;
-  onCreateStoryModalClose: () => void;
-  onNotificationsModalClose: () => void;
-  onMessagesModalClose: () => void;
-  onShareModalClose: () => void;
-  onCommentModalClose: () => void;
-  onLocationDetailClose: () => void;
-  onStoriesViewerClose: () => void;
-  onStoryCreated: () => void;
-  onShare: (friendIds: string[], place: Place) => void;
-  onCommentSubmit: (text: string, place: Place) => void;
-  onStoryViewed: (storyId: string) => void;
+  onCloseComment: () => void;
+  onCommentSubmit: (comment: string) => void;
+  isCreateStoryModalOpen: boolean;
+  onCloseCreateStory: () => void;
+  likedPlaces: Set<string>;
+  onToggleLike: (placeId: string) => void;
 }
 
 const ModalsManager = ({
-  isCreateStoryModalOpen,
-  isNotificationsModalOpen,
-  isMessagesModalOpen,
-  isShareModalOpen,
-  isCommentModalOpen,
-  isLocationDetailOpen,
-  isStoriesViewerOpen,
+  selectedPlace,
+  onCloseSelectedPlace,
   sharePlace,
+  onCloseShare,
   commentPlace,
-  locationDetailPlace,
-  stories,
-  currentStoryIndex,
-  onCreateStoryModalClose,
-  onNotificationsModalClose,
-  onMessagesModalClose,
-  onShareModalClose,
-  onCommentModalClose,
-  onLocationDetailClose,
-  onStoriesViewerClose,
-  onStoryCreated,
-  onShare,
+  onCloseComment,
   onCommentSubmit,
-  onStoryViewed
+  isCreateStoryModalOpen,
+  onCloseCreateStory,
+  likedPlaces,
+  onToggleLike
 }: ModalsManagerProps) => {
   return (
     <>
       <CreateStoryModal
         isOpen={isCreateStoryModalOpen}
-        onClose={onCreateStoryModalClose}
-        onStoryCreated={onStoryCreated}
-      />
-
-      <NotificationsModal
-        isOpen={isNotificationsModalOpen}
-        onClose={onNotificationsModalClose}
-      />
-
-      <MessagesModal
-        isOpen={isMessagesModalOpen}
-        onClose={onMessagesModalClose}
+        onClose={onCloseCreateStory}
+        onStoryCreated={() => {}}
       />
 
       <ShareModal
-        isOpen={isShareModalOpen}
-        onClose={onShareModalClose}
+        isOpen={!!sharePlace}
+        onClose={onCloseShare}
         item={sharePlace}
         itemType="place"
-        onShare={onShare}
+        onShare={() => {}}
       />
 
       <CommentModal
-        isOpen={isCommentModalOpen}
-        onClose={onCommentModalClose}
+        isOpen={!!commentPlace}
+        onClose={onCloseComment}
         place={commentPlace}
         onCommentSubmit={onCommentSubmit}
       />
 
       <LocationDetailSheet
-        isOpen={isLocationDetailOpen}
-        onClose={onLocationDetailClose}
-        location={locationDetailPlace}
-        onLike={() => {}}
-        isLiked={false}
+        isOpen={!!selectedPlace}
+        onClose={onCloseSelectedPlace}
+        location={selectedPlace}
+        onLike={() => selectedPlace && onToggleLike(selectedPlace.id)}
+        isLiked={selectedPlace ? likedPlaces.has(selectedPlace.id) : false}
         onSave={() => {}}
         isSaved={false}
       />
-
-      {isStoriesViewerOpen && (
-        <StoriesViewer
-          stories={stories}
-          initialStoryIndex={currentStoryIndex}
-          onClose={onStoriesViewerClose}
-          onStoryViewed={onStoryViewed}
-        />
-      )}
     </>
   );
 };
