@@ -2,8 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Lock, Globe, Users, MapPin, Check } from 'lucide-react';
+import { Lock, Globe, Users, MapPin, Check, ArrowLeft } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
 import { toast } from 'sonner';
 
@@ -60,97 +59,109 @@ const PrivacySettings = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-md mx-auto bg-white min-h-screen">
+      <div className="max-w-lg mx-auto bg-white min-h-screen">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-4 z-10">
-          <h1 className="text-xl font-semibold text-gray-900">Privacy Settings</h1>
-          <p className="text-sm text-gray-500 mt-1">Control who can see your profile and activity</p>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => window.history.back()}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5 text-gray-600" />
+            </button>
+            <div>
+              <h1 className="text-lg font-semibold text-gray-900">Privacy Settings</h1>
+              <p className="text-sm text-gray-500">Control who can see your content</p>
+            </div>
+          </div>
         </div>
 
         {/* Content */}
         <div className="px-4 py-6 space-y-6">
           {/* Profile Privacy */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-3 text-lg">
-                <Lock className="w-5 h-5 text-gray-600" />
-                Profile Privacy
-              </CardTitle>
-              <CardDescription className="text-sm leading-relaxed">
-                When your account is private, only approved followers can see your posts and saved locations
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <div className="font-medium text-gray-900">Private Account</div>
-                  <div className="text-sm text-gray-500">
-                    Require approval for new followers
-                  </div>
-                </div>
-                <Switch
-                  checked={isPrivateProfile}
-                  onCheckedChange={setIsPrivateProfile}
-                />
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="p-2 bg-blue-50 rounded-lg">
+                <Lock className="w-5 h-5 text-blue-600" />
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex-1">
+                <h3 className="font-medium text-gray-900 mb-1">Profile Privacy</h3>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  When your account is private, only approved followers can see your posts and saved locations
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div>
+                <div className="font-medium text-gray-900 text-sm">Private Account</div>
+                <div className="text-xs text-gray-500 mt-0.5">
+                  Require approval for new followers
+                </div>
+              </div>
+              <Switch
+                checked={isPrivateProfile}
+                onCheckedChange={setIsPrivateProfile}
+              />
+            </div>
+          </div>
 
           {/* Location Sharing */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-3 text-lg">
-                <MapPin className="w-5 h-5 text-gray-600" />
-                Location Sharing
-              </CardTitle>
-              <CardDescription className="text-sm leading-relaxed">
-                Choose your default privacy setting for saved locations
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {privacyOptions.map((option) => (
-                  <div
-                    key={option.value}
-                    className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="p-2 bg-green-50 rounded-lg">
+                <MapPin className="w-5 h-5 text-green-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-gray-900 mb-1">Location Sharing</h3>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Choose your default privacy setting for saved locations
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {privacyOptions.map((option) => (
+                <div
+                  key={option.value}
+                  className={`p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                    defaultLocationPrivacy === option.value
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 bg-white hover:border-gray-300'
+                  }`}
+                  onClick={() => setDefaultLocationPrivacy(option.value)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`p-1.5 rounded-md ${
                       defaultLocationPrivacy === option.value
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 bg-white hover:border-gray-300'
-                    }`}
-                    onClick={() => setDefaultLocationPrivacy(option.value)}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={`p-2 rounded-lg ${
+                        ? 'bg-blue-100'
+                        : 'bg-gray-100'
+                    }`}>
+                      <option.icon className={`w-4 h-4 ${
                         defaultLocationPrivacy === option.value
-                          ? 'bg-blue-100'
-                          : 'bg-gray-100'
-                      }`}>
-                        <option.icon className={`w-5 h-5 ${
-                          defaultLocationPrivacy === option.value
-                            ? 'text-blue-600'
-                            : 'text-gray-600'
-                        }`} />
+                          ? 'text-blue-600'
+                          : 'text-gray-600'
+                      }`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <div className="font-medium text-gray-900 text-sm">{option.title}</div>
+                        {defaultLocationPrivacy === option.value && (
+                          <Check className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                        )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <div className="font-medium text-gray-900">{option.title}</div>
-                          {defaultLocationPrivacy === option.value && (
-                            <Check className="w-5 h-5 text-blue-600" />
-                          )}
-                        </div>
-                        <div className="text-sm text-gray-500 mt-1 leading-relaxed">
-                          {option.description}
-                        </div>
+                      <div className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                        {option.description}
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                </div>
+              ))}
+            </div>
+          </div>
 
           {/* Save Button */}
-          <div className="sticky bottom-0 bg-white pt-4 pb-6">
+          <div className="pt-4">
             <Button
               onClick={handleSaveSettings}
               disabled={loading}
@@ -161,6 +172,9 @@ const PrivacySettings = () => {
             </Button>
           </div>
         </div>
+
+        {/* Bottom padding for mobile navigation */}
+        <div className="h-20"></div>
       </div>
     </div>
   );

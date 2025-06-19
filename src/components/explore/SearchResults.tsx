@@ -71,8 +71,9 @@ const SearchResults = ({
   }
 
   return (
-    <div className="px-4 py-4">
-      <div className="flex items-center justify-between mb-4">
+    <div className="pb-20">
+      {/* Results Header */}
+      <div className="flex items-center justify-between mb-4 px-4 pt-4">
         <h3 className="font-semibold text-gray-900">
           {searchMode === 'locations' ? filteredLocations.length : filteredUsers.length} results found
         </h3>
@@ -82,25 +83,26 @@ const SearchResults = ({
       </div>
 
       {searchMode === 'locations' ? (
-        <div className="space-y-4">
+        <div className="px-4 space-y-4">
           {filteredLocations.map((place) => (
-            <PlaceCard
-              key={place.id}
-              place={place}
-              isLiked={likedPlaces.has(place.id)}
-              isSaved={false}
-              onCardClick={onCardClick}
-              onLikeToggle={onLikeToggle}
-              onSaveToggle={() => {}}
-              onComment={onComment}
-              onShare={onShare}
-              cityName="Search Results"
-              userLocation={null}
-            />
+            <div key={place.id} className="w-full">
+              <PlaceCard
+                place={place}
+                isLiked={likedPlaces.has(place.id)}
+                isSaved={false}
+                onCardClick={onCardClick}
+                onLikeToggle={onLikeToggle}
+                onSaveToggle={() => {}}
+                onComment={onComment}
+                onShare={onShare}
+                cityName="Search Results"
+                userLocation={null}
+              />
+            </div>
           ))}
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="px-4 space-y-3">
           {filteredUsers.map((user) => (
             <UserCard
               key={user.id}

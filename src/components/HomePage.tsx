@@ -7,10 +7,8 @@ import { useMapPins } from '@/hooks/useMapPins';
 import Header from './home/Header';
 import StoriesSection from './home/StoriesSection';
 import FilterButtons from './home/FilterButtons';
-import PlaceCard from './home/PlaceCard';
 import MapSection from './home/MapSection';
 import ModalsManager from './home/ModalsManager';
-import LocationOfTheWeek from './home/LocationOfTheWeek';
 import { Place } from '@/types/place';
 
 interface Story {
@@ -31,8 +29,6 @@ const HomePage = () => {
   const { user } = useAuth();
   const { likedPlaces, toggleLike } = usePlaceLikes();
   const { savedPlaces, savePlace, unsavePlace, isPlaceSaved } = useSavedPlaces();
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [viewMode, setViewMode] = useState<'feed' | 'map'>('map'); // Default to map view
   const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'new'>('following');
   const { pins, loading, refreshPins, hasFollowedUsers } = useMapPins(activeFilter);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
@@ -94,10 +90,6 @@ const HomePage = () => {
     }
   ]);
 
-  const filteredPlaces = selectedCategory === 'all' 
-    ? places 
-    : places.filter(place => place.category === selectedCategory);
-
   const handlePinClick = (place: Place) => {
     setSelectedPlace(place);
   };
@@ -135,40 +127,8 @@ const HomePage = () => {
     refreshPins(city);
   };
 
-  const handleCardClick = (place: Place) => {
-    setSelectedPlace(place);
-  };
-
-  const handleSaveToggle = async (place: Place) => {
-    if (isPlaceSaved(place.id)) {
-      await unsavePlace(place.id, currentCity);
-    } else {
-      await savePlace({
-        id: place.id,
-        name: place.name,
-        category: place.category,
-        city: currentCity,
-        coordinates: place.coordinates
-      });
-    }
-  };
-
   const handleFilterChange = (filter: 'following' | 'popular' | 'new') => {
     setActiveFilter(filter);
-  };
-
-  // Mock categories for filter
-  const categories = [
-    { id: 'all', name: 'All', icon: '🌟' },
-    { id: 'cafe', name: 'Cafés', icon: '☕' },
-    { id: 'restaurant', name: 'Food', icon: '🍽️' },
-    { id: 'attraction', name: 'Sights', icon: '🏛️' },
-    { id: 'nature', name: 'Nature', icon: '🌲' }
-  ];
-
-  // Toggle between map and feed view
-  const toggleViewMode = () => {
-    setViewMode(viewMode === 'map' ? 'feed' : 'map');
   };
 
   return (
@@ -184,94 +144,32 @@ const HomePage = () => {
         onCitySelect={handleCitySelect}
       />
 
-      {/* Content */}
-      <div className="flex-1 overflow-hidden">
-        {viewMode === 'feed' ? (
-          <div className="h-full overflow-y-auto">
-            {/* Stories Section */}
-            <div className="bg-white px-4 py-3 border-b border-gray-100">
-              <StoriesSection 
-                stories={stories}
-                onCreateStory={() => setIsCreateStoryModalOpen(true)} 
-              />
-            </div>
-
-            {/* Location of the Week */}
-            <div className="px-4 py-3">
-              <LocationOfTheWeek 
-                topLocation={{
-                  id: '1',
-                  name: 'Central Park',
-                  image: 'https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=400&h=300&fit=crop',
-                  category: 'nature',
-                  likes: 245,
-                  saves: 89
-                }}
-                onLocationClick={(location) => console.log('Location clicked:', location)}
-              />
-            </div>
-
-            {/* Filter Buttons */}
-            <div className="bg-white px-4 py-3 border-y border-gray-100 sticky top-0 z-10">
-              <FilterButtons
-                activeFilter={activeFilter}
-                onFilterChange={handleFilterChange}
-                newCount={filteredPlaces.filter(p => p.isNew).length}
-              />
-            </div>
-
-            {/* Places Feed */}
-            <div className="px-4 py-2 space-y-3">
-              {filteredPlaces.map((place) => (
-                <PlaceCard
-                  key={place.id}
-                  place={place}
-                  onLikeToggle={() => toggleLike(place.id)}
-                  isLiked={likedPlaces.has(place.id)}
-                  isSaved={isPlaceSaved(place.id)}
-                  onCardClick={handleCardClick}
-                  onSaveToggle={handleSaveToggle}
-                  onShare={() => handleShare(place)}
-                  onComment={() => handleComment(place)}
-                  cityName={currentCity}
-                />
-              ))}
-            </div>
-
-            {/* Bottom padding for mobile navigation */}
-            <div className="h-20"></div>
-          </div>
-        ) : (
-          <>
-            {/* Filter Buttons for Map View */}
-            <div className="bg-white px-4 py-3 border-b border-gray-100 sticky top-0 z-10">
-              <FilterButtons
-                activeFilter={activeFilter}
-                onFilterChange={handleFilterChange}
-                newCount={filteredPlaces.filter(p => p.isNew).length}
-              />
-            </div>
-            
-            {/* Map Section */}
-            <MapSection
-              places={filteredPlaces}
-              onPinClick={handlePinClick}
-              mapCenter={mapCenter}
-              selectedPlace={selectedPlace}
-              onCloseSelectedPlace={() => setSelectedPlace(null)}
-            />
-          </>
-        )}
+      {/* Stories Section */}
+      <div className="bg-white px-4 py-3 border-b border-gray-100">
+        <StoriesSection 
+          stories={stories}
+          onCreateStory={() => setIsCreateStoryModalOpen(true)} 
+        />
       </div>
 
-      {/* View Toggle Button */}
-      <div className="fixed bottom-20 right-4 z-20">
-        <button
-          onClick={toggleViewMode}
-          className="bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-colors"
-        >
-          {viewMode === 'map' ? '📋' : '🗺️'}
-        </button>
+      {/* Filter Buttons */}
+      <div className="bg-white px-4 py-3 border-b border-gray-100 sticky top-0 z-10">
+        <FilterButtons
+          activeFilter={activeFilter}
+          onFilterChange={handleFilterChange}
+          newCount={places.filter(p => p.isNew).length}
+        />
+      </div>
+      
+      {/* Map Section */}
+      <div className="flex-1 overflow-hidden">
+        <MapSection
+          places={places}
+          onPinClick={handlePinClick}
+          mapCenter={mapCenter}
+          selectedPlace={selectedPlace}
+          onCloseSelectedPlace={() => setSelectedPlace(null)}
+        />
       </div>
 
       {/* Modals */}
