@@ -1,9 +1,8 @@
 
 import React from 'react';
-import PlaceCard from '@/components/home/PlaceCard';
 import UserCard from './UserCard';
 import { Place } from '@/types/place';
-import { MapPin, Users, Search } from 'lucide-react';
+import { MapPin, Users, Search, Heart, MessageCircle, Share2, Navigation } from 'lucide-react';
 
 interface SearchResultsProps {
   searchMode: 'locations' | 'users';
@@ -38,10 +37,13 @@ const SearchResults = ({
 }: SearchResultsProps) => {
   if (isSearching) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <div className="flex items-center gap-3">
-          <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-gray-600">Searching...</span>
+      <div className="flex items-center justify-center py-20">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <div className="text-center">
+            <div className="font-medium text-gray-900 mb-1">Searching...</div>
+            <div className="text-sm text-gray-500">Finding the best {searchMode} for you</div>
+          </div>
         </div>
       </div>
     );
@@ -51,116 +53,179 @@ const SearchResults = ({
 
   if (!hasResults) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 px-4">
-        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+      <div className="flex flex-col items-center justify-center py-20 px-6">
+        <div className="w-20 h-20 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl flex items-center justify-center mb-6">
           {searchMode === 'locations' ? (
-            <MapPin className="w-8 h-8 text-gray-400" />
+            <MapPin className="w-10 h-10 text-blue-600" />
           ) : (
-            <Users className="w-8 h-8 text-gray-400" />
+            <Users className="w-10 h-10 text-blue-600" />
           )}
         </div>
-        <h3 className="font-semibold text-gray-900 mb-2">No results found</h3>
-        <p className="text-gray-500 text-center text-sm">
+        <h3 className="text-xl font-bold text-gray-900 mb-3">No results found</h3>
+        <p className="text-gray-500 text-center leading-relaxed max-w-sm">
           {searchMode === 'locations' 
-            ? "Try searching for cafes, restaurants, or specific place names"
-            : "Try searching for usernames or full names"
+            ? "We couldn't find any places matching your search. Try different keywords or explore popular locations nearby."
+            : "No users found with that name. Try searching with different terms or browse recommended users."
           }
         </p>
+        <div className="mt-6 p-4 bg-blue-50 rounded-xl">
+          <div className="text-sm text-blue-800 font-medium mb-2">💡 Search Tips:</div>
+          <div className="text-sm text-blue-700 space-y-1">
+            {searchMode === 'locations' ? (
+              <>
+                <div>• Try "coffee", "restaurant", or "park"</div>
+                <div>• Include neighborhood names</div>
+                <div>• Search by cuisine type</div>
+              </>
+            ) : (
+              <>
+                <div>• Try full names or usernames</div>
+                <div>• Check spelling and try variations</div>
+                <div>• Browse popular users instead</div>
+              </>
+            )}
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="pb-20">
-      {/* Results Header */}
-      <div className="flex items-center justify-between mb-4 px-4 pt-4">
-        <h3 className="font-semibold text-gray-900">
-          {searchMode === 'locations' ? filteredLocations.length : filteredUsers.length} results found
-        </h3>
-        <div className="text-xs text-gray-500 capitalize">
-          Sorted by {sortBy}
+      {/* Enhanced Results Header */}
+      <div className="sticky top-0 bg-white/95 backdrop-blur-sm z-10 px-4 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Search className="w-4 h-4 text-blue-600" />
+            </div>
+            <div>
+              <div className="font-semibold text-gray-900">
+                {searchMode === 'locations' ? filteredLocations.length : filteredUsers.length} results
+              </div>
+              <div className="text-xs text-gray-500 capitalize">
+                Sorted by {sortBy === 'proximity' ? 'distance' : sortBy}
+              </div>
+            </div>
+          </div>
+          <div className="text-xs text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full font-medium">
+            {searchMode === 'locations' ? 'Places' : 'People'}
+          </div>
         </div>
       </div>
 
       {searchMode === 'locations' ? (
-        <div className="px-2 space-y-3">
-          {filteredLocations.map((place) => (
-            <div key={place.id} className="w-full">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                {/* Mobile-optimized place card */}
-                <div className="flex p-3 gap-3">
-                  {/* Image */}
-                  <div className="flex-shrink-0">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-gray-100">
-                      {place.image ? (
-                        <img 
-                          src={place.image} 
-                          alt={place.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <MapPin className="w-6 h-6 text-gray-400" />
+        <div className="px-4 py-2">
+          <div className="grid gap-4">
+            {filteredLocations.map((place) => (
+              <div key={place.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all">
+                <div 
+                  className="cursor-pointer"
+                  onClick={() => onCardClick(place)}
+                >
+                  {/* Image Section */}
+                  <div className="relative h-48 bg-gradient-to-br from-blue-100 to-indigo-100">
+                    {place.image ? (
+                      <img 
+                        src={place.image} 
+                        alt={place.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <div className="w-16 h-16 bg-white/90 rounded-2xl flex items-center justify-center shadow-lg">
+                          <MapPin className="w-8 h-8 text-blue-600" />
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Category Badge */}
+                    <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-medium text-gray-700 capitalize shadow-sm">
+                      {place.category}
+                    </div>
+                    
+                    {/* New Badge */}
+                    {place.isNew && (
+                      <div className="absolute top-3 right-3 bg-green-500 text-white px-3 py-1.5 rounded-full text-xs font-medium shadow-sm">
+                        New
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Content Section */}
+                  <div className="p-4">
+                    <h3 className="font-bold text-lg text-gray-900 mb-2 line-clamp-1">
+                      {place.name}
+                    </h3>
+                    
+                    {/* Stats Row */}
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="flex items-center gap-1 text-sm text-gray-600">
+                        <Heart className="w-4 h-4 text-red-500" />
+                        <span className="font-medium">{place.likes || 0}</span>
+                      </div>
+                      {place.distance && (
+                        <div className="flex items-center gap-1 text-sm text-gray-600">
+                          <Navigation className="w-4 h-4 text-blue-500" />
+                          <span>{place.distance}</span>
+                        </div>
+                      )}
+                      {place.visitors && (
+                        <div className="text-sm text-gray-600">
+                          {Array.isArray(place.visitors) ? place.visitors.length : place.visitors} visitors
                         </div>
                       )}
                     </div>
                   </div>
+                </div>
 
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div 
-                      className="cursor-pointer"
-                      onClick={() => onCardClick(place)}
+                {/* Action Buttons */}
+                <div className="px-4 pb-4">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onLikeToggle(place.id);
+                      }}
+                      className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-medium transition-all ${
+                        likedPlaces.has(place.id)
+                          ? 'bg-red-50 text-red-600 border-2 border-red-200'
+                          : 'bg-gray-50 text-gray-700 border-2 border-gray-200 hover:bg-gray-100'
+                      }`}
                     >
-                      <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate mb-1">
-                        {place.name}
-                      </h3>
-                      <p className="text-xs sm:text-sm text-gray-500 capitalize mb-2">
-                        {place.category}
-                      </p>
-                      <div className="flex items-center gap-4 text-xs text-gray-500">
-                        <span className="flex items-center gap-1">
-                          ❤️ {place.likes || 0}
-                        </span>
-                        {place.distance && (
-                          <span>{place.distance}</span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Action buttons */}
-                    <div className="flex items-center gap-2 mt-3">
-                      <button
-                        onClick={() => onLikeToggle(place.id)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                          likedPlaces.has(place.id)
-                            ? 'bg-red-50 text-red-600 border border-red-200'
-                            : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100'
-                        }`}
-                      >
-                        {likedPlaces.has(place.id) ? '❤️ Liked' : '🤍 Like'}
-                      </button>
-                      <button
-                        onClick={() => onShare(place)}
-                        className="px-3 py-1.5 rounded-full text-xs font-medium bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 transition-colors"
-                      >
-                        Share
-                      </button>
-                      <button
-                        onClick={() => onComment(place)}
-                        className="px-3 py-1.5 rounded-full text-xs font-medium bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 transition-colors"
-                      >
-                        Comment
-                      </button>
-                    </div>
+                      <Heart className={`w-4 h-4 ${likedPlaces.has(place.id) ? 'fill-current' : ''}`} />
+                      {likedPlaces.has(place.id) ? 'Liked' : 'Like'}
+                    </button>
+                    
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onComment(place);
+                      }}
+                      className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-medium bg-blue-50 text-blue-600 border-2 border-blue-200 hover:bg-blue-100 transition-all"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      Comment
+                    </button>
+                    
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onShare(place);
+                      }}
+                      className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-medium bg-green-50 text-green-600 border-2 border-green-200 hover:bg-green-100 transition-all"
+                    >
+                      <Share2 className="w-4 h-4" />
+                      Share
+                    </button>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       ) : (
-        <div className="px-4 space-y-3">
+        <div className="px-4 py-2 space-y-3">
           {filteredUsers.map((user) => (
             <UserCard
               key={user.id}
