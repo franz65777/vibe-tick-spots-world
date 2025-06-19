@@ -1,239 +1,273 @@
-
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Camera, Plus, X } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { ArrowLeft, Camera, MapPin, Plus, X, Check, Loader2, Image as ImageIcon, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { usePostCreation } from '@/hooks/usePostCreation';
-import GooglePlacesAutocomplete from './GooglePlacesAutocomplete';
-import { toast } from 'sonner';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { useLocationTagging } from '@/hooks/useLocationTagging';
+import { useMediaUpload } from '@/hooks/useMediaUpload';
 
 const AddLocationPage = () => {
-  const navigate = useNavigate();
-  const { createPost, uploading } = usePostCreation();
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedMedia, setSelectedMedia] = useState<File[]>([]);
   const [caption, setCaption] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState<{
-    place_id: string;
-    name: string;
-    address: string;
-    lat: number;
-    lng: number;
-    types: string[];
-  } | null>(null);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [selectedLocation, setSelectedLocation] = useState<any>(null);
+  const [showLocationSearch, setShowLocationSearch] = useState(false);
+  const [locationQuery, setLocationQuery] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const { nearbyPlaces, recentLocations, searchLocations, getCurrentLocation } = useLocationTagging();
+  const { uploadPost } = useMediaUpload();
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
-    
-    if (files.length === 0) return;
-
-    // Validate files
-    const validFiles = files.filter(file => {
-      if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
-        toast.error(`${file.name} is not a valid image or video file`);
-        return false;
-      }
-      if (file.size > 50 * 1024 * 1024) { // 50MB limit
-        toast.error(`${file.name} is too large. Maximum file size is 50MB`);
-        return false;
-      }
-      return true;
-    });
-
-    setSelectedFiles(validFiles);
-    
-    // Create preview URLs
-    const urls = validFiles.map(file => URL.createObjectURL(file));
-    setPreviewUrls(urls);
+  const handleMediaSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setSelectedMedia(prev => [...prev, ...files].slice(0, 10)); // Max 10 files
   };
 
-  const removeFile = (index: number) => {
-    const newFiles = selectedFiles.filter((_, i) => i !== index);
-    const newUrls = previewUrls.filter((_, i) => i !== index);
-    
-    // Revoke the removed URL to free memory
-    URL.revokeObjectURL(previewUrls[index]);
-    
-    setSelectedFiles(newFiles);
-    setPreviewUrls(newUrls);
+  const removeMedia = (index: number) => {
+    setSelectedMedia(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleLocationSelect = (place: {
-    place_id: string;
-    name: string;
-    address: string;
-    lat: number;
-    lng: number;
-    types: string[];
-  }) => {
-    setSelectedLocation(place);
-    toast.success(`Location selected: ${place.name}`);
-  };
-
-  const handleSubmit = async () => {
-    if (selectedFiles.length === 0) {
-      toast.error('Please select at least one photo or video');
-      return;
+  const handleLocationSearch = async (query: string) => {
+    if (query.length > 2) {
+      const results = await searchLocations(query);
+      // Handle search results here
     }
+  };
 
-    if (!selectedLocation) {
-      toast.error('Please select a location from the suggestions');
-      return;
-    }
+  const handleUpload = async () => {
+    if (selectedMedia.length === 0) return;
 
+    setIsUploading(true);
     try {
-      const result = await createPost({
-        caption: caption.trim() || undefined,
-        files: selectedFiles,
-        location: {
-          google_place_id: selectedLocation.place_id,
-          name: selectedLocation.name,
-          address: selectedLocation.address,
-          latitude: selectedLocation.lat,
-          longitude: selectedLocation.lng,
-          types: selectedLocation.types
-        }
-      });
+      const result = await uploadPost(
+        selectedMedia,
+        caption,
+        selectedLocation?.id
+      );
 
       if (result.success) {
-        // Clean up preview URLs
-        previewUrls.forEach(url => URL.revokeObjectURL(url));
-        toast.success('Post shared successfully!');
-        navigate('/');
-      } else {
-        toast.error('Failed to create post. Please try again.');
+        setUploadSuccess(true);
+        // Reset form after successful upload
+        setTimeout(() => {
+          setSelectedMedia([]);
+          setCaption('');
+          setSelectedLocation(null);
+          setUploadSuccess(false);
+        }, 2000);
       }
     } catch (error) {
-      console.error('Error creating post:', error);
-      toast.error('Failed to create post. Please try again.');
+      console.error('Upload failed:', error);
+    } finally {
+      setIsUploading(false);
     }
   };
 
-  return (
-    <div className="flex flex-col h-full bg-white pt-16">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-100">
-        <button onClick={() => navigate(-1)} className="p-2">
-          <ArrowLeft className="w-6 h-6 text-gray-600" />
-        </button>
-        <h1 className="text-lg font-semibold">New Post</h1>
-        <Button
-          onClick={handleSubmit}
-          disabled={uploading || selectedFiles.length === 0 || !selectedLocation}
-          className="px-6"
-        >
-          {uploading ? 'Sharing...' : 'Share'}
-        </Button>
-      </div>
+  const getMediaPreview = (file: File) => {
+    if (file.type.startsWith('image/')) {
+      return URL.createObjectURL(file);
+    }
+    return null;
+  };
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-6">
-        {/* Media Upload Section */}
-        <div>
-          <h2 className="text-lg font-semibold mb-3">Add Photos & Videos</h2>
-          
-          {selectedFiles.length === 0 ? (
-            <div>
-              <input
-                type="file"
-                accept="image/*,video/*"
-                multiple
-                onChange={handleFileSelect}
-                className="hidden"
-                id="media-upload"
-              />
-              <label
-                htmlFor="media-upload"
-                className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-xl hover:border-blue-400 hover:bg-blue-50 transition-colors cursor-pointer"
+  const isVideo = (file: File) => file.type.startsWith('video/');
+
+  if (uploadSuccess) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center p-6">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Check className="w-8 h-8 text-green-600" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Post Uploaded!</h2>
+          <p className="text-gray-600">Your post has been added to your profile</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-lg mx-auto bg-white min-h-screen">
+        {/* Header */}
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-4 z-10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => window.history.back()}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
               >
-                <Camera className="w-12 h-12 text-gray-400 mb-2" />
-                <span className="text-gray-600 font-medium">Add photos or videos</span>
-                <span className="text-gray-400 text-sm">Tap to select from gallery</span>
-              </label>
+                <ArrowLeft className="w-5 h-5 text-gray-600" />
+              </button>
+              <h1 className="text-lg font-semibold text-gray-900">New Post</h1>
             </div>
-          ) : (
-            <div>
-              <div className="grid grid-cols-2 gap-3 mb-3">
-                {previewUrls.map((url, index) => (
-                  <div key={index} className="relative aspect-square bg-gray-100 rounded-xl overflow-hidden">
-                    {selectedFiles[index].type.startsWith('image/') ? (
-                      <img src={url} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
+            <Button
+              onClick={handleUpload}
+              disabled={selectedMedia.length === 0 || isUploading}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {isUploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                'Share'
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-4 space-y-6">
+          {/* Media Upload Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-gray-900">Photos & Videos</h3>
+              <span className="text-sm text-gray-500">{selectedMedia.length}/10</span>
+            </div>
+
+            {selectedMedia.length === 0 ? (
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-gray-400 transition-colors"
+              >
+                <Camera className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h4 className="font-medium text-gray-900 mb-2">Add photos or videos</h4>
+                <p className="text-sm text-gray-500">Tap to select from your camera roll</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                {selectedMedia.map((file, index) => (
+                  <div key={index} className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                    {isVideo(file) ? (
+                      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                        <Video className="w-8 h-8 text-gray-500" />
+                      </div>
                     ) : (
-                      <video src={url} className="w-full h-full object-cover" />
+                      <img
+                        src={getMediaPreview(file)}
+                        alt={`Upload ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
                     )}
                     <button
-                      onClick={() => removeFile(index)}
-                      className="absolute top-2 right-2 w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center transition-colors"
+                      onClick={() => removeMedia(index)}
+                      className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs"
                     >
-                      <X className="w-4 h-4 text-white" />
+                      <X className="w-3 h-3" />
                     </button>
                   </div>
                 ))}
+                
+                {selectedMedia.length < 10 && (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:border-gray-400 transition-colors"
+                  >
+                    <Plus className="w-6 h-6 text-gray-400" />
+                  </div>
+                )}
               </div>
-              
-              <input
-                type="file"
-                accept="image/*,video/*"
-                multiple
-                onChange={handleFileSelect}
-                className="hidden"
-                id="media-upload-more"
-              />
-              <label
-                htmlFor="media-upload-more"
-                className="flex items-center justify-center gap-2 w-full py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
-              >
-                <Plus className="w-5 h-5 text-gray-500" />
-                <span className="text-gray-600">Add more</span>
-              </label>
-            </div>
-          )}
-        </div>
+            )}
 
-        {/* Location Selection - REQUIRED */}
-        <div>
-          <h2 className="text-lg font-semibold mb-3">
-            <MapPin className="w-5 h-5 inline mr-2" />
-            Tag Location *
-          </h2>
-          <GooglePlacesAutocomplete
-            onPlaceSelect={handleLocationSelect}
-            placeholder="Search for a place..."
-            className="mb-3"
-          />
-          
-          {selectedLocation && (
-            <div className="p-4 bg-green-50 rounded-xl border border-green-200">
-              <div className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-medium text-green-900 truncate">{selectedLocation.name}</h3>
-                  <p className="text-sm text-green-700 mt-1">{selectedLocation.address}</p>
-                  <p className="text-xs text-green-600 mt-1">
-                    {selectedLocation.lat.toFixed(6)}, {selectedLocation.lng.toFixed(6)}
-                  </p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,video/*"
+              multiple
+              onChange={handleMediaSelect}
+              className="hidden"
+            />
+          </div>
+
+          {/* Caption */}
+          <div className="space-y-2">
+            <label className="block font-semibold text-gray-900">Caption</label>
+            <Textarea
+              value={caption}
+              onChange={(e) => setCaption(e.target.value)}
+              placeholder="Write a caption..."
+              rows={3}
+              className="resize-none"
+            />
+          </div>
+
+          {/* Location Tagging */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="block font-semibold text-gray-900">Tag Location</label>
+              {selectedLocation && (
+                <button
+                  onClick={() => setSelectedLocation(null)}
+                  className="text-sm text-blue-600 hover:text-blue-700"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+
+            {selectedLocation ? (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center gap-3">
+                <MapPin className="w-5 h-5 text-blue-600" />
+                <div className="flex-1">
+                  <div className="font-medium text-blue-900">{selectedLocation.name}</div>
+                  {selectedLocation.address && (
+                    <div className="text-sm text-blue-700">{selectedLocation.address}</div>
+                  )}
                 </div>
               </div>
-            </div>
-          )}
-          
-          <p className="text-xs text-gray-500 mt-2">
-            Location tagging is required. Select from the dropdown suggestions.
-          </p>
-        </div>
+            ) : (
+              <div className="space-y-3">
+                <Input
+                  value={locationQuery}
+                  onChange={(e) => {
+                    setLocationQuery(e.target.value);
+                    handleLocationSearch(e.target.value);
+                  }}
+                  placeholder="Search for a location..."
+                  className="w-full"
+                />
 
-        {/* Caption */}
-        <div>
-          <h2 className="text-lg font-semibold mb-3">Write a Caption</h2>
-          <textarea
-            value={caption}
-            onChange={(e) => setCaption(e.target.value)}
-            placeholder="What's the story behind this place?"
-            className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-            rows={4}
-            maxLength={1000}
-          />
-          <div className="text-xs text-gray-500 mt-1 text-right">
-            {caption.length}/1000
+                {/* Nearby Places */}
+                {nearbyPlaces.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-gray-700">Nearby</h4>
+                    {nearbyPlaces.slice(0, 3).map((place) => (
+                      <button
+                        key={place.id}
+                        onClick={() => setSelectedLocation(place)}
+                        className="w-full p-3 bg-gray-50 rounded-lg text-left hover:bg-gray-100 transition-colors"
+                      >
+                        <div className="font-medium text-gray-900">{place.name}</div>
+                        {place.address && (
+                          <div className="text-sm text-gray-600">{place.address}</div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Recent Locations */}
+                {recentLocations.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-gray-700">Recent</h4>
+                    {recentLocations.slice(0, 3).map((location) => (
+                      <button
+                        key={location.id}
+                        onClick={() => setSelectedLocation(location)}
+                        className="w-full p-3 bg-gray-50 rounded-lg text-left hover:bg-gray-100 transition-colors"
+                      >
+                        <div className="font-medium text-gray-900">{location.name}</div>
+                        {location.address && (
+                          <div className="text-sm text-gray-600">{location.address}</div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
