@@ -2,7 +2,7 @@
 import React from 'react';
 import UserCard from './UserCard';
 import { Place } from '@/types/place';
-import { MapPin, Users, Search, Heart, MessageCircle, Share2, Navigation } from 'lucide-react';
+import { MapPin, Users, Search, Heart, MessageCircle, Share2, Navigation, Star } from 'lucide-react';
 
 interface SearchResultsProps {
   searchMode: 'locations' | 'users';
@@ -68,7 +68,7 @@ const SearchResults = ({
             : "No users found with that name. Try searching with different terms or browse recommended users."
           }
         </p>
-        <div className="mt-6 p-4 bg-blue-50 rounded-xl">
+        <div className="mt-6 p-4 bg-blue-50 rounded-xl max-w-sm">
           <div className="text-sm text-blue-800 font-medium mb-2">💡 Search Tips:</div>
           <div className="text-sm text-blue-700 space-y-1">
             {searchMode === 'locations' ? (
@@ -92,7 +92,7 @@ const SearchResults = ({
 
   return (
     <div className="pb-20">
-      {/* Enhanced Results Header */}
+      {/* Results Header */}
       <div className="sticky top-0 bg-white/95 backdrop-blur-sm z-10 px-4 py-4 border-b border-gray-100">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -115,16 +115,16 @@ const SearchResults = ({
       </div>
 
       {searchMode === 'locations' ? (
-        <div className="px-4 py-2">
-          <div className="grid gap-4">
+        <div className="px-4 pt-2 pb-4">
+          <div className="space-y-4">
             {filteredLocations.map((place) => (
-              <div key={place.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all">
+              <div key={place.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div 
                   className="cursor-pointer"
                   onClick={() => onCardClick(place)}
                 >
                   {/* Image Section */}
-                  <div className="relative h-48 bg-gradient-to-br from-blue-100 to-indigo-100">
+                  <div className="relative h-44 bg-gradient-to-br from-blue-100 to-indigo-100">
                     {place.image ? (
                       <img 
                         src={place.image} 
@@ -154,22 +154,24 @@ const SearchResults = ({
 
                   {/* Content Section */}
                   <div className="p-4">
-                    <h3 className="font-bold text-lg text-gray-900 mb-2 line-clamp-1">
+                    <h3 className="font-bold text-lg text-gray-900 mb-3 line-clamp-1">
                       {place.name}
                     </h3>
                     
                     {/* Stats Row */}
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="flex items-center gap-1 text-sm text-gray-600">
-                        <Heart className="w-4 h-4 text-red-500" />
-                        <span className="font-medium">{place.likes || 0}</span>
-                      </div>
-                      {place.distance && (
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1 text-sm text-gray-600">
-                          <Navigation className="w-4 h-4 text-blue-500" />
-                          <span>{place.distance}</span>
+                          <Heart className="w-4 h-4 text-red-500" />
+                          <span className="font-medium">{place.likes || 0}</span>
                         </div>
-                      )}
+                        {place.distance && (
+                          <div className="flex items-center gap-1 text-sm text-gray-600">
+                            <Navigation className="w-4 h-4 text-blue-500" />
+                            <span>{place.distance}</span>
+                          </div>
+                        )}
+                      </div>
                       {place.visitors && (
                         <div className="text-sm text-gray-600">
                           {Array.isArray(place.visitors) ? place.visitors.length : place.visitors} visitors
@@ -181,20 +183,20 @@ const SearchResults = ({
 
                 {/* Action Buttons */}
                 <div className="px-4 pb-4">
-                  <div className="flex items-center gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         onLikeToggle(place.id);
                       }}
-                      className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-medium transition-all ${
+                      className={`flex items-center justify-center gap-2 py-3 px-3 rounded-xl text-sm font-medium transition-all ${
                         likedPlaces.has(place.id)
-                          ? 'bg-red-50 text-red-600 border-2 border-red-200'
-                          : 'bg-gray-50 text-gray-700 border-2 border-gray-200 hover:bg-gray-100'
+                          ? 'bg-red-50 text-red-600 border border-red-200'
+                          : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100'
                       }`}
                     >
                       <Heart className={`w-4 h-4 ${likedPlaces.has(place.id) ? 'fill-current' : ''}`} />
-                      {likedPlaces.has(place.id) ? 'Liked' : 'Like'}
+                      <span className="hidden sm:inline">{likedPlaces.has(place.id) ? 'Liked' : 'Like'}</span>
                     </button>
                     
                     <button
@@ -202,10 +204,10 @@ const SearchResults = ({
                         e.stopPropagation();
                         onComment(place);
                       }}
-                      className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-medium bg-blue-50 text-blue-600 border-2 border-blue-200 hover:bg-blue-100 transition-all"
+                      className="flex items-center justify-center gap-2 py-3 px-3 rounded-xl text-sm font-medium bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-all"
                     >
                       <MessageCircle className="w-4 h-4" />
-                      Comment
+                      <span className="hidden sm:inline">Comment</span>
                     </button>
                     
                     <button
@@ -213,10 +215,10 @@ const SearchResults = ({
                         e.stopPropagation();
                         onShare(place);
                       }}
-                      className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-medium bg-green-50 text-green-600 border-2 border-green-200 hover:bg-green-100 transition-all"
+                      className="flex items-center justify-center gap-2 py-3 px-3 rounded-xl text-sm font-medium bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 transition-all"
                     >
                       <Share2 className="w-4 h-4" />
-                      Share
+                      <span className="hidden sm:inline">Share</span>
                     </button>
                   </div>
                 </div>
@@ -225,7 +227,7 @@ const SearchResults = ({
           </div>
         </div>
       ) : (
-        <div className="px-4 py-2 space-y-3">
+        <div className="px-4 pt-2 pb-4 space-y-3">
           {filteredUsers.map((user) => (
             <UserCard
               key={user.id}
