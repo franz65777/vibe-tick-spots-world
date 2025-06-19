@@ -4,6 +4,7 @@ declare global {
   interface Window {
     google: any;
     initGoogleMaps: () => void;
+    [key: string]: any; // Allow dynamic callback properties
   }
 }
 
@@ -58,9 +59,10 @@ export const loadGoogleMapsAPI = (): Promise<void> => {
     // Create a unique callback name to avoid conflicts
     const callbackName = 'initGoogleMaps_' + Date.now();
     
-    window[callbackName as keyof Window] = () => {
+    // Use type assertion to avoid TypeScript error
+    (window as any)[callbackName] = () => {
       console.log('Google Maps API loaded successfully via callback');
-      delete window[callbackName as keyof Window]; // Clean up
+      delete (window as any)[callbackName]; // Clean up
       
       // Double-check that everything is ready
       if (typeof window.google !== 'undefined' && 
@@ -82,7 +84,7 @@ export const loadGoogleMapsAPI = (): Promise<void> => {
     
     script.onerror = (error) => {
       console.error('Failed to load Google Maps API script:', error);
-      delete window[callbackName as keyof Window]; // Clean up
+      delete (window as any)[callbackName]; // Clean up
       reject(new Error('Failed to load Google Maps API script'));
     };
 
@@ -90,7 +92,7 @@ export const loadGoogleMapsAPI = (): Promise<void> => {
     setTimeout(() => {
       if (typeof window.google === 'undefined' || !window.google.maps) {
         console.error('Google Maps API loading timeout');
-        delete window[callbackName as keyof Window]; // Clean up
+        delete (window as any)[callbackName]; // Clean up
         reject(new Error('Google Maps API loading timeout'));
       }
     }, 15000);
