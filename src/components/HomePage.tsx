@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePlaceLikes } from '@/hooks/usePlaceLikes';
+import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import Header from './home/Header';
 import StoriesSection from './home/StoriesSection';
 import FilterButtons from './home/FilterButtons';
@@ -14,6 +15,7 @@ import { Place } from '@/types/place';
 const HomePage = () => {
   const { user } = useAuth();
   const { likedPlaces, toggleLike } = usePlaceLikes();
+  const { savedPlaces, toggleSave } = useSavedPlaces();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'feed' | 'map'>('feed');
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
@@ -64,7 +66,9 @@ const HomePage = () => {
       timestamp: new Date(),
       isViewed: false,
       mediaType: 'image' as const,
-      mediaUrl: ''
+      mediaUrl: '',
+      locationId: '1',
+      locationName: 'Café Central'
     },
     { 
       id: '2', 
@@ -75,7 +79,9 @@ const HomePage = () => {
       timestamp: new Date(),
       isViewed: false,
       mediaType: 'image' as const,
-      mediaUrl: ''
+      mediaUrl: '',
+      locationId: '2',
+      locationName: 'Brooklyn Bridge'
     }
   ]);
 
@@ -117,6 +123,14 @@ const HomePage = () => {
   const handleCitySelect = (city: string) => {
     setCurrentCity(city);
     setSearchQuery('');
+  };
+
+  const handleCardClick = (place: Place) => {
+    setSelectedPlace(place);
+  };
+
+  const handleSaveToggle = (place: Place) => {
+    toggleSave(place.id);
   };
 
   // Mock categories for filter
@@ -171,8 +185,9 @@ const HomePage = () => {
             {/* Filter Buttons */}
             <div className="bg-white px-4 py-3 border-y border-gray-100 sticky top-0 z-10">
               <FilterButtons
-                activeCategory={selectedCategory}
-                onCategorySelect={setSelectedCategory}
+                activeFilter="following"
+                onFilterChange={() => {}}
+                newCount={5}
               />
             </div>
 
@@ -184,8 +199,12 @@ const HomePage = () => {
                   place={place}
                   onLikeToggle={() => toggleLike(place.id)}
                   isLiked={likedPlaces.has(place.id)}
+                  isSaved={savedPlaces.has(place.id)}
+                  onCardClick={handleCardClick}
+                  onSaveToggle={handleSaveToggle}
                   onShare={() => handleShare(place)}
                   onComment={() => handleComment(place)}
+                  cityName={currentCity}
                 />
               ))}
             </div>
