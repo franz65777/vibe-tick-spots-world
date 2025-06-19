@@ -25,22 +25,35 @@ const GoogleMapsSetup = ({
   const markersRef = useRef<google.maps.Marker[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [initAttempts, setInitAttempts] = useState(0);
 
   useEffect(() => {
+    let mounted = true;
+    
     const initializeMap = async () => {
-      console.log('Initializing Google Maps...');
+      if (initAttempts >= 3) {
+        setError('Failed to initialize Google Maps after multiple attempts');
+        return;
+      }
+
+      console.log(`Google Maps initialization attempt ${initAttempts + 1}`);
       
       try {
+        setError(null);
         await loadGoogleMapsAPI();
-        console.log('Google Maps loaded successfully');
+        
+        if (!mounted) return;
+
+        // Wait a bit more to ensure everything is ready
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         if (mapRef.current && !mapInstanceRef.current && isGoogleMapsLoaded()) {
-          console.log('Creating map instance...');
+          console.log('Creating Google Maps instance...');
           
           const defaultCenter = mapCenter || { lat: 37.7749, lng: -122.4194 };
-          console.log('Using map center:', defaultCenter);
+          console.log('Map center:', defaultCenter);
 
-          mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
+          const mapOptions: google.maps.MapOptions = {
             center: defaultCenter,
             zoom: 13,
             styles: [
@@ -57,7 +70,9 @@ const GoogleMapsSetup = ({
             zoomControlOptions: {
               position: window.google.maps.ControlPosition.RIGHT_BOTTOM
             }
-          });
+          };
+
+          mapInstanceRef.current = new window.google.maps.Map(mapRef.current, mapOptions);
 
           // Add right-click listener for adding new locations
           if (onMapRightClick) {
@@ -72,18 +87,37 @@ const GoogleMapsSetup = ({
             });
           }
 
-          console.log('Map is fully loaded and ready');
+          console.log('Google Maps initialized successfully');
           setIsLoaded(true);
           setError(null);
+        } else if (!isGoogleMapsLoaded()) {
+          throw new Error('Google Maps API not properly loaded');
         }
       } catch (error) {
-        console.error('Error loading Google Maps:', error);
-        setError('Failed to load Google Maps. Please check your internet connection.');
+        console.error('Error initializing Google Maps:', error);
+        setInitAttempts(prev => prev + 1);
+        
+        if (mounted) {
+          if (initAttempts < 2) {
+            // Retry after a delay
+            setTimeout(() => {
+              if (mounted) {
+                initializeMap();
+              }
+            }, 2000);
+          } else {
+            setError('Failed to load Google Maps. Please refresh the page.');
+          }
+        }
       }
     };
 
     initializeMap();
-  }, [mapCenter, onMapRightClick]);
+
+    return () => {
+      mounted = false;
+    };
+  }, [mapCenter, onMapRightClick, initAttempts]);
 
   // Update map center when it changes
   useEffect(() => {
@@ -95,7 +129,7 @@ const GoogleMapsSetup = ({
 
   // Update markers when places change
   useEffect(() => {
-    if (mapInstanceRef.current && isLoaded && window.google) {
+    if (mapInstanceRef.current && isLoaded && window.google && places) {
       console.log('Updating markers for', places.length, 'places');
       
       // Clear existing markers
@@ -137,9 +171,8 @@ const GoogleMapsSetup = ({
   useEffect(() => {
     if (mapInstanceRef.current && selectedPlace && isLoaded && window.google) {
       // Find the marker for the selected place and highlight it
-      const selectedMarker = markersRef.current.find((marker, index) => {
-        return places[index]?.id === selectedPlace.id;
-      });
+      const selectedMarkerIndex = places.findIndex(place => place.id === selectedPlace.id);
+      const selectedMarker = markersRef.current[selectedMarkerIndex];
 
       if (selectedMarker) {
         // Update marker icon to highlight selected state
@@ -159,6 +192,22 @@ const GoogleMapsSetup = ({
           mapInstanceRef.current.panTo(selectedPlace.coordinates);
         }
       }
+
+      // Reset other markers to default state
+      markersRef.current.forEach((marker, index) => {
+        if (index !== selectedMarkerIndex) {
+          marker.setIcon({
+            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+              <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="16" cy="16" r="8" fill="#3B82F6" stroke="white" stroke-width="2"/>
+                <circle cx="16" cy="16" r="3" fill="white"/>
+              </svg>
+            `),
+            scaledSize: new window.google.maps.Size(32, 32),
+            anchor: new window.google.maps.Point(16, 16)
+          });
+        }
+      });
     }
   }, [selectedPlace, isLoaded, places]);
 
@@ -167,7 +216,16 @@ const GoogleMapsSetup = ({
       <div className="w-full h-full min-h-[400px] rounded-lg bg-red-50 border border-red-200 flex items-center justify-center">
         <div className="text-center p-6">
           <div className="text-red-600 text-lg font-medium mb-2">Map Loading Error</div>
-          <div className="text-red-500 text-sm">{error}</div>
+          <div className="text-red-500 text-sm mb-4">{error}</div>
+          <button
+            onClick={() => {
+              setError(null);
+              setInitAttempts(0);
+            }}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
@@ -177,10 +235,15 @@ const GoogleMapsSetup = ({
     <div className="relative w-full h-full min-h-[400px]">
       <div ref={mapRef} className="w-full h-full rounded-lg" />
       {!isLoaded && (
-        <div className="absolute inset-0 bg-gray-100 rounded-lg flex items-center justify-center">
+        <div className="absolute inset-0 bg-gray-100 rounded-lg flex items-center justify-center z-10">
           <div className="text-center">
             <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
             <div className="text-gray-600">Loading map...</div>
+            {initAttempts > 0 && (
+              <div className="text-gray-500 text-sm mt-2">
+                Attempt {initAttempts + 1} of 3
+              </div>
+            )}
           </div>
         </div>
       )}
