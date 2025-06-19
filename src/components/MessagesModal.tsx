@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { X, ArrowLeft, Send, MapPin, Search, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { messageService, DirectMessage, MessageThread } from '@/services/messageService';
-import { useRealTimeMessages } from '@/hooks/useRealTimeMessages';
 
 interface MessagesModalProps {
   isOpen: boolean;
@@ -20,18 +18,6 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Use real-time messages hook
-  useRealTimeMessages((message) => {
-    if (selectedThread && 
-        (message.sender_id === selectedThread.other_user?.id || 
-         message.receiver_id === selectedThread.other_user?.id)) {
-      setMessages(prev => [...prev, message]);
-      scrollToBottom();
-    }
-    // Refresh threads to update last message
-    loadThreads();
-  });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

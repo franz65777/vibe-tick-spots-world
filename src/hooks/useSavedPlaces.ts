@@ -12,6 +12,16 @@ interface SavedPlace {
   privacy_level: 'private' | 'followers' | 'public';
   created_at: string;
   place?: Place;
+  locations?: {
+    id: string;
+    name: string;
+    category: string;
+    latitude: number;
+    longitude: number;
+    address: string;
+    image_url: string;
+    city?: string;
+  };
 }
 
 export const useSavedPlaces = () => {
@@ -46,7 +56,8 @@ export const useSavedPlaces = () => {
             latitude,
             longitude,
             address,
-            image_url
+            image_url,
+            city
           )
         `)
         .eq('user_id', user.id);
@@ -56,10 +67,10 @@ export const useSavedPlaces = () => {
       const savedIds = new Set(data?.map(item => item.location_id) || []);
       setSavedPlaces(savedIds);
       
-      // Transform data to include privacy_level with default value
+      // Transform data to include privacy_level with default value since it doesn't exist in DB
       const transformedData = data?.map(item => ({
         ...item,
-        privacy_level: item.privacy_level || 'followers' as 'private' | 'followers' | 'public'
+        privacy_level: 'followers' as 'private' | 'followers' | 'public' // Default since column doesn't exist
       })) || [];
       
       setSavedPlacesWithDetails(transformedData);
@@ -160,7 +171,7 @@ export const useSavedPlaces = () => {
     const places = savedPlacesWithDetails.length;
     const cities = new Set(
       savedPlacesWithDetails
-        .map(item => item.place?.coordinates || item.locations?.city)
+        .map(item => item.locations?.city)
         .filter(Boolean)
     ).size;
     

@@ -6,11 +6,6 @@ import { Textarea } from '@/components/ui/textarea';
 import GooglePlacesAutocomplete from './GooglePlacesAutocomplete';
 import { useGeolocation } from '@/hooks/useGeolocation';
 
-interface LocationResult {
-  coordinates: { lat: number; lng: number };
-  address: string;
-}
-
 const AddLocationPage = () => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -61,13 +56,17 @@ const AddLocationPage = () => {
   };
 
   const handleCurrentLocation = async () => {
-    const location: LocationResult | null = await getCurrentLocation();
-    if (location?.coordinates) {
-      setFormData(prev => ({
-        ...prev,
-        coordinates: location.coordinates,
-        address: location.address || 'Current location'
-      }));
+    try {
+      const position = await getCurrentLocation();
+      if (position) {
+        setFormData(prev => ({
+          ...prev,
+          coordinates: { lat: position.lat, lng: position.lng },
+          address: 'Current location'
+        }));
+      }
+    } catch (error) {
+      console.error('Error getting current location:', error);
     }
   };
 
