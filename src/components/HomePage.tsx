@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePlaceLikes } from '@/hooks/usePlaceLikes';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
+import { useMapPins } from '@/hooks/useMapPins';
 import Header from './home/Header';
 import StoriesSection from './home/StoriesSection';
 import FilterButtons from './home/FilterButtons';
@@ -29,9 +30,11 @@ interface Story {
 const HomePage = () => {
   const { user } = useAuth();
   const { likedPlaces, toggleLike } = usePlaceLikes();
-  const { savedPlaces, isPlaceSaved, savePlace, unsavePlace } = useSavedPlaces();
+  const { savedPlaces, savePlace, unsavePlace, isPlaceSaved } = useSavedPlaces();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [viewMode, setViewMode] = useState<'feed' | 'map'>('feed');
+  const [viewMode, setViewMode] = useState<'feed' | 'map'>('map'); // Default to map view
+  const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'new'>('following');
+  const { pins, loading, refreshPins, hasFollowedUsers } = useMapPins(activeFilter);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [sharePlace, setSharePlace] = useState<Place | null>(null);
   const [commentPlace, setCommentPlace] = useState<Place | null>(null);
@@ -41,31 +44,23 @@ const HomePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentCity, setCurrentCity] = useState('New York');
 
-  // Mock data - in a real app, this would come from an API
-  const [places, setPlaces] = useState<Place[]>([
-    {
-      id: '1',
-      name: 'Café Central',
-      category: 'cafe',
-      likes: 24,
-      visitors: ['user1', 'user2', 'user3'],
-      isNew: true,
-      coordinates: { lat: 40.7589, lng: -73.9851 },
-      image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
-      addedBy: 'user1'
-    },
-    {
-      id: '2',
-      name: 'Brooklyn Bridge',
-      category: 'attraction',
-      likes: 89,
-      visitors: ['user4', 'user5'],
-      isNew: false,
-      coordinates: { lat: 40.7061, lng: -73.9969 },
-      image: 'https://images.unsplash.com/photo-1518391846015-55a9cc003b25?w=400&h=300&fit=crop',
-      addedBy: 'user2'
-    }
-  ]);
+  // Convert pins to places format for compatibility
+  const places: Place[] = pins.map(pin => ({
+    id: pin.id,
+    name: pin.name,
+    category: pin.category,
+    coordinates: pin.coordinates,
+    likes: pin.likes,
+    visitors: Array.isArray(pin.visitors) ? pin.visitors : [],
+    isNew: pin.isNew || false,
+    image: pin.image,
+    addedBy: pin.addedBy || 'user',
+    addedDate: pin.addedDate,
+    isFollowing: pin.isFollowing,
+    popularity: pin.popularity,
+    distance: pin.distance,
+    totalSaves: pin.totalSaves
+  }));
 
   const [mapCenter] = useState({ lat: 40.7589, lng: -73.9851 });
 
@@ -137,6 +132,7 @@ const HomePage = () => {
   const handleCitySelect = (city: string) => {
     setCurrentCity(city);
     setSearchQuery('');
+    refreshPins(city);
   };
 
   const handleCardClick = (place: Place) => {
@@ -157,6 +153,10 @@ const HomePage = () => {
     }
   };
 
+  const handleFilterChange = (filter: 'following' | 'popular' | 'new') => {
+    setActiveFilter(filter);
+  };
+
   // Mock categories for filter
   const categories = [
     { id: 'all', name: 'All', icon: '🌟' },
@@ -165,6 +165,11 @@ const HomePage = () => {
     { id: 'attraction', name: 'Sights', icon: '🏛️' },
     { id: 'nature', name: 'Nature', icon: '🌲' }
   ];
+
+  // Toggle between map and feed view
+  const toggleViewMode = () => {
+    setViewMode(viewMode === 'map' ? 'feed' : 'map');
+  };
 
   return (
     <div className="flex flex-col h-full bg-gray-50">
@@ -209,9 +214,9 @@ const HomePage = () => {
             {/* Filter Buttons */}
             <div className="bg-white px-4 py-3 border-y border-gray-100 sticky top-0 z-10">
               <FilterButtons
-                activeFilter="following"
-                onFilterChange={() => {}}
-                newCount={5}
+                activeFilter={activeFilter}
+                onFilterChange={handleFilterChange}
+                newCount={filteredPlaces.filter(p => p.isNew).length}
               />
             </div>
 
@@ -237,14 +242,36 @@ const HomePage = () => {
             <div className="h-20"></div>
           </div>
         ) : (
-          <MapSection
-            places={filteredPlaces}
-            onPinClick={handlePinClick}
-            mapCenter={mapCenter}
-            selectedPlace={selectedPlace}
-            onCloseSelectedPlace={() => setSelectedPlace(null)}
-          />
+          <>
+            {/* Filter Buttons for Map View */}
+            <div className="bg-white px-4 py-3 border-b border-gray-100 sticky top-0 z-10">
+              <FilterButtons
+                activeFilter={activeFilter}
+                onFilterChange={handleFilterChange}
+                newCount={filteredPlaces.filter(p => p.isNew).length}
+              />
+            </div>
+            
+            {/* Map Section */}
+            <MapSection
+              places={filteredPlaces}
+              onPinClick={handlePinClick}
+              mapCenter={mapCenter}
+              selectedPlace={selectedPlace}
+              onCloseSelectedPlace={() => setSelectedPlace(null)}
+            />
+          </>
         )}
+      </div>
+
+      {/* View Toggle Button */}
+      <div className="fixed bottom-20 right-4 z-20">
+        <button
+          onClick={toggleViewMode}
+          className="bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-colors"
+        >
+          {viewMode === 'map' ? '📋' : '🗺️'}
+        </button>
       </div>
 
       {/* Modals */}
