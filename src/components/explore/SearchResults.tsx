@@ -124,7 +124,7 @@ const SearchResults = ({
                   onClick={() => onCardClick(place)}
                 >
                   {/* Image Section */}
-                  <div className="relative h-44 bg-gradient-to-br from-blue-100 to-indigo-100">
+                  <div className="relative h-48 bg-gradient-to-br from-blue-100 to-indigo-100">
                     {place.image ? (
                       <img 
                         src={place.image} 
@@ -152,28 +152,28 @@ const SearchResults = ({
                     )}
                   </div>
 
-                  {/* Content Section */}
+                  {/* Content Section - Fixed Layout */}
                   <div className="p-4">
-                    <h3 className="font-bold text-lg text-gray-900 mb-3 line-clamp-1">
+                    <h3 className="font-bold text-lg text-gray-900 mb-2 line-clamp-2 leading-tight">
                       {place.name}
                     </h3>
                     
-                    {/* Stats Row */}
+                    {/* Stats Row - Fixed to prevent overlap */}
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1 text-sm text-gray-600">
-                          <Heart className="w-4 h-4 text-red-500" />
+                          <Heart className="w-4 h-4 text-red-500 flex-shrink-0" />
                           <span className="font-medium">{place.likes || 0}</span>
                         </div>
                         {place.distance && (
                           <div className="flex items-center gap-1 text-sm text-gray-600">
-                            <Navigation className="w-4 h-4 text-blue-500" />
-                            <span>{place.distance}</span>
+                            <Navigation className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                            <span className="truncate">{place.distance}</span>
                           </div>
                         )}
                       </div>
                       {place.visitors && (
-                        <div className="text-sm text-gray-600">
+                        <div className="text-sm text-gray-600 flex-shrink-0">
                           {Array.isArray(place.visitors) ? place.visitors.length : place.visitors} visitors
                         </div>
                       )}
@@ -181,22 +181,22 @@ const SearchResults = ({
                   </div>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="px-4 pb-4">
-                  <div className="grid grid-cols-3 gap-2">
+                {/* Action Buttons - Separated from content */}
+                <div className="px-4 pb-4 border-t border-gray-50">
+                  <div className="grid grid-cols-3 gap-2 pt-3">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         onLikeToggle(place.id);
                       }}
-                      className={`flex items-center justify-center gap-2 py-3 px-3 rounded-xl text-sm font-medium transition-all ${
+                      className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-sm font-medium transition-all ${
                         likedPlaces.has(place.id)
                           ? 'bg-red-50 text-red-600 border border-red-200'
                           : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100'
                       }`}
                     >
-                      <Heart className={`w-4 h-4 ${likedPlaces.has(place.id) ? 'fill-current' : ''}`} />
-                      <span className="hidden sm:inline">{likedPlaces.has(place.id) ? 'Liked' : 'Like'}</span>
+                      <Heart className={`w-4 h-4 flex-shrink-0 ${likedPlaces.has(place.id) ? 'fill-current' : ''}`} />
+                      <span className="hidden sm:inline truncate">{likedPlaces.has(place.id) ? 'Liked' : 'Like'}</span>
                     </button>
                     
                     <button
@@ -204,10 +204,10 @@ const SearchResults = ({
                         e.stopPropagation();
                         onComment(place);
                       }}
-                      className="flex items-center justify-center gap-2 py-3 px-3 rounded-xl text-sm font-medium bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-all"
+                      className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-sm font-medium bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-all"
                     >
-                      <MessageCircle className="w-4 h-4" />
-                      <span className="hidden sm:inline">Comment</span>
+                      <MessageCircle className="w-4 h-4 flex-shrink-0" />
+                      <span className="hidden sm:inline truncate">Comment</span>
                     </button>
                     
                     <button
@@ -215,10 +215,10 @@ const SearchResults = ({
                         e.stopPropagation();
                         onShare(place);
                       }}
-                      className="flex items-center justify-center gap-2 py-3 px-3 rounded-xl text-sm font-medium bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 transition-all"
+                      className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-sm font-medium bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 transition-all"
                     >
-                      <Share2 className="w-4 h-4" />
-                      <span className="hidden sm:inline">Share</span>
+                      <Share2 className="w-4 h-4 flex-shrink-0" />
+                      <span className="hidden sm:inline truncate">Share</span>
                     </button>
                   </div>
                 </div>
