@@ -12,6 +12,20 @@ import ModalsManager from './home/ModalsManager';
 import LocationOfTheWeek from './home/LocationOfTheWeek';
 import { Place } from '@/types/place';
 
+interface Story {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  preview: string;
+  timestamp: Date;
+  isViewed: boolean;
+  mediaType: 'image' | 'video';
+  mediaUrl: string;
+  locationId: string;
+  locationName: string;
+}
+
 const HomePage = () => {
   const { user } = useAuth();
   const { likedPlaces, toggleLike } = usePlaceLikes();
@@ -56,7 +70,7 @@ const HomePage = () => {
   const [mapCenter] = useState({ lat: 40.7589, lng: -73.9851 });
 
   // Mock stories data with correct Story interface
-  const [stories] = useState([
+  const [stories] = useState<Story[]>([
     { 
       id: '1', 
       userId: 'user1',
