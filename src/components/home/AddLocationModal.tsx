@@ -1,98 +1,89 @@
 
-import React, { useState } from 'react';
-import { X, MapPin, Camera, Star, Loader2 } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { X, MapPin, Camera, Upload, Star, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import GooglePlacesAutocomplete from '../GooglePlacesAutocomplete';
 
 interface AddLocationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  coordinates?: { lat: number; lng: number } | null;
+  coordinates: { lat: number; lng: number } | null;
   onSaveLocation: (locationData: any) => void;
 }
 
-const CATEGORY_OPTIONS = [
-  { id: 'restaurant', label: 'Restaurant', icon: '🍽️' },
-  { id: 'cafe', label: 'Café', icon: '☕' },
-  { id: 'bar', label: 'Bar', icon: '🍺' },
-  { id: 'shopping', label: 'Shopping', icon: '🛍️' },
-  { id: 'entertainment', label: 'Entertainment', icon: '🎬' },
-  { id: 'park', label: 'Park', icon: '🌳' },
-  { id: 'museum', label: 'Museum', icon: '🏛️' },
-  { id: 'hotel', label: 'Hotel', icon: '🏨' },
-  { id: 'gym', label: 'Gym', icon: '💪' },
-  { id: 'other', label: 'Other', icon: '📍' }
+const categories = [
+  { value: 'restaurant', label: '🍽️ Restaurant', color: 'bg-orange-100 text-orange-800' },
+  { value: 'cafe', label: '☕ Café', color: 'bg-amber-100 text-amber-800' },
+  { value: 'bar', label: '🍺 Bar', color: 'bg-purple-100 text-purple-800' },
+  { value: 'hotel', label: '🏨 Hotel', color: 'bg-blue-100 text-blue-800' },
+  { value: 'attraction', label: '🎭 Attraction', color: 'bg-pink-100 text-pink-800' },
+  { value: 'park', label: '🌳 Park', color: 'bg-green-100 text-green-800' },
+  { value: 'museum', label: '🏛️ Museum', color: 'bg-indigo-100 text-indigo-800' },
+  { value: 'shop', label: '🛍️ Shop', color: 'bg-teal-100 text-teal-800' },
+  { value: 'gym', label: '💪 Gym', color: 'bg-red-100 text-red-800' },
+  { value: 'other', label: '📍 Other', color: 'bg-gray-100 text-gray-800' }
 ];
 
 const AddLocationModal = ({ isOpen, onClose, coordinates, onSaveLocation }: AddLocationModalProps) => {
-  const [step, setStep] = useState<'location' | 'details' | 'review'>('location');
-  const [location, setLocation] = useState<{
-    place_id: string;
-    name: string;
-    address: string;
-    lat: number;
-    lng: number;
-  } | null>(null);
-  const [locationName, setLocationName] = useState('');
+  const [step, setStep] = useState<'search' | 'details' | 'photo'>('search');
+  const [selectedPlace, setSelectedPlace] = useState<any>(null);
+  const [customName, setCustomName] = useState('');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
   const [rating, setRating] = useState(0);
-  const [tags, setTags] = useState<string[]>([]);
-  const [newTag, setNewTag] = useState('');
-  const [loading, setSaving] = useState(false);
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [saving, setSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleLocationSelect = (place: {
-    place_id: string;
-    name: string;
-    address: string;
-    lat: number;
-    lng: number;
-  }) => {
-    setLocation(place);
-    setLocationName(place.name);
+  const handlePlaceSelect = (place: any) => {
+    setSelectedPlace(place);
+    setCustomName(place.name);
+    // Auto-detect category based on place types
+    const placeTypes = place.types || [];
+    if (placeTypes.includes('restaurant') || placeTypes.includes('meal_takeaway')) {
+      setCategory('restaurant');
+    } else if (placeTypes.includes('cafe') || placeTypes.includes('bakery')) {
+      setCategory('cafe');
+    } else if (placeTypes.includes('lodging')) {
+      setCategory('hotel');
+    } else if (placeTypes.includes('tourist_attraction')) {
+      setCategory('attraction');
+    } else if (placeTypes.includes('park')) {
+      setCategory('park');
+    } else {
+      setCategory('other');
+    }
     setStep('details');
   };
 
-  const handleManualLocation = () => {
-    if (coordinates) {
-      setLocation({
-        place_id: '',
-        name: locationName,
-        address: `${coordinates.lat.toFixed(6)}, ${coordinates.lng.toFixed(6)}`,
-        lat: coordinates.lat,
-        lng: coordinates.lng
-      });
-      setStep('details');
-    }
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setPhotos(prev => [...prev, ...files].slice(0, 3)); // Max 3 photos
   };
 
-  const addTag = () => {
-    if (newTag.trim() && !tags.includes(newTag.trim())) {
-      setTags([...tags, newTag.trim()]);
-      setNewTag('');
-    }
-  };
-
-  const removeTag = (tagToRemove: string) => {
-    setTags(tags.filter(tag => tag !== tagToRemove));
+  const removePhoto = (index: number) => {
+    setPhotos(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSave = async () => {
-    if (!location) return;
+    if (!selectedPlace && !customName) return;
 
     setSaving(true);
     try {
       const locationData = {
-        ...location,
-        name: locationName,
+        name: customName || selectedPlace?.name,
         category,
         description,
         rating,
-        tags,
-        coordinates: { lat: location.lat, lng: location.lng }
+        coordinates: selectedPlace?.lat && selectedPlace?.lng 
+          ? { lat: selectedPlace.lat, lng: selectedPlace.lng }
+          : coordinates,
+        place_id: selectedPlace?.place_id,
+        address: selectedPlace?.address,
+        photos
       };
 
       await onSaveLocation(locationData);
@@ -105,126 +96,130 @@ const AddLocationModal = ({ isOpen, onClose, coordinates, onSaveLocation }: AddL
   };
 
   const handleClose = () => {
-    setStep('location');
-    setLocation(null);
-    setLocationName('');
+    setStep('search');
+    setSelectedPlace(null);
+    setCustomName('');
     setCategory('');
     setDescription('');
     setRating(0);
-    setTags([]);
-    setNewTag('');
+    setPhotos([]);
     onClose();
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center">
+      <div className="bg-white w-full h-full sm:h-auto sm:max-w-md sm:rounded-2xl overflow-hidden shadow-2xl flex flex-col sm:max-h-[90vh]">
         {/* Header */}
-        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-          <h3 className="font-bold text-lg">
-            {step === 'location' && 'Add Location'}
-            {step === 'details' && 'Location Details'}
-            {step === 'review' && 'Review & Save'}
-          </h3>
+        <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white">
+          <div className="flex items-center gap-3">
+            {step !== 'search' && (
+              <Button
+                onClick={() => setStep(step === 'details' ? 'search' : 'details')}
+                variant="ghost"
+                size="icon"
+                className="rounded-full"
+              >
+                <X className="w-5 h-5 rotate-45" />
+              </Button>
+            )}
+            <h3 className="font-bold text-lg">Add Location</h3>
+          </div>
           <Button
             onClick={handleClose}
             variant="ghost"
             size="icon"
             className="rounded-full"
-            disabled={loading}
           >
             <X className="w-5 h-5" />
           </Button>
         </div>
 
         {/* Content */}
-        <div className="max-h-[600px] overflow-y-auto">
-          {step === 'location' && (
+        <div className="flex-1 overflow-y-auto">
+          {step === 'search' && (
             <div className="p-6 space-y-6">
-              <div>
-                <h4 className="font-semibold mb-3">Search for a place</h4>
-                <GooglePlacesAutocomplete
-                  onPlaceSelect={handleLocationSelect}
-                  placeholder="Search restaurants, cafes, attractions..."
+              <div className="text-center">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <MapPin className="w-8 h-8 text-blue-600" />
+                </div>
+                <h4 className="font-semibold text-gray-900 mb-2">Find a Place</h4>
+                <p className="text-gray-500 text-sm mb-6">
+                  Search for a location or add a custom place
+                </p>
+              </div>
+
+              <GooglePlacesAutocomplete
+                onPlaceSelect={handlePlaceSelect}
+                placeholder="Search for a place..."
+              />
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500">or</span>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Input
+                  value={customName}
+                  onChange={(e) => setCustomName(e.target.value)}
+                  placeholder="Enter custom place name"
                 />
+                <Button
+                  onClick={() => setStep('details')}
+                  disabled={!customName.trim()}
+                  className="w-full"
+                  variant="outline"
+                >
+                  Add Custom Place
+                </Button>
               </div>
 
               {coordinates && (
-                <div>
-                  <div className="flex items-center justify-center mb-4">
-                    <div className="h-px bg-gray-200 flex-1"></div>
-                    <span className="px-4 text-sm text-gray-500">OR</span>
-                    <div className="h-px bg-gray-200 flex-1"></div>
-                  </div>
-
-                  <div className="border border-gray-200 rounded-xl p-4">
-                    <h4 className="font-semibold mb-2">Add custom location</h4>
-                    <p className="text-sm text-gray-500 mb-3">
-                      You clicked at: {coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}
-                    </p>
-                    <Input
-                      value={locationName}
-                      onChange={(e) => setLocationName(e.target.value)}
-                      placeholder="Enter location name..."
-                      className="mb-3"
-                    />
-                    <Button
-                      onClick={handleManualLocation}
-                      disabled={!locationName.trim()}
-                      className="w-full"
-                    >
-                      <MapPin className="w-4 h-4 mr-2" />
-                      Use This Location
-                    </Button>
-                  </div>
+                <div className="bg-blue-50 rounded-xl p-3 border border-blue-200">
+                  <p className="text-blue-800 text-sm font-medium">📍 Selected coordinates:</p>
+                  <p className="text-blue-600 text-xs">
+                    {coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}
+                  </p>
                 </div>
               )}
             </div>
           )}
 
-          {step === 'details' && location && (
+          {step === 'details' && (
             <div className="p-6 space-y-6">
-              <div className="bg-gray-50 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <MapPin className="w-4 h-4 text-gray-500" />
-                  <h4 className="font-medium">{location.name}</h4>
-                </div>
-                <p className="text-sm text-gray-500">{location.address}</p>
-              </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Location Name
+                  Place Name
                 </label>
                 <Input
-                  value={locationName}
-                  onChange={(e) => setLocationName(e.target.value)}
-                  placeholder="Enter a custom name..."
+                  value={customName}
+                  onChange={(e) => setCustomName(e.target.value)}
+                  placeholder="Enter place name"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Category
                 </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {CATEGORY_OPTIONS.map((cat) => (
-                    <button
-                      key={cat.id}
-                      onClick={() => setCategory(cat.id)}
-                      className={`flex items-center gap-2 p-3 rounded-xl border transition-colors ${
-                        category === cat.id
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <span className="text-lg">{cat.icon}</span>
-                      <span className="text-sm font-medium">{cat.label}</span>
-                    </button>
-                  ))}
-                </div>
+                <Select value={category} onValueChange={setCategory}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.value} value={cat.value}>
+                        {cat.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
@@ -236,11 +231,15 @@ const AddLocationModal = ({ isOpen, onClose, coordinates, onSaveLocation }: AddL
                     <button
                       key={star}
                       onClick={() => setRating(star)}
-                      className={`p-1 ${
-                        star <= rating ? 'text-yellow-400' : 'text-gray-300'
-                      }`}
+                      className="p-1"
                     >
-                      <Star className="w-6 h-6 fill-current" />
+                      <Star
+                        className={`w-6 h-6 ${
+                          star <= rating
+                            ? 'text-yellow-400 fill-current'
+                            : 'text-gray-300'
+                        }`}
+                      />
                     </button>
                   ))}
                 </div>
@@ -248,130 +247,84 @@ const AddLocationModal = ({ isOpen, onClose, coordinates, onSaveLocation }: AddL
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
+                  Description (Optional)
                 </label>
                 <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="What makes this place special?"
+                  placeholder="Share your thoughts about this place..."
                   rows={3}
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tags
-                </label>
-                <div className="flex gap-2 mb-2">
-                  <Input
-                    value={newTag}
-                    onChange={(e) => setNewTag(e.target.value)}
-                    placeholder="Add a tag..."
-                    onKeyPress={(e) => e.key === 'Enter' && addTag()}
-                    className="flex-1"
-                  />
-                  <Button onClick={addTag} variant="outline" size="sm">
-                    Add
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {tags.map((tag) => (
-                    <Badge
-                      key={tag}
-                      variant="secondary"
-                      className="cursor-pointer"
-                      onClick={() => removeTag(tag)}
-                    >
-                      {tag} ×
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
               <Button
-                onClick={() => setStep('review')}
+                onClick={() => setStep('photo')}
                 className="w-full"
-                disabled={!category || !locationName.trim()}
+                disabled={!customName.trim() || !category}
               >
-                Continue
+                Continue to Photos
               </Button>
             </div>
           )}
 
-          {step === 'review' && location && (
+          {step === 'photo' && (
             <div className="p-6 space-y-6">
-              <div className="bg-gray-50 rounded-xl p-4">
-                <h4 className="font-semibold mb-3">Review Your Location</h4>
-                
-                <div className="space-y-3 text-sm">
-                  <div>
-                    <span className="font-medium text-gray-700">Name:</span>
-                    <span className="ml-2">{locationName}</span>
-                  </div>
-                  
-                  <div>
-                    <span className="font-medium text-gray-700">Category:</span>
-                    <span className="ml-2 capitalize">{category}</span>
-                  </div>
-                  
-                  <div>
-                    <span className="font-medium text-gray-700">Address:</span>
-                    <span className="ml-2">{location.address}</span>
-                  </div>
-                  
-                  {rating > 0 && (
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-700">Rating:</span>
-                      <div className="flex">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={star}
-                            className={`w-4 h-4 ${
-                              star <= rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {description && (
-                    <div>
-                      <span className="font-medium text-gray-700">Description:</span>
-                      <p className="mt-1 text-gray-600">{description}</p>
-                    </div>
-                  )}
-                  
-                  {tags.length > 0 && (
-                    <div>
-                      <span className="font-medium text-gray-700">Tags:</span>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {tags.map((tag) => (
-                          <Badge key={tag} variant="outline" className="text-xs">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+              <div className="text-center">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Camera className="w-8 h-8 text-green-600" />
                 </div>
+                <h4 className="font-semibold text-gray-900 mb-2">Add Photos</h4>
+                <p className="text-gray-500 text-sm mb-6">
+                  Share photos to help others discover this place
+                </p>
               </div>
+
+              {photos.length > 0 && (
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  {photos.map((photo, index) => (
+                    <div key={index} className="relative aspect-square">
+                      <img
+                        src={URL.createObjectURL(photo)}
+                        alt={`Photo ${index + 1}`}
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                      <button
+                        onClick={() => removePhoto(index)}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <Button
+                onClick={() => fileInputRef.current?.click()}
+                variant="outline"
+                className="w-full"
+                disabled={photos.length >= 3}
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                {photos.length === 0 ? 'Add Photos' : `Add More (${photos.length}/3)`}
+              </Button>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handlePhotoSelect}
+                className="hidden"
+              />
 
               <div className="flex gap-3">
                 <Button
-                  variant="outline"
-                  onClick={() => setStep('details')}
-                  className="flex-1"
-                  disabled={loading}
-                >
-                  Back
-                </Button>
-                <Button
                   onClick={handleSave}
                   className="flex-1"
-                  disabled={loading}
+                  disabled={saving}
                 >
-                  {loading ? (
+                  {saving ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Saving...
@@ -379,6 +332,13 @@ const AddLocationModal = ({ isOpen, onClose, coordinates, onSaveLocation }: AddL
                   ) : (
                     'Save Location'
                   )}
+                </Button>
+                <Button
+                  onClick={() => setStep('photo')}
+                  variant="outline"
+                  disabled={saving}
+                >
+                  Skip Photos
                 </Button>
               </div>
             </div>
