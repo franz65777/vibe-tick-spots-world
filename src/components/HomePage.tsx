@@ -20,6 +20,10 @@ const HomePage = () => {
   const [sharePlace, setSharePlace] = useState<Place | null>(null);
   const [commentPlace, setCommentPlace] = useState<Place | null>(null);
   const [isCreateStoryModalOpen, setIsCreateStoryModalOpen] = useState(false);
+  
+  // Add search state management
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentCity, setCurrentCity] = useState('New York');
 
   // Mock data - in a real app, this would come from an API
   const [places, setPlaces] = useState<Place[]>([
@@ -47,13 +51,32 @@ const HomePage = () => {
     }
   ]);
 
-  const [currentCity] = useState('New York');
   const [mapCenter] = useState({ lat: 40.7589, lng: -73.9851 });
 
-  // Mock stories data
+  // Mock stories data with correct Story interface
   const [stories] = useState([
-    { id: '1', user: 'John', avatar: '', preview: '', timestamp: new Date() },
-    { id: '2', user: 'Sarah', avatar: '', preview: '', timestamp: new Date() }
+    { 
+      id: '1', 
+      userId: 'user1',
+      userName: 'John', 
+      userAvatar: '', 
+      preview: '', 
+      timestamp: new Date(),
+      isViewed: false,
+      mediaType: 'image' as const,
+      mediaUrl: ''
+    },
+    { 
+      id: '2', 
+      userId: 'user2',
+      userName: 'Sarah', 
+      userAvatar: '', 
+      preview: '', 
+      timestamp: new Date(),
+      isViewed: false,
+      mediaType: 'image' as const,
+      mediaUrl: ''
+    }
   ]);
 
   const filteredPlaces = selectedCategory === 'all' 
@@ -77,6 +100,25 @@ const HomePage = () => {
     setCommentPlace(null);
   };
 
+  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      console.log('Search query:', searchQuery);
+    }
+  };
+
+  const handleNotificationsClick = () => {
+    console.log('Notifications clicked');
+  };
+
+  const handleMessagesClick = () => {
+    console.log('Messages clicked');
+  };
+
+  const handleCitySelect = (city: string) => {
+    setCurrentCity(city);
+    setSearchQuery('');
+  };
+
   // Mock categories for filter
   const categories = [
     { id: 'all', name: 'All', icon: '🌟' },
@@ -90,9 +132,13 @@ const HomePage = () => {
     <div className="flex flex-col h-full bg-gray-50">
       {/* Header */}
       <Header 
+        searchQuery={searchQuery}
         currentCity={currentCity}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
+        onSearchChange={setSearchQuery}
+        onSearchKeyPress={handleSearchKeyPress}
+        onNotificationsClick={handleNotificationsClick}
+        onMessagesClick={handleMessagesClick}
+        onCitySelect={handleCitySelect}
       />
 
       {/* Content */}
@@ -125,7 +171,6 @@ const HomePage = () => {
             {/* Filter Buttons */}
             <div className="bg-white px-4 py-3 border-y border-gray-100 sticky top-0 z-10">
               <FilterButtons
-                categories={categories}
                 activeCategory={selectedCategory}
                 onCategorySelect={setSelectedCategory}
               />
@@ -141,7 +186,6 @@ const HomePage = () => {
                   isLiked={likedPlaces.has(place.id)}
                   onShare={() => handleShare(place)}
                   onComment={() => handleComment(place)}
-                  onVisit={() => {}}
                 />
               ))}
             </div>
