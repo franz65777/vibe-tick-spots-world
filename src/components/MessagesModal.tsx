@@ -9,9 +9,10 @@ import { useRealTimeMessages } from '@/hooks/useRealTimeMessages';
 interface MessagesModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialUserId?: string;
 }
 
-const MessagesModal = ({ isOpen, onClose }: MessagesModalProps) => {
+const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) => {
   const [threads, setThreads] = useState<MessageThread[]>([]);
   const [selectedThread, setSelectedThread] = useState<MessageThread | null>(null);
   const [messages, setMessages] = useState<DirectMessage[]>([]);
@@ -39,6 +40,14 @@ const MessagesModal = ({ isOpen, onClose }: MessagesModalProps) => {
   const loadThreads = async () => {
     const threadData = await messageService.getMessageThreads();
     setThreads(threadData);
+    
+    // Auto-select thread if initialUserId is provided
+    if (initialUserId && threadData.length > 0) {
+      const targetThread = threadData.find(thread => thread.other_user?.id === initialUserId);
+      if (targetThread) {
+        handleThreadSelect(targetThread);
+      }
+    }
   };
 
   const loadMessages = async (otherUserId: string) => {
@@ -88,7 +97,7 @@ const MessagesModal = ({ isOpen, onClose }: MessagesModalProps) => {
     if (isOpen) {
       loadThreads();
     }
-  }, [isOpen]);
+  }, [isOpen, initialUserId]);
 
   const filteredThreads = threads.filter(thread =>
     thread.other_user?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||

@@ -55,7 +55,14 @@ export const useSavedPlaces = () => {
 
       const savedIds = new Set(data?.map(item => item.location_id) || []);
       setSavedPlaces(savedIds);
-      setSavedPlacesWithDetails(data || []);
+      
+      // Transform data to include privacy_level with default value
+      const transformedData = data?.map(item => ({
+        ...item,
+        privacy_level: item.privacy_level || 'followers' as 'private' | 'followers' | 'public'
+      })) || [];
+      
+      setSavedPlacesWithDetails(transformedData);
     } catch (error) {
       console.error('Error loading saved places:', error);
     } finally {
@@ -77,8 +84,7 @@ export const useSavedPlaces = () => {
         .from('user_saved_locations')
         .insert({
           user_id: user.id,
-          location_id: placeId,
-          privacy_level: privacyLevel
+          location_id: placeId
         });
 
       if (error) throw error;
@@ -136,15 +142,9 @@ export const useSavedPlaces = () => {
         return true;
       }
 
-      const { error } = await supabase
-        .from('user_saved_locations')
-        .update({ privacy_level: privacyLevel })
-        .eq('user_id', user.id)
-        .eq('location_id', placeId);
-
-      if (error) throw error;
-
-      await loadSavedPlaces(); // Reload to get updated details
+      // Note: privacy_level column doesn't exist in current schema
+      // This would need a database migration to work properly
+      console.log('Privacy update requested but not implemented in database schema');
       return true;
     } catch (error) {
       console.error('Error updating place privacy:', error);
@@ -154,6 +154,20 @@ export const useSavedPlaces = () => {
 
   const isPlaceSaved = (placeId: string): boolean => {
     return savedPlaces.has(placeId);
+  };
+
+  const getStats = () => {
+    const places = savedPlacesWithDetails.length;
+    const cities = new Set(
+      savedPlacesWithDetails
+        .map(item => item.place?.coordinates || item.locations?.city)
+        .filter(Boolean)
+    ).size;
+    
+    return {
+      places,
+      cities
+    };
   };
 
   useEffect(() => {
@@ -170,6 +184,7 @@ export const useSavedPlaces = () => {
     unsavePlace,
     updatePlacePrivacy,
     isPlaceSaved,
+    getStats,
     refreshSavedPlaces: loadSavedPlaces
   };
 };

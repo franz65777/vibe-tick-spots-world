@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ArrowLeft, MapPin, Camera, Plus, Check, Search, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,6 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import GooglePlacesAutocomplete from './GooglePlacesAutocomplete';
 import { useGeolocation } from '@/hooks/useGeolocation';
+
+interface LocationResult {
+  coordinates: { lat: number; lng: number };
+  address: string;
+}
 
 const AddLocationPage = () => {
   const [step, setStep] = useState(1);
@@ -57,7 +61,7 @@ const AddLocationPage = () => {
   };
 
   const handleCurrentLocation = async () => {
-    const location = await getCurrentLocation();
+    const location: LocationResult | null = await getCurrentLocation();
     if (location?.coordinates) {
       setFormData(prev => ({
         ...prev,
