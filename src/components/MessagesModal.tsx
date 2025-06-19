@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { X, Send, Search, MessageSquare, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -40,7 +39,7 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
 
     setSending(true);
     try {
-      const success = await messageService.sendMessage(selectedUser.id, messageText.trim());
+      const success = await messageService.sendTextMessage(selectedUser.id, messageText.trim());
       if (success) {
         setMessageText('');
         // Show success feedback

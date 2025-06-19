@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,7 +14,7 @@ import FollowersModal from './profile/FollowersModal';
 import SavedLocationsList from './profile/SavedLocationsList';
 
 const ProfilePage = () => {
-  const { profile, loading, error } = useProfile();
+  const { profile, loading } = useProfile();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('posts');
@@ -51,11 +50,11 @@ const ProfilePage = () => {
     );
   }
 
-  if (error) {
+  if (!profile) {
     return (
       <div className="flex flex-col h-full bg-white">
         <div className="flex items-center justify-center h-64">
-          <p className="text-red-600">Error loading profile: {error}</p>
+          <p className="text-gray-600">Unable to load profile</p>
         </div>
       </div>
     );

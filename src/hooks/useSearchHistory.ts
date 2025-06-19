@@ -43,7 +43,15 @@ export const useSearchHistory = () => {
 
       if (error) throw error;
 
-      setSearchHistory(data || []);
+      // Type cast the data to ensure search_type is properly typed
+      const typedData: SearchHistoryItem[] = (data || []).map(item => ({
+        id: item.id,
+        search_query: item.search_query,
+        search_type: item.search_type as 'locations' | 'users',
+        searched_at: item.searched_at
+      }));
+
+      setSearchHistory(typedData);
     } catch (error) {
       console.error('Error loading search history:', error);
     } finally {
