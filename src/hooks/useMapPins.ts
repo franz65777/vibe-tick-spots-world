@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { backendService } from '@/services/backendService';
@@ -21,8 +20,8 @@ interface MapPin {
   visitors?: string[] | number;
   distance?: string | number;
   totalSaves?: number;
-  hasPost?: boolean; // New field to indicate if location has posts
-  postCount?: number; // Number of posts at this location
+  hasPost?: boolean;
+  postCount?: number;
 }
 
 interface UseMapPinsReturn {
@@ -35,7 +34,7 @@ interface UseMapPinsReturn {
   hasFollowedUsers: boolean;
 }
 
-export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'following'): UseMapPinsReturn => {
+export const useMapPins = (activeFilter: 'following' | 'popular' = 'following'): UseMapPinsReturn => {
   const { user } = useAuth();
   const [pins, setPins] = useState<MapPin[]>([]);
   const [loading, setLoading] = useState(false);
@@ -108,6 +107,68 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           totalSaves: 45,
           hasPost: false,
           postCount: 0
+        }
+      ],
+      'new york': [
+        {
+          id: 'ny1',
+          name: 'Brooklyn Bridge Café',
+          category: 'cafe',
+          coordinates: { lat: 40.7061, lng: -73.9969 },
+          likes: 34,
+          isFollowing: true,
+          addedBy: 'user1',
+          addedDate: '2024-06-10',
+          popularity: 88,
+          city: 'New York',
+          isNew: false,
+          image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
+          friendsWhoSaved: 6,
+          visitors: 20,
+          distance: '0.3km',
+          totalSaves: 34,
+          hasPost: true,
+          postCount: 2
+        },
+        {
+          id: 'ny2',
+          name: 'Times Square Bistro',
+          category: 'restaurant',
+          coordinates: { lat: 40.7580, lng: -73.9855 },
+          likes: 67,
+          isFollowing: true,
+          addedBy: 'user2',
+          addedDate: '2024-06-05',
+          popularity: 95,
+          city: 'New York',
+          isNew: false,
+          image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop',
+          friendsWhoSaved: 12,
+          visitors: 35,
+          distance: '0.8km',
+          totalSaves: 67,
+          hasPost: true,
+          postCount: 4
+        },
+        {
+          id: 'ny3',
+          name: 'Central Park View Bar',
+          category: 'bar',
+          coordinates: { lat: 40.7829, lng: -73.9654 },
+          likes: 29,
+          isFollowing: true,
+          addedBy: 'user3',
+          addedDate: '2024-06-15',
+          popularity: 82,
+          city: 'New York',
+          isNew: true,
+          image: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=400&h=300&fit=crop',
+          friendsWhoSaved: 5,
+          visitors: 18,
+          distance: '1.5km',
+          totalSaves: 29,
+          hasPost: true,
+          postCount: 1
         }
       ],
       'milan': [
@@ -216,21 +277,14 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
       ]
     };
 
-    const cityKey = city?.toLowerCase() || 'san francisco';
-    const cityPins = allDemoPins[cityKey] || allDemoPins['san francisco'];
+    const cityKey = city?.toLowerCase() || 'new york';
+    const cityPins = allDemoPins[cityKey] || allDemoPins['new york'];
 
     switch (filter) {
       case 'following':
         return cityPins.filter(pin => pin.isFollowing);
       case 'popular':
         return cityPins.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
-      case 'new':
-        const oneWeekAgo = new Date();
-        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-        return cityPins.filter(pin => {
-          const addedDate = new Date(pin.addedDate || '');
-          return pin.isFollowing && addedDate >= oneWeekAgo;
-        });
       default:
         return cityPins;
     }
@@ -426,24 +480,14 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
 
       switch (activeFilter) {
         case 'following':
-        case 'new':
           const hasFollowed = await checkFollowedUsers();
           setHasFollowedUsers(hasFollowed);
           
           if (!hasFollowed) {
-            console.log(`User has no followed users, skipping ${activeFilter} pins fetch`);
+            console.log('User has no followed users, skipping following pins fetch');
             newPins = [];
-          } else if (activeFilter === 'following') {
-            newPins = await getFollowingPins(city);
           } else {
-            // For new filter, get following pins and filter by date
-            const followingPins = await getFollowingPins(city);
-            const oneWeekAgo = new Date();
-            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-            newPins = followingPins.filter(pin => {
-              const addedDate = new Date(pin.addedDate || '');
-              return addedDate >= oneWeekAgo;
-            });
+            newPins = await getFollowingPins(city);
           }
           break;
         case 'popular':

@@ -34,7 +34,8 @@ const HomePage = () => {
   const { likedPlaces, toggleLike } = usePlaceLikes();
   const { savedPlaces, savePlace, unsavePlace, isPlaceSaved } = useSavedPlaces();
   const { notifications, unreadCount } = useNotifications();
-  const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'new'>('following');
+  const [activeFilter, setActiveFilter] = useState<'following' | 'popular'>('following');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const { pins, loading, refreshPins, hasFollowedUsers } = useMapPins(activeFilter);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [sharePlace, setSharePlace] = useState<Place | null>(null);
@@ -47,23 +48,27 @@ const HomePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentCity, setCurrentCity] = useState('New York');
 
-  // Convert pins to places format for compatibility
-  const places: Place[] = pins.map(pin => ({
-    id: pin.id,
-    name: pin.name,
-    category: pin.category,
-    coordinates: pin.coordinates,
-    likes: pin.likes,
-    visitors: Array.isArray(pin.visitors) ? pin.visitors : [],
-    isNew: pin.isNew || false,
-    image: pin.image,
-    addedBy: typeof pin.addedBy === 'string' ? pin.addedBy : 'user',
-    addedDate: pin.addedDate,
-    isFollowing: pin.isFollowing,
-    popularity: pin.popularity,
-    distance: pin.distance,
-    totalSaves: pin.totalSaves
-  }));
+  // Convert pins to places format and filter by categories
+  const places: Place[] = pins
+    .map(pin => ({
+      id: pin.id,
+      name: pin.name,
+      category: pin.category,
+      coordinates: pin.coordinates,
+      likes: pin.likes,
+      visitors: Array.isArray(pin.visitors) ? pin.visitors : [],
+      isNew: pin.isNew || false,
+      image: pin.image,
+      addedBy: typeof pin.addedBy === 'string' ? pin.addedBy : 'user',
+      addedDate: pin.addedDate,
+      isFollowing: pin.isFollowing,
+      popularity: pin.popularity,
+      distance: pin.distance,
+      totalSaves: pin.totalSaves
+    }))
+    .filter(place => 
+      selectedCategories.length === 0 || selectedCategories.includes(place.category)
+    );
 
   const [mapCenter] = useState({ lat: 40.7589, lng: -73.9851 });
 
@@ -134,21 +139,56 @@ const HomePage = () => {
     refreshPins(city);
   };
 
-  const handleFilterChange = (filter: 'following' | 'popular' | 'new') => {
+  const handleFilterChange = (filter: 'following' | 'popular') => {
     setActiveFilter(filter);
   };
 
-  // Sample location of the week data
-  const locationOfTheWeek = {
-    id: 'lotw-1',
-    name: 'Central Park Conservatory Garden',
-    image: 'https://images.unsplash.com/photo-1568515387631-8b650bbcdb90?w=400&h=300&fit=crop',
-    description: 'A hidden gem in Central Park featuring beautiful seasonal gardens and peaceful walking paths.',
-    category: 'park',
-    likes: 245,
-    saves: 89,
-    coordinates: { lat: 40.7829, lng: -73.9654 },
-    visitors: 156
+  const handleCategoryChange = (categories: string[]) => {
+    setSelectedCategories(categories);
+  };
+
+  // Get location of the week based on current city
+  const getLocationOfTheWeek = () => {
+    const locationsByCity: Record<string, any> = {
+      'New York': {
+        id: 'lotw-ny',
+        name: 'Central Park Conservatory Garden',
+        image: 'https://images.unsplash.com/photo-1568515387631-8b650bbcdb90?w=400&h=300&fit=crop',
+        category: 'park',
+        likes: 245,
+        coordinates: { lat: 40.7829, lng: -73.9654 },
+        visitors: 156
+      },
+      'San Francisco': {
+        id: 'lotw-sf',
+        name: 'Golden Gate Park Japanese Tea Garden',
+        image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
+        category: 'park',
+        likes: 189,
+        coordinates: { lat: 37.7701, lng: -122.4696 },
+        visitors: 123
+      },
+      'Milan': {
+        id: 'lotw-milan',
+        name: 'Navigli District',
+        image: 'https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=400&h=300&fit=crop',
+        category: 'attraction',
+        likes: 167,
+        coordinates: { lat: 45.4583, lng: 9.1756 },
+        visitors: 89
+      },
+      'Paris': {
+        id: 'lotw-paris',
+        name: 'Jardin du Luxembourg',
+        image: 'https://images.unsplash.com/photo-1502602898536-47ad22581b52?w=400&h=300&fit=crop',
+        category: 'park',
+        likes: 298,
+        coordinates: { lat: 48.8462, lng: 2.3372 },
+        visitors: 201
+      }
+    };
+
+    return locationsByCity[currentCity] || locationsByCity['New York'];
   };
 
   return (
@@ -175,7 +215,7 @@ const HomePage = () => {
       {/* Location of the Week */}
       <div className="bg-white px-4 py-4 border-b border-gray-100">
         <LocationOfTheWeek 
-          topLocation={locationOfTheWeek}
+          topLocation={getLocationOfTheWeek()}
           onLocationClick={(place: Place) => {
             handlePinClick(place);
           }}
@@ -187,7 +227,8 @@ const HomePage = () => {
         <FilterButtons
           activeFilter={activeFilter}
           onFilterChange={handleFilterChange}
-          newCount={places.filter(p => p.isNew).length}
+          selectedCategories={selectedCategories}
+          onCategoryChange={handleCategoryChange}
         />
       </div>
       

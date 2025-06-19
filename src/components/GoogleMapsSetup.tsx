@@ -40,7 +40,7 @@ const GoogleMapsSetup = ({
         if (!mounted) return;
 
         // Small delay to ensure DOM is ready
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 200));
 
         if (mapRef.current && !mapInstanceRef.current && isGoogleMapsLoaded()) {
           console.log('Creating Google Maps instance...');
@@ -49,7 +49,7 @@ const GoogleMapsSetup = ({
 
           const mapOptions: google.maps.MapOptions = {
             center: defaultCenter,
-            zoom: 12,
+            zoom: 13,
             styles: [
               {
                 featureType: 'poi.business',
@@ -83,7 +83,7 @@ const GoogleMapsSetup = ({
           
           // Add places if available
           if (places && places.length > 0) {
-            addMarkersToMap(places);
+            setTimeout(() => addMarkersToMap(places), 100);
           }
         }
       } catch (error) {
@@ -138,6 +138,21 @@ const GoogleMapsSetup = ({
         }
       }
     });
+
+    // Fit map to show all markers if there are any
+    if (markersRef.current.length > 0) {
+      const bounds = new window.google.maps.LatLngBounds();
+      markersRef.current.forEach(marker => {
+        const position = marker.getPosition();
+        if (position) bounds.extend(position);
+      });
+      mapInstanceRef.current.fitBounds(bounds);
+      
+      // Don't zoom in too close if there's only one marker
+      if (markersRef.current.length === 1) {
+        mapInstanceRef.current.setZoom(Math.min(mapInstanceRef.current.getZoom() || 13, 15));
+      }
+    }
   };
 
   // Update markers when places change
