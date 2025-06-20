@@ -7,11 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { MapPin, Heart, Bookmark, Users, Clock } from 'lucide-react';
 
+type SortBy = 'proximity' | 'likes' | 'saves' | 'following' | 'recent';
+
 interface SearchFiltersModalProps {
   isOpen: boolean;
   onClose: () => void;
-  selectedSort: string;
-  onSortChange: (sort: string) => void;
+  selectedSort: SortBy;
+  onSortChange: (sort: SortBy) => void;
   selectedFilters: string[];
   onFiltersChange: (filters: string[]) => void;
 }
@@ -25,11 +27,11 @@ const SearchFiltersModal = ({
   onFiltersChange
 }: SearchFiltersModalProps) => {
   const sortOptions = [
-    { value: 'proximity', label: 'Distance', icon: MapPin, description: 'Closest to you' },
-    { value: 'likes', label: 'Most Liked', icon: Heart, description: 'Popular locations' },
-    { value: 'saves', label: 'Most Saved', icon: Bookmark, description: 'Frequently bookmarked' },
-    { value: 'following', label: 'Saved by Friends', icon: Users, description: 'From people you follow' },
-    { value: 'recent', label: 'Recently Added', icon: Clock, description: 'Newest locations' }
+    { value: 'proximity' as const, label: 'Distance', icon: MapPin, description: 'Closest to you' },
+    { value: 'likes' as const, label: 'Most Liked', icon: Heart, description: 'Popular locations' },
+    { value: 'saves' as const, label: 'Most Saved', icon: Bookmark, description: 'Frequently bookmarked' },
+    { value: 'following' as const, label: 'Saved by Friends', icon: Users, description: 'From people you follow' },
+    { value: 'recent' as const, label: 'Recently Added', icon: Clock, description: 'Newest locations' }
   ];
 
   const filterOptions = [

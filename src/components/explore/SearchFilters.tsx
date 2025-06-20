@@ -5,9 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import SearchFiltersModal from './SearchFiltersModal';
 
+type SortBy = 'proximity' | 'likes' | 'saves' | 'following' | 'recent';
+
 interface SearchFiltersProps {
-  sortBy: string;
-  onSortChange: (sortBy: string) => void;
+  sortBy: SortBy;
+  onSortChange: (sortBy: SortBy) => void;
   filters: string[];
   onFiltersChange: (filters: string[]) => void;
   showFilters: boolean;
@@ -24,7 +26,7 @@ const SearchFilters = ({
 
   if (!showFilters) return null;
 
-  const activeFiltersCount = filters.length;
+  const activeFiltersCount = filters?.length || 0;
   const hasActiveFilters = activeFiltersCount > 0 || sortBy !== 'proximity';
 
   return (

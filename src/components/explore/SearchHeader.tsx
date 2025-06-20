@@ -34,6 +34,10 @@ const SearchHeader = ({
     e.preventDefault();
   };
 
+  const handleSortChange = (newSortBy: SortBy) => {
+    setSortBy(newSortBy);
+  };
+
   return (
     <div className="bg-white/95 backdrop-blur-lg px-4 py-4 shadow-sm border-b border-gray-100">
       <div className="max-w-2xl mx-auto">
@@ -105,7 +109,7 @@ const SearchHeader = ({
         {searchMode === 'locations' && (
           <SearchFilters
             sortBy={sortBy}
-            onSortChange={setSortBy}
+            onSortChange={handleSortChange}
             filters={filters}
             onFiltersChange={setFilters}
             showFilters={showFilters}
