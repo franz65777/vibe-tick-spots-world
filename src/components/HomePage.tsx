@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,6 +8,27 @@ import StoriesSection from './home/StoriesSection';
 import FilterButtons from './home/FilterButtons';
 import MapSection from './home/MapSection';
 import ModalsManager from './home/ModalsManager';
+
+// Local interface for modal components that expect simpler Place structure
+interface LocalPlace {
+  id: string;
+  name: string;
+  category: string;
+  coordinates: { lat: number; lng: number };
+  likes: number;
+  isFollowing?: boolean;
+  addedBy?: string;
+  addedDate?: string;
+  popularity?: number;
+  city?: string;
+  isNew?: boolean;
+  image?: string;
+  friendsWhoSaved?: { name: string; avatar: string }[];
+  visitors: string[];
+  distance?: string | number;
+  totalSaves?: number;
+  address?: string;
+}
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -27,9 +47,9 @@ const HomePage = () => {
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
   const [isLocationDetailOpen, setIsLocationDetailOpen] = useState(false);
   const [isStoriesViewerOpen, setIsStoriesViewerOpen] = useState(false);
-  const [sharePlace, setSharePlace] = useState<Place | null>(null);
-  const [commentPlace, setCommentPlace] = useState<Place | null>(null);
-  const [locationDetailPlace, setLocationDetailPlace] = useState<Place | null>(null);
+  const [sharePlace, setSharePlace] = useState<LocalPlace | null>(null);
+  const [commentPlace, setCommentPlace] = useState<LocalPlace | null>(null);
+  const [locationDetailPlace, setLocationDetailPlace] = useState<LocalPlace | null>(null);
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   
   // Search state
@@ -130,6 +150,27 @@ const HomePage = () => {
   const handleCloseSelectedPlace = () => {
     setSelectedPlace(null);
   };
+
+  // Convert Place to LocalPlace for modal components
+  const convertToLocalPlace = (place: Place): LocalPlace => ({
+    id: place.id,
+    name: place.name,
+    category: place.category,
+    coordinates: place.coordinates,
+    likes: place.likes,
+    isFollowing: place.isFollowing,
+    addedBy: typeof place.addedBy === 'string' ? place.addedBy : 'unknown',
+    addedDate: place.addedDate,
+    popularity: place.popularity,
+    city: place.city,
+    isNew: place.isNew,
+    image: place.image,
+    friendsWhoSaved: Array.isArray(place.friendsWhoSaved) ? place.friendsWhoSaved : [],
+    visitors: place.visitors,
+    distance: place.distance,
+    totalSaves: place.totalSaves,
+    address: place.address
+  });
 
   // Mock stories data
   const stories = [

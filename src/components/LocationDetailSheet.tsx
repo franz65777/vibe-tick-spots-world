@@ -64,7 +64,7 @@ const LocationDetailSheet = ({
           saves_count,
           comments_count,
           created_at,
-          profiles(
+          profiles (
             username,
             full_name,
             avatar_url
@@ -80,7 +80,13 @@ const LocationDetailSheet = ({
 
       // Type guard and filter to ensure posts have valid profiles
       const validPosts: Post[] = (postsData || [])
-        .filter(post => post.profiles && typeof post.profiles === 'object')
+        .filter(post => {
+          // Check if profiles exists and is not an error object
+          return post.profiles && 
+                 typeof post.profiles === 'object' && 
+                 !('error' in post.profiles) &&
+                 'username' in post.profiles;
+        })
         .map(post => ({
           ...post,
           profiles: post.profiles as {
