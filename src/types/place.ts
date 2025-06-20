@@ -1,4 +1,5 @@
 
+
 export interface Place {
   id: string;
   name: string;
@@ -20,3 +21,4 @@ export interface Place {
   distance?: string | number;
   totalSaves?: number;
 }
+

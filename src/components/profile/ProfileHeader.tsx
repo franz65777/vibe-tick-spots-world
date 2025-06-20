@@ -1,5 +1,5 @@
 
-import { MoreHorizontal, Building2, Edit, LogOut, Camera, Shield } from 'lucide-react';
+import { MoreHorizontal, Building2, Edit, LogOut, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -15,15 +15,12 @@ import { useState } from 'react';
 import BadgeDisplay from './BadgeDisplay';
 import EditProfileModal from './EditProfileModal';
 import ProfilePictureEditor from '../ProfilePictureEditor';
-import PrivacySettings from './PrivacySettings';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const ProfileHeader = () => {
   const { profile } = useProfile();
   const { user } = useAuth();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isProfilePictureEditorOpen, setIsProfilePictureEditorOpen] = useState(false);
-  const [isPrivacySettingsOpen, setIsPrivacySettingsOpen] = useState(false);
 
   // Mock business account status - in a real app, this would come from the backend
   const hasBusinessAccount = true; // This should be fetched from user's business status
@@ -65,10 +62,6 @@ const ProfileHeader = () => {
             <DropdownMenuItem onClick={() => setIsEditModalOpen(true)}>
               <Edit className="w-4 h-4 mr-2" />
               Edit Profile
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setIsPrivacySettingsOpen(true)}>
-              <Shield className="w-4 h-4 mr-2" />
-              Privacy Settings
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="text-red-600">
@@ -115,11 +108,6 @@ const ProfileHeader = () => {
                   <Building2 className="w-3 h-3 text-white" />
                 </div>
               )}
-              {profile?.is_private && (
-                <div className="w-5 h-5 bg-gray-400 rounded-full flex items-center justify-center shrink-0">
-                  <Shield className="w-3 h-3 text-white" />
-                </div>
-              )}
             </div>
             <BadgeDisplay userId={user?.id} />
           </div>
@@ -143,15 +131,6 @@ const ProfileHeader = () => {
         onClose={() => setIsProfilePictureEditorOpen(false)}
         currentAvatarUrl={profile?.avatar_url || undefined}
       />
-
-      <Dialog open={isPrivacySettingsOpen} onOpenChange={setIsPrivacySettingsOpen}>
-        <DialogContent className="max-w-md mx-auto max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Privacy Settings</DialogTitle>
-          </DialogHeader>
-          <PrivacySettings />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

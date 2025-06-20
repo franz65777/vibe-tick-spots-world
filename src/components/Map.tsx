@@ -24,16 +24,16 @@ const Map = ({ locations, selectedFilter, onLocationClick }: MapProps) => {
   };
 
   return (
-    <div className="relative w-full h-full min-h-[50vh] rounded-lg overflow-hidden bg-gradient-to-br from-blue-100 via-green-50 to-blue-50">
+    <div className="rounded-lg overflow-hidden h-full relative min-h-96 bg-gradient-to-br from-blue-100 via-green-50 to-blue-50">
       {/* Google Maps not available notice */}
-      <div className="absolute top-3 right-3 bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2 flex items-center gap-2 text-xs text-yellow-800 z-20 max-w-[200px]">
-        <AlertCircle className="w-3 h-3 flex-shrink-0" />
-        <span className="leading-tight">Demo Map - Google Maps integration needed</span>
+      <div className="absolute top-4 right-4 bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2 flex items-center gap-2 text-sm text-yellow-800 z-20">
+        <AlertCircle className="w-4 h-4" />
+        <span>Demo Map - Google Maps integration needed</span>
       </div>
 
       {/* Map background with grid pattern to simulate map */}
       <div className="absolute inset-0 opacity-20">
-        <svg className="w-full h-full" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+        <svg className="w-full h-full" viewBox="0 0 400 300">
           <defs>
             <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
               <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#4B5563" strokeWidth="0.5"/>
@@ -56,11 +56,8 @@ const Map = ({ locations, selectedFilter, onLocationClick }: MapProps) => {
       </div>
 
       {/* Filter indicator */}
-      <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-2 rounded-lg text-sm font-medium capitalize shadow-sm z-10 border border-gray-200">
-        <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${getPinColor().replace('text-', 'bg-')}`}></div>
-          <span>{selectedFilter} ({locations.length})</span>
-        </div>
+      <div className="absolute top-4 left-4 bg-white px-3 py-1 rounded-full text-sm font-medium capitalize shadow-sm z-10">
+        {selectedFilter} ({locations.length})
       </div>
 
       {/* Location pins */}
@@ -72,9 +69,6 @@ const Map = ({ locations, selectedFilter, onLocationClick }: MapProps) => {
           { top: '65%', left: '25%' },
           { top: '35%', left: '75%' },
           { top: '55%', left: '45%' },
-          { top: '20%', left: '70%' },
-          { top: '70%', left: '50%' },
-          { top: '40%', left: '20%' },
         ];
         
         const position = positions[index % positions.length];
@@ -82,7 +76,7 @@ const Map = ({ locations, selectedFilter, onLocationClick }: MapProps) => {
         return (
           <div
             key={location.id}
-            className="absolute cursor-pointer z-20 transition-transform hover:scale-110 group"
+            className="absolute cursor-pointer z-20 transition-transform hover:scale-110"
             style={{
               top: position.top,
               left: position.left,
@@ -92,10 +86,10 @@ const Map = ({ locations, selectedFilter, onLocationClick }: MapProps) => {
           >
             <div className="relative">
               <MapPin 
-                className={`w-7 h-7 ${getPinColor()} drop-shadow-lg`}
+                className={`w-8 h-8 ${getPinColor()} drop-shadow-lg`}
                 fill="currentColor"
               />
-              <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-md text-xs font-medium shadow-sm whitespace-nowrap max-w-28 truncate border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 bg-white px-2 py-1 rounded text-xs font-medium shadow-sm whitespace-nowrap max-w-24 truncate">
                 {location.name}
               </div>
             </div>
@@ -103,19 +97,19 @@ const Map = ({ locations, selectedFilter, onLocationClick }: MapProps) => {
         );
       })}
 
-      {/* Map controls */}
-      <div className="absolute bottom-4 right-3 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200">
-        <button className="block p-2.5 border-b border-gray-200 hover:bg-gray-50 transition-colors">
-          <span className="text-lg font-bold text-gray-700">+</span>
-        </button>
-        <button className="block p-2.5 hover:bg-gray-50 transition-colors">
-          <span className="text-lg font-bold text-gray-700">−</span>
-        </button>
-      </div>
-
-      {/* Map attribution */}
-      <div className="absolute bottom-3 left-3 text-xs text-gray-500 bg-white/95 backdrop-blur-sm px-2 py-1 rounded shadow-sm border border-gray-200">
+      {/* Map attribution (like Google Maps) */}
+      <div className="absolute bottom-2 left-2 text-xs text-gray-500 bg-white px-2 py-1 rounded shadow-sm">
         Demo Map
+      </div>
+      
+      {/* Zoom controls */}
+      <div className="absolute bottom-16 right-4 bg-white rounded-lg shadow-lg">
+        <button className="block p-2 border-b border-gray-200 hover:bg-gray-50">
+          <span className="text-lg font-bold">+</span>
+        </button>
+        <button className="block p-2 hover:bg-gray-50">
+          <span className="text-lg font-bold">−</span>
+        </button>
       </div>
     </div>
   );

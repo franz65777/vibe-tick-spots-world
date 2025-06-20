@@ -1,53 +1,56 @@
 
-import React from 'react';
-import CategoryFilter from './CategoryFilter';
+import { Heart, Users, Sparkles } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface FilterButtonsProps {
-  activeFilter: 'following' | 'popular';
-  onFilterChange: (filter: 'following' | 'popular') => void;
-  selectedCategories: string[];
-  onCategoryChange: (categories: string[]) => void;
+  activeFilter: 'following' | 'popular' | 'new';
+  onFilterChange: (filter: 'following' | 'popular' | 'new') => void;
+  newCount: number;
 }
 
-const FilterButtons = ({ 
-  activeFilter, 
-  onFilterChange, 
-  selectedCategories, 
-  onCategoryChange 
-}: FilterButtonsProps) => {
-  const filters = [
-    { key: 'following' as const, label: 'Following' },
-    { key: 'popular' as const, label: 'Popular' },
-  ];
-
+const FilterButtons = ({ activeFilter, onFilterChange, newCount }: FilterButtonsProps) => {
   return (
-    <div className="w-full">
-      <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2">
-        {/* Main Filter Buttons - More compact */}
-        <div className="flex items-center gap-1 flex-shrink-0">
-          {filters.map((filter) => (
-            <button
-              key={filter.key}
-              onClick={() => onFilterChange(filter.key)}
-              className={`
-                flex items-center gap-1 px-3 py-2 rounded-full font-medium text-xs
-                whitespace-nowrap transition-all duration-200 min-w-fit
-                ${activeFilter === filter.key
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }
-              `}
-            >
-              <span>{filter.label}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Category Filter */}
-        <CategoryFilter
-          selectedCategories={selectedCategories}
-          onCategoryChange={onCategoryChange}
-        />
+    <div className="bg-white/60 backdrop-blur-sm px-2 py-2">
+      <div className="flex gap-2">
+        <button
+          onClick={() => onFilterChange('following')}
+          className={cn(
+            "flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-300 shadow-lg min-h-[36px] flex-1",
+            activeFilter === 'following'
+              ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-blue-500/30 scale-105"
+              : "bg-white/90 text-gray-600 hover:bg-white hover:shadow-xl hover:scale-105"
+          )}
+        >
+          <Users className="w-4 h-4" />
+          Following
+        </button>
+        <button
+          onClick={() => onFilterChange('popular')}
+          className={cn(
+            "flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-300 shadow-lg min-h-[36px] flex-1",
+            activeFilter === 'popular'
+              ? "bg-gradient-to-r from-pink-500 to-red-500 text-white shadow-pink-500/30 scale-105"
+              : "bg-white/90 text-gray-600 hover:bg-white hover:shadow-xl hover:scale-105"
+          )}
+        >
+          <Heart className="w-4 h-4" />
+          Popular
+        </button>
+        <button
+          onClick={() => onFilterChange('new')}
+          className={cn(
+            "flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-300 shadow-lg relative min-h-[36px] flex-1",
+            activeFilter === 'new'
+              ? "bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-purple-500/30 scale-105"
+              : "bg-white/90 text-gray-600 hover:bg-white hover:shadow-xl hover:scale-105"
+          )}
+        >
+          <Sparkles className="w-4 h-4" />
+          New
+          {newCount > 0 && activeFilter !== 'new' && (
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-orange-400 to-red-500 rounded-full animate-pulse"></div>
+          )}
+        </button>
       </div>
     </div>
   );

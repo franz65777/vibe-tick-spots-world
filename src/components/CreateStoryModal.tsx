@@ -1,7 +1,8 @@
 
 import React, { useState, useRef } from 'react';
-import { X, Camera, Image, MapPin, Loader2, Upload } from 'lucide-react';
+import { X, Camera, Image, MapPin, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import GooglePlacesAutocomplete from './GooglePlacesAutocomplete';
 import { useStories } from '@/hooks/useStories';
@@ -81,10 +82,10 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
         {/* Header */}
-        <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white">
+        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
           <h3 className="font-bold text-lg">Create Story</h3>
           <Button
             onClick={handleClose}
@@ -98,10 +99,10 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
         </div>
 
         {step === 'upload' ? (
-          <div className="p-6 flex-1">
+          <div className="p-6">
             <div className="text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Camera className="w-8 h-8 text-blue-600" />
+              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Camera className="w-10 h-10 text-blue-600" />
               </div>
               <h4 className="font-semibold text-gray-900 mb-2">Share Your Moment</h4>
               <p className="text-gray-500 text-sm mb-6">
@@ -114,8 +115,21 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
                   className="w-full"
                   size="lg"
                 >
-                  <Upload className="w-5 h-5 mr-2" />
-                  Choose Media
+                  <Image className="w-5 h-5 mr-2" />
+                  Choose from Gallery
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  size="lg"
+                  onClick={() => {
+                    // In a real app, this would open camera
+                    fileInputRef.current?.click();
+                  }}
+                >
+                  <Camera className="w-5 h-5 mr-2" />
+                  Take Photo
                 </Button>
               </div>
               
@@ -129,9 +143,9 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
             </div>
           </div>
         ) : (
-          <div className="flex flex-col flex-1 overflow-hidden">
+          <div className="flex flex-col h-[600px]">
             {/* Preview */}
-            <div className="relative bg-black aspect-[9/16] max-h-64">
+            <div className="relative bg-black aspect-[9/16] max-h-80">
               {previewUrl && (
                 selectedFile?.type.startsWith('image/') ? (
                   <img
@@ -150,7 +164,7 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
             </div>
 
             {/* Details Form */}
-            <div className="p-4 space-y-4 flex-1 overflow-y-auto">
+            <div className="p-4 space-y-4 flex-1">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Caption
@@ -174,21 +188,13 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
                   placeholder="Search for a location..."
                 />
                 {location && (
-                  <div className="mt-2 p-3 bg-blue-50 rounded-xl border border-blue-200">
-                    <div className="flex items-start gap-2">
-                      <MapPin className="w-4 h-4 text-blue-600 mt-0.5" />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-blue-900 text-sm truncate">{location.name}</p>
-                        <p className="text-blue-600 text-xs truncate">{location.address}</p>
+                  <div className="mt-2 p-2 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-blue-600" />
+                      <div>
+                        <p className="font-medium text-blue-900 text-sm">{location.name}</p>
+                        <p className="text-blue-600 text-xs">{location.address}</p>
                       </div>
-                      <Button
-                        onClick={() => setLocation(null)}
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 text-blue-600 hover:text-blue-800"
-                      >
-                        <X className="w-3 h-3" />
-                      </Button>
                     </div>
                   </div>
                 )}
@@ -196,7 +202,7 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
             </div>
 
             {/* Actions */}
-            <div className="p-4 border-t border-gray-100 flex gap-3 bg-white">
+            <div className="p-4 border-t border-gray-100 flex gap-3">
               <Button
                 variant="outline"
                 onClick={() => setStep('upload')}
@@ -213,7 +219,7 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
                 {uploading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Sharing...
+                    Uploading...
                   </>
                 ) : (
                   'Share Story'
