@@ -1,15 +1,16 @@
 
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Users, Filter } from 'lucide-react';
+import { Search, MapPin, Users, Filter, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import SearchHeader from './explore/SearchHeader';
 import SearchResults from './explore/SearchResults';
 import RecommendationsSection from './explore/RecommendationsSection';
+import CategoryFilter, { CategoryType } from './explore/CategoryFilter';
 import { Place } from '@/types/place';
-import { CategoryType } from './explore/CategoryFilter';
 import { searchService } from '@/services/searchService';
 import { backendService } from '@/services/backendService';
 import { useAuth } from '@/contexts/AuthContext';
@@ -24,10 +25,12 @@ const ExplorePage = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [sortBy, setSortBy] = useState<SortBy>('proximity');
   const [filters, setFilters] = useState<string[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<CategoryType>('all');
+  const [selectedCategories, setSelectedCategories] = useState<CategoryType[]>(['all']);
   const [locationRecommendations, setLocationRecommendations] = useState<any[]>([]);
   const [userRecommendations, setUserRecommendations] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [filteredLocations, setFilteredLocations] = useState<any[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
 
   // Load real backend data
   useEffect(() => {
@@ -55,6 +58,23 @@ const ExplorePage = () => {
 
     loadRecommendations();
   }, [user]);
+
+  // Filter recommendations by category
+  useEffect(() => {
+    if (selectedCategories.includes('all')) {
+      // Show all recommendations
+      return;
+    }
+
+    const filteredRecs = locationRecommendations.filter(place => 
+      selectedCategories.some(cat => 
+        place.category?.toLowerCase().includes(cat.toLowerCase())
+      )
+    );
+    
+    // Update filtered recommendations without changing state to avoid infinite loop
+    // This filtering will be handled in the RecommendationsSection component
+  }, [selectedCategories, locationRecommendations]);
 
   // Search for real data
   const performSearch = async (query: string) => {
@@ -89,9 +109,6 @@ const ExplorePage = () => {
       return { locations: [], users: [] };
     }
   };
-
-  const [filteredLocations, setFilteredLocations] = useState<any[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
@@ -177,6 +194,17 @@ const ExplorePage = () => {
   };
 
   const isSearchActive = searchQuery.trim().length > 0;
+  const getResultsCount = () => {
+    if (!selectedCategories.includes('all')) {
+      const filtered = locationRecommendations.filter(place => 
+        selectedCategories.some(cat => 
+          place.category?.toLowerCase().includes(cat.toLowerCase())
+        )
+      );
+      return filtered.length;
+    }
+    return searchMode === 'locations' ? locationRecommendations.length : userRecommendations.length;
+  };
 
   return (
     <div className="flex flex-col h-full bg-gray-50 pt-16">
@@ -192,6 +220,37 @@ const ExplorePage = () => {
         filters={filters}
         onFiltersChange={setFilters}
       />
+
+      {/* Category Filter - Only show for locations */}
+      {searchMode === 'locations' && !isSearchActive && (
+        <CategoryFilter
+          selectedCategories={selectedCategories}
+          onCategoryChange={setSelectedCategories}
+        />
+      )}
+
+      {/* Results Count */}
+      {searchMode === 'locations' && !isSearchActive && (
+        <div className="px-4 py-3 bg-white border-b border-gray-100">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-600">
+              {getResultsCount()} place{getResultsCount() !== 1 ? 's' : ''} found
+            </span>
+            <Select value={sortBy} onValueChange={(value: SortBy) => setSortBy(value)}>
+              <SelectTrigger className="w-32 h-8 text-xs">
+                <SlidersHorizontal className="w-3 h-3 mr-1" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="proximity">Nearby</SelectItem>
+                <SelectItem value="likes">Most Liked</SelectItem>
+                <SelectItem value="saves">Most Saved</SelectItem>
+                <SelectItem value="recent">Recent</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )}
 
       {isSearchActive ? (
         /* Search Results View */
@@ -214,6 +273,7 @@ const ExplorePage = () => {
             loading={loading}
             locationRecommendations={locationRecommendations}
             userRecommendations={userRecommendations}
+            selectedCategories={selectedCategories}
             onLocationClick={handleCardClick}
             onUserClick={handleUserClick}
             onFollowUser={handleFollowUser}

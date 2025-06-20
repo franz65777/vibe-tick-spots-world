@@ -214,14 +214,7 @@ export const usePlaceEngagement = () => {
           place_id: placeId,
           content: content.trim(),
         })
-        .select(`
-          *,
-          profiles!place_comments_user_id_fkey (
-            username,
-            full_name,
-            avatar_url
-          )
-        `)
+        .select()
         .single();
 
       if (error) throw error;
@@ -249,7 +242,7 @@ export const usePlaceEngagement = () => {
         .from('place_comments')
         .select(`
           *,
-          profiles!place_comments_user_id_fkey (
+          profiles (
             username,
             full_name,
             avatar_url

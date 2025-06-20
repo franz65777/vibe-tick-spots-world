@@ -3,12 +3,14 @@ import React from 'react';
 import { MapPin, Users, Sparkles } from 'lucide-react';
 import LocationCard from './LocationCard';
 import UserCard from './UserCard';
+import { CategoryType } from './CategoryFilter';
 
 interface RecommendationsSectionProps {
   searchMode: 'locations' | 'users';
   loading: boolean;
   locationRecommendations: any[];
   userRecommendations: any[];
+  selectedCategories?: CategoryType[];
   onLocationClick: (place: any) => void;
   onUserClick: (user: any) => void;
   onFollowUser: (userId: string) => void;
@@ -24,6 +26,7 @@ const RecommendationsSection = ({
   loading,
   locationRecommendations,
   userRecommendations,
+  selectedCategories = ['all'],
   onLocationClick,
   onUserClick,
   onFollowUser,
@@ -40,7 +43,16 @@ const RecommendationsSection = ({
     );
   }
 
-  const recommendations = searchMode === 'locations' ? locationRecommendations : userRecommendations;
+  // Filter locations by selected categories
+  const filteredLocations = selectedCategories.includes('all') 
+    ? locationRecommendations
+    : locationRecommendations.filter(place => 
+        selectedCategories.some(cat => 
+          place.category?.toLowerCase().includes(cat.toLowerCase())
+        )
+      );
+
+  const recommendations = searchMode === 'locations' ? filteredLocations : userRecommendations;
 
   if (recommendations.length === 0) {
     return (
@@ -54,12 +66,21 @@ const RecommendationsSection = ({
         </div>
         <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-yellow-500" />
-          Discover Amazing {searchMode === 'locations' ? 'Places' : 'People'}
+          {selectedCategories.includes('all') 
+            ? `Discover Amazing ${searchMode === 'locations' ? 'Places' : 'People'}`
+            : `No ${searchMode === 'locations' ? 'places' : 'people'} found`
+          }
         </h3>
         <p className="text-gray-500 text-center text-sm max-w-sm">
-          {searchMode === 'locations' 
-            ? "We're curating personalized place recommendations for you. Check back soon!"
-            : "We're finding interesting people for you to connect with. Come back later!"
+          {selectedCategories.includes('all') 
+            ? (searchMode === 'locations' 
+              ? "We're curating personalized place recommendations for you. Check back soon!"
+              : "We're finding interesting people for you to connect with. Come back later!"
+            )
+            : (searchMode === 'locations'
+              ? "Try selecting different categories or check back later for new places!"
+              : "Try adjusting your search criteria."
+            )
           }
         </p>
       </div>
@@ -68,14 +89,14 @@ const RecommendationsSection = ({
 
   return (
     <div className="pb-4">
-      <div className="px-4 mb-4">
+      <div className="px-4 mb-4 pt-4">
         <h2 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-yellow-500" />
           Recommended for you
         </h2>
         <p className="text-sm text-gray-600">
           {searchMode === 'locations' 
-            ? `${recommendations.length} places you might love`
+            ? `${recommendations.length} place${recommendations.length !== 1 ? 's' : ''} you might love`
             : `${recommendations.length} people you might want to follow`
           }
         </p>

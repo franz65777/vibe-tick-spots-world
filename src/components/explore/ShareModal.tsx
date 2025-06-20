@@ -41,27 +41,29 @@ const ShareModal = ({ isOpen, onClose, place }: ShareModalProps) => {
 
     setLoading(true);
     try {
-      // Get users that the current user follows with explicit column specification
+      // Get users that the current user follows
       const { data: followData, error: followError } = await supabase
         .from('follows')
-        .select(`
-          following_id,
-          profiles!follows_following_id_fkey (
-            id,
-            username,
-            full_name,
-            avatar_url
-          )
-        `)
+        .select('following_id')
         .eq('follower_id', user.id);
 
       if (followError) throw followError;
 
-      const friendsList = followData
-        ?.map(f => f.profiles)
-        .filter(Boolean) || [];
+      if (!followData || followData.length === 0) {
+        setFriends([]);
+        return;
+      }
 
-      setFriends(friendsList);
+      // Get profile data for followed users
+      const followingIds = followData.map(f => f.following_id);
+      const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .in('id', followingIds);
+
+      if (profileError) throw profileError;
+
+      setFriends(profiles || []);
     } catch (error) {
       console.error('Error loading friends:', error);
       setFriends([]);
