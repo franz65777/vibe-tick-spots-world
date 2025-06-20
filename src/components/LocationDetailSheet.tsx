@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { X, MapPin, Heart, Bookmark, MessageCircle, Share } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -51,7 +52,7 @@ const LocationDetailSheet = ({
       setLoading(true);
       console.log('Fetching posts for location:', locationId);
 
-      // Get all posts for this location with profile information
+      // First get posts for this location
       const { data: postsData, error: postsError } = await supabase
         .from('posts')
         .select(`
@@ -62,12 +63,7 @@ const LocationDetailSheet = ({
           likes_count,
           saves_count,
           comments_count,
-          created_at,
-          profiles (
-            username,
-            full_name,
-            avatar_url
-          )
+          created_at
         `)
         .eq('location_id', locationId)
         .order('created_at', { ascending: false });
@@ -77,22 +73,49 @@ const LocationDetailSheet = ({
         return;
       }
 
-      // Type guard and filter to ensure posts have valid profiles
-      const validPosts: Post[] = (postsData || [])
-        .filter(post => {
-          // Check if profiles exists and is not an error object
-          return post.profiles && 
-                 typeof post.profiles === 'object' && 
-                 !('error' in post.profiles) &&
-                 'username' in post.profiles;
-        })
-        .map(post => ({
-          ...post,
-          profiles: post.profiles && 'username' in post.profiles ? post.profiles : null
-        }))
-        .filter(post => post.profiles !== null); // Filter out posts without valid profiles
+      if (!postsData || postsData.length === 0) {
+        setPosts([]);
+        setFollowingPosts([]);
+        setOtherPosts([]);
+        return;
+      }
 
-      setPosts(validPosts);
+      // Get user profiles separately
+      const userIds = postsData.map(post => post.user_id);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .in('id', userIds);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        return;
+      }
+
+      // Create a map of profiles by user_id
+      const profilesMap = new Map();
+      if (profilesData) {
+        profilesData.forEach(profile => {
+          profilesMap.set(profile.id, profile);
+        });
+      }
+
+      // Combine posts with profiles
+      const postsWithProfiles: Post[] = postsData
+        .map(post => {
+          const profile = profilesMap.get(post.user_id);
+          return {
+            ...post,
+            profiles: profile ? {
+              username: profile.username || 'Unknown User',
+              full_name: profile.full_name || profile.username || 'Unknown User',
+              avatar_url: profile.avatar_url
+            } : null
+          };
+        })
+        .filter(post => post.profiles !== null); // Only keep posts with valid profiles
+
+      setPosts(postsWithProfiles);
 
       // If user is logged in, separate posts from followed users
       if (user) {
@@ -105,11 +128,11 @@ const LocationDetailSheet = ({
         const followedUserIds = followsData?.map(f => f.following_id) || [];
 
         // Separate posts
-        const following = validPosts.filter(post => 
+        const following = postsWithProfiles.filter(post => 
           followedUserIds.includes(post.user_id)
         );
         
-        const others = validPosts.filter(post => 
+        const others = postsWithProfiles.filter(post => 
           !followedUserIds.includes(post.user_id)
         );
 
@@ -117,7 +140,7 @@ const LocationDetailSheet = ({
         setOtherPosts(others);
       } else {
         setFollowingPosts([]);
-        setOtherPosts(validPosts);
+        setOtherPosts(postsWithProfiles);
       }
     } catch (error) {
       console.error('Error fetching location posts:', error);
