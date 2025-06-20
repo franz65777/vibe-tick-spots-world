@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Camera, Plus, X, Play, MapPin, Settings } from 'lucide-react';
@@ -97,35 +96,39 @@ const InstagramStyleAddPage = () => {
   const canShare = selectedFiles.length > 0 && selectedLocation;
 
   const handleSubmit = async () => {
-    if (!canShare) {
-      if (selectedFiles.length === 0) {
-        toast.error('Please add at least one photo or video');
-        return;
-      }
-      if (!selectedLocation) {
-        setShowLocationWarning(true);
-        toast.error('Please tag a location to continue');
-        return;
-      }
-    }
+    if (!selectedFiles.length || !selectedLocation || uploading) return;
 
     try {
+      console.log('Starting post creation...');
+      console.log('Selected location:', selectedLocation);
+      console.log('Files:', selectedFiles.length);
+      console.log('Caption:', caption);
+
       const result = await createPost({
-        caption: caption.trim() || undefined,
         files: selectedFiles,
+        caption: caption.trim() || undefined,
         location: selectedLocation
       });
 
       if (result.success) {
-        previewUrls.forEach(url => URL.revokeObjectURL(url));
+        console.log('Post created successfully!');
         toast.success('Post shared successfully!');
+        
+        // Reset form
+        setSelectedFiles([]);
+        setSelectedLocation(null);
+        setCaption('');
+        setAutoDetectedLocation(null);
+        
+        // Navigate to home or profile
         navigate('/');
       } else {
-        toast.error('Failed to create post. Please try again.');
+        console.error('Post creation failed:', result.error);
+        toast.error(result.error?.message || 'Failed to share post. Please try again.');
       }
     } catch (error) {
-      console.error('Error creating post:', error);
-      toast.error('Failed to create post. Please try again.');
+      console.error('Error submitting post:', error);
+      toast.error('Something went wrong. Please try again.');
     }
   };
 
