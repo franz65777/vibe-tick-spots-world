@@ -1,5 +1,5 @@
-
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MessageCircle, UserPlus, UserCheck, Users, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -23,6 +23,7 @@ const UserCard = ({
   onMessageUser,
   sortBy
 }: UserCardProps) => {
+  const navigate = useNavigate();
   const [isOptimisticFollowing, setIsOptimisticFollowing] = useState(user.is_following || user.isFollowing);
   const [showPreview, setShowPreview] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
@@ -53,8 +54,20 @@ const UserCard = ({
     onMessageUser(user.id);
   };
 
-  const handleRowClick = () => {
-    setShowPreview(true);
+  const handleRowClick = (e: React.MouseEvent) => {
+    // If clicking on action buttons, don't navigate
+    const target = e.target as HTMLElement;
+    if (target.closest('button')) {
+      return;
+    }
+    
+    // Navigate to user profile page
+    navigate(`/profile/${user.id}`);
+  };
+
+  const handleViewFullProfile = () => {
+    setShowPreview(false);
+    navigate(`/profile/${user.id}`);
   };
 
   const getInitials = (name: string) => {
@@ -236,10 +249,7 @@ const UserCard = ({
             <Button 
               variant="ghost" 
               className="text-blue-600 hover:text-blue-700"
-              onClick={() => {
-                setShowPreview(false);
-                onUserClick(user);
-              }}
+              onClick={handleViewFullProfile}
             >
               View Full Profile
             </Button>
