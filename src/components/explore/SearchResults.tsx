@@ -1,13 +1,15 @@
 
 import React from 'react';
-import PlaceCard from '@/components/home/PlaceCard';
+import { Search, Users, MapPin } from 'lucide-react';
+import LocationCard from './LocationCard';
 import UserCard from './UserCard';
 import { Place } from '@/types/place';
-import { MapPin, Users, Search } from 'lucide-react';
+
+type SortBy = 'proximity' | 'likes' | 'saves' | 'following' | 'recent';
 
 interface SearchResultsProps {
   searchMode: 'locations' | 'users';
-  sortBy: 'proximity' | 'likes' | 'followers';
+  sortBy: SortBy;
   filteredLocations: Place[];
   filteredUsers: any[];
   isSearching: boolean;
