@@ -1,84 +1,177 @@
-
-import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, MapPin, Search, X } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Search, MapPin, Building, Landmark, Building2, Clock, Mountain, Shield, Church, Waves, TreePine, Locate } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { useGeolocation } from '@/hooks/useGeolocation';
 
 interface CitySearchProps {
-  currentCity: string;
-  onCitySelect: (city: string, coordinates: { lat: number; lng: number }) => void;
   searchQuery: string;
-  onSearchChange: (query: string) => void;
-  onSearchKeyPress: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  currentCity: string;
+  onSearchChange: (value: string) => void;
+  onSearchKeyPress: (e: React.KeyboardEvent) => void;
+  onCitySelect: (city: string) => void;
 }
 
+// City data with more appropriate landmark icons and search variations
+const cityData = {
+  'san francisco': { 
+    name: 'San Francisco', 
+    icon: Building2,
+    description: 'Golden Gate City',
+    searchTerms: ['san francisco', 'sf', 'san fran', 'sanfrancisco']
+  },
+  'milan': { 
+    name: 'Milan', 
+    icon: Church,
+    description: 'Fashion Capital',
+    searchTerms: ['milan', 'milano', 'milaan', 'miland']
+  },
+  'paris': { 
+    name: 'Paris', 
+    icon: Landmark,
+    description: 'City of Light',
+    searchTerms: ['paris', 'paris', 'pariis', 'pariss']
+  },
+  'new york': { 
+    name: 'New York', 
+    icon: Building,
+    description: 'The Big Apple',
+    searchTerms: ['new york', 'ny', 'nyc', 'newyork', 'new yourk', 'new yor']
+  },
+  'london': { 
+    name: 'London', 
+    icon: Clock,
+    description: 'Royal City',
+    searchTerms: ['london', 'londdon', 'londn', 'lonon']
+  },
+  'tokyo': { 
+    name: 'Tokyo', 
+    icon: Mountain,
+    description: 'Land of Rising Sun',
+    searchTerms: ['tokyo', 'tokio', 'tokyio', 'tokya']
+  },
+  'rome': { 
+    name: 'Rome', 
+    icon: Shield,
+    description: 'Eternal City',
+    searchTerms: ['rome', 'roma', 'roome', 'rom']
+  },
+  'barcelona': { 
+    name: 'Barcelona', 
+    icon: Church,
+    description: 'Gaudí\'s City',
+    searchTerms: ['barcelona', 'barselona', 'barcellona', 'barca']
+  },
+  'amsterdam': { 
+    name: 'Amsterdam', 
+    icon: Waves,
+    description: 'Venice of North',
+    searchTerms: ['amsterdam', 'amsterdamm', 'amesterdam', 'amstrerdam']
+  },
+  'sydney': { 
+    name: 'Sydney', 
+    icon: Waves,
+    description: 'Harbor City',
+    searchTerms: ['sydney', 'sydny', 'sideny', 'sydey']
+  }
+};
+
+// Function to calculate string similarity (Levenshtein distance based)
+const getSimilarity = (str1: string, str2: string): number => {
+  const longer = str1.length > str2.length ? str1 : str2;
+  const shorter = str1.length > str2.length ? str2 : str1;
+  
+  if (longer.length === 0) return 1.0;
+  
+  const editDistance = getEditDistance(longer, shorter);
+  return (longer.length - editDistance) / longer.length;
+};
+
+const getEditDistance = (str1: string, str2: string): number => {
+  const matrix = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
+  
+  for (let i = 0; i <= str1.length; i++) matrix[0][i] = i;
+  for (let j = 0; j <= str2.length; j++) matrix[j][0] = j;
+  
+  for (let j = 1; j <= str2.length; j++) {
+    for (let i = 1; i <= str1.length; i++) {
+      const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
+      matrix[j][i] = Math.min(
+        matrix[j][i - 1] + 1,
+        matrix[j - 1][i] + 1,
+        matrix[j - 1][i - 1] + indicator
+      );
+    }
+  }
+  
+  return matrix[str2.length][str1.length];
+};
+
 const CitySearch = ({ 
-  currentCity, 
-  onCitySelect, 
   searchQuery, 
+  currentCity, 
   onSearchChange, 
-  onSearchKeyPress 
+  onSearchKeyPress,
+  onCitySelect 
 }: CitySearchProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchInput, setSearchInput] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const { searchCity } = useGeolocation();
+  const [filteredCities, setFilteredCities] = useState<Array<{key: string, data: typeof cityData[keyof typeof cityData], similarity: number}>>([]);
+  const [userHasManuallySelectedCity, setUserHasManuallySelectedCity] = useState(false);
+  const [ignoreGeoLocation, setIgnoreGeoLocation] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const { location, loading: geoLoading, getCurrentLocation } = useGeolocation();
 
-  // Popular cities for quick access
-  const popularCities = [
-    'San Francisco', 'New York', 'London', 'Paris', 'Tokyo', 'Milan',
-    'Barcelona', 'Rome', 'Amsterdam', 'Sydney', 'Dubai', 'Singapore',
-    'Los Angeles', 'Chicago', 'Miami', 'Toronto', 'Vancouver', 'Berlin',
-    'Madrid', 'Lisbon', 'Stockholm', 'Copenhagen', 'Mumbai', 'Delhi',
-    'Bangkok', 'Seoul', 'Melbourne', 'Cape Town', 'Buenos Aires'
-  ];
-
-  const handleCitySearch = async (cityName: string) => {
-    if (!cityName.trim()) return;
-    
-    setIsSearching(true);
-    try {
-      const coordinates = await searchCity(cityName);
-      if (coordinates) {
-        onCitySelect(cityName, coordinates);
-        setIsOpen(false);
-        setSearchInput('');
-      } else {
-        console.error('City not found:', cityName);
-      }
-    } catch (error) {
-      console.error('Error searching city:', error);
-    } finally {
-      setIsSearching(false);
+  // Only update current city from geolocation if user hasn't manually selected one AND not ignoring geo
+  useEffect(() => {
+    if (location?.city && 
+        location.city !== currentCity && 
+        !userHasManuallySelectedCity && 
+        !ignoreGeoLocation) {
+      console.log('Geolocation detected city:', location.city);
+      onCitySelect(location.city);
     }
-  };
+  }, [location?.city, currentCity, onCitySelect, userHasManuallySelectedCity, ignoreGeoLocation]);
 
-  const handleSearchInputChange = (value: string) => {
-    setSearchInput(value);
-    
-    if (value.length > 0) {
-      const filtered = popularCities
-        .filter(city => city.toLowerCase().includes(value.toLowerCase()))
-        .slice(0, 5);
-      setSuggestions(filtered);
+  // Get current city data
+  const currentCityData = cityData[currentCity.toLowerCase() as keyof typeof cityData];
+  const CurrentCityIcon = currentCityData?.icon || MapPin;
+
+  useEffect(() => {
+    if (searchQuery.trim() && searchQuery.trim() !== ' ') {
+      const query = searchQuery.toLowerCase().trim();
+      
+      // Find matches with similarity scoring
+      const matches = Object.entries(cityData)
+        .map(([key, data]) => {
+          let bestSimilarity = 0;
+          
+          // Check against all search terms for each city
+          data.searchTerms.forEach(term => {
+            if (term.includes(query) || query.includes(term)) {
+              bestSimilarity = Math.max(bestSimilarity, 0.9);
+            } else {
+              const similarity = getSimilarity(query, term);
+              bestSimilarity = Math.max(bestSimilarity, similarity);
+            }
+          });
+          
+          return { key, data, similarity: bestSimilarity };
+        })
+        .filter(item => item.similarity > 0.4) // Only show reasonably similar matches
+        .sort((a, b) => b.similarity - a.similarity) // Sort by best match first
+        .slice(0, 5); // Limit to top 5 results
+      
+      setFilteredCities(matches);
+      setIsOpen(true);
     } else {
-      setSuggestions([]);
+      setFilteredCities([]);
+      setIsOpen(false);
     }
-  };
-
-  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && searchInput.trim()) {
-      handleCitySearch(searchInput);
-    }
-  };
+  }, [searchQuery]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setIsOpen(false);
-        setSearchInput('');
-        setSuggestions([]);
       }
     };
 
@@ -86,112 +179,115 @@ const CitySearch = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleCityClick = (cityName: string) => {
+    console.log('Manual city selection:', cityName);
+    setUserHasManuallySelectedCity(true);
+    setIgnoreGeoLocation(true);
+    onCitySelect(cityName);
+    onSearchChange('');
+    setIsOpen(false);
+  };
+
+  const handleLocationClick = () => {
+    console.log('Location button clicked - resetting manual selection');
+    setUserHasManuallySelectedCity(false);
+    setIgnoreGeoLocation(false);
+    getCurrentLocation();
+  };
+
   return (
-    <div className="flex items-center gap-2 flex-1">
-      {/* City Selector */}
-      <div className="relative" ref={dropdownRef}>
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-2xl transition-colors min-w-0"
-        >
-          <MapPin className="w-4 h-4 text-blue-600 flex-shrink-0" />
-          <span className="font-medium text-gray-900 truncate max-w-[100px] sm:max-w-none">
-            {currentCity}
-          </span>
-          <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
-        </button>
-
-        {isOpen && (
-          <div className="absolute top-full left-0 mt-2 w-80 max-w-[90vw] bg-white rounded-2xl shadow-xl border border-gray-200 z-50 max-h-96 overflow-hidden">
-            {/* Search Input */}
-            <div className="p-3 border-b border-gray-100">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search any city in the world..."
-                  value={searchInput}
-                  onChange={(e) => handleSearchInputChange(e.target.value)}
-                  onKeyPress={handleSearchKeyPress}
-                  className="w-full pl-10 pr-10 py-2 bg-gray-50 rounded-xl border-0 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
-                  autoFocus
-                />
-                {searchInput && (
-                  <button
-                    onClick={() => {
-                      setSearchInput('');
-                      setSuggestions([]);
-                    }}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-              
-              {isSearching && (
-                <div className="mt-2 text-center text-sm text-gray-500">
-                  Searching...
-                </div>
+    <div ref={searchRef} className="relative flex-1 max-w-md z-[100]">
+      {/* Current City Display / Search Input */}
+      <div className="relative">
+        {!searchQuery || searchQuery.trim() === ' ' ? (
+          // Show current city when not searching
+          <div className="flex items-center gap-3 bg-white/90 border border-gray-200 rounded-2xl h-12 px-4 hover:bg-white transition-colors cursor-pointer"
+               onClick={() => document.getElementById('city-search-input')?.focus()}>
+            <CurrentCityIcon className="w-5 h-5 text-blue-600 shrink-0" />
+            <span className="text-gray-900 font-medium flex-1">
+              {currentCityData?.name || currentCity}
+            </span>
+            <div className="flex items-center gap-2">
+              {geoLoading && (
+                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
               )}
+              <button
+                onClick={handleLocationClick}
+                className="w-6 h-6 text-gray-400 hover:text-blue-600 transition-colors"
+                title="Detect current location"
+              >
+                <Locate className="w-4 h-4" />
+              </button>
+              <Search className="w-4 h-4 text-gray-400" />
             </div>
-
-            {/* Search Suggestions */}
-            {suggestions.length > 0 && (
-              <div className="py-2">
-                <div className="px-3 py-1 text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  Suggestions
-                </div>
-                {suggestions.map((city) => (
-                  <button
-                    key={city}
-                    onClick={() => handleCitySearch(city)}
-                    className="w-full px-3 py-2 text-left hover:bg-gray-50 transition-colors flex items-center gap-2"
-                  >
-                    <Search className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-900">{city}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Popular Cities */}
-            <div className="py-2 max-h-64 overflow-y-auto">
-              <div className="px-3 py-1 text-xs font-medium text-gray-500 uppercase tracking-wide">
-                Popular Cities
-              </div>
-              {popularCities.map((city) => (
-                <button
-                  key={city}
-                  onClick={() => handleCitySearch(city)}
-                  className={`w-full px-3 py-2 text-left hover:bg-gray-50 transition-colors flex items-center gap-2 ${
-                    city === currentCity ? 'bg-blue-50 text-blue-600' : 'text-gray-900'
-                  }`}
-                >
-                  <MapPin className={`w-4 h-4 ${city === currentCity ? 'text-blue-600' : 'text-gray-400'}`} />
-                  <span>{city}</span>
-                  {city === currentCity && (
-                    <div className="ml-auto w-2 h-2 bg-blue-600 rounded-full"></div>
-                  )}
-                </button>
-              ))}
-            </div>
+          </div>
+        ) : (
+          // Show search input when searching
+          <div className="relative">
+            <Input
+              id="city-search-input"
+              type="text"
+              placeholder="Search cities..."
+              value={searchQuery === ' ' ? '' : searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              onKeyPress={onSearchKeyPress}
+              onFocus={() => searchQuery && setIsOpen(true)}
+              className="pl-4 pr-10 bg-white/90 border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-2xl h-12"
+              autoFocus
+            />
+            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           </div>
         )}
       </div>
 
-      {/* Global Search Input */}
-      <div className="flex-1 relative max-w-xs">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+      {/* Hidden input for focusing */}
+      {(!searchQuery || searchQuery.trim() === ' ') && (
         <input
+          id="city-search-input"
           type="text"
-          placeholder="Search places..."
-          value={searchQuery}
+          className="absolute inset-0 opacity-0 cursor-pointer"
+          onFocus={() => onSearchChange(' ')}
           onChange={(e) => onSearchChange(e.target.value)}
           onKeyPress={onSearchKeyPress}
-          className="w-full pl-10 pr-4 py-2 bg-gray-100 rounded-2xl border-0 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all placeholder-gray-500"
         />
-      </div>
+      )}
+
+      {/* Dropdown Results - High z-index to appear above everything */}
+      {isOpen && filteredCities.length > 0 && (
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 max-h-64 overflow-y-auto z-[9999] backdrop-blur-sm">
+          {filteredCities.map(({ key, data, similarity }) => {
+            const IconComponent = data.icon;
+            return (
+              <button
+                key={key}
+                onClick={() => handleCityClick(data.name)}
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left border-b border-gray-50 last:border-b-0"
+              >
+                <IconComponent className="w-5 h-5 text-blue-600 shrink-0" />
+                <div className="flex-1">
+                  <div className="font-medium text-gray-900">{data.name}</div>
+                  <div className="text-xs text-gray-500">{data.description}</div>
+                </div>
+                {similarity > 0.8 && (
+                  <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                    Best match
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* No results - High z-index to appear above everything */}
+      {isOpen && searchQuery.trim() && searchQuery.trim() !== ' ' && filteredCities.length === 0 && (
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 z-[9999] backdrop-blur-sm">
+          <div className="text-gray-500 text-sm text-center">
+            <div className="mb-2">No cities found for "{searchQuery}"</div>
+            <div className="text-xs">Try: Milan, Paris, New York, London, Tokyo</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
