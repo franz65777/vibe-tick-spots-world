@@ -94,6 +94,17 @@ const HomePage = () => {
     }
   }, [user, navigate]);
 
+  // Update map center to user's current location when available
+  useEffect(() => {
+    if (location) {
+      setMapCenter({ lat: location.latitude, lng: location.longitude });
+      console.log('Map centered on user location:', { lat: location.latitude, lng: location.longitude });
+    } else {
+      // Try to get current location on page load
+      getCurrentLocation();
+    }
+  }, [location, getCurrentLocation]);
+
   useEffect(() => {
     refreshPins(currentCity);
   }, [currentCity, refreshPins]);

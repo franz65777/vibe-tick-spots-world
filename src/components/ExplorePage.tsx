@@ -13,7 +13,10 @@ import LocationDetailSheet from './LocationDetailSheet';
 import ShareModal from './home/ShareModal';
 import CommentModal from './home/CommentModal';
 import MessagesModal from './MessagesModal';
+import RecentSearches from './explore/RecentSearches';
+import LocationCard from './explore/LocationCard';
 import { Place } from '@/types/place';
+import { toast } from '@/hooks/use-toast';
 
 const ExplorePage = () => {
   const navigate = useNavigate();
@@ -22,7 +25,8 @@ const ExplorePage = () => {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState<'locations' | 'users'>('locations');
-  const [sortBy, setSortBy] = useState<'proximity' | 'likes' | 'followers'>('proximity');
+  const [sortBy, setSortBy] = useState('proximity');
+  const [filters, setFilters] = useState<string[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [filteredLocations, setFilteredLocations] = useState<Place[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
@@ -30,6 +34,7 @@ const ExplorePage = () => {
   const [locationRecommendations, setLocationRecommendations] = useState<LocationRecommendation[]>([]);
   const [userRecommendations, setUserRecommendations] = useState<UserRecommendation[]>([]);
   const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
+  const [savedPlaces, setSavedPlaces] = useState<Set<string>>(new Set());
   const [selectedLocation, setSelectedLocation] = useState<Place | null>(null);
   const [shareLocation, setShareLocation] = useState<Place | null>(null);
   const [commentLocation, setCommentLocation] = useState<Place | null>(null);
@@ -49,7 +54,7 @@ const ExplorePage = () => {
       setFilteredLocations([]);
       setFilteredUsers([]);
     }
-  }, [searchQuery, searchMode]);
+  }, [searchQuery, searchMode, sortBy, filters]);
 
   const loadRecommendations = async () => {
     setRecommendationsLoading(true);
@@ -73,8 +78,8 @@ const ExplorePage = () => {
     
     try {
       if (searchMode === 'locations') {
-        // Mock location search for now - convert to Place format
-        const mockLocations = [
+        // Enhanced mock location search with sorting and filtering
+        let mockLocations = [
           {
             id: '1',
             name: 'Coffee Shop Milano',
@@ -83,7 +88,13 @@ const ExplorePage = () => {
             visitors: ['user1', 'user2'],
             isNew: false,
             coordinates: { lat: 45.4642, lng: 9.1900 },
-            image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop'
+            image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
+            distance: '0.5km',
+            totalSaves: 45,
+            friendsWhoSaved: [
+              { name: 'Emma', avatar: 'photo-1438761681033-6461ffad8d80' },
+              { name: 'James', avatar: 'photo-1507003211169-0a1dd7228f2d' }
+            ]
           },
           {
             id: '2',
@@ -91,16 +102,67 @@ const ExplorePage = () => {
             category: 'restaurant',
             likes: 210,
             visitors: ['user3', 'user4'],
-            isNew: false,
+            isNew: true,
             coordinates: { lat: 40.8518, lng: 14.2681 },
-            image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop'
+            image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop',
+            distance: '1.2km',
+            totalSaves: 89,
+            friendsWhoSaved: [
+              { name: 'Sofia', avatar: 'photo-1494790108755-2616b612b789' }
+            ]
+          },
+          {
+            id: '3',
+            name: 'Rooftop Bar Sunset',
+            category: 'bar',
+            likes: 156,
+            visitors: ['user5', 'user6', 'user7'],
+            isNew: false,
+            coordinates: { lat: 41.9028, lng: 12.4964 },
+            image: 'https://images.unsplash.com/photo-1569949381669-ecf31ae8e613?w=400&h=300&fit=crop',
+            distance: '2.1km',
+            totalSaves: 67
           }
         ];
-        
-        setFilteredLocations(mockLocations.filter(loc => 
+
+        // Apply search filter
+        mockLocations = mockLocations.filter(loc => 
           loc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           loc.category.toLowerCase().includes(searchQuery.toLowerCase())
-        ));
+        );
+
+        // Apply sorting
+        switch (sortBy) {
+          case 'likes':
+            mockLocations.sort((a, b) => b.likes - a.likes);
+            break;
+          case 'saves':
+            mockLocations.sort((a, b) => (b.totalSaves || 0) - (a.totalSaves || 0));
+            break;
+          case 'following':
+            mockLocations.sort((a, b) => (b.friendsWhoSaved?.length || 0) - (a.friendsWhoSaved?.length || 0));
+            break;
+          case 'recent':
+            mockLocations.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
+            break;
+          case 'proximity':
+          default:
+            mockLocations.sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
+            break;
+        }
+
+        // Apply filters
+        if (filters.includes('new')) {
+          mockLocations = mockLocations.filter(loc => loc.isNew);
+        }
+        if (filters.includes('photos')) {
+          mockLocations = mockLocations.filter(loc => loc.image);
+        }
+        if (filters.includes('trending')) {
+          mockLocations = mockLocations.filter(loc => loc.likes > 150);
+        }
+        
+        setFilteredLocations(mockLocations);
         setFilteredUsers([]);
       } else {
         // Search users
@@ -150,6 +212,18 @@ const ExplorePage = () => {
         newSet.delete(placeId);
       } else {
         newSet.add(placeId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSaveToggle = (place: Place) => {
+    setSavedPlaces(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(place.id)) {
+        newSet.delete(place.id);
+      } else {
+        newSet.add(place.id);
       }
       return newSet;
     });
@@ -217,11 +291,9 @@ const ExplorePage = () => {
       }
       
       // Make API call to follow/unfollow
-      // This would be implemented in a real app
       console.log('Following/unfollowing user:', userId);
     } catch (error) {
       console.error('Error following user:', error);
-      // Revert UI change if API call fails
     }
   };
 
@@ -256,32 +328,82 @@ const ExplorePage = () => {
       <SearchFilters
         sortBy={sortBy}
         onSortChange={setSortBy}
-        showFilters={!!searchQuery}
+        filters={filters}
+        onFiltersChange={setFilters}
+        showFilters={!!searchQuery && searchMode === 'locations'}
       />
 
       <div className="flex-1 overflow-y-auto">
         {searchQuery ? (
-          <SearchResults
-            searchMode={searchMode}
-            sortBy={sortBy}
-            filteredLocations={filteredLocations}
-            filteredUsers={filteredUsers}
-            isSearching={isSearching || searchLoading}
-            likedPlaces={likedPlaces}
-            onCardClick={handleCardClick}
-            onLikeToggle={handleLikeToggle}
-            onShare={handleShare}
-            onComment={handleComment}
-            onUserClick={handleUserClick}
-            onFollowUser={handleFollowUser}
-            onMessageUser={handleMessageUser}
-          />
+          searchMode === 'locations' ? (
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">
+                  {filteredLocations.length} locations found
+                </h3>
+              </div>
+              
+              {isSearching ? (
+                <div className="flex items-center justify-center py-16">
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-gray-600">Searching...</span>
+                  </div>
+                </div>
+              ) : filteredLocations.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 px-4">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-2">No locations found</h3>
+                  <p className="text-gray-500 text-center text-sm">
+                    Try searching for cafes, restaurants, or specific place names
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4">
+                  {filteredLocations.map((place) => (
+                    <LocationCard
+                      key={place.id}
+                      place={place}
+                      isLiked={likedPlaces.has(place.id)}
+                      isSaved={savedPlaces.has(place.id)}
+                      onLike={handleLikeToggle}
+                      onSave={handleSaveToggle}
+                      onComment={handleComment}
+                      onShare={handleShare}
+                      onCardClick={handleCardClick}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <SearchResults
+              searchMode={searchMode}
+              sortBy={sortBy}
+              filteredLocations={filteredLocations}
+              filteredUsers={filteredUsers}
+              isSearching={isSearching || searchLoading}
+              likedPlaces={likedPlaces}
+              onCardClick={handleCardClick}
+              onLikeToggle={handleLikeToggle}
+              onShare={handleShare}
+              onComment={handleComment}
+              onUserClick={handleUserClick}
+              onFollowUser={handleFollowUser}
+              onMessageUser={handleMessageUser}
+            />
+          )
         ) : (
-          <div className="space-y-6">
-            <SearchSuggestions 
-              suggestions={[]}
-              onSuggestionClick={() => {}}
-              searchHistory={[]}
+          <div className="space-y-0">
+            <RecentSearches
+              searchMode={searchMode}
+              onSearchClick={setSearchQuery}
+              onUserClick={handleUserClick}
             />
             <RecommendationsSection
               searchMode={searchMode}
@@ -316,8 +438,8 @@ const ExplorePage = () => {
         onClose={() => setSelectedLocation(null)}
         onLike={() => selectedLocation && handleLikeToggle(selectedLocation.id)}
         isLiked={selectedLocation ? likedPlaces.has(selectedLocation.id) : false}
-        onSave={() => {}}
-        isSaved={false}
+        onSave={() => selectedLocation && handleSaveToggle(selectedLocation)}
+        isSaved={selectedLocation ? savedPlaces.has(selectedLocation.id) : false}
       />
 
       <ShareModal
