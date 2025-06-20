@@ -86,18 +86,16 @@ const SearchResults = ({
       {searchMode === 'locations' ? (
         <div className="space-y-4">
           {filteredLocations.map((place) => (
-            <PlaceCard
+            <LocationCard
               key={place.id}
               place={place}
               isLiked={likedPlaces.has(place.id)}
               isSaved={false}
-              onCardClick={onCardClick}
-              onLikeToggle={onLikeToggle}
-              onSaveToggle={() => {}}
+              onLike={onLikeToggle}
+              onSave={() => {}}
               onComment={onComment}
               onShare={onShare}
-              cityName="Search Results"
-              userLocation={null}
+              onCardClick={onCardClick}
             />
           ))}
         </div>
