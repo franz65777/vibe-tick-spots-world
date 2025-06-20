@@ -295,7 +295,7 @@ const HomePage = () => {
         onNotificationsModalClose={() => setIsNotificationsModalOpen(false)}
         onMessagesModalClose={() => setIsMessagesModalOpen(false)}
         onShareModalClose={() => setIsShareModalOpen(false)}
-        onCommentModalClose={() => setIsCommentModalClose(false)}
+        onCommentModalClose={() => setIsCommentModalOpen(false)}
         onLocationDetailClose={() => setIsLocationDetailOpen(false)}
         onStoriesViewerClose={() => setIsStoriesViewerOpen(false)}
         onStoryCreated={() => {}}
