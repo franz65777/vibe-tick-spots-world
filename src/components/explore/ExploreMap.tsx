@@ -158,7 +158,7 @@ const ExploreMap = ({ pins, activeFilter, selectedCategory, onPinClick, mapCente
         });
         
         if (filteredPins.length > 1) {
-          mapInstanceRef.current.fitBounds(bounds, { padding: 50 });
+          mapInstanceRef.current.fitBounds(bounds, 50);
         }
       }
 
