@@ -118,7 +118,6 @@ const InstagramStyleAddPage = () => {
         setSelectedFiles([]);
         setSelectedLocation(null);
         setCaption('');
-        setAutoDetectedLocation(null);
         
         // Navigate to home or profile
         navigate('/');

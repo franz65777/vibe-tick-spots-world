@@ -1,4 +1,3 @@
-
 import CreateStoryModal from '@/components/CreateStoryModal';
 import NotificationsModal from '@/components/NotificationsModal';
 import MessagesModal from '@/components/MessagesModal';
@@ -123,15 +122,15 @@ const ModalsManager = ({
         onCommentSubmit={onCommentSubmit}
       />
 
-      <LocationDetailSheet
-        isOpen={isLocationDetailOpen}
-        onClose={onLocationDetailClose}
-        location={locationDetailPlace}
-        onLike={() => {}}
-        isLiked={false}
-        onSave={() => {}}
-        isSaved={false}
-      />
+      {locationDetailPlace && (
+        <LocationDetailSheet
+          isOpen={isLocationDetailOpen}
+          onClose={onLocationDetailClose}
+          locationId={locationDetailPlace.id}
+          locationName={locationDetailPlace.name}
+          locationAddress={locationDetailPlace.address}
+        />
+      )}
 
       {isStoriesViewerOpen && (
         <StoriesViewer

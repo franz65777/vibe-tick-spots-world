@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,6 +18,23 @@ const HomePage = () => {
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 37.7749, lng: -122.4194 });
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  
+  // Modal states
+  const [isCreateStoryModalOpen, setIsCreateStoryModalOpen] = useState(false);
+  const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
+  const [isMessagesModalOpen, setIsMessagesModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
+  const [isLocationDetailOpen, setIsLocationDetailOpen] = useState(false);
+  const [isStoriesViewerOpen, setIsStoriesViewerOpen] = useState(false);
+  const [sharePlace, setSharePlace] = useState<Place | null>(null);
+  const [commentPlace, setCommentPlace] = useState<Place | null>(null);
+  const [locationDetailPlace, setLocationDetailPlace] = useState<Place | null>(null);
+  const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
+  
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentCity, setCurrentCity] = useState('');
   
   // Use the map pins hook with the active filter
   const { pins, loading, error, refreshPins, hasFollowedUsers } = useMapPins(activeFilter);
@@ -70,10 +88,11 @@ const HomePage = () => {
     city: pin.city,
     isNew: pin.isNew,
     image: pin.image,
-    friendsWhoSaved: pin.friendsWhoSaved,
+    friendsWhoSaved: Array.isArray(pin.friendsWhoSaved) ? pin.friendsWhoSaved : [],
     visitors: pin.visitors,
     distance: pin.distance,
-    totalSaves: pin.totalSaves
+    totalSaves: pin.totalSaves,
+    address: pin.address || ''
   }));
 
   const handleFilterChange = (filter: 'following' | 'popular' | 'new') => {
@@ -82,6 +101,7 @@ const HomePage = () => {
 
   const handleCityChange = (city: string) => {
     setSelectedCity(city);
+    setCurrentCity(city);
     refreshPins(city);
     
     // Update map center based on selected city
@@ -111,6 +131,23 @@ const HomePage = () => {
     setSelectedPlace(null);
   };
 
+  // Mock stories data
+  const stories = [
+    {
+      id: '1',
+      userId: 'user1',
+      userName: 'John Doe',
+      userAvatar: '',
+      isViewed: false,
+      mediaUrl: '/placeholder.svg',
+      mediaType: 'image' as const,
+      locationId: 'loc1',
+      locationName: 'Sample Location',
+      locationAddress: 'Sample Address',
+      timestamp: new Date().toISOString(),
+    }
+  ];
+
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -130,15 +167,22 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header />
+      <Header 
+        searchQuery={searchQuery}
+        currentCity={currentCity}
+        onSearchChange={setSearchQuery}
+        onSearchKeyPress={() => {}}
+        onNotificationsClick={() => setIsNotificationsModalOpen(true)}
+        onMessagesClick={() => setIsMessagesModalOpen(true)}
+        onCreateStoryClick={() => setIsCreateStoryModalOpen(true)}
+      />
       
       <main className="flex-1 flex flex-col max-w-7xl mx-auto w-full">
-        <StoriesSection />
+        <StoriesSection stories={stories} />
         
         <FilterButtons 
           activeFilter={activeFilter}
           onFilterChange={handleFilterChange}
-          selectedCity={selectedCity}
           onCityChange={handleCityChange}
           hasFollowedUsers={hasFollowedUsers}
         />
@@ -152,7 +196,31 @@ const HomePage = () => {
         />
       </main>
 
-      <ModalsManager />
+      <ModalsManager 
+        isCreateStoryModalOpen={isCreateStoryModalOpen}
+        isNotificationsModalOpen={isNotificationsModalOpen}
+        isMessagesModalOpen={isMessagesModalOpen}
+        isShareModalOpen={isShareModalOpen}
+        isCommentModalOpen={isCommentModalOpen}
+        isLocationDetailOpen={isLocationDetailOpen}
+        isStoriesViewerOpen={isStoriesViewerOpen}
+        sharePlace={sharePlace}
+        commentPlace={commentPlace}
+        locationDetailPlace={locationDetailPlace}
+        stories={stories}
+        currentStoryIndex={currentStoryIndex}
+        onCreateStoryModalClose={() => setIsCreateStoryModalOpen(false)}
+        onNotificationsModalClose={() => setIsNotificationsModalOpen(false)}
+        onMessagesModalClose={() => setIsMessagesModalOpen(false)}
+        onShareModalClose={() => setIsShareModalOpen(false)}
+        onCommentModalClose={() => setIsCommentModalOpen(false)}
+        onLocationDetailClose={() => setIsLocationDetailOpen(false)}
+        onStoriesViewerClose={() => setIsStoriesViewerOpen(false)}
+        onStoryCreated={() => {}}
+        onShare={() => {}}
+        onCommentSubmit={() => {}}
+        onStoryViewed={() => {}}
+      />
     </div>
   );
 };

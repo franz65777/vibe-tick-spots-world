@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { X, MapPin, Heart, Bookmark, MessageCircle, Share } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,7 +17,7 @@ interface Post {
     username: string;
     full_name: string;
     avatar_url?: string;
-  };
+  } | null;
 }
 
 interface LocationDetailSheetProps {
@@ -51,7 +52,7 @@ const LocationDetailSheet = ({
       setLoading(true);
       console.log('Fetching posts for location:', locationId);
 
-      // Get all posts for this location
+      // Get all posts for this location with profile information
       const { data: postsData, error: postsError } = await supabase
         .from('posts')
         .select(`
@@ -63,7 +64,7 @@ const LocationDetailSheet = ({
           saves_count,
           comments_count,
           created_at,
-          profiles!posts_user_id_fkey (
+          profiles!inner(
             username,
             full_name,
             avatar_url
@@ -77,7 +78,19 @@ const LocationDetailSheet = ({
         return;
       }
 
-      setPosts(postsData || []);
+      // Type guard to ensure posts have valid profiles
+      const validPosts: Post[] = (postsData || []).filter(post => 
+        post.profiles && typeof post.profiles === 'object'
+      ).map(post => ({
+        ...post,
+        profiles: post.profiles as {
+          username: string;
+          full_name: string;
+          avatar_url?: string;
+        }
+      }));
+
+      setPosts(validPosts);
 
       // If user is logged in, separate posts from followed users
       if (user) {
@@ -90,19 +103,19 @@ const LocationDetailSheet = ({
         const followedUserIds = followsData?.map(f => f.following_id) || [];
 
         // Separate posts
-        const following = postsData?.filter(post => 
+        const following = validPosts.filter(post => 
           followedUserIds.includes(post.user_id)
-        ) || [];
+        );
         
-        const others = postsData?.filter(post => 
+        const others = validPosts.filter(post => 
           !followedUserIds.includes(post.user_id)
-        ) || [];
+        );
 
         setFollowingPosts(following);
         setOtherPosts(others);
       } else {
         setFollowingPosts([]);
-        setOtherPosts(postsData || []);
+        setOtherPosts(validPosts);
       }
     } catch (error) {
       console.error('Error fetching location posts:', error);
