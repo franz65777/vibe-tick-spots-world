@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 
 export interface Location {
@@ -48,8 +49,10 @@ export const locationService = {
       const { data: user } = await supabase.auth.getUser();
       if (!user?.user) throw new Error('User not authenticated');
 
-      // CRITICAL: Check for existing location by Google Place ID first
+      // CRITICAL: Check for existing location by Google Place ID FIRST
       if (locationData.google_place_id) {
+        console.log('🔍 Checking for existing location by Google Place ID:', locationData.google_place_id);
+        
         const { data: existingLocation } = await supabase
           .from('locations')
           .select('*')
@@ -58,6 +61,7 @@ export const locationService = {
 
         if (existingLocation) {
           console.log('✅ Location already exists, using existing:', existingLocation.name);
+          
           // Save location for current user if not already saved
           const { error: saveError } = await supabase
             .from('user_saved_locations')
@@ -74,7 +78,7 @@ export const locationService = {
         }
       }
 
-      // Check by name and address as fallback
+      // Only check by name/address as fallback if no Google Place ID match
       const { data: existingLocationByNameAddress } = await supabase
         .from('locations')
         .select('*')
@@ -85,7 +89,7 @@ export const locationService = {
       let location: Location;
 
       if (existingLocationByNameAddress) {
-        // Location exists, just save it for the user
+        // Location exists by name/address, use it
         location = existingLocationByNameAddress;
         console.log('✅ Location exists by name/address, using existing:', location.name);
       } else {
@@ -96,7 +100,7 @@ export const locationService = {
           .insert({
             ...locationData,
             created_by: user.user.id,
-            pioneer_user_id: user.user.id, // First person to save becomes pioneer
+            pioneer_user_id: user.user.id,
           })
           .select()
           .single();
@@ -186,7 +190,7 @@ export const locationService = {
       }
 
       const locations = data
-        .filter(item => item.locations) // Filter out any null locations
+        .filter(item => item.locations)
         .map(item => {
           const location = item.locations as any;
           return {
@@ -243,7 +247,6 @@ export const locationService = {
     }
   },
 
-  // Search locations
   async searchLocations(query: string): Promise<Location[]> {
     if (!supabase) {
       console.warn('Supabase not configured, returning empty search results');
@@ -265,7 +268,6 @@ export const locationService = {
     }
   },
 
-  // Unsave location
   async unsaveLocation(locationId: string): Promise<boolean> {
     if (!supabase) {
       console.warn('Supabase not configured');

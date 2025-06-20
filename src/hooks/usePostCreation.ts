@@ -28,31 +28,32 @@ export const usePostCreation = () => {
     try {
       let locationId = null;
 
-      // Handle location creation/finding FIRST
+      // Handle location creation/finding FIRST - THIS IS THE CRITICAL FIX
       if (location) {
-        console.log('Processing location for post:', location.name);
+        console.log('🔍 CHECKING FOR EXISTING LOCATION:', location.name);
         console.log('Google Place ID:', location.google_place_id);
         
-        // CRITICAL: Check if location already exists by Google Place ID
+        // STEP 1: Check if location already exists by Google Place ID
         const { data: existingLocation, error: locationFetchError } = await supabase
           .from('locations')
-          .select('id, name')
+          .select('id, name, google_place_id')
           .eq('google_place_id', location.google_place_id)
           .maybeSingle();
 
         if (locationFetchError) {
-          console.error('Error checking existing location:', locationFetchError);
+          console.error('❌ Error checking existing location:', locationFetchError);
           throw locationFetchError;
         }
 
         if (existingLocation) {
-          console.log('✅ USING EXISTING LOCATION - NO NEW CARD CREATED');
+          // STEP 2A: Location exists - use it, don't create new one
+          console.log('✅ FOUND EXISTING LOCATION - USING IT');
           console.log('Existing location:', existingLocation.name, 'ID:', existingLocation.id);
           locationId = existingLocation.id;
         } else {
+          // STEP 2B: Location doesn't exist - create new one
           console.log('🆕 CREATING NEW LOCATION CARD');
           
-          // Create new location card only if it doesn't exist
           const { data: newLocation, error: locationError } = await supabase
             .from('locations')
             .insert({
@@ -79,9 +80,8 @@ export const usePostCreation = () => {
         }
       }
 
+      // STEP 3: Upload files to storage
       console.log('📤 Uploading files to storage...');
-      
-      // Upload files to storage
       const mediaUrls: string[] = [];
       
       for (let i = 0; i < files.length; i++) {
@@ -100,7 +100,6 @@ export const usePostCreation = () => {
           throw uploadError;
         }
 
-        // Get public URL
         const { data: { publicUrl } } = supabase.storage
           .from('media')
           .getPublicUrl(uploadData.path);
@@ -109,10 +108,10 @@ export const usePostCreation = () => {
         console.log('✅ File uploaded successfully:', publicUrl);
       }
 
+      // STEP 4: Create post record linked to the location
       console.log('📝 Creating post record...');
       console.log('Post will be linked to location_id:', locationId);
       
-      // Create post record - this will be linked to existing or new location
       const { data: post, error: postError } = await supabase
         .from('posts')
         .insert({
