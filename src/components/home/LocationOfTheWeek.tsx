@@ -1,15 +1,25 @@
 
 import React from 'react';
-import { MapPin, Heart, Users } from 'lucide-react';
+import { MapPin, Heart, Users, Star, Award } from 'lucide-react';
 import { Place } from '@/types/place';
 
 interface LocationOfTheWeekProps {
-  topLocation: any; // Using any to handle the converted map pin
+  topLocation: any;
   onLocationClick: (place: Place) => void;
+  currentCity: string;
 }
 
-const LocationOfTheWeek = ({ topLocation, onLocationClick }: LocationOfTheWeekProps) => {
+const LocationOfTheWeek = ({ topLocation, onLocationClick, currentCity }: LocationOfTheWeekProps) => {
   if (!topLocation) return null;
+
+  // Get current week number for rotation
+  const getWeekNumber = (date: Date) => {
+    const onejan = new Date(date.getFullYear(), 0, 1);
+    const millisecsInDay = 86400000;
+    return Math.ceil((((date.getTime() - onejan.getTime()) / millisecsInDay) + onejan.getDay() + 1) / 7);
+  };
+
+  const currentWeek = getWeekNumber(new Date());
 
   // Convert to proper Place format for the click handler
   const convertToPlace = (location: any): Place => ({
@@ -40,50 +50,82 @@ const LocationOfTheWeek = ({ topLocation, onLocationClick }: LocationOfTheWeekPr
   };
 
   return (
-    <div className="mx-3 mb-2">
+    <div className="mx-4 mb-4">
       <div 
-        className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-3 border border-amber-200/50 cursor-pointer hover:shadow-md transition-all duration-300"
+        className="relative bg-gradient-to-r from-amber-50 via-orange-50 to-red-50 rounded-3xl p-4 border border-amber-200/50 cursor-pointer hover:shadow-lg transition-all duration-300 overflow-hidden"
         onClick={handleClick}
       >
-        <div className="flex items-center gap-3">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-100/20 to-orange-100/20 rounded-3xl"></div>
+        
+        {/* Award Badge */}
+        <div className="absolute top-3 right-3 bg-gradient-to-r from-amber-400 to-orange-500 rounded-full p-2 shadow-lg">
+          <Award className="w-4 h-4 text-white" />
+        </div>
+
+        {/* Week Badge */}
+        <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm">
+          <span className="text-xs font-bold text-amber-600">Week {currentWeek}</span>
+        </div>
+
+        <div className="relative flex items-center gap-4 mt-8">
           {/* Location Image */}
           <div className="relative">
             <img 
               src={topLocation.image || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop'} 
               alt={topLocation.name}
-              className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl object-cover"
+              className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover shadow-lg ring-2 ring-white"
             />
-            <div className="absolute -top-1 -right-1 bg-gradient-to-r from-amber-400 to-orange-500 rounded-full p-1">
-              <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2L15.09 8.26L22 9L17 14L18.18 21L12 17.77L5.82 21L7 14L2 9L8.91 8.26L12 2Z"/>
-              </svg>
+            <div className="absolute -top-1 -right-1 bg-gradient-to-r from-amber-400 to-orange-500 rounded-full p-1.5 shadow-lg">
+              <Star className="w-3 h-3 text-white fill-current" />
             </div>
           </div>
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-bold text-gray-900 text-sm sm:text-base truncate">{topLocation.name}</h3>
-              <span className="text-xs text-amber-600 font-medium bg-amber-100 px-2 py-0.5 rounded-full flex-shrink-0">
-                Location of the Week ✨
-              </span>
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="font-bold text-gray-900 text-lg sm:text-xl truncate">{topLocation.name}</h3>
+                </div>
+                <div className="flex items-center gap-1 text-amber-600 mb-2">
+                  <MapPin className="w-3 h-3" />
+                  <span className="text-sm font-medium">{currentCity}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Title */}
+            <div className="mb-3">
+              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-400 to-orange-500 text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-lg">
+                <Star className="w-4 h-4 fill-current" />
+                <span>Location of the Week</span>
+              </div>
             </div>
             
-            <div className="flex items-center gap-3 text-xs text-gray-600">
-              <div className="flex items-center gap-1">
-                <Heart className="w-3 h-3 text-red-400" />
-                <span className="font-medium">{topLocation.likes}</span>
+            {/* Stats */}
+            <div className="flex items-center gap-4 text-sm">
+              <div className="flex items-center gap-1 bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm">
+                <Heart className="w-4 h-4 text-red-500 fill-current" />
+                <span className="font-semibold text-gray-800">{topLocation.likes}</span>
+                <span className="text-gray-600">likes</span>
               </div>
-              <div className="flex items-center gap-1">
-                <Users className="w-3 h-3 text-blue-400" />
-                <span className="font-medium">{getVisitorCount()}</span>
+              <div className="flex items-center gap-1 bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm">
+                <Users className="w-4 h-4 text-blue-500" />
+                <span className="font-semibold text-gray-800">{getVisitorCount()}</span>
+                <span className="text-gray-600">visits</span>
               </div>
-              <div className="flex items-center gap-1">
-                <MapPin className="w-3 h-3 text-green-400" />
-                <span className="font-medium capitalize">{topLocation.category}</span>
+              <div className="flex items-center gap-1 bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-gray-600 font-medium capitalize">{topLocation.category}</span>
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Tap indicator */}
+        <div className="absolute bottom-2 right-2 text-xs text-amber-600/80 font-medium">
+          Tap to explore →
         </div>
       </div>
     </div>
