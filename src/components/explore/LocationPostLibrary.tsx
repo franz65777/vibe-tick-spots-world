@@ -49,7 +49,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
         .from('posts')
         .select(`
           *,
-          profiles (
+          profiles:user_id (
             username,
             full_name,
             avatar_url
@@ -74,14 +74,32 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
         const followingIds = new Set(following?.map(f => f.following_id) || []);
 
         locationPosts?.forEach(post => {
+          const processedPost: Post = {
+            id: post.id,
+            user_id: post.user_id,
+            caption: post.caption,
+            media_urls: post.media_urls || [],
+            created_at: post.created_at,
+            profiles: Array.isArray(post.profiles) ? post.profiles[0] : post.profiles
+          };
+
           if (followingIds.has(post.user_id)) {
-            followedUserPosts.push(post);
+            followedUserPosts.push(processedPost);
           } else {
-            otherPosts.push(post);
+            otherPosts.push(processedPost);
           }
         });
       } else {
-        otherPosts.push(...(locationPosts || []));
+        const processedPosts = locationPosts?.map(post => ({
+          id: post.id,
+          user_id: post.user_id,
+          caption: post.caption,
+          media_urls: post.media_urls || [],
+          created_at: post.created_at,
+          profiles: Array.isArray(post.profiles) ? post.profiles[0] : post.profiles
+        })) || [];
+        
+        otherPosts.push(...processedPosts);
       }
 
       // Combine: followed users first, then others
@@ -95,7 +113,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
   };
 
   const formatCategory = (category: string) => {
-    return category.charAt(0).toUpperCase() + category.slice(1);
+    return category?.charAt(0).toUpperCase() + category?.slice(1) || 'Place';
   };
 
   const getCityName = () => {

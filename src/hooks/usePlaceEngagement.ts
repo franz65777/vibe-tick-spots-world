@@ -1,26 +1,8 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/hooks/use-toast';
-
-interface PlaceLike {
-  id: string;
-  user_id: string;
-  place_id: string;
-  created_at: string;
-}
-
-interface SavedPlace {
-  id: string;
-  user_id: string;
-  place_id: string;
-  place_name: string;
-  place_category?: string;
-  city?: string;
-  coordinates?: any;
-  created_at: string;
-}
+import { useToast } from '@/hooks/use-toast';
 
 interface PlaceComment {
   id: string;
@@ -38,53 +20,34 @@ interface PlaceComment {
 
 export const usePlaceEngagement = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
   const [savedPlaces, setSavedPlaces] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(false);
 
-  // Load user's liked and saved places
-  useEffect(() => {
-    if (user) {
-      loadUserEngagement();
+  const isLiked = useCallback((placeId: string) => {
+    return likedPlaces.has(placeId);
+  }, [likedPlaces]);
+
+  const isSaved = useCallback((placeId: string) => {
+    return savedPlaces.has(placeId);
+  }, [savedPlaces]);
+
+  const toggleLike = useCallback(async (placeId: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to like places.",
+        variant: "destructive",
+      });
+      return false;
     }
-  }, [user]);
 
-  const loadUserEngagement = async () => {
-    if (!user) return;
-
-    try {
-      setLoading(true);
-
-      // Load liked places
-      const { data: likes } = await supabase
-        .from('place_likes')
-        .select('place_id')
-        .eq('user_id', user.id);
-
-      // Load saved places
-      const { data: saves } = await supabase
-        .from('saved_places')
-        .select('place_id')
-        .eq('user_id', user.id);
-
-      setLikedPlaces(new Set(likes?.map(l => l.place_id) || []));
-      setSavedPlaces(new Set(saves?.map(s => s.place_id) || []));
-    } catch (error) {
-      console.error('Error loading user engagement:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const toggleLike = async (placeId: string) => {
-    if (!user) return false;
-
-    const isLiked = likedPlaces.has(placeId);
+    const wasLiked = likedPlaces.has(placeId);
     
     // Optimistic update
     setLikedPlaces(prev => {
       const newSet = new Set(prev);
-      if (isLiked) {
+      if (wasLiked) {
         newSet.delete(placeId);
       } else {
         newSet.add(placeId);
@@ -93,7 +56,7 @@ export const usePlaceEngagement = () => {
     });
 
     try {
-      if (isLiked) {
+      if (wasLiked) {
         // Unlike
         const { error } = await supabase
           .from('place_likes')
@@ -106,19 +69,27 @@ export const usePlaceEngagement = () => {
         // Like
         const { error } = await supabase
           .from('place_likes')
-          .insert({ user_id: user.id, place_id: placeId });
+          .insert({
+            user_id: user.id,
+            place_id: placeId
+          });
 
         if (error) throw error;
       }
+
+      toast({
+        title: wasLiked ? "Removed from favorites" : "Added to favorites",
+        description: wasLiked ? "Place unliked" : "Place liked",
+      });
 
       return true;
     } catch (error) {
       console.error('Error toggling like:', error);
       
-      // Revert optimistic update on error
+      // Revert optimistic update
       setLikedPlaces(prev => {
         const newSet = new Set(prev);
-        if (isLiked) {
+        if (wasLiked) {
           newSet.add(placeId);
         } else {
           newSet.delete(placeId);
@@ -128,23 +99,30 @@ export const usePlaceEngagement = () => {
 
       toast({
         title: "Error",
-        description: `Failed to ${isLiked ? 'unlike' : 'like'} place`,
+        description: "Failed to update like status",
         variant: "destructive",
       });
 
       return false;
     }
-  };
+  }, [user, likedPlaces, toast]);
 
-  const toggleSave = async (place: any) => {
-    if (!user) return false;
+  const toggleSave = useCallback(async (place: any) => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to save places.",
+        variant: "destructive",
+      });
+      return false;
+    }
 
-    const isSaved = savedPlaces.has(place.id);
+    const wasSaved = savedPlaces.has(place.id);
     
     // Optimistic update
     setSavedPlaces(prev => {
       const newSet = new Set(prev);
-      if (isSaved) {
+      if (wasSaved) {
         newSet.delete(place.id);
       } else {
         newSet.add(place.id);
@@ -153,7 +131,7 @@ export const usePlaceEngagement = () => {
     });
 
     try {
-      if (isSaved) {
+      if (wasSaved) {
         // Unsave
         const { error } = await supabase
           .from('saved_places')
@@ -171,21 +149,26 @@ export const usePlaceEngagement = () => {
             place_id: place.id,
             place_name: place.name,
             place_category: place.category,
-            city: place.city,
-            coordinates: place.coordinates,
+            city: place.city || 'Unknown',
+            coordinates: place.coordinates || {}
           });
 
         if (error) throw error;
       }
 
+      toast({
+        title: wasSaved ? "Removed from saved" : "Saved",
+        description: wasSaved ? "Place removed from saved" : "Place saved",
+      });
+
       return true;
     } catch (error) {
       console.error('Error toggling save:', error);
       
-      // Revert optimistic update on error
+      // Revert optimistic update
       setSavedPlaces(prev => {
         const newSet = new Set(prev);
-        if (isSaved) {
+        if (wasSaved) {
           newSet.add(place.id);
         } else {
           newSet.delete(place.id);
@@ -195,54 +178,59 @@ export const usePlaceEngagement = () => {
 
       toast({
         title: "Error",
-        description: `Failed to ${isSaved ? 'unsave' : 'save'} place`,
+        description: "Failed to update save status",
         variant: "destructive",
       });
 
       return false;
     }
-  };
+  }, [user, savedPlaces, toast]);
 
-  const addComment = async (placeId: string, content: string) => {
-    if (!user) return null;
+  const addComment = useCallback(async (placeId: string, content: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to comment.",
+        variant: "destructive",
+      });
+      return false;
+    }
 
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('place_comments')
         .insert({
           user_id: user.id,
           place_id: placeId,
-          content: content.trim(),
-        })
-        .select()
-        .single();
+          content: content.trim()
+        });
 
       if (error) throw error;
 
       toast({
         title: "Comment added",
-        description: "Your comment has been posted successfully",
+        description: "Your comment has been posted",
       });
 
-      return data;
+      return true;
     } catch (error) {
       console.error('Error adding comment:', error);
       toast({
         title: "Error",
-        description: "Failed to post comment",
+        description: "Failed to add comment",
         variant: "destructive",
       });
-      return null;
+      return false;
     }
-  };
+  }, [user, toast]);
 
-  const getComments = async (placeId: string): Promise<PlaceComment[]> => {
+  const getComments = useCallback(async (placeId: string): Promise<PlaceComment[]> => {
     try {
       const { data, error } = await supabase
         .from('place_comments')
         .select(`
           *,
-          profiles (
+          profiles:user_id (
             username,
             full_name,
             avatar_url
@@ -252,57 +240,48 @@ export const usePlaceEngagement = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+
       return data || [];
     } catch (error) {
       console.error('Error fetching comments:', error);
       return [];
     }
-  };
+  }, []);
 
-  const shareWithFriends = async (place: any, friendIds: string[]) => {
-    if (!user) return false;
+  const shareWithFriends = useCallback(async (place: any, friendIds: string[]) => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to share places.",
+        variant: "destructive",
+      });
+      return false;
+    }
 
     try {
-      const shareData = friendIds.map(friendId => ({
-        sender_id: user.id,
-        recipient_id: friendId,
-        place_id: place.id,
-        place_name: place.name,
-        place_data: {
-          name: place.name,
-          category: place.category,
-          city: place.city,
-          coordinates: place.coordinates,
-          image: place.image,
-        },
-      }));
+      const sharePromises = friendIds.map(friendId =>
+        supabase
+          .from('shared_places')
+          .insert({
+            sender_id: user.id,
+            recipient_id: friendId,
+            place_id: place.id,
+            place_name: place.name,
+            place_data: {
+              name: place.name,
+              category: place.category,
+              city: place.city,
+              image: place.image,
+              coordinates: place.coordinates
+            }
+          })
+      );
 
-      const { error } = await supabase
-        .from('shared_places')
-        .insert(shareData);
-
-      if (error) throw error;
-
-      // Create notifications for recipients
-      const notifications = friendIds.map(friendId => ({
-        user_id: friendId,
-        type: 'place_shared',
-        title: 'Place shared with you',
-        message: `${user.user_metadata?.full_name || 'Someone'} shared "${place.name}" with you`,
-        data: {
-          sender_id: user.id,
-          place_id: place.id,
-          place_name: place.name,
-        },
-      }));
-
-      await supabase
-        .from('notifications')
-        .insert(notifications);
+      await Promise.all(sharePromises);
 
       toast({
-        title: "Shared successfully",
-        description: `Shared "${place.name}" with ${friendIds.length} friend${friendIds.length > 1 ? 's' : ''}`,
+        title: "Place shared",
+        description: `Shared with ${friendIds.length} friend${friendIds.length !== 1 ? 's' : ''}`,
       });
 
       return true;
@@ -315,19 +294,15 @@ export const usePlaceEngagement = () => {
       });
       return false;
     }
-  };
+  }, [user, toast]);
 
   return {
-    likedPlaces,
-    savedPlaces,
-    loading,
-    isLiked: (placeId: string) => likedPlaces.has(placeId),
-    isSaved: (placeId: string) => savedPlaces.has(placeId),
+    isLiked,
+    isSaved,
     toggleLike,
     toggleSave,
     addComment,
     getComments,
-    shareWithFriends,
-    refetch: loadUserEngagement,
+    shareWithFriends
   };
 };

@@ -6,8 +6,10 @@ import { cn } from '@/lib/utils';
 type CategoryType = 'all' | 'restaurant' | 'bar' | 'cafe' | 'shop' | 'museum' | 'hotel' | 'park' | 'gym' | 'attraction';
 
 interface CategoryFilterProps {
-  selectedCategories: CategoryType[];
-  onCategoryChange: (categories: CategoryType[]) => void;
+  selectedCategory?: CategoryType;
+  selectedCategories?: CategoryType[];
+  onCategoryChange?: (category: CategoryType) => void;
+  onCategoriesChange?: (categories: CategoryType[]) => void;
 }
 
 const categories = [
@@ -23,20 +25,42 @@ const categories = [
   { id: 'attraction' as CategoryType, label: 'Attraction', icon: Camera },
 ];
 
-const CategoryFilter = ({ selectedCategories, onCategoryChange }: CategoryFilterProps) => {
+const CategoryFilter = ({ 
+  selectedCategory,
+  selectedCategories = [], 
+  onCategoryChange,
+  onCategoriesChange 
+}: CategoryFilterProps) => {
   const handleCategoryToggle = (categoryId: CategoryType) => {
-    if (categoryId === 'all') {
-      onCategoryChange(['all']);
+    // Handle single category mode (for HomePage)
+    if (onCategoryChange) {
+      onCategoryChange(categoryId);
       return;
     }
 
-    const newSelected = selectedCategories.includes('all') 
-      ? [categoryId]
-      : selectedCategories.includes(categoryId)
-        ? selectedCategories.filter(c => c !== categoryId)
-        : [...selectedCategories.filter(c => c !== 'all'), categoryId];
+    // Handle multiple categories mode (for ExplorePage)
+    if (onCategoriesChange) {
+      if (categoryId === 'all') {
+        onCategoriesChange(['all']);
+        return;
+      }
 
-    onCategoryChange(newSelected.length === 0 ? ['all'] : newSelected);
+      const newSelected = selectedCategories.includes('all') 
+        ? [categoryId]
+        : selectedCategories.includes(categoryId)
+          ? selectedCategories.filter(c => c !== categoryId)
+          : [...selectedCategories.filter(c => c !== 'all'), categoryId];
+
+      onCategoriesChange(newSelected.length === 0 ? ['all'] : newSelected);
+    }
+  };
+
+  // Determine if category is selected
+  const isCategorySelected = (categoryId: CategoryType) => {
+    if (selectedCategory !== undefined) {
+      return selectedCategory === categoryId;
+    }
+    return selectedCategories.includes(categoryId);
   };
 
   return (
@@ -44,7 +68,7 @@ const CategoryFilter = ({ selectedCategories, onCategoryChange }: CategoryFilter
       <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
         {categories.map((category) => {
           const Icon = category.icon;
-          const isSelected = selectedCategories.includes(category.id);
+          const isSelected = isCategorySelected(category.id);
           
           return (
             <button

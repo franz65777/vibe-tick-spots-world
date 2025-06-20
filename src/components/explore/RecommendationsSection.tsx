@@ -43,11 +43,13 @@ const RecommendationsSection = ({
     );
   }
 
-  // Filter locations by selected categories
-  const filteredLocations = selectedCategories.includes('all') 
+  // Filter locations by selected categories - ensure selectedCategories is always an array
+  const safeSelectedCategories = Array.isArray(selectedCategories) ? selectedCategories : ['all'];
+  
+  const filteredLocations = safeSelectedCategories.includes('all') 
     ? locationRecommendations
     : locationRecommendations.filter(place => 
-        selectedCategories.some(cat => 
+        safeSelectedCategories.some(cat => 
           place.category?.toLowerCase().includes(cat.toLowerCase())
         )
       );
@@ -66,13 +68,13 @@ const RecommendationsSection = ({
         </div>
         <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-yellow-500" />
-          {selectedCategories.includes('all') 
+          {safeSelectedCategories.includes('all') 
             ? `Discover Amazing ${searchMode === 'locations' ? 'Places' : 'People'}`
             : `No ${searchMode === 'locations' ? 'places' : 'people'} found`
           }
         </h3>
         <p className="text-gray-500 text-center text-sm max-w-sm">
-          {selectedCategories.includes('all') 
+          {safeSelectedCategories.includes('all') 
             ? (searchMode === 'locations' 
               ? "We're curating personalized place recommendations for you. Check back soon!"
               : "We're finding interesting people for you to connect with. Come back later!"
