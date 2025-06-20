@@ -13,11 +13,7 @@ interface SearchResultsProps {
   filteredLocations: Place[];
   filteredUsers: any[];
   isSearching: boolean;
-  likedPlaces: Set<string>;
   onCardClick: (place: Place) => void;
-  onLikeToggle: (placeId: string) => void;
-  onShare: (place: Place) => void;
-  onComment: (place: Place) => void;
   onUserClick: (user: any) => void;
   onFollowUser: (userId: string) => void;
   onMessageUser: (userId: string) => void;
@@ -29,11 +25,7 @@ const SearchResults = ({
   filteredLocations,
   filteredUsers,
   isSearching,
-  likedPlaces,
   onCardClick,
-  onLikeToggle,
-  onShare,
-  onComment,
   onUserClick,
   onFollowUser,
   onMessageUser
@@ -73,8 +65,8 @@ const SearchResults = ({
   }
 
   return (
-    <div className="px-4 py-4">
-      <div className="flex items-center justify-between mb-4">
+    <div className="pb-4">
+      <div className="flex items-center justify-between mb-4 px-4">
         <h3 className="font-semibold text-gray-900">
           {searchMode === 'locations' ? filteredLocations.length : filteredUsers.length} results found
         </h3>
@@ -84,23 +76,17 @@ const SearchResults = ({
       </div>
 
       {searchMode === 'locations' ? (
-        <div className="space-y-4">
+        <div className="space-y-0">
           {filteredLocations.map((place) => (
             <LocationCard
               key={place.id}
               place={place}
-              isLiked={likedPlaces.has(place.id)}
-              isSaved={false}
-              onLike={onLikeToggle}
-              onSave={() => {}}
-              onComment={onComment}
-              onShare={onShare}
               onCardClick={onCardClick}
             />
           ))}
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3 px-4">
           {filteredUsers.map((user) => (
             <UserCard
               key={user.id}

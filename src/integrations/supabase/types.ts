@@ -745,6 +745,54 @@ export type Database = {
         }
         Relationships: []
       }
+      place_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          place_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          place_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          place_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      place_likes: {
+        Row: {
+          created_at: string
+          id: string
+          place_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          place_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          place_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       post_likes: {
         Row: {
           created_at: string
@@ -967,6 +1015,39 @@ export type Database = {
           },
         ]
       }
+      saved_places: {
+        Row: {
+          city: string | null
+          coordinates: Json | null
+          created_at: string
+          id: string
+          place_category: string | null
+          place_id: string
+          place_name: string
+          user_id: string
+        }
+        Insert: {
+          city?: string | null
+          coordinates?: Json | null
+          created_at?: string
+          id?: string
+          place_category?: string | null
+          place_id: string
+          place_name: string
+          user_id: string
+        }
+        Update: {
+          city?: string | null
+          coordinates?: Json | null
+          created_at?: string
+          id?: string
+          place_category?: string | null
+          place_id?: string
+          place_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       search_history: {
         Row: {
           id: string
@@ -998,6 +1079,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      shared_places: {
+        Row: {
+          created_at: string
+          id: string
+          place_data: Json | null
+          place_id: string
+          place_name: string
+          recipient_id: string
+          sender_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          place_data?: Json | null
+          place_id: string
+          place_name: string
+          recipient_id: string
+          sender_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          place_data?: Json | null
+          place_id?: string
+          place_name?: string
+          recipient_id?: string
+          sender_id?: string
+        }
+        Relationships: []
       }
       stories: {
         Row: {
