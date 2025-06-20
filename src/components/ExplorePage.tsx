@@ -1,12 +1,11 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserSearch } from '@/hooks/useUserSearch';
 import { searchService, LocationRecommendation, UserRecommendation } from '@/services/searchService';
 import SearchHeader from './explore/SearchHeader';
-import SearchFilters from './explore/SearchFilters';
 import SearchResults from './explore/SearchResults';
-import SearchSuggestions from './explore/SearchSuggestions';
 import RecommendationsSection from './explore/RecommendationsSection';
 import LocationDetailSheet from './LocationDetailSheet';
 import ShareModal from './home/ShareModal';
@@ -312,8 +311,8 @@ const ExplorePage = () => {
     setCommentLocation(null);
   };
 
-  const handleSortChange = (newSortBy: string) => {
-    setSortBy(newSortBy as SortBy);
+  const handleSortChange = (newSortBy: SortBy) => {
+    setSortBy(newSortBy);
   };
 
   return (
@@ -328,14 +327,10 @@ const ExplorePage = () => {
           setFilteredLocations([]);
           setFilteredUsers([]);
         }}
-      />
-
-      <SearchFilters
         sortBy={sortBy}
         onSortChange={handleSortChange}
         filters={filters}
         onFiltersChange={setFilters}
-        showFilters={!!searchQuery && searchMode === 'locations'}
       />
 
       <div className="flex-1 overflow-y-auto">

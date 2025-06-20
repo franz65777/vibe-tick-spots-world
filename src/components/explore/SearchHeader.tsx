@@ -15,6 +15,10 @@ interface SearchHeaderProps {
   searchMode: SearchMode;
   onSearchModeChange: (mode: SearchMode) => void;
   onClearSearch: () => void;
+  sortBy: SortBy;
+  onSortChange: (sortBy: SortBy) => void;
+  filters: string[];
+  onFiltersChange: (filters: string[]) => void;
 }
 
 const SearchHeader = ({
@@ -22,20 +26,18 @@ const SearchHeader = ({
   onSearchQueryChange,
   searchMode,
   onSearchModeChange,
-  onClearSearch
+  onClearSearch,
+  sortBy,
+  onSortChange,
+  filters,
+  onFiltersChange
 }: SearchHeaderProps) => {
   const [showFilters, setShowFilters] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [sortBy, setSortBy] = useState<SortBy>('proximity');
-  const [filters, setFilters] = useState<string[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-  };
-
-  const handleSortChange = (newSortBy: SortBy) => {
-    setSortBy(newSortBy);
   };
 
   return (
@@ -109,9 +111,9 @@ const SearchHeader = ({
         {searchMode === 'locations' && (
           <SearchFilters
             sortBy={sortBy}
-            onSortChange={handleSortChange}
+            onSortChange={onSortChange}
             filters={filters}
-            onFiltersChange={setFilters}
+            onFiltersChange={onFiltersChange}
             showFilters={showFilters}
           />
         )}
