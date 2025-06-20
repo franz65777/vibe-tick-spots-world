@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,6 +12,8 @@ import PlaceInteractionModal from './home/PlaceInteractionModal';
 import CreateStoryModal from './CreateStoryModal';
 import NotificationsModal from './NotificationsModal';
 import MessagesModal from './MessagesModal';
+import CategoryFilter, { CategoryType } from './explore/CategoryFilter';
+import ExploreMap from './explore/ExploreMap';
 import { useMapPins } from '@/hooks/useMapPins';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useGeolocation } from '@/hooks/useGeolocation';
@@ -18,6 +21,7 @@ import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { useStories } from '@/hooks/useStories';
 import { usePlaceLikes } from '@/hooks/usePlaceLikes';
 import { Place } from '@/types/place';
+import { messageService } from '@/services/messageService';
 
 interface HomeStory {
   id: string;
@@ -67,6 +71,7 @@ const HomePage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'new'>('following');
+  const [selectedCategory, setSelectedCategory] = useState<CategoryType>('all');
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [isInteractionModalOpen, setIsInteractionModalOpen] = useState(false);
   const [isCreateStoryModalOpen, setIsCreateStoryModalOpen] = useState(false);
@@ -96,6 +101,11 @@ const HomePage = () => {
   const handleFilterChange = (filter: 'following' | 'popular' | 'new') => {
     setActiveFilter(filter);
     trackUserAction('filter_change', { filter });
+  };
+
+  const handleCategoryChange = (category: CategoryType) => {
+    setSelectedCategory(category);
+    trackUserAction('category_filter_change', { category });
   };
 
   const handleCitySelect = (city: string) => {
@@ -300,6 +310,12 @@ const HomePage = () => {
         newCount={newCount}
       />
 
+      {/* Category filters */}
+      <CategoryFilter
+        selectedCategory={selectedCategory}
+        onCategoryChange={handleCategoryChange}
+      />
+
       {/* No followed users message */}
       {showNoFollowedUsersMessage && (
         <div className="px-4 py-6 text-center">
@@ -320,18 +336,20 @@ const HomePage = () => {
         </div>
       )}
 
-      {/* Map Section - Full height when no place selected */}
+      {/* Enhanced Map Section */}
       {!showNoFollowedUsersMessage && (
         <div className="flex-1 flex flex-col">
-          <MapSection
-            places={convertedPlaces}
-            onPinClick={handlePinClick}
-            mapCenter={mapCenter}
-            selectedPlace={selectedPlace}
-            onCloseSelectedPlace={() => setSelectedPlace(null)}
-          />
+          <div className="flex-1 relative">
+            <ExploreMap
+              pins={pins}
+              activeFilter={activeFilter}
+              selectedCategory={selectedCategory}
+              onPinClick={handlePinClick}
+              mapCenter={mapCenter}
+            />
+          </div>
 
-          {/* Selected Place Card - Only show when a pin is selected */}
+          {/* Selected Place Card */}
           {selectedPlace && (
             <div className="px-4 pb-20">
               <PlaceCard

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,8 +9,6 @@ import SearchFilters from './explore/SearchFilters';
 import SearchResults from './explore/SearchResults';
 import SearchSuggestions from './explore/SearchSuggestions';
 import RecommendationsSection from './explore/RecommendationsSection';
-import CategoryFilter, { CategoryType } from './explore/CategoryFilter';
-import ExploreMap from './explore/ExploreMap';
 import LocationDetailSheet from './LocationDetailSheet';
 import ShareModal from './home/ShareModal';
 import CommentModal from './home/CommentModal';
@@ -24,8 +23,6 @@ const ExplorePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState<'locations' | 'users'>('locations');
   const [sortBy, setSortBy] = useState<'proximity' | 'likes' | 'followers'>('proximity');
-  const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'new'>('following');
-  const [selectedCategory, setSelectedCategory] = useState<CategoryType>('all');
   const [isSearching, setIsSearching] = useState(false);
   const [filteredLocations, setFilteredLocations] = useState<Place[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
@@ -38,55 +35,6 @@ const ExplorePage = () => {
   const [commentLocation, setCommentLocation] = useState<Place | null>(null);
   const [isMessagesModalOpen, setIsMessagesModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-
-  // Mock map pins data
-  const [mapPins, setMapPins] = useState([
-    {
-      id: '1',
-      name: 'The Blue Bottle Coffee',
-      category: 'cafe',
-      coordinates: { lat: 37.7849, lng: -122.4094 },
-      likes: 24,
-      image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
-      isFollowing: true
-    },
-    {
-      id: '2',
-      name: 'Sunset Grill',
-      category: 'restaurant',
-      coordinates: { lat: 37.7849, lng: -122.4194 },
-      likes: 45,
-      image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop',
-      isFollowing: true
-    },
-    {
-      id: '3',
-      name: 'The Whisky Bar',
-      category: 'bar',
-      coordinates: { lat: 37.7749, lng: -122.4094 },
-      likes: 32,
-      image: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=400&h=300&fit=crop',
-      isFollowing: false
-    },
-    {
-      id: '4',
-      name: 'Modern Art Museum',
-      category: 'museum',
-      coordinates: { lat: 37.7849, lng: -122.4284 },
-      likes: 67,
-      image: 'https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=400&h=300&fit=crop',
-      isFollowing: false
-    },
-    {
-      id: '5',
-      name: 'Fashion District Store',
-      category: 'shop',
-      coordinates: { lat: 37.7649, lng: -122.4094 },
-      likes: 18,
-      image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop',
-      isFollowing: true
-    }
-  ]);
 
   useEffect(() => {
     if (user) {
@@ -291,28 +239,6 @@ const ExplorePage = () => {
     setCommentLocation(null);
   };
 
-  const handlePinClick = (pin: any) => {
-    const placeData: Place = {
-      id: pin.id,
-      name: pin.name,
-      category: pin.category,
-      likes: pin.likes,
-      visitors: [],
-      isNew: false,
-      coordinates: pin.coordinates,
-      image: pin.image
-    };
-    setSelectedLocation(placeData);
-  };
-
-  const handleFilterChange = (filter: 'following' | 'popular' | 'new') => {
-    setActiveFilter(filter);
-  };
-
-  const handleCategoryChange = (category: CategoryType) => {
-    setSelectedCategory(category);
-  };
-
   return (
     <div className="flex flex-col h-full bg-white">
       <SearchHeader
@@ -326,61 +252,6 @@ const ExplorePage = () => {
           setFilteredUsers([]);
         }}
       />
-
-      {!searchQuery && searchMode === 'locations' && (
-        <>
-          {/* Primary filters */}
-          <div className="bg-white/60 backdrop-blur-sm px-2 py-2">
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleFilterChange('following')}
-                className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-300 shadow-lg min-h-[36px] flex-1 ${
-                  activeFilter === 'following'
-                    ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-blue-500/30 scale-105"
-                    : "bg-white/90 text-gray-600 hover:bg-white hover:shadow-xl hover:scale-105"
-                }`}
-              >
-                Following
-              </button>
-              <button
-                onClick={() => handleFilterChange('popular')}
-                className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-300 shadow-lg min-h-[36px] flex-1 ${
-                  activeFilter === 'popular'
-                    ? "bg-gradient-to-r from-pink-500 to-red-500 text-white shadow-pink-500/30 scale-105"
-                    : "bg-white/90 text-gray-600 hover:bg-white hover:shadow-xl hover:scale-105"
-                }`}
-              >
-                Popular
-              </button>
-              <button
-                onClick={() => handleFilterChange('new')}
-                className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-300 shadow-lg relative min-h-[36px] flex-1 ${
-                  activeFilter === 'new'
-                    ? "bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-purple-500/30 scale-105"
-                    : "bg-white/90 text-gray-600 hover:bg-white hover:shadow-xl hover:scale-105"
-                }`}
-              >
-                New
-              </button>
-            </div>
-          </div>
-
-          {/* Category filters */}
-          <CategoryFilter
-            selectedCategory={selectedCategory}
-            onCategoryChange={handleCategoryChange}
-          />
-
-          {/* Map */}
-          <ExploreMap
-            pins={mapPins}
-            activeFilter={activeFilter}
-            selectedCategory={selectedCategory}
-            onPinClick={handlePinClick}
-            mapCenter={{ lat: 37.7749, lng: -122.4194 }}
-          />
-        </>
-      )}
 
       <SearchFilters
         sortBy={sortBy}
