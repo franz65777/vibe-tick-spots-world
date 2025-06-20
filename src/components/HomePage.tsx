@@ -9,6 +9,7 @@ import StoriesSection from './home/StoriesSection';
 import FilterButtons from './home/FilterButtons';
 import MapSection from './home/MapSection';
 import ModalsManager from './home/ModalsManager';
+import LocationOfTheWeek from './home/LocationOfTheWeek';
 
 // Local interface for modal components that expect simpler Place structure
 interface LocalPlace {
@@ -116,6 +117,20 @@ const HomePage = () => {
     address: pin.address || ''
   }));
 
+  // Get top location for "Location of the Week"
+  const getTopLocation = () => {
+    if (places.length === 0) return null;
+    
+    // Sort by popularity or likes to get the top location
+    const sortedPlaces = [...places].sort((a, b) => {
+      const aScore = (a.popularity || 0) + (a.likes || 0) + (a.totalSaves || 0);
+      const bScore = (b.popularity || 0) + (b.likes || 0) + (b.totalSaves || 0);
+      return bScore - aScore;
+    });
+    
+    return sortedPlaces[0];
+  };
+
   const handleFilterChange = (filter: 'following' | 'popular' | 'new') => {
     setActiveFilter(filter);
   };
@@ -150,6 +165,12 @@ const HomePage = () => {
 
   const handleCloseSelectedPlace = () => {
     setSelectedPlace(null);
+  };
+
+  const handleLocationOfTheWeekClick = (place: Place) => {
+    const localPlace = convertToLocalPlace(place);
+    setLocationDetailPlace(localPlace);
+    setIsLocationDetailOpen(true);
   };
 
   // Convert Place to LocalPlace for modal components
@@ -207,6 +228,8 @@ const HomePage = () => {
     );
   }
 
+  const topLocation = getTopLocation();
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header 
@@ -221,7 +244,23 @@ const HomePage = () => {
       />
       
       <main className="flex-1 flex flex-col max-w-7xl mx-auto w-full">
-        <StoriesSection stories={stories} />
+        <div className="bg-white border-b border-gray-100 px-4 py-3">
+          <StoriesSection 
+            stories={stories}
+            onCreateStory={() => setIsCreateStoryModalOpen(true)}
+            onStoryClick={(index) => {
+              setCurrentStoryIndex(index);
+              setIsStoriesViewerOpen(true);
+            }}
+          />
+        </div>
+        
+        {topLocation && (
+          <LocationOfTheWeek 
+            topLocation={topLocation} 
+            onLocationClick={handleLocationOfTheWeekClick}
+          />
+        )}
         
         <FilterButtons 
           activeFilter={activeFilter}
@@ -256,7 +295,7 @@ const HomePage = () => {
         onNotificationsModalClose={() => setIsNotificationsModalOpen(false)}
         onMessagesModalClose={() => setIsMessagesModalOpen(false)}
         onShareModalClose={() => setIsShareModalOpen(false)}
-        onCommentModalClose={() => setIsCommentModalOpen(false)}
+        onCommentModalClose={() => setIsCommentModalClose(false)}
         onLocationDetailClose={() => setIsLocationDetailOpen(false)}
         onStoriesViewerClose={() => setIsStoriesViewerOpen(false)}
         onStoryCreated={() => {}}

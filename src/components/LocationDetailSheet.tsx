@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { X, MapPin, Heart, Bookmark, MessageCircle, Share } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,8 +51,8 @@ const LocationDetailSheet = ({
       setLoading(true);
       console.log('Fetching posts for location:', locationId);
 
-      // First get posts for this location
-      const { data: postsData, error: postsError } = await supabase
+      // First get posts for this location - handle both UUID and string IDs
+      let postsQuery = supabase
         .from('posts')
         .select(`
           id,
@@ -65,8 +64,37 @@ const LocationDetailSheet = ({
           comments_count,
           created_at
         `)
-        .eq('location_id', locationId)
         .order('created_at', { ascending: false });
+
+      // Check if locationId is a UUID or a Google Place ID
+      if (locationId.includes('-')) {
+        // Likely a UUID
+        postsQuery = postsQuery.eq('location_id', locationId);
+      } else {
+        // Likely a Google Place ID, need to find the location first
+        const { data: locationData, error: locationError } = await supabase
+          .from('locations')
+          .select('id')
+          .eq('google_place_id', locationId)
+          .maybeSingle();
+
+        if (locationError) {
+          console.error('Error finding location:', locationError);
+          return;
+        }
+
+        if (locationData) {
+          postsQuery = postsQuery.eq('location_id', locationData.id);
+        } else {
+          console.log('No location found for place ID:', locationId);
+          setPosts([]);
+          setFollowingPosts([]);
+          setOtherPosts([]);
+          return;
+        }
+      }
+
+      const { data: postsData, error: postsError } = await postsQuery;
 
       if (postsError) {
         console.error('Error fetching location posts:', postsError);

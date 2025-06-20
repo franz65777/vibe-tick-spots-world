@@ -50,7 +50,7 @@ export const usePostCreation = () => {
         } else {
           console.log('Creating new location for place:', location.name);
           
-          // Create new location
+          // Create new location only if it doesn't exist
           const { data: newLocation, error: locationError } = await supabase
             .from('locations')
             .insert({
