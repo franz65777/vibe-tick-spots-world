@@ -51,8 +51,39 @@ const LocationDetailSheet = ({
       setLoading(true);
       console.log('Fetching posts for location:', locationId);
 
-      // First get posts for this location - handle both UUID and string IDs
-      let postsQuery = supabase
+      let actualLocationId = locationId;
+
+      // If locationId looks like a Google Place ID, find the actual location UUID
+      if (!locationId.includes('-')) {
+        console.log('Converting Google Place ID to location UUID:', locationId);
+        const { data: locationData, error: locationError } = await supabase
+          .from('locations')
+          .select('id')
+          .eq('google_place_id', locationId)
+          .maybeSingle();
+
+        if (locationError) {
+          console.error('Error finding location by Place ID:', locationError);
+          setPosts([]);
+          setFollowingPosts([]);
+          setOtherPosts([]);
+          return;
+        }
+
+        if (!locationData) {
+          console.log('No location found for Place ID:', locationId);
+          setPosts([]);
+          setFollowingPosts([]);
+          setOtherPosts([]);
+          return;
+        }
+
+        actualLocationId = locationData.id;
+        console.log('Found location UUID:', actualLocationId);
+      }
+
+      // Get all posts for this location
+      const { data: postsData, error: postsError } = await supabase
         .from('posts')
         .select(`
           id,
@@ -64,52 +95,29 @@ const LocationDetailSheet = ({
           comments_count,
           created_at
         `)
+        .eq('location_id', actualLocationId)
         .order('created_at', { ascending: false });
-
-      // Check if locationId is a UUID or a Google Place ID
-      if (locationId.includes('-')) {
-        // Likely a UUID
-        postsQuery = postsQuery.eq('location_id', locationId);
-      } else {
-        // Likely a Google Place ID, need to find the location first
-        const { data: locationData, error: locationError } = await supabase
-          .from('locations')
-          .select('id')
-          .eq('google_place_id', locationId)
-          .maybeSingle();
-
-        if (locationError) {
-          console.error('Error finding location:', locationError);
-          return;
-        }
-
-        if (locationData) {
-          postsQuery = postsQuery.eq('location_id', locationData.id);
-        } else {
-          console.log('No location found for place ID:', locationId);
-          setPosts([]);
-          setFollowingPosts([]);
-          setOtherPosts([]);
-          return;
-        }
-      }
-
-      const { data: postsData, error: postsError } = await postsQuery;
 
       if (postsError) {
         console.error('Error fetching location posts:', postsError);
-        return;
-      }
-
-      if (!postsData || postsData.length === 0) {
         setPosts([]);
         setFollowingPosts([]);
         setOtherPosts([]);
         return;
       }
 
-      // Get user profiles separately
-      const userIds = postsData.map(post => post.user_id);
+      if (!postsData || postsData.length === 0) {
+        console.log('No posts found for location:', actualLocationId);
+        setPosts([]);
+        setFollowingPosts([]);
+        setOtherPosts([]);
+        return;
+      }
+
+      console.log('Found posts for location:', postsData.length);
+
+      // Get user profiles for all post authors
+      const userIds = [...new Set(postsData.map(post => post.user_id))];
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('id, username, full_name, avatar_url')
@@ -141,13 +149,12 @@ const LocationDetailSheet = ({
             } : null
           };
         })
-        .filter(post => post.profiles !== null); // Only keep posts with valid profiles
+        .filter(post => post.profiles !== null);
 
       setPosts(postsWithProfiles);
 
       // If user is logged in, separate posts from followed users
       if (user) {
-        // Get list of users the current user follows
         const { data: followsData } = await supabase
           .from('follows')
           .select('following_id')
@@ -155,7 +162,6 @@ const LocationDetailSheet = ({
 
         const followedUserIds = followsData?.map(f => f.following_id) || [];
 
-        // Separate posts
         const following = postsWithProfiles.filter(post => 
           followedUserIds.includes(post.user_id)
         );
@@ -172,6 +178,9 @@ const LocationDetailSheet = ({
       }
     } catch (error) {
       console.error('Error fetching location posts:', error);
+      setPosts([]);
+      setFollowingPosts([]);
+      setOtherPosts([]);
     } finally {
       setLoading(false);
     }

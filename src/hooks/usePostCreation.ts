@@ -32,7 +32,7 @@ export const usePostCreation = () => {
       if (location) {
         console.log('Processing location:', location);
         
-        // First check if location already exists by Google Place ID
+        // CRITICAL: First check if location already exists by Google Place ID
         const { data: existingLocation, error: locationFetchError } = await supabase
           .from('locations')
           .select('id')
@@ -45,10 +45,10 @@ export const usePostCreation = () => {
         }
 
         if (existingLocation) {
-          console.log('Using existing location:', existingLocation.id);
+          console.log('Using existing location - NO NEW CARD CREATED:', existingLocation.id);
           locationId = existingLocation.id;
         } else {
-          console.log('Creating new location for place:', location.name);
+          console.log('Creating new location card for place:', location.name);
           
           // Create new location only if it doesn't exist
           const { data: newLocation, error: locationError } = await supabase
@@ -72,7 +72,7 @@ export const usePostCreation = () => {
             throw locationError;
           }
           
-          console.log('Created new location:', newLocation.id);
+          console.log('Created new location card:', newLocation.id);
           locationId = newLocation.id;
         }
       }
@@ -107,9 +107,9 @@ export const usePostCreation = () => {
         console.log('File uploaded successfully:', publicUrl);
       }
 
-      console.log('Creating post record...');
+      console.log('Creating post record with location_id:', locationId);
       
-      // Create post record
+      // Create post record - this will be linked to existing or new location
       const { data: post, error: postError } = await supabase
         .from('posts')
         .insert({
@@ -126,7 +126,7 @@ export const usePostCreation = () => {
         throw postError;
       }
 
-      console.log('Post created successfully:', post.id);
+      console.log('Post created successfully and linked to location:', post.id);
       
       return { success: true, post };
     } catch (error) {
