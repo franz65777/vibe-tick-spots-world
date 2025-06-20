@@ -88,15 +88,6 @@ export const loadGoogleMapsAPI = (): Promise<void> => {
       reject(new Error('Failed to load Google Maps API script'));
     };
 
-    // Set a timeout for loading
-    setTimeout(() => {
-      if (typeof window.google === 'undefined' || !window.google.maps) {
-        console.error('Google Maps API loading timeout');
-        delete (window as any)[callbackName]; // Clean up
-        reject(new Error('Google Maps API loading timeout'));
-      }
-    }, 15000);
-
     document.head.appendChild(script);
     console.log('Google Maps script added to document');
   });
@@ -108,15 +99,6 @@ export const isGoogleMapsLoaded = (): boolean => {
          window.google.maps.Map &&
          window.google.maps.places &&
          window.google.maps.places.Autocomplete;
-  
-  console.log('Google Maps full readiness check:', {
-    google: typeof window.google,
-    maps: !!window.google?.maps,
-    Map: !!window.google?.maps?.Map,
-    places: !!window.google?.maps?.places,
-    Autocomplete: !!window.google?.maps?.places?.Autocomplete,
-    overall: loaded
-  });
   
   return loaded;
 };
