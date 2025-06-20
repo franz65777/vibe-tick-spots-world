@@ -19,6 +19,7 @@ import EnhancedSearchHeader from './explore/EnhancedSearchHeader';
 import EnhancedCategoryFilter from './explore/EnhancedCategoryFilter';
 import EnhancedLocationCard from './explore/EnhancedLocationCard';
 import NoResults from './explore/NoResults';
+import UserCard from './explore/UserCard';
 
 type SortBy = 'proximity' | 'likes' | 'saves' | 'following' | 'recent';
 

@@ -82,7 +82,7 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
     e.stopPropagation();
     if (isSaving) return;
     
-    setSaving(true);
+    setIsSaving(true);
     try {
       await toggleSave(place);
     } finally {
