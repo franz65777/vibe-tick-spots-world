@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Search, MapPin, Users, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,17 +7,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import SearchHeader from './explore/SearchHeader';
 import SearchResults from './explore/SearchResults';
-import ExploreMap from './explore/ExploreMap';
-import CategoryFilter from './explore/CategoryFilter';
-import LocationRecommendations from './explore/LocationRecommendations';
-import UserRecommendations from './explore/UserRecommendations';
 import RecommendationsSection from './explore/RecommendationsSection';
 import { Place } from '@/types/place';
 import { CategoryType } from './explore/CategoryFilter';
+import { searchService } from '@/services/searchService';
+import { backendService } from '@/services/backendService';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 type SortBy = 'proximity' | 'likes' | 'saves' | 'following' | 'recent';
 
 const ExplorePage = () => {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState<'locations' | 'users'>('locations');
   const [isSearching, setIsSearching] = useState(false);
@@ -24,148 +26,91 @@ const ExplorePage = () => {
   const [sortBy, setSortBy] = useState<SortBy>('proximity');
   const [filters, setFilters] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<CategoryType>('all');
-  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationRecommendations, setLocationRecommendations] = useState<any[]>([]);
+  const [userRecommendations, setUserRecommendations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  // Get user's current location on component mount
+  // Load real backend data
   useEffect(() => {
-    const getCurrentLocation = () => {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const { latitude, longitude } = position.coords;
-            const location = { lat: latitude, lng: longitude };
-            setUserLocation(location);
-            setMapCenter(location);
-            console.log('User location set:', location);
-          },
-          (error) => {
-            console.error('Error getting location:', error);
-            // Fallback to default location (San Francisco)
-            const fallbackLocation = { lat: 37.7749, lng: -122.4194 };
-            setUserLocation(fallbackLocation);
-            setMapCenter(fallbackLocation);
-          },
-          {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 300000
-          }
-        );
-      } else {
-        // Fallback if geolocation is not supported
-        const fallbackLocation = { lat: 37.7749, lng: -122.4194 };
-        setUserLocation(fallbackLocation);
-        setMapCenter(fallbackLocation);
+    const loadRecommendations = async () => {
+      if (!user) return;
+      
+      setLoading(true);
+      try {
+        // Get real location recommendations
+        const locations = await searchService.getLocationRecommendations(user.id);
+        setLocationRecommendations(locations);
+
+        // Get real user recommendations
+        const users = await searchService.getUserRecommendations(user.id);
+        setUserRecommendations(users);
+      } catch (error) {
+        console.error('Error loading recommendations:', error);
+        // Fallback to empty arrays
+        setLocationRecommendations([]);
+        setUserRecommendations([]);
+      } finally {
+        setLoading(false);
       }
     };
 
-    getCurrentLocation();
-  }, []);
+    loadRecommendations();
+  }, [user]);
 
-  // Mock data for demo
-  const mockLocations: Place[] = [
-    {
-      id: '1',
-      name: 'Blue Bottle Coffee',
-      category: 'cafe',
-      coordinates: { lat: 37.7983, lng: -122.4020 },
-      likes: 245,
-      visitors: ['user1', 'user2', 'user3'],
-      isNew: true,
-      image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
-      friendsWhoSaved: [
-        { name: 'Emma', avatar: 'photo-1438761681033-6461ffad8d80' },
-        { name: 'James', avatar: 'photo-1507003211169-0a1dd7228f2d' }
-      ],
-      totalSaves: 89,
-      distance: '0.3km'
-    },
-    {
-      id: '2',
-      name: 'Golden Gate Park',
-      category: 'park',
-      coordinates: { lat: 37.7694, lng: -122.4862 },
-      likes: 892,
-      visitors: ['user1', 'user2', 'user3', 'user4', 'user5'],
-      isNew: false,
-      image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
-      friendsWhoSaved: [
-        { name: 'Sarah', avatar: 'photo-1494790108755-2616b612d1d' }
-      ],
-      totalSaves: 234,
-      distance: '1.2km'
+  // Search for real data
+  const performSearch = async (query: string) => {
+    if (!user || !query.trim()) return { locations: [], users: [] };
+
+    try {
+      if (searchMode === 'locations') {
+        const locations = await backendService.searchLocations(query);
+        return { locations, users: [] };
+      } else {
+        // Search users
+        const { data: users, error } = await supabase
+          .from('profiles')
+          .select('id, username, full_name, avatar_url')
+          .or(`username.ilike.%${query}%, full_name.ilike.%${query}%`)
+          .limit(20);
+
+        if (error) throw error;
+        return { 
+          locations: [], 
+          users: users?.map(user => ({
+            id: user.id,
+            name: user.full_name || user.username || 'User',
+            username: user.username || `@${user.id.substring(0, 8)}`,
+            avatar: user.avatar_url || 'photo-1472099645785-5658abf4ff4e',
+            is_following: false
+          })) || []
+        };
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      return { locations: [], users: [] };
     }
-  ];
+  };
 
-  const mockUsers = [
-    {
-      id: 'user1',
-      name: 'Sarah Johnson',
-      username: 'sarah_j',
-      avatar: 'photo-1494790108755-2616b612d1d',
-      is_following: false
-    },
-    {
-      id: 'user2',
-      name: 'Mike Chen',
-      username: 'mike_explorer',
-      avatar: 'photo-1507003211169-0a1dd7228f2d',
-      is_following: true
-    }
-  ];
+  const [filteredLocations, setFilteredLocations] = useState<any[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
 
-  // Mock recommendations data
-  const mockLocationRecommendations = [
-    {
-      id: '3',
-      name: 'Tartine Bakery',
-      category: 'bakery',
-      coordinates: { lat: 37.7611, lng: -122.4086 },
-      likes: 156,
-      visitors: ['visitor1', 'visitor2', 'visitor3', 'visitor4'],
-      isNew: false,
-      image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=300&fit=crop',
-      addedBy: 'Local Explorer',
-      isFollowing: false,
-      popularity: 85,
-      distance: 0.8,
-      recommendationReason: 'Popular nearby'
-    }
-  ];
-
-  const mockUserRecommendations = [
-    {
-      id: 'user3',
-      name: 'Alex Kim',
-      username: 'alex_foodie',
-      avatar: 'photo-1472099645785-5658abf4ff4e',
-      isFollowing: false,
-      followers: 245,
-      following: 180,
-      savedPlaces: 67,
-      mutualFollowers: 3,
-      sharedInterests: ['Food', 'Travel']
-    }
-  ];
-
-  const filteredLocations = mockLocations.filter(location => {
-    if (!searchQuery) return true;
-    return location.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-           location.category.toLowerCase().includes(searchQuery.toLowerCase());
-  });
-
-  const filteredUsers = mockUsers.filter(user => {
-    if (!searchQuery) return true;
-    return user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-           user.username.toLowerCase().includes(searchQuery.toLowerCase());
-  });
-
-  const handleSearch = (query: string) => {
+  const handleSearch = async (query: string) => {
     setSearchQuery(query);
     if (query.trim()) {
       setIsSearching(true);
+      const results = await performSearch(query);
+      setFilteredLocations(results.locations);
+      setFilteredUsers(results.users);
+      
+      // Save search history
+      if (user) {
+        await searchService.saveSearchHistory(user.id, query, searchMode);
+      }
+      
       setTimeout(() => setIsSearching(false), 500);
+    } else {
+      setFilteredLocations([]);
+      setFilteredUsers([]);
     }
   };
 
@@ -181,15 +126,15 @@ const ExplorePage = () => {
     });
   };
 
-  const handleCardClick = (place: Place) => {
+  const handleCardClick = (place: any) => {
     console.log('Card clicked:', place.name);
   };
 
-  const handleShare = (place: Place) => {
+  const handleShare = (place: any) => {
     console.log('Share place:', place.name);
   };
 
-  const handleComment = (place: Place) => {
+  const handleComment = (place: any) => {
     console.log('Comment on place:', place.name);
   };
 
@@ -197,35 +142,51 @@ const ExplorePage = () => {
     console.log('User clicked:', user.name);
   };
 
-  const handleFollowUser = (userId: string) => {
-    console.log('Follow user:', userId);
+  const handleFollowUser = async (userId: string) => {
+    if (!user) return;
+    
+    try {
+      // Check if already following
+      const { data: existingFollow } = await supabase
+        .from('follows')
+        .select('id')
+        .eq('follower_id', user.id)
+        .eq('following_id', userId)
+        .maybeSingle();
+
+      if (existingFollow) {
+        // Unfollow
+        await supabase
+          .from('follows')
+          .delete()
+          .eq('follower_id', user.id)
+          .eq('following_id', userId);
+      } else {
+        // Follow
+        await supabase
+          .from('follows')
+          .insert({
+            follower_id: user.id,
+            following_id: userId
+          });
+      }
+
+      // Refresh user recommendations
+      const users = await searchService.getUserRecommendations(user.id);
+      setUserRecommendations(users);
+    } catch (error) {
+      console.error('Error toggling follow:', error);
+    }
   };
 
   const handleMessageUser = (userId: string) => {
     console.log('Message user:', userId);
   };
 
-  const handlePinClick = (pin: any) => {
-    console.log('Pin clicked:', pin);
-    // Find the corresponding place and handle click
-    const place = mockLocations.find(loc => loc.id === pin.id);
-    if (place) {
-      handleCardClick(place);
-    }
-  };
-
-  const mapPins = mockLocations.map(location => ({
-    id: location.id,
-    name: location.name,
-    category: location.category,
-    coordinates: location.coordinates,
-    likes: location.likes,
-    image: location.image,
-    isFollowing: false
-  }));
-
   const clearSearch = () => {
     setSearchQuery('');
+    setFilteredLocations([]);
+    setFilteredUsers([]);
   };
 
   const isSearchActive = searchQuery.trim().length > 0;
@@ -263,58 +224,22 @@ const ExplorePage = () => {
           onMessageUser={handleMessageUser}
         />
       ) : (
-        /* Explore View */
-        <div className="flex-1 overflow-hidden">
-          <Tabs defaultValue="map" className="h-full flex flex-col">
-            <div className="px-4 py-2 bg-white border-b border-gray-100">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="map">Map View</TabsTrigger>
-                <TabsTrigger value="recommendations">Discover</TabsTrigger>
-              </TabsList>
-            </div>
-
-            <TabsContent value="map" className="flex-1 m-0 p-0">
-              <div className="h-full flex flex-col">
-                {/* Category Filter */}
-                <div className="px-4 py-3 bg-white border-b border-gray-100">
-                  <CategoryFilter
-                    selectedCategory={selectedCategory}
-                    onCategoryChange={setSelectedCategory}
-                  />
-                </div>
-
-                {/* Map */}
-                <div className="flex-1">
-                  {mapCenter && (
-                    <ExploreMap
-                      pins={mapPins}
-                      activeFilter="popular"
-                      selectedCategory={selectedCategory}
-                      onPinClick={handlePinClick}
-                      mapCenter={mapCenter}
-                    />
-                  )}
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="recommendations" className="flex-1 m-0 p-0 overflow-y-auto">
-              <RecommendationsSection
-                searchMode={searchMode}
-                loading={false}
-                locationRecommendations={mockLocationRecommendations}
-                userRecommendations={mockUserRecommendations}
-                onLocationClick={handleCardClick}
-                onUserClick={handleUserClick}
-                onFollowUser={handleFollowUser}
-                onLocationShare={handleShare}
-                onLocationComment={handleComment}
-                onLocationLike={handleLikeToggle}
-                likedPlaces={likedPlaces}
-                onMessageUser={handleMessageUser}
-              />
-            </TabsContent>
-          </Tabs>
+        /* Discover View - Only show recommendations */
+        <div className="flex-1 overflow-y-auto">
+          <RecommendationsSection
+            searchMode={searchMode}
+            loading={loading}
+            locationRecommendations={locationRecommendations}
+            userRecommendations={userRecommendations}
+            onLocationClick={handleCardClick}
+            onUserClick={handleUserClick}
+            onFollowUser={handleFollowUser}
+            onLocationShare={handleShare}
+            onLocationComment={handleComment}
+            onLocationLike={handleLikeToggle}
+            likedPlaces={likedPlaces}
+            onMessageUser={handleMessageUser}
+          />
         </div>
       )}
     </div>

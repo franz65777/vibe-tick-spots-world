@@ -28,6 +28,40 @@ const ExploreMap = ({ pins, activeFilter, selectedCategory, onPinClick, mapCente
   const markersRef = useRef<google.maps.Marker[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+
+  // Get user's current location
+  useEffect(() => {
+    const getCurrentLocation = () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            const location = { lat: latitude, lng: longitude };
+            setUserLocation(location);
+            console.log('User location obtained:', location);
+          },
+          (error) => {
+            console.error('Error getting location:', error);
+            // Fallback to San Francisco
+            const fallback = { lat: 37.7749, lng: -122.4194 };
+            setUserLocation(fallback);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 300000
+          }
+        );
+      } else {
+        // Fallback if geolocation is not supported
+        const fallback = { lat: 37.7749, lng: -122.4194 };
+        setUserLocation(fallback);
+      }
+    };
+
+    getCurrentLocation();
+  }, []);
 
   // Filter pins based on selected category
   const filteredPins = selectedCategory === 'all' 
@@ -40,20 +74,18 @@ const ExploreMap = ({ pins, activeFilter, selectedCategory, onPinClick, mapCente
     const initializeMap = async () => {
       try {
         setError(null);
-        console.log('Initializing Google Maps for Explore page...');
+        console.log('Initializing Google Maps...');
         
         await loadGoogleMapsAPI();
         
         if (!mounted || !mapRef.current) return;
 
-        // Wait a bit more to ensure everything is ready
-        await new Promise(resolve => setTimeout(resolve, 500));
-
+        // Wait for user location or use provided center
+        const center = mapCenter || userLocation || { lat: 37.7749, lng: -122.4194 };
+        
         if (isGoogleMapsLoaded() && !mapInstanceRef.current) {
-          const defaultCenter = mapCenter || { lat: 37.7749, lng: -122.4194 };
-          
           const mapOptions: google.maps.MapOptions = {
-            center: defaultCenter,
+            center: center,
             zoom: 13,
             styles: [
               {
@@ -77,7 +109,7 @@ const ExploreMap = ({ pins, activeFilter, selectedCategory, onPinClick, mapCente
           };
 
           mapInstanceRef.current = new window.google.maps.Map(mapRef.current, mapOptions);
-          console.log('Google Maps initialized successfully for Explore');
+          console.log('Google Maps initialized successfully');
           setIsLoaded(true);
         }
       } catch (error) {
@@ -88,12 +120,15 @@ const ExploreMap = ({ pins, activeFilter, selectedCategory, onPinClick, mapCente
       }
     };
 
-    initializeMap();
+    // Only initialize when we have user location or mapCenter
+    if (userLocation || mapCenter) {
+      initializeMap();
+    }
 
     return () => {
       mounted = false;
     };
-  }, [mapCenter]);
+  }, [mapCenter, userLocation]);
 
   // Update markers when filtered pins change
   useEffect(() => {
@@ -107,18 +142,13 @@ const ExploreMap = ({ pins, activeFilter, selectedCategory, onPinClick, mapCente
       // Add new markers with category-specific styling
       filteredPins.forEach((pin, index) => {
         if (pin.coordinates) {
-          // Get category color for pin styling
-          const categoryColor = getCategoryColor(pin.category);
-          const isPopular = activeFilter === 'popular';
-          const isFollowing = activeFilter === 'following';
-          
           // Create custom marker icon based on category and filter
           const markerIcon = {
             url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
               <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="18" cy="18" r="12" fill="${isPopular ? '#EF4444' : isFollowing ? '#3B82F6' : '#6B7280'}" stroke="white" stroke-width="3"/>
+                <circle cx="18" cy="18" r="12" fill="${activeFilter === 'popular' ? '#EF4444' : activeFilter === 'following' ? '#3B82F6' : '#6B7280'}" stroke="white" stroke-width="3"/>
                 <circle cx="18" cy="18" r="6" fill="white"/>
-                ${isPopular ? '<circle cx="18" cy="18" r="3" fill="#EF4444"/>' : ''}
+                ${activeFilter === 'popular' ? '<circle cx="18" cy="18" r="3" fill="#EF4444"/>' : ''}
               </svg>
             `),
             scaledSize: new window.google.maps.Size(36, 36),
