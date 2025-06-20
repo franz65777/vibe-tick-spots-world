@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Search, MapPin, Users, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -124,7 +123,7 @@ const ExplorePage = () => {
       category: 'bakery',
       coordinates: { lat: 37.7611, lng: -122.4086 },
       likes: 156,
-      visitors: 4,
+      visitors: ['visitor1', 'visitor2', 'visitor3', 'visitor4'],
       isNew: false,
       image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=300&fit=crop',
       addedBy: 'Local Explorer',
@@ -141,8 +140,12 @@ const ExplorePage = () => {
       name: 'Alex Kim',
       username: 'alex_foodie',
       avatar: 'photo-1472099645785-5658abf4ff4e',
-      is_following: false,
-      mutual_friends: 3
+      isFollowing: false,
+      followers: 245,
+      following: 180,
+      savedPlaces: 67,
+      mutualFollowers: 3,
+      sharedInterests: ['Food', 'Travel']
     }
   ];
 
