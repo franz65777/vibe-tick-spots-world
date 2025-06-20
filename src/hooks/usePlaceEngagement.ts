@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -229,8 +228,13 @@ export const usePlaceEngagement = () => {
       const { data, error } = await supabase
         .from('place_comments')
         .select(`
-          *,
-          profiles:user_id (
+          id,
+          user_id,
+          place_id,
+          content,
+          created_at,
+          updated_at,
+          profiles!place_comments_user_id_fkey (
             username,
             full_name,
             avatar_url
@@ -239,7 +243,10 @@ export const usePlaceEngagement = () => {
         .eq('place_id', placeId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching comments:', error);
+        return [];
+      }
 
       return data || [];
     } catch (error) {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Search, MapPin, Users, Filter, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -193,11 +192,20 @@ const ExplorePage = () => {
     setFilteredUsers([]);
   };
 
+  // Handle category changes properly for multiple selection mode
+  const handleCategoriesChange = (categories: CategoryType[]) => {
+    setSelectedCategories(categories);
+  };
+
   const isSearchActive = searchQuery.trim().length > 0;
+  
+  // Fix getResultsCount to handle array properly
   const getResultsCount = () => {
-    if (!selectedCategories.includes('all')) {
+    const safeSelectedCategories = Array.isArray(selectedCategories) ? selectedCategories : ['all'];
+    
+    if (!safeSelectedCategories.includes('all')) {
       const filtered = locationRecommendations.filter(place => 
-        selectedCategories.some(cat => 
+        safeSelectedCategories.some(cat => 
           place.category?.toLowerCase().includes(cat.toLowerCase())
         )
       );
@@ -225,7 +233,7 @@ const ExplorePage = () => {
       {searchMode === 'locations' && !isSearchActive && (
         <CategoryFilter
           selectedCategories={selectedCategories}
-          onCategoryChange={setSelectedCategories}
+          onCategoriesChange={handleCategoriesChange}
         />
       )}
 
