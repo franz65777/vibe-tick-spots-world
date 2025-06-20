@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { backendService } from '@/services/backendService';
@@ -18,11 +17,12 @@ interface MapPin {
   isNew?: boolean;
   image?: string;
   friendsWhoSaved?: { name: string; avatar: string }[] | number;
-  visitors?: string[] | number;
+  visitors?: string[];
   distance?: string | number;
   totalSaves?: number;
-  hasPost?: boolean; // New field to indicate if location has posts
-  postCount?: number; // Number of posts at this location
+  hasPost?: boolean;
+  postCount?: number;
+  address?: string;
 }
 
 interface UseMapPinsReturn {
@@ -67,7 +67,8 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           distance: '0.5km',
           totalSaves: 24,
           hasPost: true,
-          postCount: 3
+          postCount: 3,
+          address: '123 Main St, San Francisco, CA'
         },
         {
           id: '2',
@@ -83,11 +84,12 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           isNew: true,
           image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop',
           friendsWhoSaved: 3,
-          visitors: 12,
+          visitors: ['user1', 'user2', 'user3', 'user4', 'user5', 'user6', 'user7', 'user8', 'user9', 'user10', 'user11', 'user12'],
           distance: '1.2km',
           totalSaves: 18,
           hasPost: true,
-          postCount: 1
+          postCount: 1,
+          address: '456 Sunset Blvd, San Francisco, CA'
         },
         {
           id: '3',
@@ -103,11 +105,12 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           isNew: false,
           image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop',
           friendsWhoSaved: 8,
-          visitors: 25,
+          visitors: ['user1', 'user2', 'user3', 'user4', 'user5', 'user6', 'user7', 'user8', 'user9', 'user10', 'user11', 'user12', 'user13', 'user14', 'user15', 'user16', 'user17', 'user18', 'user19', 'user20', 'user21', 'user22', 'user23', 'user24', 'user25'],
           distance: '2.1km',
           totalSaves: 45,
           hasPost: false,
-          postCount: 0
+          postCount: 0,
+          address: '789 Market St, San Francisco, CA'
         }
       ],
       'milan': [
@@ -125,11 +128,12 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           isNew: false,
           image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
           friendsWhoSaved: 5,
-          visitors: 18,
+          visitors: ['user1', 'user2', 'user3', 'user4', 'user5', 'user6', 'user7', 'user8', 'user9', 'user10', 'user11', 'user12', 'user13', 'user14', 'user15', 'user16', 'user17', 'user18'],
           distance: '0.8km',
           totalSaves: 32,
           hasPost: true,
-          postCount: 2
+          postCount: 2,
+          address: 'Via Brera 12, Milan, Italy'
         },
         {
           id: 'milan2',
@@ -145,11 +149,12 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           isNew: false,
           image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop',
           friendsWhoSaved: 7,
-          visitors: 22,
+          visitors: ['user1', 'user2', 'user3', 'user4', 'user5', 'user6', 'user7', 'user8', 'user9', 'user10', 'user11', 'user12', 'user13', 'user14', 'user15', 'user16', 'user17', 'user18', 'user19', 'user20', 'user21', 'user22'],
           distance: '1.5km',
           totalSaves: 45,
           hasPost: true,
-          postCount: 1
+          postCount: 1,
+          address: 'Piazza del Duomo 21, Milan, Italy'
         },
         {
           id: 'milan3',
@@ -165,11 +170,12 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           isNew: true,
           image: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=400&h=300&fit=crop',
           friendsWhoSaved: 4,
-          visitors: 15,
+          visitors: ['user1', 'user2', 'user3', 'user4', 'user5', 'user6', 'user7', 'user8', 'user9', 'user10', 'user11', 'user12', 'user13', 'user14', 'user15'],
           distance: '2.3km',
           totalSaves: 28,
           hasPost: false,
-          postCount: 0
+          postCount: 0,
+          address: 'Navigli District, Milan, Italy'
         }
       ],
       'paris': [
@@ -187,11 +193,12 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           isNew: false,
           image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
           friendsWhoSaved: 9,
-          visitors: 34,
+          visitors: ['user1', 'user2', 'user3', 'user4', 'user5', 'user6', 'user7', 'user8', 'user9', 'user10', 'user11', 'user12', 'user13', 'user14', 'user15', 'user16', 'user17', 'user18', 'user19', 'user20', 'user21', 'user22', 'user23', 'user24', 'user25', 'user26', 'user27', 'user28', 'user29', 'user30', 'user31', 'user32', 'user33', 'user34'],
           distance: '0.3km',
           totalSaves: 56,
           hasPost: true,
-          postCount: 4
+          postCount: 4,
+          address: '172 Boulevard Saint-Germain, Paris, France'
         },
         {
           id: 'paris2',
@@ -207,11 +214,12 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
           isNew: true,
           image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop',
           friendsWhoSaved: 15,
-          visitors: 45,
+          visitors: ['user1', 'user2', 'user3', 'user4', 'user5', 'user6', 'user7', 'user8', 'user9', 'user10', 'user11', 'user12', 'user13', 'user14', 'user15', 'user16', 'user17', 'user18', 'user19', 'user20', 'user21', 'user22', 'user23', 'user24', 'user25', 'user26', 'user27', 'user28', 'user29', 'user30', 'user31', 'user32', 'user33', 'user34', 'user35', 'user36', 'user37', 'user38', 'user39', 'user40', 'user41', 'user42', 'user43', 'user44', 'user45'],
           distance: '1.8km',
           totalSaves: 89,
           hasPost: true,
-          postCount: 2
+          postCount: 2,
+          address: 'Avenue Gustave Eiffel, Paris, France'
         }
       ]
     };
@@ -347,7 +355,8 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
             distance: '0km',
             totalSaves: 0,
             hasPost: true,
-            postCount: 1
+            postCount: 1,
+            address: location.address || ''
           });
         }
       });
@@ -408,7 +417,8 @@ export const useMapPins = (activeFilter: 'following' | 'popular' | 'new' = 'foll
         distance: '0km',
         totalSaves: 0,
         hasPost: location.posts.length > 0,
-        postCount: location.posts.length
+        postCount: location.posts.length,
+        address: location.address || ''
       })) || [];
     } catch (error) {
       console.error('Error fetching popular pins:', error);
