@@ -41,12 +41,12 @@ const ShareModal = ({ isOpen, onClose, place }: ShareModalProps) => {
 
     setLoading(true);
     try {
-      // Get users that the current user follows
+      // Get users that the current user follows with explicit column specification
       const { data: followData, error: followError } = await supabase
         .from('follows')
         .select(`
           following_id,
-          profiles:following_id (
+          profiles!follows_following_id_fkey (
             id,
             username,
             full_name,
@@ -64,6 +64,7 @@ const ShareModal = ({ isOpen, onClose, place }: ShareModalProps) => {
       setFriends(friendsList);
     } catch (error) {
       console.error('Error loading friends:', error);
+      setFriends([]);
     } finally {
       setLoading(false);
     }

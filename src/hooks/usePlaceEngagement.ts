@@ -216,7 +216,7 @@ export const usePlaceEngagement = () => {
         })
         .select(`
           *,
-          profiles:user_id (
+          profiles!place_comments_user_id_fkey (
             username,
             full_name,
             avatar_url
@@ -249,7 +249,7 @@ export const usePlaceEngagement = () => {
         .from('place_comments')
         .select(`
           *,
-          profiles:user_id (
+          profiles!place_comments_user_id_fkey (
             username,
             full_name,
             avatar_url

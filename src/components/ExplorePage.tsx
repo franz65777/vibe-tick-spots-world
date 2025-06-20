@@ -22,7 +22,6 @@ const ExplorePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState<'locations' | 'users'>('locations');
   const [isSearching, setIsSearching] = useState(false);
-  const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<SortBy>('proximity');
   const [filters, setFilters] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<CategoryType>('all');
@@ -114,18 +113,6 @@ const ExplorePage = () => {
     }
   };
 
-  const handleLikeToggle = (placeId: string) => {
-    setLikedPlaces(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(placeId)) {
-        newSet.delete(placeId);
-      } else {
-        newSet.add(placeId);
-      }
-      return newSet;
-    });
-  };
-
   const handleCardClick = (place: any) => {
     console.log('Card clicked:', place.name);
   };
@@ -214,11 +201,7 @@ const ExplorePage = () => {
           filteredLocations={filteredLocations}
           filteredUsers={filteredUsers}
           isSearching={isSearching}
-          likedPlaces={likedPlaces}
           onCardClick={handleCardClick}
-          onLikeToggle={handleLikeToggle}
-          onShare={handleShare}
-          onComment={handleComment}
           onUserClick={handleUserClick}
           onFollowUser={handleFollowUser}
           onMessageUser={handleMessageUser}
@@ -236,8 +219,8 @@ const ExplorePage = () => {
             onFollowUser={handleFollowUser}
             onLocationShare={handleShare}
             onLocationComment={handleComment}
-            onLocationLike={handleLikeToggle}
-            likedPlaces={likedPlaces}
+            onLocationLike={(placeId: string) => console.log('Like place:', placeId)}
+            likedPlaces={new Set()}
             onMessageUser={handleMessageUser}
           />
         </div>

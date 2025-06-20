@@ -1,9 +1,9 @@
 
-
 export interface Place {
   id: string;
   name: string;
   category: string;
+  city?: string;
   likes: number;
   friendsWhoSaved?: { name: string; avatar: string }[];
   visitors: string[];
@@ -21,4 +21,3 @@ export interface Place {
   distance?: string | number;
   totalSaves?: number;
 }
-
