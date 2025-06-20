@@ -7,7 +7,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, Send, ArrowLeft, Phone, Video, MoreHorizontal } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { messageService, MessageThread, Message } from '@/services/messageService';
+import { messageService, MessageThread, DirectMessage } from '@/services/messageService';
 import { formatDistanceToNow } from 'date-fns';
 
 interface MessagesModalProps {
@@ -20,7 +20,7 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
   const { user } = useAuth();
   const [threads, setThreads] = useState<MessageThread[]>([]);
   const [selectedThread, setSelectedThread] = useState<MessageThread | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<DirectMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState<'threads' | 'chat'>('threads');
@@ -52,7 +52,7 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
     
     setLoading(true);
     try {
-      const userThreads = await messageService.getMessageThreads(user.id);
+      const userThreads = await messageService.getMessageThreads();
       setThreads(userThreads);
     } catch (error) {
       console.error('Error loading threads:', error);
@@ -61,10 +61,10 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
     }
   };
 
-  const loadMessages = async (threadId: string) => {
+  const loadMessages = async (otherUserId: string) => {
     setLoading(true);
     try {
-      const threadMessages = await messageService.getMessages(threadId);
+      const threadMessages = await messageService.getMessagesInThread(otherUserId);
       setMessages(threadMessages);
     } catch (error) {
       console.error('Error loading messages:', error);
@@ -76,7 +76,10 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
   const handleThreadSelect = async (thread: MessageThread) => {
     setSelectedThread(thread);
     setView('chat');
-    await loadMessages(thread.id);
+    const otherUserId = thread.participant_1_id === user?.id 
+      ? thread.participant_2_id 
+      : thread.participant_1_id;
+    await loadMessages(otherUserId);
   };
 
   const handleSendMessage = async () => {
@@ -87,9 +90,9 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
         ? selectedThread.participant_2_id 
         : selectedThread.participant_1_id;
 
-      await messageService.sendMessage(user.id, otherParticipantId, newMessage.trim());
+      await messageService.sendTextMessage(otherParticipantId, newMessage.trim());
       setNewMessage('');
-      await loadMessages(selectedThread.id);
+      await loadMessages(otherParticipantId);
       await loadThreads();
     } catch (error) {
       console.error('Error sending message:', error);
@@ -102,8 +105,8 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
 
   const getOtherParticipant = (thread: MessageThread) => {
     return thread.participant_1_id === user?.id 
-      ? thread.participant_2 
-      : thread.participant_1;
+      ? thread.other_user 
+      : thread.other_user;
   };
 
   const formatMessageTime = (timestamp: string) => {

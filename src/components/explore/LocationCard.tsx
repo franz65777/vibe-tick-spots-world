@@ -54,7 +54,7 @@ const LocationCard = ({
     e.stopPropagation();
     if (isSaving) return;
     
-    setSaving(true);
+    setIsSaving(true);
     try {
       onSave(place);
       toast({
@@ -64,7 +64,7 @@ const LocationCard = ({
     } catch (error) {
       console.error('Error toggling save:', error);
     } finally {
-      setTimeout(() => setSaving(false), 500);
+      setTimeout(() => setIsSaving(false), 500);
     }
   };
 

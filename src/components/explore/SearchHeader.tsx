@@ -7,7 +7,7 @@ import SearchSuggestions from './SearchSuggestions';
 import SearchFilters from './SearchFilters';
 
 type SearchMode = 'locations' | 'users';
-type SortBy = 'proximity' | 'likes' | 'followers';
+type SortBy = 'proximity' | 'likes' | 'saves' | 'following' | 'recent';
 
 interface SearchHeaderProps {
   searchQuery: string;
@@ -26,6 +26,8 @@ const SearchHeader = ({
 }: SearchHeaderProps) => {
   const [showFilters, setShowFilters] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [sortBy, setSortBy] = useState<SortBy>('proximity');
+  const [filters, setFilters] = useState<string[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -102,8 +104,10 @@ const SearchHeader = ({
         {/* Filters - Only for locations */}
         {searchMode === 'locations' && (
           <SearchFilters
-            sortBy="proximity"
-            onSortChange={() => {}}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+            filters={filters}
+            onFiltersChange={setFilters}
             showFilters={showFilters}
           />
         )}

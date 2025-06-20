@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,6 +17,8 @@ import LocationCard from './explore/LocationCard';
 import { Place } from '@/types/place';
 import { toast } from '@/hooks/use-toast';
 
+type SortBy = 'proximity' | 'likes' | 'saves' | 'following' | 'recent';
+
 const ExplorePage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -25,7 +26,7 @@ const ExplorePage = () => {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState<'locations' | 'users'>('locations');
-  const [sortBy, setSortBy] = useState('proximity');
+  const [sortBy, setSortBy] = useState<SortBy>('proximity');
   const [filters, setFilters] = useState<string[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [filteredLocations, setFilteredLocations] = useState<Place[]>([]);
@@ -311,6 +312,10 @@ const ExplorePage = () => {
     setCommentLocation(null);
   };
 
+  const handleSortChange = (newSortBy: string) => {
+    setSortBy(newSortBy as SortBy);
+  };
+
   return (
     <div className="flex flex-col h-full bg-white">
       <SearchHeader
@@ -327,7 +332,7 @@ const ExplorePage = () => {
 
       <SearchFilters
         sortBy={sortBy}
-        onSortChange={setSortBy}
+        onSortChange={handleSortChange}
         filters={filters}
         onFiltersChange={setFilters}
         showFilters={!!searchQuery && searchMode === 'locations'}
