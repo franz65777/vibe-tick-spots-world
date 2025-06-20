@@ -72,6 +72,10 @@ const InstagramStyleAddPage = () => {
     setPreviewUrls(newUrls);
   };
 
+  const formatDistance = (distance: number): string => {
+    return `${distance.toFixed(1)} km`;
+  };
+
   const handleLocationSelect = (place: any) => {
     setSelectedLocation(place);
     setShowLocationWarning(false);
@@ -183,13 +187,21 @@ const InstagramStyleAddPage = () => {
                 />
                 <label
                   htmlFor="media-upload"
-                  className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-2xl hover:border-blue-400 hover:bg-blue-50 transition-all cursor-pointer bg-white"
+                  className="block cursor-pointer"
                 >
-                  <div className="p-6 bg-blue-100 rounded-full mb-4">
-                    <Camera className="w-12 h-12 text-blue-600" />
-                  </div>
-                  <span className="text-gray-900 font-semibold text-xl">Add photos or videos</span>
-                  <span className="text-gray-500 text-sm mt-2">Tap to select from gallery</span>
+                  <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-blue-50 to-blue-100 border-0">
+                    <CardContent className="flex flex-col items-center justify-center p-8 min-h-[280px]">
+                      <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4 animate-pulse">
+                        <Camera className="w-8 h-8 text-blue-600" />
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-2 text-center">
+                        Add your best photos or videos
+                      </h3>
+                      <p className="text-gray-600 text-center">
+                        Tap to select from gallery or take a new one
+                      </p>
+                    </CardContent>
+                  </Card>
                 </label>
               </div>
             ) : (
@@ -198,7 +210,7 @@ const InstagramStyleAddPage = () => {
                   <CarouselContent>
                     {previewUrls.map((url, index) => (
                       <CarouselItem key={index} className="basis-4/5">
-                        <Card>
+                        <Card className="shadow-md">
                           <CardContent className="relative aspect-square p-0">
                             {getFileType(selectedFiles[index]) === 'video' ? (
                               <div className="relative w-full h-full">
@@ -222,7 +234,7 @@ const InstagramStyleAddPage = () => {
                       </CarouselItem>
                     ))}
                     <CarouselItem className="basis-1/4">
-                      <Card>
+                      <Card className="shadow-md">
                         <CardContent className="aspect-square p-0">
                           <input
                             type="file"
@@ -312,20 +324,25 @@ const InstagramStyleAddPage = () => {
                   {nearbyPlaces.length > 0 && (
                     <div>
                       <p className="text-sm font-medium text-gray-700 mb-3">📍 Nearby places:</p>
-                      <div className="space-y-2">
-                        {nearbyPlaces.slice(0, 3).map((place, index) => (
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {nearbyPlaces.slice(0, 5).map((place, index) => (
                           <button
                             key={index}
-                            className="w-full text-left p-3 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all"
+                            className="w-full text-left p-3 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all shadow-sm"
                             onClick={() => handleNearbyPlaceSelect(place)}
                           >
                             <div className="flex items-center justify-between">
-                              <div>
-                                <p className="font-medium text-gray-900">{place.name}</p>
-                                <p className="text-sm text-gray-500">{place.address}</p>
+                              <div className="flex items-start gap-3 min-w-0 flex-1">
+                                <MapPin className="w-4 h-4 text-blue-600 mt-1 flex-shrink-0" />
+                                <div className="min-w-0 flex-1">
+                                  <p className="font-medium text-gray-900 truncate">{place.name}</p>
+                                  <p className="text-sm text-gray-500 truncate">{place.address}</p>
+                                </div>
                               </div>
                               {place.distance && (
-                                <span className="text-xs text-blue-600 font-medium">{place.distance}km</span>
+                                <span className="text-xs text-blue-600 font-medium ml-2 flex-shrink-0">
+                                  {formatDistance(place.distance)}
+                                </span>
                               )}
                             </div>
                           </button>
@@ -357,7 +374,7 @@ const InstagramStyleAddPage = () => {
 
           {/* Settings */}
           {selectedFiles.length > 0 && (
-            <div className="bg-white rounded-2xl p-4 border border-gray-100">
+            <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
               <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
                 <Settings className="w-5 h-5 mr-2" />
                 Settings
@@ -378,14 +395,14 @@ const InstagramStyleAddPage = () => {
       </div>
 
       {/* Bottom Summary Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-30">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-30 shadow-lg">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4 text-sm text-gray-600">
             <span>{selectedFiles.length} file{selectedFiles.length !== 1 ? 's' : ''}</span>
             {selectedLocation && (
-              <span className="flex items-center gap-1">
-                <MapPin className="w-4 h-4" />
-                {selectedLocation.name}
+              <span className="flex items-center gap-1 truncate max-w-32">
+                <MapPin className="w-4 h-4 flex-shrink-0" />
+                <span className="truncate">{selectedLocation.name}</span>
               </span>
             )}
           </div>
