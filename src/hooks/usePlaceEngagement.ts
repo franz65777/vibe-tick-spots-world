@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -225,30 +226,52 @@ export const usePlaceEngagement = () => {
 
   const getComments = useCallback(async (placeId: string): Promise<PlaceComment[]> => {
     try {
-      const { data, error } = await supabase
+      // First get the comments
+      const { data: comments, error: commentsError } = await supabase
         .from('place_comments')
-        .select(`
-          id,
-          user_id,
-          place_id,
-          content,
-          created_at,
-          updated_at,
-          profiles!place_comments_user_id_fkey (
-            username,
-            full_name,
-            avatar_url
-          )
-        `)
+        .select('*')
         .eq('place_id', placeId)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching comments:', error);
+      if (commentsError) {
+        console.error('Error fetching comments:', commentsError);
         return [];
       }
 
-      return data || [];
+      if (!comments || comments.length === 0) {
+        return [];
+      }
+
+      // Get unique user IDs
+      const userIds = [...new Set(comments.map(comment => comment.user_id))];
+
+      // Fetch profiles for these users
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .in('id', userIds);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        // Return comments without profile data
+        return comments.map(comment => ({
+          ...comment,
+          profiles: undefined
+        }));
+      }
+
+      // Create a map of user profiles for quick lookup
+      const profileMap = new Map();
+      profiles?.forEach(profile => {
+        profileMap.set(profile.id, profile);
+      });
+
+      // Combine comments with profile data
+      return comments.map(comment => ({
+        ...comment,
+        profiles: profileMap.get(comment.user_id) || undefined
+      }));
+
     } catch (error) {
       console.error('Error fetching comments:', error);
       return [];
