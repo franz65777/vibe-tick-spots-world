@@ -15,6 +15,11 @@ import { backendService } from '@/services/backendService';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
+import EnhancedSearchHeader from './explore/EnhancedSearchHeader';
+import EnhancedCategoryFilter from './explore/EnhancedCategoryFilter';
+import EnhancedLocationCard from './explore/EnhancedLocationCard';
+import NoResults from './explore/NoResults';
+
 type SortBy = 'proximity' | 'likes' | 'saves' | 'following' | 'recent';
 
 const ExplorePage = () => {
@@ -30,6 +35,11 @@ const ExplorePage = () => {
   const [loading, setLoading] = useState(false);
   const [filteredLocations, setFilteredLocations] = useState<any[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
+
+  const handleAddLocation = () => {
+    // Navigate to add location page or open modal
+    console.log('Navigate to add location');
+  };
 
   // Load real backend data
   useEffect(() => {
@@ -216,8 +226,8 @@ const ExplorePage = () => {
 
   return (
     <div className="flex flex-col h-full bg-gray-50 pt-16">
-      {/* Search Header */}
-      <SearchHeader
+      {/* Enhanced Search Header */}
+      <EnhancedSearchHeader
         searchQuery={searchQuery}
         onSearchQueryChange={handleSearch}
         searchMode={searchMode}
@@ -229,9 +239,9 @@ const ExplorePage = () => {
         onFiltersChange={setFilters}
       />
 
-      {/* Category Filter - Only show for locations */}
+      {/* Enhanced Category Filter - Only show for locations */}
       {searchMode === 'locations' && !isSearchActive && (
-        <CategoryFilter
+        <EnhancedCategoryFilter
           selectedCategories={selectedCategories}
           onCategoriesChange={handleCategoriesChange}
         />
@@ -261,20 +271,70 @@ const ExplorePage = () => {
       )}
 
       {isSearchActive ? (
-        /* Search Results View */
-        <SearchResults
-          searchMode={searchMode}
-          sortBy={sortBy}
-          filteredLocations={filteredLocations}
-          filteredUsers={filteredUsers}
-          isSearching={isSearching}
-          onCardClick={handleCardClick}
-          onUserClick={handleUserClick}
-          onFollowUser={handleFollowUser}
-          onMessageUser={handleMessageUser}
-        />
+        /* Enhanced Search Results View */
+        <div className="flex-1 overflow-y-auto">
+          {isSearching ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-gray-600">Searching...</span>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Results count for search */}
+              {(filteredLocations.length > 0 || filteredUsers.length > 0) && (
+                <div className="px-4 py-3 bg-white border-b border-gray-100">
+                  <span className="text-sm text-gray-600">
+                    {searchMode === 'locations' ? filteredLocations.length : filteredUsers.length} results found
+                  </span>
+                </div>
+              )}
+
+              {/* Search Results */}
+              {searchMode === 'locations' ? (
+                filteredLocations.length > 0 ? (
+                  <div className="space-y-0 pb-4">
+                    {filteredLocations.map((place) => (
+                      <EnhancedLocationCard
+                        key={place.id}
+                        place={place}
+                        onCardClick={handleCardClick}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <NoResults
+                    searchMode="locations"
+                    searchQuery={searchQuery}
+                    onAddLocation={handleAddLocation}
+                  />
+                )
+              ) : (
+                filteredUsers.length > 0 ? (
+                  <div className="space-y-3 px-4 pb-4">
+                    {filteredUsers.map((user) => (
+                      <UserCard
+                        key={user.id}
+                        user={user}
+                        onUserClick={handleUserClick}
+                        onFollowUser={handleFollowUser}
+                        onMessageUser={handleMessageUser}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <NoResults
+                    searchMode="users"
+                    searchQuery={searchQuery}
+                  />
+                )
+              )}
+            </>
+          )}
+        </div>
       ) : (
-        /* Discover View - Only show recommendations */
+        /* Discover View - Enhanced Recommendations */
         <div className="flex-1 overflow-y-auto">
           <RecommendationsSection
             searchMode={searchMode}
