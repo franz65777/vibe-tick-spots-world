@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,7 +22,7 @@ interface LocalPlace {
   addedDate?: string;
   popularity?: number;
   city?: string;
-  isNew?: boolean;
+  isNew: boolean; // Make this required to match Place interface
   image?: string;
   friendsWhoSaved?: { name: string; avatar: string }[];
   visitors: string[];
@@ -163,7 +164,7 @@ const HomePage = () => {
     addedDate: place.addedDate,
     popularity: place.popularity,
     city: place.city,
-    isNew: place.isNew,
+    isNew: place.isNew, // Now required
     image: place.image,
     friendsWhoSaved: Array.isArray(place.friendsWhoSaved) ? place.friendsWhoSaved : [],
     visitors: place.visitors,

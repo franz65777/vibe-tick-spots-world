@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { X, MapPin, Heart, Bookmark, MessageCircle, Share } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -89,12 +88,9 @@ const LocationDetailSheet = ({
         })
         .map(post => ({
           ...post,
-          profiles: post.profiles as {
-            username: string;
-            full_name: string;
-            avatar_url?: string;
-          }
-        }));
+          profiles: post.profiles && 'username' in post.profiles ? post.profiles : null
+        }))
+        .filter(post => post.profiles !== null); // Filter out posts without valid profiles
 
       setPosts(validPosts);
 
