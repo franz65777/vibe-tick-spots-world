@@ -49,13 +49,13 @@ const LocationDetailSheet = ({
   const fetchLocationPosts = async () => {
     try {
       setLoading(true);
-      console.log('Fetching posts for location:', locationId);
+      console.log('🔍 Fetching posts for location:', locationId);
 
       let actualLocationId = locationId;
 
-      // If locationId looks like a Google Place ID, find the actual location UUID
-      if (!locationId.includes('-')) {
-        console.log('Converting Google Place ID to location UUID:', locationId);
+      // Handle both UUID and Google Place ID formats
+      if (!locationId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+        console.log('🔄 Converting Google Place ID to location UUID:', locationId);
         const { data: locationData, error: locationError } = await supabase
           .from('locations')
           .select('id')
@@ -63,7 +63,7 @@ const LocationDetailSheet = ({
           .maybeSingle();
 
         if (locationError) {
-          console.error('Error finding location by Place ID:', locationError);
+          console.error('❌ Error finding location by Place ID:', locationError);
           setPosts([]);
           setFollowingPosts([]);
           setOtherPosts([]);
@@ -71,7 +71,7 @@ const LocationDetailSheet = ({
         }
 
         if (!locationData) {
-          console.log('No location found for Place ID:', locationId);
+          console.log('❌ No location found for Place ID:', locationId);
           setPosts([]);
           setFollowingPosts([]);
           setOtherPosts([]);
@@ -79,10 +79,10 @@ const LocationDetailSheet = ({
         }
 
         actualLocationId = locationData.id;
-        console.log('Found location UUID:', actualLocationId);
+        console.log('✅ Found location UUID:', actualLocationId);
       }
 
-      // Get all posts for this location
+      // Fetch all posts for this location with user profiles
       const { data: postsData, error: postsError } = await supabase
         .from('posts')
         .select(`
@@ -93,13 +93,18 @@ const LocationDetailSheet = ({
           likes_count,
           saves_count,
           comments_count,
-          created_at
+          created_at,
+          profiles:user_id (
+            username,
+            full_name,
+            avatar_url
+          )
         `)
         .eq('location_id', actualLocationId)
         .order('created_at', { ascending: false });
 
       if (postsError) {
-        console.error('Error fetching location posts:', postsError);
+        console.error('❌ Error fetching location posts:', postsError);
         setPosts([]);
         setFollowingPosts([]);
         setOtherPosts([]);
@@ -107,53 +112,26 @@ const LocationDetailSheet = ({
       }
 
       if (!postsData || postsData.length === 0) {
-        console.log('No posts found for location:', actualLocationId);
+        console.log('📝 No posts found for location:', actualLocationId);
         setPosts([]);
         setFollowingPosts([]);
         setOtherPosts([]);
         return;
       }
 
-      console.log('Found posts for location:', postsData.length);
+      console.log('✅ Found posts for location:', postsData.length);
 
-      // Get user profiles for all post authors
-      const userIds = [...new Set(postsData.map(post => post.user_id))];
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, username, full_name, avatar_url')
-        .in('id', userIds);
-
-      if (profilesError) {
-        console.error('Error fetching profiles:', profilesError);
-        return;
-      }
-
-      // Create a map of profiles by user_id
-      const profilesMap = new Map();
-      if (profilesData) {
-        profilesData.forEach(profile => {
-          profilesMap.set(profile.id, profile);
-        });
-      }
-
-      // Combine posts with profiles
+      // Process posts with proper profile data
       const postsWithProfiles: Post[] = postsData
-        .map(post => {
-          const profile = profilesMap.get(post.user_id);
-          return {
-            ...post,
-            profiles: profile ? {
-              username: profile.username || 'Unknown User',
-              full_name: profile.full_name || profile.username || 'Unknown User',
-              avatar_url: profile.avatar_url
-            } : null
-          };
-        })
+        .map(post => ({
+          ...post,
+          profiles: Array.isArray(post.profiles) ? post.profiles[0] : post.profiles
+        }))
         .filter(post => post.profiles !== null);
 
       setPosts(postsWithProfiles);
 
-      // If user is logged in, separate posts from followed users
+      // Separate posts from followed users if user is logged in
       if (user) {
         const { data: followsData } = await supabase
           .from('follows')
@@ -177,7 +155,7 @@ const LocationDetailSheet = ({
         setOtherPosts(postsWithProfiles);
       }
     } catch (error) {
-      console.error('Error fetching location posts:', error);
+      console.error('❌ Error fetching location posts:', error);
       setPosts([]);
       setFollowingPosts([]);
       setOtherPosts([]);

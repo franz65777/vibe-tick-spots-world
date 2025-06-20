@@ -14,6 +14,7 @@ export interface Location {
   metadata?: any;
   is_saved?: boolean;
   media_count?: number;
+  google_place_id?: string;
 }
 
 export interface SaveLocationData {
@@ -23,10 +24,11 @@ export interface SaveLocationData {
   latitude?: number;
   longitude?: number;
   metadata?: any;
+  google_place_id?: string;
 }
 
 export const locationService = {
-  // Save a new location (creates the hub)
+  // Save a new location (creates the hub) - FIXED to prevent duplicates
   async saveLocation(locationData: SaveLocationData): Promise<Location | null> {
     // If Supabase is not configured, return mock data
     if (!supabase) {
@@ -46,21 +48,49 @@ export const locationService = {
       const { data: user } = await supabase.auth.getUser();
       if (!user?.user) throw new Error('User not authenticated');
 
-      // First check if location already exists
-      const { data: existingLocation } = await supabase
+      // CRITICAL: Check for existing location by Google Place ID first
+      if (locationData.google_place_id) {
+        const { data: existingLocation } = await supabase
+          .from('locations')
+          .select('*')
+          .eq('google_place_id', locationData.google_place_id)
+          .maybeSingle();
+
+        if (existingLocation) {
+          console.log('✅ Location already exists, using existing:', existingLocation.name);
+          // Save location for current user if not already saved
+          const { error: saveError } = await supabase
+            .from('user_saved_locations')
+            .insert({
+              user_id: user.user.id,
+              location_id: existingLocation.id,
+            });
+
+          if (saveError && !saveError.message.includes('duplicate')) {
+            throw saveError;
+          }
+
+          return existingLocation;
+        }
+      }
+
+      // Check by name and address as fallback
+      const { data: existingLocationByNameAddress } = await supabase
         .from('locations')
         .select('*')
         .eq('name', locationData.name)
         .eq('address', locationData.address || '')
-        .single();
+        .maybeSingle();
 
       let location: Location;
 
-      if (existingLocation) {
+      if (existingLocationByNameAddress) {
         // Location exists, just save it for the user
-        location = existingLocation;
+        location = existingLocationByNameAddress;
+        console.log('✅ Location exists by name/address, using existing:', location.name);
       } else {
         // Create new location hub
+        console.log('🆕 Creating new location hub:', locationData.name);
         const { data: newLocation, error } = await supabase
           .from('locations')
           .insert({
@@ -73,6 +103,7 @@ export const locationService = {
 
         if (error) throw error;
         location = newLocation;
+        console.log('✅ Created new location hub:', location.name);
       }
 
       // Save location for current user
@@ -89,7 +120,7 @@ export const locationService = {
 
       return location;
     } catch (error) {
-      console.error('Error saving location:', error);
+      console.error('❌ Error saving location:', error);
       return null;
     }
   },
@@ -135,7 +166,8 @@ export const locationService = {
             pioneer_user_id,
             created_at,
             updated_at,
-            metadata
+            metadata,
+            google_place_id
           )
         `)
         .eq('user_id', user.user.id)
@@ -169,6 +201,7 @@ export const locationService = {
             created_at: location.created_at,
             updated_at: location.updated_at,
             metadata: location.metadata,
+            google_place_id: location.google_place_id,
             is_saved: true,
           } as Location;
         });
@@ -193,7 +226,7 @@ export const locationService = {
         .from('locations')
         .select(`
           *,
-          media (count)
+          posts (count)
         `)
         .eq('id', locationId)
         .single();
@@ -202,7 +235,7 @@ export const locationService = {
 
       return {
         ...location,
-        media_count: location.media?.[0]?.count || 0,
+        media_count: location.posts?.[0]?.count || 0,
       };
     } catch (error) {
       console.error('Error fetching location details:', error);
