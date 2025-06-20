@@ -1,6 +1,6 @@
 
 import { useState, useRef } from 'react';
-import { Search, MapPin, Users, SlidersHorizontal, X } from 'lucide-react';
+import { Search, MapPin, Users, X, Settings } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import SmartAutocomplete from './SmartAutocomplete';
@@ -118,12 +118,13 @@ const EnhancedSearchHeader = ({
                 size="sm"
                 onClick={clearSearch}
                 className="absolute right-12 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100 rounded-full"
+                aria-label="Clear search"
               >
                 <X className="w-4 h-4" />
               </Button>
             )}
             
-            {/* Filters button for locations */}
+            {/* Settings button for locations (more intuitive than sliders) */}
             {searchMode === 'locations' && (
               <Button
                 type="button"
@@ -131,8 +132,9 @@ const EnhancedSearchHeader = ({
                 size="sm"
                 onClick={() => setShowFilters(!showFilters)}
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100 rounded-full"
+                aria-label="Search settings and filters"
               >
-                <SlidersHorizontal className="w-4 h-4" />
+                <Settings className="w-4 h-4" />
               </Button>
             )}
             
