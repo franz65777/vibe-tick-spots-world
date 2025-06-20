@@ -38,6 +38,7 @@ const ExplorePage = () => {
             const location = { lat: latitude, lng: longitude };
             setUserLocation(location);
             setMapCenter(location);
+            console.log('User location set:', location);
           },
           (error) => {
             console.error('Error getting location:', error);
@@ -69,7 +70,6 @@ const ExplorePage = () => {
       id: '1',
       name: 'Blue Bottle Coffee',
       category: 'cafe',
-      address: '300 Broadway, San Francisco',
       coordinates: { lat: 37.7983, lng: -122.4020 },
       likes: 245,
       visitors: ['user1', 'user2', 'user3'],
@@ -86,7 +86,6 @@ const ExplorePage = () => {
       id: '2',
       name: 'Golden Gate Park',
       category: 'park',
-      address: 'Golden Gate Park, San Francisco',
       coordinates: { lat: 37.7694, lng: -122.4862 },
       likes: 892,
       visitors: ['user1', 'user2', 'user3', 'user4', 'user5'],
@@ -114,6 +113,36 @@ const ExplorePage = () => {
       username: 'mike_explorer',
       avatar: 'photo-1507003211169-0a1dd7228f2d',
       is_following: true
+    }
+  ];
+
+  // Mock recommendations data
+  const mockLocationRecommendations = [
+    {
+      id: '3',
+      name: 'Tartine Bakery',
+      category: 'bakery',
+      coordinates: { lat: 37.7611, lng: -122.4086 },
+      likes: 156,
+      visitors: 4,
+      isNew: false,
+      image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=300&fit=crop',
+      addedBy: 'Local Explorer',
+      isFollowing: false,
+      popularity: 85,
+      distance: 0.8,
+      recommendationReason: 'Popular nearby'
+    }
+  ];
+
+  const mockUserRecommendations = [
+    {
+      id: 'user3',
+      name: 'Alex Kim',
+      username: 'alex_foodie',
+      avatar: 'photo-1472099645785-5658abf4ff4e',
+      is_following: false,
+      mutual_friends: 3
     }
   ];
 
@@ -267,7 +296,20 @@ const ExplorePage = () => {
             </TabsContent>
 
             <TabsContent value="recommendations" className="flex-1 m-0 p-0 overflow-y-auto">
-              <RecommendationsSection />
+              <RecommendationsSection
+                searchMode={searchMode}
+                loading={false}
+                locationRecommendations={mockLocationRecommendations}
+                userRecommendations={mockUserRecommendations}
+                onLocationClick={handleCardClick}
+                onUserClick={handleUserClick}
+                onFollowUser={handleFollowUser}
+                onLocationShare={handleShare}
+                onLocationComment={handleComment}
+                onLocationLike={handleLikeToggle}
+                likedPlaces={likedPlaces}
+                onMessageUser={handleMessageUser}
+              />
             </TabsContent>
           </Tabs>
         </div>
