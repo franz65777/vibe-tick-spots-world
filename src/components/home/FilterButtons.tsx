@@ -5,10 +5,14 @@ import { cn } from '@/lib/utils';
 interface FilterButtonsProps {
   activeFilter: 'following' | 'popular' | 'new';
   onFilterChange: (filter: 'following' | 'popular' | 'new') => void;
-  newCount: number;
+  onCityChange: (city: string) => void;
+  hasFollowedUsers: boolean;
 }
 
-const FilterButtons = ({ activeFilter, onFilterChange, newCount }: FilterButtonsProps) => {
+const FilterButtons = ({ activeFilter, onFilterChange, onCityChange, hasFollowedUsers }: FilterButtonsProps) => {
+  // Calculate new count (this would be dynamic in a real app)
+  const newCount = activeFilter === 'new' ? 0 : 3;
+
   return (
     <div className="bg-white/60 backdrop-blur-sm px-2 py-2">
       <div className="flex gap-2">

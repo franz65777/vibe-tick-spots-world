@@ -11,6 +11,7 @@ interface HeaderProps {
   onSearchKeyPress: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   onNotificationsClick: () => void;
   onMessagesClick: () => void;
+  onCreateStoryClick: () => void;
   onCitySelect: (city: string) => void;
 }
 
@@ -21,6 +22,7 @@ const Header = ({
   onSearchKeyPress,
   onNotificationsClick,
   onMessagesClick,
+  onCreateStoryClick,
   onCitySelect
 }: HeaderProps) => {
   const [isMessageHistoryOpen, setIsMessageHistoryOpen] = useState(false);

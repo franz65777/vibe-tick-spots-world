@@ -1,3 +1,4 @@
+
 import CreateStoryModal from '@/components/CreateStoryModal';
 import NotificationsModal from '@/components/NotificationsModal';
 import MessagesModal from '@/components/MessagesModal';
@@ -20,6 +21,7 @@ interface Place {
   addedDate?: string;
   isFollowing?: boolean;
   popularity?: number;
+  address?: string;
 }
 
 interface Story {
@@ -128,7 +130,7 @@ const ModalsManager = ({
           onClose={onLocationDetailClose}
           locationId={locationDetailPlace.id}
           locationName={locationDetailPlace.name}
-          locationAddress={locationDetailPlace.address}
+          locationAddress={locationDetailPlace.address || ''}
         />
       )}
 

@@ -64,7 +64,7 @@ const LocationDetailSheet = ({
           saves_count,
           comments_count,
           created_at,
-          profiles!inner(
+          profiles(
             username,
             full_name,
             avatar_url
@@ -78,17 +78,17 @@ const LocationDetailSheet = ({
         return;
       }
 
-      // Type guard to ensure posts have valid profiles
-      const validPosts: Post[] = (postsData || []).filter(post => 
-        post.profiles && typeof post.profiles === 'object'
-      ).map(post => ({
-        ...post,
-        profiles: post.profiles as {
-          username: string;
-          full_name: string;
-          avatar_url?: string;
-        }
-      }));
+      // Type guard and filter to ensure posts have valid profiles
+      const validPosts: Post[] = (postsData || [])
+        .filter(post => post.profiles && typeof post.profiles === 'object')
+        .map(post => ({
+          ...post,
+          profiles: post.profiles as {
+            username: string;
+            full_name: string;
+            avatar_url?: string;
+          }
+        }));
 
       setPosts(validPosts);
 

@@ -82,14 +82,14 @@ const HomePage = () => {
     coordinates: pin.coordinates,
     likes: pin.likes,
     isFollowing: pin.isFollowing,
-    addedBy: pin.addedBy,
+    addedBy: typeof pin.addedBy === 'string' ? pin.addedBy : pin.addedBy || 'unknown',
     addedDate: pin.addedDate,
     popularity: pin.popularity,
     city: pin.city,
     isNew: pin.isNew,
     image: pin.image,
     friendsWhoSaved: Array.isArray(pin.friendsWhoSaved) ? pin.friendsWhoSaved : [],
-    visitors: pin.visitors,
+    visitors: Array.isArray(pin.visitors) ? pin.visitors : [],
     distance: pin.distance,
     totalSaves: pin.totalSaves,
     address: pin.address || ''
@@ -175,6 +175,7 @@ const HomePage = () => {
         onNotificationsClick={() => setIsNotificationsModalOpen(true)}
         onMessagesClick={() => setIsMessagesModalOpen(true)}
         onCreateStoryClick={() => setIsCreateStoryModalOpen(true)}
+        onCitySelect={handleCityChange}
       />
       
       <main className="flex-1 flex flex-col max-w-7xl mx-auto w-full">
