@@ -13,10 +13,10 @@ export const usePostDeletion = () => {
     setDeleting(true);
     
     try {
-      // First, get the post to access media URLs
+      // First, get the post to access media URLs and location_id
       const { data: post, error: fetchError } = await supabase
         .from('posts')
-        .select('media_urls, user_id')
+        .select('media_urls, user_id, location_id')
         .eq('id', postId)
         .single();
 
@@ -57,9 +57,27 @@ export const usePostDeletion = () => {
 
       if (deleteError) throw deleteError;
 
+      // Check if this was the last post for the location
+      if (post.location_id) {
+        console.log('🔍 Checking remaining posts for location:', post.location_id);
+        
+        const { data: remainingPosts, error: countError } = await supabase
+          .from('posts')
+          .select('id')
+          .eq('location_id', post.location_id);
+
+        if (countError) {
+          console.warn('⚠️ Could not check remaining posts:', countError);
+        } else if (!remainingPosts || remainingPosts.length === 0) {
+          console.log('🗑️ No more posts for location, location will be hidden from Explore');
+          // Location will automatically be filtered out by the query in searchService
+          // since it looks for locations with posts using inner join
+        }
+      }
+
       return { success: true };
     } catch (error) {
-      console.error('Error deleting post:', error);
+      console.error('❌ Error deleting post:', error);
       return { success: false, error: error as Error };
     } finally {
       setDeleting(false);

@@ -28,7 +28,7 @@ const ExplorePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState<'locations' | 'users'>('locations');
   const [isSearching, setIsSearching] = useState(false);
-  const [sortBy, setSortBy] = useState<SortBy>('proximity');
+  const [sortBy, setSortBy] = useState<SortBy>('recent');
   const [filters, setFilters] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<CategoryType[]>(['all']);
   const [locationRecommendations, setLocationRecommendations] = useState<any[]>([]);
@@ -41,63 +41,26 @@ const ExplorePage = () => {
     console.log('Navigate to add location');
   };
 
-  // Load real backend data - ENSURE UNIQUE CARDS BY GOOGLE_PLACE_ID
+  // Load ALL locations with posts - NO LIMITS, ENSURE UNIQUE BY GOOGLE_PLACE_ID
   useEffect(() => {
     const loadRecommendations = async () => {
       if (!user) return;
       
       setLoading(true);
       try {
-        // Query locations table to get unique cards by google_place_id
-        const { data: locations, error: locationsError } = await supabase
-          .from('locations')
-          .select(`
-            id,
-            name,
-            category,
-            address,
-            latitude,
-            longitude,
-            google_place_id,
-            created_at,
-            posts(count)
-          `)
-          .order('created_at', { ascending: false });
-
-        if (locationsError) throw locationsError;
-
-        // De-duplicate by google_place_id in UI (ensure no duplicates)
-        const uniqueLocations = new Map();
-        locations?.forEach(location => {
-          if (location.google_place_id && !uniqueLocations.has(location.google_place_id)) {
-            uniqueLocations.set(location.google_place_id, {
-              id: location.id,
-              name: location.name,
-              category: location.category,
-              address: location.address,
-              city: location.address?.split(',')[1]?.trim() || 'Unknown',
-              coordinates: { 
-                lat: parseFloat(location.latitude?.toString() || '0'), 
-                lng: parseFloat(location.longitude?.toString() || '0') 
-              },
-              likes: 0,
-              totalSaves: 0,
-              visitors: [],
-              isNew: new Date(location.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-              distance: Math.random() * 5,
-              google_place_id: location.google_place_id,
-              postCount: location.posts?.[0]?.count || 0
-            });
-          }
-        });
-
-        setLocationRecommendations(Array.from(uniqueLocations.values()));
+        console.log('🔍 Loading ALL locations with posts...');
+        
+        // Use the updated searchService method to get ALL locations with posts
+        const locations = await searchService.getLocationRecommendations(user.id);
+        
+        console.log('✅ Loaded location recommendations:', locations.length);
+        setLocationRecommendations(locations);
 
         // Get user recommendations
         const users = await searchService.getUserRecommendations(user.id);
         setUserRecommendations(users);
       } catch (error) {
-        console.error('Error loading recommendations:', error);
+        console.error('❌ Error loading recommendations:', error);
         setLocationRecommendations([]);
         setUserRecommendations([]);
       } finally {
@@ -125,41 +88,61 @@ const ExplorePage = () => {
     // This filtering will be handled in the RecommendationsSection component
   }, [selectedCategories, locationRecommendations]);
 
-  // Search for real data - ENSURE UNIQUE RESULTS
+  // Search for real data - ENSURE UNIQUE RESULTS BY GOOGLE_PLACE_ID
   const performSearch = async (query: string) => {
     if (!user || !query.trim()) return { locations: [], users: [] };
 
     try {
       if (searchMode === 'locations') {
+        console.log('🔍 Searching locations with posts...');
+        
+        // Search locations that have posts and match the query
         const { data: locations, error } = await supabase
           .from('locations')
-          .select('*')
-          .or(`name.ilike.%${query}%, address.ilike.%${query}%`)
+          .select(`
+            id,
+            name,
+            category,
+            address,
+            city,
+            latitude,
+            longitude,
+            google_place_id,
+            created_at,
+            posts!inner(id)
+          `)
+          .or(`name.ilike.%${query}%, address.ilike.%${query}%, city.ilike.%${query}%`)
+          .not('posts', 'is', null)
           .limit(20);
 
         if (error) throw error;
 
-        // De-duplicate by google_place_id
+        // De-duplicate by google_place_id and ensure they have posts
         const uniqueResults = new Map();
         locations?.forEach(location => {
           if (location.google_place_id && !uniqueResults.has(location.google_place_id)) {
-            uniqueResults.set(location.google_place_id, {
-              id: location.id,
-              name: location.name,
-              category: location.category,
-              address: location.address,
-              city: location.address?.split(',')[1]?.trim() || 'Unknown',
-              coordinates: { 
-                lat: parseFloat(location.latitude?.toString() || '0'), 
-                lng: parseFloat(location.longitude?.toString() || '0') 
-              },
-              likes: 0,
-              totalSaves: 0,
-              visitors: [],
-              isNew: false,
-              distance: Math.random() * 5,
-              google_place_id: location.google_place_id
-            });
+            const postCount = Array.isArray(location.posts) ? location.posts.length : 0;
+            
+            if (postCount > 0) {
+              uniqueResults.set(location.google_place_id, {
+                id: location.id,
+                name: location.name,
+                category: location.category,
+                address: location.address,
+                city: location.city || location.address?.split(',')[1]?.trim() || 'Unknown',
+                coordinates: { 
+                  lat: parseFloat(location.latitude?.toString() || '0'), 
+                  lng: parseFloat(location.longitude?.toString() || '0') 
+                },
+                likes: 0,
+                totalSaves: 0,
+                visitors: [],
+                isNew: false,
+                distance: Math.random() * 5,
+                google_place_id: location.google_place_id,
+                postCount: postCount
+              });
+            }
           }
         });
 
@@ -185,7 +168,7 @@ const ExplorePage = () => {
         };
       }
     } catch (error) {
-      console.error('Search error:', error);
+      console.error('❌ Search error:', error);
       return { locations: [], users: [] };
     }
   };

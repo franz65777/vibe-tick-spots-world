@@ -24,6 +24,10 @@ export interface LocationRecommendation {
   popularity?: number;
   distance?: number;
   recommendationReason?: string;
+  address?: string;
+  city?: string;
+  google_place_id?: string;
+  postCount?: number;
 }
 
 export interface UserRecommendation {
@@ -124,7 +128,7 @@ class SearchService {
     }
   }
 
-  // Get location recommendations based on user interests
+  // Get location recommendations based on user interests - FETCH ALL LOCATIONS WITH POSTS
   async getLocationRecommendations(userId: string): Promise<LocationRecommendation[]> {
     const config = backendService.getConfig();
     
@@ -155,36 +159,80 @@ class SearchService {
     }
 
     try {
-      // In production, get real location recommendations
-      const { data, error } = await supabase
+      console.log('🔍 Fetching all locations with posts for recommendations...');
+      
+      // Query locations that have at least one post - NO LIMIT, fetch ALL
+      const { data: locationsWithPosts, error } = await supabase
         .from('locations')
         .select(`
-          *,
-          location_likes(count)
+          id,
+          name,
+          category,
+          address,
+          city,
+          latitude,
+          longitude,
+          google_place_id,
+          created_at,
+          created_by,
+          posts!inner(id)
         `)
-        .limit(10);
+        .not('posts', 'is', null)
+        .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching locations with posts:', error);
+        throw error;
+      }
+
+      console.log('✅ Found locations with posts:', locationsWithPosts?.length || 0);
+
+      if (!locationsWithPosts || locationsWithPosts.length === 0) {
+        return [];
+      }
+
+      // Transform to match interface and ensure uniqueness by google_place_id
+      const uniqueLocations = new Map();
       
-      // Transform to match interface
-      return (data || []).map(location => ({
-        id: location.id,
-        name: location.name,
-        category: location.category,
-        likes: location.location_likes?.[0]?.count || 0,
-        visitors: [],
-        isNew: new Date(location.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-        coordinates: { lat: parseFloat(location.latitude?.toString() || '0'), lng: parseFloat(location.longitude?.toString() || '0') },
-        image: location.image_url,
-        addedBy: location.created_by,
-        addedDate: location.created_at,
-        isFollowing: false,
-        popularity: 75,
-        distance: Math.random() * 2,
-        recommendationReason: 'Popular in your area'
-      }));
+      locationsWithPosts.forEach(location => {
+        // Only include locations that have a google_place_id and aren't already in the map
+        if (location.google_place_id && !uniqueLocations.has(location.google_place_id)) {
+          const postCount = Array.isArray(location.posts) ? location.posts.length : 0;
+          
+          // Only include locations that actually have posts
+          if (postCount > 0) {
+            uniqueLocations.set(location.google_place_id, {
+              id: location.id,
+              name: location.name,
+              category: location.category,
+              address: location.address,
+              city: location.city || location.address?.split(',')[1]?.trim() || 'Unknown',
+              likes: 0, // Will be calculated separately if needed
+              visitors: [],
+              isNew: new Date(location.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+              coordinates: { 
+                lat: parseFloat(location.latitude?.toString() || '0'), 
+                lng: parseFloat(location.longitude?.toString() || '0') 
+              },
+              addedBy: location.created_by,
+              addedDate: location.created_at,
+              isFollowing: false,
+              popularity: Math.min(75 + postCount * 5, 100), // Popularity based on post count
+              distance: Math.random() * 5, // Mock distance for now
+              recommendationReason: postCount === 1 ? 'New spot with content' : `${postCount} posts`,
+              google_place_id: location.google_place_id,
+              postCount: postCount
+            });
+          }
+        }
+      });
+
+      const recommendations = Array.from(uniqueLocations.values());
+      console.log('✅ Processed unique location recommendations:', recommendations.length);
+      
+      return recommendations;
     } catch (error) {
-      console.error('Error fetching location recommendations:', error);
+      console.error('❌ Error fetching location recommendations:', error);
       return [];
     }
   }
