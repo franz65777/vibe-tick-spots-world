@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -44,7 +43,9 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
 
     setLoading(true);
     try {
-      // Get posts for this location
+      console.log('🔍 Fetching posts for location_id:', place.id);
+      
+      // Fetch ALL posts from posts table where location_id matches the location card's id
       const { data: locationPosts, error } = await supabase
         .from('posts')
         .select(`
@@ -58,9 +59,19 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
         .eq('location_id', place.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching posts:', error);
+        throw error;
+      }
 
-      // Separate posts from followed users and others
+      console.log('✅ Found posts for location:', locationPosts?.length || 0);
+
+      if (!locationPosts || locationPosts.length === 0) {
+        setPosts([]);
+        return;
+      }
+
+      // Separate posts: users you follow first, then others
       const followedUserPosts: Post[] = [];
       const otherPosts: Post[] = [];
 
@@ -73,7 +84,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
 
         const followingIds = new Set(following?.map(f => f.following_id) || []);
 
-        locationPosts?.forEach(post => {
+        locationPosts.forEach(post => {
           const processedPost: Post = {
             id: post.id,
             user_id: post.user_id,
@@ -83,6 +94,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
             profiles: Array.isArray(post.profiles) ? post.profiles[0] : post.profiles
           };
 
+          // Show posts from users you follow first, then others
           if (followingIds.has(post.user_id)) {
             followedUserPosts.push(processedPost);
           } else {
@@ -90,22 +102,23 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
           }
         });
       } else {
-        const processedPosts = locationPosts?.map(post => ({
+        const processedPosts = locationPosts.map(post => ({
           id: post.id,
           user_id: post.user_id,
           caption: post.caption,
           media_urls: post.media_urls || [],
           created_at: post.created_at,
           profiles: Array.isArray(post.profiles) ? post.profiles[0] : post.profiles
-        })) || [];
+        }));
         
         otherPosts.push(...processedPosts);
       }
 
       // Combine: followed users first, then others
       setPosts([...followedUserPosts, ...otherPosts]);
+      console.log('✅ Processed posts - Following:', followedUserPosts.length, 'Others:', otherPosts.length);
     } catch (error) {
-      console.error('Error loading location posts:', error);
+      console.error('❌ Error loading location posts:', error);
       setPosts([]);
     } finally {
       setLoading(false);

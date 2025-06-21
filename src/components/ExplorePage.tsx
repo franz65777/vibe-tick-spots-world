@@ -38,27 +38,66 @@ const ExplorePage = () => {
   const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
 
   const handleAddLocation = () => {
-    // Navigate to add location page or open modal
     console.log('Navigate to add location');
   };
 
-  // Load real backend data
+  // Load real backend data - ENSURE UNIQUE CARDS BY GOOGLE_PLACE_ID
   useEffect(() => {
     const loadRecommendations = async () => {
       if (!user) return;
       
       setLoading(true);
       try {
-        // Get real location recommendations
-        const locations = await searchService.getLocationRecommendations(user.id);
-        setLocationRecommendations(locations);
+        // Query locations table to get unique cards by google_place_id
+        const { data: locations, error: locationsError } = await supabase
+          .from('locations')
+          .select(`
+            id,
+            name,
+            category,
+            address,
+            latitude,
+            longitude,
+            google_place_id,
+            created_at,
+            posts(count)
+          `)
+          .order('created_at', { ascending: false });
 
-        // Get real user recommendations
+        if (locationsError) throw locationsError;
+
+        // De-duplicate by google_place_id in UI (ensure no duplicates)
+        const uniqueLocations = new Map();
+        locations?.forEach(location => {
+          if (location.google_place_id && !uniqueLocations.has(location.google_place_id)) {
+            uniqueLocations.set(location.google_place_id, {
+              id: location.id,
+              name: location.name,
+              category: location.category,
+              address: location.address,
+              city: location.address?.split(',')[1]?.trim() || 'Unknown',
+              coordinates: { 
+                lat: parseFloat(location.latitude?.toString() || '0'), 
+                lng: parseFloat(location.longitude?.toString() || '0') 
+              },
+              likes: 0,
+              totalSaves: 0,
+              visitors: [],
+              isNew: new Date(location.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+              distance: Math.random() * 5,
+              google_place_id: location.google_place_id,
+              postCount: location.posts?.[0]?.count || 0
+            });
+          }
+        });
+
+        setLocationRecommendations(Array.from(uniqueLocations.values()));
+
+        // Get user recommendations
         const users = await searchService.getUserRecommendations(user.id);
         setUserRecommendations(users);
       } catch (error) {
         console.error('Error loading recommendations:', error);
-        // Fallback to empty arrays
         setLocationRecommendations([]);
         setUserRecommendations([]);
       } finally {
@@ -86,14 +125,45 @@ const ExplorePage = () => {
     // This filtering will be handled in the RecommendationsSection component
   }, [selectedCategories, locationRecommendations]);
 
-  // Search for real data
+  // Search for real data - ENSURE UNIQUE RESULTS
   const performSearch = async (query: string) => {
     if (!user || !query.trim()) return { locations: [], users: [] };
 
     try {
       if (searchMode === 'locations') {
-        const locations = await backendService.searchLocations(query);
-        return { locations, users: [] };
+        const { data: locations, error } = await supabase
+          .from('locations')
+          .select('*')
+          .or(`name.ilike.%${query}%, address.ilike.%${query}%`)
+          .limit(20);
+
+        if (error) throw error;
+
+        // De-duplicate by google_place_id
+        const uniqueResults = new Map();
+        locations?.forEach(location => {
+          if (location.google_place_id && !uniqueResults.has(location.google_place_id)) {
+            uniqueResults.set(location.google_place_id, {
+              id: location.id,
+              name: location.name,
+              category: location.category,
+              address: location.address,
+              city: location.address?.split(',')[1]?.trim() || 'Unknown',
+              coordinates: { 
+                lat: parseFloat(location.latitude?.toString() || '0'), 
+                lng: parseFloat(location.longitude?.toString() || '0') 
+              },
+              likes: 0,
+              totalSaves: 0,
+              visitors: [],
+              isNew: false,
+              distance: Math.random() * 5,
+              google_place_id: location.google_place_id
+            });
+          }
+        });
+
+        return { locations: Array.from(uniqueResults.values()), users: [] };
       } else {
         // Search users
         const { data: users, error } = await supabase
@@ -128,7 +198,6 @@ const ExplorePage = () => {
       setFilteredLocations(results.locations);
       setFilteredUsers(results.users);
       
-      // Save search history
       if (user) {
         await searchService.saveSearchHistory(user.id, query, searchMode);
       }
@@ -160,7 +229,6 @@ const ExplorePage = () => {
     if (!user) return;
     
     try {
-      // Check if already following
       const { data: existingFollow } = await supabase
         .from('follows')
         .select('id')
@@ -169,14 +237,12 @@ const ExplorePage = () => {
         .maybeSingle();
 
       if (existingFollow) {
-        // Unfollow
         await supabase
           .from('follows')
           .delete()
           .eq('follower_id', user.id)
           .eq('following_id', userId);
       } else {
-        // Follow
         await supabase
           .from('follows')
           .insert({
@@ -185,7 +251,6 @@ const ExplorePage = () => {
           });
       }
 
-      // Refresh user recommendations
       const users = await searchService.getUserRecommendations(user.id);
       setUserRecommendations(users);
     } catch (error) {
@@ -283,7 +348,6 @@ const ExplorePage = () => {
             </div>
           ) : (
             <>
-              {/* Results count for search */}
               {(filteredLocations.length > 0 || filteredUsers.length > 0) && (
                 <div className="px-4 py-3 bg-white border-b border-gray-100">
                   <span className="text-sm text-gray-600">
@@ -292,7 +356,6 @@ const ExplorePage = () => {
                 </div>
               )}
 
-              {/* Search Results */}
               {searchMode === 'locations' ? (
                 filteredLocations.length > 0 ? (
                   <div className="space-y-0 pb-4">
