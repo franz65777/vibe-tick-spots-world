@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface LocationRecommendation {
@@ -50,7 +49,7 @@ class SearchService {
     try {
       console.log('🔍 Fetching ALL locations with posts...');
       
-      // Query locations that have posts using inner join to ensure they have content
+      // Query locations that have posts using proper join
       const { data: locations, error } = await supabase
         .from('locations')
         .select(`
@@ -63,7 +62,11 @@ class SearchService {
           longitude,
           google_place_id,
           created_at,
-          posts!inner(id)
+          posts(
+            id,
+            media_urls,
+            created_at
+          )
         `)
         .not('posts', 'is', null);
 
@@ -77,41 +80,55 @@ class SearchService {
         return [];
       }
 
-      // De-duplicate by google_place_id and ensure unique results
+      console.log('📍 Raw locations data:', locations);
+
+      // Process and de-duplicate locations
       const uniqueResults = new Map<string, LocationRecommendation>();
       
       locations.forEach(location => {
+        // Use google_place_id as key for deduplication, fallback to location id
         const key = location.google_place_id || location.id;
         
-        if (!uniqueResults.has(key)) {
-          const postCount = Array.isArray(location.posts) ? location.posts.length : 0;
+        // Count actual posts
+        const posts = Array.isArray(location.posts) ? location.posts : [];
+        const postCount = posts.length;
+        
+        // Only include locations that actually have posts
+        if (postCount > 0 && !uniqueResults.has(key)) {
+          // Get the most recent post image for location card
+          const latestPost = posts.sort((a, b) => 
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          )[0];
           
-          // Only include locations that actually have posts
-          if (postCount > 0) {
-            uniqueResults.set(key, {
-              id: location.id,
-              name: location.name,
-              category: location.category,
-              address: location.address,
-              city: location.city || location.address?.split(',')[1]?.trim() || 'Unknown',
-              coordinates: { 
-                lat: parseFloat(location.latitude?.toString() || '0'), 
-                lng: parseFloat(location.longitude?.toString() || '0') 
-              },
-              likes: 0,
-              totalSaves: 0,
-              visitors: [],
-              isNew: this.isLocationNew(location.created_at),
-              distance: Math.random() * 5, // Mock distance for now
-              google_place_id: location.google_place_id,
-              postCount: postCount
-            });
-          }
+          const firstMediaUrl = latestPost?.media_urls?.[0];
+          
+          uniqueResults.set(key, {
+            id: location.id,
+            name: location.name,
+            category: location.category,
+            address: location.address,
+            city: location.city || location.address?.split(',')[1]?.trim() || 'Unknown',
+            coordinates: { 
+              lat: parseFloat(location.latitude?.toString() || '0'), 
+              lng: parseFloat(location.longitude?.toString() || '0') 
+            },
+            likes: 0,
+            totalSaves: 0,
+            visitors: [],
+            isNew: this.isLocationNew(location.created_at),
+            distance: Math.random() * 5, // Mock distance for now
+            google_place_id: location.google_place_id,
+            postCount: postCount,
+            image: firstMediaUrl, // Add the first media from latest post
+            addedDate: location.created_at
+          });
         }
       });
 
       const results = Array.from(uniqueResults.values());
-      console.log('✅ Unique locations with posts found:', results.length);
+      console.log('✅ Processed unique locations with posts:', results.length);
+      console.log('📊 Sample location data:', results[0]);
+      
       return results;
     } catch (error) {
       console.error('❌ Error in getLocationRecommendations:', error);
