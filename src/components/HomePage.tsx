@@ -23,6 +23,12 @@ const HomePage = () => {
   const [showShare, setShowShare] = useState(false);
   const [showAddLocation, setShowAddLocation] = useState(false);
   const [showMessages, setShowMessages] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentCity, setCurrentCity] = useState('New York');
+  const [stories, setStories] = useState<any[]>([]);
+  const [topLocation, setTopLocation] = useState<any>(null);
+  const [likedPlaces, setLikedPlaces] = useState<Set<string>>(new Set());
+  const [savedPlaces, setSavedPlaces] = useState<Set<string>>(new Set());
 
   // Load places based on current filters
   useEffect(() => {
@@ -57,6 +63,11 @@ const HomePage = () => {
         }
         
         setPlaces(filteredPlaces);
+        
+        // Set top location for Location of the Week
+        if (filteredPlaces.length > 0) {
+          setTopLocation(filteredPlaces[0]);
+        }
       } catch (error) {
         console.error('Error loading places:', error);
         setPlaces([]);
@@ -90,19 +101,83 @@ const HomePage = () => {
     setShowMessages(true);
   };
 
+  const handleNotifications = () => {
+    // Handle notifications
+  };
+
+  const handleCreateStory = () => {
+    // Handle create story
+  };
+
+  const handleStoryClick = (index: number) => {
+    // Handle story click
+  };
+
+  const handleLikeToggle = (placeId: string) => {
+    setLikedPlaces(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(placeId)) {
+        newSet.delete(placeId);
+      } else {
+        newSet.add(placeId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSaveToggle = (place: any) => {
+    setSavedPlaces(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(place.id)) {
+        newSet.delete(place.id);
+      } else {
+        newSet.add(place.id);
+      }
+      return newSet;
+    });
+  };
+
+  const handleLocationClick = (place: any) => {
+    setSelectedPlace(place);
+  };
+
+  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      // Handle search
+    }
+  };
+
+  const handleCitySelect = (city: string) => {
+    setCurrentCity(city);
+  };
+
+  const mapCenter = { lat: 40.7128, lng: -74.0060 }; // Default to NYC
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header 
-        onAddLocation={handleAddLocation}
-        onMessages={handleMessages}
+        searchQuery={searchQuery}
+        currentCity={currentCity}
+        onSearchChange={setSearchQuery}
+        onSearchKeyPress={handleSearchKeyPress}
+        onNotificationsClick={handleNotifications}
+        onMessagesClick={handleMessages}
+        onCreateStoryClick={handleCreateStory}
+        onCitySelect={handleCitySelect}
       />
       
       <div className="pt-16">
-        <StoriesSection />
+        <StoriesSection 
+          stories={stories}
+          onCreateStory={handleCreateStory}
+          onStoryClick={handleStoryClick}
+        />
         
         <FilterButtons
-          currentView={currentView}
-          onViewChange={setCurrentView}
+          activeFilter={currentView}
+          onFilterChange={setCurrentView}
+          onCityChange={setCurrentCity}
+          hasFollowedUsers={true}
         />
         
         <CategoryFilters
@@ -110,7 +185,10 @@ const HomePage = () => {
           onCategoryChange={setSelectedCategory}
         />
         
-        <LocationOfTheWeek />
+        <LocationOfTheWeek 
+          topLocation={topLocation}
+          onLocationClick={handleLocationClick}
+        />
         
         <div className="px-4 py-6">
           {loading ? (
@@ -133,28 +211,53 @@ const HomePage = () => {
                 <PlaceCard
                   key={place.id}
                   place={place}
+                  isLiked={likedPlaces.has(place.id)}
+                  isSaved={savedPlaces.has(place.id)}
                   onCardClick={handlePlaceClick}
-                  onComment={handleComment}
+                  onLikeToggle={handleLikeToggle}
+                  onSaveToggle={handleSaveToggle}
                   onShare={handleShare}
+                  onComment={handleComment}
+                  cityName={currentCity}
                 />
               ))}
             </div>
           )}
         </div>
         
-        <MapSection places={places} />
+        <MapSection 
+          places={places}
+          onPinClick={handlePlaceClick}
+          mapCenter={mapCenter}
+          selectedPlace={selectedPlace}
+          onCloseSelectedPlace={() => setSelectedPlace(null)}
+        />
       </div>
 
       <ModalsManager
-        selectedPlace={selectedPlace}
-        showComments={showComments}
-        showShare={showShare}
-        showAddLocation={showAddLocation}
-        showMessages={showMessages}
-        onCloseComments={() => setShowComments(false)}
-        onCloseShare={() => setShowShare(false)}
-        onCloseAddLocation={() => setShowAddLocation(false)}
-        onCloseMessages={() => setShowMessages(false)}
+        isCreateStoryModalOpen={false}
+        isNotificationsModalOpen={false}
+        isMessagesModalOpen={showMessages}
+        isShareModalOpen={showShare}
+        isCommentModalOpen={showComments}
+        isLocationDetailOpen={false}
+        isStoriesViewerOpen={false}
+        sharePlace={selectedPlace}
+        commentPlace={selectedPlace}
+        locationDetailPlace={null}
+        stories={stories}
+        currentStoryIndex={0}
+        onCreateStoryModalClose={() => {}}
+        onNotificationsModalClose={() => {}}
+        onMessagesModalClose={() => setShowMessages(false)}
+        onShareModalClose={() => setShowShare(false)}
+        onCommentModalClose={() => setShowComments(false)}
+        onLocationDetailClose={() => {}}
+        onStoriesViewerClose={() => {}}
+        onStoryCreated={() => {}}
+        onShare={(friendIds: string[], place: any) => {}}
+        onCommentSubmit={(text: string, place: any) => {}}
+        onStoryViewed={(storyId: string) => {}}
       />
     </div>
   );
