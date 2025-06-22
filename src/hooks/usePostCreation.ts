@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,11 +28,11 @@ export const usePostCreation = () => {
     try {
       let locationId = null;
 
-      // STEP 1: Handle location creation/finding - CRITICAL FIX FOR LOCATION LINKING
+      // STEP 1: Handle location creation/finding - CHECK FOR EXISTING LOCATION FIRST
       if (location) {
-        console.log('🔍 CRITICAL: Checking for existing location by Google Place ID:', location.google_place_id);
+        console.log('🔍 Checking for existing location by Google Place ID:', location.google_place_id);
         
-        // CHECK FOR EXISTING LOCATION FIRST - this prevents duplicates
+        // Check if location already exists by Google Place ID
         const { data: existingLocation, error: locationFetchError } = await supabase
           .from('locations')
           .select('id, name, google_place_id')
@@ -39,18 +40,17 @@ export const usePostCreation = () => {
           .maybeSingle();
 
         if (locationFetchError) {
-          console.error('❌ CRITICAL ERROR checking existing location:', locationFetchError);
+          console.error('❌ Error checking existing location:', locationFetchError);
           throw locationFetchError;
         }
 
         if (existingLocation) {
-          // EXISTING LOCATION FOUND - USE IT, DO NOT CREATE NEW
-          console.log('✅ CRITICAL: Found existing location - using existing ID:', existingLocation.id);
-          console.log('✅ Existing location name:', existingLocation.name);
+          // Location exists - use existing location ID, DO NOT create new
+          console.log('✅ Found existing location - using existing ID:', existingLocation.id);
           locationId = existingLocation.id;
         } else {
-          // NO EXISTING LOCATION - CREATE NEW ONE
-          console.log('🆕 CRITICAL: Creating new location for Google Place ID:', location.google_place_id);
+          // Location doesn't exist - create new location
+          console.log('🆕 Creating new location for Google Place ID:', location.google_place_id);
           
           const { data: newLocation, error: locationError } = await supabase
             .from('locations')
@@ -69,11 +69,11 @@ export const usePostCreation = () => {
             .single();
 
           if (locationError) {
-            console.error('❌ CRITICAL ERROR creating new location:', locationError);
+            console.error('❌ Error creating new location:', locationError);
             throw locationError;
           }
           
-          console.log('✅ CRITICAL: Created new location with ID:', newLocation.id);
+          console.log('✅ Created new location with ID:', newLocation.id);
           locationId = newLocation.id;
         }
       }
@@ -106,14 +106,14 @@ export const usePostCreation = () => {
         console.log('✅ File uploaded successfully:', publicUrl);
       }
 
-      // STEP 3: Create post record with location_id - CRITICAL FOR LOCATION LINKING
-      console.log('📝 CRITICAL: Creating post record with location_id:', locationId);
+      // STEP 3: Create post record with location_id
+      console.log('📝 Creating post record with location_id:', locationId);
       
       const { data: post, error: postError } = await supabase
         .from('posts')
         .insert({
           user_id: user.id,
-          location_id: locationId, // CRITICAL: Always save location_id in posts table
+          location_id: locationId, // Always save location_id in posts table
           caption: caption || null,
           media_urls: mediaUrls,
         })
@@ -121,19 +121,12 @@ export const usePostCreation = () => {
         .single();
 
       if (postError) {
-        console.error('❌ CRITICAL ERROR creating post:', postError);
+        console.error('❌ Error creating post:', postError);
         throw postError;
       }
 
-      console.log('✅ CRITICAL SUCCESS: POST CREATED AND LINKED TO LOCATION!');
+      console.log('✅ POST CREATED SUCCESSFULLY!');
       console.log('Post ID:', post.id, 'linked to location_id:', post.location_id);
-      
-      // VERIFICATION: Check that the post is properly linked
-      if (locationId && post.location_id === locationId) {
-        console.log('✅ VERIFICATION PASSED: Post correctly linked to location');
-      } else {
-        console.warn('⚠️ VERIFICATION WARNING: Post linking may have issues');
-      }
       
       return { success: true, post };
     } catch (error) {
