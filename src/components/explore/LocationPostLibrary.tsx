@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -56,8 +55,9 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
     setLoading(true);
     try {
       console.log('📚 Loading posts for location ID:', place.id);
+      console.log('📚 Location name:', place.name);
       
-      // Fetch ALL posts from ALL users for this specific location
+      // Query posts for this specific location ID
       const { data: locationPosts, error } = await supabase
         .from('posts')
         .select(`
@@ -83,10 +83,22 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
         throw error;
       }
 
-      console.log(`✅ Found ${locationPosts?.length || 0} posts for location: ${place.name}`);
-
+      console.log(`📊 Raw query result: ${locationPosts?.length || 0} posts found`);
+      
       if (!locationPosts || locationPosts.length === 0) {
         console.log('📝 No posts found for this location');
+        
+        // DEBUG: Let's also check if there are any posts with this location name in caption
+        const { data: debugPosts } = await supabase
+          .from('posts')
+          .select('id, caption, location_id')
+          .ilike('caption', `%${place.name}%`);
+        
+        console.log('🔍 DEBUG - Posts mentioning location name in caption:', debugPosts?.length || 0);
+        debugPosts?.forEach(post => {
+          console.log(`  - Post ${post.id}: location_id=${post.location_id}, caption="${post.caption}"`);
+        });
+        
         setPosts([]);
         return;
       }
@@ -104,8 +116,12 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
         profiles: Array.isArray(post.profiles) ? post.profiles[0] : post.profiles
       }));
 
+      console.log(`✅ Successfully loaded ${processedPosts.length} posts for ${place.name}`);
+      processedPosts.forEach(post => {
+        console.log(`  📸 Post ${post.id} by ${post.profiles?.username || 'unknown'}: ${post.media_urls.length} media files`);
+      });
+
       setPosts(processedPosts);
-      console.log(`✅ Processed ${processedPosts.length} posts for display`);
 
     } catch (error) {
       console.error('❌ Error loading location posts:', error);
@@ -122,15 +138,13 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
   const handleLike = async (postId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     await toggleLike(postId);
-    // Refresh posts to get updated counts
-    loadLocationPosts();
+    loadLocationPosts(); // Refresh to get updated counts
   };
 
   const handleSave = async (postId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     await toggleSave(postId);
-    // Refresh posts to get updated counts
-    loadLocationPosts();
+    loadLocationPosts(); // Refresh to get updated counts
   };
 
   return (
@@ -186,6 +200,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-2">No posts yet</h3>
                 <p className="text-gray-500 text-sm">Be the first to post about this spot!</p>
+                <p className="text-gray-400 text-xs mt-2">Location ID: {place?.id}</p>
               </div>
             ) : (
               <div className="space-y-4">

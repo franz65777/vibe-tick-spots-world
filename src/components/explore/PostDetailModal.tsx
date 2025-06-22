@@ -2,8 +2,7 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Heart, MessageCircle, Bookmark, Share2, X, Send } from 'lucide-react';
+import { Heart, MessageCircle, Bookmark, Share2, X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { usePostEngagement } from '@/hooks/usePostEngagement';
 import { useNavigate } from 'react-router-dom';

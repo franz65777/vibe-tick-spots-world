@@ -27,7 +27,7 @@ export const usePostCreation = () => {
     try {
       let locationId = null;
 
-      // STEP 1: CRITICAL - Handle location creation/finding - ABSOLUTELY NO DUPLICATES
+      // STEP 1: Handle location creation/finding - PREVENT DUPLICATES
       if (location) {
         console.log('🔍 CHECKING FOR EXISTING LOCATION - PREVENTING DUPLICATES');
         console.log('Google Place ID:', location.google_place_id);
@@ -51,31 +51,30 @@ export const usePostCreation = () => {
           }
         }
 
-        // SECOND: If not found by Google Place ID, check by name + address
+        // SECOND: If not found by Google Place ID, check by exact name match
         if (!existingLocation) {
-          console.log('🔍 No Google Place ID match, checking by name + address...');
+          console.log('🔍 No Google Place ID match, checking by exact name...');
           
-          const { data: nameAddressLocation, error: nameAddressError } = await supabase
+          const { data: nameLocation, error: nameError } = await supabase
             .from('locations')
             .select('id, name, address')
-            .eq('name', location.name)
-            .eq('address', location.address)
+            .ilike('name', location.name) // Case-insensitive exact name match
             .maybeSingle();
 
-          if (nameAddressError) {
-            console.error('❌ Error checking by name + address:', nameAddressError);
-          } else if (nameAddressLocation) {
-            existingLocation = nameAddressLocation;
-            console.log('✅ FOUND EXISTING by name + address:', existingLocation.name);
+          if (nameError) {
+            console.error('❌ Error checking by name:', nameError);
+          } else if (nameLocation) {
+            existingLocation = nameLocation;
+            console.log('✅ FOUND EXISTING by name:', existingLocation.name);
           }
         }
 
         if (existingLocation) {
-          // EXISTING LOCATION FOUND - USE IT, DO NOT CREATE NEW
+          // EXISTING LOCATION FOUND - USE IT
           console.log('✅ USING EXISTING LOCATION - NO NEW CARD CREATED');
           locationId = existingLocation.id;
         } else {
-          // ONLY CREATE NEW LOCATION IF ABSOLUTELY NONE EXISTS
+          // CREATE NEW LOCATION ONLY IF NONE EXISTS
           console.log('🆕 CREATING NEW LOCATION - WILL CREATE NEW CARD');
           
           const { data: newLocation, error: locationError } = await supabase
@@ -99,13 +98,13 @@ export const usePostCreation = () => {
             throw locationError;
           }
           
-          console.log('✅ NEW LOCATION CREATED - NEW CARD WILL APPEAR');
+          console.log('✅ NEW LOCATION CREATED');
           locationId = newLocation.id;
         }
       }
 
-      // STEP 2: Upload user's media files
-      console.log('📤 Uploading user post media...');
+      // STEP 2: Upload media files
+      console.log('📤 Uploading media files...');
       const mediaUrls: string[] = [];
       
       for (let i = 0; i < files.length; i++) {
@@ -113,14 +112,12 @@ export const usePostCreation = () => {
         const fileExt = file.name.split('.').pop();
         const fileName = `${user.id}/${Date.now()}-${i}-${Math.random().toString(36).substring(7)}.${fileExt}`;
         
-        console.log(`📤 Uploading user content ${i + 1}/${files.length}:`, fileName);
-        
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('media')
           .upload(fileName, file);
 
         if (uploadError) {
-          console.error('❌ Upload error for file:', fileName, uploadError);
+          console.error('❌ Upload error:', uploadError);
           throw uploadError;
         }
 
@@ -129,18 +126,17 @@ export const usePostCreation = () => {
           .getPublicUrl(uploadData.path);
         
         mediaUrls.push(publicUrl);
-        console.log('✅ User post media uploaded:', publicUrl);
+        console.log('✅ Media uploaded:', publicUrl);
       }
 
-      // STEP 3: Create post record - ADD TO EXISTING LOCATION'S LIBRARY
-      console.log('📝 ADDING POST TO LOCATION LIBRARY (NOT CREATING NEW CARD)');
-      console.log('Location ID:', locationId);
+      // STEP 3: Create post record with proper location linking
+      console.log('📝 CREATING POST WITH LOCATION ID:', locationId);
       
       const { data: post, error: postError } = await supabase
         .from('posts')
         .insert({
           user_id: user.id,
-          location_id: locationId,
+          location_id: locationId, // This is the critical connection!
           caption: caption || null,
           media_urls: mediaUrls,
         })
@@ -152,8 +148,7 @@ export const usePostCreation = () => {
         throw postError;
       }
 
-      console.log('✅ POST SUCCESSFULLY ADDED TO LOCATION LIBRARY!');
-      console.log('📍 No duplicate cards - post added to existing location');
+      console.log('✅ POST CREATED SUCCESSFULLY!');
       console.log('Post ID:', post.id, 'Location ID:', post.location_id);
       
       return { success: true, post };
