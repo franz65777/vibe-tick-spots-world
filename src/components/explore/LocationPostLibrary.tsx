@@ -43,9 +43,9 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
 
     setLoading(true);
     try {
-      console.log('🔍 Fetching posts for location_id:', place.id);
+      console.log('🔍 CRITICAL: Fetching posts for location_id:', place.id);
       
-      // Fetch ALL posts from posts table where location_id matches the location card's id
+      // CRITICAL FIX: Fetch ALL posts from posts table where location_id matches the location card's id
       const { data: locationPosts, error } = await supabase
         .from('posts')
         .select(`
@@ -60,13 +60,15 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('❌ Error fetching posts:', error);
+        console.error('❌ CRITICAL ERROR fetching posts:', error);
         throw error;
       }
 
-      console.log('✅ Found posts for location:', locationPosts?.length || 0);
+      console.log('✅ CRITICAL SUCCESS: Found posts for location:', locationPosts?.length || 0);
+      console.log('Posts data:', locationPosts);
 
       if (!locationPosts || locationPosts.length === 0) {
+        console.log('📝 No posts found for location:', place.id);
         setPosts([]);
         return;
       }
@@ -83,6 +85,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
           .eq('follower_id', user.id);
 
         const followingIds = new Set(following?.map(f => f.following_id) || []);
+        console.log('Following users:', followingIds.size);
 
         locationPosts.forEach(post => {
           const processedPost: Post = {
@@ -115,10 +118,11 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
       }
 
       // Combine: followed users first, then others
-      setPosts([...followedUserPosts, ...otherPosts]);
-      console.log('✅ Processed posts - Following:', followedUserPosts.length, 'Others:', otherPosts.length);
+      const allPosts = [...followedUserPosts, ...otherPosts];
+      setPosts(allPosts);
+      console.log('✅ CRITICAL SUCCESS: Processed posts - Following:', followedUserPosts.length, 'Others:', otherPosts.length);
     } catch (error) {
-      console.error('❌ Error loading location posts:', error);
+      console.error('❌ CRITICAL ERROR loading location posts:', error);
       setPosts([]);
     } finally {
       setLoading(false);

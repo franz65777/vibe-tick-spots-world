@@ -1,307 +1,160 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useMapPins } from '@/hooks/useMapPins';
-import { Place } from '@/types/place';
+import { backendService } from '@/services/backendService';
+import { searchService } from '@/services/searchService';
 import Header from './home/Header';
 import StoriesSection from './home/StoriesSection';
 import FilterButtons from './home/FilterButtons';
+import CategoryFilters, { CategoryType } from './home/CategoryFilters';
+import PlaceCard from './home/PlaceCard';
+import LocationOfTheWeek from './home/LocationOfTheWeek';
 import MapSection from './home/MapSection';
 import ModalsManager from './home/ModalsManager';
-import LocationOfTheWeek from './home/LocationOfTheWeek';
-
-// Local interface for modal components that expect simpler Place structure
-interface LocalPlace {
-  id: string;
-  name: string;
-  category: string;
-  coordinates: { lat: number; lng: number };
-  likes: number;
-  isFollowing?: boolean;
-  addedBy?: string;
-  addedDate?: string;
-  popularity?: number;
-  city?: string;
-  isNew: boolean; // Make this required to match Place interface
-  image?: string;
-  friendsWhoSaved?: { name: string; avatar: string }[];
-  visitors: string[];
-  distance?: string | number;
-  totalSaves?: number;
-  address?: string;
-}
 
 const HomePage = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
-  const [selectedCity, setSelectedCity] = useState('');
-  const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'new'>('following');
-  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
-  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 37.7749, lng: -122.4194 });
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  
-  // Modal states
-  const [isCreateStoryModalOpen, setIsCreateStoryModalOpen] = useState(false);
-  const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
-  const [isMessagesModalOpen, setIsMessagesModalOpen] = useState(false);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
-  const [isLocationDetailOpen, setIsLocationDetailOpen] = useState(false);
-  const [isStoriesViewerOpen, setIsStoriesViewerOpen] = useState(false);
-  const [sharePlace, setSharePlace] = useState<LocalPlace | null>(null);
-  const [commentPlace, setCommentPlace] = useState<LocalPlace | null>(null);
-  const [locationDetailPlace, setLocationDetailPlace] = useState<LocalPlace | null>(null);
-  const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
-  
-  // Search state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentCity, setCurrentCity] = useState('');
-  
-  // Use the map pins hook with the active filter
-  const { pins, loading, error, refreshPins, hasFollowedUsers } = useMapPins(activeFilter);
+  const [currentView, setCurrentView] = useState<'following' | 'popular' | 'new'>('following');
+  const [selectedCategory, setSelectedCategory] = useState<CategoryType>('all');
+  const [places, setPlaces] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedPlace, setSelectedPlace] = useState<any>(null);
+  const [showComments, setShowComments] = useState(false);
+  const [showShare, setShowShare] = useState(false);
+  const [showAddLocation, setShowAddLocation] = useState(false);
+  const [showMessages, setShowMessages] = useState(false);
 
-  // Get user's current location on component mount
+  // Load places based on current filters
   useEffect(() => {
-    const getCurrentLocation = () => {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const { latitude, longitude } = position.coords;
-            const location = { lat: latitude, lng: longitude };
-            setUserLocation(location);
-            setMapCenter(location); // Center map on user's location
-            console.log('User location obtained:', location);
-          },
-          (error) => {
-            console.warn('Error getting user location:', error);
-            // Keep default San Francisco coordinates if geolocation fails
-            const defaultLocation = { lat: 37.7749, lng: -122.4194 };
-            setMapCenter(defaultLocation);
-          },
-          {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 300000 // 5 minutes
-          }
-        );
-      } else {
-        console.warn('Geolocation is not supported by this browser');
-        // Keep default San Francisco coordinates
-        const defaultLocation = { lat: 37.7749, lng: -122.4194 };
-        setMapCenter(defaultLocation);
+    const loadPlaces = async () => {
+      if (!user) return;
+      
+      setLoading(true);
+      try {
+        // Get all location recommendations
+        const locations = await searchService.getLocationRecommendations(user.id);
+        
+        let filteredPlaces = locations;
+        
+        // Apply category filter
+        if (selectedCategory !== 'all') {
+          filteredPlaces = locations.filter(place => 
+            place.category?.toLowerCase().includes(selectedCategory.toLowerCase())
+          );
+        }
+        
+        // Apply view filter
+        switch (currentView) {
+          case 'popular':
+            filteredPlaces = filteredPlaces.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+            break;
+          case 'new':
+            filteredPlaces = filteredPlaces.filter(place => place.isNew);
+            break;
+          case 'following':
+            // For now, show all places since we don't have following-specific logic
+            break;
+        }
+        
+        setPlaces(filteredPlaces);
+      } catch (error) {
+        console.error('Error loading places:', error);
+        setPlaces([]);
+      } finally {
+        setLoading(false);
       }
     };
 
-    getCurrentLocation();
-  }, []);
+    loadPlaces();
+  }, [user, currentView, selectedCategory]);
 
-  // Convert map pins to Place format for the map
-  const places: Place[] = pins.map(pin => ({
-    id: pin.id,
-    name: pin.name,
-    category: pin.category,
-    coordinates: pin.coordinates,
-    likes: pin.likes,
-    isFollowing: pin.isFollowing,
-    addedBy: typeof pin.addedBy === 'string' ? pin.addedBy : pin.addedBy || 'unknown',
-    addedDate: pin.addedDate,
-    popularity: pin.popularity,
-    city: pin.city,
-    isNew: pin.isNew,
-    image: pin.image,
-    friendsWhoSaved: Array.isArray(pin.friendsWhoSaved) ? pin.friendsWhoSaved : [],
-    visitors: Array.isArray(pin.visitors) ? pin.visitors : [],
-    distance: pin.distance,
-    totalSaves: pin.totalSaves,
-    address: pin.address || ''
-  }));
-
-  // Get top location for "Location of the Week"
-  const getTopLocation = () => {
-    if (places.length === 0) return null;
-    
-    // Sort by popularity or likes to get the top location
-    const sortedPlaces = [...places].sort((a, b) => {
-      const aScore = (a.popularity || 0) + (a.likes || 0) + (a.totalSaves || 0);
-      const bScore = (b.popularity || 0) + (b.likes || 0) + (b.totalSaves || 0);
-      return bScore - aScore;
-    });
-    
-    return sortedPlaces[0];
-  };
-
-  const handleFilterChange = (filter: 'following' | 'popular' | 'new') => {
-    setActiveFilter(filter);
-  };
-
-  const handleCityChange = (city: string) => {
-    setSelectedCity(city);
-    setCurrentCity(city);
-    refreshPins(city);
-    
-    // Update map center based on selected city
-    const cityCoordinates: Record<string, { lat: number; lng: number }> = {
-      'san francisco': { lat: 37.7749, lng: -122.4194 },
-      'milan': { lat: 45.4642, lng: 9.1900 },
-      'paris': { lat: 48.8566, lng: 2.3522 },
-      'new york': { lat: 40.7128, lng: -74.0060 },
-      'london': { lat: 51.5074, lng: -0.1278 },
-      'tokyo': { lat: 35.6762, lng: 139.6503 }
-    };
-    
-    const cityKey = city.toLowerCase();
-    if (cityCoordinates[cityKey]) {
-      setMapCenter(cityCoordinates[cityKey]);
-    } else if (userLocation) {
-      // If unknown city, use user's location
-      setMapCenter(userLocation);
-    }
-  };
-
-  const handlePinClick = (place: Place) => {
+  const handlePlaceClick = (place: any) => {
     setSelectedPlace(place);
   };
 
-  const handleCloseSelectedPlace = () => {
-    setSelectedPlace(null);
+  const handleComment = (place: any) => {
+    setSelectedPlace(place);
+    setShowComments(true);
   };
 
-  const handleLocationOfTheWeekClick = (place: Place) => {
-    const localPlace = convertToLocalPlace(place);
-    setLocationDetailPlace(localPlace);
-    setIsLocationDetailOpen(true);
+  const handleShare = (place: any) => {
+    setSelectedPlace(place);
+    setShowShare(true);
   };
 
-  // Convert Place to LocalPlace for modal components
-  const convertToLocalPlace = (place: Place): LocalPlace => ({
-    id: place.id,
-    name: place.name,
-    category: place.category,
-    coordinates: place.coordinates,
-    likes: place.likes,
-    isFollowing: place.isFollowing,
-    addedBy: typeof place.addedBy === 'string' ? place.addedBy : 'unknown',
-    addedDate: place.addedDate,
-    popularity: place.popularity,
-    city: place.city,
-    isNew: place.isNew, // Now required
-    image: place.image,
-    friendsWhoSaved: Array.isArray(place.friendsWhoSaved) ? place.friendsWhoSaved : [],
-    visitors: place.visitors,
-    distance: place.distance,
-    totalSaves: place.totalSaves,
-    address: place.address
-  });
+  const handleAddLocation = () => {
+    setShowAddLocation(true);
+  };
 
-  // Mock stories data
-  const stories = [
-    {
-      id: '1',
-      userId: 'user1',
-      userName: 'John Doe',
-      userAvatar: '',
-      isViewed: false,
-      mediaUrl: '/placeholder.svg',
-      mediaType: 'image' as const,
-      locationId: 'loc1',
-      locationName: 'Sample Location',
-      locationAddress: 'Sample Address',
-      timestamp: new Date().toISOString(),
-    }
-  ];
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Welcome!</h2>
-          <p className="text-gray-600 mb-4">Please sign in to explore amazing places</p>
-          <button 
-            onClick={() => navigate('/auth')}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
-          >
-            Sign In
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const topLocation = getTopLocation();
+  const handleMessages = () => {
+    setShowMessages(true);
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50">
       <Header 
-        searchQuery={searchQuery}
-        currentCity={currentCity}
-        onSearchChange={setSearchQuery}
-        onSearchKeyPress={() => {}}
-        onNotificationsClick={() => setIsNotificationsModalOpen(true)}
-        onMessagesClick={() => setIsMessagesModalOpen(true)}
-        onCreateStoryClick={() => setIsCreateStoryModalOpen(true)}
-        onCitySelect={handleCityChange}
+        onAddLocation={handleAddLocation}
+        onMessages={handleMessages}
       />
       
-      <main className="flex-1 flex flex-col max-w-7xl mx-auto w-full">
-        <div className="bg-white border-b border-gray-100 px-4 py-3">
-          <StoriesSection 
-            stories={stories}
-            onCreateStory={() => setIsCreateStoryModalOpen(true)}
-            onStoryClick={(index) => {
-              setCurrentStoryIndex(index);
-              setIsStoriesViewerOpen(true);
-            }}
-          />
+      <div className="pt-16">
+        <StoriesSection />
+        
+        <FilterButtons
+          currentView={currentView}
+          onViewChange={setCurrentView}
+        />
+        
+        <CategoryFilters
+          selectedCategory={selectedCategory}
+          onCategoryChange={setSelectedCategory}
+        />
+        
+        <LocationOfTheWeek />
+        
+        <div className="px-4 py-6">
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : places.length === 0 ? (
+            <div className="text-center py-12">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No places found</h3>
+              <p className="text-gray-500">
+                {selectedCategory === 'all' 
+                  ? 'Try switching to a different view or check back later'
+                  : `No ${selectedCategory} places found. Try a different category.`
+                }
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {places.map((place) => (
+                <PlaceCard
+                  key={place.id}
+                  place={place}
+                  onCardClick={handlePlaceClick}
+                  onComment={handleComment}
+                  onShare={handleShare}
+                />
+              ))}
+            </div>
+          )}
         </div>
         
-        {topLocation && (
-          <LocationOfTheWeek 
-            topLocation={topLocation} 
-            onLocationClick={handleLocationOfTheWeekClick}
-          />
-        )}
-        
-        <FilterButtons 
-          activeFilter={activeFilter}
-          onFilterChange={handleFilterChange}
-          onCityChange={handleCityChange}
-          hasFollowedUsers={hasFollowedUsers}
-        />
-        
-        <MapSection 
-          places={places}
-          onPinClick={handlePinClick}
-          mapCenter={mapCenter}
-          selectedPlace={selectedPlace}
-          onCloseSelectedPlace={handleCloseSelectedPlace}
-        />
-      </main>
+        <MapSection places={places} />
+      </div>
 
-      <ModalsManager 
-        isCreateStoryModalOpen={isCreateStoryModalOpen}
-        isNotificationsModalOpen={isNotificationsModalOpen}
-        isMessagesModalOpen={isMessagesModalOpen}
-        isShareModalOpen={isShareModalOpen}
-        isCommentModalOpen={isCommentModalOpen}
-        isLocationDetailOpen={isLocationDetailOpen}
-        isStoriesViewerOpen={isStoriesViewerOpen}
-        sharePlace={sharePlace}
-        commentPlace={commentPlace}
-        locationDetailPlace={locationDetailPlace}
-        stories={stories}
-        currentStoryIndex={currentStoryIndex}
-        onCreateStoryModalClose={() => setIsCreateStoryModalOpen(false)}
-        onNotificationsModalClose={() => setIsNotificationsModalOpen(false)}
-        onMessagesModalClose={() => setIsMessagesModalOpen(false)}
-        onShareModalClose={() => setIsShareModalOpen(false)}
-        onCommentModalClose={() => setIsCommentModalOpen(false)}
-        onLocationDetailClose={() => setIsLocationDetailOpen(false)}
-        onStoriesViewerClose={() => setIsStoriesViewerOpen(false)}
-        onStoryCreated={() => {}}
-        onShare={() => {}}
-        onCommentSubmit={() => {}}
-        onStoryViewed={() => {}}
+      <ModalsManager
+        selectedPlace={selectedPlace}
+        showComments={showComments}
+        showShare={showShare}
+        showAddLocation={showAddLocation}
+        showMessages={showMessages}
+        onCloseComments={() => setShowComments(false)}
+        onCloseShare={() => setShowShare(false)}
+        onCloseAddLocation={() => setShowAddLocation(false)}
+        onCloseMessages={() => setShowMessages(false)}
       />
     </div>
   );
