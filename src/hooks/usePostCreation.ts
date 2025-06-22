@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,29 +27,56 @@ export const usePostCreation = () => {
     try {
       let locationId = null;
 
-      // STEP 1: Handle location creation/finding - CRITICAL: NO DUPLICATES
+      // STEP 1: CRITICAL - Handle location creation/finding - ABSOLUTELY NO DUPLICATES
       if (location) {
-        console.log('🔍 Checking for existing location by Google Place ID:', location.google_place_id);
+        console.log('🔍 CHECKING FOR EXISTING LOCATION - PREVENTING DUPLICATES');
+        console.log('Google Place ID:', location.google_place_id);
+        console.log('Location Name:', location.name);
         
-        // Check if location already exists by Google Place ID
-        const { data: existingLocation, error: locationFetchError } = await supabase
-          .from('locations')
-          .select('id, name, google_place_id')
-          .eq('google_place_id', location.google_place_id)
-          .maybeSingle();
+        // FIRST: Check by Google Place ID (most reliable)
+        let existingLocation = null;
+        
+        if (location.google_place_id) {
+          const { data: googlePlaceLocation, error: googlePlaceError } = await supabase
+            .from('locations')
+            .select('id, name, google_place_id')
+            .eq('google_place_id', location.google_place_id)
+            .maybeSingle();
 
-        if (locationFetchError) {
-          console.error('❌ Error checking existing location:', locationFetchError);
-          throw locationFetchError;
+          if (googlePlaceError) {
+            console.error('❌ Error checking by Google Place ID:', googlePlaceError);
+          } else if (googlePlaceLocation) {
+            existingLocation = googlePlaceLocation;
+            console.log('✅ FOUND EXISTING by Google Place ID:', existingLocation.name);
+          }
+        }
+
+        // SECOND: If not found by Google Place ID, check by name + address
+        if (!existingLocation) {
+          console.log('🔍 No Google Place ID match, checking by name + address...');
+          
+          const { data: nameAddressLocation, error: nameAddressError } = await supabase
+            .from('locations')
+            .select('id, name, address')
+            .eq('name', location.name)
+            .eq('address', location.address)
+            .maybeSingle();
+
+          if (nameAddressError) {
+            console.error('❌ Error checking by name + address:', nameAddressError);
+          } else if (nameAddressLocation) {
+            existingLocation = nameAddressLocation;
+            console.log('✅ FOUND EXISTING by name + address:', existingLocation.name);
+          }
         }
 
         if (existingLocation) {
-          // Location exists - use existing location ID, DO NOT create new card
-          console.log('✅ Location exists - adding post to existing card library:', existingLocation.name);
+          // EXISTING LOCATION FOUND - USE IT, DO NOT CREATE NEW
+          console.log('✅ USING EXISTING LOCATION - NO NEW CARD CREATED');
           locationId = existingLocation.id;
         } else {
-          // Location doesn't exist - create new location (will create new card)
-          console.log('🆕 Creating new location - will create new card:', location.name);
+          // ONLY CREATE NEW LOCATION IF ABSOLUTELY NONE EXISTS
+          console.log('🆕 CREATING NEW LOCATION - WILL CREATE NEW CARD');
           
           const { data: newLocation, error: locationError } = await supabase
             .from('locations')
@@ -73,12 +99,12 @@ export const usePostCreation = () => {
             throw locationError;
           }
           
-          console.log('✅ Created new location - new card will appear:', newLocation.id);
+          console.log('✅ NEW LOCATION CREATED - NEW CARD WILL APPEAR');
           locationId = newLocation.id;
         }
       }
 
-      // STEP 2: Upload files to storage (user's actual post content)
+      // STEP 2: Upload user's media files
       console.log('📤 Uploading user post media...');
       const mediaUrls: string[] = [];
       
@@ -106,16 +132,17 @@ export const usePostCreation = () => {
         console.log('✅ User post media uploaded:', publicUrl);
       }
 
-      // STEP 3: Create post record - this goes to the location's library
-      console.log('📝 Adding post to location library, location_id:', locationId);
+      // STEP 3: Create post record - ADD TO EXISTING LOCATION'S LIBRARY
+      console.log('📝 ADDING POST TO LOCATION LIBRARY (NOT CREATING NEW CARD)');
+      console.log('Location ID:', locationId);
       
       const { data: post, error: postError } = await supabase
         .from('posts')
         .insert({
           user_id: user.id,
-          location_id: locationId, // Links post to location card
+          location_id: locationId,
           caption: caption || null,
-          media_urls: mediaUrls, // User's uploaded content for library
+          media_urls: mediaUrls,
         })
         .select('id, location_id')
         .single();
@@ -125,9 +152,9 @@ export const usePostCreation = () => {
         throw postError;
       }
 
-      console.log('✅ POST ADDED TO LOCATION LIBRARY!');
-      console.log('📍 Location card will show AI image, post goes to library');
-      console.log('Post ID:', post.id, 'linked to location_id:', post.location_id);
+      console.log('✅ POST SUCCESSFULLY ADDED TO LOCATION LIBRARY!');
+      console.log('📍 No duplicate cards - post added to existing location');
+      console.log('Post ID:', post.id, 'Location ID:', post.location_id);
       
       return { success: true, post };
     } catch (error) {

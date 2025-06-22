@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -34,91 +33,65 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (isOpen && place) {
+    if (isOpen && place?.id) {
       loadLocationPosts();
     }
-  }, [isOpen, place]);
+  }, [isOpen, place?.id]);
 
   const loadLocationPosts = async () => {
-    if (!place?.id) return;
+    if (!place?.id) {
+      console.log('❌ No place ID provided');
+      return;
+    }
 
     setLoading(true);
     try {
-      console.log('📚 Loading ALL posts for location:', place.name);
-      console.log('🔍 Fetching posts for location_id:', place.id);
+      console.log('📚 Loading posts for location ID:', place.id);
       
       // Fetch ALL posts from ALL users for this specific location
       const { data: locationPosts, error } = await supabase
         .from('posts')
         .select(`
-          *,
+          id,
+          user_id,
+          caption,
+          media_urls,
+          created_at,
           profiles:user_id (
             username,
             full_name,
             avatar_url
           )
         `)
-        .eq('location_id', place.id) // Get ALL posts for this location
-        .order('created_at', { ascending: false }); // Show newest first
+        .eq('location_id', place.id)
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('❌ Error fetching posts:', error);
         throw error;
       }
 
-      console.log(`✅ Found ${locationPosts?.length || 0} posts from ALL users for ${place.name}`);
+      console.log(`✅ Found ${locationPosts?.length || 0} posts for location: ${place.name}`);
 
       if (!locationPosts || locationPosts.length === 0) {
+        console.log('📝 No posts found for this location');
         setPosts([]);
         return;
       }
 
-      // Separate posts: users you follow first, then others
-      const followedUserPosts: Post[] = [];
-      const otherPosts: Post[] = [];
+      // Process posts and ensure profiles data is properly formatted
+      const processedPosts = locationPosts.map(post => ({
+        id: post.id,
+        user_id: post.user_id,
+        caption: post.caption,
+        media_urls: post.media_urls || [],
+        created_at: post.created_at,
+        profiles: Array.isArray(post.profiles) ? post.profiles[0] : post.profiles
+      }));
 
-      if (user) {
-        // Get users that current user follows
-        const { data: following } = await supabase
-          .from('follows')
-          .select('following_id')
-          .eq('follower_id', user.id);
+      setPosts(processedPosts);
+      console.log(`✅ Processed ${processedPosts.length} posts for display`);
 
-        const followingIds = new Set(following?.map(f => f.following_id) || []);
-
-        locationPosts.forEach(post => {
-          const processedPost: Post = {
-            id: post.id,
-            user_id: post.user_id,
-            caption: post.caption,
-            media_urls: post.media_urls || [],
-            created_at: post.created_at,
-            profiles: Array.isArray(post.profiles) ? post.profiles[0] : post.profiles
-          };
-
-          // Show posts from users you follow first, then others
-          if (followingIds.has(post.user_id)) {
-            followedUserPosts.push(processedPost);
-          } else {
-            otherPosts.push(processedPost);
-          }
-        });
-      } else {
-        const processedPosts = locationPosts.map(post => ({
-          id: post.id,
-          user_id: post.user_id,
-          caption: post.caption,
-          media_urls: post.media_urls || [],
-          created_at: post.created_at,
-          profiles: Array.isArray(post.profiles) ? post.profiles[0] : post.profiles
-        }));
-        
-        otherPosts.push(...processedPosts);
-      }
-
-      // Combine: followed users first, then others
-      setPosts([...followedUserPosts, ...otherPosts]);
-      console.log(`✅ Library shows ${followedUserPosts.length} posts from followed users + ${otherPosts.length} from others`);
     } catch (error) {
       console.error('❌ Error loading location posts:', error);
       setPosts([]);
@@ -132,7 +105,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
   };
 
   const getCityName = () => {
-    return place?.city || 'Nearby';
+    return place?.city || place?.address || 'Unknown location';
   };
 
   return (
@@ -148,10 +121,10 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
               <div className="flex items-center gap-3 text-sm text-gray-600 mb-3">
                 <div className="flex items-center gap-1">
                   <MapPin className="w-4 h-4 text-gray-400" />
-                  <span>{getCityName()}</span>
+                  <span>{place?.city || place?.address || 'Unknown location'}</span>
                 </div>
                 <Badge className={`${getCategoryColor(place?.category || '')} bg-gray-100 text-xs px-2 py-1 rounded-lg border-0`}>
-                  {formatCategory(place?.category || '')}
+                  {place?.category?.charAt(0).toUpperCase() + place?.category?.slice(1) || 'Place'}
                 </Badge>
               </div>
             </div>
@@ -224,6 +197,10 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
                             src={url}
                             alt={`Post media ${index + 1}`}
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.log('Image failed to load:', url);
+                              e.currentTarget.style.display = 'none';
+                            }}
                           />
                         </div>
                       ))}

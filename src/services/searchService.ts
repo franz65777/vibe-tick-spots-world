@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { imageService } from './imageService';
 
@@ -45,10 +46,10 @@ export interface SearchHistoryItem {
 }
 
 class SearchService {
-  // Get ALL locations that have posts - ENSURE UNIQUE BY GOOGLE_PLACE_ID with AI images
+  // Get ALL locations that have posts - CRITICAL: PROPER DEDUPLICATION BY GOOGLE_PLACE_ID
   async getLocationRecommendations(userId: string): Promise<LocationRecommendation[]> {
     try {
-      console.log('🔍 Fetching ALL unique locations with posts...');
+      console.log('🔍 Fetching ALL unique locations with posts - ENSURING NO DUPLICATES...');
       
       // Check if user session is valid before making request
       const { data: sessionData } = await supabase.auth.getSession();
@@ -57,7 +58,7 @@ class SearchService {
         return [];
       }
       
-      // Query locations that have posts using proper join
+      // Query to get locations with posts and proper deduplication
       const { data: locations, error } = await supabase
         .from('locations')
         .select(`
@@ -70,9 +71,8 @@ class SearchService {
           longitude,
           google_place_id,
           created_at,
-          posts(
+          posts!inner(
             id,
-            media_urls,
             created_at
           )
         `)
@@ -88,58 +88,67 @@ class SearchService {
         return [];
       }
 
-      console.log('📍 Raw locations data:', locations);
+      console.log('📍 Raw locations data before deduplication:', locations.length);
 
-      // Process and de-duplicate locations - CRITICAL: ONE CARD PER LOCATION
+      // CRITICAL DEDUPLICATION: Use Map with google_place_id OR location name+address as key
       const uniqueResults = new Map<string, LocationRecommendation>();
       
       for (const location of locations) {
-        // Use google_place_id as key for deduplication, fallback to location id
-        const key = location.google_place_id || location.id;
+        // Create a unique key: prefer google_place_id, fallback to name+address combination
+        const uniqueKey = location.google_place_id || 
+                          `${location.name.toLowerCase()}_${(location.address || '').toLowerCase()}`;
         
-        // Count actual posts for this location
+        // Count posts for this location
         const posts = Array.isArray(location.posts) ? location.posts : [];
         const postCount = posts.length;
         
-        // Only include locations that actually have posts
-        if (postCount > 0 && !uniqueResults.has(key)) {
-          console.log(`🎨 Generating AI image for location: ${location.name} (${location.category})`);
-          
-          // Generate AI image based on location type and name - NOT user posts
-          const aiLocationImage = await imageService.getPlaceImage(
-            location.name,
-            location.city || location.address?.split(',')[1]?.trim() || 'Unknown',
-            location.category
-          );
-          
-          uniqueResults.set(key, {
-            id: location.id,
-            name: location.name,
-            category: location.category,
-            address: location.address,
-            city: location.city || location.address?.split(',')[1]?.trim() || 'Unknown',
-            coordinates: { 
-              lat: parseFloat(location.latitude?.toString() || '0'), 
-              lng: parseFloat(location.longitude?.toString() || '0') 
-            },
-            likes: 0,
-            totalSaves: 0,
-            visitors: [],
-            isNew: this.isLocationNew(location.created_at),
-            distance: Math.random() * 5, // Mock distance for now
-            google_place_id: location.google_place_id,
-            postCount: postCount,
-            image: aiLocationImage, // AI-generated location image, NOT user post image
-            addedDate: location.created_at
-          });
-          
-          console.log(`✅ Created unique card for: ${location.name} with ${postCount} posts in library`);
+        console.log(`🔍 Processing location: ${location.name}, Key: ${uniqueKey}, Posts: ${postCount}`);
+        
+        if (postCount > 0) {
+          // If we already have this location, update post count (aggregate from duplicates)
+          if (uniqueResults.has(uniqueKey)) {
+            const existing = uniqueResults.get(uniqueKey)!;
+            existing.postCount += postCount;
+            console.log(`📝 Updated post count for ${location.name}: ${existing.postCount}`);
+          } else {
+            // Create new unique location entry
+            console.log(`🎨 Generating AI image for NEW location: ${location.name} (${location.category})`);
+            
+            const aiLocationImage = await imageService.getPlaceImage(
+              location.name,
+              location.city || location.address?.split(',')[1]?.trim() || 'Unknown',
+              location.category
+            );
+            
+            uniqueResults.set(uniqueKey, {
+              id: location.id, // Use the first occurrence's ID
+              name: location.name,
+              category: location.category,
+              address: location.address,
+              city: location.city || location.address?.split(',')[1]?.trim() || 'Unknown',
+              coordinates: { 
+                lat: parseFloat(location.latitude?.toString() || '0'), 
+                lng: parseFloat(location.longitude?.toString() || '0') 
+              },
+              likes: 0,
+              totalSaves: 0,
+              visitors: [],
+              isNew: this.isLocationNew(location.created_at),
+              distance: Math.random() * 5,
+              google_place_id: location.google_place_id,
+              postCount: postCount,
+              image: aiLocationImage,
+              addedDate: location.created_at
+            });
+            
+            console.log(`✅ Created UNIQUE card for: ${location.name} with ${postCount} posts`);
+          }
         }
       }
 
       const results = Array.from(uniqueResults.values());
-      console.log('✅ Processed unique location cards:', results.length);
-      console.log('📊 Each card will show all posts for that location in library');
+      console.log(`✅ FINAL RESULT: ${results.length} UNIQUE location cards (NO DUPLICATES)`);
+      console.log('📊 Each card aggregates ALL posts for that location');
       
       return results;
     } catch (error) {
