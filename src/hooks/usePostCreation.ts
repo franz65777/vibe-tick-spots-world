@@ -28,7 +28,7 @@ export const usePostCreation = () => {
     try {
       let locationId = null;
 
-      // STEP 1: Handle location creation/finding - CHECK FOR EXISTING LOCATION FIRST
+      // STEP 1: Handle location creation/finding - CRITICAL: NO DUPLICATES
       if (location) {
         console.log('🔍 Checking for existing location by Google Place ID:', location.google_place_id);
         
@@ -45,12 +45,12 @@ export const usePostCreation = () => {
         }
 
         if (existingLocation) {
-          // Location exists - use existing location ID, DO NOT create new
-          console.log('✅ Found existing location - using existing ID:', existingLocation.id);
+          // Location exists - use existing location ID, DO NOT create new card
+          console.log('✅ Location exists - adding post to existing card library:', existingLocation.name);
           locationId = existingLocation.id;
         } else {
-          // Location doesn't exist - create new location
-          console.log('🆕 Creating new location for Google Place ID:', location.google_place_id);
+          // Location doesn't exist - create new location (will create new card)
+          console.log('🆕 Creating new location - will create new card:', location.name);
           
           const { data: newLocation, error: locationError } = await supabase
             .from('locations')
@@ -73,13 +73,13 @@ export const usePostCreation = () => {
             throw locationError;
           }
           
-          console.log('✅ Created new location with ID:', newLocation.id);
+          console.log('✅ Created new location - new card will appear:', newLocation.id);
           locationId = newLocation.id;
         }
       }
 
-      // STEP 2: Upload files to storage
-      console.log('📤 Uploading files to storage...');
+      // STEP 2: Upload files to storage (user's actual post content)
+      console.log('📤 Uploading user post media...');
       const mediaUrls: string[] = [];
       
       for (let i = 0; i < files.length; i++) {
@@ -87,7 +87,7 @@ export const usePostCreation = () => {
         const fileExt = file.name.split('.').pop();
         const fileName = `${user.id}/${Date.now()}-${i}-${Math.random().toString(36).substring(7)}.${fileExt}`;
         
-        console.log(`📤 Uploading file ${i + 1}/${files.length}:`, fileName);
+        console.log(`📤 Uploading user content ${i + 1}/${files.length}:`, fileName);
         
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('media')
@@ -103,19 +103,19 @@ export const usePostCreation = () => {
           .getPublicUrl(uploadData.path);
         
         mediaUrls.push(publicUrl);
-        console.log('✅ File uploaded successfully:', publicUrl);
+        console.log('✅ User post media uploaded:', publicUrl);
       }
 
-      // STEP 3: Create post record with location_id
-      console.log('📝 Creating post record with location_id:', locationId);
+      // STEP 3: Create post record - this goes to the location's library
+      console.log('📝 Adding post to location library, location_id:', locationId);
       
       const { data: post, error: postError } = await supabase
         .from('posts')
         .insert({
           user_id: user.id,
-          location_id: locationId, // Always save location_id in posts table
+          location_id: locationId, // Links post to location card
           caption: caption || null,
-          media_urls: mediaUrls,
+          media_urls: mediaUrls, // User's uploaded content for library
         })
         .select('id, location_id')
         .single();
@@ -125,7 +125,8 @@ export const usePostCreation = () => {
         throw postError;
       }
 
-      console.log('✅ POST CREATED SUCCESSFULLY!');
+      console.log('✅ POST ADDED TO LOCATION LIBRARY!');
+      console.log('📍 Location card will show AI image, post goes to library');
       console.log('Post ID:', post.id, 'linked to location_id:', post.location_id);
       
       return { success: true, post };

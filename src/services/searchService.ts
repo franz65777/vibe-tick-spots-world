@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { imageService } from './imageService';
 
 export interface LocationRecommendation {
   id: string;
@@ -44,10 +45,10 @@ export interface SearchHistoryItem {
 }
 
 class SearchService {
-  // Get ALL locations that have posts - ENSURE UNIQUE BY GOOGLE_PLACE_ID
+  // Get ALL locations that have posts - ENSURE UNIQUE BY GOOGLE_PLACE_ID with AI images
   async getLocationRecommendations(userId: string): Promise<LocationRecommendation[]> {
     try {
-      console.log('🔍 Fetching ALL locations with posts...');
+      console.log('🔍 Fetching ALL unique locations with posts...');
       
       // Check if user session is valid before making request
       const { data: sessionData } = await supabase.auth.getSession();
@@ -89,25 +90,27 @@ class SearchService {
 
       console.log('📍 Raw locations data:', locations);
 
-      // Process and de-duplicate locations
+      // Process and de-duplicate locations - CRITICAL: ONE CARD PER LOCATION
       const uniqueResults = new Map<string, LocationRecommendation>();
       
-      locations.forEach(location => {
+      for (const location of locations) {
         // Use google_place_id as key for deduplication, fallback to location id
         const key = location.google_place_id || location.id;
         
-        // Count actual posts
+        // Count actual posts for this location
         const posts = Array.isArray(location.posts) ? location.posts : [];
         const postCount = posts.length;
         
         // Only include locations that actually have posts
         if (postCount > 0 && !uniqueResults.has(key)) {
-          // Get the most recent post image for location card
-          const latestPost = posts.sort((a, b) => 
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          )[0];
+          console.log(`🎨 Generating AI image for location: ${location.name} (${location.category})`);
           
-          const firstMediaUrl = latestPost?.media_urls?.[0];
+          // Generate AI image based on location type and name - NOT user posts
+          const aiLocationImage = await imageService.getPlaceImage(
+            location.name,
+            location.city || location.address?.split(',')[1]?.trim() || 'Unknown',
+            location.category
+          );
           
           uniqueResults.set(key, {
             id: location.id,
@@ -126,15 +129,17 @@ class SearchService {
             distance: Math.random() * 5, // Mock distance for now
             google_place_id: location.google_place_id,
             postCount: postCount,
-            image: firstMediaUrl, // Add the first media from latest post
+            image: aiLocationImage, // AI-generated location image, NOT user post image
             addedDate: location.created_at
           });
+          
+          console.log(`✅ Created unique card for: ${location.name} with ${postCount} posts in library`);
         }
-      });
+      }
 
       const results = Array.from(uniqueResults.values());
-      console.log('✅ Processed unique locations with posts:', results.length);
-      console.log('📊 Sample location data:', results[0]);
+      console.log('✅ Processed unique location cards:', results.length);
+      console.log('📊 Each card will show all posts for that location in library');
       
       return results;
     } catch (error) {

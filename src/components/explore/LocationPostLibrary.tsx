@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -43,9 +44,10 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
 
     setLoading(true);
     try {
+      console.log('📚 Loading ALL posts for location:', place.name);
       console.log('🔍 Fetching posts for location_id:', place.id);
       
-      // Fetch ALL posts from posts table where location_id matches the location card's id
+      // Fetch ALL posts from ALL users for this specific location
       const { data: locationPosts, error } = await supabase
         .from('posts')
         .select(`
@@ -56,15 +58,15 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
             avatar_url
           )
         `)
-        .eq('location_id', place.id)
-        .order('created_at', { ascending: false });
+        .eq('location_id', place.id) // Get ALL posts for this location
+        .order('created_at', { ascending: false }); // Show newest first
 
       if (error) {
         console.error('❌ Error fetching posts:', error);
         throw error;
       }
 
-      console.log('✅ Found posts for location:', locationPosts?.length || 0);
+      console.log(`✅ Found ${locationPosts?.length || 0} posts from ALL users for ${place.name}`);
 
       if (!locationPosts || locationPosts.length === 0) {
         setPosts([]);
@@ -116,7 +118,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
 
       // Combine: followed users first, then others
       setPosts([...followedUserPosts, ...otherPosts]);
-      console.log('✅ Processed posts - Following:', followedUserPosts.length, 'Others:', otherPosts.length);
+      console.log(`✅ Library shows ${followedUserPosts.length} posts from followed users + ${otherPosts.length} from others`);
     } catch (error) {
       console.error('❌ Error loading location posts:', error);
       setPosts([]);
