@@ -1,3 +1,4 @@
+
 import { Users, MapPin } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -97,9 +98,9 @@ const UserRecommendations = ({ recommendations, onUserClick, onFollowUser, onMes
                 <div className="flex flex-col gap-2 ml-4">
                   <Button
                     size="sm"
-                    variant={user.isFollowing ? "outline" : "default"}
+                    variant={user.is_following ? "outline" : "default"}
                     className={`px-4 py-2 rounded-full font-semibold ${
-                      user.isFollowing 
+                      user.is_following 
                         ? 'border-gray-300 text-gray-700 hover:bg-gray-50' 
                         : 'bg-gray-900 text-white hover:bg-gray-800'
                     }`}
@@ -109,7 +110,7 @@ const UserRecommendations = ({ recommendations, onUserClick, onFollowUser, onMes
                       onFollowUser(user.id);
                     }}
                   >
-                    {user.isFollowing ? 'Following' : 'Follow'}
+                    {user.is_following ? 'Following' : 'Follow'}
                   </Button>
                   
                   <Button
