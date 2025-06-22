@@ -27,12 +27,27 @@ export const useProfile = () => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchProfile = async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      setProfile(null);
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     setError(null);
 
     try {
+      // Check if user session is valid before making request
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        console.log('❌ No valid session found for profile fetch');
+        setError('Authentication required');
+        setLoading(false);
+        return;
+      }
+
+      console.log('🔍 Fetching profile for user:', user.id);
+
       const { data, error: fetchError } = await supabase
         .from('profiles')
         .select('*')
@@ -42,6 +57,7 @@ export const useProfile = () => {
       if (fetchError) {
         if (fetchError.code === 'PGRST116') {
           // Profile doesn't exist, create one
+          console.log('📝 Creating new profile for user:', user.id);
           const { data: newProfile, error: createError } = await supabase
             .from('profiles')
             .insert({
@@ -55,16 +71,19 @@ export const useProfile = () => {
             .single();
 
           if (createError) throw createError;
+          console.log('✅ Profile created successfully');
           setProfile(newProfile);
         } else {
           throw fetchError;
         }
       } else {
+        console.log('✅ Profile fetched successfully');
         setProfile(data);
       }
-    } catch (err) {
-      console.error('Error fetching profile:', err);
+    } catch (err: any) {
+      console.error('❌ Error fetching profile:', err);
       setError('Failed to load profile');
+      setProfile(null);
     } finally {
       setLoading(false);
     }
@@ -74,6 +93,8 @@ export const useProfile = () => {
     if (!user?.id) throw new Error('No user logged in');
 
     try {
+      console.log('📝 Updating profile for user:', user.id);
+
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
@@ -84,17 +105,22 @@ export const useProfile = () => {
 
       if (updateError) throw updateError;
 
+      console.log('✅ Profile updated successfully');
       // Refresh profile data
       await fetchProfile();
     } catch (err) {
-      console.error('Error updating profile:', err);
+      console.error('❌ Error updating profile:', err);
       throw err;
     }
   };
 
   useEffect(() => {
+    // Only fetch profile if user is authenticated
     if (user?.id) {
       fetchProfile();
+    } else {
+      setProfile(null);
+      setLoading(false);
     }
   }, [user?.id]);
 

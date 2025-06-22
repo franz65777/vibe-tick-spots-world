@@ -49,6 +49,13 @@ class SearchService {
     try {
       console.log('🔍 Fetching ALL locations with posts...');
       
+      // Check if user session is valid before making request
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        console.log('❌ No valid session found for location recommendations');
+        return [];
+      }
+      
       // Query locations that have posts using proper join
       const { data: locations, error } = await supabase
         .from('locations')
@@ -145,6 +152,13 @@ class SearchService {
 
   async getUserRecommendations(userId: string): Promise<UserRecommendation[]> {
     try {
+      // Check session before making request
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        console.log('❌ No valid session found for user recommendations');
+        return [];
+      }
+
       // Get users that current user is NOT following
       const { data: users, error } = await supabase
         .from('profiles')

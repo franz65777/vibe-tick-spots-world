@@ -30,7 +30,9 @@ export const useUserPosts = (userId?: string) => {
 
   useEffect(() => {
     const fetchUserPosts = async () => {
-      if (!targetUserId) {
+      // Don't fetch if no user or still loading auth
+      if (!user || !targetUserId) {
+        console.log('❌ No user or target user ID available');
         setLoading(false);
         return;
       }
@@ -38,6 +40,15 @@ export const useUserPosts = (userId?: string) => {
       try {
         console.log('🔍 Fetching posts for user:', targetUserId);
         
+        // Check if user session is valid before making request
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!sessionData.session) {
+          console.log('❌ No valid session found');
+          setError('Authentication required');
+          setLoading(false);
+          return;
+        }
+
         const { data, error } = await supabase
           .from('posts')
           .select(`
@@ -76,16 +87,29 @@ export const useUserPosts = (userId?: string) => {
       }
     };
 
-    fetchUserPosts();
-  }, [targetUserId]);
+    // Only fetch if user is authenticated
+    if (user) {
+      fetchUserPosts();
+    } else {
+      setLoading(false);
+    }
+  }, [targetUserId, user]);
 
   const refetch = async () => {
-    if (!targetUserId) return;
+    if (!targetUserId || !user) return;
     
     setLoading(true);
     try {
       console.log('🔍 Refetching posts for user:', targetUserId);
       
+      // Check session before refetch
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        setError('Authentication required');
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('posts')
         .select(`
