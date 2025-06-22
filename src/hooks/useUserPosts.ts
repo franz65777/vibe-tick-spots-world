@@ -79,13 +79,55 @@ export const useUserPosts = (userId?: string) => {
     fetchUserPosts();
   }, [targetUserId]);
 
+  const refetch = async () => {
+    if (!targetUserId) return;
+    
+    setLoading(true);
+    try {
+      console.log('🔍 Refetching posts for user:', targetUserId);
+      
+      const { data, error } = await supabase
+        .from('posts')
+        .select(`
+          id,
+          user_id,
+          location_id,
+          caption,
+          media_urls,
+          created_at,
+          likes_count,
+          comments_count,
+          saves_count,
+          locations (
+            id,
+            name,
+            address
+          )
+        `)
+        .eq('user_id', targetUserId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Error refetching user posts:', error);
+        throw error;
+      }
+
+      console.log('✅ User posts refetched:', data?.length || 0);
+      setPosts(data || []);
+      setError(null);
+    } catch (err: any) {
+      console.error('❌ Error in refetch:', err);
+      setError(err.message);
+      setPosts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     posts,
     loading,
     error,
-    refetch: () => {
-      setLoading(true);
-      fetchUserPosts();
-    }
+    refetch
   };
 };
