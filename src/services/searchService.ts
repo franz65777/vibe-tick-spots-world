@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-interface LocationRecommendation {
+export interface LocationRecommendation {
   id: string;
   name: string;
   category: string;
@@ -15,14 +15,33 @@ interface LocationRecommendation {
   distance?: number;
   google_place_id?: string;
   postCount: number;
+  image?: string;
+  addedBy?: string | { name: string; avatar: string; isFollowing: boolean };
+  addedDate?: string;
+  isFollowing?: boolean;
+  popularity?: number;
+  friendsWhoSaved?: { name: string; avatar: string }[] | number;
+  recommendationReason?: string;
 }
 
-interface UserRecommendation {
+export interface UserRecommendation {
   id: string;
   name: string;
   username: string;
   avatar: string;
   is_following: boolean;
+  followers?: number;
+  savedPlaces?: number;
+  mutualFollowers?: number;
+  sharedInterests?: string[];
+  recommendationReason?: string;
+}
+
+export interface SearchHistoryItem {
+  id: string;
+  search_query: string;
+  search_type: 'locations' | 'users';
+  searched_at: string;
 }
 
 class SearchService {
@@ -145,6 +164,29 @@ class SearchService {
     }
   }
 
+  async getSearchHistory(userId: string): Promise<SearchHistoryItem[]> {
+    try {
+      const { data: history, error } = await supabase
+        .from('search_history')
+        .select('id, search_query, search_type, searched_at')
+        .eq('user_id', userId)
+        .order('searched_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+
+      return history?.map(item => ({
+        id: item.id,
+        search_query: item.search_query,
+        search_type: item.search_type as 'locations' | 'users',
+        searched_at: item.searched_at
+      })) || [];
+    } catch (error) {
+      console.error('Error fetching search history:', error);
+      return [];
+    }
+  }
+
   async saveSearchHistory(userId: string, query: string, searchType: 'locations' | 'users'): Promise<void> {
     try {
       await supabase
@@ -156,6 +198,41 @@ class SearchService {
         });
     } catch (error) {
       console.error('Error saving search history:', error);
+    }
+  }
+
+  async updateUserPreferences(userId: string, category: string): Promise<void> {
+    try {
+      // Check if preference already exists
+      const { data: existing } = await supabase
+        .from('user_preferences')
+        .select('id, search_count')
+        .eq('user_id', userId)
+        .eq('category', category)
+        .maybeSingle();
+
+      if (existing) {
+        // Update existing preference
+        await supabase
+          .from('user_preferences')
+          .update({
+            search_count: existing.search_count + 1,
+            last_searched: new Date().toISOString()
+          })
+          .eq('id', existing.id);
+      } else {
+        // Create new preference
+        await supabase
+          .from('user_preferences')
+          .insert({
+            user_id: userId,
+            category: category,
+            search_count: 1,
+            last_searched: new Date().toISOString()
+          });
+      }
+    } catch (error) {
+      console.error('Error updating user preferences:', error);
     }
   }
 }
