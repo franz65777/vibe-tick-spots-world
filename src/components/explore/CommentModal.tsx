@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Send, MessageCircle } from 'lucide-react';
-import { usePlaceEngagement } from '@/hooks/usePlaceEngagement';
+import { commentService } from '@/services/commentService';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -17,7 +17,6 @@ interface CommentModalProps {
 
 const CommentModal = ({ isOpen, onClose, place }: CommentModalProps) => {
   const { user } = useAuth();
-  const { addComment, getComments } = usePlaceEngagement();
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(false);
@@ -32,7 +31,7 @@ const CommentModal = ({ isOpen, onClose, place }: CommentModalProps) => {
   const loadComments = async () => {
     setLoading(true);
     try {
-      const data = await getComments(place.id);
+      const data = await commentService.getCommentsForPlace(place.id);
       setComments(data);
     } catch (error) {
       console.error('Error loading comments:', error);
@@ -47,7 +46,7 @@ const CommentModal = ({ isOpen, onClose, place }: CommentModalProps) => {
 
     setSubmitting(true);
     try {
-      const comment = await addComment(place.id, newComment);
+      const comment = await commentService.addComment(place.id, newComment);
       if (comment) {
         setComments(prev => [comment, ...prev]);
         setNewComment('');
@@ -84,15 +83,15 @@ const CommentModal = ({ isOpen, onClose, place }: CommentModalProps) => {
             comments.map((comment) => (
               <div key={comment.id} className="flex gap-3 p-3 bg-gray-50 rounded-xl">
                 <Avatar className="w-8 h-8">
-                  <AvatarImage src={comment.profiles?.avatar_url} />
+                  <AvatarImage src={comment.user?.avatar_url} />
                   <AvatarFallback className="bg-blue-100 text-blue-600 text-xs">
-                    {(comment.profiles?.full_name || comment.profiles?.username || 'U')[0].toUpperCase()}
+                    {(comment.user?.full_name || comment.user?.username || 'U')[0].toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-medium text-sm text-gray-900">
-                      {comment.profiles?.full_name || comment.profiles?.username || 'Anonymous'}
+                      {comment.user?.full_name || comment.user?.username || 'Anonymous'}
                     </span>
                     <span className="text-xs text-gray-500">
                       {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
