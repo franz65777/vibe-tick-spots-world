@@ -1,8 +1,10 @@
 
 import React, { useState } from 'react';
-import { Bell, MessageSquare } from 'lucide-react';
+import { Bell, MessageSquare, BellRing } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import CitySearch from './CitySearch';
 import MessageHistoryModal from './MessageHistoryModal';
+import { useNotifications } from '@/hooks/useNotifications';
 
 interface HeaderProps {
   searchQuery: string;
@@ -26,30 +28,61 @@ const Header = ({
   onCitySelect
 }: HeaderProps) => {
   const [isMessageHistoryOpen, setIsMessageHistoryOpen] = useState(false);
+  const { unreadCount } = useNotifications();
 
-  return <>
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-40">
+  return (
+    <>
+      <header className="bg-white border-b border-gray-100 sticky top-0 z-40 shadow-sm">
         <div className="flex items-center justify-between px-4 py-3">
           {/* Left: City Selection */}
-          <CitySearch currentCity={currentCity} onCitySelect={onCitySelect} searchQuery={searchQuery} onSearchChange={onSearchChange} onSearchKeyPress={onSearchKeyPress} />
+          <CitySearch 
+            currentCity={currentCity} 
+            onCitySelect={onCitySelect} 
+            searchQuery={searchQuery} 
+            onSearchChange={onSearchChange} 
+            onSearchKeyPress={onSearchKeyPress} 
+          />
 
           {/* Right: Action Buttons */}
-          <div className="flex items-center gap-2">
-            <button onClick={onNotificationsClick} className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors">
-              <Bell className="w-5 h-5" />
-              {/* Notification badge can be added here */}
+          <div className="flex items-center gap-1">
+            {/* Notifications Button */}
+            <button 
+              onClick={onNotificationsClick} 
+              className="relative p-2.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all duration-200 active:scale-95"
+            >
+              <div className="relative">
+                <Bell className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs font-bold leading-none">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  </div>
+                )}
+              </div>
             </button>
             
-            <button onClick={onMessagesClick} className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors">
-              <MessageSquare className="w-5 h-5" />
-              {/* Message badge can be added here */}
+            {/* Messages Button */}
+            <button 
+              onClick={onMessagesClick} 
+              className="relative p-2.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all duration-200 active:scale-95"
+            >
+              <div className="relative">
+                <MessageSquare className="w-5 h-5" />
+                {/* Message badge can be added here when we have unread message count */}
+                <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              </div>
             </button>
           </div>
         </div>
       </header>
 
-      <MessageHistoryModal isOpen={isMessageHistoryOpen} onClose={() => setIsMessageHistoryOpen(false)} />
-    </>;
+      <MessageHistoryModal 
+        isOpen={isMessageHistoryOpen} 
+        onClose={() => setIsMessageHistoryOpen(false)} 
+      />
+    </>
+  );
 };
 
 export default Header;
