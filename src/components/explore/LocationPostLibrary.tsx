@@ -61,11 +61,24 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
     }
 
     try {
-      console.log('📚 LOADING POSTS FOR LOCATION - FIXED QUERY');
-      console.log('Location ID:', place.id);
-      console.log('Location name:', place.name);
+      console.log('📚 LOADING ALL POSTS FOR LOCATION:', place.name);
       
-      // FIXED: Use proper join syntax instead of nested select
+      // First, find all locations that match this place (by name and city for broader matching)
+      const { data: matchingLocations, error: locationsError } = await supabase
+        .from('locations')
+        .select('id')
+        .or(`id.eq.${place.id},name.ilike.%${place.name}%`)
+        .eq('city', place.city || '');
+
+      if (locationsError) {
+        console.error('❌ Error fetching matching locations:', locationsError);
+        throw locationsError;
+      }
+
+      const locationIds = matchingLocations?.map(loc => loc.id) || [place.id];
+      console.log('🔍 Searching posts in location IDs:', locationIds);
+
+      // Get ALL posts for any of these matching locations
       const { data: locationPosts, error } = await supabase
         .from('posts')
         .select(`
@@ -79,7 +92,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
           comments_count,
           saves_count
         `)
-        .eq('location_id', place.id)
+        .in('location_id', locationIds)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -87,12 +100,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
         throw error;
       }
 
-      console.log(`📊 POSTS QUERY RESULT:`, {
-        locationId: place.id,
-        locationName: place.name,
-        postsFound: locationPosts?.length || 0,
-        rawData: locationPosts
-      });
+      console.log(`📊 FOUND ${locationPosts?.length || 0} POSTS for ${place.name}`);
 
       if (!locationPosts || locationPosts.length === 0) {
         console.log('📝 No posts found for this location');
@@ -100,7 +108,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
         return;
       }
 
-      // Get user profiles separately to avoid relationship issues
+      // Get user profiles separately
       const userIds = [...new Set(locationPosts.map(p => p.user_id))];
       const { data: profiles } = await supabase
         .from('profiles')
@@ -164,20 +172,18 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
+        <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden p-0">
           {/* Header */}
-          <div className="sticky top-0 z-10 bg-white border-b border-gray-100 p-6">
-            <div className="flex items-start justify-between">
+          <div className="sticky top-0 z-10 bg-white border-b border-gray-100 p-4">
+            <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">
-                <DialogTitle className="text-2xl font-bold text-gray-900 mb-2 line-clamp-2">
+                <DialogTitle className="text-xl font-bold text-gray-900 mb-1 line-clamp-1">
                   {place?.name || 'Location'}
                 </DialogTitle>
-                <div className="flex items-center gap-3 text-sm text-gray-600 mb-3">
-                  <div className="flex items-center gap-1">
-                    <MapPin className="w-4 h-4 text-gray-400" />
-                    <span>{place?.city || place?.address || 'Unknown location'}</span>
-                  </div>
-                  <Badge className={`${getCategoryColor(place?.category || '')} bg-gray-100 text-xs px-2 py-1 rounded-lg border-0`}>
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <MapPin className="w-4 h-4 text-gray-400" />
+                  <span>{place?.city || place?.address || 'Unknown location'}</span>
+                  <Badge className={`${getCategoryColor(place?.category || '')} bg-gray-100 text-xs px-2 py-1 rounded-lg border-0 ml-2`}>
                     {place?.category?.charAt(0).toUpperCase() + place?.category?.slice(1) || 'Place'}
                   </Badge>
                 </div>
@@ -198,36 +204,25 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
                 </button>
               </div>
             </div>
-            
-            {place?.image && (
-              <div className="aspect-video w-full rounded-xl overflow-hidden bg-gray-100">
-                <img
-                  src={place.image}
-                  alt={place.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
           </div>
 
-          {/* Posts Content */}
-          <div className="flex-1 overflow-y-auto p-6">
+          {/* Posts Grid Content */}
+          <div className="flex-1 overflow-y-auto p-4">
             {loading ? (
-              <div className="flex justify-center py-12">
+              <div className="flex justify-center py-20">
                 <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
               </div>
             ) : posts.length === 0 ? (
-              <div className="text-center py-12">
+              <div className="text-center py-20">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Users className="w-8 h-8 text-gray-400" />
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-2">No posts yet</h3>
-                <p className="text-gray-500 text-sm">Be the first to post about this spot!</p>
+                <p className="text-gray-500 text-sm mb-4">Be the first to post about this spot!</p>
                 <Button
                   onClick={handleRefresh}
                   variant="outline"
                   size="sm"
-                  className="mt-4"
                   disabled={refreshing}
                 >
                   <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
@@ -241,106 +236,70 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
                   <span className="font-medium">{posts.length} post{posts.length !== 1 ? 's' : ''}</span>
                 </div>
                 
-                {/* Posts Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Posts Grid - Instagram-style */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1">
                   {posts.map((post) => (
                     <div 
                       key={post.id} 
-                      className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group"
+                      className="aspect-square relative group cursor-pointer overflow-hidden bg-gray-100"
                       onClick={() => handlePostClick(post)}
                     >
-                      {/* Post Media */}
+                      {/* Post Image */}
                       {post.media_urls && post.media_urls.length > 0 && (
-                        <div className="aspect-square relative overflow-hidden">
-                          <img
-                            src={post.media_urls[0]}
-                            alt="Post content"
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            onError={(e) => {
-                              console.log('Image failed to load:', post.media_urls[0]);
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
-                          {post.media_urls.length > 1 && (
-                            <div className="absolute top-3 right-3 bg-black/70 text-white px-2 py-1 rounded-full text-xs font-medium">
-                              +{post.media_urls.length - 1}
-                            </div>
-                          )}
-                          
-                          {/* Overlay with engagement stats */}
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                            <div className="flex items-center gap-4 text-white">
-                              <div className="flex items-center gap-1">
-                                <Heart className="w-5 h-5 fill-white" />
-                                <span className="font-semibold">{post.likes_count}</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <MessageCircle className="w-5 h-5 fill-white" />
-                                <span className="font-semibold">{post.comments_count}</span>
-                              </div>
-                            </div>
-                          </div>
+                        <img
+                          src={post.media_urls[0]}
+                          alt="Post content"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            console.log('Image failed to load:', post.media_urls[0]);
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      )}
+                      
+                      {/* Multiple images indicator */}
+                      {post.media_urls && post.media_urls.length > 1 && (
+                        <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded-full text-xs font-medium">
+                          {post.media_urls.length}
                         </div>
                       )}
-
-                      {/* Post Info */}
-                      <div className="p-4">
-                        {/* User Info */}
-                        <div className="flex items-center gap-3 mb-3">
-                          <Avatar className="w-8 h-8">
-                            <AvatarImage src={post.profiles?.avatar_url} />
-                            <AvatarFallback className="bg-blue-100 text-blue-600 text-xs">
-                              {(post.profiles?.full_name || post.profiles?.username || 'U')[0].toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-gray-900 text-sm truncate">
-                              {post.profiles?.full_name || post.profiles?.username || 'Anonymous'}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-                            </div>
+                      
+                      {/* Hover overlay with stats */}
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                        <div className="flex items-center gap-4 text-white">
+                          <div className="flex items-center gap-1">
+                            <Heart className="w-5 h-5 fill-white" />
+                            <span className="font-semibold">{post.likes_count}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <MessageCircle className="w-5 h-5 fill-white" />
+                            <span className="font-semibold">{post.comments_count}</span>
                           </div>
                         </div>
+                      </div>
 
-                        {/* Caption */}
-                        {post.caption && (
-                          <p className="text-gray-800 text-sm leading-relaxed mb-3 line-clamp-2">
-                            {post.caption}
-                          </p>
-                        )}
-
-                        {/* Actions */}
-                        <div className="flex items-center justify-between pt-2 border-t border-gray-50">
-                          <div className="flex items-center gap-4">
-                            <button
-                              onClick={(e) => handleLike(post.id, e)}
-                              className={`flex items-center gap-1 text-sm transition-colors ${
-                                isLiked(post.id) ? 'text-red-500' : 'text-gray-500 hover:text-red-500'
-                              }`}
-                            >
-                              <Heart className={`w-4 h-4 ${isLiked(post.id) ? 'fill-current' : ''}`} />
-                              {post.likes_count}
-                            </button>
-                            <button className="flex items-center gap-1 text-sm text-gray-500 hover:text-blue-500 transition-colors">
-                              <MessageCircle className="w-4 h-4" />
-                              {post.comments_count}
-                            </button>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={(e) => handleSave(post.id, e)}
-                              className={`p-1 rounded-full transition-colors ${
-                                isSaved(post.id) ? 'text-blue-500' : 'text-gray-500 hover:text-blue-500'
-                              }`}
-                            >
-                              <Bookmark className={`w-4 h-4 ${isSaved(post.id) ? 'fill-current' : ''}`} />
-                            </button>
-                            <button className="p-1 rounded-full text-gray-500 hover:text-gray-700 transition-colors">
-                              <Share2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
+                      {/* Quick action buttons */}
+                      <div className="absolute bottom-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <button
+                          onClick={(e) => handleLike(post.id, e)}
+                          className={`p-1.5 rounded-full backdrop-blur-sm transition-colors ${
+                            isLiked(post.id) 
+                              ? 'bg-red-500 text-white' 
+                              : 'bg-white/80 text-gray-700 hover:bg-red-500 hover:text-white'
+                          }`}
+                        >
+                          <Heart className={`w-3 h-3 ${isLiked(post.id) ? 'fill-current' : ''}`} />
+                        </button>
+                        <button
+                          onClick={(e) => handleSave(post.id, e)}
+                          className={`p-1.5 rounded-full backdrop-blur-sm transition-colors ${
+                            isSaved(post.id) 
+                              ? 'bg-blue-500 text-white' 
+                              : 'bg-white/80 text-gray-700 hover:bg-blue-500 hover:text-white'
+                          }`}
+                        >
+                          <Bookmark className={`w-3 h-3 ${isSaved(post.id) ? 'fill-current' : ''}`} />
+                        </button>
                       </div>
                     </div>
                   ))}
