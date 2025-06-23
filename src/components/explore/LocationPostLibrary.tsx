@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, X, Calendar, Users, Heart, MessageCircle, Bookmark, Share2 } from 'lucide-react';
+import { MapPin, X, Calendar, Users, Heart, MessageCircle, Bookmark, Share2, Refresh } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
@@ -39,6 +40,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     if (isOpen && place?.id) {
@@ -46,23 +48,30 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
     }
   }, [isOpen, place?.id]);
 
-  const loadLocationPosts = async () => {
+  const loadLocationPosts = async (forceRefresh = false) => {
     if (!place?.id) {
       console.log('❌ No place ID provided');
       return;
     }
 
-    setLoading(true);
+    if (forceRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+
     try {
-      console.log('📚 Loading posts for location ID:', place.id);
-      console.log('📚 Location name:', place.name);
+      console.log('📚 LOADING POSTS FOR LOCATION - CRITICAL DEBUG');
+      console.log('Location ID:', place.id);
+      console.log('Location name:', place.name);
       
-      // Query posts for this specific location ID
+      // CRITICAL: Query posts for this specific location ID with better debugging
       const { data: locationPosts, error } = await supabase
         .from('posts')
         .select(`
           id,
           user_id,
+          location_id,
           caption,
           media_urls,
           created_at,
@@ -83,21 +92,44 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
         throw error;
       }
 
-      console.log(`📊 Raw query result: ${locationPosts?.length || 0} posts found`);
+      console.log(`📊 POSTS QUERY RESULT:`, {
+        locationId: place.id,
+        locationName: place.name,
+        postsFound: locationPosts?.length || 0,
+        rawData: locationPosts
+      });
       
       if (!locationPosts || locationPosts.length === 0) {
-        console.log('📝 No posts found for this location');
+        console.log('📝 No posts found - Running diagnostic queries...');
         
-        // DEBUG: Let's also check if there are any posts with this location name in caption
-        const { data: debugPosts } = await supabase
+        // DIAGNOSTIC 1: Check all posts in the database
+        const { data: allPosts } = await supabase
           .from('posts')
-          .select('id, caption, location_id')
-          .ilike('caption', `%${place.name}%`);
+          .select('id, location_id, caption')
+          .limit(10);
         
-        console.log('🔍 DEBUG - Posts mentioning location name in caption:', debugPosts?.length || 0);
-        debugPosts?.forEach(post => {
-          console.log(`  - Post ${post.id}: location_id=${post.location_id}, caption="${post.caption}"`);
-        });
+        console.log('🔍 DIAGNOSTIC - Sample of all posts:', allPosts);
+        
+        // DIAGNOSTIC 2: Check all locations
+        const { data: allLocations } = await supabase
+          .from('locations')
+          .select('id, name, google_place_id')
+          .limit(10);
+        
+        console.log('🔍 DIAGNOSTIC - Sample of all locations:', allLocations);
+        
+        // DIAGNOSTIC 3: Check if there are posts with similar location names
+        const { data: similarPosts } = await supabase
+          .from('posts')
+          .select(`
+            id, 
+            location_id, 
+            caption,
+            locations!inner(name)
+          `)
+          .ilike('locations.name', `%${place.name}%`);
+        
+        console.log('🔍 DIAGNOSTIC - Posts with similar location names:', similarPosts);
         
         setPosts([]);
         return;
@@ -116,9 +148,9 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
         profiles: Array.isArray(post.profiles) ? post.profiles[0] : post.profiles
       }));
 
-      console.log(`✅ Successfully loaded ${processedPosts.length} posts for ${place.name}`);
-      processedPosts.forEach(post => {
-        console.log(`  📸 Post ${post.id} by ${post.profiles?.username || 'unknown'}: ${post.media_urls.length} media files`);
+      console.log(`✅ SUCCESS: Loaded ${processedPosts.length} posts for ${place.name}`);
+      processedPosts.forEach((post, index) => {
+        console.log(`  📸 Post ${index + 1}: ID=${post.id}, User=${post.profiles?.username || 'unknown'}, Media=${post.media_urls.length} files`);
       });
 
       setPosts(processedPosts);
@@ -128,6 +160,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
       setPosts([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -138,13 +171,17 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
   const handleLike = async (postId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     await toggleLike(postId);
-    loadLocationPosts(); // Refresh to get updated counts
+    loadLocationPosts(true); // Refresh to get updated counts
   };
 
   const handleSave = async (postId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     await toggleSave(postId);
-    loadLocationPosts(); // Refresh to get updated counts
+    loadLocationPosts(true); // Refresh to get updated counts
+  };
+
+  const handleRefresh = () => {
+    loadLocationPosts(true);
   };
 
   return (
@@ -168,12 +205,21 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
                   </Badge>
                 </div>
               </div>
-              <button
-                onClick={onClose}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleRefresh}
+                  disabled={refreshing}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <Refresh className={`w-5 h-5 text-gray-500 ${refreshing ? 'animate-spin' : ''}`} />
+                </button>
+                <button
+                  onClick={onClose}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
             </div>
             
             {place?.image && (
@@ -201,6 +247,16 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
                 <h3 className="font-semibold text-gray-900 mb-2">No posts yet</h3>
                 <p className="text-gray-500 text-sm">Be the first to post about this spot!</p>
                 <p className="text-gray-400 text-xs mt-2">Location ID: {place?.id}</p>
+                <Button
+                  onClick={handleRefresh}
+                  variant="outline"
+                  size="sm"
+                  className="mt-4"
+                  disabled={refreshing}
+                >
+                  <Refresh className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
               </div>
             ) : (
               <div className="space-y-4">

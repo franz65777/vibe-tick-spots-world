@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Search, Users, MapPin } from 'lucide-react';
-import LocationCard from './LocationCard';
+import CompactLocationCard from './CompactLocationCard';
 import UserCard from './UserCard';
 import { Place } from '@/types/place';
 
@@ -78,7 +78,7 @@ const SearchResults = ({
       {searchMode === 'locations' ? (
         <div className="space-y-0">
           {filteredLocations.map((place) => (
-            <LocationCard
+            <CompactLocationCard
               key={place.id}
               place={place}
               onCardClick={onCardClick}
