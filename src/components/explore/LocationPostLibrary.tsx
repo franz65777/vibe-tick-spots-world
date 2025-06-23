@@ -63,7 +63,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
     try {
       console.log('📚 LOADING POSTS FOR LOCATION ID:', place.id);
       
-      // Get posts directly by location_id - SIMPLIFIED QUERY
+      // Get posts with profile data using correct join syntax
       const { data: locationPosts, error } = await supabase
         .from('posts')
         .select(`
@@ -76,8 +76,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
           likes_count,
           comments_count,
           saves_count,
-          profiles:user_id (
-            id,
+          profiles!posts_user_id_fkey (
             username,
             full_name,
             avatar_url
