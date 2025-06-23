@@ -61,24 +61,9 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
     }
 
     try {
-      console.log('📚 LOADING ALL POSTS FOR LOCATION:', place.name);
+      console.log('📚 LOADING POSTS FOR LOCATION ID:', place.id);
       
-      // First, find all locations that match this place (by name and city for broader matching)
-      const { data: matchingLocations, error: locationsError } = await supabase
-        .from('locations')
-        .select('id')
-        .or(`id.eq.${place.id},name.ilike.%${place.name}%`)
-        .eq('city', place.city || '');
-
-      if (locationsError) {
-        console.error('❌ Error fetching matching locations:', locationsError);
-        throw locationsError;
-      }
-
-      const locationIds = matchingLocations?.map(loc => loc.id) || [place.id];
-      console.log('🔍 Searching posts in location IDs:', locationIds);
-
-      // Get ALL posts for any of these matching locations
+      // Get posts directly by location_id - SIMPLIFIED QUERY
       const { data: locationPosts, error } = await supabase
         .from('posts')
         .select(`
@@ -90,9 +75,15 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
           created_at,
           likes_count,
           comments_count,
-          saves_count
+          saves_count,
+          profiles:user_id (
+            id,
+            username,
+            full_name,
+            avatar_url
+          )
         `)
-        .in('location_id', locationIds)
+        .eq('location_id', place.id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -100,7 +91,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
         throw error;
       }
 
-      console.log(`📊 FOUND ${locationPosts?.length || 0} POSTS for ${place.name}`);
+      console.log(`📊 FOUND ${locationPosts?.length || 0} POSTS for location ${place.id}`);
 
       if (!locationPosts || locationPosts.length === 0) {
         console.log('📝 No posts found for this location');
@@ -108,36 +99,24 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
         return;
       }
 
-      // Get user profiles separately
-      const userIds = [...new Set(locationPosts.map(p => p.user_id))];
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, username, full_name, avatar_url')
-        .in('id', userIds);
-
-      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
-
       // Process posts with profile data
-      const processedPosts = locationPosts.map(post => {
-        const profile = profileMap.get(post.user_id);
-        return {
-          id: post.id,
-          user_id: post.user_id,
-          caption: post.caption,
-          media_urls: post.media_urls || [],
-          created_at: post.created_at,
-          likes_count: post.likes_count || 0,
-          comments_count: post.comments_count || 0,
-          saves_count: post.saves_count || 0,
-          profiles: profile ? {
-            username: profile.username,
-            full_name: profile.full_name,
-            avatar_url: profile.avatar_url
-          } : undefined
-        };
-      });
+      const processedPosts = locationPosts.map(post => ({
+        id: post.id,
+        user_id: post.user_id,
+        caption: post.caption,
+        media_urls: post.media_urls || [],
+        created_at: post.created_at,
+        likes_count: post.likes_count || 0,
+        comments_count: post.comments_count || 0,
+        saves_count: post.saves_count || 0,
+        profiles: post.profiles ? {
+          username: post.profiles.username,
+          full_name: post.profiles.full_name,
+          avatar_url: post.profiles.avatar_url
+        } : undefined
+      }));
 
-      console.log(`✅ SUCCESS: Loaded ${processedPosts.length} posts for ${place.name}`);
+      console.log(`✅ SUCCESS: Loaded ${processedPosts.length} posts for location`);
       setPosts(processedPosts);
 
     } catch (error) {
@@ -156,13 +135,13 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
   const handleLike = async (postId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     await toggleLike(postId);
-    loadLocationPosts(true); // Refresh to get updated counts
+    loadLocationPosts(true);
   };
 
   const handleSave = async (postId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     await toggleSave(postId);
-    loadLocationPosts(true); // Refresh to get updated counts
+    loadLocationPosts(true);
   };
 
   const handleRefresh = () => {
@@ -172,72 +151,72 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden p-0">
-          {/* Header */}
-          <div className="sticky top-0 z-10 bg-white border-b border-gray-100 p-4">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
+          {/* Compact Header */}
+          <div className="sticky top-0 z-10 bg-white border-b border-gray-100 p-3">
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">
-                <DialogTitle className="text-xl font-bold text-gray-900 mb-1 line-clamp-1">
+                <DialogTitle className="text-lg font-bold text-gray-900 mb-1 line-clamp-1">
                   {place?.name || 'Location'}
                 </DialogTitle>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <MapPin className="w-4 h-4 text-gray-400" />
+                <div className="flex items-center gap-2 text-xs text-gray-600">
+                  <MapPin className="w-3 h-3 text-gray-400" />
                   <span>{place?.city || place?.address || 'Unknown location'}</span>
-                  <Badge className={`${getCategoryColor(place?.category || '')} bg-gray-100 text-xs px-2 py-1 rounded-lg border-0 ml-2`}>
+                  <Badge className={`${getCategoryColor(place?.category || '')} bg-gray-100 text-xs px-2 py-0.5 rounded-md border-0 ml-1`}>
                     {place?.category?.charAt(0).toUpperCase() + place?.category?.slice(1) || 'Place'}
                   </Badge>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 <button
                   onClick={handleRefresh}
                   disabled={refreshing}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
                 >
-                  <RefreshCw className={`w-5 h-5 text-gray-500 ${refreshing ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-4 h-4 text-gray-500 ${refreshing ? 'animate-spin' : ''}`} />
                 </button>
                 <button
                   onClick={onClose}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
                 >
-                  <X className="w-5 h-5 text-gray-500" />
+                  <X className="w-4 h-4 text-gray-500" />
                 </button>
               </div>
             </div>
           </div>
 
           {/* Posts Grid Content */}
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="flex-1 overflow-y-auto p-3">
             {loading ? (
-              <div className="flex justify-center py-20">
-                <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <div className="flex justify-center py-16">
+                <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
               </div>
             ) : posts.length === 0 ? (
-              <div className="text-center py-20">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users className="w-8 h-8 text-gray-400" />
+              <div className="text-center py-16">
+                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Users className="w-6 h-6 text-gray-400" />
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-2">No posts yet</h3>
-                <p className="text-gray-500 text-sm mb-4">Be the first to post about this spot!</p>
+                <h3 className="font-semibold text-gray-900 mb-1">No posts yet</h3>
+                <p className="text-gray-500 text-sm mb-3">Be the first to post about this spot!</p>
                 <Button
                   onClick={handleRefresh}
                   variant="outline"
                   size="sm"
                   disabled={refreshing}
                 >
-                  <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-3 h-3 mr-1 ${refreshing ? 'animate-spin' : ''}`} />
                   Refresh
                 </Button>
               </div>
             ) : (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 text-sm text-gray-600 mb-6">
-                  <Calendar className="w-4 h-4" />
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-xs text-gray-600 mb-3">
+                  <Calendar className="w-3 h-3" />
                   <span className="font-medium">{posts.length} post{posts.length !== 1 ? 's' : ''}</span>
                 </div>
                 
-                {/* Posts Grid - Instagram-style */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1">
+                {/* Compact Instagram-style Grid */}
+                <div className="grid grid-cols-3 gap-0.5">
                   {posts.map((post) => (
                     <div 
                       key={post.id} 
@@ -259,46 +238,46 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
                       
                       {/* Multiple images indicator */}
                       {post.media_urls && post.media_urls.length > 1 && (
-                        <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded-full text-xs font-medium">
+                        <div className="absolute top-1 right-1 bg-black/70 text-white px-1.5 py-0.5 rounded-full text-xs font-medium">
                           {post.media_urls.length}
                         </div>
                       )}
                       
                       {/* Hover overlay with stats */}
                       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                        <div className="flex items-center gap-4 text-white">
+                        <div className="flex items-center gap-3 text-white">
                           <div className="flex items-center gap-1">
-                            <Heart className="w-5 h-5 fill-white" />
-                            <span className="font-semibold">{post.likes_count}</span>
+                            <Heart className="w-4 h-4 fill-white" />
+                            <span className="font-semibold text-sm">{post.likes_count}</span>
                           </div>
                           <div className="flex items-center gap-1">
-                            <MessageCircle className="w-5 h-5 fill-white" />
-                            <span className="font-semibold">{post.comments_count}</span>
+                            <MessageCircle className="w-4 h-4 fill-white" />
+                            <span className="font-semibold text-sm">{post.comments_count}</span>
                           </div>
                         </div>
                       </div>
 
                       {/* Quick action buttons */}
-                      <div className="absolute bottom-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <div className="absolute bottom-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         <button
                           onClick={(e) => handleLike(post.id, e)}
-                          className={`p-1.5 rounded-full backdrop-blur-sm transition-colors ${
+                          className={`p-1 rounded-full backdrop-blur-sm transition-colors ${
                             isLiked(post.id) 
                               ? 'bg-red-500 text-white' 
                               : 'bg-white/80 text-gray-700 hover:bg-red-500 hover:text-white'
                           }`}
                         >
-                          <Heart className={`w-3 h-3 ${isLiked(post.id) ? 'fill-current' : ''}`} />
+                          <Heart className={`w-2.5 h-2.5 ${isLiked(post.id) ? 'fill-current' : ''}`} />
                         </button>
                         <button
                           onClick={(e) => handleSave(post.id, e)}
-                          className={`p-1.5 rounded-full backdrop-blur-sm transition-colors ${
+                          className={`p-1 rounded-full backdrop-blur-sm transition-colors ${
                             isSaved(post.id) 
                               ? 'bg-blue-500 text-white' 
                               : 'bg-white/80 text-gray-700 hover:bg-blue-500 hover:text-white'
                           }`}
                         >
-                          <Bookmark className={`w-3 h-3 ${isSaved(post.id) ? 'fill-current' : ''}`} />
+                          <Bookmark className={`w-2.5 h-2.5 ${isSaved(post.id) ? 'fill-current' : ''}`} />
                         </button>
                       </div>
                     </div>

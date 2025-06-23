@@ -34,11 +34,9 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
   const loadSmartImage = async () => {
     setImageLoading(true);
     try {
-      // Use existing image if available, otherwise fetch smart image
       if (place.image) {
         setSmartImage(place.image);
       } else {
-        // Generate location-specific image using AI
         const image = await imageService.getPlaceImage(
           place.name,
           place.city || 'Unknown',
@@ -125,12 +123,12 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
   return (
     <>
       <Card 
-        className="overflow-hidden cursor-pointer group bg-white mx-3 mb-4 rounded-xl border-0 shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5"
+        className="overflow-hidden cursor-pointer group bg-white mx-2 mb-2 rounded-lg border-0 shadow-sm hover:shadow-md transition-all duration-300"
         onClick={handleCardClick}
       >
         <div className="relative">
-          {/* Compact Image - Reduced height */}
-          <div className="aspect-[16/10] overflow-hidden rounded-t-xl relative">
+          {/* Ultra Compact Image */}
+          <div className="aspect-[2/1] overflow-hidden rounded-t-lg relative">
             {imageLoading ? (
               <div className={`w-full h-full ${getPlaceholderGradient()} animate-pulse`} />
             ) : smartImage ? (
@@ -142,43 +140,38 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
               />
             ) : (
               <div className={`w-full h-full ${getPlaceholderGradient()} flex items-center justify-center`}>
-                <MapPin className="w-8 h-8 text-white/80" />
+                <MapPin className="w-6 h-6 text-white/80" />
               </div>
             )}
             
             {/* Post Count Badge */}
             {getPostCount() > 0 && (
-              <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded-full flex items-center gap-1">
-                <Camera className="w-3 h-3" />
+              <div className="absolute top-1.5 right-1.5 bg-black/70 text-white px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                <Camera className="w-2.5 h-2.5" />
                 <span className="text-xs font-medium">{getPostCount()}</span>
               </div>
             )}
           </div>
           
-          {/* Category and Status Badges */}
-          <div className="absolute top-2 left-2 flex gap-1">
-            <Badge className={`${getCategoryColor(place.category)} bg-white/95 backdrop-blur-sm text-xs px-2 py-0.5 rounded-md border-0 font-medium shadow-sm`}>
+          {/* Category Badge */}
+          <div className="absolute top-1.5 left-1.5">
+            <Badge className={`${getCategoryColor(place.category)} bg-white/95 backdrop-blur-sm text-xs px-1.5 py-0.5 rounded-md border-0 font-medium shadow-sm`}>
               {formatCategory(place.category)}
             </Badge>
-            {place.isNew && (
-              <Badge className="bg-green-500 text-white text-xs px-2 py-0.5 rounded-md border-0 font-medium shadow-sm">
-                New
-              </Badge>
-            )}
           </div>
         </div>
 
-        <CardContent className="p-3">
-          <div className="space-y-2">
-            {/* Place Name - Reduced spacing */}
-            <h3 className="font-bold text-gray-900 text-base leading-tight line-clamp-1">
+        <CardContent className="p-2">
+          <div className="space-y-1.5">
+            {/* Place Name */}
+            <h3 className="font-bold text-gray-900 text-sm leading-tight line-clamp-1">
               {place.name}
             </h3>
 
-            {/* Location Row - More compact */}
-            <div className="flex items-center gap-3 text-xs text-gray-600">
-              <div className="flex items-center gap-1">
-                <MapPin className="w-3 h-3 text-gray-400" />
+            {/* Location Row */}
+            <div className="flex items-center gap-2 text-xs text-gray-600">
+              <div className="flex items-center gap-0.5">
+                <MapPin className="w-2.5 h-2.5 text-gray-400" />
                 <span className="font-medium">{getCityName()}</span>
               </div>
               {getDistanceText() && (
@@ -187,37 +180,37 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
             </div>
 
             {/* Compact Stats Row */}
-            <div className="flex items-center justify-between py-1">
-              <div className="flex items-center gap-4 text-xs">
-                <div className="flex items-center gap-1">
-                  <Heart className="w-3 h-3 text-red-500" />
+            <div className="flex items-center justify-between py-0.5">
+              <div className="flex items-center gap-3 text-xs">
+                <div className="flex items-center gap-0.5">
+                  <Heart className="w-2.5 h-2.5 text-red-500" />
                   <span className="font-semibold text-gray-700">{place.likes || 0}</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Bookmark className="w-3 h-3 text-blue-500" />
+                <div className="flex items-center gap-0.5">
+                  <Bookmark className="w-2.5 h-2.5 text-blue-500" />
                   <span className="font-semibold text-gray-700">{place.totalSaves || 0}</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <MessageCircle className="w-3 h-3 text-green-500" />
+                <div className="flex items-center gap-0.5">
+                  <MessageCircle className="w-2.5 h-2.5 text-green-500" />
                   <span className="font-semibold text-gray-700">0</span>
                 </div>
               </div>
             </div>
 
-            {/* Compact Action Buttons */}
-            <div className="grid grid-cols-4 gap-1 pt-1">
+            {/* Ultra Compact Action Buttons */}
+            <div className="grid grid-cols-4 gap-0.5 pt-0.5">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleLike}
                 disabled={isLiking}
-                className={`h-8 rounded-lg flex flex-col gap-0.5 transition-all text-xs ${
+                className={`h-6 rounded-md flex flex-col gap-0 transition-all text-xs py-0 ${
                   isLiked(place.id)
                     ? 'text-red-600 bg-red-50 hover:bg-red-100' 
                     : 'text-gray-600 hover:text-red-600 hover:bg-red-50'
                 } ${isLiking ? 'animate-pulse' : ''}`}
               >
-                <Heart className={`w-3 h-3 ${isLiked(place.id) ? 'fill-current' : ''}`} />
+                <Heart className={`w-2.5 h-2.5 ${isLiked(place.id) ? 'fill-current' : ''}`} />
                 <span className="text-xs font-medium">Like</span>
               </Button>
               
@@ -226,13 +219,13 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
                 size="sm"
                 onClick={handleSave}
                 disabled={isSaving}
-                className={`h-8 rounded-lg flex flex-col gap-0.5 transition-all text-xs ${
+                className={`h-6 rounded-md flex flex-col gap-0 transition-all text-xs py-0 ${
                   isSaved(place.id)
                     ? 'text-blue-600 bg-blue-50 hover:bg-blue-100' 
                     : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
                 } ${isSaving ? 'animate-pulse' : ''}`}
               >
-                <Bookmark className={`w-3 h-3 ${isSaved(place.id) ? 'fill-current' : ''}`} />
+                <Bookmark className={`w-2.5 h-2.5 ${isSaved(place.id) ? 'fill-current' : ''}`} />
                 <span className="text-xs font-medium">Save</span>
               </Button>
               
@@ -240,9 +233,9 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
                 variant="ghost"
                 size="sm"
                 onClick={handleComment}
-                className="h-8 rounded-lg flex flex-col gap-0.5 text-gray-600 hover:text-green-600 hover:bg-green-50 transition-all text-xs"
+                className="h-6 rounded-md flex flex-col gap-0 text-gray-600 hover:text-green-600 hover:bg-green-50 transition-all text-xs py-0"
               >
-                <MessageCircle className="w-3 h-3" />
+                <MessageCircle className="w-2.5 h-2.5" />
                 <span className="text-xs font-medium">Comment</span>
               </Button>
               
@@ -250,9 +243,9 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
                 variant="ghost"
                 size="sm"
                 onClick={handleShare}
-                className="h-8 rounded-lg flex flex-col gap-0.5 text-gray-600 hover:text-purple-600 hover:bg-purple-50 transition-all text-xs"
+                className="h-6 rounded-md flex flex-col gap-0 text-gray-600 hover:text-purple-600 hover:bg-purple-50 transition-all text-xs py-0"
               >
-                <Share2 className="w-3 h-3" />
+                <Share2 className="w-2.5 h-2.5" />
                 <span className="text-xs font-medium">Share</span>
               </Button>
             </div>
