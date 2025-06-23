@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, X, Calendar, Users, Heart, MessageCircle, Bookmark, Share2, Refresh } from 'lucide-react';
+import { MapPin, X, Calendar, Users, Heart, MessageCircle, Bookmark, Share2, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
@@ -211,7 +211,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
                   disabled={refreshing}
                   className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                 >
-                  <Refresh className={`w-5 h-5 text-gray-500 ${refreshing ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-5 h-5 text-gray-500 ${refreshing ? 'animate-spin' : ''}`} />
                 </button>
                 <button
                   onClick={onClose}
@@ -254,7 +254,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
                   className="mt-4"
                   disabled={refreshing}
                 >
-                  <Refresh className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
                   Refresh
                 </Button>
               </div>
