@@ -1,180 +1,247 @@
 
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Share2, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { X, Search, Send, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { usePlaceEngagement } from '@/hooks/usePlaceEngagement';
+import { messageService } from '@/services/messageService';
+import { Place } from '@/types/place';
 
 interface ShareModalProps {
   isOpen: boolean;
   onClose: () => void;
-  place: any;
+  place: Place;
 }
 
-interface Friend {
+interface User {
   id: string;
-  username?: string;
-  full_name?: string;
-  avatar_url?: string;
+  username: string;
+  full_name: string;
+  avatar_url: string;
 }
 
 const ShareModal = ({ isOpen, onClose, place }: ShareModalProps) => {
   const { user } = useAuth();
-  const { shareWithFriends } = usePlaceEngagement();
-  const [friends, setFriends] = useState<Friend[]>([]);
-  const [selectedFriends, setSelectedFriends] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
+  const [users, setUsers] = useState<User[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+  const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [sharing, setSharing] = useState(false);
 
   useEffect(() => {
-    if (isOpen && user) {
-      loadFriends();
+    if (isOpen) {
+      loadUsers();
     }
-  }, [isOpen, user]);
+  }, [isOpen]);
 
-  const loadFriends = async () => {
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      searchUsers();
+    } else {
+      loadUsers();
+    }
+  }, [searchQuery]);
+
+  const loadUsers = async () => {
     if (!user) return;
-
+    
     setLoading(true);
     try {
-      // Get users that the current user follows
-      const { data: followData, error: followError } = await supabase
+      const { data: followers, error } = await supabase
         .from('follows')
-        .select('following_id')
+        .select(`
+          following_id,
+          profiles!follows_following_id_fkey (
+            id,
+            username,
+            full_name,
+            avatar_url
+          )
+        `)
         .eq('follower_id', user.id);
 
-      if (followError) throw followError;
+      if (error) throw error;
 
-      if (!followData || followData.length === 0) {
-        setFriends([]);
-        return;
-      }
+      const userList = followers?.map(f => ({
+        id: f.profiles.id,
+        username: f.profiles.username || 'Unknown',
+        full_name: f.profiles.full_name || 'Unknown User',
+        avatar_url: f.profiles.avatar_url || ''
+      })) || [];
 
-      // Get profile data for followed users
-      const followingIds = followData.map(f => f.following_id);
-      const { data: profiles, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, username, full_name, avatar_url')
-        .in('id', followingIds);
-
-      if (profileError) throw profileError;
-
-      setFriends(profiles || []);
+      setUsers(userList);
     } catch (error) {
-      console.error('Error loading friends:', error);
-      setFriends([]);
+      console.error('Error loading users:', error);
+      setUsers([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFriendToggle = (friendId: string) => {
-    setSelectedFriends(prev => {
+  const searchUsers = async () => {
+    if (!user || !searchQuery.trim()) return;
+    
+    setLoading(true);
+    try {
+      const { data: searchResults, error } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .or(`username.ilike.%${searchQuery}%, full_name.ilike.%${searchQuery}%`)
+        .neq('id', user.id)
+        .limit(20);
+
+      if (error) throw error;
+
+      const userList = searchResults?.map(u => ({
+        id: u.id,
+        username: u.username || 'Unknown',
+        full_name: u.full_name || 'Unknown User',
+        avatar_url: u.avatar_url || ''
+      })) || [];
+
+      setUsers(userList);
+    } catch (error) {
+      console.error('Error searching users:', error);
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleUserSelection = (userId: string) => {
+    setSelectedUsers(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(friendId)) {
-        newSet.delete(friendId);
+      if (newSet.has(userId)) {
+        newSet.delete(userId);
       } else {
-        newSet.add(friendId);
+        newSet.add(userId);
       }
       return newSet;
     });
   };
 
-  const handleShare = async () => {
-    if (selectedFriends.size === 0) return;
+  const handleSend = async () => {
+    if (selectedUsers.size === 0 || !place) return;
 
-    setSharing(true);
+    setSending(true);
     try {
-      const success = await shareWithFriends(place, Array.from(selectedFriends));
-      if (success) {
-        onClose();
-        setSelectedFriends(new Set());
-      }
+      const placeData = {
+        id: place.id,
+        name: place.name,
+        category: place.category,
+        address: place.address,
+        city: place.city,
+        image: place.image,
+        coordinates: place.coordinates
+      };
+
+      // Send to all selected users
+      const promises = Array.from(selectedUsers).map(userId =>
+        messageService.sendPlaceShare(userId, placeData)
+      );
+
+      await Promise.all(promises);
+      
+      // Reset and close
+      setSelectedUsers(new Set());
+      setSearchQuery('');
+      onClose();
     } catch (error) {
-      console.error('Error sharing:', error);
+      console.error('Error sending place share:', error);
     } finally {
-      setSharing(false);
+      setSending(false);
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md mx-auto">
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Share2 className="w-5 h-5 text-blue-600" />
-            Share • {place?.name}
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle>Share {place?.name}</DialogTitle>
+            <button
+              onClick={onClose}
+              className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
+          </div>
         </DialogHeader>
 
         <div className="space-y-4">
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          ) : friends.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <Users className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-              <p>No friends to share with</p>
-              <p className="text-sm">Follow some users to share places with them!</p>
-            </div>
-          ) : (
-            <>
-              <div className="text-sm text-gray-600 mb-4">
-                Select friends to share this place with:
-              </div>
-              <div className="max-h-64 overflow-y-auto space-y-2">
-                {friends.map((friend) => (
-                  <label
-                    key={friend.id}
-                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors"
-                  >
-                    <Checkbox
-                      checked={selectedFriends.has(friend.id)}
-                      onCheckedChange={() => handleFriendToggle(friend.id)}
-                    />
-                    <Avatar className="w-10 h-10">
-                      <AvatarImage src={friend.avatar_url} />
-                      <AvatarFallback className="bg-blue-100 text-blue-600">
-                        {(friend.full_name || friend.username || 'U')[0].toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm text-gray-900 truncate">
-                        {friend.full_name || friend.username || 'Anonymous'}
-                      </div>
-                      {friend.username && friend.full_name && (
-                        <div className="text-xs text-gray-500 truncate">
-                          @{friend.username}
-                        </div>
-                      )}
-                    </div>
-                  </label>
-                ))}
-              </div>
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              placeholder="Search people..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
 
-              <div className="flex justify-between pt-4 border-t">
-                <Button variant="outline" onClick={onClose}>
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleShare}
-                  disabled={selectedFriends.size === 0 || sharing}
-                  className="min-w-[100px]"
-                >
-                  {sharing ? (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    `Share (${selectedFriends.size})`
-                  )}
-                </Button>
-              </div>
-            </>
+          {/* Selected count */}
+          {selectedUsers.size > 0 && (
+            <div className="text-sm text-gray-600">
+              {selectedUsers.size} user{selectedUsers.size !== 1 ? 's' : ''} selected
+            </div>
           )}
+
+          {/* Users list */}
+          <div className="max-h-60 overflow-y-auto space-y-2">
+            {loading ? (
+              <div className="flex justify-center py-4">
+                <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            ) : users.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <p className="text-sm">No users found</p>
+              </div>
+            ) : (
+              users.map((u) => (
+                <div
+                  key={u.id}
+                  onClick={() => toggleUserSelection(u.id)}
+                  className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                    selectedUsers.has(u.id)
+                      ? 'bg-blue-50 border border-blue-200'
+                      : 'hover:bg-gray-50'
+                  }`}
+                >
+                  <Avatar className="w-10 h-10">
+                    <AvatarImage src={u.avatar_url} />
+                    <AvatarFallback className="bg-gray-100 text-gray-600">
+                      {(u.full_name || u.username)[0].toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-gray-900 truncate">
+                      {u.full_name || u.username}
+                    </div>
+                    <div className="text-sm text-gray-500 truncate">
+                      @{u.username}
+                    </div>
+                  </div>
+                  {selectedUsers.has(u.id) && (
+                    <Check className="w-5 h-5 text-blue-600" />
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Send button */}
+          <Button
+            onClick={handleSend}
+            disabled={selectedUsers.size === 0 || sending}
+            className="w-full"
+          >
+            <Send className="w-4 h-4 mr-2" />
+            {sending ? 'Sending...' : `Send to ${selectedUsers.size} user${selectedUsers.size !== 1 ? 's' : ''}`}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

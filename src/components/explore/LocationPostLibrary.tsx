@@ -61,11 +61,11 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
     }
 
     try {
-      console.log('📚 LOADING POSTS FOR LOCATION - CRITICAL DEBUG');
+      console.log('📚 LOADING POSTS FOR LOCATION - FIXED QUERY');
       console.log('Location ID:', place.id);
       console.log('Location name:', place.name);
       
-      // CRITICAL: Query posts for this specific location ID with better debugging
+      // FIXED: Use proper join syntax instead of nested select
       const { data: locationPosts, error } = await supabase
         .from('posts')
         .select(`
@@ -77,12 +77,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
           created_at,
           likes_count,
           comments_count,
-          saves_count,
-          profiles:user_id (
-            username,
-            full_name,
-            avatar_url
-          )
+          saves_count
         `)
         .eq('location_id', place.id)
         .order('created_at', { ascending: false });
@@ -98,61 +93,43 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
         postsFound: locationPosts?.length || 0,
         rawData: locationPosts
       });
-      
+
       if (!locationPosts || locationPosts.length === 0) {
-        console.log('📝 No posts found - Running diagnostic queries...');
-        
-        // DIAGNOSTIC 1: Check all posts in the database
-        const { data: allPosts } = await supabase
-          .from('posts')
-          .select('id, location_id, caption')
-          .limit(10);
-        
-        console.log('🔍 DIAGNOSTIC - Sample of all posts:', allPosts);
-        
-        // DIAGNOSTIC 2: Check all locations
-        const { data: allLocations } = await supabase
-          .from('locations')
-          .select('id, name, google_place_id')
-          .limit(10);
-        
-        console.log('🔍 DIAGNOSTIC - Sample of all locations:', allLocations);
-        
-        // DIAGNOSTIC 3: Check if there are posts with similar location names
-        const { data: similarPosts } = await supabase
-          .from('posts')
-          .select(`
-            id, 
-            location_id, 
-            caption,
-            locations!inner(name)
-          `)
-          .ilike('locations.name', `%${place.name}%`);
-        
-        console.log('🔍 DIAGNOSTIC - Posts with similar location names:', similarPosts);
-        
+        console.log('📝 No posts found for this location');
         setPosts([]);
         return;
       }
 
-      // Process posts and ensure profiles data is properly formatted
-      const processedPosts = locationPosts.map(post => ({
-        id: post.id,
-        user_id: post.user_id,
-        caption: post.caption,
-        media_urls: post.media_urls || [],
-        created_at: post.created_at,
-        likes_count: post.likes_count || 0,
-        comments_count: post.comments_count || 0,
-        saves_count: post.saves_count || 0,
-        profiles: Array.isArray(post.profiles) ? post.profiles[0] : post.profiles
-      }));
+      // Get user profiles separately to avoid relationship issues
+      const userIds = [...new Set(locationPosts.map(p => p.user_id))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .in('id', userIds);
 
-      console.log(`✅ SUCCESS: Loaded ${processedPosts.length} posts for ${place.name}`);
-      processedPosts.forEach((post, index) => {
-        console.log(`  📸 Post ${index + 1}: ID=${post.id}, User=${post.profiles?.username || 'unknown'}, Media=${post.media_urls.length} files`);
+      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+
+      // Process posts with profile data
+      const processedPosts = locationPosts.map(post => {
+        const profile = profileMap.get(post.user_id);
+        return {
+          id: post.id,
+          user_id: post.user_id,
+          caption: post.caption,
+          media_urls: post.media_urls || [],
+          created_at: post.created_at,
+          likes_count: post.likes_count || 0,
+          comments_count: post.comments_count || 0,
+          saves_count: post.saves_count || 0,
+          profiles: profile ? {
+            username: profile.username,
+            full_name: profile.full_name,
+            avatar_url: profile.avatar_url
+          } : undefined
+        };
       });
 
+      console.log(`✅ SUCCESS: Loaded ${processedPosts.length} posts for ${place.name}`);
       setPosts(processedPosts);
 
     } catch (error) {
@@ -246,7 +223,6 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-2">No posts yet</h3>
                 <p className="text-gray-500 text-sm">Be the first to post about this spot!</p>
-                <p className="text-gray-400 text-xs mt-2">Location ID: {place?.id}</p>
                 <Button
                   onClick={handleRefresh}
                   variant="outline"
