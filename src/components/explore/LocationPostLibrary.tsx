@@ -63,8 +63,8 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
     try {
       console.log('📚 LOADING POSTS FOR LOCATION ID:', place.id);
       
-      // Get posts with profile data using correct join syntax
-      const { data: locationPosts, error } = await supabase
+      // First get posts for this location
+      const { data: locationPosts, error: postsError } = await supabase
         .from('posts')
         .select(`
           id,
@@ -75,22 +75,15 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
           created_at,
           likes_count,
           comments_count,
-          saves_count,
-          profiles!posts_user_id_fkey (
-            username,
-            full_name,
-            avatar_url
-          )
+          saves_count
         `)
         .eq('location_id', place.id)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('❌ Error fetching posts:', error);
-        throw error;
+      if (postsError) {
+        console.error('❌ Error fetching posts:', postsError);
+        throw postsError;
       }
-
-      console.log(`📊 FOUND ${locationPosts?.length || 0} POSTS for location ${place.id}`);
 
       if (!locationPosts || locationPosts.length === 0) {
         console.log('📝 No posts found for this location');
@@ -98,24 +91,35 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
         return;
       }
 
-      // Process posts with profile data
-      const processedPosts = locationPosts.map(post => ({
-        id: post.id,
-        user_id: post.user_id,
-        caption: post.caption,
-        media_urls: post.media_urls || [],
-        created_at: post.created_at,
-        likes_count: post.likes_count || 0,
-        comments_count: post.comments_count || 0,
-        saves_count: post.saves_count || 0,
-        profiles: post.profiles ? {
-          username: post.profiles.username,
-          full_name: post.profiles.full_name,
-          avatar_url: post.profiles.avatar_url
-        } : undefined
-      }));
+      console.log(`📊 FOUND ${locationPosts.length} POSTS for location ${place.id}`);
 
-      console.log(`✅ SUCCESS: Loaded ${processedPosts.length} posts for location`);
+      // Get unique user IDs
+      const userIds = [...new Set(locationPosts.map(post => post.user_id))];
+
+      // Fetch profiles for these users
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .in('id', userIds);
+
+      if (profilesError) {
+        console.error('❌ Error fetching profiles:', profilesError);
+      }
+
+      // Combine posts with profile data
+      const processedPosts = locationPosts.map(post => {
+        const profile = profiles?.find(p => p.id === post.user_id);
+        return {
+          ...post,
+          profiles: profile ? {
+            username: profile.username,
+            full_name: profile.full_name,
+            avatar_url: profile.avatar_url
+          } : undefined
+        };
+      });
+
+      console.log(`✅ SUCCESS: Loaded ${processedPosts.length} posts with profile data`);
       setPosts(processedPosts);
 
     } catch (error) {
