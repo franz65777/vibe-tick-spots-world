@@ -89,7 +89,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
         });
       }
 
-      // STRATEGY 2: Search by place name in metadata
+      // STRATEGY 2: Search by place name in metadata - with proper type checking
       console.log('📍 STRATEGY 2: Metadata place name search');
       const { data: metadataPosts, error: metadataError } = await supabase
         .from('posts')
@@ -142,7 +142,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
         }
       }
 
-      // STRATEGY 4: Broad search in ALL posts for this location name (fallback)
+      // STRATEGY 4: Broad search in ALL posts for this location name (fallback) - with proper type checking
       console.log('📍 STRATEGY 4: Broad search fallback');
       const { data: broadPosts, error: broadError } = await supabase
         .from('posts')
@@ -156,11 +156,19 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
       } else if (broadPosts && broadPosts.length > 0) {
         console.log(`✅ Strategy 4 found ${broadPosts.length} posts`);
         broadPosts.forEach(post => {
-          // Additional filtering to ensure it's really related to our location
+          // Additional filtering to ensure it's really related to our location with proper type checking
           const metadata = post.metadata || {};
           const metadataStr = JSON.stringify(metadata).toLowerCase();
-          if ((metadataStr.includes(place.name.toLowerCase()) || 
-               (metadata.place_name && metadata.place_name.toLowerCase().includes(place.name.toLowerCase()))) &&
+          
+          // Type-safe metadata checking
+          const hasMatchingPlaceName = metadata && 
+            typeof metadata === 'object' && 
+            metadata !== null &&
+            'place_name' in metadata &&
+            typeof metadata.place_name === 'string' &&
+            metadata.place_name.toLowerCase().includes(place.name.toLowerCase());
+
+          if ((metadataStr.includes(place.name.toLowerCase()) || hasMatchingPlaceName) &&
               !allFoundPosts.has(post.id)) {
             allFoundPosts.add(post.id);
             combinedPosts.push(post);
