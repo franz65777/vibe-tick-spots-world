@@ -27,6 +27,7 @@ interface Post {
   likes_count: number;
   comments_count: number;
   saves_count: number;
+  location_id?: string;
   profiles?: {
     username?: string;
     full_name?: string;
@@ -61,86 +62,90 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
     }
 
     try {
-      console.log('📚 LOADING POSTS FOR LOCATION ID:', place.id);
+      console.log('📚 LOADING POSTS FOR LOCATION:', place);
+      console.log('📚 SEARCHING FOR PLACE ID:', place.id);
+      console.log('📚 SEARCHING FOR PLACE NAME:', place.name);
       
-      // First, let's check if we have any posts at all and what location_id values exist
-      const { data: allPosts, error: debugError } = await supabase
+      // Strategy 1: Search by exact place.id in location_id field
+      console.log('🔍 Strategy 1: Direct location_id match');
+      let { data: directPosts, error: directError } = await supabase
         .from('posts')
-        .select('id, location_id')
-        .limit(10);
-      
-      console.log('🔍 DEBUG: All posts location_ids:', allPosts?.map(p => p.location_id));
-      console.log('🔍 DEBUG: Looking for place.id:', place.id);
-      
-      // Try multiple query strategies to find posts
-      let locationPosts: any[] = [];
-      
-      // Strategy 1: Direct match with place.id
-      const { data: directMatch } = await supabase
-        .from('posts')
-        .select(`
-          id,
-          user_id,
-          location_id,
-          caption,
-          media_urls,
-          created_at,
-          likes_count,
-          comments_count,
-          saves_count
-        `)
+        .select('*')
         .eq('location_id', place.id)
         .order('created_at', { ascending: false });
-      
-      if (directMatch && directMatch.length > 0) {
-        locationPosts = directMatch;
-        console.log('✅ Found posts with direct location_id match');
+
+      if (directError) {
+        console.error('❌ Direct query error:', directError);
       } else {
-        // Strategy 2: Try finding by place name if no direct match
-        console.log('🔄 No direct match, trying to find location in locations table...');
+        console.log('📊 Direct posts found:', directPosts?.length || 0);
+      }
+
+      let allPosts = directPosts || [];
+
+      // Strategy 2: Search in locations table and find matching posts
+      console.log('🔍 Strategy 2: Location table lookup');
+      const { data: locationRecord, error: locationError } = await supabase
+        .from('locations')
+        .select('id')
+        .or(`id.eq.${place.id},name.ilike.%${place.name}%,google_place_id.eq.${place.id}`)
+        .limit(10);
+
+      if (locationError) {
+        console.error('❌ Location lookup error:', locationError);
+      } else {
+        console.log('📍 Found locations:', locationRecord);
         
-        const { data: locationRecord } = await supabase
-          .from('locations')
-          .select('id')
-          .ilike('name', `%${place.name}%`)
-          .limit(1)
-          .single();
-        
-        if (locationRecord) {
-          const { data: locationBasedPosts } = await supabase
+        if (locationRecord && locationRecord.length > 0) {
+          const locationIds = locationRecord.map(loc => loc.id);
+          console.log('🎯 Searching posts for location IDs:', locationIds);
+          
+          const { data: locationPosts, error: locationPostsError } = await supabase
             .from('posts')
-            .select(`
-              id,
-              user_id,
-              location_id,
-              caption,
-              media_urls,
-              created_at,
-              likes_count,
-              comments_count,
-              saves_count
-            `)
-            .eq('location_id', locationRecord.id)
+            .select('*')
+            .in('location_id', locationIds)
             .order('created_at', { ascending: false });
           
-          if (locationBasedPosts) {
-            locationPosts = locationBasedPosts;
-            console.log('✅ Found posts using locations table lookup');
+          if (locationPostsError) {
+            console.error('❌ Location posts error:', locationPostsError);
+          } else {
+            console.log('📊 Location-based posts found:', locationPosts?.length || 0);
+            // Merge with direct posts, avoiding duplicates
+            const existingIds = new Set(allPosts.map(p => p.id));
+            const newPosts = (locationPosts || []).filter(p => !existingIds.has(p.id));
+            allPosts = [...allPosts, ...newPosts];
           }
         }
       }
-      
-      // Strategy 3: If still no posts, get recent posts and show message
-      if (locationPosts.length === 0) {
-        console.log('📝 No posts found for this specific location');
+
+      // Strategy 3: Search by place name in post metadata (for posts created with place names)
+      console.log('🔍 Strategy 3: Metadata search');
+      const { data: metadataPosts, error: metadataError } = await supabase
+        .from('posts')
+        .select('*')
+        .or(`metadata->>place_name.ilike.%${place.name}%,metadata->>location_name.ilike.%${place.name}%`)
+        .order('created_at', { ascending: false });
+
+      if (metadataError) {
+        console.error('❌ Metadata search error:', metadataError);
+      } else {
+        console.log('📊 Metadata posts found:', metadataPosts?.length || 0);
+        // Merge avoiding duplicates
+        const existingIds = new Set(allPosts.map(p => p.id));
+        const newPosts = (metadataPosts || []).filter(p => !existingIds.has(p.id));
+        allPosts = [...allPosts, ...newPosts];
+      }
+
+      console.log('📊 TOTAL UNIQUE POSTS FOUND:', allPosts.length);
+
+      if (allPosts.length === 0) {
+        console.log('📝 No posts found for this location');
         setPosts([]);
         return;
       }
 
-      console.log(`📊 FOUND ${locationPosts.length} POSTS for location`);
-
-      // Get unique user IDs and fetch profiles
-      const userIds = [...new Set(locationPosts.map(post => post.user_id))];
+      // Get profiles for all posts
+      const userIds = [...new Set(allPosts.map(post => post.user_id))];
+      console.log('👥 Fetching profiles for users:', userIds);
       
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
@@ -149,10 +154,12 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
 
       if (profilesError) {
         console.error('❌ Error fetching profiles:', profilesError);
+      } else {
+        console.log('👤 Profiles fetched:', profiles?.length || 0);
       }
 
       // Combine posts with profile data
-      const processedPosts = locationPosts.map(post => {
+      const processedPosts = allPosts.map(post => {
         const profile = profiles?.find(p => p.id === post.user_id);
         return {
           ...post,
