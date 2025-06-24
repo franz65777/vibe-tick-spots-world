@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -28,6 +27,7 @@ interface Post {
   comments_count: number;
   saves_count: number;
   location_id?: string;
+  metadata?: any;
   profiles?: {
     username?: string;
     full_name?: string;
@@ -62,89 +62,123 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
     }
 
     try {
-      console.log('📚 LOADING POSTS FOR LOCATION:', place);
-      console.log('📚 SEARCHING FOR PLACE ID:', place.id);
-      console.log('📚 SEARCHING FOR PLACE NAME:', place.name);
+      console.log('🔍 COMPREHENSIVE SEARCH FOR POSTS - LOCATION:', place);
+      console.log('🔍 Searching for place ID:', place.id);
+      console.log('🔍 Searching for place name:', place.name);
       
-      // Strategy 1: Search by exact place.id in location_id field
-      console.log('🔍 Strategy 1: Direct location_id match');
-      let { data: directPosts, error: directError } = await supabase
+      const allFoundPosts = new Set<string>(); // Track unique post IDs
+      let combinedPosts: Post[] = [];
+
+      // STRATEGY 1: Direct location_id match (UUID format)
+      console.log('📍 STRATEGY 1: Direct location_id match');
+      const { data: directPosts, error: directError } = await supabase
         .from('posts')
         .select('*')
         .eq('location_id', place.id)
         .order('created_at', { ascending: false });
 
       if (directError) {
-        console.error('❌ Direct query error:', directError);
-      } else {
-        console.log('📊 Direct posts found:', directPosts?.length || 0);
-      }
-
-      let allPosts = directPosts || [];
-
-      // Strategy 2: Search in locations table and find matching posts
-      console.log('🔍 Strategy 2: Location table lookup');
-      const { data: locationRecord, error: locationError } = await supabase
-        .from('locations')
-        .select('id')
-        .or(`id.eq.${place.id},name.ilike.%${place.name}%,google_place_id.eq.${place.id}`)
-        .limit(10);
-
-      if (locationError) {
-        console.error('❌ Location lookup error:', locationError);
-      } else {
-        console.log('📍 Found locations:', locationRecord);
-        
-        if (locationRecord && locationRecord.length > 0) {
-          const locationIds = locationRecord.map(loc => loc.id);
-          console.log('🎯 Searching posts for location IDs:', locationIds);
-          
-          const { data: locationPosts, error: locationPostsError } = await supabase
-            .from('posts')
-            .select('*')
-            .in('location_id', locationIds)
-            .order('created_at', { ascending: false });
-          
-          if (locationPostsError) {
-            console.error('❌ Location posts error:', locationPostsError);
-          } else {
-            console.log('📊 Location-based posts found:', locationPosts?.length || 0);
-            // Merge with direct posts, avoiding duplicates
-            const existingIds = new Set(allPosts.map(p => p.id));
-            const newPosts = (locationPosts || []).filter(p => !existingIds.has(p.id));
-            allPosts = [...allPosts, ...newPosts];
+        console.error('❌ Strategy 1 error:', directError);
+      } else if (directPosts && directPosts.length > 0) {
+        console.log(`✅ Strategy 1 found ${directPosts.length} posts`);
+        directPosts.forEach(post => {
+          if (!allFoundPosts.has(post.id)) {
+            allFoundPosts.add(post.id);
+            combinedPosts.push(post);
           }
-        }
+        });
       }
 
-      // Strategy 3: Search by place name in post metadata (for posts created with place names)
-      console.log('🔍 Strategy 3: Metadata search');
+      // STRATEGY 2: Search by place name in metadata
+      console.log('📍 STRATEGY 2: Metadata place name search');
       const { data: metadataPosts, error: metadataError } = await supabase
         .from('posts')
         .select('*')
-        .or(`metadata->>place_name.ilike.%${place.name}%,metadata->>location_name.ilike.%${place.name}%`)
+        .or(`metadata->>place_name.ilike.%${place.name}%,metadata->>location_name.ilike.%${place.name}%,metadata->>placeName.ilike.%${place.name}%`)
         .order('created_at', { ascending: false });
 
       if (metadataError) {
-        console.error('❌ Metadata search error:', metadataError);
-      } else {
-        console.log('📊 Metadata posts found:', metadataPosts?.length || 0);
-        // Merge avoiding duplicates
-        const existingIds = new Set(allPosts.map(p => p.id));
-        const newPosts = (metadataPosts || []).filter(p => !existingIds.has(p.id));
-        allPosts = [...allPosts, ...newPosts];
+        console.error('❌ Strategy 2 error:', metadataError);
+      } else if (metadataPosts && metadataPosts.length > 0) {
+        console.log(`✅ Strategy 2 found ${metadataPosts.length} posts`);
+        metadataPosts.forEach(post => {
+          if (!allFoundPosts.has(post.id)) {
+            allFoundPosts.add(post.id);
+            combinedPosts.push(post);
+          }
+        });
       }
 
-      console.log('📊 TOTAL UNIQUE POSTS FOUND:', allPosts.length);
+      // STRATEGY 3: Search locations table and match posts
+      console.log('📍 STRATEGY 3: Locations table lookup');
+      const { data: locations, error: locationsError } = await supabase
+        .from('locations')
+        .select('id')
+        .or(`name.ilike.%${place.name}%,google_place_id.eq.${place.id},id.eq.${place.id}`)
+        .limit(20);
 
-      if (allPosts.length === 0) {
-        console.log('📝 No posts found for this location');
+      if (locationsError) {
+        console.error('❌ Strategy 3 locations error:', locationsError);
+      } else if (locations && locations.length > 0) {
+        console.log(`✅ Strategy 3 found ${locations.length} matching locations`);
+        
+        const locationIds = locations.map(loc => loc.id);
+        const { data: locationPosts, error: locationPostsError } = await supabase
+          .from('posts')
+          .select('*')
+          .in('location_id', locationIds)
+          .order('created_at', { ascending: false });
+
+        if (locationPostsError) {
+          console.error('❌ Strategy 3 posts error:', locationPostsError);
+        } else if (locationPosts && locationPosts.length > 0) {
+          console.log(`✅ Strategy 3 found ${locationPosts.length} posts`);
+          locationPosts.forEach(post => {
+            if (!allFoundPosts.has(post.id)) {
+              allFoundPosts.add(post.id);
+              combinedPosts.push(post);
+            }
+          });
+        }
+      }
+
+      // STRATEGY 4: Broad search in ALL posts for this location name (fallback)
+      console.log('📍 STRATEGY 4: Broad search fallback');
+      const { data: broadPosts, error: broadError } = await supabase
+        .from('posts')
+        .select('*')
+        .textSearch('metadata', place.name)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (broadError) {
+        console.error('❌ Strategy 4 error:', broadError);
+      } else if (broadPosts && broadPosts.length > 0) {
+        console.log(`✅ Strategy 4 found ${broadPosts.length} posts`);
+        broadPosts.forEach(post => {
+          // Additional filtering to ensure it's really related to our location
+          const metadata = post.metadata || {};
+          const metadataStr = JSON.stringify(metadata).toLowerCase();
+          if ((metadataStr.includes(place.name.toLowerCase()) || 
+               (metadata.place_name && metadata.place_name.toLowerCase().includes(place.name.toLowerCase()))) &&
+              !allFoundPosts.has(post.id)) {
+            allFoundPosts.add(post.id);
+            combinedPosts.push(post);
+          }
+        });
+      }
+
+      console.log(`🎯 TOTAL UNIQUE POSTS FOUND: ${combinedPosts.length}`);
+      console.log('📋 Post IDs found:', Array.from(allFoundPosts));
+
+      if (combinedPosts.length === 0) {
+        console.log('❌ NO POSTS FOUND - This should not happen if posts exist!');
         setPosts([]);
         return;
       }
 
       // Get profiles for all posts
-      const userIds = [...new Set(allPosts.map(post => post.user_id))];
+      const userIds = [...new Set(combinedPosts.map(post => post.user_id))];
       console.log('👥 Fetching profiles for users:', userIds);
       
       const { data: profiles, error: profilesError } = await supabase
@@ -155,11 +189,11 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
       if (profilesError) {
         console.error('❌ Error fetching profiles:', profilesError);
       } else {
-        console.log('👤 Profiles fetched:', profiles?.length || 0);
+        console.log(`👤 Profiles fetched: ${profiles?.length || 0}`);
       }
 
       // Combine posts with profile data
-      const processedPosts = allPosts.map(post => {
+      const processedPosts = combinedPosts.map(post => {
         const profile = profiles?.find(p => p.id === post.user_id);
         return {
           ...post,
@@ -171,11 +205,14 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
         };
       });
 
+      // Sort by creation date (newest first)
+      processedPosts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
       console.log(`✅ SUCCESS: Loaded ${processedPosts.length} posts with profile data`);
       setPosts(processedPosts);
 
     } catch (error) {
-      console.error('❌ Error loading location posts:', error);
+      console.error('❌ CRITICAL ERROR loading location posts:', error);
       setPosts([]);
     } finally {
       setLoading(false);
