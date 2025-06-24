@@ -127,7 +127,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
         }
       }
 
-      // STEP 4: If still no matches, try broader metadata search
+      // STEP 4: If still no matches, try broader metadata search with proper type handling
       if (foundPosts.length === 0) {
         console.log('🔍 STEP 4: Broader metadata search');
         
@@ -143,18 +143,23 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
           console.log(`🔍 Filter search checking: ${allPostsForFilter?.length || 0} posts`);
           
           const filteredPosts = allPostsForFilter?.filter(post => {
-            if (!post.metadata) return false;
+            if (!post.metadata || typeof post.metadata !== 'object') return false;
             
-            const metadata = post.metadata;
+            const metadata = post.metadata as Record<string, any>;
             const searchTerm = place.name.toLowerCase();
             
-            // Check various metadata fields
+            // Check various metadata fields with proper type checking
             const matchesPlaceName = metadata.place_name && 
-              metadata.place_name.toString().toLowerCase().includes(searchTerm);
+              typeof metadata.place_name === 'string' &&
+              metadata.place_name.toLowerCase().includes(searchTerm);
+            
             const matchesLocationName = metadata.location_name && 
-              metadata.location_name.toString().toLowerCase().includes(searchTerm);
+              typeof metadata.location_name === 'string' &&
+              metadata.location_name.toLowerCase().includes(searchTerm);
+            
             const matchesName = metadata.name && 
-              metadata.name.toString().toLowerCase().includes(searchTerm);
+              typeof metadata.name === 'string' &&
+              metadata.name.toLowerCase().includes(searchTerm);
             
             return matchesPlaceName || matchesLocationName || matchesName;
           }) || [];
