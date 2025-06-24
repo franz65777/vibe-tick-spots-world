@@ -29,11 +29,6 @@ interface Post {
   saves_count: number;
   location_id?: string;
   metadata?: any;
-  profiles?: {
-    username?: string;
-    full_name?: string;
-    avatar_url?: string;
-  };
 }
 
 const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProps) => {
@@ -72,23 +67,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
       console.log('📊 STEP 1: Getting ALL posts to debug');
       const { data: allPosts, error: allPostsError } = await supabase
         .from('posts')
-        .select(`
-          id,
-          user_id,
-          caption,
-          media_urls,
-          created_at,
-          likes_count,
-          comments_count,
-          saves_count,
-          location_id,
-          metadata,
-          profiles (
-            username,
-            full_name,
-            avatar_url
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (allPostsError) {
@@ -111,23 +90,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
       console.log('🎯 STEP 2: Direct location_id search');
       const { data: directPosts, error: directError } = await supabase
         .from('posts')
-        .select(`
-          id,
-          user_id,
-          caption,
-          media_urls,
-          created_at,
-          likes_count,
-          comments_count,
-          saves_count,
-          location_id,
-          metadata,
-          profiles (
-            username,
-            full_name,
-            avatar_url
-          )
-        `)
+        .select('*')
         .eq('location_id', place.id)
         .order('created_at', { ascending: false });
 
@@ -149,24 +112,8 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
         
         const { data: metadataPosts, error: metadataError } = await supabase
           .from('posts')
-          .select(`
-            id,
-            user_id,
-            caption,
-            media_urls,
-            created_at,
-            likes_count,
-            comments_count,
-            saves_count,
-            location_id,
-            metadata,
-            profiles (
-              username,
-              full_name,
-              avatar_url
-            )
-          `)
-          .ilike('metadata->place_name', `%${place.name}%`)
+          .select('*')
+          .contains('metadata', { place_name: place.name })
           .order('created_at', { ascending: false });
 
         if (metadataError) {
@@ -180,39 +127,42 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
         }
       }
 
-      // STEP 4: If still no matches, try text search on all metadata
+      // STEP 4: If still no matches, try broader metadata search
       if (foundPosts.length === 0) {
-        console.log('🔍 STEP 4: Full text search on metadata');
+        console.log('🔍 STEP 4: Broader metadata search');
         
-        const { data: textSearchPosts, error: textSearchError } = await supabase
+        // Get all posts and filter in JavaScript for debugging
+        const { data: allPostsForFilter, error: filterError } = await supabase
           .from('posts')
-          .select(`
-            id,
-            user_id,
-            caption,
-            media_urls,
-            created_at,
-            likes_count,
-            comments_count,
-            saves_count,
-            location_id,
-            metadata,
-            profiles (
-              username,
-              full_name,
-              avatar_url
-            )
-          `)
-          .textSearch('metadata', place.name)
+          .select('*')
           .order('created_at', { ascending: false });
 
-        if (textSearchError) {
-          console.error('❌ Text search error:', textSearchError);
+        if (filterError) {
+          console.error('❌ Filter search error:', filterError);
         } else {
-          console.log(`🔍 Text search found: ${textSearchPosts?.length || 0} posts`);
-          if (textSearchPosts && textSearchPosts.length > 0) {
-            foundPosts = textSearchPosts;
-            console.log('✅ Using text search results');
+          console.log(`🔍 Filter search checking: ${allPostsForFilter?.length || 0} posts`);
+          
+          const filteredPosts = allPostsForFilter?.filter(post => {
+            if (!post.metadata) return false;
+            
+            const metadata = post.metadata;
+            const searchTerm = place.name.toLowerCase();
+            
+            // Check various metadata fields
+            const matchesPlaceName = metadata.place_name && 
+              metadata.place_name.toString().toLowerCase().includes(searchTerm);
+            const matchesLocationName = metadata.location_name && 
+              metadata.location_name.toString().toLowerCase().includes(searchTerm);
+            const matchesName = metadata.name && 
+              metadata.name.toString().toLowerCase().includes(searchTerm);
+            
+            return matchesPlaceName || matchesLocationName || matchesName;
+          }) || [];
+
+          console.log(`🔍 JavaScript filter found: ${filteredPosts.length} posts`);
+          if (filteredPosts.length > 0) {
+            foundPosts = filteredPosts;
+            console.log('✅ Using JavaScript filter results');
           }
         }
       }
