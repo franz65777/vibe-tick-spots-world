@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -58,97 +57,54 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
     }
 
     try {
-      console.log('🔍 DEBUGGING POSTS SEARCH');
+      console.log('🔍 DEBUGGING POSTS SEARCH - COMPREHENSIVE APPROACH');
       console.log('🔍 Place object:', JSON.stringify(place, null, 2));
       console.log('🔍 Looking for posts with place ID:', place.id);
       console.log('🔍 Looking for posts with place name:', place.name);
 
-      // STEP 1: Get ALL posts first to see what we're working with
-      console.log('📊 STEP 1: Getting ALL posts to debug');
-      const { data: allPosts, error: allPostsError } = await supabase
-        .from('posts')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (allPostsError) {
-        console.error('❌ Error getting all posts:', allPostsError);
-      } else {
-        console.log(`📊 TOTAL POSTS IN DATABASE: ${allPosts?.length || 0}`);
-        
-        // Log each post's location info
-        allPosts?.forEach((post, index) => {
-          console.log(`📝 Post ${index + 1}:`, {
-            id: post.id,
-            location_id: post.location_id,
-            metadata: post.metadata,
-            created_at: post.created_at
-          });
-        });
-      }
-
-      // STEP 2: Try direct location_id match
-      console.log('🎯 STEP 2: Direct location_id search');
-      const { data: directPosts, error: directError } = await supabase
+      // CRITICAL FIX: Use the place.id (which is actually the location_id) directly
+      console.log('🎯 DIRECT SEARCH: Getting ALL posts for location_id:', place.id);
+      
+      const { data: locationPosts, error: locationError } = await supabase
         .from('posts')
         .select('*')
         .eq('location_id', place.id)
         .order('created_at', { ascending: false });
 
-      let foundPosts: Post[] = [];
-
-      if (directError) {
-        console.error('❌ Direct search error:', directError);
-      } else {
-        console.log(`🎯 Direct search found: ${directPosts?.length || 0} posts`);
-        if (directPosts && directPosts.length > 0) {
-          foundPosts = directPosts;
-          console.log('✅ Using direct search results');
-        }
+      if (locationError) {
+        console.error('❌ Error in direct location search:', locationError);
+        throw locationError;
       }
 
-      // STEP 3: If no direct matches, search by place name in metadata
-      if (foundPosts.length === 0) {
-        console.log('🔍 STEP 3: Searching metadata for place name');
+      console.log(`🎯 DIRECT SEARCH RESULT: Found ${locationPosts?.length || 0} posts`);
+      
+      if (locationPosts && locationPosts.length > 0) {
+        locationPosts.forEach((post, index) => {
+          console.log(`📝 Post ${index + 1}: ID=${post.id}, location_id=${post.location_id}, created_at=${post.created_at}`);
+        });
         
+        setPosts(locationPosts);
+        console.log(`✅ SUCCESS: Displaying ${locationPosts.length} posts for location`);
+      } else {
+        console.log('❌ No posts found with direct location_id match');
+        console.log('🔍 Trying alternative search methods...');
+        
+        // Fallback: Search by metadata if direct search fails
         const { data: metadataPosts, error: metadataError } = await supabase
           .from('posts')
           .select('*')
-          .contains('metadata', { place_name: place.name })
           .order('created_at', { ascending: false });
 
         if (metadataError) {
           console.error('❌ Metadata search error:', metadataError);
+          setPosts([]);
         } else {
-          console.log(`🔍 Metadata search found: ${metadataPosts?.length || 0} posts`);
-          if (metadataPosts && metadataPosts.length > 0) {
-            foundPosts = metadataPosts;
-            console.log('✅ Using metadata search results');
-          }
-        }
-      }
-
-      // STEP 4: If still no matches, try broader metadata search with proper type handling
-      if (foundPosts.length === 0) {
-        console.log('🔍 STEP 4: Broader metadata search');
-        
-        // Get all posts and filter in JavaScript for debugging
-        const { data: allPostsForFilter, error: filterError } = await supabase
-          .from('posts')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (filterError) {
-          console.error('❌ Filter search error:', filterError);
-        } else {
-          console.log(`🔍 Filter search checking: ${allPostsForFilter?.length || 0} posts`);
-          
-          const filteredPosts = allPostsForFilter?.filter(post => {
+          const filteredPosts = metadataPosts?.filter(post => {
             if (!post.metadata || typeof post.metadata !== 'object') return false;
             
             const metadata = post.metadata as Record<string, any>;
             const searchTerm = place.name.toLowerCase();
             
-            // Check various metadata fields with proper type checking
             const matchesPlaceName = metadata.place_name && 
               typeof metadata.place_name === 'string' &&
               metadata.place_name.toLowerCase().includes(searchTerm);
@@ -164,22 +120,10 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
             return matchesPlaceName || matchesLocationName || matchesName;
           }) || [];
 
-          console.log(`🔍 JavaScript filter found: ${filteredPosts.length} posts`);
-          if (filteredPosts.length > 0) {
-            foundPosts = filteredPosts;
-            console.log('✅ Using JavaScript filter results');
-          }
+          console.log(`🔍 Metadata search found: ${filteredPosts.length} posts`);
+          setPosts(filteredPosts);
         }
       }
-
-      console.log(`🎯 FINAL RESULT: Found ${foundPosts.length} posts for location`);
-      
-      if (foundPosts.length === 0) {
-        console.log('❌ NO POSTS FOUND - This suggests a data linking issue');
-        console.log('💡 Check if posts are being saved with the correct location_id or metadata');
-      }
-
-      setPosts(foundPosts);
 
     } catch (error) {
       console.error('❌ CRITICAL ERROR loading location posts:', error);
