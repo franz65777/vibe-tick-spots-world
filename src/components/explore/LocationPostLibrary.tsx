@@ -38,6 +38,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
   const [loading, setLoading] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [debugMode, setDebugMode] = useState(true); // Enable debug mode
 
   useEffect(() => {
     if (isOpen && place) {
@@ -59,9 +60,12 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
     }
 
     try {
-      console.log('🔍 SIMPLE STRATEGY: Loading posts for place:', place);
-      console.log('🔍 Place ID:', place.id);
-      console.log('🔍 Place name:', place.name);
+      console.log('🚀 NEW STRATEGY: Starting fresh approach');
+      console.log('🔍 Target place:', {
+        id: place.id,
+        name: place.name,
+        google_place_id: place.google_place_id
+      });
 
       // Get ALL posts from the database
       const { data: allPosts, error } = await supabase
@@ -70,12 +74,12 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('❌ Error fetching posts:', error);
+        console.error('❌ Database error:', error);
         setPosts([]);
         return;
       }
 
-      console.log(`📊 Total posts in database: ${allPosts?.length || 0}`);
+      console.log(`📊 TOTAL POSTS IN DATABASE: ${allPosts?.length || 0}`);
 
       if (!allPosts || allPosts.length === 0) {
         console.log('📭 No posts found in database');
@@ -83,66 +87,67 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
         return;
       }
 
-      // Log all posts for debugging
+      // Log every single post for debugging
+      console.log('🔍 ANALYZING ALL POSTS:');
       allPosts.forEach((post, index) => {
-        console.log(`📝 Post ${index + 1}:`, {
+        console.log(`POST ${index + 1}:`, {
           id: post.id,
           location_id: post.location_id,
+          caption: post.caption,
           metadata: post.metadata,
-          caption: post.caption?.substring(0, 50) + '...'
+          created_at: post.created_at
         });
       });
 
-      // Filter posts that match our location
-      const matchingPosts = allPosts.filter(post => {
-        // Strategy 1: Direct location_id match
-        if (post.location_id === place.id) {
-          console.log(`✅ Direct match found: Post ${post.id} matches location_id ${place.id}`);
-          return true;
-        }
+      let matchingPosts: Post[] = [];
 
-        // Strategy 2: Check if metadata contains location information
-        if (post.metadata && typeof post.metadata === 'object') {
-          const metadata = post.metadata as Record<string, any>;
-          
-          // Check for place name in various metadata fields
+      if (debugMode) {
+        // DEBUG MODE: Show ALL posts to see what we're working with
+        console.log('🐛 DEBUG MODE: Showing ALL posts');
+        matchingPosts = allPosts;
+      } else {
+        // NORMAL MODE: Filter posts
+        console.log('🎯 FILTERING MODE: Looking for matches...');
+        
+        matchingPosts = allPosts.filter(post => {
+          // Strategy 1: Direct location_id match
+          if (post.location_id === place.id) {
+            console.log(`✅ MATCH by location_id: ${post.id}`);
+            return true;
+          }
+
+          // Strategy 2: Google Place ID match (if available)
+          if (place.google_place_id && post.metadata?.google_place_id === place.google_place_id) {
+            console.log(`✅ MATCH by google_place_id: ${post.id}`);
+            return true;
+          }
+
+          // Strategy 3: Name matching in metadata
           const placeName = place.name?.toLowerCase();
-          if (placeName) {
-            if (metadata.place_name && typeof metadata.place_name === 'string' && 
-                metadata.place_name.toLowerCase().includes(placeName)) {
-              console.log(`✅ Metadata place_name match: ${metadata.place_name} contains ${placeName}`);
-              return true;
-            }
-            
-            if (metadata.location_name && typeof metadata.location_name === 'string' && 
-                metadata.location_name.toLowerCase().includes(placeName)) {
-              console.log(`✅ Metadata location_name match: ${metadata.location_name} contains ${placeName}`);
-              return true;
-            }
-            
-            if (metadata.name && typeof metadata.name === 'string' && 
-                metadata.name.toLowerCase().includes(placeName)) {
-              console.log(`✅ Metadata name match: ${metadata.name} contains ${placeName}`);
-              return true;
+          if (placeName && post.metadata) {
+            const metadataKeys = ['place_name', 'location_name', 'name'];
+            for (const key of metadataKeys) {
+              if (post.metadata[key] && 
+                  typeof post.metadata[key] === 'string' && 
+                  post.metadata[key].toLowerCase().includes(placeName)) {
+                console.log(`✅ MATCH by metadata.${key}: ${post.id}`);
+                return true;
+              }
             }
           }
-        }
 
-        return false;
-      });
-
-      console.log(`🎯 RESULT: Found ${matchingPosts.length} matching posts for location "${place.name}"`);
-      
-      if (matchingPosts.length > 0) {
-        matchingPosts.forEach((post, index) => {
-          console.log(`📌 Matching Post ${index + 1}: ID=${post.id}, location_id=${post.location_id}`);
+          console.log(`❌ NO MATCH: ${post.id}`);
+          return false;
         });
       }
+
+      console.log(`🎯 FINAL RESULT: ${matchingPosts.length} posts selected`);
+      console.log('📝 Selected post IDs:', matchingPosts.map(p => p.id));
 
       setPosts(matchingPosts);
 
     } catch (error) {
-      console.error('❌ CRITICAL ERROR loading location posts:', error);
+      console.error('❌ CRITICAL ERROR:', error);
       setPosts([]);
     } finally {
       setLoading(false);
@@ -170,11 +175,16 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
     loadLocationPosts(true);
   };
 
+  const toggleDebugMode = () => {
+    setDebugMode(!debugMode);
+    loadLocationPosts(true);
+  };
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
-          {/* Compact Header */}
+          {/* Header */}
           <div className="sticky top-0 z-10 bg-white border-b border-gray-100 p-3">
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">
@@ -184,12 +194,22 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
                 <div className="flex items-center gap-2 text-xs text-gray-600">
                   <MapPin className="w-3 h-3 text-gray-400" />
                   <span>{place?.city || place?.address || 'Unknown location'}</span>
-                  <Badge className={`${getCategoryColor(place?.category || '')} bg-gray-100 text-xs px-2 py-0.5 rounded-md border-0 ml-1`}>
-                    {place?.category?.charAt(0).toUpperCase() + place?.category?.slice(1) || 'Place'}
-                  </Badge>
+                  {debugMode && (
+                    <Badge className="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-md border-0 ml-1">
+                      DEBUG MODE
+                    </Badge>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-1">
+                <button
+                  onClick={toggleDebugMode}
+                  className={`p-1.5 rounded-full transition-colors text-xs px-2 py-1 ${
+                    debugMode ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  {debugMode ? 'EXIT DEBUG' : 'DEBUG'}
+                </button>
                 <button
                   onClick={handleRefresh}
                   disabled={refreshing}
@@ -207,7 +227,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
             </div>
           </div>
 
-          {/* Posts Grid Content */}
+          {/* Content */}
           <div className="flex-1 overflow-y-auto p-3">
             {loading ? (
               <div className="flex justify-center py-16">
@@ -218,8 +238,10 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
                 <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
                   <Users className="w-6 h-6 text-gray-400" />
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-1">No posts yet</h3>
-                <p className="text-gray-500 text-sm mb-3">Be the first to post about this spot!</p>
+                <h3 className="font-semibold text-gray-900 mb-1">No posts found</h3>
+                <p className="text-gray-500 text-sm mb-3">
+                  {debugMode ? 'No posts in database' : 'No posts match this location'}
+                </p>
                 <Button
                   onClick={handleRefresh}
                   variant="outline"
@@ -234,10 +256,13 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-xs text-gray-600 mb-3">
                   <Calendar className="w-3 h-3" />
-                  <span className="font-medium">{posts.length} post{posts.length !== 1 ? 's' : ''}</span>
+                  <span className="font-medium">
+                    {posts.length} post{posts.length !== 1 ? 's' : ''} 
+                    {debugMode ? ' (ALL POSTS - DEBUG MODE)' : ` for ${place.name}`}
+                  </span>
                 </div>
                 
-                {/* Compact Instagram-style Grid */}
+                {/* Posts Grid */}
                 <div className="grid grid-cols-3 gap-0.5">
                   {posts.map((post) => (
                     <div 
@@ -256,6 +281,13 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
                             e.currentTarget.style.display = 'none';
                           }}
                         />
+                      )}
+                      
+                      {/* Debug info overlay */}
+                      {debugMode && (
+                        <div className="absolute top-1 left-1 bg-black/70 text-white px-1 py-0.5 rounded text-xs">
+                          ID: {post.id.slice(0, 8)}
+                        </div>
                       )}
                       
                       {/* Multiple images indicator */}
