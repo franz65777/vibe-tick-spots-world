@@ -57,72 +57,114 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
     }
 
     try {
-      console.log('🔍 DEBUGGING POSTS SEARCH - COMPREHENSIVE APPROACH');
+      console.log('🔍 DEBUGGING POSTS SEARCH - COMPREHENSIVE SEARCH');
       console.log('🔍 Place object:', JSON.stringify(place, null, 2));
-      console.log('🔍 Looking for posts with place ID:', place.id);
-      console.log('🔍 Looking for posts with place name:', place.name);
+      console.log('🔍 Place ID to search:', place.id);
+      console.log('🔍 Place name:', place.name);
+      console.log('🔍 Place google_place_id:', place.google_place_id);
 
-      // CRITICAL FIX: Use the place.id (which is actually the location_id) directly
-      console.log('🎯 DIRECT SEARCH: Getting ALL posts for location_id:', place.id);
-      
-      const { data: locationPosts, error: locationError } = await supabase
+      // STRATEGY 1: Search by location_id directly
+      console.log('🎯 STRATEGY 1: Direct location_id search');
+      const { data: directPosts, error: directError } = await supabase
         .from('posts')
         .select('*')
         .eq('location_id', place.id)
         .order('created_at', { ascending: false });
 
-      if (locationError) {
-        console.error('❌ Error in direct location search:', locationError);
-        throw locationError;
+      if (directError) {
+        console.error('❌ Direct search error:', directError);
+      } else {
+        console.log(`🎯 Direct search found: ${directPosts?.length || 0} posts`);
+        if (directPosts && directPosts.length > 0) {
+          directPosts.forEach((post, index) => {
+            console.log(`📝 Direct Post ${index + 1}: ID=${post.id}, location_id=${post.location_id}`);
+          });
+          setPosts(directPosts);
+          console.log(`✅ SUCCESS: Using direct search results - ${directPosts.length} posts`);
+          return;
+        }
       }
 
-      console.log(`🎯 DIRECT SEARCH RESULT: Found ${locationPosts?.length || 0} posts`);
-      
-      if (locationPosts && locationPosts.length > 0) {
-        locationPosts.forEach((post, index) => {
-          console.log(`📝 Post ${index + 1}: ID=${post.id}, location_id=${post.location_id}, created_at=${post.created_at}`);
-        });
+      // STRATEGY 2: Search by google_place_id if available
+      if (place.google_place_id) {
+        console.log('🎯 STRATEGY 2: Google Place ID search');
         
-        setPosts(locationPosts);
-        console.log(`✅ SUCCESS: Displaying ${locationPosts.length} posts for location`);
-      } else {
-        console.log('❌ No posts found with direct location_id match');
-        console.log('🔍 Trying alternative search methods...');
-        
-        // Fallback: Search by metadata if direct search fails
-        const { data: metadataPosts, error: metadataError } = await supabase
-          .from('posts')
-          .select('*')
-          .order('created_at', { ascending: false });
+        // First find the location by google_place_id
+        const { data: locationData, error: locationError } = await supabase
+          .from('locations')
+          .select('id')
+          .eq('google_place_id', place.google_place_id);
 
-        if (metadataError) {
-          console.error('❌ Metadata search error:', metadataError);
-          setPosts([]);
-        } else {
-          const filteredPosts = metadataPosts?.filter(post => {
-            if (!post.metadata || typeof post.metadata !== 'object') return false;
-            
-            const metadata = post.metadata as Record<string, any>;
-            const searchTerm = place.name.toLowerCase();
-            
-            const matchesPlaceName = metadata.place_name && 
-              typeof metadata.place_name === 'string' &&
-              metadata.place_name.toLowerCase().includes(searchTerm);
-            
-            const matchesLocationName = metadata.location_name && 
-              typeof metadata.location_name === 'string' &&
-              metadata.location_name.toLowerCase().includes(searchTerm);
-            
-            const matchesName = metadata.name && 
-              typeof metadata.name === 'string' &&
-              metadata.name.toLowerCase().includes(searchTerm);
-            
-            return matchesPlaceName || matchesLocationName || matchesName;
-          }) || [];
+        if (locationError) {
+          console.error('❌ Location lookup error:', locationError);
+        } else if (locationData && locationData.length > 0) {
+          console.log('🎯 Found locations with google_place_id:', locationData);
+          
+          // Get all location IDs that match this google_place_id
+          const locationIds = locationData.map(loc => loc.id);
+          
+          const { data: googlePlacePosts, error: googlePlaceError } = await supabase
+            .from('posts')
+            .select('*')
+            .in('location_id', locationIds)
+            .order('created_at', { ascending: false });
 
-          console.log(`🔍 Metadata search found: ${filteredPosts.length} posts`);
-          setPosts(filteredPosts);
+          if (googlePlaceError) {
+            console.error('❌ Google place posts error:', googlePlaceError);
+          } else {
+            console.log(`🎯 Google place search found: ${googlePlacePosts?.length || 0} posts`);
+            if (googlePlacePosts && googlePlacePosts.length > 0) {
+              googlePlacePosts.forEach((post, index) => {
+                console.log(`📝 Google Place Post ${index + 1}: ID=${post.id}, location_id=${post.location_id}`);
+              });
+              setPosts(googlePlacePosts);
+              console.log(`✅ SUCCESS: Using Google Place ID search results - ${googlePlacePosts.length} posts`);
+              return;
+            }
+          }
         }
+      }
+
+      // STRATEGY 3: Search by name matching in metadata
+      console.log('🎯 STRATEGY 3: Metadata name search');
+      const { data: allPosts, error: allPostsError } = await supabase
+        .from('posts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (allPostsError) {
+        console.error('❌ All posts search error:', allPostsError);
+        setPosts([]);
+      } else {
+        const searchTerm = place.name.toLowerCase();
+        const filteredPosts = allPosts?.filter(post => {
+          if (!post.metadata || typeof post.metadata !== 'object') return false;
+          
+          const metadata = post.metadata as Record<string, any>;
+          
+          const matchesPlaceName = metadata.place_name && 
+            typeof metadata.place_name === 'string' &&
+            metadata.place_name.toLowerCase().includes(searchTerm);
+          
+          const matchesLocationName = metadata.location_name && 
+            typeof metadata.location_name === 'string' &&
+            metadata.location_name.toLowerCase().includes(searchTerm);
+          
+          const matchesName = metadata.name && 
+            typeof metadata.name === 'string' &&
+            metadata.name.toLowerCase().includes(searchTerm);
+          
+          return matchesPlaceName || matchesLocationName || matchesName;
+        }) || [];
+
+        console.log(`🎯 Metadata search found: ${filteredPosts.length} posts`);
+        if (filteredPosts.length > 0) {
+          filteredPosts.forEach((post, index) => {
+            console.log(`📝 Metadata Post ${index + 1}: ID=${post.id}, metadata=${JSON.stringify(post.metadata)}`);
+          });
+        }
+        setPosts(filteredPosts);
+        console.log(`✅ FINAL RESULT: Using metadata search - ${filteredPosts.length} posts`);
       }
 
     } catch (error) {
