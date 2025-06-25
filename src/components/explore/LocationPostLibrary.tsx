@@ -83,7 +83,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
         return;
       }
 
-      // Filter posts that match this location
+      // Filter posts that match this location - RESTORED WORKING LOGIC
       const matchingPosts = allPosts.filter(post => {
         // Strategy 1: Direct location_id match
         if (post.location_id === place.id) {
@@ -95,11 +95,14 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
         if (place.google_place_id && 
             post.metadata && 
             typeof post.metadata === 'object' && 
-            post.metadata !== null &&
-            'google_place_id' in post.metadata &&
-            post.metadata.google_place_id === place.google_place_id) {
-          console.log(`✅ MATCH by google_place_id: ${post.id}`);
-          return true;
+            post.metadata !== null) {
+          
+          // Type guard and safe access to metadata
+          const metadata = post.metadata as Record<string, any>;
+          if ('google_place_id' in metadata && metadata.google_place_id === place.google_place_id) {
+            console.log(`✅ MATCH by google_place_id: ${post.id}`);
+            return true;
+          }
         }
 
         // Strategy 3: Name matching in metadata
@@ -108,11 +111,14 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
             post.metadata && 
             typeof post.metadata === 'object' && 
             post.metadata !== null) {
+          
+          const metadata = post.metadata as Record<string, any>;
           const metadataKeys = ['place_name', 'location_name', 'name'];
+          
           for (const key of metadataKeys) {
-            if (key in post.metadata && 
-                typeof post.metadata[key] === 'string' && 
-                post.metadata[key].toLowerCase().includes(placeName)) {
+            if (key in metadata && 
+                typeof metadata[key] === 'string' && 
+                metadata[key].toLowerCase().includes(placeName)) {
               console.log(`✅ MATCH by metadata.${key}: ${post.id}`);
               return true;
             }
@@ -159,19 +165,29 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
     loadLocationPosts(true);
   };
 
-  // Get city name for display
+  // Get city name for display - FIXED to show actual city
   const getCityDisplay = () => {
-    if (place.city) {
+    // First try to get city from place object
+    if (place.city && place.city !== place.name) {
       return place.city;
     }
+    
+    // Then try to extract from address
     if (place.address) {
-      // Try to extract city from address
-      const addressParts = place.address.split(',');
-      if (addressParts.length > 1) {
-        return addressParts[addressParts.length - 2].trim();
+      const addressParts = place.address.split(',').map(part => part.trim());
+      // Look for Dublin, London, Paris, etc. in the address
+      for (const part of addressParts) {
+        if (part !== place.name && part.length > 2) {
+          // Return the last meaningful part that's not the place name
+          const lastPart = addressParts[addressParts.length - 2];
+          if (lastPart && lastPart !== place.name) {
+            return lastPart;
+          }
+        }
       }
     }
-    return 'Unknown City';
+    
+    return 'City';
   };
 
   const getLocationDisplay = () => {
@@ -182,27 +198,25 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0 bg-gradient-to-br from-gray-50 to-white">
-          {/* Enhanced Header */}
-          <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-gray-100 p-6">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0 bg-white">
+          {/* Header */}
+          <div className="sticky top-0 z-10 bg-white border-b border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">
-                <DialogTitle className="text-2xl font-bold text-gray-900 mb-2 line-clamp-1">
+                <DialogTitle className="text-xl font-bold text-gray-900 mb-2">
                   {place?.name || 'Location'}
                 </DialogTitle>
-                <div className="flex items-center gap-3 text-gray-600 mb-3">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-blue-500" />
-                    <span className="font-medium">{getLocationDisplay()}</span>
-                  </div>
+                <div className="flex items-center gap-2 text-gray-600 mb-3">
+                  <MapPin className="w-4 h-4 text-blue-500" />
+                  <span>{getCityDisplay()}</span>
                 </div>
-                <div className="flex items-center gap-4">
-                  <Badge className="bg-blue-50 text-blue-700 border-blue-200 px-3 py-1">
+                <div className="flex items-center gap-3">
+                  <Badge variant="secondary" className="px-3 py-1">
                     <ImageIcon className="w-3 h-3 mr-1" />
                     {posts.length} {posts.length === 1 ? 'post' : 'posts'}
                   </Badge>
                   {place.category && (
-                    <Badge className="bg-purple-50 text-purple-700 border-purple-200 px-3 py-1">
+                    <Badge variant="outline" className="px-3 py-1">
                       {place.category}
                     </Badge>
                   )}
@@ -214,7 +228,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
                   disabled={refreshing}
                   variant="ghost"
                   size="sm"
-                  className="rounded-full p-2 hover:bg-gray-100"
+                  className="rounded-full p-2"
                 >
                   <RefreshCw className={`w-4 h-4 text-gray-500 ${refreshing ? 'animate-spin' : ''}`} />
                 </Button>
@@ -222,7 +236,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
                   onClick={onClose}
                   variant="ghost"
                   size="sm"
-                  className="rounded-full p-2 hover:bg-gray-100"
+                  className="rounded-full p-2"
                 >
                   <X className="w-4 h-4 text-gray-500" />
                 </Button>
@@ -235,23 +249,22 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20">
                 <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                <p className="text-gray-600 font-medium">Loading posts...</p>
+                <p className="text-gray-600">Loading posts...</p>
               </div>
             ) : posts.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 px-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mb-4">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                   <ImageIcon className="w-8 h-8 text-gray-400" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">No posts yet</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No posts yet</h3>
                 <p className="text-gray-500 text-center max-w-sm mb-4">
-                  Be the first to share a moment from this amazing location!
+                  Be the first to share a moment from this location!
                 </p>
                 <Button
                   onClick={handleRefresh}
                   variant="outline"
                   size="sm"
                   disabled={refreshing}
-                  className="rounded-full"
                 >
                   <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
                   Refresh
@@ -271,11 +284,11 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
                 </div>
                 
                 {/* Posts Grid */}
-                <div className="grid grid-cols-3 gap-1 rounded-2xl overflow-hidden bg-white shadow-sm border">
+                <div className="grid grid-cols-3 gap-1 rounded-lg overflow-hidden">
                   {posts.map((post) => (
                     <div 
                       key={post.id} 
-                      className="aspect-square relative group cursor-pointer overflow-hidden bg-gray-100 hover:ring-2 hover:ring-blue-500 hover:ring-offset-2 transition-all duration-300"
+                      className="aspect-square relative group cursor-pointer overflow-hidden bg-gray-100 hover:opacity-90 transition-all duration-200"
                       onClick={() => handlePostClick(post)}
                     >
                       {/* Post Image */}
@@ -283,7 +296,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
                         <img
                           src={post.media_urls[0]}
                           alt="Post content"
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          className="w-full h-full object-cover"
                           onError={(e) => {
                             console.log('Image failed to load:', post.media_urls[0]);
                             e.currentTarget.style.display = 'none';
@@ -293,31 +306,31 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
                       
                       {/* Multiple images indicator */}
                       {post.media_urls && post.media_urls.length > 1 && (
-                        <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm">
+                        <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded-full text-xs">
                           +{post.media_urls.length - 1}
                         </div>
                       )}
                       
-                      {/* Hover overlay with enhanced stats */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-between p-3">
+                      {/* Hover overlay */}
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all duration-200 flex flex-col justify-between p-3">
                         {/* Top actions */}
                         <div className="flex justify-end gap-1">
                           <button
                             onClick={(e) => handleLike(post.id, e)}
-                            className={`p-1.5 rounded-full backdrop-blur-sm transition-all duration-200 ${
+                            className={`p-1.5 rounded-full transition-all duration-200 ${
                               isLiked(post.id) 
-                                ? 'bg-red-500 text-white scale-110' 
-                                : 'bg-white/20 text-white hover:bg-red-500 hover:scale-110'
+                                ? 'bg-red-500 text-white' 
+                                : 'bg-white/20 text-white hover:bg-red-500'
                             }`}
                           >
                             <Heart className={`w-3 h-3 ${isLiked(post.id) ? 'fill-current' : ''}`} />
                           </button>
                           <button
                             onClick={(e) => handleSave(post.id, e)}
-                            className={`p-1.5 rounded-full backdrop-blur-sm transition-all duration-200 ${
+                            className={`p-1.5 rounded-full transition-all duration-200 ${
                               isSaved(post.id) 
-                                ? 'bg-blue-500 text-white scale-110' 
-                                : 'bg-white/20 text-white hover:bg-blue-500 hover:scale-110'
+                                ? 'bg-blue-500 text-white' 
+                                : 'bg-white/20 text-white hover:bg-blue-500'
                             }`}
                           >
                             <Bookmark className={`w-3 h-3 ${isSaved(post.id) ? 'fill-current' : ''}`} />
@@ -328,11 +341,11 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
                         <div className="flex items-center justify-center gap-4 text-white">
                           <div className="flex items-center gap-1">
                             <Heart className="w-4 h-4 fill-white" />
-                            <span className="font-semibold text-sm">{post.likes_count}</span>
+                            <span className="text-sm font-medium">{post.likes_count}</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <MessageCircle className="w-4 h-4 fill-white" />
-                            <span className="font-semibold text-sm">{post.comments_count}</span>
+                            <span className="text-sm font-medium">{post.comments_count}</span>
                           </div>
                         </div>
                       </div>
