@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -39,14 +40,15 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    if (isOpen && place?.id) {
+    if (isOpen && place) {
       loadLocationPosts();
     }
-  }, [isOpen, place?.id]);
+  }, [isOpen, place]);
 
   const loadLocationPosts = async (forceRefresh = false) => {
-    if (!place?.id) {
-      console.log('❌ No place ID provided');
+    if (!place) {
+      console.log('❌ No place provided');
+      setPosts([]);
       return;
     }
 
@@ -57,115 +59,87 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
     }
 
     try {
-      console.log('🔍 DEBUGGING POSTS SEARCH - COMPREHENSIVE SEARCH');
-      console.log('🔍 Place object:', JSON.stringify(place, null, 2));
-      console.log('🔍 Place ID to search:', place.id);
+      console.log('🔍 SIMPLE STRATEGY: Loading posts for place:', place);
+      console.log('🔍 Place ID:', place.id);
       console.log('🔍 Place name:', place.name);
-      console.log('🔍 Place google_place_id:', place.google_place_id);
 
-      // STRATEGY 1: Search by location_id directly
-      console.log('🎯 STRATEGY 1: Direct location_id search');
-      const { data: directPosts, error: directError } = await supabase
+      // Get ALL posts from the database
+      const { data: allPosts, error } = await supabase
         .from('posts')
         .select('*')
-        .eq('location_id', place.id)
         .order('created_at', { ascending: false });
 
-      if (directError) {
-        console.error('❌ Direct search error:', directError);
-      } else {
-        console.log(`🎯 Direct search found: ${directPosts?.length || 0} posts`);
-        if (directPosts && directPosts.length > 0) {
-          directPosts.forEach((post, index) => {
-            console.log(`📝 Direct Post ${index + 1}: ID=${post.id}, location_id=${post.location_id}`);
-          });
-          setPosts(directPosts);
-          console.log(`✅ SUCCESS: Using direct search results - ${directPosts.length} posts`);
-          return;
-        }
+      if (error) {
+        console.error('❌ Error fetching posts:', error);
+        setPosts([]);
+        return;
       }
 
-      // STRATEGY 2: Search by google_place_id if available
-      if (place.google_place_id) {
-        console.log('🎯 STRATEGY 2: Google Place ID search');
-        
-        // First find the location by google_place_id
-        const { data: locationData, error: locationError } = await supabase
-          .from('locations')
-          .select('id')
-          .eq('google_place_id', place.google_place_id);
+      console.log(`📊 Total posts in database: ${allPosts?.length || 0}`);
 
-        if (locationError) {
-          console.error('❌ Location lookup error:', locationError);
-        } else if (locationData && locationData.length > 0) {
-          console.log('🎯 Found locations with google_place_id:', locationData);
-          
-          // Get all location IDs that match this google_place_id
-          const locationIds = locationData.map(loc => loc.id);
-          
-          const { data: googlePlacePosts, error: googlePlaceError } = await supabase
-            .from('posts')
-            .select('*')
-            .in('location_id', locationIds)
-            .order('created_at', { ascending: false });
+      if (!allPosts || allPosts.length === 0) {
+        console.log('📭 No posts found in database');
+        setPosts([]);
+        return;
+      }
 
-          if (googlePlaceError) {
-            console.error('❌ Google place posts error:', googlePlaceError);
-          } else {
-            console.log(`🎯 Google place search found: ${googlePlacePosts?.length || 0} posts`);
-            if (googlePlacePosts && googlePlacePosts.length > 0) {
-              googlePlacePosts.forEach((post, index) => {
-                console.log(`📝 Google Place Post ${index + 1}: ID=${post.id}, location_id=${post.location_id}`);
-              });
-              setPosts(googlePlacePosts);
-              console.log(`✅ SUCCESS: Using Google Place ID search results - ${googlePlacePosts.length} posts`);
-              return;
+      // Log all posts for debugging
+      allPosts.forEach((post, index) => {
+        console.log(`📝 Post ${index + 1}:`, {
+          id: post.id,
+          location_id: post.location_id,
+          metadata: post.metadata,
+          caption: post.caption?.substring(0, 50) + '...'
+        });
+      });
+
+      // Filter posts that match our location
+      const matchingPosts = allPosts.filter(post => {
+        // Strategy 1: Direct location_id match
+        if (post.location_id === place.id) {
+          console.log(`✅ Direct match found: Post ${post.id} matches location_id ${place.id}`);
+          return true;
+        }
+
+        // Strategy 2: Check if metadata contains location information
+        if (post.metadata && typeof post.metadata === 'object') {
+          const metadata = post.metadata as Record<string, any>;
+          
+          // Check for place name in various metadata fields
+          const placeName = place.name?.toLowerCase();
+          if (placeName) {
+            if (metadata.place_name && typeof metadata.place_name === 'string' && 
+                metadata.place_name.toLowerCase().includes(placeName)) {
+              console.log(`✅ Metadata place_name match: ${metadata.place_name} contains ${placeName}`);
+              return true;
+            }
+            
+            if (metadata.location_name && typeof metadata.location_name === 'string' && 
+                metadata.location_name.toLowerCase().includes(placeName)) {
+              console.log(`✅ Metadata location_name match: ${metadata.location_name} contains ${placeName}`);
+              return true;
+            }
+            
+            if (metadata.name && typeof metadata.name === 'string' && 
+                metadata.name.toLowerCase().includes(placeName)) {
+              console.log(`✅ Metadata name match: ${metadata.name} contains ${placeName}`);
+              return true;
             }
           }
         }
+
+        return false;
+      });
+
+      console.log(`🎯 RESULT: Found ${matchingPosts.length} matching posts for location "${place.name}"`);
+      
+      if (matchingPosts.length > 0) {
+        matchingPosts.forEach((post, index) => {
+          console.log(`📌 Matching Post ${index + 1}: ID=${post.id}, location_id=${post.location_id}`);
+        });
       }
 
-      // STRATEGY 3: Search by name matching in metadata
-      console.log('🎯 STRATEGY 3: Metadata name search');
-      const { data: allPosts, error: allPostsError } = await supabase
-        .from('posts')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (allPostsError) {
-        console.error('❌ All posts search error:', allPostsError);
-        setPosts([]);
-      } else {
-        const searchTerm = place.name.toLowerCase();
-        const filteredPosts = allPosts?.filter(post => {
-          if (!post.metadata || typeof post.metadata !== 'object') return false;
-          
-          const metadata = post.metadata as Record<string, any>;
-          
-          const matchesPlaceName = metadata.place_name && 
-            typeof metadata.place_name === 'string' &&
-            metadata.place_name.toLowerCase().includes(searchTerm);
-          
-          const matchesLocationName = metadata.location_name && 
-            typeof metadata.location_name === 'string' &&
-            metadata.location_name.toLowerCase().includes(searchTerm);
-          
-          const matchesName = metadata.name && 
-            typeof metadata.name === 'string' &&
-            metadata.name.toLowerCase().includes(searchTerm);
-          
-          return matchesPlaceName || matchesLocationName || matchesName;
-        }) || [];
-
-        console.log(`🎯 Metadata search found: ${filteredPosts.length} posts`);
-        if (filteredPosts.length > 0) {
-          filteredPosts.forEach((post, index) => {
-            console.log(`📝 Metadata Post ${index + 1}: ID=${post.id}, metadata=${JSON.stringify(post.metadata)}`);
-          });
-        }
-        setPosts(filteredPosts);
-        console.log(`✅ FINAL RESULT: Using metadata search - ${filteredPosts.length} posts`);
-      }
+      setPosts(matchingPosts);
 
     } catch (error) {
       console.error('❌ CRITICAL ERROR loading location posts:', error);
