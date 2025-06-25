@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -117,17 +116,25 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
           }
 
           // Strategy 2: Google Place ID match (if available)
-          if (place.google_place_id && post.metadata?.google_place_id === place.google_place_id) {
+          if (place.google_place_id && 
+              post.metadata && 
+              typeof post.metadata === 'object' && 
+              post.metadata !== null &&
+              'google_place_id' in post.metadata &&
+              post.metadata.google_place_id === place.google_place_id) {
             console.log(`✅ MATCH by google_place_id: ${post.id}`);
             return true;
           }
 
           // Strategy 3: Name matching in metadata
           const placeName = place.name?.toLowerCase();
-          if (placeName && post.metadata) {
+          if (placeName && 
+              post.metadata && 
+              typeof post.metadata === 'object' && 
+              post.metadata !== null) {
             const metadataKeys = ['place_name', 'location_name', 'name'];
             for (const key of metadataKeys) {
-              if (post.metadata[key] && 
+              if (key in post.metadata && 
                   typeof post.metadata[key] === 'string' && 
                   post.metadata[key].toLowerCase().includes(placeName)) {
                 console.log(`✅ MATCH by metadata.${key}: ${post.id}`);
