@@ -288,11 +288,12 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
         place={place}
       />
 
-      <LocationPostLibrary
-        isOpen={libraryModalOpen}
-        onClose={() => setLibraryModalOpen(false)}
-        place={place}
-      />
+      {libraryModalOpen && (
+        <LocationPostLibrary
+          onClose={() => setLibraryModalOpen(false)}
+          place={place}
+        />
+      )}
     </>
   );
 };

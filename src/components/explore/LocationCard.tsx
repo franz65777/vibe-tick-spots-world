@@ -231,11 +231,12 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
         place={place}
       />
 
-      <LocationPostLibrary
-        isOpen={libraryModalOpen}
-        onClose={() => setLibraryModalOpen(false)}
-        place={place}
-      />
+      {libraryModalOpen && (
+        <LocationPostLibrary
+          onClose={() => setLibraryModalOpen(false)}
+          place={place}
+        />
+      )}
     </>
   );
 };
