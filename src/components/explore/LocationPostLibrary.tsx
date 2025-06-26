@@ -1,364 +1,380 @@
+
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
+import { ChevronLeft, MapPin, Calendar, Users, Heart, MessageCircle, Share2, Bookmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { MapPin, X, Calendar, Users, Heart, MessageCircle, Bookmark, Share2, RefreshCw } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { formatDistanceToNow } from 'date-fns';
-import { getCategoryColor } from '@/utils/categoryIcons';
-import { usePostEngagement } from '@/hooks/usePostEngagement';
-import PostDetailModal from './PostDetailModal';
 
-interface LocationPostLibraryProps {
-  isOpen: boolean;
-  onClose: () => void;
-  place: any;
-}
-
-interface Post {
+interface LocationPost {
   id: string;
   user_id: string;
-  caption?: string;
+  caption: string | null;
   media_urls: string[];
-  created_at: string;
   likes_count: number;
   comments_count: number;
   saves_count: number;
-  location_id?: string;
-  metadata?: any;
+  created_at: string;
+  metadata: any;
+  profiles?: {
+    username: string;
+    full_name: string;
+    avatar_url: string;
+  };
 }
 
-const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProps) => {
+interface LocationPostLibraryProps {
+  place: {
+    id: string;
+    name: string;
+    category?: string;
+    address?: string;
+    city?: string;
+    google_place_id?: string;
+    coordinates?: { lat: number; lng: number };
+    postCount?: number;
+  };
+  onBack: () => void;
+}
+
+const LocationPostLibrary = ({ place, onBack }: LocationPostLibraryProps) => {
   const { user } = useAuth();
-  const { isLiked, isSaved, toggleLike, toggleSave } = usePostEngagement();
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const [debugMode, setDebugMode] = useState(true); // Enable debug mode
+  const [posts, setPosts] = useState<LocationPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedPost, setSelectedPost] = useState<LocationPost | null>(null);
+  const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
+  const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
+
+  // Extract city from address if not provided
+  const displayCity = place.city || place.address?.split(',')[1]?.trim() || 'Unknown City';
 
   useEffect(() => {
-    if (isOpen && place) {
-      loadLocationPosts();
+    fetchLocationPosts();
+    if (user) {
+      fetchUserInteractions();
     }
-  }, [isOpen, place]);
+  }, [place.id, user]);
 
-  const loadLocationPosts = async (forceRefresh = false) => {
-    if (!place) {
-      console.log('❌ No place provided');
-      setPosts([]);
-      return;
-    }
-
-    if (forceRefresh) {
-      setRefreshing(true);
-    } else {
-      setLoading(true);
-    }
-
+  const fetchLocationPosts = async () => {
     try {
-      console.log('🚀 NEW STRATEGY: Starting fresh approach');
-      console.log('🔍 Target place:', {
-        id: place.id,
-        name: place.name,
-        google_place_id: place.google_place_id
-      });
-
-      // Get ALL posts from the database
-      const { data: allPosts, error } = await supabase
+      setLoading(true);
+      
+      const { data: posts, error } = await supabase
         .from('posts')
-        .select('*')
+        .select(`
+          id,
+          user_id,
+          caption,
+          media_urls,
+          likes_count,
+          comments_count,
+          saves_count,
+          created_at,
+          metadata,
+          profiles:user_id (
+            username,
+            full_name,
+            avatar_url
+          )
+        `)
+        .eq('location_id', place.id)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('❌ Database error:', error);
-        setPosts([]);
-        return;
-      }
+      if (error) throw error;
 
-      console.log(`📊 TOTAL POSTS IN DATABASE: ${allPosts?.length || 0}`);
-
-      if (!allPosts || allPosts.length === 0) {
-        console.log('📭 No posts found in database');
-        setPosts([]);
-        return;
-      }
-
-      // Log every single post for debugging
-      console.log('🔍 ANALYZING ALL POSTS:');
-      allPosts.forEach((post, index) => {
-        console.log(`POST ${index + 1}:`, {
-          id: post.id,
-          location_id: post.location_id,
-          caption: post.caption,
-          metadata: post.metadata,
-          created_at: post.created_at
-        });
-      });
-
-      let matchingPosts: Post[] = [];
-
-      if (debugMode) {
-        // DEBUG MODE: Show ALL posts to see what we're working with
-        console.log('🐛 DEBUG MODE: Showing ALL posts');
-        matchingPosts = allPosts;
-      } else {
-        // NORMAL MODE: Filter posts
-        console.log('🎯 FILTERING MODE: Looking for matches...');
-        
-        matchingPosts = allPosts.filter(post => {
-          // Strategy 1: Direct location_id match
-          if (post.location_id === place.id) {
-            console.log(`✅ MATCH by location_id: ${post.id}`);
-            return true;
-          }
-
-          // Strategy 2: Google Place ID match (if available)
-          if (place.google_place_id && 
-              post.metadata && 
-              typeof post.metadata === 'object' && 
-              post.metadata !== null &&
-              'google_place_id' in post.metadata &&
-              post.metadata.google_place_id === place.google_place_id) {
-            console.log(`✅ MATCH by google_place_id: ${post.id}`);
-            return true;
-          }
-
-          // Strategy 3: Name matching in metadata
-          const placeName = place.name?.toLowerCase();
-          if (placeName && 
-              post.metadata && 
-              typeof post.metadata === 'object' && 
-              post.metadata !== null) {
-            const metadataKeys = ['place_name', 'location_name', 'name'];
-            for (const key of metadataKeys) {
-              if (key in post.metadata && 
-                  typeof post.metadata[key] === 'string' && 
-                  post.metadata[key].toLowerCase().includes(placeName)) {
-                console.log(`✅ MATCH by metadata.${key}: ${post.id}`);
-                return true;
-              }
-            }
-          }
-
-          console.log(`❌ NO MATCH: ${post.id}`);
-          return false;
-        });
-      }
-
-      console.log(`🎯 FINAL RESULT: ${matchingPosts.length} posts selected`);
-      console.log('📝 Selected post IDs:', matchingPosts.map(p => p.id));
-
-      setPosts(matchingPosts);
-
+      console.log(`📍 Loaded ${posts?.length || 0} posts for ${place.name}`);
+      setPosts(posts || []);
     } catch (error) {
-      console.error('❌ CRITICAL ERROR:', error);
+      console.error('❌ Error fetching location posts:', error);
       setPosts([]);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   };
 
-  const handlePostClick = (post: Post) => {
-    setSelectedPost(post);
+  const fetchUserInteractions = async () => {
+    if (!user) return;
+
+    try {
+      // Fetch user's likes
+      const { data: likes } = await supabase
+        .from('post_likes')
+        .select('post_id')
+        .eq('user_id', user.id);
+
+      // Fetch user's saves
+      const { data: saves } = await supabase
+        .from('post_saves')
+        .select('post_id')
+        .eq('user_id', user.id);
+
+      setLikedPosts(new Set(likes?.map(l => l.post_id) || []));
+      setSavedPosts(new Set(saves?.map(s => s.post_id) || []));
+    } catch (error) {
+      console.error('Error fetching user interactions:', error);
+    }
   };
 
-  const handleLike = async (postId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    await toggleLike(postId);
-    loadLocationPosts(true);
+  const handleLike = async (postId: string) => {
+    if (!user) return;
+
+    try {
+      const isLiked = likedPosts.has(postId);
+      
+      if (isLiked) {
+        await supabase
+          .from('post_likes')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('post_id', postId);
+        
+        setLikedPosts(prev => {
+          const next = new Set(prev);
+          next.delete(postId);
+          return next;
+        });
+      } else {
+        await supabase
+          .from('post_likes')
+          .insert({ user_id: user.id, post_id: postId });
+        
+        setLikedPosts(prev => new Set([...prev, postId]));
+      }
+
+      // Update post likes count in UI
+      setPosts(prev => prev.map(post => 
+        post.id === postId 
+          ? { ...post, likes_count: post.likes_count + (isLiked ? -1 : 1) }
+          : post
+      ));
+    } catch (error) {
+      console.error('Error toggling like:', error);
+    }
   };
 
-  const handleSave = async (postId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    await toggleSave(postId);
-    loadLocationPosts(true);
+  const handleSave = async (postId: string) => {
+    if (!user) return;
+
+    try {
+      const isSaved = savedPosts.has(postId);
+      
+      if (isSaved) {
+        await supabase
+          .from('post_saves')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('post_id', postId);
+        
+        setSavedPosts(prev => {
+          const next = new Set(prev);
+          next.delete(postId);
+          return next;
+        });
+      } else {
+        await supabase
+          .from('post_saves')
+          .insert({ user_id: user.id, post_id: postId });
+        
+        setSavedPosts(prev => new Set([...prev, postId]));
+      }
+
+      // Update post saves count in UI
+      setPosts(prev => prev.map(post => 
+        post.id === postId 
+          ? { ...post, saves_count: post.saves_count + (isSaved ? -1 : 1) }
+          : post
+      ));
+    } catch (error) {
+      console.error('Error toggling save:', error);
+    }
   };
 
-  const handleRefresh = () => {
-    loadLocationPosts(true);
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
   };
 
-  const toggleDebugMode = () => {
-    setDebugMode(!debugMode);
-    loadLocationPosts(true);
-  };
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-white z-50 flex items-center justify-center">
+        <div className="flex items-center gap-3">
+          <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-gray-600">Loading posts...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
-          {/* Header */}
-          <div className="sticky top-0 z-10 bg-white border-b border-gray-100 p-3">
-            <div className="flex items-center justify-between">
-              <div className="flex-1 min-w-0">
-                <DialogTitle className="text-lg font-bold text-gray-900 mb-1 line-clamp-1">
-                  {place?.name || 'Location'}
-                </DialogTitle>
-                <div className="flex items-center gap-2 text-xs text-gray-600">
-                  <MapPin className="w-3 h-3 text-gray-400" />
-                  <span>{place?.city || place?.address || 'Unknown location'}</span>
-                  {debugMode && (
-                    <Badge className="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-md border-0 ml-1">
-                      DEBUG MODE
-                    </Badge>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={toggleDebugMode}
-                  className={`p-1.5 rounded-full transition-colors text-xs px-2 py-1 ${
-                    debugMode ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
-                  }`}
-                >
-                  {debugMode ? 'EXIT DEBUG' : 'DEBUG'}
-                </button>
-                <button
-                  onClick={handleRefresh}
-                  disabled={refreshing}
-                  className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <RefreshCw className={`w-4 h-4 text-gray-500 ${refreshing ? 'animate-spin' : ''}`} />
-                </button>
-                <button
-                  onClick={onClose}
-                  className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <X className="w-4 h-4 text-gray-500" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto p-3">
-            {loading ? (
-              <div className="flex justify-center py-16">
-                <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-              </div>
-            ) : posts.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Users className="w-6 h-6 text-gray-400" />
-                </div>
-                <h3 className="font-semibold text-gray-900 mb-1">No posts found</h3>
-                <p className="text-gray-500 text-sm mb-3">
-                  {debugMode ? 'No posts in database' : 'No posts match this location'}
-                </p>
-                <Button
-                  onClick={handleRefresh}
-                  variant="outline"
-                  size="sm"
-                  disabled={refreshing}
-                >
-                  <RefreshCw className={`w-3 h-3 mr-1 ${refreshing ? 'animate-spin' : ''}`} />
-                  Refresh
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-xs text-gray-600 mb-3">
-                  <Calendar className="w-3 h-3" />
-                  <span className="font-medium">
-                    {posts.length} post{posts.length !== 1 ? 's' : ''} 
-                    {debugMode ? ' (ALL POSTS - DEBUG MODE)' : ` for ${place.name}`}
-                  </span>
-                </div>
-                
-                {/* Posts Grid */}
-                <div className="grid grid-cols-3 gap-0.5">
-                  {posts.map((post) => (
-                    <div 
-                      key={post.id} 
-                      className="aspect-square relative group cursor-pointer overflow-hidden bg-gray-100"
-                      onClick={() => handlePostClick(post)}
-                    >
-                      {/* Post Image */}
-                      {post.media_urls && post.media_urls.length > 0 && (
-                        <img
-                          src={post.media_urls[0]}
-                          alt="Post content"
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          onError={(e) => {
-                            console.log('Image failed to load:', post.media_urls[0]);
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                      )}
-                      
-                      {/* Debug info overlay */}
-                      {debugMode && (
-                        <div className="absolute top-1 left-1 bg-black/70 text-white px-1 py-0.5 rounded text-xs">
-                          ID: {post.id.slice(0, 8)}
-                        </div>
-                      )}
-                      
-                      {/* Multiple images indicator */}
-                      {post.media_urls && post.media_urls.length > 1 && (
-                        <div className="absolute top-1 right-1 bg-black/70 text-white px-1.5 py-0.5 rounded-full text-xs font-medium">
-                          {post.media_urls.length}
-                        </div>
-                      )}
-                      
-                      {/* Hover overlay with stats */}
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                        <div className="flex items-center gap-3 text-white">
-                          <div className="flex items-center gap-1">
-                            <Heart className="w-4 h-4 fill-white" />
-                            <span className="font-semibold text-sm">{post.likes_count}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <MessageCircle className="w-4 h-4 fill-white" />
-                            <span className="font-semibold text-sm">{post.comments_count}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Quick action buttons */}
-                      <div className="absolute bottom-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <button
-                          onClick={(e) => handleLike(post.id, e)}
-                          className={`p-1 rounded-full backdrop-blur-sm transition-colors ${
-                            isLiked(post.id) 
-                              ? 'bg-red-500 text-white' 
-                              : 'bg-white/80 text-gray-700 hover:bg-red-500 hover:text-white'
-                          }`}
-                        >
-                          <Heart className={`w-2.5 h-2.5 ${isLiked(post.id) ? 'fill-current' : ''}`} />
-                        </button>
-                        <button
-                          onClick={(e) => handleSave(post.id, e)}
-                          className={`p-1 rounded-full backdrop-blur-sm transition-colors ${
-                            isSaved(post.id) 
-                              ? 'bg-blue-500 text-white' 
-                              : 'bg-white/80 text-gray-700 hover:bg-blue-500 hover:text-white'
-                          }`}
-                        >
-                          <Bookmark className={`w-2.5 h-2.5 ${isSaved(post.id) ? 'fill-current' : ''}`} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+    <div className="fixed inset-0 bg-white z-50 flex flex-col">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onBack}
+          className="p-2 hover:bg-gray-100 rounded-full"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </Button>
+        
+        <div className="flex-1">
+          <h1 className="font-semibold text-lg text-gray-900">{place.name}</h1>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <MapPin className="w-4 h-4" />
+            <span>{displayCity}</span>
+            {place.category && (
+              <>
+                <span>•</span>
+                <Badge variant="secondary" className="text-xs">
+                  {place.category}
+                </Badge>
+              </>
             )}
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
 
-      {/* Post Detail Modal */}
-      {selectedPost && (
-        <PostDetailModal
-          post={selectedPost}
-          isOpen={!!selectedPost}
-          onClose={() => setSelectedPost(null)}
-        />
-      )}
-    </>
+        <div className="text-right">
+          <div className="text-sm font-medium text-gray-900">
+            {posts.length} post{posts.length !== 1 ? 's' : ''}
+          </div>
+          <div className="text-xs text-gray-500">
+            <Users className="w-3 h-3 inline mr-1" />
+            {new Set(posts.map(p => p.user_id)).size} visitor{new Set(posts.map(p => p.user_id)).size !== 1 ? 's' : ''}
+          </div>
+        </div>
+      </div>
+
+      {/* Posts Grid */}
+      <div className="flex-1 overflow-y-auto bg-gray-50">
+        {posts.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-center px-8">
+            <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mb-4">
+              <MapPin className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No posts yet</h3>
+            <p className="text-gray-600 mb-6">Be the first to share your experience at {place.name}!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+            {posts.map((post) => (
+              <div key={post.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                {/* Post Image */}
+                {post.media_urls && post.media_urls.length > 0 && (
+                  <div className="aspect-square bg-gray-100 relative">
+                    <img
+                      src={post.media_urls[0]}
+                      alt="Post"
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                    {post.media_urls.length > 1 && (
+                      <div className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
+                        +{post.media_urls.length - 1}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Post Content */}
+                <div className="p-4">
+                  {/* User Info */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs font-medium">
+                        {post.profiles?.full_name?.[0] || post.profiles?.username?.[0] || 'U'}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm text-gray-900 truncate">
+                        {post.profiles?.full_name || post.profiles?.username || 'User'}
+                      </div>
+                      <div className="text-xs text-gray-500 flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {formatDate(post.created_at)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Caption */}
+                  {post.caption && (
+                    <p className="text-sm text-gray-700 mb-3 line-clamp-2">
+                      {post.caption}
+                    </p>
+                  )}
+
+                  {/* Engagement Stats */}
+                  <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                    <div className="flex items-center gap-3">
+                      <span className="flex items-center gap-1">
+                        <Heart className="w-3 h-3" />
+                        {post.likes_count}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <MessageCircle className="w-3 h-3" />
+                        {post.comments_count}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Bookmark className="w-3 h-3" />
+                        {post.saves_count}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleLike(post.id)}
+                      className={`flex items-center gap-1 px-2 py-1 h-auto ${
+                        likedPosts.has(post.id) ? 'text-red-600' : 'text-gray-600'
+                      }`}
+                    >
+                      <Heart className={`w-4 h-4 ${likedPosts.has(post.id) ? 'fill-current' : ''}`} />
+                      <span className="text-xs">Like</span>
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="flex items-center gap-1 px-2 py-1 h-auto text-gray-600"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      <span className="text-xs">Comment</span>
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleSave(post.id)}
+                      className={`flex items-center gap-1 px-2 py-1 h-auto ${
+                        savedPosts.has(post.id) ? 'text-blue-600' : 'text-gray-600'
+                      }`}
+                    >
+                      <Bookmark className={`w-4 h-4 ${savedPosts.has(post.id) ? 'fill-current' : ''}`} />
+                      <span className="text-xs">Save</span>
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="flex items-center gap-1 px-2 py-1 h-auto text-gray-600"
+                    >
+                      <Share2 className="w-4 h-4" />
+                      <span className="text-xs">Share</span>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 

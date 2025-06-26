@@ -66,6 +66,13 @@ const EnhancedSearchHeader = ({
     searchInputRef.current?.focus();
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      searchInputRef.current?.blur();
+      setShowAutocomplete(false);
+    }
+  };
+
   return (
     <div className="bg-white/95 backdrop-blur-lg px-4 py-4 shadow-sm border-b border-gray-100 sticky top-16 z-20">
       <div className="max-w-2xl mx-auto">
@@ -76,8 +83,10 @@ const EnhancedSearchHeader = ({
             className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all min-h-[44px] ${
               searchMode === 'locations' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
             }`}
+            aria-pressed={searchMode === 'locations'}
+            aria-label="Search for locations"
           >
-            <MapPin className="w-4 h-4" />
+            <MapPin className="w-4 h-4" aria-hidden="true" />
             Locations
           </button>
           <button 
@@ -85,16 +94,18 @@ const EnhancedSearchHeader = ({
             className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all min-h-[44px] ${
               searchMode === 'users' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
             }`}
+            aria-pressed={searchMode === 'users'}
+            aria-label="Search for users"
           >
-            <Users className="w-4 h-4" />
+            <Users className="w-4 h-4" aria-hidden="true" />
             Users
           </button>
         </div>
 
         {/* Search Bar */}
-        <form onSubmit={handleSearch} className="relative">
+        <form onSubmit={handleSearch} className="relative" role="search">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" aria-hidden="true" />
             <Input 
               ref={searchInputRef} 
               type="text" 
@@ -102,8 +113,10 @@ const EnhancedSearchHeader = ({
               value={searchQuery} 
               onChange={e => onSearchQueryChange(e.target.value)} 
               onFocus={handleInputFocus} 
-              onBlur={handleInputBlur} 
+              onBlur={handleInputBlur}
+              onKeyDown={handleKeyDown}
               className="pl-10 pr-20 h-12 bg-white border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-xl text-base" 
+              aria-label={`Search for ${searchMode}`}
             />
             
             {/* Clear button */}
@@ -128,7 +141,8 @@ const EnhancedSearchHeader = ({
                 size="sm"
                 onClick={() => setShowFilters(!showFilters)}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100 rounded-full"
-                aria-label="Toggle filters"
+                aria-label={`${showFilters ? 'Hide' : 'Show'} search filters`}
+                aria-expanded={showFilters}
               >
                 <Settings className="w-4 h-4" />
               </Button>
