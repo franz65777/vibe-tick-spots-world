@@ -192,10 +192,10 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
           {/* Header */}
-          <div className="sticky top-0 z-10 bg-white border-b border-gray-100 p-3">
+          <div className="sticky top-0 z-10 bg-white border-b border-gray-100 p-4">
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">
-                <DialogTitle className="text-lg font-bold text-gray-900 mb-1 line-clamp-1">
+                <DialogTitle className="text-lg font-semibold text-gray-900 mb-1 line-clamp-1">
                   {place?.name || 'Location'}
                 </DialogTitle>
                 <div className="flex items-center gap-2 text-xs text-gray-600">
@@ -235,7 +235,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto p-3">
+          <div className="flex-1 overflow-y-auto p-4">
             {loading ? (
               <div className="flex justify-center py-16">
                 <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -260,7 +260,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
                 </Button>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="flex items-center gap-2 text-xs text-gray-600 mb-3">
                   <Calendar className="w-3 h-3" />
                   <span className="font-medium">
@@ -270,7 +270,7 @@ const LocationPostLibrary = ({ isOpen, onClose, place }: LocationPostLibraryProp
                 </div>
                 
                 {/* Posts Grid */}
-                <div className="grid grid-cols-3 gap-0.5">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                   {posts.map((post) => (
                     <div 
                       key={post.id} 
