@@ -93,7 +93,7 @@ export const usePosts = (userId?: string) => {
         .select('id')
         .eq('user_id', user.id)
         .eq('post_id', postId)
-        .single();
+        .maybeSingle();
 
       if (existingLike) {
         // Unlike
@@ -129,7 +129,7 @@ export const usePosts = (userId?: string) => {
         .select('id')
         .eq('user_id', user.id)
         .eq('post_id', postId)
-        .single();
+        .maybeSingle();
 
       if (existingSave) {
         // Unsave
