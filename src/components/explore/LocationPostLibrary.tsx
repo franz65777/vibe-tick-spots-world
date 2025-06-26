@@ -20,7 +20,7 @@ interface LocationPost {
     username: string;
     full_name: string;
     avatar_url: string;
-  };
+  } | null;
 }
 
 interface LocationPostLibraryProps {
@@ -34,14 +34,14 @@ interface LocationPostLibraryProps {
     coordinates?: { lat: number; lng: number };
     postCount?: number;
   };
-  onBack: () => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-const LocationPostLibrary = ({ place, onBack }: LocationPostLibraryProps) => {
+const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProps) => {
   const { user } = useAuth();
   const [posts, setPosts] = useState<LocationPost[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPost, setSelectedPost] = useState<LocationPost | null>(null);
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
 
@@ -49,11 +49,13 @@ const LocationPostLibrary = ({ place, onBack }: LocationPostLibraryProps) => {
   const displayCity = place.city || place.address?.split(',')[1]?.trim() || 'Unknown City';
 
   useEffect(() => {
-    fetchLocationPosts();
-    if (user) {
-      fetchUserInteractions();
+    if (isOpen) {
+      fetchLocationPosts();
+      if (user) {
+        fetchUserInteractions();
+      }
     }
-  }, [place.id, user]);
+  }, [place.id, user, isOpen]);
 
   const fetchLocationPosts = async () => {
     try {
@@ -71,7 +73,7 @@ const LocationPostLibrary = ({ place, onBack }: LocationPostLibraryProps) => {
           saves_count,
           created_at,
           metadata,
-          profiles:user_id (
+          profiles!posts_user_id_fkey (
             username,
             full_name,
             avatar_url
@@ -197,6 +199,8 @@ const LocationPostLibrary = ({ place, onBack }: LocationPostLibraryProps) => {
     });
   };
 
+  if (!isOpen) return null;
+
   if (loading) {
     return (
       <div className="fixed inset-0 bg-white z-50 flex items-center justify-center">
@@ -215,7 +219,7 @@ const LocationPostLibrary = ({ place, onBack }: LocationPostLibraryProps) => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={onBack}
+          onClick={onClose}
           className="p-2 hover:bg-gray-100 rounded-full"
         >
           <ChevronLeft className="w-5 h-5" />
