@@ -73,7 +73,7 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
           saves_count,
           created_at,
           metadata,
-          profiles!posts_user_id_fkey (
+          profiles (
             username,
             full_name,
             avatar_url
