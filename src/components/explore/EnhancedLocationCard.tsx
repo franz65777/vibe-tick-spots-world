@@ -132,8 +132,8 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
 
   return (
     <>
-      <Card 
-        className="overflow-hidden cursor-pointer group bg-white mx-4 mb-6 rounded-2xl border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+      <Card
+        className="overflow-hidden cursor-pointer group bg-white mx-2 sm:mx-4 mb-8 rounded-3xl border border-gray-100 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
         onClick={handleCardClick}
       >
         <div className="relative">
@@ -177,7 +177,7 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
               </Badge>
             )}
             {place.popularity && place.popularity > 80 && (
-              <Badge className="bg-purple-500 text-white text-xs px-3 py-1 rounded-full border-0 flex items-center gap-1 font-medium shadow-sm">
+              <Badge className="bg-purple-500 text-white text-xs px-3 py-1 rounded-full border-0 flex items-center gap-1.5 font-medium shadow-sm">
                 <Star className="w-3 h-3" />
                 Popular
               </Badge>
@@ -185,10 +185,10 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
           </div>
         </div>
 
-        <CardContent className="p-5">
-          <div className="space-y-4">
+        <CardContent className="p-6 sm:p-7">
+          <div className="space-y-5">
             {/* Place Name */}
-            <h3 className="font-bold text-gray-900 text-xl leading-tight line-clamp-2">
+            <h3 className="font-semibold text-gray-800 text-lg sm:text-xl leading-snug line-clamp-2">
               {place.name}
             </h3>
 
@@ -204,7 +204,7 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
             </div>
 
             {/* Stats Row */}
-            <div className="flex items-center justify-between py-2">
+            <div className="flex items-center justify-between py-3">
               <div className="flex items-center gap-6 text-sm">
                 <div className="flex items-center gap-1.5">
                   <Heart className="w-4 h-4 text-red-500" />
@@ -222,15 +222,15 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
             </div>
 
             {/* Action Buttons */}
-            <div className="grid grid-cols-4 gap-2 pt-2">
+            <div className="grid grid-cols-4 gap-3 pt-3">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleLike}
                 disabled={isLiking}
-                className={`min-h-[44px] rounded-xl flex flex-col gap-1 transition-all ${
+                className={`min-h-[44px] rounded-xl flex flex-col gap-1.5 transition-all ${
                   isLiked(place.id)
-                    ? 'text-red-600 bg-red-50 hover:bg-red-100' 
+                    ? 'text-red-600 bg-red-50 hover:bg-red-100'
                     : 'text-gray-600 hover:text-red-600 hover:bg-red-50'
                 } ${isLiking ? 'animate-pulse' : ''}`}
               >
@@ -243,9 +243,9 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
                 size="sm"
                 onClick={handleSave}
                 disabled={isSaving}
-                className={`min-h-[44px] rounded-xl flex flex-col gap-1 transition-all ${
+                className={`min-h-[44px] rounded-xl flex flex-col gap-1.5 transition-all ${
                   isSaved(place.id)
-                    ? 'text-blue-600 bg-blue-50 hover:bg-blue-100' 
+                    ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
                     : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
                 } ${isSaving ? 'animate-pulse' : ''}`}
               >
@@ -257,7 +257,7 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
                 variant="ghost"
                 size="sm"
                 onClick={handleComment}
-                className="min-h-[44px] rounded-xl flex flex-col gap-1 text-gray-600 hover:text-green-600 hover:bg-green-50 transition-all"
+                className="min-h-[44px] rounded-xl flex flex-col gap-1.5 text-gray-600 hover:text-green-600 hover:bg-green-50 transition-all"
               >
                 <MessageCircle className="w-4 h-4" />
                 <span className="text-xs font-medium">Comment</span>
@@ -267,7 +267,7 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
                 variant="ghost"
                 size="sm"
                 onClick={handleShare}
-                className="min-h-[44px] rounded-xl flex flex-col gap-1 text-gray-600 hover:text-purple-600 hover:bg-purple-50 transition-all"
+                className="min-h-[44px] rounded-xl flex flex-col gap-1.5 text-gray-600 hover:text-purple-600 hover:bg-purple-50 transition-all"
               >
                 <Share2 className="w-4 h-4" />
                 <span className="text-xs font-medium">Share</span>
