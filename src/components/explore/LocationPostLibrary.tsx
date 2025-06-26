@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, MapPin, Calendar, Users, Heart, MessageCircle, Share2, Bookmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -34,11 +33,10 @@ interface LocationPostLibraryProps {
     coordinates?: { lat: number; lng: number };
     postCount?: number;
   };
-  isOpen: boolean;
   onClose: () => void;
 }
 
-const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProps) => {
+const LocationPostLibrary = ({ place, onClose }: LocationPostLibraryProps) => {
   const { user } = useAuth();
   const [posts, setPosts] = useState<LocationPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,19 +47,18 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
   const displayCity = place.city || place.address?.split(',')[1]?.trim() || 'Unknown City';
 
   useEffect(() => {
-    if (isOpen) {
-      fetchLocationPosts();
-      if (user) {
-        fetchUserInteractions();
-      }
+    fetchLocationPosts();
+    if (user) {
+      fetchUserInteractions();
     }
-  }, [place.id, user, isOpen]);
+  }, [place.id, user]);
 
   const fetchLocationPosts = async () => {
     try {
       setLoading(true);
       
-      const { data: posts, error } = await supabase
+      // First fetch posts
+      const { data: postsData, error: postsError } = await supabase
         .from('posts')
         .select(`
           id,
@@ -72,20 +69,34 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
           comments_count,
           saves_count,
           created_at,
-          metadata,
-          profiles (
-            username,
-            full_name,
-            avatar_url
-          )
+          metadata
         `)
         .eq('location_id', place.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (postsError) throw postsError;
 
-      console.log(`📍 Loaded ${posts?.length || 0} posts for ${place.name}`);
-      setPosts(posts || []);
+      // Then fetch profiles for the users
+      if (postsData && postsData.length > 0) {
+        const userIds = postsData.map(post => post.user_id);
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, username, full_name, avatar_url')
+          .in('id', userIds);
+
+        if (profilesError) throw profilesError;
+
+        // Combine posts with profiles
+        const postsWithProfiles = postsData.map(post => ({
+          ...post,
+          profiles: profilesData?.find(profile => profile.id === post.user_id) || null
+        }));
+
+        console.log(`📍 Loaded ${postsWithProfiles.length} posts for ${place.name}`);
+        setPosts(postsWithProfiles);
+      } else {
+        setPosts([]);
+      }
     } catch (error) {
       console.error('❌ Error fetching location posts:', error);
       setPosts([]);
@@ -198,8 +209,6 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
       year: 'numeric'
     });
   };
-
-  if (!isOpen) return null;
 
   if (loading) {
     return (
