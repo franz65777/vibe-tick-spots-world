@@ -160,7 +160,7 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
           </div>
         </div>
 
-        <CardContent className="p-2">
+        <CardContent className="p-3">
           <div className="space-y-1.5">
             {/* Place Name */}
             <h3 className="font-bold text-gray-900 text-sm leading-tight line-clamp-1">

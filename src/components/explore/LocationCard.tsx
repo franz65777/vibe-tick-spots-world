@@ -127,7 +127,7 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
           </div>
         </div>
 
-        <CardContent className="p-5">
+        <CardContent className="p-6">
           <div className="space-y-4">
             {/* Place Name */}
             <h3 className="font-bold text-gray-900 text-xl leading-tight line-clamp-2">

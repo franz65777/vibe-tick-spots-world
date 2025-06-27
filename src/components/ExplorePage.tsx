@@ -341,7 +341,7 @@ const ExplorePage = () => {
 
               {searchMode === 'locations' ? (
                 filteredLocations.length > 0 ? (
-                  <div className="space-y-0 pb-4">
+                  <div className="px-4 pb-6">
                     {filteredLocations.map((place) => (
                       <EnhancedLocationCard
                         key={place.id}

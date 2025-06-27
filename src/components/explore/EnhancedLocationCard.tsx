@@ -117,6 +117,24 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
     return place.city || 'Nearby';
   };
 
+  const getCategoryGradient = (category: string) => {
+    const gradients: Record<string, string> = {
+      restaurant: 'from-orange-500 to-yellow-400',
+      bar: 'from-pink-500 to-rose-500',
+      cafe: 'from-amber-500 to-yellow-500',
+      shop: 'from-purple-500 to-indigo-500',
+      hotel: 'from-blue-500 to-cyan-500',
+      museum: 'from-indigo-500 to-purple-500',
+      park: 'from-green-500 to-emerald-500',
+      gym: 'from-red-500 to-orange-500',
+      attraction: 'from-teal-500 to-sky-500'
+    };
+    
+    const key = category.toLowerCase() as keyof typeof gradients;
+    const gradient = gradients[key] || 'from-blue-500 to-purple-500';
+    return `bg-gradient-to-r ${gradient}`;
+  };
+
   const getPlaceholderGradient = () => {
     const colors = [
       'bg-gradient-to-br from-blue-400 to-blue-600',
@@ -132,7 +150,7 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
   return (
     <>
       <Card 
-        className="overflow-hidden cursor-pointer group bg-white mx-4 mb-6 rounded-2xl border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+        className="overflow-hidden cursor-pointer group bg-white mx-4 mb-6 rounded-2xl border-0 shadow-lg transition-transform duration-300 hover:-translate-y-1 hover:shadow-2xl"
         onClick={handleCardClick}
       >
         <div className="relative">
@@ -167,16 +185,16 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
           
           {/* Category and Status Badges */}
           <div className="absolute top-4 left-4 flex gap-2">
-            <Badge className={`${getCategoryColor(place.category)} bg-white/95 backdrop-blur-sm text-xs px-3 py-1 rounded-full border-0 font-medium shadow-sm`}>
+            <Badge className={`${getCategoryGradient(place.category)} text-white text-xs px-3 py-1 rounded-full border-0 font-semibold shadow-md`}>
               {formatCategory(place.category)}
             </Badge>
             {place.isNew && (
-              <Badge className="bg-green-500 text-white text-xs px-3 py-1 rounded-full border-0 font-medium shadow-sm">
+              <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs px-3 py-1 rounded-full border-0 font-semibold shadow-md">
                 New
               </Badge>
             )}
             {place.popularity && place.popularity > 80 && (
-              <Badge className="bg-purple-500 text-white text-xs px-3 py-1 rounded-full border-0 flex items-center gap-1 font-medium shadow-sm">
+              <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-3 py-1 rounded-full border-0 flex items-center gap-1 font-semibold shadow-md">
                 <Star className="w-3 h-3" />
                 Popular
               </Badge>
@@ -184,7 +202,7 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
           </div>
         </div>
 
-        <CardContent className="p-5">
+        <CardContent className="p-6">
           <div className="space-y-4">
             {/* Place Name */}
             <h3 className="font-bold text-gray-900 text-xl leading-tight line-clamp-2">
