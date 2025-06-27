@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Camera, Plus, X, Play, MapPin, Settings } from 'lucide-react';
+import { ArrowLeft, Camera, Plus, X, Play, MapPin, Settings, Image } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,14 +11,6 @@ import { usePostCreation } from '@/hooks/usePostCreation';
 import { useLocationTagging } from '@/hooks/useLocationTagging';
 import GooglePlacesAutocomplete from './GooglePlacesAutocomplete';
 import { toast } from 'sonner';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-import { Card, CardContent } from "@/components/ui/card";
 
 const InstagramStyleAddPage = () => {
   const navigate = useNavigate();
@@ -33,7 +25,6 @@ const InstagramStyleAddPage = () => {
   const [showLocationWarning, setShowLocationWarning] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Auto-detect location when component mounts
   useEffect(() => {
     getCurrentLocation();
   }, []);
@@ -58,7 +49,6 @@ const InstagramStyleAddPage = () => {
 
     setSelectedFiles(prev => [...prev, ...validFiles]);
     
-    // Create preview URLs
     const newUrls = validFiles.map(file => URL.createObjectURL(file));
     setPreviewUrls(prev => [...prev, ...newUrls]);
   };
@@ -88,7 +78,7 @@ const InstagramStyleAddPage = () => {
       place_id: `nearby_${place.id}`,
       name: place.name,
       address: place.address,
-      lat: 0, // Would need actual coordinates
+      lat: 0,
       lng: 0,
       types: [place.category]
     });
@@ -116,12 +106,10 @@ const InstagramStyleAddPage = () => {
         console.log('Post created successfully!');
         toast.success('Post shared successfully!');
         
-        // Reset form
         setSelectedFiles([]);
         setSelectedLocation(null);
         setCaption('');
         
-        // Navigate to home or profile
         navigate('/');
       } else {
         console.error('Post creation failed:', result.error);
@@ -137,52 +125,53 @@ const InstagramStyleAddPage = () => {
     return file.type.startsWith('video/') ? 'video' : 'image';
   };
 
-  const getMissingItem = () => {
-    if (selectedFiles.length === 0) return 'Add a photo/video';
-    if (!selectedLocation) return 'Tag a location';
-    return null;
-  };
-
   return (
     <div className="flex flex-col h-full bg-gray-50 pt-16">
-      {/* Sticky Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-100 shadow-sm">
-        <button 
-          onClick={() => navigate(-1)} 
-          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          aria-label="Go back"
-        >
-          <ArrowLeft className="w-6 h-6 text-gray-600" />
-        </button>
-        <h1 className="text-xl font-bold text-gray-900">New Post</h1>
+      {/* Header */}
+      <div className="bg-white px-4 py-4 flex items-center justify-between border-b border-gray-200 shadow-sm">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => navigate(-1)} 
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <ArrowLeft className="w-6 h-6 text-gray-600" />
+          </button>
+          <h1 className="text-xl font-bold text-gray-900">New Post</h1>
+        </div>
+        
         <Button
           onClick={handleSubmit}
           disabled={!canShare || uploading}
-          className={`px-6 rounded-full font-semibold transition-all ${
+          className={`px-6 py-2 rounded-full font-semibold transition-all ${
             canShare 
               ? 'bg-blue-600 hover:bg-blue-700 text-white' 
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
         >
-          {uploading ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-              Uploading {progress}%
-            </>
-          ) : (
-            'Share'
-          )}
+          {uploading ? 'Uploading...' : 'Share'}
         </Button>
       </div>
 
       {uploading && (
-        <Progress value={progress} className="h-1 w-full" />
+        <div className="bg-blue-50 px-4 py-3 border-b">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-sm font-medium text-blue-900">Uploading your post...</span>
+            <span className="text-sm text-blue-700">{progress}%</span>
+          </div>
+          <Progress value={progress} className="h-2" />
+        </div>
       )}
 
-      <div className="flex-1 overflow-y-auto pb-20">
-        <div className="p-4 space-y-8">
-          {/* Media Carousel */}
-          <div>
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-2xl mx-auto p-4 space-y-8">
+          {/* Media Upload Section */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Image className="w-5 h-5" />
+              Add Photos & Videos
+            </h2>
+            
             {selectedFiles.length === 0 ? (
               <div>
                 <input
@@ -193,99 +182,84 @@ const InstagramStyleAddPage = () => {
                   className="hidden"
                   id="media-upload"
                 />
-                <Button asChild variant="secondary" className="w-full h-full p-0 rounded-xl overflow-hidden">
-                  <label htmlFor="media-upload" className="cursor-pointer w-full">
-                    <Card className="overflow-hidden border-0 bg-gradient-to-br from-blue-50 to-blue-100">
-                      <CardContent className="flex flex-col items-center justify-center p-8 min-h-[280px]">
-                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4 animate-pulse">
-                          <Camera className="w-8 h-8 text-blue-600" />
-                        </div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2 text-center">
-                          Add your best photos or videos
-                        </h3>
-                        <p className="text-gray-600 text-center">
-                          Tap to select from gallery or take a new one
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </label>
-                </Button>
+                <label
+                  htmlFor="media-upload"
+                  className="block cursor-pointer"
+                >
+                  <div className="border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center hover:border-blue-400 hover:bg-blue-50 transition-all">
+                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Camera className="w-8 h-8 text-blue-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      Upload your best moments
+                    </h3>
+                    <p className="text-gray-600 text-sm">
+                      Tap to select photos or videos from your gallery
+                    </p>
+                  </div>
+                </label>
               </div>
             ) : (
-              <div className="space-y-2">
-                <Carousel className="w-full">
-                  <CarouselContent>
-                    {previewUrls.map((url, index) => (
-                      <CarouselItem key={index} className="basis-4/5">
-                        <Card className="shadow-md">
-                          <CardContent className="relative aspect-square p-0">
-                            {getFileType(selectedFiles[index]) === 'video' ? (
-                              <div className="relative w-full h-full">
-                                <video src={url} className="w-full h-full object-cover rounded-lg" />
-                                <div className="absolute inset-0 bg-black/20 flex items-center justify-center rounded-lg">
-                                  <Play className="w-12 h-12 text-white" />
-                                </div>
-                              </div>
-                            ) : (
-                              <img src={url} alt={`Preview ${index + 1}`} className="w-full h-full object-cover rounded-lg" />
-                            )}
-                            <button
-                              onClick={() => removeFile(index)}
-                              className="absolute top-2 right-2 w-8 h-8 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center transition-colors shadow-lg"
-                              aria-label={`Remove ${getFileType(selectedFiles[index])}`}
-                            >
-                              <X className="w-4 h-4 text-white" />
-                            </button>
-                          </CardContent>
-                        </Card>
-                      </CarouselItem>
-                    ))}
-                    <CarouselItem className="basis-1/4">
-                      <Card className="shadow-md">
-                        <CardContent className="aspect-square p-0">
-                          <input
-                            type="file"
-                            accept="image/*,video/*"
-                            multiple
-                            onChange={handleFileSelect}
-                            className="hidden"
-                            id="media-upload-more"
-                          />
-                          <Button
-                            variant="outline"
-                            asChild
-                            className="w-full h-full border-dashed"
-                          >
-                            <label htmlFor="media-upload-more" className="flex flex-col items-center justify-center gap-2 cursor-pointer">
-                              <Plus className="w-8 h-8 text-gray-400" />
-                              <span className="text-sm">Add more</span>
-                            </label>
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    </CarouselItem>
-                  </CarouselContent>
-                  {selectedFiles.length > 1 && (
-                    <>
-                      <CarouselPrevious />
-                      <CarouselNext />
-                    </>
-                  )}
-                </Carousel>
+              <div className="space-y-4">
+                {/* Selected Files Preview */}
+                <div className="grid grid-cols-2 gap-4">
+                  {previewUrls.map((url, index) => (
+                    <div key={index} className="relative aspect-square">
+                      {getFileType(selectedFiles[index]) === 'video' ? (
+                        <div className="relative w-full h-full">
+                          <video src={url} className="w-full h-full object-cover rounded-xl" />
+                          <div className="absolute inset-0 bg-black/20 flex items-center justify-center rounded-xl">
+                            <Play className="w-8 h-8 text-white" />
+                          </div>
+                        </div>
+                      ) : (
+                        <img src={url} alt={`Preview ${index + 1}`} className="w-full h-full object-cover rounded-xl" />
+                      )}
+                      <button
+                        onClick={() => removeFile(index)}
+                        className="absolute top-2 right-2 w-8 h-8 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center transition-colors shadow-lg"
+                      >
+                        <X className="w-4 h-4 text-white" />
+                      </button>
+                    </div>
+                  ))}
+                  
+                  {/* Add More Button */}
+                  <div className="aspect-square">
+                    <input
+                      type="file"
+                      accept="image/*,video/*"
+                      multiple
+                      onChange={handleFileSelect}
+                      className="hidden"
+                      id="media-upload-more"
+                    />
+                    <label
+                      htmlFor="media-upload-more"
+                      className="flex items-center justify-center w-full h-full border-2 border-dashed border-gray-300 rounded-xl hover:border-blue-400 hover:bg-blue-50 transition-all cursor-pointer"
+                    >
+                      <div className="text-center">
+                        <Plus className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                        <span className="text-sm text-gray-500">Add more</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
               </div>
             )}
           </div>
 
-          {/* Caption */}
+          {/* Caption Section */}
           {selectedFiles.length > 0 && (
-            <div>
-              <div className="relative">
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Write a Caption</h2>
+              <div className="space-y-2">
                 {isExpanded ? (
                   <Textarea
                     value={caption}
                     onChange={(e) => setCaption(e.target.value)}
-                    placeholder="Say something about this place..."
-                    className="w-full border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white text-gray-900 placeholder-gray-500 min-h-[100px]"
+                    placeholder="Share your thoughts about this place..."
+                    className="w-full border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none min-h-[100px]"
                     maxLength={1000}
                     onBlur={() => {
                       if (!caption.trim()) setIsExpanded(false);
@@ -297,28 +271,29 @@ const InstagramStyleAddPage = () => {
                     value={caption}
                     onChange={(e) => setCaption(e.target.value)}
                     onFocus={() => setIsExpanded(true)}
-                    placeholder="Say something about this place..."
-                    className="w-full border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-500"
+                    placeholder="Share your thoughts about this place..."
+                    className="w-full border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     maxLength={1000}
                   />
                 )}
-                <div className="text-xs text-gray-500 text-right mt-1">
+                <div className="text-xs text-gray-500 text-right">
                   {caption.length}/1000
                 </div>
               </div>
             </div>
           )}
 
-          {/* Location Selection */}
+          {/* Location Section */}
           {selectedFiles.length > 0 && (
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center">
-                <MapPin className="w-5 h-5 mr-2" />
-                Tag Location *
-              </h3>
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <MapPin className="w-5 h-5" />
+                Tag Location
+                <span className="text-red-500 text-sm">*</span>
+              </h2>
               
               {showLocationWarning && (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-3">
+                <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
                   <p className="text-red-800 text-sm font-medium">⚠️ Location is required to share your post</p>
                 </div>
               )}
@@ -328,18 +303,17 @@ const InstagramStyleAddPage = () => {
                   <GooglePlacesAutocomplete
                     onPlaceSelect={handleLocationSelect}
                     placeholder="Search for a place..."
-                    className="mb-3"
+                    className="mb-4"
                   />
                   
-                  {/* Nearby Places */}
                   {nearbyPlaces.length > 0 && (
                     <div>
                       <p className="text-sm font-medium text-gray-700 mb-3">📍 Nearby places:</p>
-                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
                         {nearbyPlaces.slice(0, 5).map((place, index) => (
                           <button
                             key={index}
-                            className="w-full text-left p-3 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all shadow-sm"
+                            className="w-full text-left p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
                             onClick={() => handleNearbyPlaceSelect(place)}
                           >
                             <div className="flex items-center justify-between">
@@ -363,7 +337,7 @@ const InstagramStyleAddPage = () => {
                   )}
                 </div>
               ) : (
-                <div className="p-4 bg-green-50 rounded-2xl border border-green-200">
+                <div className="p-4 bg-green-50 rounded-xl border border-green-200">
                   <div className="flex items-start gap-3">
                     <MapPin className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
                     <div className="min-w-0 flex-1">
@@ -373,7 +347,6 @@ const InstagramStyleAddPage = () => {
                     <button
                       onClick={() => setSelectedLocation(null)}
                       className="w-6 h-6 bg-green-200 hover:bg-green-300 rounded-full flex items-center justify-center transition-colors"
-                      aria-label="Remove location"
                     >
                       <X className="w-3 h-3 text-green-700" />
                     </button>
@@ -383,13 +356,13 @@ const InstagramStyleAddPage = () => {
             </div>
           )}
 
-          {/* Settings */}
+          {/* Settings Section */}
           {selectedFiles.length > 0 && (
-            <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-              <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
-                <Settings className="w-5 h-5 mr-2" />
-                Settings
-              </h4>
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Settings className="w-5 h-5" />
+                Post Settings
+              </h2>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-gray-900">Allow comments</p>
@@ -401,27 +374,6 @@ const InstagramStyleAddPage = () => {
                 />
               </div>
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* Bottom Summary Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-30 shadow-lg">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4 text-sm text-gray-600">
-            <span>{selectedFiles.length} file{selectedFiles.length !== 1 ? 's' : ''}</span>
-            {selectedLocation && (
-              <span className="flex items-center gap-1 truncate max-w-32">
-                <MapPin className="w-4 h-4 flex-shrink-0" />
-                <span className="truncate">{selectedLocation.name}</span>
-              </span>
-            )}
-          </div>
-          
-          {getMissingItem() && (
-            <span className="text-sm text-orange-600 font-medium">
-              {getMissingItem()}
-            </span>
           )}
         </div>
       </div>
