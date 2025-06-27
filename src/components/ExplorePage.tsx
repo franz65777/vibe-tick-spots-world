@@ -1,22 +1,17 @@
+
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Users, Filter, SlidersHorizontal } from 'lucide-react';
+import { Search, MapPin, Users, Filter, SlidersHorizontal, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import SearchHeader from './explore/SearchHeader';
 import SearchResults from './explore/SearchResults';
 import RecommendationsSection from './explore/RecommendationsSection';
-import CategoryFilter, { CategoryType } from './explore/CategoryFilter';
+import CategoryIconsFilter, { CategoryType } from './explore/CategoryIconsFilter';
 import { Place } from '@/types/place';
 import { searchService } from '@/services/searchService';
-import { backendService } from '@/services/backendService';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-
-import EnhancedSearchHeader from './explore/EnhancedSearchHeader';
-import EnhancedCategoryFilter from './explore/EnhancedCategoryFilter';
 import EnhancedLocationCard from './explore/EnhancedLocationCard';
 import NoResults from './explore/NoResults';
 import UserCard from './explore/UserCard';
@@ -29,7 +24,6 @@ const ExplorePage = () => {
   const [searchMode, setSearchMode] = useState<'locations' | 'users'>('locations');
   const [isSearching, setIsSearching] = useState(false);
   const [sortBy, setSortBy] = useState<SortBy>('recent');
-  const [filters, setFilters] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<CategoryType[]>(['all']);
   const [locationRecommendations, setLocationRecommendations] = useState<any[]>([]);
   const [userRecommendations, setUserRecommendations] = useState<any[]>([]);
@@ -41,7 +35,7 @@ const ExplorePage = () => {
     console.log('Navigate to add location');
   };
 
-  // Load ALL locations with posts - NO LIMITS, ENSURE UNIQUE BY GOOGLE_PLACE_ID
+  // Load ALL locations with posts
   useEffect(() => {
     const loadRecommendations = async () => {
       if (!user) return;
@@ -50,13 +44,11 @@ const ExplorePage = () => {
       try {
         console.log('🔍 Loading ALL locations with posts...');
         
-        // Use the updated searchService method to get ALL locations with posts
         const locations = await searchService.getLocationRecommendations(user.id);
         
         console.log('✅ Loaded location recommendations:', locations.length);
         setLocationRecommendations(locations);
 
-        // Get user recommendations
         const users = await searchService.getUserRecommendations(user.id);
         setUserRecommendations(users);
       } catch (error) {
@@ -71,24 +63,7 @@ const ExplorePage = () => {
     loadRecommendations();
   }, [user]);
 
-  // Filter recommendations by category
-  useEffect(() => {
-    if (selectedCategories.includes('all')) {
-      // Show all recommendations
-      return;
-    }
-
-    const filteredRecs = locationRecommendations.filter(place => 
-      selectedCategories.some(cat => 
-        place.category?.toLowerCase().includes(cat.toLowerCase())
-      )
-    );
-    
-    // Update filtered recommendations without changing state to avoid infinite loop
-    // This filtering will be handled in the RecommendationsSection component
-  }, [selectedCategories, locationRecommendations]);
-
-  // Search for real data - ENSURE UNIQUE RESULTS BY GOOGLE_PLACE_ID
+  // Search for real data
   const performSearch = async (query: string) => {
     if (!user || !query.trim()) return { locations: [], users: [] };
 
@@ -96,7 +71,6 @@ const ExplorePage = () => {
       if (searchMode === 'locations') {
         console.log('🔍 Searching locations with posts...');
         
-        // Search locations that have posts and match the query
         const { data: locations, error } = await supabase
           .from('locations')
           .select(`
@@ -117,7 +91,6 @@ const ExplorePage = () => {
 
         if (error) throw error;
 
-        // De-duplicate by google_place_id and ensure they have posts
         const uniqueResults = new Map();
         locations?.forEach(location => {
           if (location.google_place_id && !uniqueResults.has(location.google_place_id)) {
@@ -148,7 +121,6 @@ const ExplorePage = () => {
 
         return { locations: Array.from(uniqueResults.values()), users: [] };
       } else {
-        // Search users
         const { data: users, error } = await supabase
           .from('profiles')
           .select('id, username, full_name, avatar_url')
@@ -251,14 +223,12 @@ const ExplorePage = () => {
     setFilteredUsers([]);
   };
 
-  // Handle category changes properly for multiple selection mode
   const handleCategoriesChange = (categories: CategoryType[]) => {
     setSelectedCategories(categories);
   };
 
   const isSearchActive = searchQuery.trim().length > 0;
   
-  // Fix getResultsCount to handle array properly
   const getResultsCount = () => {
     const safeSelectedCategories = Array.isArray(selectedCategories) ? selectedCategories : ['all'];
     
@@ -275,36 +245,82 @@ const ExplorePage = () => {
 
   return (
     <div className="flex flex-col h-full bg-gray-50 pt-16">
-      {/* Enhanced Search Header */}
-      <EnhancedSearchHeader
-        searchQuery={searchQuery}
-        onSearchQueryChange={handleSearch}
-        searchMode={searchMode}
-        onSearchModeChange={setSearchMode}
-        onClearSearch={clearSearch}
-        sortBy={sortBy}
-        onSortChange={setSortBy}
-        filters={filters}
-        onFiltersChange={setFilters}
-      />
+      {/* Enhanced Header with Gradient */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+        <div className="p-6 pb-8">
+          <h1 className="text-2xl font-bold mb-2">Discover Amazing Places</h1>
+          <p className="text-blue-100 text-sm">Find your next favorite spot shared by the community</p>
+        </div>
+        
+        {/* Search Section */}
+        <div className="px-6 pb-6">
+          {/* Search Mode Toggle */}
+          <div className="flex bg-white/10 backdrop-blur-sm rounded-2xl p-1 mb-4">
+            <button 
+              onClick={() => setSearchMode('locations')} 
+              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-medium transition-all ${
+                searchMode === 'locations' 
+                  ? 'bg-white text-gray-900 shadow-lg' 
+                  : 'text-white/80 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <MapPin className="w-4 h-4" />
+              Places
+            </button>
+            <button 
+              onClick={() => setSearchMode('users')} 
+              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-medium transition-all ${
+                searchMode === 'users' 
+                  ? 'bg-white text-gray-900 shadow-lg' 
+                  : 'text-white/80 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              People
+            </button>
+          </div>
 
-      {/* Enhanced Category Filter - Only show for locations */}
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Input 
+              type="text" 
+              placeholder={searchMode === 'locations' ? 'Search for cafes, restaurants, attractions...' : 'Search for people...'} 
+              value={searchQuery} 
+              onChange={e => handleSearch(e.target.value)} 
+              className="pl-12 pr-4 h-12 bg-white/90 backdrop-blur-sm border-0 focus:bg-white rounded-2xl text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-white/50" 
+            />
+            {searchQuery && (
+              <Button
+                onClick={clearSearch}
+                variant="ghost"
+                size="sm"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100 rounded-full text-gray-500"
+              >
+                ×
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Category Icons Filter - Only show for locations when not searching */}
       {searchMode === 'locations' && !isSearchActive && (
-        <EnhancedCategoryFilter
+        <CategoryIconsFilter
           selectedCategories={selectedCategories}
           onCategoriesChange={handleCategoriesChange}
         />
       )}
 
-      {/* Results Count */}
+      {/* Results Count and Sort */}
       {searchMode === 'locations' && !isSearchActive && (
         <div className="px-4 py-3 bg-white border-b border-gray-100">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-gray-600 font-medium">
               {getResultsCount()} place{getResultsCount() !== 1 ? 's' : ''} found
             </span>
             <Select value={sortBy} onValueChange={(value: SortBy) => setSortBy(value)}>
-              <SelectTrigger className="w-32 h-8 text-xs">
+              <SelectTrigger className="w-32 h-8 text-xs border-gray-200 rounded-xl">
                 <SlidersHorizontal className="w-3 h-3 mr-1" />
                 <SelectValue />
               </SelectTrigger>
@@ -320,20 +336,20 @@ const ExplorePage = () => {
       )}
 
       {isSearchActive ? (
-        /* Enhanced Search Results View */
+        /* Search Results View */
         <div className="flex-1 overflow-y-auto">
           {isSearching ? (
-            <div className="flex items-center justify-center py-16">
+            <div className="flex items-center justify-center py-20">
               <div className="flex items-center gap-3">
-                <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-gray-600">Searching...</span>
+                <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-gray-600 font-medium">Searching amazing places...</span>
               </div>
             </div>
           ) : (
             <>
               {(filteredLocations.length > 0 || filteredUsers.length > 0) && (
                 <div className="px-4 py-3 bg-white border-b border-gray-100">
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-gray-600 font-medium">
                     {searchMode === 'locations' ? filteredLocations.length : filteredUsers.length} results found
                   </span>
                 </div>
@@ -341,7 +357,7 @@ const ExplorePage = () => {
 
               {searchMode === 'locations' ? (
                 filteredLocations.length > 0 ? (
-                  <div className="px-4 pb-6">
+                  <div className="pb-6">
                     {filteredLocations.map((place) => (
                       <EnhancedLocationCard
                         key={place.id}
@@ -381,7 +397,7 @@ const ExplorePage = () => {
           )}
         </div>
       ) : (
-        /* Discover View - Enhanced Recommendations */
+        /* Discover View */
         <div className="flex-1 overflow-y-auto">
           <RecommendationsSection
             searchMode={searchMode}
@@ -400,6 +416,15 @@ const ExplorePage = () => {
           />
         </div>
       )}
+
+      {/* Floating Add Button */}
+      <Button
+        onClick={() => window.location.href = '/add'}
+        className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 z-30"
+        size="icon"
+      >
+        <Plus className="h-6 w-6 text-white" />
+      </Button>
     </div>
   );
 };
