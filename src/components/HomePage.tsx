@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMapPins } from '@/hooks/useMapPins';
+import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { Place } from '@/types/place';
 import Header from './home/Header';
 import StoriesSection from './home/StoriesSection';
@@ -23,7 +23,7 @@ interface LocalPlace {
   addedDate?: string;
   popularity?: number;
   city?: string;
-  isNew: boolean; // Make this required to match Place interface
+  isNew: boolean;
   image?: string;
   friendsWhoSaved?: { name: string; avatar: string }[];
   visitors: string[];
@@ -36,7 +36,7 @@ const HomePage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [selectedCity, setSelectedCity] = useState('');
-  const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'new'>('following');
+  const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'saved'>('following');
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 37.7749, lng: -122.4194 });
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -58,8 +58,10 @@ const HomePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentCity, setCurrentCity] = useState('');
   
-  // Use the map pins hook with the active filter
-  const { pins, loading, error, refreshPins, hasFollowedUsers } = useMapPins(activeFilter);
+  // Use the map pins hook with the active filter - but change 'new' to 'saved'
+  const mapFilter = activeFilter === 'saved' ? 'popular' : activeFilter;
+  const { pins, loading, error, refreshPins, hasFollowedUsers } = useMapPins(mapFilter);
+  const { savedPlaces } = useSavedPlaces();
 
   // Get user's current location on component mount
   useEffect(() => {
@@ -70,24 +72,22 @@ const HomePage = () => {
             const { latitude, longitude } = position.coords;
             const location = { lat: latitude, lng: longitude };
             setUserLocation(location);
-            setMapCenter(location); // Center map on user's location
+            setMapCenter(location);
             console.log('User location obtained:', location);
           },
           (error) => {
             console.warn('Error getting user location:', error);
-            // Keep default San Francisco coordinates if geolocation fails
             const defaultLocation = { lat: 37.7749, lng: -122.4194 };
             setMapCenter(defaultLocation);
           },
           {
             enableHighAccuracy: true,
             timeout: 10000,
-            maximumAge: 300000 // 5 minutes
+            maximumAge: 300000
           }
         );
       } else {
         console.warn('Geolocation is not supported by this browser');
-        // Keep default San Francisco coordinates
         const defaultLocation = { lat: 37.7749, lng: -122.4194 };
         setMapCenter(defaultLocation);
       }
@@ -96,32 +96,50 @@ const HomePage = () => {
     getCurrentLocation();
   }, []);
 
-  // Convert map pins to Place format for the map
-  const places: Place[] = pins.map(pin => ({
-    id: pin.id,
-    name: pin.name,
-    category: pin.category,
-    coordinates: pin.coordinates,
-    likes: pin.likes,
-    isFollowing: pin.isFollowing,
-    addedBy: typeof pin.addedBy === 'string' ? pin.addedBy : pin.addedBy || 'unknown',
-    addedDate: pin.addedDate,
-    popularity: pin.popularity,
-    city: pin.city,
-    isNew: pin.isNew,
-    image: pin.image,
-    friendsWhoSaved: Array.isArray(pin.friendsWhoSaved) ? pin.friendsWhoSaved : [],
-    visitors: Array.isArray(pin.visitors) ? pin.visitors : [],
-    distance: pin.distance,
-    totalSaves: pin.totalSaves,
-    address: pin.address || ''
-  }));
+  // Convert saved places or map pins to Place format for the map
+  const places: Place[] = activeFilter === 'saved' 
+    ? Object.values(savedPlaces).flat().map(savedPlace => ({
+        id: savedPlace.id,
+        name: savedPlace.name,
+        category: savedPlace.category,
+        coordinates: savedPlace.coordinates,
+        likes: 0,
+        isFollowing: false,
+        addedBy: 'You',
+        addedDate: savedPlace.savedAt,
+        popularity: 50,
+        city: savedPlace.city,
+        isNew: false,
+        image: undefined,
+        friendsWhoSaved: [],
+        visitors: [],
+        distance: 0,
+        totalSaves: 1,
+        address: ''
+      }))
+    : pins.map(pin => ({
+        id: pin.id,
+        name: pin.name,
+        category: pin.category,
+        coordinates: pin.coordinates,
+        likes: pin.likes,
+        isFollowing: pin.isFollowing,
+        addedBy: typeof pin.addedBy === 'string' ? pin.addedBy : pin.addedBy || 'unknown',
+        addedDate: pin.addedDate,
+        popularity: pin.popularity,
+        city: pin.city,
+        isNew: pin.isNew,
+        image: pin.image,
+        friendsWhoSaved: Array.isArray(pin.friendsWhoSaved) ? pin.friendsWhoSaved : [],
+        visitors: Array.isArray(pin.visitors) ? pin.visitors : [],
+        distance: pin.distance,
+        totalSaves: pin.totalSaves,
+        address: pin.address || ''
+      }));
 
-  // Get top location for "Location of the Week"
   const getTopLocation = () => {
     if (places.length === 0) return null;
     
-    // Sort by popularity or likes to get the top location
     const sortedPlaces = [...places].sort((a, b) => {
       const aScore = (a.popularity || 0) + (a.likes || 0) + (a.totalSaves || 0);
       const bScore = (b.popularity || 0) + (b.likes || 0) + (b.totalSaves || 0);
@@ -131,7 +149,7 @@ const HomePage = () => {
     return sortedPlaces[0];
   };
 
-  const handleFilterChange = (filter: 'following' | 'popular' | 'new') => {
+  const handleFilterChange = (filter: 'following' | 'popular' | 'saved') => {
     setActiveFilter(filter);
   };
 
@@ -140,7 +158,6 @@ const HomePage = () => {
     setCurrentCity(city);
     refreshPins(city);
     
-    // Update map center based on selected city
     const cityCoordinates: Record<string, { lat: number; lng: number }> = {
       'san francisco': { lat: 37.7749, lng: -122.4194 },
       'milan': { lat: 45.4642, lng: 9.1900 },
@@ -154,7 +171,6 @@ const HomePage = () => {
     if (cityCoordinates[cityKey]) {
       setMapCenter(cityCoordinates[cityKey]);
     } else if (userLocation) {
-      // If unknown city, use user's location
       setMapCenter(userLocation);
     }
   };
@@ -173,7 +189,6 @@ const HomePage = () => {
     setIsLocationDetailOpen(true);
   };
 
-  // Convert Place to LocalPlace for modal components
   const convertToLocalPlace = (place: Place): LocalPlace => ({
     id: place.id,
     name: place.name,
@@ -185,7 +200,7 @@ const HomePage = () => {
     addedDate: place.addedDate,
     popularity: place.popularity,
     city: place.city,
-    isNew: place.isNew, // Now required
+    isNew: place.isNew,
     image: place.image,
     friendsWhoSaved: Array.isArray(place.friendsWhoSaved) ? place.friendsWhoSaved : [],
     visitors: place.visitors,
@@ -194,7 +209,6 @@ const HomePage = () => {
     address: place.address
   });
 
-  // Mock stories data
   const stories = [
     {
       id: '1',

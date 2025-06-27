@@ -1,14 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Users, Filter, SlidersHorizontal, Plus } from 'lucide-react';
+import { Search, MapPin, Users, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import SearchResults from './explore/SearchResults';
-import RecommendationsSection from './explore/RecommendationsSection';
-import CategoryIconsFilter, { CategoryType } from './explore/CategoryIconsFilter';
-import { Place } from '@/types/place';
 import { searchService } from '@/services/searchService';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,15 +10,11 @@ import EnhancedLocationCard from './explore/EnhancedLocationCard';
 import NoResults from './explore/NoResults';
 import UserCard from './explore/UserCard';
 
-type SortBy = 'proximity' | 'likes' | 'saves' | 'following' | 'recent';
-
 const ExplorePage = () => {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState<'locations' | 'users'>('locations');
   const [isSearching, setIsSearching] = useState(false);
-  const [sortBy, setSortBy] = useState<SortBy>('recent');
-  const [selectedCategories, setSelectedCategories] = useState<CategoryType[]>(['all']);
   const [locationRecommendations, setLocationRecommendations] = useState<any[]>([]);
   const [userRecommendations, setUserRecommendations] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -223,45 +213,24 @@ const ExplorePage = () => {
     setFilteredUsers([]);
   };
 
-  const handleCategoriesChange = (categories: CategoryType[]) => {
-    setSelectedCategories(categories);
-  };
-
   const isSearchActive = searchQuery.trim().length > 0;
-  
-  const getResultsCount = () => {
-    const safeSelectedCategories = Array.isArray(selectedCategories) ? selectedCategories : ['all'];
-    
-    if (!safeSelectedCategories.includes('all')) {
-      const filtered = locationRecommendations.filter(place => 
-        safeSelectedCategories.some(cat => 
-          place.category?.toLowerCase().includes(cat.toLowerCase())
-        )
-      );
-      return filtered.length;
-    }
-    return searchMode === 'locations' ? locationRecommendations.length : userRecommendations.length;
-  };
+  const displayData = searchMode === 'locations' 
+    ? (isSearchActive ? filteredLocations : locationRecommendations)
+    : (isSearchActive ? filteredUsers : userRecommendations);
 
   return (
     <div className="flex flex-col h-full bg-gray-50 pt-16">
-      {/* Enhanced Header with Gradient */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-        <div className="p-6 pb-8">
-          <h1 className="text-2xl font-bold mb-2">Discover Amazing Places</h1>
-          <p className="text-blue-100 text-sm">Find your next favorite spot shared by the community</p>
-        </div>
-        
-        {/* Search Section */}
-        <div className="px-6 pb-6">
+      {/* Simplified Header */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="p-4">
           {/* Search Mode Toggle */}
-          <div className="flex bg-white/10 backdrop-blur-sm rounded-2xl p-1 mb-4">
+          <div className="flex bg-gray-100 rounded-xl p-1 mb-4">
             <button 
               onClick={() => setSearchMode('locations')} 
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-medium transition-all ${
+              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all ${
                 searchMode === 'locations' 
-                  ? 'bg-white text-gray-900 shadow-lg' 
-                  : 'text-white/80 hover:text-white hover:bg-white/10'
+                  ? 'bg-white text-gray-900 shadow-sm' 
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
               <MapPin className="w-4 h-4" />
@@ -269,10 +238,10 @@ const ExplorePage = () => {
             </button>
             <button 
               onClick={() => setSearchMode('users')} 
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-medium transition-all ${
+              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all ${
                 searchMode === 'users' 
-                  ? 'bg-white text-gray-900 shadow-lg' 
-                  : 'text-white/80 hover:text-white hover:bg-white/10'
+                  ? 'bg-white text-gray-900 shadow-sm' 
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
               <Users className="w-4 h-4" />
@@ -288,7 +257,7 @@ const ExplorePage = () => {
               placeholder={searchMode === 'locations' ? 'Search for cafes, restaurants, attractions...' : 'Search for people...'} 
               value={searchQuery} 
               onChange={e => handleSearch(e.target.value)} 
-              className="pl-12 pr-4 h-12 bg-white/90 backdrop-blur-sm border-0 focus:bg-white rounded-2xl text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-white/50" 
+              className="pl-12 pr-4 h-12 bg-gray-50 border-gray-200 focus:bg-white rounded-xl text-gray-900 placeholder-gray-500" 
             />
             {searchQuery && (
               <Button
@@ -304,118 +273,68 @@ const ExplorePage = () => {
         </div>
       </div>
 
-      {/* Category Icons Filter - Only show for locations when not searching */}
-      {searchMode === 'locations' && !isSearchActive && (
-        <CategoryIconsFilter
-          selectedCategories={selectedCategories}
-          onCategoriesChange={handleCategoriesChange}
-        />
-      )}
-
-      {/* Results Count and Sort */}
-      {searchMode === 'locations' && !isSearchActive && (
-        <div className="px-4 py-3 bg-white border-b border-gray-100">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600 font-medium">
-              {getResultsCount()} place{getResultsCount() !== 1 ? 's' : ''} found
-            </span>
-            <Select value={sortBy} onValueChange={(value: SortBy) => setSortBy(value)}>
-              <SelectTrigger className="w-32 h-8 text-xs border-gray-200 rounded-xl">
-                <SlidersHorizontal className="w-3 h-3 mr-1" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="proximity">Nearby</SelectItem>
-                <SelectItem value="likes">Most Liked</SelectItem>
-                <SelectItem value="saves">Most Saved</SelectItem>
-                <SelectItem value="recent">Recent</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      )}
-
-      {isSearchActive ? (
-        /* Search Results View */
-        <div className="flex-1 overflow-y-auto">
-          {isSearching ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-gray-600 font-medium">Searching amazing places...</span>
-              </div>
+      {/* Results */}
+      <div className="flex-1 overflow-y-auto">
+        {loading || isSearching ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-gray-600 font-medium">
+                {isSearching ? 'Searching...' : 'Loading amazing places...'}
+              </span>
             </div>
-          ) : (
-            <>
-              {(filteredLocations.length > 0 || filteredUsers.length > 0) && (
-                <div className="px-4 py-3 bg-white border-b border-gray-100">
-                  <span className="text-sm text-gray-600 font-medium">
-                    {searchMode === 'locations' ? filteredLocations.length : filteredUsers.length} results found
-                  </span>
-                </div>
-              )}
+          </div>
+        ) : (
+          <>
+            {displayData.length > 0 && (
+              <div className="px-4 py-3 bg-white border-b border-gray-100">
+                <span className="text-sm text-gray-600 font-medium">
+                  {displayData.length} {searchMode === 'locations' ? 'place' : 'person'}{displayData.length !== 1 ? 's' : ''} found
+                </span>
+              </div>
+            )}
 
-              {searchMode === 'locations' ? (
-                filteredLocations.length > 0 ? (
-                  <div className="pb-6">
-                    {filteredLocations.map((place) => (
-                      <EnhancedLocationCard
-                        key={place.id}
-                        place={place}
-                        onCardClick={handleCardClick}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <NoResults
-                    searchMode="locations"
-                    searchQuery={searchQuery}
-                    onAddLocation={handleAddLocation}
-                  />
-                )
+            {searchMode === 'locations' ? (
+              displayData.length > 0 ? (
+                <div className="pb-6">
+                  {displayData.map((place) => (
+                    <EnhancedLocationCard
+                      key={place.id}
+                      place={place}
+                      onCardClick={handleCardClick}
+                    />
+                  ))}
+                </div>
               ) : (
-                filteredUsers.length > 0 ? (
-                  <div className="space-y-3 px-4 pb-4">
-                    {filteredUsers.map((user) => (
-                      <UserCard
-                        key={user.id}
-                        user={user}
-                        onUserClick={handleUserClick}
-                        onFollowUser={handleFollowUser}
-                        onMessageUser={handleMessageUser}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <NoResults
-                    searchMode="users"
-                    searchQuery={searchQuery}
-                  />
-                )
-              )}
-            </>
-          )}
-        </div>
-      ) : (
-        /* Discover View */
-        <div className="flex-1 overflow-y-auto">
-          <RecommendationsSection
-            searchMode={searchMode}
-            loading={loading}
-            locationRecommendations={locationRecommendations}
-            userRecommendations={userRecommendations}
-            selectedCategories={selectedCategories}
-            onLocationClick={handleCardClick}
-            onUserClick={handleUserClick}
-            onFollowUser={handleFollowUser}
-            onLocationShare={handleShare}
-            onLocationComment={handleComment}
-            onLocationLike={(placeId: string) => console.log('Like place:', placeId)}
-            likedPlaces={new Set()}
-            onMessageUser={handleMessageUser}
-          />
-        </div>
-      )}
+                <NoResults
+                  searchMode="locations"
+                  searchQuery={searchQuery}
+                  onAddLocation={handleAddLocation}
+                />
+              )
+            ) : (
+              displayData.length > 0 ? (
+                <div className="space-y-3 px-4 pb-4">
+                  {displayData.map((user) => (
+                    <UserCard
+                      key={user.id}
+                      user={user}
+                      onUserClick={handleUserClick}
+                      onFollowUser={handleFollowUser}
+                      onMessageUser={handleMessageUser}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <NoResults
+                  searchMode="users"
+                  searchQuery={searchQuery}
+                />
+              )
+            )}
+          </>
+        )}
+      </div>
 
       {/* Floating Add Button */}
       <Button
