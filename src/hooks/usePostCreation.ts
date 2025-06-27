@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,11 +19,13 @@ interface CreatePostData {
 export const usePostCreation = () => {
   const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   const createPost = async ({ caption, files, location }: CreatePostData) => {
     if (!user) throw new Error('User not authenticated');
     
     setUploading(true);
+    setProgress(0);
     
     try {
       let locationId = null;
@@ -103,6 +106,8 @@ export const usePostCreation = () => {
         }
       }
 
+      setProgress(25);
+
       // STEP 2: Upload media files
       console.log('📤 Uploading media files...');
       const mediaUrls: string[] = [];
@@ -127,7 +132,12 @@ export const usePostCreation = () => {
         
         mediaUrls.push(publicUrl);
         console.log('✅ Media uploaded:', publicUrl);
+        
+        // Update progress based on file upload completion
+        setProgress(25 + (50 * (i + 1) / files.length));
       }
+
+      setProgress(75);
 
       // STEP 3: Create post record with EXPLICIT location linking
       console.log('📝 CREATING POST WITH LOCATION ID:', locationId);
@@ -148,6 +158,8 @@ export const usePostCreation = () => {
         throw postError;
       }
 
+      setProgress(100);
+
       console.log('✅ POST CREATED SUCCESSFULLY!');
       console.log('Post ID:', post.id, 'Location ID:', post.location_id);
       
@@ -167,11 +179,13 @@ export const usePostCreation = () => {
       return { success: false, error: error as Error };
     } finally {
       setUploading(false);
+      setProgress(0);
     }
   };
 
   return {
     createPost,
-    uploading
+    uploading,
+    progress
   };
 };
