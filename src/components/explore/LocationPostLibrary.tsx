@@ -57,6 +57,25 @@ const LocationPostLibrary = ({ place, onClose }: LocationPostLibraryProps) => {
     try {
       setLoading(true);
       
+      let locationIds = [place.id];
+
+      // If the place has a Google Place ID, gather all matching location IDs
+      if (place.google_place_id) {
+        const { data: locationData, error: locationError } = await supabase
+          .from('locations')
+          .select('id')
+          .eq('google_place_id', place.google_place_id);
+
+        if (locationError) throw locationError;
+
+        locationIds = locationData?.map(loc => loc.id) || [];
+      }
+
+      // Ensure the current location ID is included
+      if (!locationIds.includes(place.id)) {
+        locationIds.push(place.id);
+      }
+
       // First fetch posts
       const { data: postsData, error: postsError } = await supabase
         .from('posts')
@@ -71,7 +90,7 @@ const LocationPostLibrary = ({ place, onClose }: LocationPostLibraryProps) => {
           created_at,
           metadata
         `)
-        .eq('location_id', place.id)
+        .in('location_id', locationIds)
         .order('created_at', { ascending: false });
 
       if (postsError) throw postsError;

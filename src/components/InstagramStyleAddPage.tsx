@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Camera, Plus, X, Play, MapPin, Settings } from 'lucide-react';
@@ -5,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Progress } from '@/components/ui/progress';
 import { usePostCreation } from '@/hooks/usePostCreation';
 import { useLocationTagging } from '@/hooks/useLocationTagging';
 import GooglePlacesAutocomplete from './GooglePlacesAutocomplete';
@@ -20,7 +22,7 @@ import { Card, CardContent } from "@/components/ui/card";
 
 const InstagramStyleAddPage = () => {
   const navigate = useNavigate();
-  const { createPost, uploading } = usePostCreation();
+  const { createPost, uploading, progress } = usePostCreation();
   const { nearbyPlaces, getCurrentLocation, loading: locationLoading } = useLocationTagging();
   
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -144,7 +146,7 @@ const InstagramStyleAddPage = () => {
   return (
     <div className="flex flex-col h-full bg-gray-50 pt-16">
       {/* Sticky Header */}
-      <div className="flex items-center justify-between p-4 bg-white border-b border-gray-100 shadow-sm sticky top-16 z-20">
+      <div className="flex items-center justify-between p-4 border-b border-gray-100 shadow-sm">
         <button 
           onClick={() => navigate(-1)} 
           className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -165,7 +167,7 @@ const InstagramStyleAddPage = () => {
           {uploading ? (
             <>
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-              Sharing...
+              Uploading {progress}%
             </>
           ) : (
             'Share'
@@ -173,8 +175,12 @@ const InstagramStyleAddPage = () => {
         </Button>
       </div>
 
+      {uploading && (
+        <Progress value={progress} className="h-1 w-full" />
+      )}
+
       <div className="flex-1 overflow-y-auto pb-20">
-        <div className="p-4 space-y-6">
+        <div className="p-4 space-y-8">
           {/* Media Carousel */}
           <div>
             {selectedFiles.length === 0 ? (
@@ -187,27 +193,26 @@ const InstagramStyleAddPage = () => {
                   className="hidden"
                   id="media-upload"
                 />
-                <label
-                  htmlFor="media-upload"
-                  className="block cursor-pointer"
-                >
-                  <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-blue-50 to-blue-100 border-0">
-                    <CardContent className="flex flex-col items-center justify-center p-8 min-h-[280px]">
-                      <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4 animate-pulse">
-                        <Camera className="w-8 h-8 text-blue-600" />
-                      </div>
-                      <h3 className="text-xl font-bold text-gray-900 mb-2 text-center">
-                        Add your best photos or videos
-                      </h3>
-                      <p className="text-gray-600 text-center">
-                        Tap to select from gallery or take a new one
-                      </p>
-                    </CardContent>
-                  </Card>
-                </label>
+                <Button asChild variant="secondary" className="w-full h-full p-0 rounded-xl overflow-hidden">
+                  <label htmlFor="media-upload" className="cursor-pointer w-full">
+                    <Card className="overflow-hidden border-0 bg-gradient-to-br from-blue-50 to-blue-100">
+                      <CardContent className="flex flex-col items-center justify-center p-8 min-h-[280px]">
+                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4 animate-pulse">
+                          <Camera className="w-8 h-8 text-blue-600" />
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2 text-center">
+                          Add your best photos or videos
+                        </h3>
+                        <p className="text-gray-600 text-center">
+                          Tap to select from gallery or take a new one
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </label>
+                </Button>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-2">
                 <Carousel className="w-full">
                   <CarouselContent>
                     {previewUrls.map((url, index) => (
@@ -246,12 +251,16 @@ const InstagramStyleAddPage = () => {
                             className="hidden"
                             id="media-upload-more"
                           />
-                          <label
-                            htmlFor="media-upload-more"
-                            className="flex items-center justify-center w-full h-full border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all cursor-pointer bg-white"
+                          <Button
+                            variant="outline"
+                            asChild
+                            className="w-full h-full border-dashed"
                           >
-                            <Plus className="w-8 h-8 text-gray-400" />
-                          </label>
+                            <label htmlFor="media-upload-more" className="flex flex-col items-center justify-center gap-2 cursor-pointer">
+                              <Plus className="w-8 h-8 text-gray-400" />
+                              <span className="text-sm">Add more</span>
+                            </label>
+                          </Button>
                         </CardContent>
                       </Card>
                     </CarouselItem>
@@ -293,7 +302,7 @@ const InstagramStyleAddPage = () => {
                     maxLength={1000}
                   />
                 )}
-                <div className="text-xs text-gray-500 mt-2 text-right">
+                <div className="text-xs text-gray-500 text-right mt-1">
                   {caption.length}/1000
                 </div>
               </div>

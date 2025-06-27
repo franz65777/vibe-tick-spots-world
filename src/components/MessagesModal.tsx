@@ -113,10 +113,11 @@ const MessagesModal = ({
   return <Dialog open={isOpen} onOpenChange={onClose}>
     <DialogContent className="max-w-full h-full md:max-w-2xl md:h-[80vh] p-0 overflow-hidden">
       {/* Mobile-first header */}
-      <DialogHeader className="p-4 border-b bg-white/95 backdrop-blur-sm">
+      <DialogHeader className="p-4 border-b border-gray-200 bg-white/95 backdrop-blur-sm">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={handleBack} className="h-8 w-8">
+          <Button variant="ghost" size="icon" onClick={handleBack} className="h-8 w-8" aria-label="Back">
             <ArrowLeft className="h-4 w-4" />
+            <span className="sr-only">Back</span>
           </Button>
           
           {view === 'threads' ? <DialogTitle className="text-lg font-semibold">Messages</DialogTitle> : selectedThread && <div className="flex items-center gap-3 flex-1">
@@ -145,7 +146,7 @@ const MessagesModal = ({
 
       {view === 'threads' ? <div className="flex-1 flex flex-col">
           {/* Search */}
-          <div className="p-4 border-b">
+          <div className="p-4 border-b border-gray-200">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input placeholder="Search messages" className="pl-9 h-10 bg-gray-50 border-gray-200 rounded-full" />
@@ -160,9 +161,9 @@ const MessagesModal = ({
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                   <Send className="w-8 h-8 text-gray-400" />
                 </div>
-                <h3 className="font-medium text-gray-900 mb-2">No messages yet</h3>
-                <p className="text-sm text-gray-500">Start a conversation with someone!</p>
-              </div> : <div className="divide-y">
+                <h3 className="font-medium text-gray-900 mb-2">Your inbox is empty</h3>
+                <p className="text-sm text-gray-500">Find a friend and start chatting!</p>
+              </div> : <div className="divide-y divide-gray-200">
                 {threads.map(thread => {
                   const otherParticipant = getOtherParticipant(thread);
                   return <button key={thread.id} onClick={() => handleThreadSelect(thread)} className="w-full p-4 text-left hover:bg-gray-50 transition-colors">
@@ -234,18 +235,31 @@ const MessagesModal = ({
           </ScrollArea>
 
           {/* Message input */}
-          <div className="p-4 border-t bg-white">
+          <div className="p-4 border-t border-gray-200 bg-white">
             <div className="flex gap-3 items-end">
               <div className="flex-1">
-                <Input value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder="Type a message..." className="min-h-[44px] rounded-full border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 resize-none" onKeyPress={e => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }
-                }} />
+                <Input
+                  value={newMessage}
+                  onChange={e => setNewMessage(e.target.value)}
+                  placeholder="Type a message..."
+                  className="min-h-[44px] rounded-full border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 resize-none"
+                  onKeyPress={e => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                />
               </div>
-              <Button onClick={handleSendMessage} disabled={!newMessage.trim()} className="h-11 w-11 rounded-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed" size="icon">
+              <Button
+                onClick={handleSendMessage}
+                disabled={!newMessage.trim()}
+                className="h-11 w-11 rounded-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-transform active:scale-95"
+                size="icon"
+                aria-label="Send message"
+              >
                 <Send className="h-4 w-4" />
+                <span className="sr-only">Send</span>
               </Button>
             </div>
           </div>

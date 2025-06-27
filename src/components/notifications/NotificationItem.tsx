@@ -49,7 +49,7 @@ const NotificationItem = ({ notification, onMarkAsRead, onAction }: Notification
 
   return (
     <div 
-      className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
+      className={`p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors duration-300 ${
         !notification.is_read ? 'bg-blue-50' : ''
       }`}
       onClick={handleClick}
@@ -70,7 +70,7 @@ const NotificationItem = ({ notification, onMarkAsRead, onAction }: Notification
             </div>
             
             {!notification.is_read && (
-              <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-1"></div>
+              <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-1 transition-opacity"></div>
             )}
           </div>
           
