@@ -1,318 +1,202 @@
+
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { MapPin, Heart, Bookmark, Users, MessageSquare, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Heart, Bookmark, MessageCircle, Share2, MapPin, Star } from 'lucide-react';
-import { Place } from '@/types/place';
-import { usePlaceEngagement } from '@/hooks/usePlaceEngagement';
-import { imageService } from '@/services/imageService';
-import CommentModal from './CommentModal';
-import ShareModal from './ShareModal';
-import LocationPostLibrary from './LocationPostLibrary';
-import { getCategoryColor } from '@/utils/categoryIcons';
+import { locationInteractionService } from '@/services/locationInteractionService';
 
 interface EnhancedLocationCardProps {
-  place: Place;
-  onCardClick: (place: Place) => void;
+  place: any;
+  onCardClick: (place: any) => void;
 }
 
 const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps) => {
-  const { isLiked, isSaved, toggleLike, toggleSave } = usePlaceEngagement();
-  const [isLiking, setIsLiking] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [commentModalOpen, setCommentModalOpen] = useState(false);
-  const [shareModalOpen, setShareModalOpen] = useState(false);
-  const [libraryModalOpen, setLibraryModalOpen] = useState(false);
-  const [smartImage, setSmartImage] = useState<string>('');
-  const [mapPreviewUrl, setMapPreviewUrl] = useState<string>('');
-  const [imageLoading, setImageLoading] = useState(true);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    loadSmartImage();
-    loadMapPreview();
-  }, [place]);
+    const checkInteractions = async () => {
+      if (place.id) {
+        const [liked, saved, count] = await Promise.all([
+          locationInteractionService.isLocationLiked(place.id),
+          locationInteractionService.isLocationSaved(place.id),
+          locationInteractionService.getLocationLikeCount(place.id)
+        ]);
+        
+        setIsLiked(liked);
+        setIsSaved(saved);
+        setLikeCount(count);
+      }
+    };
 
-  const loadSmartImage = async () => {
-    setImageLoading(true);
+    checkInteractions();
+  }, [place.id]);
+
+  const handleLikeToggle = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setLoading(true);
+    
     try {
-      // Use existing image if available, otherwise fetch smart image
-      if (place.image) {
-        setSmartImage(place.image);
+      const result = await locationInteractionService.toggleLocationLike(place.id);
+      setIsLiked(result.liked);
+      setLikeCount(result.count);
+    } catch (error) {
+      console.error('Error toggling like:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveToggle = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setLoading(true);
+    
+    try {
+      if (isSaved) {
+        await locationInteractionService.unsaveLocation(place.id);
+        setIsSaved(false);
       } else {
-        const image = await imageService.getPlaceImage(
-          place.name,
-          place.city || 'Unknown',
-          place.category
-        );
-        setSmartImage(image);
+        await locationInteractionService.saveLocation(place.id, {
+          google_place_id: place.google_place_id,
+          name: place.name,
+          address: place.address,
+          latitude: place.coordinates?.lat || 0,
+          longitude: place.coordinates?.lng || 0,
+          category: place.category,
+          types: place.types || []
+        });
+        setIsSaved(true);
       }
     } catch (error) {
-      console.error('Error loading smart image:', error);
-      // Fallback to gradient
-      setSmartImage('');
+      console.error('Error toggling save:', error);
     } finally {
-      setImageLoading(false);
+      setLoading(false);
     }
   };
 
-  const loadMapPreview = () => {
-    if (place.coordinates) {
-      const mapUrl = imageService.getStaticMapUrl(
-        place.coordinates.lat,
-        place.coordinates.lng
-      );
-      setMapPreviewUrl(mapUrl);
-    }
-  };
-
-  const handleLike = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isLiking) return;
-    
-    setIsLiking(true);
-    try {
-      await toggleLike(place.id);
-    } finally {
-      setTimeout(() => setIsLiking(false), 300);
-    }
-  };
-
-  const handleSave = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isSaving) return;
-    
-    setIsSaving(true);
-    try {
-      await toggleSave(place);
-    } finally {
-      setTimeout(() => setIsSaving(false), 300);
-    }
-  };
-
-  const handleComment = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCommentModalOpen(true);
-  };
-
-  const handleShare = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShareModalOpen(true);
-  };
-
-  const handleCardClick = () => {
-    setLibraryModalOpen(true);
-  };
-
-  const formatCategory = (category: string) => {
-    return category.charAt(0).toUpperCase() + category.slice(1);
-  };
-
-  const getDistanceText = () => {
-    if (typeof place.distance === 'string') return place.distance;
-    if (typeof place.distance === 'number') return `${place.distance.toFixed(1)}km`;
-    return '';
-  };
-
-  const getCityName = () => {
-    return place.city || 'Nearby';
-  };
-
-  const getCategoryGradient = (category: string) => {
-    const gradients: Record<string, string> = {
-      restaurant: 'from-orange-500 to-yellow-400',
-      bar: 'from-pink-500 to-rose-500',
-      cafe: 'from-amber-500 to-yellow-500',
-      shop: 'from-purple-500 to-indigo-500',
-      hotel: 'from-blue-500 to-cyan-500',
-      museum: 'from-indigo-500 to-purple-500',
-      park: 'from-green-500 to-emerald-500',
-      gym: 'from-red-500 to-orange-500',
-      attraction: 'from-teal-500 to-sky-500'
+  const getImageUrl = () => {
+    // Smart image loading based on category
+    const categoryImages: Record<string, string> = {
+      'restaurant': 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop',
+      'cafe': 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
+      'bar': 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&h=300&fit=crop',
+      'hotel': 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop',
+      'attraction': 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
+      'shopping': 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop',
+      'park': 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=300&fit=crop'
     };
-    
-    const key = category.toLowerCase() as keyof typeof gradients;
-    const gradient = gradients[key] || 'from-blue-500 to-purple-500';
-    return `bg-gradient-to-r ${gradient}`;
-  };
 
-  const getPlaceholderGradient = () => {
-    const colors = [
-      'bg-gradient-to-br from-blue-400 to-blue-600',
-      'bg-gradient-to-br from-purple-400 to-purple-600',
-      'bg-gradient-to-br from-green-400 to-green-600',
-      'bg-gradient-to-br from-orange-400 to-orange-600',
-      'bg-gradient-to-br from-pink-400 to-pink-600',
-    ];
-    const colorIndex = place.id.length % colors.length;
-    return colors[colorIndex];
+    // Return existing image or category-based fallback
+    return place.image || categoryImages[place.category] || categoryImages['attraction'];
   };
 
   return (
-    <>
-      <Card 
-        className="overflow-hidden cursor-pointer group bg-white mx-4 mb-6 rounded-2xl border-0 shadow-lg transition-transform duration-300 hover:-translate-y-1 hover:shadow-2xl"
-        onClick={handleCardClick}
-      >
-        <div className="relative">
-          {/* Main Image */}
-          <div className="aspect-[4/3] overflow-hidden rounded-t-2xl relative">
-            {imageLoading ? (
-              <div className={`w-full h-full ${getPlaceholderGradient()} animate-pulse`} />
-            ) : smartImage ? (
-              <img
-                src={smartImage}
-                alt={place.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                loading="lazy"
-              />
-            ) : (
-              <div className={`w-full h-full ${getPlaceholderGradient()} flex items-center justify-center`}>
-                <MapPin className="w-12 h-12 text-white/80" />
-              </div>
-            )}
-          </div>
-          
-          {/* Map Preview Overlay */}
-          {mapPreviewUrl && (
-            <div className="absolute top-4 right-4 w-16 h-16 rounded-lg overflow-hidden border-2 border-white shadow-lg">
-              <img
-                src={mapPreviewUrl}
-                alt="Map preview"
-                className="w-full h-full object-cover"
-              />
+    <div 
+      className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 group"
+      onClick={() => onCardClick(place)}
+    >
+      {/* Image section */}
+      <div className="relative h-48 overflow-hidden">
+        <img 
+          src={getImageUrl()} 
+          alt={place.name}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          onError={(e) => {
+            const img = e.target as HTMLImageElement;
+            img.src = 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop';
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+        
+        {/* Post count badge */}
+        {place.postCount && place.postCount > 0 && (
+          <div className="absolute top-3 right-3">
+            <div className="bg-black/60 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+              <MessageSquare className="w-3 h-3" />
+              {place.postCount}
             </div>
-          )}
-          
-          {/* Category and Status Badges */}
-          <div className="absolute top-4 left-4 flex gap-2">
-            <Badge className={`${getCategoryGradient(place.category)} text-white text-xs px-3 py-1 rounded-full border-0 font-semibold shadow-md`}>
-              {formatCategory(place.category)}
-            </Badge>
-            {place.isNew && (
-              <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs px-3 py-1 rounded-full border-0 font-semibold shadow-md">
-                New
-              </Badge>
-            )}
-            {place.popularity && place.popularity > 80 && (
-              <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-3 py-1 rounded-full border-0 flex items-center gap-1 font-semibold shadow-md">
-                <Star className="w-3 h-3" />
-                Popular
-              </Badge>
-            )}
+          </div>
+        )}
+      </div>
+
+      {/* Content section */}
+      <div className="p-4">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex-1">
+            <h3 className="font-bold text-gray-900 text-lg leading-tight mb-1">{place.name}</h3>
+            <div className="flex items-center gap-1 text-gray-500">
+              <MapPin className="w-3 h-3" />
+              <span className="text-sm">{place.city || place.address?.split(',')[1]?.trim() || 'Unknown location'}</span>
+            </div>
           </div>
         </div>
 
-        <CardContent className="p-6">
-          <div className="space-y-4">
-            {/* Place Name */}
-            <h3 className="font-bold text-gray-900 text-xl leading-tight line-clamp-2">
-              {place.name}
-            </h3>
-
-            {/* Location Row */}
-            <div className="flex items-center gap-4 text-sm text-gray-600">
-              <div className="flex items-center gap-1">
-                <MapPin className="w-4 h-4 text-gray-400" />
-                <span className="font-medium">{getCityName()}</span>
-              </div>
-              {getDistanceText() && (
-                <span className="font-medium">{getDistanceText()}</span>
-              )}
-            </div>
-
-            {/* Stats Row */}
-            <div className="flex items-center justify-between py-2">
-              <div className="flex items-center gap-6 text-sm">
-                <div className="flex items-center gap-1.5">
-                  <Heart className="w-4 h-4 text-red-500" />
-                  <span className="font-semibold text-gray-700">{place.likes || 0}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Bookmark className="w-4 h-4 text-blue-500" />
-                  <span className="font-semibold text-gray-700">{place.totalSaves || 0}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <MessageCircle className="w-4 h-4 text-green-500" />
-                  <span className="font-semibold text-gray-700">0</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="grid grid-cols-4 gap-2 pt-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLike}
-                disabled={isLiking}
-                className={`min-h-[44px] rounded-xl flex flex-col gap-1 transition-all ${
-                  isLiked(place.id)
-                    ? 'text-red-600 bg-red-50 hover:bg-red-100' 
-                    : 'text-gray-600 hover:text-red-600 hover:bg-red-50'
-                } ${isLiking ? 'animate-pulse' : ''}`}
-              >
-                <Heart className={`w-4 h-4 ${isLiked(place.id) ? 'fill-current' : ''}`} />
-                <span className="text-xs font-medium">Like</span>
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleSave}
-                disabled={isSaving}
-                className={`min-h-[44px] rounded-xl flex flex-col gap-1 transition-all ${
-                  isSaved(place.id)
-                    ? 'text-blue-600 bg-blue-50 hover:bg-blue-100' 
-                    : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
-                } ${isSaving ? 'animate-pulse' : ''}`}
-              >
-                <Bookmark className={`w-4 h-4 ${isSaved(place.id) ? 'fill-current' : ''}`} />
-                <span className="text-xs font-medium">Save</span>
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleComment}
-                className="min-h-[44px] rounded-xl flex flex-col gap-1 text-gray-600 hover:text-green-600 hover:bg-green-50 transition-all"
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span className="text-xs font-medium">Comment</span>
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleShare}
-                className="min-h-[44px] rounded-xl flex flex-col gap-1 text-gray-600 hover:text-purple-600 hover:bg-purple-50 transition-all"
-              >
-                <Share2 className="w-4 h-4" />
-                <span className="text-xs font-medium">Share</span>
-              </Button>
-            </div>
+        {/* Stats */}
+        <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
+          <div className="flex items-center gap-1">
+            <Heart className="w-4 h-4 text-red-400" />
+            <span>{likeCount}</span>
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex items-center gap-1">
+            <Users className="w-4 h-4 text-blue-400" />
+            <span>{place.visitors?.length || 0}</span>
+          </div>
+          {place.distance && (
+            <div className="flex items-center gap-1">
+              <span className="text-green-500">•</span>
+              <span>{typeof place.distance === 'number' ? `${place.distance.toFixed(1)}km` : place.distance}</span>
+            </div>
+          )}
+        </div>
 
-      <CommentModal
-        isOpen={commentModalOpen}
-        onClose={() => setCommentModalOpen(false)}
-        place={place}
-      />
+        {/* Action buttons */}
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={handleLikeToggle}
+            disabled={loading}
+            variant="ghost"
+            size="sm"
+            className={`flex-1 rounded-xl transition-all duration-200 ${
+              isLiked 
+                ? 'bg-red-50 text-red-600 hover:bg-red-100' 
+                : 'text-gray-600 hover:bg-red-50 hover:text-red-600'
+            }`}
+          >
+            <Heart className={`w-4 h-4 mr-2 ${isLiked ? 'fill-current' : ''}`} />
+            Like
+          </Button>
 
-      <ShareModal
-        isOpen={shareModalOpen}
-        onClose={() => setShareModalOpen(false)}
-        place={place}
-      />
+          <Button
+            onClick={handleSaveToggle}
+            disabled={loading}
+            variant="ghost"
+            size="sm"
+            className={`flex-1 rounded-xl transition-all duration-200 ${
+              isSaved 
+                ? 'bg-blue-50 text-blue-600 hover:bg-blue-100' 
+                : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600'
+            }`}
+          >
+            <Bookmark className={`w-4 h-4 mr-2 ${isSaved ? 'fill-current' : ''}`} />
+            Save
+          </Button>
 
-      {libraryModalOpen && (
-        <LocationPostLibrary
-          onClose={() => setLibraryModalOpen(false)}
-          place={place}
-        />
-      )}
-    </>
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              // Handle share
+            }}
+            variant="ghost"
+            size="sm"
+            className="flex-1 rounded-xl text-gray-600 hover:bg-orange-50 hover:text-orange-600 transition-all duration-200"
+          >
+            <Share2 className="w-4 h-4 mr-2" />
+            Share
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 };
 
