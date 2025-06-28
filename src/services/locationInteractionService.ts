@@ -152,7 +152,7 @@ class LocationInteractionService {
         .from('posts')
         .select(`
           *,
-          locations!inner (
+          locations!inner(
             id,
             name,
             address,
@@ -160,11 +160,6 @@ class LocationInteractionService {
             longitude,
             category,
             google_place_id
-          ),
-          profiles!posts_user_id_fkey (
-            username,
-            full_name,
-            avatar_url
           )
         `)
         .in('user_id', followedUserIds)
@@ -176,12 +171,29 @@ class LocationInteractionService {
         return [];
       }
 
+      // Get user profiles separately to avoid join issues
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .in('id', followedUserIds);
+
+      if (profilesError) {
+        console.error('Profiles error:', profilesError);
+      }
+
+      // Create a map of user profiles for quick lookup
+      const profileMap = new Map();
+      profiles?.forEach(profile => {
+        profileMap.set(profile.id, profile);
+      });
+
       // Transform posts into location format
       const locationMap = new Map();
       
       posts?.forEach(post => {
         const location = post.locations;
         const locationKey = location.google_place_id || location.id;
+        const userProfile = profileMap.get(post.user_id);
         
         if (!locationMap.has(locationKey)) {
           locationMap.set(locationKey, {
@@ -194,7 +206,7 @@ class LocationInteractionService {
             },
             likes: 0,
             isFollowing: true,
-            addedBy: post.profiles?.full_name || post.profiles?.username || 'Someone',
+            addedBy: userProfile?.full_name || userProfile?.username || 'Someone',
             addedDate: new Date(post.created_at).toLocaleDateString(),
             popularity: 75,
             city: location.address?.split(',')[1]?.trim() || 'Unknown',
