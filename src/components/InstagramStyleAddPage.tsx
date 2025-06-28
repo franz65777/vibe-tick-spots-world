@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Camera, Image, MapPin, X, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -44,7 +43,18 @@ const InstagramStyleAddPage = () => {
   };
 
   const handleLocationSelect = (location: any) => {
-    setSelectedLocation(location);
+    setSelectedLocation({
+      place_id: location.place_id,
+      name: location.name,
+      formatted_address: location.address,
+      geometry: {
+        location: {
+          lat: () => location.lat,
+          lng: () => location.lng
+        }
+      },
+      types: location.types
+    });
   };
 
   const uploadFiles = async (): Promise<string[]> => {
@@ -232,7 +242,7 @@ const InstagramStyleAddPage = () => {
             Add Location
           </h3>
           <GooglePlacesAutocomplete
-            onLocationSelect={handleLocationSelect}
+            onPlaceSelect={handleLocationSelect}
             placeholder="Search for a place..."
             className="w-full"
           />
