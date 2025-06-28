@@ -1,349 +1,269 @@
 
-import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { ArrowLeft, Camera, MapPin, X, Image as ImageIcon, Check, Sparkles, Upload, Plus } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Camera, Image, MapPin, X, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import GooglePlacesAutocomplete from './GooglePlacesAutocomplete';
-import { usePostCreation } from '@/hooks/usePostCreation';
-
-interface SelectedLocation {
-  id: string;
-  name: string;
-  address: string;
-  coordinates: { lat: number; lng: number };
-  placeId: string;
-  types: string[];
-}
 
 const InstagramStyleAddPage = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const { createPost, uploading, progress } = usePostCreation();
-
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [caption, setCaption] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState<SelectedLocation | null>(null);
-  const [currentStep, setCurrentStep] = useState<'select' | 'edit' | 'share'>('select');
-  const [isDragOver, setIsDragOver] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<any>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Cleanup preview URLs when component unmounts
-  useEffect(() => {
-    return () => {
-      previewUrls.forEach(url => URL.revokeObjectURL(url));
-    };
-  }, []);
-
-  const handleFileSelect = useCallback((files: FileList | null) => {
+  const handleFileSelect = (files: FileList | null) => {
     if (!files) return;
-
-    const validFiles = Array.from(files).filter(file => 
+    
+    const fileArray = Array.from(files);
+    const validFiles = fileArray.filter(file => 
       file.type.startsWith('image/') || file.type.startsWith('video/')
     );
 
-    if (validFiles.length === 0) return;
-
-    // Cleanup old preview URLs
-    previewUrls.forEach(url => URL.revokeObjectURL(url));
-
-    const newFiles = validFiles.slice(0, 10); // Limit to 10 files
-    const newPreviews = newFiles.map(file => URL.createObjectURL(file));
-
-    setSelectedFiles(newFiles);
-    setPreviewUrls(newPreviews);
-    setCurrentStep('edit');
-  }, [previewUrls]);
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-  }, []);
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    handleFileSelect(e.dataTransfer.files);
-  }, [handleFileSelect]);
+    if (validFiles.length > 0) {
+      setSelectedFiles(prev => [...prev, ...validFiles].slice(0, 10)); // Max 10 files
+      
+      // Create preview URLs
+      validFiles.forEach(file => {
+        const url = URL.createObjectURL(file);
+        setPreviewUrls(prev => [...prev, url]);
+      });
+    }
+  };
 
   const removeFile = (index: number) => {
-    URL.revokeObjectURL(previewUrls[index]);
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-    setPreviewUrls(prev => prev.filter((_, i) => i !== index));
+    setPreviewUrls(prev => {
+      URL.revokeObjectURL(prev[index]);
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   const handleLocationSelect = (location: any) => {
-    if (location) {
-      setSelectedLocation({
-        id: location.place_id,
-        name: location.name,
-        address: location.formatted_address || location.vicinity || '',
-        coordinates: {
-          lat: location.geometry?.location?.lat() || 0,
-          lng: location.geometry?.location?.lng() || 0
-        },
-        placeId: location.place_id,
-        types: location.types || []
-      });
-    }
+    setSelectedLocation(location);
   };
 
-  const handlePost = async () => {
+  const uploadFiles = async (): Promise<string[]> => {
+    if (!user || selectedFiles.length === 0) return [];
+
+    const uploadPromises = selectedFiles.map(async (file) => {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `posts/${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      
+      const { data, error } = await supabase.storage
+        .from('media')
+        .upload(fileName, file);
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('media')
+        .getPublicUrl(data.path);
+
+      return publicUrl;
+    });
+
+    return Promise.all(uploadPromises);
+  };
+
+  const handleSubmit = async () => {
     if (!user || selectedFiles.length === 0) return;
 
+    setIsUploading(true);
     try {
-      const locationData = selectedLocation ? {
-        google_place_id: selectedLocation.placeId,
-        name: selectedLocation.name,
-        address: selectedLocation.address,
-        latitude: selectedLocation.coordinates.lat,
-        longitude: selectedLocation.coordinates.lng,
-        types: selectedLocation.types
-      } : undefined;
-
-      const result = await createPost({
-        files: selectedFiles,
-        caption: caption.trim() || undefined,
-        location: locationData
-      });
-
-      if (result.success) {
-        // Clear form
-        setSelectedFiles([]);
-        setPreviewUrls([]);
-        setCaption('');
-        setSelectedLocation(null);
-        setCurrentStep('select');
+      // Upload files first
+      const mediaUrls = await uploadFiles();
+      
+      // Save location if provided (prevent duplicates by checking google_place_id)
+      let locationId = null;
+      if (selectedLocation) {
+        // First check if location already exists
+        let existingLocation = null;
         
-        // Navigate back to home
-        navigate('/');
+        if (selectedLocation.place_id) {
+          const { data: existing } = await supabase
+            .from('locations')
+            .select('id')
+            .eq('google_place_id', selectedLocation.place_id)
+            .maybeSingle();
+          
+          existingLocation = existing;
+        }
+
+        if (existingLocation) {
+          locationId = existingLocation.id;
+        } else {
+          // Create new location
+          const { data: newLocation, error: locationError } = await supabase
+            .from('locations')
+            .insert({
+              name: selectedLocation.name,
+              address: selectedLocation.formatted_address,
+              latitude: selectedLocation.geometry?.location?.lat(),
+              longitude: selectedLocation.geometry?.location?.lng(),
+              google_place_id: selectedLocation.place_id,
+              category: selectedLocation.types?.[0] || 'establishment',
+              place_types: selectedLocation.types || [],
+              created_by: user.id,
+              pioneer_user_id: user.id
+            })
+            .select('id')
+            .single();
+
+          if (locationError) {
+            console.error('Location creation error:', locationError);
+          } else {
+            locationId = newLocation.id;
+          }
+        }
       }
+
+      // Create post
+      const { error: postError } = await supabase
+        .from('posts')
+        .insert({
+          user_id: user.id,
+          location_id: locationId,
+          caption: caption || null,
+          media_urls: mediaUrls,
+        });
+
+      if (postError) throw postError;
+
+      // Reset form
+      setSelectedFiles([]);
+      setPreviewUrls(prev => {
+        prev.forEach(url => URL.revokeObjectURL(url));
+        return [];
+      });
+      setCaption('');
+      setSelectedLocation(null);
+
+      console.log('Post created successfully!');
     } catch (error) {
       console.error('Error creating post:', error);
+    } finally {
+      setIsUploading(false);
     }
   };
 
-  const resetForm = () => {
-    previewUrls.forEach(url => URL.revokeObjectURL(url));
-    setSelectedFiles([]);
-    setPreviewUrls([]);
-    setCaption('');
-    setSelectedLocation(null);
-    setCurrentStep('select');
-  };
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
-        <div className="text-center max-w-md bg-white rounded-3xl p-8 shadow-xl">
-          <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Sparkles className="w-10 h-10 text-white" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">Join Our Community</h2>
-          <p className="text-gray-600 mb-6">Sign in to share your amazing discoveries with the world</p>
-          <Button 
-            onClick={() => navigate('/auth')}
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-          >
-            Sign In to Continue
-          </Button>
-        </div>
+  return (
+    <div className="flex flex-col h-full bg-gray-50 pt-16">
+      <div className="bg-white border-b border-gray-200 p-4">
+        <h1 className="text-xl font-bold text-gray-900">Create Post</h1>
       </div>
-    );
-  }
 
-  if (currentStep === 'select') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50">
-        {/* Header */}
-        <div className="bg-white/90 backdrop-blur-lg border-b border-gray-200/50 sticky top-0 z-10">
-          <div className="flex items-center justify-between p-4 max-w-2xl mx-auto">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/')}
-              className="flex items-center gap-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-xl px-3 py-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="font-medium">Back</span>
-            </Button>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-cyan-600 bg-clip-text text-transparent">
-              Share Your Discovery
-            </h1>
-            <div className="w-20"></div>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 flex items-center justify-center p-6">
-          <div className="w-full max-w-lg">
-            {/* Upload Area */}
-            <div
-              className={`relative border-2 border-dashed rounded-3xl p-16 text-center transition-all duration-300 cursor-pointer bg-white/60 backdrop-blur-sm ${
-                isDragOver
-                  ? 'border-indigo-400 bg-indigo-50/70 scale-105 shadow-xl'
-                  : 'border-gray-300 hover:border-indigo-400 hover:bg-indigo-50/50 hover:shadow-lg'
-              }`}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
+      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        {/* Media Upload Section */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <h3 className="font-semibold text-gray-900 mb-4">Add Photos or Videos</h3>
+          
+          {selectedFiles.length === 0 ? (
+            <div 
+              className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-all duration-200"
               onClick={() => fileInputRef.current?.click()}
             >
-              <div className="space-y-8">
-                <div className="relative">
-                  <div className="w-24 h-24 bg-gradient-to-r from-indigo-500 to-cyan-600 rounded-full flex items-center justify-center mx-auto shadow-lg">
-                    <Upload className="w-12 h-12 text-white" />
-                  </div>
-                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-pink-500 to-rose-500 rounded-full flex items-center justify-center">
-                    <Plus className="w-4 h-4 text-white" />
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Image className="w-8 h-8 text-blue-600" />
+              </div>
+              <p className="text-gray-600 font-medium mb-2">Tap to add media</p>
+              <p className="text-gray-400 text-sm">Share your favorite moments</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {previewUrls.map((url, index) => (
+                <div key={index} className="relative aspect-square rounded-xl overflow-hidden">
+                  <img 
+                    src={url} 
+                    alt={`Preview ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    onClick={() => removeFile(index)}
+                    className="absolute top-2 right-2 w-6 h-6 bg-black/60 rounded-full flex items-center justify-center"
+                  >
+                    <X className="w-4 h-4 text-white" />
+                  </button>
+                </div>
+              ))}
+              {selectedFiles.length < 10 && (
+                <div 
+                  className="aspect-square border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-all duration-200"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <div className="text-center">
+                    <Camera className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-500 text-sm">Add more</p>
                   </div>
                 </div>
-                
-                <div className="space-y-4">
-                  <h3 className="text-2xl font-bold text-gray-900">
-                    Share Your Adventure
-                  </h3>
-                  <p className="text-gray-600 leading-relaxed text-lg">
-                    Drag photos here or click to browse
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Support JPG, PNG, MP4 • Up to 10 files
-                  </p>
-                </div>
-
-                <Button
-                  className="bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 text-white font-semibold px-10 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                >
-                  Choose Files
-                </Button>
-              </div>
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept="image/*,video/*"
-                onChange={(e) => handleFileSelect(e.target.files)}
-                className="hidden"
-              />
+              )}
             </div>
+          )}
 
-            {/* Camera Option */}
-            <div className="mt-8">
-              <Button
-                variant="outline"
-                className="w-full flex items-center justify-center gap-3 py-6 rounded-2xl border-2 border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/70 transition-all duration-300 bg-white/60 backdrop-blur-sm"
-                onClick={() => {
-                  if (fileInputRef.current) {
-                    fileInputRef.current.setAttribute('capture', 'environment');
-                    fileInputRef.current.click();
-                  }
-                }}
-              >
-                <Camera className="w-6 h-6 text-gray-600" />
-                <span className="font-semibold text-gray-700 text-lg">Use Camera</span>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50">
-      {/* Header */}
-      <div className="bg-white/90 backdrop-blur-lg border-b border-gray-200/50 sticky top-0 z-10">
-        <div className="flex items-center justify-between p-4 max-w-4xl mx-auto">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={resetForm}
-            disabled={uploading}
-            className="flex items-center gap-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-xl px-3 py-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="font-medium">Back</span>
-          </Button>
-          
-          <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-cyan-600 bg-clip-text text-transparent">
-            Create Post
-          </h1>
-
-          <Button
-            onClick={handlePost}
-            disabled={uploading || selectedFiles.length === 0}
-            className="bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 text-white font-semibold px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
-          >
-            {uploading ? `${progress}%` : 'Share'}
-          </Button>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="max-w-4xl mx-auto p-6 space-y-8">
-        {/* Media Preview */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-6 shadow-lg">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Media</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {previewUrls.map((url, index) => (
-              <div key={index} className="relative group rounded-2xl overflow-hidden bg-gray-100">
-                <img 
-                  src={url} 
-                  alt={`Preview ${index + 1}`}
-                  className="w-full h-32 object-cover"
-                />
-                <button
-                  onClick={() => removeFile(index)}
-                  className="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Caption */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-6 shadow-lg">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Caption</h3>
-          <Textarea
-            placeholder="Write a caption..."
-            value={caption}
-            onChange={(e) => setCaption(e.target.value)}
-            className="min-h-[100px] resize-none border-gray-200 rounded-2xl focus:border-indigo-400 focus:ring-indigo-400"
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,video/*"
+            multiple
+            onChange={(e) => handleFileSelect(e.target.files)}
+            className="hidden"
           />
         </div>
 
-        {/* Location */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-6 shadow-lg">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-indigo-600" />
+        {/* Caption Section */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <h3 className="font-semibold text-gray-900 mb-4">Write a caption</h3>
+          <Textarea
+            value={caption}
+            onChange={(e) => setCaption(e.target.value)}
+            placeholder="Share your thoughts about this place..."
+            className="min-h-[100px] resize-none border-gray-200 rounded-xl focus:border-blue-400 focus:ring-blue-400"
+          />
+        </div>
+
+        {/* Location Section */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <MapPin className="w-5 h-5" />
             Add Location
           </h3>
-          <GooglePlacesAutocomplete onPlaceSelect={handleLocationSelect} />
+          <GooglePlacesAutocomplete
+            onLocationSelect={handleLocationSelect}
+            placeholder="Search for a place..."
+            className="w-full"
+          />
           {selectedLocation && (
-            <div className="mt-4 p-4 bg-indigo-50 rounded-xl flex items-center justify-between">
-              <div>
-                <p className="font-medium text-gray-900">{selectedLocation.name}</p>
-                <p className="text-sm text-gray-600">{selectedLocation.address}</p>
-              </div>
-              <button
-                onClick={() => setSelectedLocation(null)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="w-5 h-5" />
-              </button>
+            <div className="mt-3 p-3 bg-blue-50 rounded-xl">
+              <p className="font-medium text-blue-900">{selectedLocation.name}</p>
+              <p className="text-blue-600 text-sm">{selectedLocation.formatted_address}</p>
             </div>
           )}
         </div>
+      </div>
+
+      {/* Submit Button */}
+      <div className="p-4 bg-white border-t border-gray-200">
+        <Button
+          onClick={handleSubmit}
+          disabled={selectedFiles.length === 0 || isUploading}
+          className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-xl font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isUploading ? (
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              Publishing...
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Send className="w-5 h-5" />
+              Share Post
+            </div>
+          )}
+        </Button>
       </div>
     </div>
   );

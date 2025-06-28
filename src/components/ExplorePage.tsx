@@ -8,6 +8,8 @@ import { supabase } from '@/integrations/supabase/client';
 import EnhancedLocationCard from './explore/EnhancedLocationCard';
 import NoResults from './explore/NoResults';
 import UserCard from './explore/UserCard';
+import LocationDetailModal from './explore/LocationDetailModal';
+
 const ExplorePage = () => {
   const {
     user
@@ -20,6 +22,9 @@ const ExplorePage = () => {
   const [loading, setLoading] = useState(false);
   const [filteredLocations, setFilteredLocations] = useState<any[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
+  const [selectedLocation, setSelectedLocation] = useState<any>(null);
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+
   const handleAddLocation = () => {
     console.log('Navigate to add location');
   };
@@ -145,6 +150,8 @@ const ExplorePage = () => {
   };
   const handleCardClick = (place: any) => {
     console.log('Card clicked:', place.name);
+    setSelectedLocation(place);
+    setIsLocationModalOpen(true);
   };
   const handleShare = (place: any) => {
     console.log('Share place:', place.name);
@@ -184,7 +191,9 @@ const ExplorePage = () => {
     setFilteredUsers([]);
   };
   const isSearchActive = searchQuery.trim().length > 0;
-  const displayData = searchMode === 'locations' ? isSearchActive ? filteredLocations : locationRecommendations : isSearchActive ? filteredUsers : userRecommendations;
+  const displayData = searchMode === 'locations' 
+    ? (isSearchActive ? filteredLocations : locationRecommendations)
+    : (isSearchActive ? filteredUsers : userRecommendations);
   return <div className="flex flex-col h-full bg-gray-50 pt-16">
       {/* Simplified Header */}
       <div className="bg-white border-b border-gray-200">
@@ -237,7 +246,13 @@ const ExplorePage = () => {
       </div>
 
       {/* Floating Add Button */}
-      
+      {/* Location Detail Modal */}
+      <LocationDetailModal
+        isOpen={isLocationModalOpen}
+        onClose={() => setIsLocationModalOpen(false)}
+        location={selectedLocation}
+      />
     </div>;
 };
+
 export default ExplorePage;

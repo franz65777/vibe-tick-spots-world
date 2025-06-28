@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface LocationInteraction {
@@ -10,33 +9,57 @@ export interface LocationInteraction {
 }
 
 class LocationInteractionService {
-  // Save a location for the user
+  // Save a location for the user - IMPROVED duplicate prevention
   async saveLocation(locationId: string, locationData?: any): Promise<boolean> {
     try {
       const { data: user } = await supabase.auth.getUser();
       if (!user?.user) return false;
 
-      // First check if location exists, if not create it
+      // First check if location exists, if not create it (with better duplicate prevention)
       if (locationData) {
-        const { error: locationError } = await supabase
-          .from('locations')
-          .upsert({
-            id: locationId,
-            google_place_id: locationData.google_place_id,
-            name: locationData.name,
-            address: locationData.address,
-            latitude: locationData.latitude,
-            longitude: locationData.longitude,
-            category: locationData.category || 'establishment',
-            place_types: locationData.types || [],
-            created_by: user.user.id,
-            pioneer_user_id: user.user.id
-          }, { onConflict: 'google_place_id' });
+        let existingLocationId = locationId;
 
-        if (locationError) console.error('Location upsert error:', locationError);
+        // If we have a google_place_id, check for existing location first
+        if (locationData.google_place_id) {
+          const { data: existingLocation } = await supabase
+            .from('locations')
+            .select('id')
+            .eq('google_place_id', locationData.google_place_id)
+            .maybeSingle();
+
+          if (existingLocation) {
+            existingLocationId = existingLocation.id;
+          } else {
+            // Create new location only if it doesn't exist
+            const { data: newLocation, error: locationError } = await supabase
+              .from('locations')
+              .insert({
+                id: locationId,
+                google_place_id: locationData.google_place_id,
+                name: locationData.name,
+                address: locationData.address,
+                latitude: locationData.latitude,
+                longitude: locationData.longitude,
+                category: locationData.category || 'establishment',
+                place_types: locationData.types || [],
+                created_by: user.user.id,
+                pioneer_user_id: user.user.id
+              })
+              .select('id')
+              .single();
+
+            if (locationError) {
+              console.error('Location creation error:', locationError);
+              return false;
+            }
+            existingLocationId = newLocation.id;
+          }
+        }
+
+        locationId = existingLocationId;
       }
 
-      // Save location for user
+      // Save location for user (prevent duplicate saves)
       const { error } = await supabase
         .from('user_saved_locations')
         .insert({

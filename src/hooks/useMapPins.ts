@@ -1,7 +1,9 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { locationInteractionService } from '@/services/locationInteractionService';
 import { backendService } from '@/services/backendService';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MapPin {
   id: string;
@@ -104,6 +106,58 @@ export const useMapPins = (filter: 'following' | 'popular' | 'saved' = 'followin
           address: location.address || '',
           google_place_id: location.google_place_id
         }));
+      } else if (filter === 'saved') {
+        console.log('🔍 Fetching saved locations...');
+        const { data: savedLocations, error } = await supabase
+          .from('user_saved_locations')
+          .select(`
+            location_id,
+            created_at,
+            locations!inner (
+              id,
+              name,
+              category,
+              address,
+              latitude,
+              longitude,
+              google_place_id
+            )
+          `)
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error('Error fetching saved locations:', error);
+          throw error;
+        }
+
+        fetchedPins = savedLocations?.map(item => {
+          const location = item.locations as any;
+          return {
+            id: location.id,
+            name: location.name,
+            category: location.category,
+            coordinates: { 
+              lat: parseFloat(location.latitude?.toString() || '0'), 
+              lng: parseFloat(location.longitude?.toString() || '0') 
+            },
+            likes: 0,
+            isFollowing: false,
+            addedBy: 'You',
+            addedDate: new Date(item.created_at).toLocaleDateString(),
+            popularity: 75,
+            city: location.address?.split(',')[1]?.trim() || 'Unknown',
+            isNew: false,
+            image: undefined,
+            friendsWhoSaved: [],
+            visitors: [],
+            distance: Math.random() * 10,
+            totalSaves: 1,
+            address: location.address || '',
+            google_place_id: location.google_place_id
+          };
+        }) || [];
+
+        console.log('✅ Saved locations:', fetchedPins.length);
       }
 
       setPins(fetchedPins);
