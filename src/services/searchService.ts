@@ -90,59 +90,66 @@ class SearchService {
 
       console.log('📍 Raw locations data before deduplication:', locations.length);
 
-      // CRITICAL DEDUPLICATION: Use Map with google_place_id OR location name+address as key
+      // CRITICAL DEDUPLICATION: Group by google_place_id first, then by name
+      const locationGroups = new Map<string, any[]>();
+      
+      // Group locations by google_place_id or name
+      for (const location of locations) {
+        const groupKey = location.google_place_id || location.name.toLowerCase().trim();
+        if (!locationGroups.has(groupKey)) {
+          locationGroups.set(groupKey, []);
+        }
+        locationGroups.get(groupKey)!.push(location);
+      }
+      
+      console.log(`📍 Found ${locationGroups.size} unique location groups from ${locations.length} raw locations`);
+      
       const uniqueResults = new Map<string, LocationRecommendation>();
       
-      for (const location of locations) {
-        // Create a unique key: prefer google_place_id, fallback to name+address combination
-        const uniqueKey = location.google_place_id || 
-                          `${location.name.toLowerCase()}_${(location.address || '').toLowerCase()}`;
+      for (const [groupKey, locationGroup] of locationGroups) {
+        // Use the first location as the representative
+        const primaryLocation = locationGroup[0];
         
-        // Count posts for this location
-        const posts = Array.isArray(location.posts) ? location.posts : [];
-        const postCount = posts.length;
+        // Count total posts across all locations in this group
+        let totalPosts = 0;
+        for (const location of locationGroup) {
+          const posts = Array.isArray(location.posts) ? location.posts : [];
+          totalPosts += posts.length;
+        }
         
-        console.log(`🔍 Processing location: ${location.name}, Key: ${uniqueKey}, Posts: ${postCount}`);
+        console.log(`🔍 Processing group: ${primaryLocation.name}, Total posts: ${totalPosts}`);
         
-        if (postCount > 0) {
-          // If we already have this location, update post count (aggregate from duplicates)
-          if (uniqueResults.has(uniqueKey)) {
-            const existing = uniqueResults.get(uniqueKey)!;
-            existing.postCount += postCount;
-            console.log(`📝 Updated post count for ${location.name}: ${existing.postCount}`);
-          } else {
-            // Create new unique location entry
-            console.log(`🎨 Generating AI image for NEW location: ${location.name} (${location.category})`);
-            
-            const aiLocationImage = await imageService.getPlaceImage(
-              location.name,
-              location.city || location.address?.split(',')[1]?.trim() || 'Unknown',
-              location.category
-            );
-            
-            uniqueResults.set(uniqueKey, {
-              id: location.id, // Use the first occurrence's ID
-              name: location.name,
-              category: location.category,
-              address: location.address,
-              city: location.city || location.address?.split(',')[1]?.trim() || 'Unknown',
-              coordinates: { 
-                lat: parseFloat(location.latitude?.toString() || '0'), 
-                lng: parseFloat(location.longitude?.toString() || '0') 
-              },
-              likes: 0,
-              totalSaves: 0,
-              visitors: [],
-              isNew: this.isLocationNew(location.created_at),
-              distance: Math.random() * 5,
-              google_place_id: location.google_place_id,
-              postCount: postCount,
-              image: aiLocationImage,
-              addedDate: location.created_at
-            });
-            
-            console.log(`✅ Created UNIQUE card for: ${location.name} with ${postCount} posts`);
-          }
+        if (totalPosts > 0) {
+          console.log(`🎨 Generating AI image for location: ${primaryLocation.name} (${primaryLocation.category})`);
+          
+          const aiLocationImage = await imageService.getPlaceImage(
+            primaryLocation.name,
+            primaryLocation.city || primaryLocation.address?.split(',')[1]?.trim() || 'Unknown',
+            primaryLocation.category
+          );
+          
+          uniqueResults.set(groupKey, {
+            id: primaryLocation.id,
+            name: primaryLocation.name,
+            category: primaryLocation.category,
+            address: primaryLocation.address,
+            city: primaryLocation.city || primaryLocation.address?.split(',')[1]?.trim() || 'Unknown',
+            coordinates: { 
+              lat: parseFloat(primaryLocation.latitude?.toString() || '0'), 
+              lng: parseFloat(primaryLocation.longitude?.toString() || '0') 
+            },
+            likes: 0,
+            totalSaves: 0,
+            visitors: [],
+            isNew: this.isLocationNew(primaryLocation.created_at),
+            distance: Math.random() * 5,
+            google_place_id: primaryLocation.google_place_id,
+            postCount: totalPosts,
+            image: aiLocationImage,
+            addedDate: primaryLocation.created_at
+          });
+          
+          console.log(`✅ Created UNIQUE card for: ${primaryLocation.name} with ${totalPosts} posts`);
         }
       }
 

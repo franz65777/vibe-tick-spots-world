@@ -38,44 +38,42 @@ const LocationDetailModal = ({ isOpen, onClose, location }: LocationDetailModalP
       // Get posts for this specific location OR any location with the same google_place_id
       let postIds: string[] = [];
 
-      if (location.google_place_id) {
-        // Get posts from ALL locations with the same google_place_id
-        const { data: sameLocationIds } = await supabase
-          .from('locations')
-          .select('id')
-          .eq('google_place_id', location.google_place_id);
-        
-        const locationIds = sameLocationIds?.map(l => l.id) || [location.id];
-        console.log('📍 Searching posts from all duplicate locations:', locationIds.length);
-        
-        // Get posts from these locations
-        const { data: postsData, error: postsError } = await supabase
-          .from('posts')
-          .select('id, caption, media_urls, created_at, user_id')
-          .in('location_id', locationIds)
-          .order('created_at', { ascending: false });
-
-        if (postsError) throw postsError;
-        postIds = postsData?.map(p => p.id) || [];
-        setPosts(postsData || []);
-      } else {
-        // Get posts for single location
-        const { data: postsData, error: postsError } = await supabase
-          .from('posts')
-          .select('id, caption, media_urls, created_at, user_id')
-          .eq('location_id', location.id)
-          .order('created_at', { ascending: false });
-
-        if (postsError) throw postsError;
-        postIds = postsData?.map(p => p.id) || [];
-        setPosts(postsData || []);
+      // Get all locations that match either by google_place_id or by name
+      const { data: allMatchingLocations, error: locationsError } = await supabase
+        .from('locations')
+        .select('id')
+        .or(
+          location.google_place_id 
+            ? `google_place_id.eq.${location.google_place_id},name.ilike.${location.name}`
+            : `name.ilike.${location.name}`
+        );
+      
+      if (locationsError) {
+        console.error('❌ Error fetching matching locations:', locationsError);
+        throw locationsError;
       }
+      
+      const locationIds = allMatchingLocations?.map(l => l.id) || [location.id];
+      console.log('📍 Searching posts from all matching locations:', locationIds.length, locationIds);
+      
+      // Get posts from all matching locations
+      const { data: postsData, error: postsError } = await supabase
+        .from('posts')
+        .select('id, caption, media_urls, created_at, user_id')
+        .in('location_id', locationIds)
+        .order('created_at', { ascending: false });
 
-      console.log('✅ Found posts for location:', postIds.length);
+      if (postsError) {
+        console.error('❌ Error fetching posts:', postsError);
+        throw postsError;
+      }
+      
+      console.log('📊 Found posts:', postsData?.length || 0);
+      setPosts(postsData || []);
 
-      // Get user profiles for the posts separately
-      if (postIds.length > 0) {
-        const userIds = [...new Set(posts.map(p => p.user_id))];
+      // Get user profiles for the posts
+      if (postsData && postsData.length > 0) {
+        const userIds = [...new Set(postsData.map(p => p.user_id))];
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select('id, username, full_name, avatar_url')
@@ -86,16 +84,17 @@ const LocationDetailModal = ({ isOpen, onClose, location }: LocationDetailModalP
           const profileMap = new Map(profiles.map(p => [p.id, p]));
           
           // Add profile data to posts
-          const enrichedPosts = posts.map(post => ({
+          const enrichedPosts = postsData.map(post => ({
             ...post,
             profiles: profileMap.get(post.user_id)
           }));
           
           setPosts(enrichedPosts);
+          console.log('✅ Posts enriched with profiles:', enrichedPosts.length);
         }
       }
 
-      // Get friends who posted here (if user follows them)
+      // Get friends who posted here (if user follows them)  
       if (user && posts.length) {
         const { data: followingData } = await supabase
           .from('follows')
