@@ -2,7 +2,6 @@
 import { useAuth } from '@/contexts/AuthContext';
 import WelcomePage from '@/components/WelcomePage';
 import HomePage from '@/components/HomePage';
-import AuthenticatedLayout from '@/components/AuthenticatedLayout';
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -28,12 +27,8 @@ const Index = () => {
   }
 
   console.log('Index page: User authenticated, showing home page');
-  // Show main app if user is authenticated - Use the FULL HomePage with map
-  return (
-    <AuthenticatedLayout>
-      <HomePage />
-    </AuthenticatedLayout>
-  );
+  // Show main app if user is authenticated
+  return <HomePage />;
 };
 
 export default Index;
