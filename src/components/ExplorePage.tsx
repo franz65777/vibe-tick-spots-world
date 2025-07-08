@@ -77,12 +77,15 @@ const ExplorePage = () => {
             posts!inner(id)
           `).or(`name.ilike.%${query}%, address.ilike.%${query}%, city.ilike.%${query}%`).not('posts', 'is', null).limit(20);
         if (error) throw error;
+        
+        // Group by google_place_id to ensure only 1 library per location
         const uniqueResults = new Map();
         locations?.forEach(location => {
-          if (location.google_place_id && !uniqueResults.has(location.google_place_id)) {
+          const key = location.google_place_id || `${location.latitude}-${location.longitude}`;
+          if (!uniqueResults.has(key)) {
             const postCount = Array.isArray(location.posts) ? location.posts.length : 0;
             if (postCount > 0) {
-              uniqueResults.set(location.google_place_id, {
+              uniqueResults.set(key, {
                 id: location.id,
                 name: location.name,
                 category: location.category,

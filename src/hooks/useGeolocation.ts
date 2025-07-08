@@ -24,32 +24,10 @@ export const useGeolocation = (): UseGeolocationReturn => {
 
   const getCityFromCoordinates = async (lat: number, lng: number): Promise<string> => {
     try {
-      // Use more reliable reverse geocoding API with proper error handling
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-      
-      const response = await fetch(
-        `https://api.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&addressdetails=1`,
-        { 
-          signal: controller.signal,
-          headers: {
-            'User-Agent': 'LocationApp/1.0'
-          }
-        }
-      );
-      
-      clearTimeout(timeoutId);
-      
-      if (response.ok) {
-        const data = await response.json();
-        const address = data.address;
-        return address?.city || address?.town || address?.village || address?.municipality || 'Unknown City';
-      }
-      
-      // Fallback to manual city detection based on coordinates
+      // Fallback to manual city detection to avoid network issues
       return getCityFromCoordinatesManual(lat, lng);
     } catch (error) {
-      console.error('Error fetching city from coordinates:', error);
+      console.error('Error getting city from coordinates:', error);
       return getCityFromCoordinatesManual(lat, lng);
     }
   };
