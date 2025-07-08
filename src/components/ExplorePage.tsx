@@ -29,15 +29,15 @@ const ExplorePage = () => {
     console.log('Navigate to add location');
   };
 
-  // Load ALL locations with posts
+  // Load ALL locations with posts - IMPROVED DEDUPLICATION
   useEffect(() => {
     const loadRecommendations = async () => {
       if (!user) return;
       setLoading(true);
       try {
-        console.log('🔍 Loading ALL locations with posts...');
+        console.log('🔍 Loading UNIQUE locations with posts...');
         const locations = await searchService.getLocationRecommendations(user.id);
-        console.log('✅ Loaded location recommendations:', locations.length);
+        console.log('✅ Loaded DEDUPLICATED location recommendations:', locations.length);
         setLocationRecommendations(locations);
         const users = await searchService.getUserRecommendations(user.id);
         setUserRecommendations(users);

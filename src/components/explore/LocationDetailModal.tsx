@@ -33,8 +33,10 @@ const LocationDetailModal = ({ isOpen, onClose, location }: LocationDetailModalP
     
     setLoading(true);
     try {
-      // Get posts for this location
-      const { data: postsData, error: postsError } = await supabase
+      console.log('🔍 Loading posts for location:', location.id, 'Google Place ID:', location.google_place_id);
+      
+      // Get posts for this specific location OR any location with the same google_place_id
+      let query = supabase
         .from('posts')
         .select(`
           id,
@@ -48,12 +50,28 @@ const LocationDetailModal = ({ isOpen, onClose, location }: LocationDetailModalP
             full_name,
             avatar_url
           )
-        `)
-        .eq('location_id', location.id)
+        `);
+
+      if (location.google_place_id) {
+        // Get posts from ALL locations with the same google_place_id
+        const { data: sameLocationIds } = await supabase
+          .from('locations')
+          .select('id')
+          .eq('google_place_id', location.google_place_id);
+        
+        const locationIds = sameLocationIds?.map(l => l.id) || [location.id];
+        query = query.in('location_id', locationIds);
+        console.log('📍 Searching posts from all duplicate locations:', locationIds.length);
+      } else {
+        query = query.eq('location_id', location.id);
+      }
+
+      const { data: postsData, error: postsError } = await query
         .order('created_at', { ascending: false });
 
       if (postsError) throw postsError;
 
+      console.log('✅ Found posts for location:', postsData?.length || 0);
       setPosts(postsData || []);
 
       // Get friends who posted here (if user follows them)
