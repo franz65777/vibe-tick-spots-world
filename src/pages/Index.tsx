@@ -28,7 +28,7 @@ const Index = () => {
   }
 
   console.log('Index page: User authenticated, showing home page');
-  // Show main app if user is authenticated
+  // Show main app if user is authenticated - Use the FULL HomePage with map
   return (
     <AuthenticatedLayout>
       <HomePage />

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -36,7 +37,7 @@ const HomePage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [selectedCity, setSelectedCity] = useState('');
-  const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'saved'>('following');
+  const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'saved'>('popular');
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 37.7749, lng: -122.4194 });
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -61,6 +62,8 @@ const HomePage = () => {
   // Use the map pins hook with the active filter 
   const { pins, loading, error, refreshPins, hasFollowedUsers } = useMapPins(activeFilter);
   const { savedPlaces } = useSavedPlaces();
+
+  console.log('HomePage - pins:', pins, 'loading:', loading, 'error:', error);
 
   // Get user's current location on component mount
   useEffect(() => {
@@ -121,20 +124,22 @@ const HomePage = () => {
         name: pin.name,
         category: pin.category,
         coordinates: pin.coordinates,
-        likes: pin.likes,
-        isFollowing: pin.isFollowing,
-        addedBy: typeof pin.addedBy === 'string' ? pin.addedBy : pin.addedBy || 'unknown',
+        likes: pin.likes || 0,
+        isFollowing: pin.isFollowing || false,
+        addedBy: typeof pin.addedBy === 'string' ? pin.addedBy : pin.addedBy?.name || 'unknown',
         addedDate: pin.addedDate,
-        popularity: pin.popularity,
+        popularity: pin.popularity || 0,
         city: pin.city,
-        isNew: pin.isNew,
+        isNew: pin.isNew || false,
         image: pin.image,
         friendsWhoSaved: Array.isArray(pin.friendsWhoSaved) ? pin.friendsWhoSaved : [],
         visitors: Array.isArray(pin.visitors) ? pin.visitors : [],
-        distance: pin.distance,
-        totalSaves: pin.totalSaves,
+        distance: pin.distance || 0,
+        totalSaves: pin.totalSaves || 0,
         address: pin.address || ''
       }));
+
+  console.log('HomePage - converted places:', places);
 
   const getTopLocation = () => {
     if (places.length === 0) return null;
@@ -149,10 +154,12 @@ const HomePage = () => {
   };
 
   const handleFilterChange = (filter: 'following' | 'popular' | 'saved') => {
+    console.log('HomePage - Filter changed to:', filter);
     setActiveFilter(filter);
   };
 
   const handleCityChange = (city: string) => {
+    console.log('HomePage - City changed to:', city);
     setSelectedCity(city);
     setCurrentCity(city);
     refreshPins(city);
@@ -175,6 +182,7 @@ const HomePage = () => {
   };
 
   const handlePinClick = (place: Place) => {
+    console.log('HomePage - Pin clicked:', place.name);
     setSelectedPlace(place);
   };
 
@@ -279,13 +287,34 @@ const HomePage = () => {
           hasFollowedUsers={hasFollowedUsers}
         />
         
-        <MapSection 
-          places={places}
-          onPinClick={handlePinClick}
-          mapCenter={mapCenter}
-          selectedPlace={selectedPlace}
-          onCloseSelectedPlace={handleCloseSelectedPlace}
-        />
+        {loading ? (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center py-8">
+              <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+              <p className="text-gray-500">Loading amazing places...</p>
+            </div>
+          </div>
+        ) : error ? (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center py-8">
+              <p className="text-red-500 mb-4">Error loading places: {error}</p>
+              <button 
+                onClick={() => refreshPins()} 
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        ) : (
+          <MapSection 
+            places={places}
+            onPinClick={handlePinClick}
+            mapCenter={mapCenter}
+            selectedPlace={selectedPlace}
+            onCloseSelectedPlace={handleCloseSelectedPlace}
+          />
+        )}
       </main>
 
       <ModalsManager 

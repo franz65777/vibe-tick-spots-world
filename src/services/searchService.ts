@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { imageService } from './imageService';
 
@@ -46,10 +45,10 @@ export interface SearchHistoryItem {
 }
 
 class SearchService {
-  // Get ALL locations that have posts - CRITICAL: PROPER DEDUPLICATION BY GOOGLE_PLACE_ID
+  // Get ALL locations that have posts - FIXED DEDUPLICATION BY GOOGLE_PLACE_ID AND NAME
   async getLocationRecommendations(userId: string): Promise<LocationRecommendation[]> {
     try {
-      console.log('🔍 Fetching ALL unique locations with posts - ENSURING NO DUPLICATES...');
+      console.log('🔍 Fetching ALL unique locations with posts - PROPER DEDUPLICATION...');
       
       // Check if user session is valid before making request
       const { data: sessionData } = await supabase.auth.getSession();
@@ -90,25 +89,62 @@ class SearchService {
 
       console.log('📍 Raw locations data before deduplication:', locations.length);
 
-      // CRITICAL DEDUPLICATION: Group by google_place_id first, then by name
+      // ENHANCED DEDUPLICATION: Proper grouping by google_place_id AND name matching
       const locationGroups = new Map<string, any[]>();
       
-      // Group locations by google_place_id or name
+      // First pass: Group by google_place_id if it exists
       for (const location of locations) {
-        const groupKey = location.google_place_id || location.name.toLowerCase().trim();
-        if (!locationGroups.has(groupKey)) {
-          locationGroups.set(groupKey, []);
+        if (location.google_place_id) {
+          const key = `place_${location.google_place_id}`;
+          if (!locationGroups.has(key)) {
+            locationGroups.set(key, []);
+          }
+          locationGroups.get(key)!.push(location);
         }
-        locationGroups.get(groupKey)!.push(location);
       }
       
-      console.log(`📍 Found ${locationGroups.size} unique location groups from ${locations.length} raw locations`);
+      // Second pass: Group remaining locations by normalized name
+      const ungroupedLocations = locations.filter(loc => !loc.google_place_id);
+      const nameGroups = new Map<string, any[]>();
+      
+      for (const location of ungroupedLocations) {
+        const normalizedName = location.name.toLowerCase().trim().replace(/[^\w\s]/g, '');
+        let foundGroup = false;
+        
+        // Check if this name matches any existing group (fuzzy matching)
+        for (const [existingName, group] of nameGroups) {
+          if (this.isSimilarLocation(normalizedName, existingName, location.address, group[0].address)) {
+            group.push(location);
+            foundGroup = true;
+            break;
+          }
+        }
+        
+        if (!foundGroup) {
+          nameGroups.set(normalizedName, [location]);
+        }
+      }
+      
+      // Merge name groups into main locationGroups
+      let nameGroupIndex = 0;
+      for (const [name, group] of nameGroups) {
+        locationGroups.set(`name_${nameGroupIndex}_${name}`, group);
+        nameGroupIndex++;
+      }
+      
+      console.log(`📍 After deduplication: ${locationGroups.size} unique location groups from ${locations.length} raw locations`);
       
       const uniqueResults = new Map<string, LocationRecommendation>();
       
       for (const [groupKey, locationGroup] of locationGroups) {
-        // Use the first location as the representative
-        const primaryLocation = locationGroup[0];
+        // Use the location with most posts as the representative
+        const sortedByPosts = locationGroup.sort((a, b) => {
+          const aPosts = Array.isArray(a.posts) ? a.posts.length : 0;
+          const bPosts = Array.isArray(b.posts) ? b.posts.length : 0;
+          return bPosts - aPosts;
+        });
+        
+        const primaryLocation = sortedByPosts[0];
         
         // Count total posts across all locations in this group
         let totalPosts = 0;
@@ -117,7 +153,7 @@ class SearchService {
           totalPosts += posts.length;
         }
         
-        console.log(`🔍 Processing group: ${primaryLocation.name}, Total posts: ${totalPosts}`);
+        console.log(`🔍 Processing group: ${primaryLocation.name}, Locations in group: ${locationGroup.length}, Total posts: ${totalPosts}`);
         
         if (totalPosts > 0) {
           console.log(`🎨 Generating AI image for location: ${primaryLocation.name} (${primaryLocation.category})`);
@@ -128,7 +164,9 @@ class SearchService {
             primaryLocation.category
           );
           
-          uniqueResults.set(groupKey, {
+          const uniqueKey = primaryLocation.google_place_id || `${primaryLocation.name}_${primaryLocation.id}`;
+          
+          uniqueResults.set(uniqueKey, {
             id: primaryLocation.id,
             name: primaryLocation.name,
             category: primaryLocation.category,
@@ -149,19 +187,83 @@ class SearchService {
             addedDate: primaryLocation.created_at
           });
           
-          console.log(`✅ Created UNIQUE card for: ${primaryLocation.name} with ${totalPosts} posts`);
+          console.log(`✅ Created UNIQUE card for: ${primaryLocation.name} with ${totalPosts} posts (${locationGroup.length} duplicate locations merged)`);
         }
       }
 
       const results = Array.from(uniqueResults.values());
       console.log(`✅ FINAL RESULT: ${results.length} UNIQUE location cards (NO DUPLICATES)`);
-      console.log('📊 Each card aggregates ALL posts for that location');
+      console.log('📊 Each card represents a unique location with aggregated post counts');
       
       return results;
     } catch (error) {
       console.error('❌ Error in getLocationRecommendations:', error);
       return [];
     }
+  }
+
+  // Helper method to check if two locations are similar
+  private isSimilarLocation(name1: string, name2: string, address1?: string, address2?: string): boolean {
+    // Exact name match
+    if (name1 === name2) return true;
+    
+    // Check if names are very similar (accounting for common variations)
+    const similarity = this.calculateStringSimilarity(name1, name2);
+    if (similarity > 0.8) return true;
+    
+    // If addresses are available, check if they're similar too
+    if (address1 && address2) {
+      const addr1 = address1.toLowerCase().trim();
+      const addr2 = address2.toLowerCase().trim();
+      if (addr1 === addr2) return true;
+      
+      // Check if they share the same street address
+      const streetAddr1 = addr1.split(',')[0];
+      const streetAddr2 = addr2.split(',')[0];
+      if (streetAddr1 === streetAddr2) return true;
+    }
+    
+    return false;
+  }
+
+  // Simple string similarity calculation
+  private calculateStringSimilarity(str1: string, str2: string): number {
+    const longer = str1.length > str2.length ? str1 : str2;
+    const shorter = str1.length > str2.length ? str2 : str1;
+    
+    if (longer.length === 0) return 1.0;
+    
+    const editDistance = this.levenshteinDistance(longer, shorter);
+    return (longer.length - editDistance) / longer.length;
+  }
+
+  // Levenshtein distance calculation
+  private levenshteinDistance(str1: string, str2: string): number {
+    const matrix = [];
+    
+    for (let i = 0; i <= str2.length; i++) {
+      matrix[i] = [i];
+    }
+    
+    for (let j = 0; j <= str1.length; j++) {
+      matrix[0][j] = j;
+    }
+    
+    for (let i = 1; i <= str2.length; i++) {
+      for (let j = 1; j <= str1.length; j++) {
+        if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1,
+            matrix[i][j - 1] + 1,
+            matrix[i - 1][j] + 1
+          );
+        }
+      }
+    }
+    
+    return matrix[str2.length][str1.length];
   }
 
   // Check if location was recently created (within 7 days)
