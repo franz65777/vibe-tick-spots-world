@@ -36,21 +36,7 @@ const LocationDetailModal = ({ isOpen, onClose, location }: LocationDetailModalP
       console.log('🔍 Loading posts for location:', location.id, 'Google Place ID:', location.google_place_id);
       
       // Get posts for this specific location OR any location with the same google_place_id
-      let query = supabase
-        .from('posts')
-        .select(`
-          id,
-          caption,
-          media_urls,
-          created_at,
-          user_id,
-          profiles!inner (
-            id,
-            username,
-            full_name,
-            avatar_url
-          )
-        `);
+      let postIds: string[] = [];
 
       if (location.google_place_id) {
         // Get posts from ALL locations with the same google_place_id
@@ -60,35 +46,70 @@ const LocationDetailModal = ({ isOpen, onClose, location }: LocationDetailModalP
           .eq('google_place_id', location.google_place_id);
         
         const locationIds = sameLocationIds?.map(l => l.id) || [location.id];
-        query = query.in('location_id', locationIds);
         console.log('📍 Searching posts from all duplicate locations:', locationIds.length);
+        
+        // Get posts from these locations
+        const { data: postsData, error: postsError } = await supabase
+          .from('posts')
+          .select('id, caption, media_urls, created_at, user_id')
+          .in('location_id', locationIds)
+          .order('created_at', { ascending: false });
+
+        if (postsError) throw postsError;
+        postIds = postsData?.map(p => p.id) || [];
+        setPosts(postsData || []);
       } else {
-        query = query.eq('location_id', location.id);
+        // Get posts for single location
+        const { data: postsData, error: postsError } = await supabase
+          .from('posts')
+          .select('id, caption, media_urls, created_at, user_id')
+          .eq('location_id', location.id)
+          .order('created_at', { ascending: false });
+
+        if (postsError) throw postsError;
+        postIds = postsData?.map(p => p.id) || [];
+        setPosts(postsData || []);
       }
 
-      const { data: postsData, error: postsError } = await query
-        .order('created_at', { ascending: false });
+      console.log('✅ Found posts for location:', postIds.length);
 
-      if (postsError) throw postsError;
+      // Get user profiles for the posts separately
+      if (postIds.length > 0) {
+        const userIds = [...new Set(posts.map(p => p.user_id))];
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, username, full_name, avatar_url')
+          .in('id', userIds);
 
-      console.log('✅ Found posts for location:', postsData?.length || 0);
-      setPosts(postsData || []);
+        if (!profilesError && profiles) {
+          // Create a map of user profiles
+          const profileMap = new Map(profiles.map(p => [p.id, p]));
+          
+          // Add profile data to posts
+          const enrichedPosts = posts.map(post => ({
+            ...post,
+            profiles: profileMap.get(post.user_id)
+          }));
+          
+          setPosts(enrichedPosts);
+        }
+      }
 
       // Get friends who posted here (if user follows them)
-      if (user && postsData?.length) {
+      if (user && posts.length) {
         const { data: followingData } = await supabase
           .from('follows')
           .select('following_id')
           .eq('follower_id', user.id);
 
         const followingIds = followingData?.map(f => f.following_id) || [];
-        const friendPosts = postsData.filter(post => followingIds.includes(post.user_id));
+        const friendPosts = posts.filter(post => followingIds.includes(post.user_id));
         
         // Get unique friends
         const uniqueFriends = new Map();
         friendPosts.forEach(post => {
           const profile = post.profiles as any;
-          if (!uniqueFriends.has(profile.id)) {
+          if (profile && !uniqueFriends.has(profile.id)) {
             uniqueFriends.set(profile.id, {
               id: profile.id,
               name: profile.full_name || profile.username,

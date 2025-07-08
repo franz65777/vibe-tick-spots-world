@@ -1,7 +1,7 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import WelcomePage from '@/components/WelcomePage';
-import HomePage from '@/components/HomePage';
+import SimpleHomePage from '@/components/SimpleHomePage';
 import AuthenticatedLayout from '@/components/AuthenticatedLayout';
 
 const Index = () => {
@@ -31,7 +31,7 @@ const Index = () => {
   // Show main app if user is authenticated
   return (
     <AuthenticatedLayout>
-      <HomePage />
+      <SimpleHomePage />
     </AuthenticatedLayout>
   );
 };

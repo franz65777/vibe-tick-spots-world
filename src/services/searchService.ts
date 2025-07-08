@@ -173,20 +173,19 @@ class SearchService {
         return [];
       }
 
-      // Get users that current user is NOT following
+      // Get users that current user is NOT following - fix the query
       const { data: users, error } = await supabase
         .from('profiles')
-        .select(`
-          id,
-          username,
-          full_name,
-          avatar_url,
-          posts!inner(id)
-        `)
+        .select('id, username, full_name, avatar_url, posts_count')
         .neq('id', userId)
+        .not('posts_count', 'is', null)
+        .gt('posts_count', 0)
         .limit(20);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching users:', error);
+        return [];
+      }
 
       // Get current user's following list
       const { data: following } = await supabase
