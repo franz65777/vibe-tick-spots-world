@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { loadGoogleMapsAPI } from '@/lib/googleMaps';
 import { Place } from '@/types/place';
 import LocationDetailSheet from './LocationDetailSheet';
+import { useGeolocation } from '@/hooks/useGeolocation';
 
 interface GoogleMapsSetupProps {
   places: Place[];
@@ -24,10 +25,12 @@ const GoogleMapsSetup = ({
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
+  const currentLocationMarkerRef = useRef<google.maps.Marker | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
   const [selectedLocationName, setSelectedLocationName] = useState<string>('');
   const [selectedLocationAddress, setSelectedLocationAddress] = useState<string>('');
+  const { location, getCurrentLocation } = useGeolocation();
 
   // Initialize map
   useEffect(() => {
@@ -67,13 +70,16 @@ const GoogleMapsSetup = ({
         }
 
         setIsLoaded(true);
+        
+        // Get current location when map is loaded
+        getCurrentLocation();
       } catch (error) {
         console.error('Error initializing Google Maps:', error);
       }
     };
 
     initMap();
-  }, []);
+  }, [getCurrentLocation, onMapRightClick]);
 
   // Update map center when it changes
   useEffect(() => {
@@ -83,6 +89,66 @@ const GoogleMapsSetup = ({
       mapInstanceRef.current.setZoom(13);
     }
   }, [mapCenter, isLoaded]);
+
+  // Add current location marker
+  useEffect(() => {
+    if (!mapInstanceRef.current || !isLoaded || !location?.latitude || !location?.longitude) return;
+
+    // Remove existing current location marker
+    if (currentLocationMarkerRef.current) {
+      currentLocationMarkerRef.current.setMap(null);
+    }
+
+    // Add current location marker with pulsing effect
+    const currentLocationMarker = new google.maps.Marker({
+      position: { lat: location.latitude, lng: location.longitude },
+      map: mapInstanceRef.current,
+      title: 'Your Current Location',
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 8,
+        fillColor: '#4285F4',
+        fillOpacity: 1,
+        strokeColor: '#FFFFFF',
+        strokeWeight: 3,
+      },
+      zIndex: 2000,
+    });
+
+    currentLocationMarkerRef.current = currentLocationMarker;
+
+    // Add pulsing circle around current location
+    const pulseCircle = new google.maps.Circle({
+      strokeColor: '#4285F4',
+      strokeOpacity: 0.8,
+      strokeWeight: 2,
+      fillColor: '#4285F4',
+      fillOpacity: 0.1,
+      map: mapInstanceRef.current,
+      center: { lat: location.latitude, lng: location.longitude },
+      radius: 100,
+    });
+
+    // Animate the pulse
+    let radius = 100;
+    let growing = true;
+    const pulseAnimation = setInterval(() => {
+      if (growing) {
+        radius += 5;
+        if (radius >= 200) growing = false;
+      } else {
+        radius -= 5;
+        if (radius <= 100) growing = true;
+      }
+      pulseCircle.setRadius(radius);
+    }, 100);
+
+    // Cleanup animation on unmount
+    return () => {
+      clearInterval(pulseAnimation);
+      pulseCircle.setMap(null);
+    };
+  }, [location, isLoaded]);
 
   // Clear existing markers
   const clearMarkers = useCallback(() => {
@@ -97,18 +163,25 @@ const GoogleMapsSetup = ({
     clearMarkers();
 
     places.forEach(place => {
+      // Create a more visually appealing custom pin
+      const pinColor = place.isFollowing ? '#3B82F6' : '#10B981';
+      const pinSize = place.isNew ? 12 : 10;
+      
       const marker = new google.maps.Marker({
         position: place.coordinates,
         map: mapInstanceRef.current,
         title: place.name,
         icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 8,
-          fillColor: place.isFollowing ? '#3B82F6' : '#10B981',
-          fillOpacity: 1,
+          path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+          scale: pinSize,
+          fillColor: pinColor,
+          fillOpacity: 0.9,
           strokeColor: '#FFFFFF',
           strokeWeight: 2,
+          rotation: 180,
+          anchor: new google.maps.Point(0, 0),
         },
+        zIndex: place.isNew ? 1000 : 100,
       });
 
       // Add click listener to marker
@@ -120,6 +193,33 @@ const GoogleMapsSetup = ({
         if (onPinClick) {
           onPinClick(place);
         }
+      });
+
+      // Add hover effects
+      marker.addListener('mouseover', () => {
+        marker.setIcon({
+          path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+          scale: pinSize + 2,
+          fillColor: pinColor,
+          fillOpacity: 1,
+          strokeColor: '#FFFFFF',
+          strokeWeight: 3,
+          rotation: 180,
+          anchor: new google.maps.Point(0, 0),
+        });
+      });
+
+      marker.addListener('mouseout', () => {
+        marker.setIcon({
+          path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+          scale: pinSize,
+          fillColor: pinColor,
+          fillOpacity: 0.9,
+          strokeColor: '#FFFFFF',
+          strokeWeight: 2,
+          rotation: 180,
+          anchor: new google.maps.Point(0, 0),
+        });
       });
 
       markersRef.current.push(marker);
