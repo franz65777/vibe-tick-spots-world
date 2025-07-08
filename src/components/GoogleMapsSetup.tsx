@@ -36,10 +36,15 @@ const GoogleMapsSetup = ({
   useEffect(() => {
     const initMap = async () => {
       try {
+        console.log('Starting Google Maps initialization...');
         await loadGoogleMapsAPI();
         
-        if (!mapRef.current) return;
+        if (!mapRef.current) {
+          console.log('Map container not ready');
+          return;
+        }
 
+        console.log('Creating Google Maps instance...');
         const map = new google.maps.Map(mapRef.current, {
           center: mapCenter,
           zoom: 13,
@@ -48,14 +53,22 @@ const GoogleMapsSetup = ({
               featureType: 'poi',
               elementType: 'labels',
               stylers: [{ visibility: 'off' }]
+            },
+            {
+              featureType: 'transit',
+              elementType: 'labels',
+              stylers: [{ visibility: 'off' }]
             }
           ],
           mapTypeControl: false,
           streetViewControl: false,
           fullscreenControl: false,
+          gestureHandling: 'greedy',
+          backgroundColor: '#f0f0f0'
         });
 
         mapInstanceRef.current = map;
+        console.log('Google Maps instance created successfully');
 
         // Add right-click listener for adding new locations
         if (onMapRightClick) {
@@ -70,15 +83,19 @@ const GoogleMapsSetup = ({
         }
 
         setIsLoaded(true);
+        console.log('Map initialization complete');
         
         // Get current location when map is loaded
         getCurrentLocation();
       } catch (error) {
         console.error('Error initializing Google Maps:', error);
+        setIsLoaded(false);
       }
     };
 
-    initMap();
+    // Add delay to ensure DOM is ready
+    const timer = setTimeout(initMap, 100);
+    return () => clearTimeout(timer);
   }, [getCurrentLocation, onMapRightClick]);
 
   // Update map center when it changes
@@ -252,7 +269,20 @@ const GoogleMapsSetup = ({
 
   return (
     <>
-      <div ref={mapRef} className="w-full h-full min-h-[500px] rounded-lg overflow-hidden" />
+      <div 
+        ref={mapRef} 
+        className="w-full h-full min-h-[500px] rounded-lg overflow-hidden relative bg-gray-100"
+        style={{ minHeight: '500px' }}
+      >
+        {!isLoaded && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+              <p className="text-sm text-gray-600">Loading map...</p>
+            </div>
+          </div>
+        )}
+      </div>
       
       {selectedLocationId && (
         <LocationDetailSheet

@@ -268,12 +268,9 @@ const HomePage = () => {
           />
         </div>
         
-        {topLocation && (
-          <LocationOfTheWeek 
-            topLocation={topLocation} 
-            onLocationClick={handleLocationOfTheWeekClick}
-          />
-        )}
+        <LocationOfTheWeek 
+          onLocationClick={handleLocationOfTheWeekClick}
+        />
         
         <FilterButtons 
           activeFilter={activeFilter}

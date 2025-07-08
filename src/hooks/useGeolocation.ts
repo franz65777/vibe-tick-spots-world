@@ -24,15 +24,26 @@ export const useGeolocation = (): UseGeolocationReturn => {
 
   const getCityFromCoordinates = async (lat: number, lng: number): Promise<string> => {
     try {
-      // Use reverse geocoding API (for now using a mock response)
-      // In production, you'd use Google Maps Geocoding API or similar
+      // Use more reliable reverse geocoding API with proper error handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
       const response = await fetch(
-        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
+        `https://api.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&addressdetails=1`,
+        { 
+          signal: controller.signal,
+          headers: {
+            'User-Agent': 'LocationApp/1.0'
+          }
+        }
       );
+      
+      clearTimeout(timeoutId);
       
       if (response.ok) {
         const data = await response.json();
-        return data.city || data.locality || 'Unknown City';
+        const address = data.address;
+        return address?.city || address?.town || address?.village || address?.municipality || 'Unknown City';
       }
       
       // Fallback to manual city detection based on coordinates

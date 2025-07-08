@@ -1165,6 +1165,50 @@ export type Database = {
           },
         ]
       }
+      super_users: {
+        Row: {
+          created_at: string | null
+          id: string
+          level: number | null
+          points: number | null
+          status: string
+          total_contributions: number | null
+          updated_at: string | null
+          user_id: string
+          weekly_contributions: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          level?: number | null
+          points?: number | null
+          status?: string
+          total_contributions?: number | null
+          updated_at?: string | null
+          user_id: string
+          weekly_contributions?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          level?: number | null
+          points?: number | null
+          status?: string
+          total_contributions?: number | null
+          updated_at?: string | null
+          user_id?: string
+          weekly_contributions?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "super_users_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_analytics: {
         Row: {
           created_at: string
@@ -1394,6 +1438,47 @@ export type Database = {
           },
         ]
       }
+      weekly_location_metrics: {
+        Row: {
+          created_at: string | null
+          id: string
+          likes_count: number | null
+          location_id: string
+          saves_count: number | null
+          updated_at: string | null
+          visits_count: number | null
+          week_start: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          likes_count?: number | null
+          location_id: string
+          saves_count?: number | null
+          updated_at?: string | null
+          visits_count?: number | null
+          week_start: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          likes_count?: number | null
+          location_id?: string
+          saves_count?: number | null
+          updated_at?: string | null
+          visits_count?: number | null
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_location_metrics_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1402,6 +1487,21 @@ export type Database = {
       cleanup_expired_stories: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      get_location_of_the_week: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          location_id: string
+          location_name: string
+          location_category: string
+          location_address: string
+          latitude: number
+          longitude: number
+          image_url: string
+          total_likes: number
+          total_saves: number
+          total_score: number
+        }[]
       }
     }
     Enums: {

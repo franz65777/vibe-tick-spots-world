@@ -4,6 +4,7 @@ import { Bell, MessageSquare, BellRing } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import GlobalCitySearch from './GlobalCitySearch';
 import MessageHistoryModal from './MessageHistoryModal';
+import SuperUserBadge from '../SuperUserBadge';
 import { useNotifications } from '@/hooks/useNotifications';
 
 interface HeaderProps {
@@ -42,6 +43,11 @@ const Header = ({
             onSearchChange={onSearchChange} 
             onSearchKeyPress={onSearchKeyPress} 
           />
+
+          {/* Center: Super User Badge */}
+          <div className="flex-1 flex justify-center">
+            <SuperUserBadge />
+          </div>
 
           {/* Right: Action Buttons */}
           <div className="flex items-center gap-1">
