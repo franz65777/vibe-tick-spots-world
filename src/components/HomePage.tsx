@@ -58,9 +58,8 @@ const HomePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentCity, setCurrentCity] = useState('');
   
-  // Use the map pins hook with the active filter - but change 'new' to 'saved'
-  const mapFilter = activeFilter === 'saved' ? 'popular' : activeFilter;
-  const { pins, loading, error, refreshPins, hasFollowedUsers } = useMapPins(mapFilter);
+  // Use the map pins hook with the active filter 
+  const { pins, loading, error, refreshPins, hasFollowedUsers } = useMapPins(activeFilter);
   const { savedPlaces } = useSavedPlaces();
 
   // Get user's current location on component mount
