@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -98,6 +97,17 @@ const HomePage = () => {
     getCurrentLocation();
   }, []);
 
+  // Helper function to safely extract addedBy string
+  const getAddedByName = (addedBy: any): string => {
+    if (typeof addedBy === 'string') {
+      return addedBy;
+    }
+    if (addedBy && typeof addedBy === 'object' && addedBy.name) {
+      return addedBy.name;
+    }
+    return 'unknown';
+  };
+
   // Convert saved places or map pins to Place format for the map
   const places: Place[] = activeFilter === 'saved' 
     ? Object.values(savedPlaces).flat().map(savedPlace => ({
@@ -126,7 +136,7 @@ const HomePage = () => {
         coordinates: pin.coordinates,
         likes: pin.likes || 0,
         isFollowing: pin.isFollowing || false,
-        addedBy: typeof pin.addedBy === 'string' ? pin.addedBy : pin.addedBy?.name || 'unknown',
+        addedBy: getAddedByName(pin.addedBy),
         addedDate: pin.addedDate,
         popularity: pin.popularity || 0,
         city: pin.city,
@@ -203,7 +213,7 @@ const HomePage = () => {
     coordinates: place.coordinates,
     likes: place.likes,
     isFollowing: place.isFollowing,
-    addedBy: typeof place.addedBy === 'string' ? place.addedBy : 'unknown',
+    addedBy: getAddedByName(place.addedBy),
     addedDate: place.addedDate,
     popularity: place.popularity,
     city: place.city,
@@ -332,9 +342,9 @@ const HomePage = () => {
         currentStoryIndex={currentStoryIndex}
         onCreateStoryModalClose={() => setIsCreateStoryModalOpen(false)}
         onNotificationsModalClose={() => setIsNotificationsModalOpen(false)}
-        onMessagesModalClose={() => setIsMessagesModalOpen(false)}
+        onMessagesModalClose={() => setIsMessagesModalClose(false)}
         onShareModalClose={() => setIsShareModalOpen(false)}
-        onCommentModalClose={() => setIsCommentModalOpen(false)}
+        onCommentModalClose={() => setIsCommentModalClose(false)}
         onLocationDetailClose={() => setIsLocationDetailOpen(false)}
         onStoriesViewerClose={() => setIsStoriesViewerOpen(false)}
         onStoryCreated={() => {}}
