@@ -26,11 +26,51 @@ const GoogleMapsSetup = ({
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
   const currentLocationMarkerRef = useRef<google.maps.Marker | null>(null);
+  const pulseCircleRef = useRef<google.maps.Circle | null>(null);
+  const pulseAnimationRef = useRef<NodeJS.Timeout | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
   const [selectedLocationName, setSelectedLocationName] = useState<string>('');
   const [selectedLocationAddress, setSelectedLocationAddress] = useState<string>('');
   const { location, getCurrentLocation } = useGeolocation();
+
+  // Safe marker cleanup function
+  const clearMarkers = useCallback(() => {
+    try {
+      markersRef.current.forEach(marker => {
+        try {
+          if (marker && marker.getMap()) {
+            marker.setMap(null);
+          }
+        } catch (error) {
+          console.warn('Error removing marker:', error);
+        }
+      });
+    } catch (error) {
+      console.warn('Error clearing markers:', error);
+    }
+    markersRef.current = [];
+  }, []);
+
+  // Safe cleanup for current location marker
+  const clearCurrentLocationMarker = useCallback(() => {
+    try {
+      if (currentLocationMarkerRef.current) {
+        currentLocationMarkerRef.current.setMap(null);
+        currentLocationMarkerRef.current = null;
+      }
+      if (pulseCircleRef.current) {
+        pulseCircleRef.current.setMap(null);
+        pulseCircleRef.current = null;
+      }
+      if (pulseAnimationRef.current) {
+        clearInterval(pulseAnimationRef.current);
+        pulseAnimationRef.current = null;
+      }
+    } catch (error) {
+      console.warn('Error clearing current location marker:', error);
+    }
+  }, []);
 
   // Initialize map
   useEffect(() => {
@@ -95,15 +135,24 @@ const GoogleMapsSetup = ({
 
     // Add delay to ensure DOM is ready
     const timer = setTimeout(initMap, 100);
-    return () => clearTimeout(timer);
-  }, [getCurrentLocation, onMapRightClick]);
+    return () => {
+      clearTimeout(timer);
+      // Cleanup on unmount
+      clearMarkers();
+      clearCurrentLocationMarker();
+    };
+  }, [getCurrentLocation, onMapRightClick, clearMarkers, clearCurrentLocationMarker]);
 
   // Update map center when it changes
   useEffect(() => {
     if (mapInstanceRef.current && isLoaded) {
       console.log('Updating map center to:', mapCenter);
-      mapInstanceRef.current.setCenter(mapCenter);
-      mapInstanceRef.current.setZoom(13);
+      try {
+        mapInstanceRef.current.setCenter(mapCenter);
+        mapInstanceRef.current.setZoom(13);
+      } catch (error) {
+        console.warn('Error updating map center:', error);
+      }
     }
   }, [mapCenter, isLoaded]);
 
@@ -111,159 +160,192 @@ const GoogleMapsSetup = ({
   useEffect(() => {
     if (!mapInstanceRef.current || !isLoaded || !location?.latitude || !location?.longitude) return;
 
-    // Remove existing current location marker
-    if (currentLocationMarkerRef.current) {
-      currentLocationMarkerRef.current.setMap(null);
-    }
+    // Clear existing current location marker first
+    clearCurrentLocationMarker();
 
-    // Add current location marker with pulsing effect
-    const currentLocationMarker = new google.maps.Marker({
-      position: { lat: location.latitude, lng: location.longitude },
-      map: mapInstanceRef.current,
-      title: 'Your Current Location',
-      icon: {
-        path: google.maps.SymbolPath.CIRCLE,
-        scale: 8,
+    try {
+      // Add current location marker with pulsing effect
+      const currentLocationMarker = new google.maps.Marker({
+        position: { lat: location.latitude, lng: location.longitude },
+        map: mapInstanceRef.current,
+        title: 'Your Current Location',
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 8,
+          fillColor: '#4285F4',
+          fillOpacity: 1,
+          strokeColor: '#FFFFFF',
+          strokeWeight: 3,
+        },
+        zIndex: 2000,
+      });
+
+      currentLocationMarkerRef.current = currentLocationMarker;
+
+      // Add pulsing circle around current location
+      const pulseCircle = new google.maps.Circle({
+        strokeColor: '#4285F4',
+        strokeOpacity: 0.8,
+        strokeWeight: 2,
         fillColor: '#4285F4',
-        fillOpacity: 1,
-        strokeColor: '#FFFFFF',
-        strokeWeight: 3,
-      },
-      zIndex: 2000,
-    });
+        fillOpacity: 0.1,
+        map: mapInstanceRef.current,
+        center: { lat: location.latitude, lng: location.longitude },
+        radius: 100,
+      });
 
-    currentLocationMarkerRef.current = currentLocationMarker;
+      pulseCircleRef.current = pulseCircle;
 
-    // Add pulsing circle around current location
-    const pulseCircle = new google.maps.Circle({
-      strokeColor: '#4285F4',
-      strokeOpacity: 0.8,
-      strokeWeight: 2,
-      fillColor: '#4285F4',
-      fillOpacity: 0.1,
-      map: mapInstanceRef.current,
-      center: { lat: location.latitude, lng: location.longitude },
-      radius: 100,
-    });
+      // Animate the pulse
+      let radius = 100;
+      let growing = true;
+      const pulseAnimation = setInterval(() => {
+        try {
+          if (growing) {
+            radius += 5;
+            if (radius >= 200) growing = false;
+          } else {
+            radius -= 5;
+            if (radius <= 100) growing = true;
+          }
+          if (pulseCircleRef.current) {
+            pulseCircleRef.current.setRadius(radius);
+          }
+        } catch (error) {
+          console.warn('Error in pulse animation:', error);
+          if (pulseAnimationRef.current) {
+            clearInterval(pulseAnimationRef.current);
+          }
+        }
+      }, 100);
 
-    // Animate the pulse
-    let radius = 100;
-    let growing = true;
-    const pulseAnimation = setInterval(() => {
-      if (growing) {
-        radius += 5;
-        if (radius >= 200) growing = false;
-      } else {
-        radius -= 5;
-        if (radius <= 100) growing = true;
-      }
-      pulseCircle.setRadius(radius);
-    }, 100);
+      pulseAnimationRef.current = pulseAnimation;
+    } catch (error) {
+      console.error('Error adding current location marker:', error);
+    }
 
     // Cleanup animation on unmount
     return () => {
-      clearInterval(pulseAnimation);
-      pulseCircle.setMap(null);
+      clearCurrentLocationMarker();
     };
-  }, [location, isLoaded]);
-
-  // Clear existing markers
-  const clearMarkers = useCallback(() => {
-    markersRef.current.forEach(marker => marker.setMap(null));
-    markersRef.current = [];
-  }, []);
+  }, [location, isLoaded, clearCurrentLocationMarker]);
 
   // Add markers for places
   useEffect(() => {
     if (!mapInstanceRef.current || !isLoaded) return;
 
+    // Clear existing markers first
     clearMarkers();
 
-    places.forEach(place => {
-      // Create a more visually appealing custom pin
-      const pinColor = place.isFollowing ? '#3B82F6' : '#10B981';
-      const pinSize = place.isNew ? 12 : 10;
-      
-      const marker = new google.maps.Marker({
-        position: place.coordinates,
-        map: mapInstanceRef.current,
-        title: place.name,
-        icon: {
-          path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-          scale: pinSize,
-          fillColor: pinColor,
-          fillOpacity: 0.9,
-          strokeColor: '#FFFFFF',
-          strokeWeight: 2,
-          rotation: 180,
-          anchor: new google.maps.Point(0, 0),
-        },
-        zIndex: place.isNew ? 1000 : 100,
-      });
+    try {
+      const newMarkers: google.maps.Marker[] = [];
 
-      // Add click listener to marker
-      marker.addListener('click', () => {
-        console.log('Pin clicked:', place.name);
-        setSelectedLocationId(place.id);
-        setSelectedLocationName(place.name);
-        setSelectedLocationAddress(place.address || '');
-        if (onPinClick) {
-          onPinClick(place);
+      places.forEach(place => {
+        try {
+          // Create a more visually appealing custom pin
+          const pinColor = place.isFollowing ? '#3B82F6' : '#10B981';
+          const pinSize = place.isNew ? 12 : 10;
+          
+          const marker = new google.maps.Marker({
+            position: place.coordinates,
+            map: mapInstanceRef.current,
+            title: place.name,
+            icon: {
+              path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+              scale: pinSize,
+              fillColor: pinColor,
+              fillOpacity: 0.9,
+              strokeColor: '#FFFFFF',
+              strokeWeight: 2,
+              rotation: 180,
+              anchor: new google.maps.Point(0, 0),
+            },
+            zIndex: place.isNew ? 1000 : 100,
+          });
+
+          // Add click listener to marker
+          marker.addListener('click', () => {
+            console.log('Pin clicked:', place.name);
+            setSelectedLocationId(place.id);
+            setSelectedLocationName(place.name);
+            setSelectedLocationAddress(place.address || '');
+            if (onPinClick) {
+              onPinClick(place);
+            }
+          });
+
+          // Add hover effects
+          marker.addListener('mouseover', () => {
+            try {
+              marker.setIcon({
+                path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+                scale: pinSize + 2,
+                fillColor: pinColor,
+                fillOpacity: 1,
+                strokeColor: '#FFFFFF',
+                strokeWeight: 3,
+                rotation: 180,
+                anchor: new google.maps.Point(0, 0),
+              });
+            } catch (error) {
+              console.warn('Error on marker mouseover:', error);
+            }
+          });
+
+          marker.addListener('mouseout', () => {
+            try {
+              marker.setIcon({
+                path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+                scale: pinSize,
+                fillColor: pinColor,
+                fillOpacity: 0.9,
+                strokeColor: '#FFFFFF',
+                strokeWeight: 2,
+                rotation: 180,
+                anchor: new google.maps.Point(0, 0),
+              });
+            } catch (error) {
+              console.warn('Error on marker mouseout:', error);
+            }
+          });
+
+          newMarkers.push(marker);
+        } catch (error) {
+          console.warn('Error creating marker for place:', place.name, error);
         }
       });
 
-      // Add hover effects
-      marker.addListener('mouseover', () => {
-        marker.setIcon({
-          path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-          scale: pinSize + 2,
-          fillColor: pinColor,
-          fillOpacity: 1,
-          strokeColor: '#FFFFFF',
-          strokeWeight: 3,
-          rotation: 180,
-          anchor: new google.maps.Point(0, 0),
-        });
-      });
-
-      marker.addListener('mouseout', () => {
-        marker.setIcon({
-          path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-          scale: pinSize,
-          fillColor: pinColor,
-          fillOpacity: 0.9,
-          strokeColor: '#FFFFFF',
-          strokeWeight: 2,
-          rotation: 180,
-          anchor: new google.maps.Point(0, 0),
-        });
-      });
-
-      markersRef.current.push(marker);
-    });
+      markersRef.current = newMarkers;
+    } catch (error) {
+      console.error('Error adding markers:', error);
+    }
   }, [places, isLoaded, onPinClick, clearMarkers]);
 
   // Handle selected place highlight
   useEffect(() => {
     if (!selectedPlace || !mapInstanceRef.current) return;
 
-    // Find the marker for the selected place and highlight it
-    const selectedMarker = markersRef.current.find((marker, index) => 
-      places[index]?.id === selectedPlace.id
-    );
+    try {
+      // Find the marker for the selected place and highlight it
+      const selectedMarker = markersRef.current.find((marker, index) => 
+        places[index]?.id === selectedPlace.id
+      );
 
-    if (selectedMarker) {
-      selectedMarker.setIcon({
-        path: google.maps.SymbolPath.CIRCLE,
-        scale: 12,
-        fillColor: '#EF4444',
-        fillOpacity: 1,
-        strokeColor: '#FFFFFF',
-        strokeWeight: 3,
-      });
+      if (selectedMarker) {
+        selectedMarker.setIcon({
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 12,
+          fillColor: '#EF4444',
+          fillOpacity: 1,
+          strokeColor: '#FFFFFF',
+          strokeWeight: 3,
+        });
 
-      // Center map on selected place
-      mapInstanceRef.current.setCenter(selectedPlace.coordinates);
+        // Center map on selected place
+        mapInstanceRef.current.setCenter(selectedPlace.coordinates);
+      }
+    } catch (error) {
+      console.warn('Error highlighting selected place:', error);
     }
   }, [selectedPlace, places]);
 
