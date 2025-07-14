@@ -28,6 +28,7 @@ const GoogleMapsSetup = ({
   const currentLocationMarkerRef = useRef<google.maps.Marker | null>(null);
   const pulseCircleRef = useRef<google.maps.Circle | null>(null);
   const pulseAnimationRef = useRef<NodeJS.Timeout | null>(null);
+  const isUnmountingRef = useRef(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
   const [selectedLocationName, setSelectedLocationName] = useState<string>('');
@@ -36,10 +37,12 @@ const GoogleMapsSetup = ({
 
   // Safe marker cleanup function
   const clearMarkers = useCallback(() => {
+    if (isUnmountingRef.current) return;
+    
     try {
       markersRef.current.forEach(marker => {
         try {
-          if (marker && marker.getMap()) {
+          if (marker && typeof marker.setMap === 'function') {
             marker.setMap(null);
           }
         } catch (error) {
@@ -54,12 +57,14 @@ const GoogleMapsSetup = ({
 
   // Safe cleanup for current location marker
   const clearCurrentLocationMarker = useCallback(() => {
+    if (isUnmountingRef.current) return;
+    
     try {
-      if (currentLocationMarkerRef.current) {
+      if (currentLocationMarkerRef.current && typeof currentLocationMarkerRef.current.setMap === 'function') {
         currentLocationMarkerRef.current.setMap(null);
         currentLocationMarkerRef.current = null;
       }
-      if (pulseCircleRef.current) {
+      if (pulseCircleRef.current && typeof pulseCircleRef.current.setMap === 'function') {
         pulseCircleRef.current.setMap(null);
         pulseCircleRef.current = null;
       }
@@ -74,13 +79,15 @@ const GoogleMapsSetup = ({
 
   // Initialize map
   useEffect(() => {
+    let mounted = true;
+    
     const initMap = async () => {
       try {
         console.log('Starting Google Maps initialization...');
         await loadGoogleMapsAPI();
         
-        if (!mapRef.current) {
-          console.log('Map container not ready');
+        if (!mounted || !mapRef.current || isUnmountingRef.current) {
+          console.log('Map container not ready or component unmounting');
           return;
         }
 
@@ -107,13 +114,15 @@ const GoogleMapsSetup = ({
           backgroundColor: '#f0f0f0'
         });
 
+        if (!mounted || isUnmountingRef.current) return;
+
         mapInstanceRef.current = map;
         console.log('Google Maps instance created successfully');
 
         // Add right-click listener for adding new locations
         if (onMapRightClick) {
           map.addListener('rightclick', (event: google.maps.MapMouseEvent) => {
-            if (event.latLng) {
+            if (event.latLng && !isUnmountingRef.current) {
               onMapRightClick({
                 lat: event.latLng.lat(),
                 lng: event.latLng.lng()
@@ -122,30 +131,48 @@ const GoogleMapsSetup = ({
           });
         }
 
-        setIsLoaded(true);
-        console.log('Map initialization complete');
-        
-        // Get current location when map is loaded
-        getCurrentLocation();
+        if (mounted && !isUnmountingRef.current) {
+          setIsLoaded(true);
+          console.log('Map initialization complete');
+          
+          // Get current location when map is loaded
+          getCurrentLocation();
+        }
       } catch (error) {
         console.error('Error initializing Google Maps:', error);
-        setIsLoaded(false);
+        if (mounted && !isUnmountingRef.current) {
+          setIsLoaded(false);
+        }
       }
     };
 
     // Add delay to ensure DOM is ready
     const timer = setTimeout(initMap, 100);
+    
     return () => {
+      mounted = false;
       clearTimeout(timer);
-      // Cleanup on unmount
-      clearMarkers();
-      clearCurrentLocationMarker();
+      isUnmountingRef.current = true;
+      
+      // Cleanup with delay to prevent DOM conflicts
+      setTimeout(() => {
+        clearMarkers();
+        clearCurrentLocationMarker();
+        if (mapInstanceRef.current) {
+          try {
+            // Don't try to destroy the map instance as it may conflict with React
+            mapInstanceRef.current = null;
+          } catch (error) {
+            console.warn('Error cleaning up map instance:', error);
+          }
+        }
+      }, 0);
     };
   }, [getCurrentLocation, onMapRightClick, clearMarkers, clearCurrentLocationMarker]);
 
   // Update map center when it changes
   useEffect(() => {
-    if (mapInstanceRef.current && isLoaded) {
+    if (mapInstanceRef.current && isLoaded && !isUnmountingRef.current) {
       console.log('Updating map center to:', mapCenter);
       try {
         mapInstanceRef.current.setCenter(mapCenter);
@@ -158,10 +185,12 @@ const GoogleMapsSetup = ({
 
   // Add current location marker
   useEffect(() => {
-    if (!mapInstanceRef.current || !isLoaded || !location?.latitude || !location?.longitude) return;
+    if (!mapInstanceRef.current || !isLoaded || !location?.latitude || !location?.longitude || isUnmountingRef.current) return;
 
     // Clear existing current location marker first
     clearCurrentLocationMarker();
+
+    if (isUnmountingRef.current) return;
 
     try {
       // Add current location marker with pulsing effect
@@ -180,6 +209,11 @@ const GoogleMapsSetup = ({
         zIndex: 2000,
       });
 
+      if (isUnmountingRef.current) {
+        currentLocationMarker.setMap(null);
+        return;
+      }
+
       currentLocationMarkerRef.current = currentLocationMarker;
 
       // Add pulsing circle around current location
@@ -194,12 +228,22 @@ const GoogleMapsSetup = ({
         radius: 100,
       });
 
+      if (isUnmountingRef.current) {
+        pulseCircle.setMap(null);
+        return;
+      }
+
       pulseCircleRef.current = pulseCircle;
 
       // Animate the pulse
       let radius = 100;
       let growing = true;
       const pulseAnimation = setInterval(() => {
+        if (isUnmountingRef.current) {
+          clearInterval(pulseAnimation);
+          return;
+        }
+        
         try {
           if (growing) {
             radius += 5;
@@ -208,14 +252,12 @@ const GoogleMapsSetup = ({
             radius -= 5;
             if (radius <= 100) growing = true;
           }
-          if (pulseCircleRef.current) {
+          if (pulseCircleRef.current && !isUnmountingRef.current) {
             pulseCircleRef.current.setRadius(radius);
           }
         } catch (error) {
           console.warn('Error in pulse animation:', error);
-          if (pulseAnimationRef.current) {
-            clearInterval(pulseAnimationRef.current);
-          }
+          clearInterval(pulseAnimation);
         }
       }, 100);
 
@@ -232,15 +274,19 @@ const GoogleMapsSetup = ({
 
   // Add markers for places
   useEffect(() => {
-    if (!mapInstanceRef.current || !isLoaded) return;
+    if (!mapInstanceRef.current || !isLoaded || isUnmountingRef.current) return;
 
     // Clear existing markers first
     clearMarkers();
+
+    if (isUnmountingRef.current) return;
 
     try {
       const newMarkers: google.maps.Marker[] = [];
 
       places.forEach(place => {
+        if (isUnmountingRef.current) return;
+        
         try {
           // Create a more visually appealing custom pin
           const pinColor = place.isFollowing ? '#3B82F6' : '#10B981';
@@ -263,8 +309,15 @@ const GoogleMapsSetup = ({
             zIndex: place.isNew ? 1000 : 100,
           });
 
+          if (isUnmountingRef.current) {
+            marker.setMap(null);
+            return;
+          }
+
           // Add click listener to marker
           marker.addListener('click', () => {
+            if (isUnmountingRef.current) return;
+            
             console.log('Pin clicked:', place.name);
             setSelectedLocationId(place.id);
             setSelectedLocationName(place.name);
@@ -276,6 +329,8 @@ const GoogleMapsSetup = ({
 
           // Add hover effects
           marker.addListener('mouseover', () => {
+            if (isUnmountingRef.current) return;
+            
             try {
               marker.setIcon({
                 path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
@@ -293,6 +348,8 @@ const GoogleMapsSetup = ({
           });
 
           marker.addListener('mouseout', () => {
+            if (isUnmountingRef.current) return;
+            
             try {
               marker.setIcon({
                 path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
@@ -315,7 +372,9 @@ const GoogleMapsSetup = ({
         }
       });
 
-      markersRef.current = newMarkers;
+      if (!isUnmountingRef.current) {
+        markersRef.current = newMarkers;
+      }
     } catch (error) {
       console.error('Error adding markers:', error);
     }
@@ -323,7 +382,7 @@ const GoogleMapsSetup = ({
 
   // Handle selected place highlight
   useEffect(() => {
-    if (!selectedPlace || !mapInstanceRef.current) return;
+    if (!selectedPlace || !mapInstanceRef.current || isUnmountingRef.current) return;
 
     try {
       // Find the marker for the selected place and highlight it
@@ -331,7 +390,7 @@ const GoogleMapsSetup = ({
         places[index]?.id === selectedPlace.id
       );
 
-      if (selectedMarker) {
+      if (selectedMarker && !isUnmountingRef.current) {
         selectedMarker.setIcon({
           path: google.maps.SymbolPath.CIRCLE,
           scale: 12,
@@ -357,7 +416,7 @@ const GoogleMapsSetup = ({
         style={{ minHeight: '500px' }}
       >
         {!isLoaded && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
               <p className="text-sm text-gray-600">Loading map...</p>
