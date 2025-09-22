@@ -19,6 +19,9 @@ import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import './App.css';
 
+// Initialize analytics cleanup service for data privacy compliance
+import '@/services/analyticsCleanupService';
+
 const queryClient = new QueryClient();
 
 function App() {

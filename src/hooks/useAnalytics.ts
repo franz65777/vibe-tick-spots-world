@@ -8,6 +8,14 @@ export const useAnalytics = () => {
     const currentPage = window.location.pathname;
     analyticsService.trackPageView(currentPage);
 
+    // Run cleanup on first load (throttled to once per session)
+    const hasRunCleanup = sessionStorage.getItem('analytics_cleanup_done');
+    if (!hasRunCleanup) {
+      analyticsService.cleanupOldAnalytics().then(() => {
+        sessionStorage.setItem('analytics_cleanup_done', 'true');
+      });
+    }
+
     // Track performance metrics
     const trackPerformance = () => {
       if ('performance' in window && 'getEntriesByType' in performance) {

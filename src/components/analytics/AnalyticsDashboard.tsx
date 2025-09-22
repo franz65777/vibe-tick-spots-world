@@ -138,10 +138,13 @@ const AnalyticsDashboard = () => {
         </TabsList>
 
         <TabsContent value="events" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Event Types Distribution</CardTitle>
-            </CardHeader>
+        <Card>
+          <CardHeader>
+            <CardTitle>Event Types Distribution</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Privacy Notice: All user data is anonymized and automatically cleaned up after 30 days
+            </p>
+          </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
