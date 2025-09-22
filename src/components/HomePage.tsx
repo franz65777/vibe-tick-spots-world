@@ -10,6 +10,7 @@ import StoriesSection from './home/StoriesSection';
 import MapSection from './home/MapSection';
 import ModalsManager from './home/ModalsManager';
 import LocationOfTheWeek from './home/LocationOfTheWeek';
+import CommunityHighlights from './home/CommunityHighlights';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '@/lib/googleMaps';
 
 // Local interface for modal components that expect simpler Place structure
@@ -314,6 +315,14 @@ const HomePage = () => {
         
         <LocationOfTheWeek 
           onLocationClick={handleLocationOfTheWeekClick}
+        />
+        
+        {/* Community Highlights Section */}
+        <CommunityHighlights
+          currentCity={currentCity}
+          onLocationClick={(locationId: string) => console.log('Location clicked:', locationId)}
+          onUserClick={(userId: string) => navigate(`/profile/${userId}`)}
+          onMapLocationClick={(coords: { lat: number; lng: number }) => setMapCenter(coords)}
         />
         
         {loading ? (
