@@ -1,7 +1,4 @@
 import React from 'react';
-import WeeklyWinner from './WeeklyWinner';
-import CommunityChampions from './CommunityChampions';
-import BusinessSpotlight from './BusinessSpotlight';
 import { useWeeklyWinner } from '@/hooks/useWeeklyWinner';
 import { useCommunityChampions } from '@/hooks/useCommunityChampions';
 
@@ -21,7 +18,7 @@ const CommunityHighlights = ({
   const { location: weeklyWinner, loading: winnerLoading } = useWeeklyWinner(currentCity);
   const { champions, loading: championsLoading } = useCommunityChampions(currentCity);
 
-  // Always show something engaging - prioritize weekly winner, then champion, then placeholder
+  // Prioritize: Weekly Winner > Champion > Placeholder
   if (weeklyWinner && !winnerLoading) {
     return (
       <div className="px-4 py-2">

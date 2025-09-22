@@ -8,9 +8,10 @@ import {
   Car,
   Building,
   TreePine,
-  Heart,
-  Star,
-  Bookmark
+  Users,
+  TrendingUp,
+  Bookmark,
+  Star
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -48,15 +49,15 @@ const MapCategoryFilters = ({
 }: MapCategoryFiltersProps) => {
   
   const mapFilters = [
-    { id: 'following' as MapFilter, name: 'Following', icon: Heart, description: 'Places from people you follow' },
-    { id: 'popular' as MapFilter, name: 'Popular', icon: Star, description: 'Trending locations nearby' },
+    { id: 'following' as MapFilter, name: 'Following', icon: Users, description: 'Places from people you follow' },
+    { id: 'popular' as MapFilter, name: 'Popular', icon: TrendingUp, description: 'Trending locations nearby' },
     { id: 'saved' as MapFilter, name: 'Saved', icon: Bookmark, description: 'Your saved places' }
   ];
 
   return (
     <div className="absolute top-4 left-4 right-4 z-50">
       {/* Transparent Compact Filter */}
-      <div className="bg-black/20 backdrop-blur-md rounded-2xl border border-white/20 overflow-hidden">
+      <div className="bg-black/40 backdrop-blur-md rounded-2xl border border-white/30 overflow-hidden shadow-lg">
         {/* Map Mode Pills - Horizontal Scroll */}
         <div className="flex overflow-x-auto scrollbar-hide border-b border-white/10">
           {mapFilters.map((filter, index) => {
@@ -68,10 +69,10 @@ const MapCategoryFilters = ({
                 key={filter.id}
                 onClick={() => onMapFilterChange(filter.id)}
                 className={cn(
-                  "flex-shrink-0 flex items-center justify-center gap-2 px-4 py-3 transition-all duration-200 font-medium text-sm border-r border-white/10 last:border-r-0 min-w-[80px]",
+                  "flex-shrink-0 flex items-center justify-center gap-2 px-4 py-3 transition-all duration-200 font-semibold text-sm border-r border-white/20 last:border-r-0 min-w-[80px]",
                   isActive
-                    ? "bg-white/20 text-white"
-                    : "text-white/80 hover:bg-white/10"
+                    ? "bg-white/30 text-white shadow-md border-white/40"
+                    : "text-white/90 hover:bg-white/15 hover:text-white"
                 )}
                 title={filter.description}
               >
@@ -94,10 +95,10 @@ const MapCategoryFilters = ({
                   key={category.id}
                   onClick={() => onCategoryToggle(category.id)}
                   className={cn(
-                    "flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-200 text-xs font-medium border whitespace-nowrap",
+                    "flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-200 text-xs font-semibold border whitespace-nowrap",
                     isSelected
-                      ? "bg-white text-black border-white/20 shadow-sm"
-                      : "bg-white/10 text-white/90 border-white/20 hover:bg-white/20"
+                      ? "bg-white text-black border-white/30 shadow-md"
+                      : "bg-white/15 text-white border-white/30 hover:bg-white/25 hover:text-white"
                   )}
                 >
                   <IconComponent className="w-3 h-3" />

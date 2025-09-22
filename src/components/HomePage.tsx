@@ -313,15 +313,17 @@ const HomePage = () => {
           />
         </div>
         
-        <LocationOfTheWeek 
-          onLocationClick={handleLocationOfTheWeekClick}
-        />
-        
         {/* Community Highlights Section */}
         <CommunityHighlights
           currentCity={currentCity}
-          onLocationClick={(locationId: string) => console.log('Location clicked:', locationId)}
-          onUserClick={(userId: string) => navigate(`/profile/${userId}`)}
+          onLocationClick={(locationId: string) => {
+            // Navigate to explore tab for location details
+            navigate('/explore');
+          }}
+          onUserClick={(userId: string) => {
+            // Navigate to search tab for user profiles
+            navigate('/explore');
+          }}
           onMapLocationClick={(coords: { lat: number; lng: number }) => setMapCenter(coords)}
         />
         
