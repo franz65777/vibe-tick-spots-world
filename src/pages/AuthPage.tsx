@@ -19,7 +19,7 @@ const AuthPage = () => {
   const [username, setUsername] = useState('');
   const [businessName, setBusinessName] = useState('');
   const [businessType, setBusinessType] = useState('');
-  const [emailOrUsername, setEmailOrUsername] = useState('');
+  const [loginEmail, setLoginEmail] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -47,7 +47,7 @@ const AuthPage = () => {
 
     try {
       if (isLogin) {
-        const { error } = await signIn(emailOrUsername, password);
+        const { error } = await signIn(loginEmail, password);
         if (error) {
           toast.error(error.message);
         } else {
@@ -280,18 +280,21 @@ const AuthPage = () => {
 
             {isLogin && (
               <div>
-                <Label htmlFor="emailOrUsername" className="text-sm font-medium text-gray-700">
-                  Email or Username
+                <Label htmlFor="loginEmail" className="text-sm font-medium text-gray-700">
+                  Email Address
                 </Label>
                 <Input
-                  id="emailOrUsername"
-                  type="text"
-                  value={emailOrUsername}
-                  onChange={(e) => setEmailOrUsername(e.target.value)}
+                  id="loginEmail"
+                  type="email"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
                   required={isLogin}
                   className="mt-1 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                  placeholder="Enter your email or username"
+                  placeholder="Enter your email address"
                 />
+                <p className="mt-1 text-xs text-gray-500">
+                  For security, please use your email address to sign in
+                </p>
               </div>
             )}
 

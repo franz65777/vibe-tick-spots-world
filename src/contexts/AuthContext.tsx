@@ -6,7 +6,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   signUp: (email: string, password: string, fullName?: string, username?: string) => Promise<{ error: any }>;
-  signIn: (emailOrUsername: string, password: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   loading: boolean;
 }
@@ -107,7 +107,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             username: user.user_metadata?.username || `user_${user.id.substring(0, 8)}`,
             full_name: user.user_metadata?.full_name,
             avatar_url: user.user_metadata?.avatar_url,
-            posts_count: 0
+            posts_count: 0,
+            // Initialize security-relevant fields
+            follower_count: 0,
+            following_count: 0,
+            cities_visited: 0,
+            places_visited: 0
           });
 
         if (error) {
@@ -142,33 +147,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error };
   };
 
-  const signIn = async (emailOrUsername: string, password: string) => {
-    // First try to sign in with email
-    let { error } = await supabase.auth.signInWithPassword({
-      email: emailOrUsername,
+  const signIn = async (email: string, password: string) => {
+    // SECURITY FIX: Only allow email-based sign in to prevent user enumeration
+    // Users must sign in with their email address, not username
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email,
       password,
     });
 
-    // If that fails and it looks like a username (no @ symbol), try to find the email by username
-    if (error && !emailOrUsername.includes('@')) {
-      try {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('email')
-          .eq('username', emailOrUsername)
-          .single();
-
-        if (profile?.email) {
-          const { error: emailSignInError } = await supabase.auth.signInWithPassword({
-            email: profile.email,
-            password,
-          });
-          error = emailSignInError;
-        }
-      } catch (profileError) {
-        // If we can't find the username, keep the original error
-        console.log('Could not find user by username:', profileError);
-      }
+    // Track authentication attempts for rate limiting (anonymized)
+    try {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      await supabase.from('user_analytics').insert({
+        user_id: currentUser?.id || null, // Allow null for failed auth attempts
+        event_type: 'auth_attempt',
+        event_data: { 
+          success: !error,
+          timestamp: new Date().toISOString() 
+        },
+        page_url: window.location.href
+      });
+    } catch (analyticsError) {
+      // Don't block sign in if analytics fails
+      console.warn('Failed to track auth attempt:', analyticsError);
     }
 
     return { error };

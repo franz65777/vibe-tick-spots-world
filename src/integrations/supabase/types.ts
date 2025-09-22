@@ -1484,6 +1484,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_auth_rate_limit: {
+        Args: { user_ip: unknown }
+        Returns: boolean
+      }
       cleanup_expired_stories: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -1556,6 +1560,18 @@ export type Database = {
           places_visited: number
           posts_count: number
           user_type: Database["public"]["Enums"]["user_type"]
+          username: string
+        }[]
+      }
+      search_users_safely: {
+        Args: { requesting_user_id: string; search_query: string }
+        Returns: {
+          avatar_url: string
+          bio: string
+          follower_count: number
+          following_count: number
+          id: string
+          is_following: boolean
           username: string
         }[]
       }
