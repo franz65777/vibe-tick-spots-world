@@ -1518,6 +1518,17 @@ export type Database = {
           total_score: number
         }[]
       }
+      get_public_business_data: {
+        Args: { business_id: string }
+        Returns: {
+          business_description: string
+          business_name: string
+          business_type: string
+          created_at: string
+          id: string
+          verification_status: Database["public"]["Enums"]["business_verification_status"]
+        }[]
+      }
       get_safe_business_data: {
         Args: { business_id: string }
         Returns: {
