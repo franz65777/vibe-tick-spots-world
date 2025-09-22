@@ -11,6 +11,7 @@ import FilterButtons from './home/FilterButtons';
 import MapSection from './home/MapSection';
 import ModalsManager from './home/ModalsManager';
 import LocationOfTheWeek from './home/LocationOfTheWeek';
+import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '@/lib/googleMaps';
 
 // Local interface for modal components that expect simpler Place structure
 interface LocalPlace {
@@ -97,6 +98,31 @@ const HomePage = () => {
 
     getCurrentLocation();
   }, []);
+
+  // Derive city name from geolocation via Google Geocoder
+  useEffect(() => {
+    const setCityFromLocation = async () => {
+      if (!userLocation) return;
+      try {
+        await loadGoogleMapsAPI();
+        if (!(isGoogleMapsLoaded() && (window as any).google?.maps?.Geocoder)) return;
+        const geocoder = new (window as any).google.maps.Geocoder();
+        geocoder.geocode({ location: userLocation }, (results: any, status: any) => {
+          if (status === 'OK' && results?.[0]) {
+            const comps = results[0].address_components || [];
+            const cityComp = comps.find((c: any) => c.types.includes('locality'))
+              || comps.find((c: any) => c.types.includes('postal_town'))
+              || comps.find((c: any) => c.types.includes('administrative_area_level_1'));
+            const cityName = cityComp?.long_name || '';
+            if (cityName) setCurrentCity(cityName);
+          }
+        });
+      } catch (e) {
+        console.warn('Reverse geocoding failed', e);
+      }
+    };
+    setCityFromLocation();
+  }, [userLocation]);
 
   // Helper function to safely extract addedBy string
   const getAddedByName = (addedBy: any): string => {
