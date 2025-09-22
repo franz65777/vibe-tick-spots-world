@@ -84,6 +84,8 @@ const GoogleMapsSetup = ({
     const initMap = async () => {
       try {
         console.log('Starting Google Maps initialization...');
+        setIsLoaded(false); // Make sure we show loading state
+        
         await loadGoogleMapsAPI();
         
         if (!mounted || !mapRef.current || isUnmountingRef.current) {
@@ -142,6 +144,13 @@ const GoogleMapsSetup = ({
         console.error('Error initializing Google Maps:', error);
         if (mounted && !isUnmountingRef.current) {
           setIsLoaded(false);
+          // Show error message after a delay to allow for retries
+          setTimeout(() => {
+            if (mounted && !isUnmountingRef.current) {
+              console.log('Retrying Google Maps initialization...');
+              initMap(); // Retry once
+            }
+          }, 2000);
         }
       }
     };
@@ -168,7 +177,7 @@ const GoogleMapsSetup = ({
         }
       }, 0);
     };
-  }, [getCurrentLocation, onMapRightClick, clearMarkers, clearCurrentLocationMarker]);
+  }, [getCurrentLocation, onMapRightClick, clearMarkers, clearCurrentLocationMarker, mapCenter]);
 
   // Update map center when it changes
   useEffect(() => {
@@ -420,7 +429,13 @@ const GoogleMapsSetup = ({
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
               <p className="text-sm text-gray-600">Loading map...</p>
+              <p className="text-xs text-gray-500 mt-1">Connecting to Google Maps</p>
             </div>
+          </div>
+        )}
+        {isLoaded && (
+          <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs text-gray-600 shadow-sm">
+            Map loaded ✓
           </div>
         )}
       </div>

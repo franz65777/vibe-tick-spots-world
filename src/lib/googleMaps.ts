@@ -55,18 +55,22 @@ export const loadGoogleMapsAPI = (): Promise<void> => {
       const loader = new Loader({
         apiKey,
         version: 'weekly',
-        libraries: ['places']
+        libraries: ['places', 'geometry']
       });
 
       await loader.load();
 
-      if (isGoogleMapsLoaded()) {
-        console.log('Google Maps and Places API loaded successfully via Loader');
-        resolve();
-      } else {
-        console.error('Google Maps loaded but Places components not ready');
-        reject(new Error('Google Maps components not ready'));
-      }
+      // Wait a bit for everything to be ready
+      setTimeout(() => {
+        if (window.google && window.google.maps && window.google.maps.Map) {
+          console.log('Google Maps loaded successfully');
+          resolve();
+        } else {
+          console.error('Google Maps loaded but Map component not ready');
+          reject(new Error('Google Maps Map component not ready'));
+        }
+      }, 100);
+      
     } catch (error: any) {
       console.error('Failed to load Google Maps via Loader:', error);
       reject(error);
@@ -75,11 +79,10 @@ export const loadGoogleMapsAPI = (): Promise<void> => {
 };
 
 export const isGoogleMapsLoaded = (): boolean => {
-  const loaded = typeof window.google !== 'undefined' && 
-         window.google.maps && 
-         window.google.maps.Map &&
-         window.google.maps.places &&
-         window.google.maps.places.Autocomplete;
+  const loaded = typeof window !== 'undefined' &&
+                 typeof window.google !== 'undefined' && 
+                 window.google.maps && 
+                 window.google.maps.Map;
   
   return loaded;
 };
