@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import GoogleMapsSetup from '@/components/GoogleMapsSetup';
 import AddLocationModal from './AddLocationModal';
 import QuickAddPinModal from './QuickAddPinModal';
@@ -27,9 +27,21 @@ const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) =
   // Filter states
   const [activeMapFilter, setActiveMapFilter] = useState<MapFilter>(activeFilter || 'popular');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+
+  // Keep internal filter in sync with parent prop
+  useEffect(() => {
+    if (activeFilter && activeFilter !== activeMapFilter) {
+      setActiveMapFilter(activeFilter);
+    }
+  }, [activeFilter]);
+
+  // Reset category filters when switching between main filters
+  useEffect(() => {
+    setSelectedCategories([]);
+  }, [activeMapFilter]);
   
   // Fetch locations based on current filters
-  const { locations, loading, error } = useMapLocations({
+  const { locations, loading, error, refetch } = useMapLocations({
     mapFilter: activeMapFilter,
     selectedCategories,
     currentCity
@@ -93,6 +105,8 @@ const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) =
     setActiveMapFilter('saved');
     setIsQuickAddModalOpen(false);
     setNewLocationCoords(null);
+    // Force refetch to show newly saved location
+    try { refetch?.(); } catch {}
   };
 
   const handleCategoryToggle = (categoryId: string) => {
@@ -160,6 +174,7 @@ const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) =
         }}
         coordinates={newLocationCoords}
         onPinAdded={handlePinAdded}
+        allowedCategoriesFilter={selectedCategories}
       />
 
       <PinShareModal

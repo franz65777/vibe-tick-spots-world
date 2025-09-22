@@ -202,45 +202,50 @@ const HomePage = () => {
     setActiveFilter(filter);
   };
 
-  const handleCityChange = (city: string) => {
-    console.log('HomePage - City changed to:', city);
+  const handleCityChange = (city: string, coords?: { lat: number; lng: number }) => {
+    console.log('HomePage - City changed to:', city, coords);
     setSelectedCity(city);
     setCurrentCity(city);
-    
-    const cityCoordinates: Record<string, { lat: number; lng: number }> = {
-      'san francisco': { lat: 37.7749, lng: -122.4194 },
-      'milan': { lat: 45.4642, lng: 9.1900 },
-      'paris': { lat: 48.8566, lng: 2.3522 },
-      'new york': { lat: 40.7128, lng: -74.0060 },
-      'london': { lat: 51.5074, lng: -0.1278 },
-      'tokyo': { lat: 35.6762, lng: 139.6503 },
-      'rome': { lat: 41.9028, lng: 12.4964 },
-      'barcelona': { lat: 41.3851, lng: 2.1734 },
-      'amsterdam': { lat: 52.3676, lng: 4.9041 },
-      'berlin': { lat: 52.5200, lng: 13.4050 },
-      'madrid': { lat: 40.4168, lng: -3.7038 },
-      'lisbon': { lat: 38.7223, lng: -9.1393 },
-      'munich': { lat: 48.1351, lng: 11.5820 },
-      'vienna': { lat: 48.2082, lng: 16.3738 },
-      'zurich': { lat: 47.3769, lng: 8.5417 },
-      'dublin': { lat: 53.3498, lng: -6.2603 },
-      'stockholm': { lat: 59.3293, lng: 18.0686 },
-      'copenhagen': { lat: 55.6761, lng: 12.5683 },
-      'prague': { lat: 50.755, lng: 14.4378 },
-      'budapest': { lat: 47.4979, lng: 19.0402 },
-      'warsaw': { lat: 52.2297, lng: 21.0122 },
-      'athens': { lat: 37.9838, lng: 23.7275 }
-    };
-    
-    const cityKey = city.toLowerCase();
-    if (cityCoordinates[cityKey]) {
-      const newCenter = cityCoordinates[cityKey];
+
+    if (coords) {
+      const newCenter = { lat: coords.lat, lng: coords.lng };
       setMapCenter(newCenter);
-      console.log('Map center updated to:', newCenter);
-    } else if (userLocation) {
-      setMapCenter(userLocation);
+      console.log('Map center updated from external geo:', newCenter);
+    } else {
+      const cityCoordinates: Record<string, { lat: number; lng: number }> = {
+        'san francisco': { lat: 37.7749, lng: -122.4194 },
+        'milan': { lat: 45.4642, lng: 9.1900 },
+        'paris': { lat: 48.8566, lng: 2.3522 },
+        'new york': { lat: 40.7128, lng: -74.0060 },
+        'london': { lat: 51.5074, lng: -0.1278 },
+        'tokyo': { lat: 35.6762, lng: 139.6503 },
+        'rome': { lat: 41.9028, lng: 12.4964 },
+        'barcelona': { lat: 41.3851, lng: 2.1734 },
+        'amsterdam': { lat: 52.3676, lng: 4.9041 },
+        'berlin': { lat: 52.5200, lng: 13.4050 },
+        'madrid': { lat: 40.4168, lng: -3.7038 },
+        'lisbon': { lat: 38.7223, lng: -9.1393 },
+        'munich': { lat: 48.1351, lng: 11.5820 },
+        'vienna': { lat: 48.2082, lng: 16.3738 },
+        'zurich': { lat: 47.3769, lng: 8.5417 },
+        'dublin': { lat: 53.3498, lng: -6.2603 },
+        'stockholm': { lat: 59.3293, lng: 18.0686 },
+        'copenhagen': { lat: 55.6761, lng: 12.5683 },
+        'prague': { lat: 50.755, lng: 14.4378 },
+        'budapest': { lat: 47.4979, lng: 19.0402 },
+        'warsaw': { lat: 52.2297, lng: 21.0122 },
+        'athens': { lat: 37.9838, lng: 23.7275 }
+      };
+      const cityKey = city.toLowerCase();
+      if (cityCoordinates[cityKey]) {
+        const newCenter = cityCoordinates[cityKey];
+        setMapCenter(newCenter);
+        console.log('Map center updated from predefined list:', newCenter);
+      } else if (userLocation) {
+        setMapCenter(userLocation);
+      }
     }
-    
+
     // Refresh pins after city change
     refreshPins(city);
   };

@@ -15,7 +15,7 @@ interface HeaderProps {
   onNotificationsClick: () => void;
   onMessagesClick: () => void;
   onCreateStoryClick: () => void;
-  onCitySelect: (city: string) => void;
+  onCitySelect: (city: string, coords?: { lat: number; lng: number }) => void;
 }
 
 const Header = ({

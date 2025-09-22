@@ -13,9 +13,10 @@ interface QuickAddPinModalProps {
   onClose: () => void;
   coordinates: { lat: number; lng: number } | null;
   onPinAdded: () => void;
+  allowedCategoriesFilter?: string[];
 }
 
-const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded }: QuickAddPinModalProps) => {
+const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCategoriesFilter }: QuickAddPinModalProps) => {
   const [selectedPlace, setSelectedPlace] = useState<{
     place_id: string;
     name: string;
@@ -50,6 +51,11 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded }: QuickAdd
     const category = mapPlaceTypeToCategory(place.types);
     if (!category) {
       toast.error('This type of location cannot be saved. Please select a restaurant, bar, café, hotel, bakery, museum, or entertainment venue.');
+      return;
+    }
+    // Enforce current map category filters if any are selected
+    if (allowedCategoriesFilter && allowedCategoriesFilter.length > 0 && !allowedCategoriesFilter.includes(category)) {
+      toast.error('This category is currently filtered out. Switch filters or pick a matching venue.');
       return;
     }
     
@@ -87,11 +93,16 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded }: QuickAdd
       return;
     }
 
-    const category = mapPlaceTypeToCategory(selectedPlace.types);
-    if (!category) {
-      toast.error('Invalid location type selected');
-      return;
-    }
+  const category = mapPlaceTypeToCategory(selectedPlace.types);
+  if (!category) {
+    toast.error('Invalid location type selected');
+    return;
+  }
+  // Enforce current map category filters if any are selected
+  if (allowedCategoriesFilter && allowedCategoriesFilter.length > 0 && !allowedCategoriesFilter.includes(category)) {
+    toast.error('This category is currently filtered out. Switch filters or pick a matching venue.');
+    return;
+  }
 
     setIsLoading(true);
     try {

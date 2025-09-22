@@ -9,7 +9,7 @@ interface GlobalCitySearchProps {
   currentCity: string;
   onSearchChange: (value: string) => void;
   onSearchKeyPress: (e: React.KeyboardEvent) => void;
-  onCitySelect: (city: string) => void;
+  onCitySelect: (city: string, coords?: { lat: number; lng: number }) => void;
 }
 
 // Comprehensive global city data
@@ -134,6 +134,8 @@ const GlobalCitySearch = ({
   const [filteredCities, setFilteredCities] = useState<Array<{key: string, data: typeof globalCities[keyof typeof globalCities], similarity: number}>>([]);
   const [userHasManuallySelectedCity, setUserHasManuallySelectedCity] = useState(false);
   const [ignoreGeoLocation, setIgnoreGeoLocation] = useState(false);
+  const [externalResults, setExternalResults] = useState<Array<{ name: string; lat: number; lng: number; subtitle?: string }>>([]);
+  const [isFetchingExternal, setIsFetchingExternal] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const { location, loading: geoLoading, getCurrentLocation } = useGeolocation();
 
@@ -209,11 +211,11 @@ const GlobalCitySearch = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleCityClick = (cityName: string) => {
-    console.log('Manual city selection:', cityName);
+  const handleCityClick = (cityName: string, coords?: { lat: number; lng: number }) => {
+    console.log('Manual city selection:', cityName, coords);
     setUserHasManuallySelectedCity(true);
     setIgnoreGeoLocation(true);
-    onCitySelect(cityName);
+    onCitySelect(cityName, coords);
     onSearchChange('');
     setIsOpen(false);
   };
@@ -299,9 +301,30 @@ const GlobalCitySearch = ({
       )}
 
       {/* Dropdown Results - Organized by continent */}
-      {isOpen && Object.keys(groupedCities).length > 0 && (
+      {isOpen && (Object.keys(groupedCities).length > 0 || externalResults.length > 0) && (
         <div className="fixed top-16 left-4 right-4 bg-white rounded-3xl shadow-2xl border border-gray-100/50 max-h-96 overflow-hidden z-[9999] backdrop-blur-xl bg-white/95">
           <div className="overflow-y-auto max-h-96 scrollbar-hide">
+            {/* External global results */}
+            {externalResults.length > 0 && (
+              <div className="border-b border-gray-50/50">
+                <div className="px-6 py-3 bg-gradient-to-r from-gray-50 to-blue-50/30 text-xs font-bold text-gray-700 uppercase tracking-widest sticky top-0 backdrop-blur-sm">
+                  Global results
+                </div>
+                {externalResults.map((item, idx) => (
+                  <button
+                    key={`ext-${idx}`}
+                    onClick={() => handleCityClick(item.name, { lat: item.lat, lng: item.lng })}
+                    className="w-full flex items-center gap-4 px-6 py-4 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200 text-left group"
+                  >
+                    <MapPin className="w-5 h-5 text-blue-600" />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-gray-900 truncate">{item.name}</div>
+                      {item.subtitle && <div className="text-xs text-gray-500 truncate">{item.subtitle}</div>}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
             {Object.entries(groupedCities).map(([continent, cities]) => (
               <div key={continent} className="border-b border-gray-50/50 last:border-b-0">
                 <div className="px-6 py-3 bg-gradient-to-r from-gray-50 to-blue-50/30 text-xs font-bold text-gray-700 uppercase tracking-widest sticky top-0 backdrop-blur-sm">
