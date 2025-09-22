@@ -106,6 +106,12 @@ const GoogleMapsSetup = ({
           }
           return;
         }
+        // Avoid double-initializing the map (StrictMode)
+        if (mapInstanceRef.current) {
+          console.log('ℹ️ Map instance already exists, skipping init');
+          setIsLoaded(true);
+          return;
+        }
         
         await loadGoogleMapsAPI();
         
@@ -464,13 +470,13 @@ const GoogleMapsSetup = ({
 
   return (
     <>
-      <div 
-        ref={mapRef} 
-        className="w-full h-full min-h-[60vh] rounded-lg overflow-hidden relative bg-gray-100"
-        style={{ minHeight: '60vh' }}
-      >
+      <div className="relative w-full min-h-[60vh] rounded-lg overflow-hidden bg-gray-100" style={{ minHeight: '60vh' }}>
+        {/* Google Maps container must be empty and dedicated to the map */}
+        <div ref={mapRef} className="absolute inset-0" />
+
+        {/* Overlays rendered as siblings (not children of the map container) to avoid DOM conflicts */}
         {!isLoaded && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
+          <div className="absolute inset-0 flex items-center justify-center z-10">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
               <p className="text-sm text-gray-600">Loading map...</p>
