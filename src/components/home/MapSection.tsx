@@ -51,13 +51,7 @@ const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) =
 
   const handleMapRightClick = (coords: { lat: number; lng: number }) => {
     setNewLocationCoords(coords);
-    // Only use quick add modal for saved locations filter
-    if (activeMapFilter === 'saved') {
-      setIsQuickAddModalOpen(true);
-    } else {
-      // For other filters, don't allow adding new locations
-      toast.info('Switch to "Saved" filter to add your favorite places');
-    }
+    setIsQuickAddModalOpen(true);
   };
 
   const handleSaveLocation = async (locationData: any) => {

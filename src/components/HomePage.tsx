@@ -206,7 +206,6 @@ const HomePage = () => {
     console.log('HomePage - City changed to:', city);
     setSelectedCity(city);
     setCurrentCity(city);
-    refreshPins(city);
     
     const cityCoordinates: Record<string, { lat: number; lng: number }> = {
       'san francisco': { lat: 37.7749, lng: -122.4194 },
@@ -227,7 +226,7 @@ const HomePage = () => {
       'dublin': { lat: 53.3498, lng: -6.2603 },
       'stockholm': { lat: 59.3293, lng: 18.0686 },
       'copenhagen': { lat: 55.6761, lng: 12.5683 },
-      'prague': { lat: 50.0755, lng: 14.4378 },
+      'prague': { lat: 50.755, lng: 14.4378 },
       'budapest': { lat: 47.4979, lng: 19.0402 },
       'warsaw': { lat: 52.2297, lng: 21.0122 },
       'athens': { lat: 37.9838, lng: 23.7275 }
@@ -235,10 +234,15 @@ const HomePage = () => {
     
     const cityKey = city.toLowerCase();
     if (cityCoordinates[cityKey]) {
-      setMapCenter(cityCoordinates[cityKey]);
+      const newCenter = cityCoordinates[cityKey];
+      setMapCenter(newCenter);
+      console.log('Map center updated to:', newCenter);
     } else if (userLocation) {
       setMapCenter(userLocation);
     }
+    
+    // Refresh pins after city change
+    refreshPins(city);
   };
 
   const handlePinClick = (place: Place) => {

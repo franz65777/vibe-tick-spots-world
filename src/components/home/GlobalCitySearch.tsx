@@ -233,46 +233,54 @@ const GlobalCitySearch = ({
   }, {} as Record<string, typeof filteredCities>);
 
   return (
-    <div ref={searchRef} className="relative flex-1 max-w-md z-[100]">
+    <div ref={searchRef} className="relative flex-1 max-w-sm z-[200]">
       {/* Current City Display / Search Input */}
       <div className="relative">
-      {!searchQuery || searchQuery.trim() === ' ' ? (
-          // Show current city when not searching - Mobile optimized
-          <div className="flex items-center gap-2 bg-white/95 border border-gray-200 rounded-full h-10 px-4 hover:bg-white transition-colors cursor-pointer shadow-sm"
+        {!searchQuery || searchQuery.trim() === ' ' ? (
+          // Show current city when not searching
+          <div className="flex items-center gap-3 bg-white/95 border border-gray-200 rounded-2xl h-12 px-4 hover:bg-white transition-all duration-200 cursor-pointer shadow-lg backdrop-blur-sm"
                onClick={() => document.getElementById('global-city-search-input')?.focus()}>
+            <MapPin className="w-5 h-5 text-blue-600 shrink-0" />
             <div className="flex-1 min-w-0">
-              <span className="text-gray-900 font-medium text-sm truncate">
+              <span className="text-gray-900 font-semibold text-base truncate">
                 {currentCityData?.name || currentCity || 'Select City'}
               </span>
+              {currentCityData?.country && (
+                <div className="text-xs text-gray-500">{currentCityData.country}</div>
+              )}
             </div>
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               {geoLoading && (
-                <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
               )}
               <button
-                onClick={handleLocationClick}
-                className="w-5 h-5 text-gray-400 hover:text-blue-600 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleLocationClick();
+                }}
+                className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all duration-200"
                 title="Detect current location"
               >
-                <Locate className="w-3 h-3" />
+                <Locate className="w-4 h-4" />
               </button>
             </div>
           </div>
         ) : (
-          // Show search input when searching - Mobile optimized
+          // Show search input when searching
           <div className="relative">
             <Input
               id="global-city-search-input"
               type="text"
-              placeholder="Search cities..."
+              placeholder="Search cities worldwide..."
               value={searchQuery === ' ' ? '' : searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               onKeyPress={onSearchKeyPress}
               onFocus={() => searchQuery && setIsOpen(true)}
-              className="pl-4 pr-10 bg-white/95 border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-full h-10 text-sm"
+              className="pl-12 pr-12 bg-white/95 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-2xl h-12 text-base shadow-lg backdrop-blur-sm"
               autoFocus
             />
-            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3" />
+            <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           </div>
         )}
       </div>
@@ -291,34 +299,37 @@ const GlobalCitySearch = ({
 
       {/* Dropdown Results - Organized by continent */}
       {isOpen && Object.keys(groupedCities).length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 max-h-80 overflow-y-auto z-[9999] backdrop-blur-sm">
-          {Object.entries(groupedCities).map(([continent, cities]) => (
-            <div key={continent} className="border-b border-gray-50 last:border-b-0">
-              <div className="px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                {continent}
-              </div>
-              {cities.map(({ key, data, similarity }) => {
-                const IconComponent = data.icon;
-                return (
-                  <button
-                    key={key}
-                    onClick={() => handleCityClick(data.name)}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left"
-                  >
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-900 text-sm">{data.name}</div>
-                      <div className="text-xs text-gray-500">{data.country}</div>
-                    </div>
-                    {similarity > 0.8 && (
-                      <div className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-                        ★
+        <div className="fixed top-16 left-4 right-4 bg-white rounded-3xl shadow-2xl border border-gray-100/50 max-h-96 overflow-hidden z-[9999] backdrop-blur-xl bg-white/95">
+          <div className="overflow-y-auto max-h-96 scrollbar-hide">
+            {Object.entries(groupedCities).map(([continent, cities]) => (
+              <div key={continent} className="border-b border-gray-50/50 last:border-b-0">
+                <div className="px-6 py-3 bg-gradient-to-r from-gray-50 to-blue-50/30 text-xs font-bold text-gray-700 uppercase tracking-widest sticky top-0 backdrop-blur-sm">
+                  {continent}
+                </div>
+                {cities.map(({ key, data, similarity }) => {
+                  const IconComponent = data.icon;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => handleCityClick(data.name)}
+                      className="w-full flex items-center gap-4 px-6 py-4 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200 text-left group"
+                    >
+                      <IconComponent className="w-5 h-5 text-blue-500 group-hover:text-blue-600 shrink-0" />
+                      <div className="flex-1">
+                        <div className="font-semibold text-gray-900 text-base group-hover:text-blue-900">{data.name}</div>
+                        <div className="text-sm text-gray-500 group-hover:text-gray-600">{data.country} • {data.description}</div>
                       </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          ))}
+                      {similarity > 0.8 && (
+                        <div className="text-xs text-blue-600 bg-blue-100 px-3 py-1 rounded-full font-medium">
+                          Best Match
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

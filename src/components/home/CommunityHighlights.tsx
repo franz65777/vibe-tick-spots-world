@@ -1,6 +1,7 @@
 import React from 'react';
 import { MapPin, Heart, Users, Star, Crown, Sparkles, TrendingUp } from 'lucide-react';
 import { useNearbyLocations } from '@/hooks/useNearbyLocations';
+import { cn } from '@/lib/utils';
 
 interface CommunityHighlightsProps {
   currentCity: string;
@@ -48,73 +49,98 @@ const CommunityHighlights = ({
   onUserClick, 
   onMapLocationClick 
 }: CommunityHighlightsProps) => {
-  const { locations, loading } = useNearbyLocations({
-    userLat: userLocation?.lat,
-    userLng: userLocation?.lng,
-    limit: 8,
-    autoFetch: true
-  });
+  // Use the mock data for now
+  const locations = getMockFeaturedLocations(currentCity);
 
   return (
-    <div className="px-4 py-0.5">
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-        {locations.map((location) => (
+    <div className="w-full px-4 py-6">
+      {/* Minimal Header */}
+      <div className="mb-6 text-center">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-900 bg-clip-text text-transparent mb-2">
+          Discover {currentCity}
+        </h2>
+        <div className="w-16 h-1 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full mx-auto"></div>
+      </div>
+
+      {/* Grid Layout for Cards */}
+      <div className="grid grid-cols-1 gap-4">
+        {locations.map((location, index) => (
           <div 
             key={location.id}
-            onClick={() => onLocationClick(location.id, location.coordinates)}
-            className="flex-shrink-0 w-32 sm:w-36 bg-gradient-to-br from-card/95 to-card/80 rounded-xl border border-border/30 p-3 cursor-pointer hover:shadow-md hover:scale-[1.02] transition-all duration-300 backdrop-blur-sm"
+            className="bg-white/80 backdrop-blur-xl rounded-3xl border-0 overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group hover:scale-[1.02] active:scale-[0.98]"
+            onClick={() => onLocationClick(location.id)}
           >
-            <div className="flex flex-col items-center">
-              <div className="relative mb-2">
-                <img 
-                  src={location.image} 
-                  alt={location.name}
-                  className="w-12 h-12 rounded-xl object-cover shadow-sm"
-                />
-                <div className="absolute -top-1 -right-1">
-                  {location.type === 'business_offer' && (
-                    <div className="bg-gradient-to-r from-emerald-500 to-green-500 rounded-full p-1 shadow-sm">
-                      <Sparkles className="w-2 h-2 text-white" />
-                    </div>
-                  )}
-                  {location.type === 'popular' && (
-                    <div className="bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full p-1 shadow-sm">
-                      <TrendingUp className="w-2 h-2 text-white" />
-                    </div>
-                  )}
-                  {location.type === 'weekly_winner' && (
-                    <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-full p-1 shadow-sm">
-                      <Crown className="w-2 h-2 text-white" />
-                    </div>
-                  )}
-                </div>
-              </div>
+            <div className="relative">
+              {/* Premium Gradient Background */}
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-indigo-500/5 to-purple-500/10"></div>
               
-              <div className="text-center w-full">
-                <h4 className="font-semibold text-sm text-foreground mb-1 leading-tight px-1 line-clamp-2">{location.name}</h4>
-                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                  location.type === 'business_offer' ? 'bg-emerald-100 text-emerald-700' :
-                  location.type === 'popular' ? 'bg-blue-100 text-blue-700' :
-                  location.type === 'weekly_winner' ? 'bg-purple-100 text-purple-700' :
-                  'bg-orange-100 text-orange-700'
-                }`}>
-                  {location.badge}
-                </span>
+              <div className="relative flex items-center gap-4 p-5">
+                {/* Enhanced Location Image */}
+                <div className="relative w-14 h-14 shrink-0 overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 shadow-lg">
+                  <img
+                    src={location.image}
+                    alt={location.name}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
+                    {location.name[0]}
+                  </div>
+                  
+                  {/* Glow Effect */}
+                  <div className="absolute -inset-1 bg-gradient-to-br from-blue-400 via-indigo-400 to-purple-500 opacity-0 group-hover:opacity-20 rounded-2xl blur transition-all duration-300"></div>
+                </div>
+
+                {/* Enhanced Location Details */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-lg text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+                        {location.name}
+                      </h3>
+                      <p className="text-sm text-gray-500 truncate mt-1 leading-tight">
+                        {location.description}
+                      </p>
+                    </div>
+                    
+                    {/* Enhanced Badge */}
+                    {location.badge && (
+                      <div className={cn(
+                        "px-3 py-1.5 rounded-full text-xs font-bold shrink-0 shadow-sm",
+                        location.type === 'business_offer' && "bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-700 border border-emerald-200",
+                        location.type === 'popular' && "bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 border border-blue-200", 
+                        location.type === 'weekly_winner' && "bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border border-purple-200"
+                      )}>
+                        {location.badge}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Enhanced Stats */}
+                  <div className="flex items-center gap-5 mt-3">
+                    <div className="flex items-center gap-2 text-gray-600 group-hover:text-pink-600 transition-colors">
+                      <Heart className="w-4 h-4" />
+                      <span className="text-sm font-medium">{location.stats.saves}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-600 group-hover:text-blue-600 transition-colors">
+                      <Users className="w-4 h-4" />
+                      <span className="text-sm font-medium">{location.stats.followers}</span>
+                    </div>
+                    {location.type === 'weekly_winner' && (
+                      <div className="flex items-center gap-2 text-purple-600 group-hover:text-purple-700 transition-colors">
+                        <Crown className="w-4 h-4" />
+                        <span className="text-sm font-bold">Featured</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         ))}
-        
-        {/* Add New Location Card */}
-        <div 
-          onClick={() => onLocationClick('add-new')}
-          className="flex-shrink-0 w-32 sm:w-36 bg-gradient-to-br from-primary/10 to-accent/5 rounded-xl border-2 border-dashed border-primary/30 p-3 cursor-pointer hover:border-primary/50 hover:shadow-md transition-all duration-300 flex flex-col items-center justify-center backdrop-blur-sm"
-        >
-          <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-full flex items-center justify-center mb-2 shadow-sm">
-            <Star className="w-4 h-4 text-primary" />
-          </div>
-          <p className="text-sm font-semibold text-primary text-center leading-tight">Add New</p>
-        </div>
       </div>
     </div>
   );
