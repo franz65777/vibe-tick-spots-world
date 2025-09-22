@@ -57,9 +57,9 @@ const MapCategoryFilters = ({
   return (
     <div className="absolute top-4 left-4 right-4 z-50">
       {/* Transparent Compact Filter */}
-      <div className="bg-black/40 backdrop-blur-md rounded-2xl border border-white/30 overflow-hidden shadow-lg">
+      <div className="bg-black/60 backdrop-blur-md rounded-2xl border border-white/20 overflow-hidden shadow-lg">
         {/* Map Mode Pills - Horizontal Scroll */}
-        <div className="flex overflow-x-auto scrollbar-hide border-b border-white/10">
+        <div className="flex overflow-x-auto scrollbar-hide border-b border-white/20">
           {mapFilters.map((filter, index) => {
             const IconComponent = filter.icon;
             const isActive = activeMapFilter === filter.id;
@@ -69,9 +69,9 @@ const MapCategoryFilters = ({
                 key={filter.id}
                 onClick={() => onMapFilterChange(filter.id)}
                 className={cn(
-                  "flex-shrink-0 flex items-center justify-center gap-2 px-4 py-3 transition-all duration-200 font-semibold text-sm border-r border-white/20 last:border-r-0 min-w-[80px]",
+                  "flex-1 flex items-center justify-center gap-2 px-3 py-3 transition-all duration-200 font-semibold text-sm border-r border-white/20 last:border-r-0",
                   isActive
-                    ? "bg-white/30 text-white shadow-md border-white/40"
+                    ? "bg-white text-black shadow-md"
                     : "text-white/90 hover:bg-white/15 hover:text-white"
                 )}
                 title={filter.description}
