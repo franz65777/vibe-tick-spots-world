@@ -88,10 +88,13 @@ const GoogleMapsSetup = ({
     const initMap = async () => {
       try {
         console.log('🗺️ Starting Google Maps initialization, attempt:', retryCount + 1);
+        // If map already exists (e.g., StrictMode re-run), don't reset loading state
+        if (mapInstanceRef.current) {
+          console.log('ℹ️ Map instance already exists, skipping init');
+          setIsLoaded(true);
+          return;
+        }
         setIsLoaded(false);
-        
-        // Wait for DOM to be ready
-        await new Promise(resolve => setTimeout(resolve, 100));
         
         if (!mounted || isUnmountingRef.current) {
           console.log('❌ Component unmounting, abort init');
@@ -228,7 +231,7 @@ const GoogleMapsSetup = ({
         }
       }, 0);
     };
-  }, [getCurrentLocation, onMapRightClick, clearMarkers, clearCurrentLocationMarker, mapCenter]);
+  }, []);
 
   // Update map center when it changes
   useEffect(() => {
