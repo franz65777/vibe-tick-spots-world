@@ -9,7 +9,6 @@ import Header from './home/Header';
 import StoriesSection from './home/StoriesSection';
 import MapSection from './home/MapSection';
 import ModalsManager from './home/ModalsManager';
-import LocationOfTheWeek from './home/LocationOfTheWeek';
 import CommunityHighlights from './home/CommunityHighlights';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '@/lib/googleMaps';
 
@@ -289,7 +288,7 @@ const HomePage = () => {
   const topLocation = getTopLocation();
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5 flex flex-col">
       <Header 
         searchQuery={searchQuery}
         currentCity={currentCity}
@@ -302,7 +301,7 @@ const HomePage = () => {
       />
       
       <main className="flex-1 flex flex-col max-w-7xl mx-auto w-full">
-        <div className="bg-white border-b border-gray-100 px-4 py-3">
+        <div className="bg-card/80 backdrop-blur-sm border-b border-border/50 px-4 py-3 shadow-sm">
           <StoriesSection 
             stories={stories}
             onCreateStory={() => setIsCreateStoryModalOpen(true)}
@@ -314,18 +313,24 @@ const HomePage = () => {
         </div>
         
         {/* Community Highlights Section */}
-        <CommunityHighlights
-          currentCity={currentCity}
-          onLocationClick={(locationId: string) => {
-            // Navigate to explore tab for location details
-            navigate('/explore');
-          }}
-          onUserClick={(userId: string) => {
-            // Navigate to search tab for user profiles
-            navigate('/explore');
-          }}
-          onMapLocationClick={(coords: { lat: number; lng: number }) => setMapCenter(coords)}
-        />
+        <div className="bg-gradient-to-r from-card/90 via-card to-card/90 backdrop-blur-sm">
+          <CommunityHighlights
+            currentCity={currentCity}
+            userLocation={userLocation}
+            onLocationClick={(locationId: string, coordinates?: { lat: number; lng: number }) => {
+              if (coordinates) {
+                setMapCenter(coordinates);
+              }
+              // Navigate to explore tab for location details
+              navigate('/explore');
+            }}
+            onUserClick={(userId: string) => {
+              // Navigate to search tab for user profiles
+              navigate('/explore');
+            }}
+            onMapLocationClick={(coords: { lat: number; lng: number }) => setMapCenter(coords)}
+          />
+        </div>
         
         {loading ? (
           <div className="flex-1 flex items-center justify-center">
