@@ -77,23 +77,43 @@ const GoogleMapsSetup = ({
     }
   }, []);
 
-  // Initialize map
+  // Initialize map with better timing
   useEffect(() => {
     let mounted = true;
+    let retryCount = 0;
+    const maxRetries = 3;
     
     const initMap = async () => {
       try {
-        console.log('Starting Google Maps initialization...');
-        setIsLoaded(false); // Make sure we show loading state
+        console.log('🗺️ Starting Google Maps initialization, attempt:', retryCount + 1);
+        setIsLoaded(false);
         
-        await loadGoogleMapsAPI();
+        // Wait for DOM to be ready
+        await new Promise(resolve => setTimeout(resolve, 100));
         
-        if (!mounted || !mapRef.current || isUnmountingRef.current) {
-          console.log('Map container not ready or component unmounting');
+        if (!mounted || isUnmountingRef.current) {
+          console.log('❌ Component unmounting, abort init');
           return;
         }
 
-        console.log('Creating Google Maps instance...');
+        if (!mapRef.current) {
+          console.log('❌ Map container not available, retrying...');
+          if (retryCount < maxRetries) {
+            retryCount++;
+            setTimeout(initMap, 500);
+          }
+          return;
+        }
+        
+        await loadGoogleMapsAPI();
+        
+        // Double-check everything is still ready
+        if (!mounted || !mapRef.current || isUnmountingRef.current) {
+          console.log('❌ Map container lost during API load');
+          return;
+        }
+
+        console.log('✅ Creating Google Maps instance...');
         const map = new google.maps.Map(mapRef.current, {
           center: mapCenter,
           zoom: 13,

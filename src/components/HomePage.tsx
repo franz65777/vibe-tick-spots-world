@@ -345,11 +345,8 @@ const HomePage = () => {
           </div>
         ) : (
           <MapSection 
-            places={places}
-            onPinClick={handlePinClick}
             mapCenter={mapCenter}
-            selectedPlace={selectedPlace}
-            onCloseSelectedPlace={handleCloseSelectedPlace}
+            currentCity={currentCity}
           />
         )}
       </main>

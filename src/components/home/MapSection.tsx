@@ -2,19 +2,44 @@
 import React, { useState } from 'react';
 import GoogleMapsSetup from '@/components/GoogleMapsSetup';
 import AddLocationModal from './AddLocationModal';
+import MapCategoryFilters, { type MapFilter } from './MapCategoryFilters';
+import { useMapLocations } from '@/hooks/useMapLocations';
 import { Place } from '@/types/place';
 
 interface MapSectionProps {
-  places: Place[];
-  onPinClick: (place: Place) => void;
   mapCenter: { lat: number; lng: number };
-  selectedPlace: Place | null;
-  onCloseSelectedPlace: () => void;
+  currentCity: string;
 }
 
-const MapSection = ({ places, onPinClick, mapCenter, selectedPlace, onCloseSelectedPlace }: MapSectionProps) => {
+const MapSection = ({ mapCenter, currentCity }: MapSectionProps) => {
   const [isAddLocationModalOpen, setIsAddLocationModalOpen] = useState(false);
   const [newLocationCoords, setNewLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  
+  // Filter states
+  const [activeMapFilter, setActiveMapFilter] = useState<MapFilter>('popular');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  
+  // Fetch locations based on current filters
+  const { locations, loading, error } = useMapLocations({
+    mapFilter: activeMapFilter,
+    selectedCategories,
+    currentCity
+  });
+
+  // Convert locations to Place format for GoogleMapsSetup
+  const places: Place[] = locations.map(location => ({
+    id: location.id,
+    name: location.name,
+    category: location.category as any,
+    address: location.address || '',
+    coordinates: location.coordinates,
+    isFollowing: location.isFollowing || false,
+    isNew: location.isNew || false,
+    isSaved: location.isSaved || false,
+    likes: 0, // Default value
+    visitors: [] // Default value as string array
+  }));
 
   const handleMapRightClick = (coords: { lat: number; lng: number }) => {
     setNewLocationCoords(coords);
@@ -23,14 +48,9 @@ const MapSection = ({ places, onPinClick, mapCenter, selectedPlace, onCloseSelec
 
   const handleSaveLocation = async (locationData: any) => {
     try {
-      // Here you would typically call a service to save the location
       console.log('Saving new location:', locationData);
-      
-      // For now, just close the modal
       setIsAddLocationModalOpen(false);
       setNewLocationCoords(null);
-      
-      // You could add a toast notification here
       alert('Location saved successfully!');
     } catch (error) {
       console.error('Error saving location:', error);
@@ -38,23 +58,60 @@ const MapSection = ({ places, onPinClick, mapCenter, selectedPlace, onCloseSelec
     }
   };
 
+  const handlePinClick = (place: Place) => {
+    setSelectedPlace(place);
+  };
+
+  const handleCategoryToggle = (categoryId: string) => {
+    setSelectedCategories(prev => 
+      prev.includes(categoryId) 
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId]
+    );
+  };
+
   return (
     <>
       <div className="flex-1 relative min-h-[500px]">
         <GoogleMapsSetup 
           places={places}
-          onPinClick={onPinClick}
+          onPinClick={handlePinClick}
           mapCenter={mapCenter}
           selectedPlace={selectedPlace}
-          onCloseSelectedPlace={onCloseSelectedPlace}
+          onCloseSelectedPlace={() => setSelectedPlace(null)}
           onMapRightClick={handleMapRightClick}
         />
         
-        {/* Instruction overlay */}
-        <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-sm border border-gray-200 z-50">
-          <p className="text-xs text-gray-600">
-            💡 Right-click on the map to add a new location
-          </p>
+        {/* Map Category Filters */}
+        <MapCategoryFilters
+          activeMapFilter={activeMapFilter}
+          onMapFilterChange={setActiveMapFilter}
+          selectedCategories={selectedCategories}
+          onCategoryToggle={handleCategoryToggle}
+        />
+        
+        {/* Loading/Error States */}
+        {loading && (
+          <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-sm border border-gray-200 z-50">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-sm text-gray-600">Loading locations...</span>
+            </div>
+          </div>
+        )}
+        
+        {error && (
+          <div className="absolute bottom-4 right-4 bg-red-50 border border-red-200 rounded-lg px-3 py-2 shadow-sm z-50">
+            <span className="text-sm text-red-600">Error: {error}</span>
+          </div>
+        )}
+        
+        {/* Stats */}
+        <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-sm border border-gray-200 z-50">
+          <span className="text-sm text-gray-600">
+            📍 {places.length} locations • {activeMapFilter.charAt(0).toUpperCase() + activeMapFilter.slice(1)}
+            {selectedCategories.length > 0 && ` • ${selectedCategories.length} categories`}
+          </span>
         </div>
       </div>
 
