@@ -17,7 +17,6 @@ interface LocationPost {
   metadata: any;
   profiles?: {
     username: string;
-    full_name: string;
     avatar_url: string;
   } | null;
 }
@@ -122,9 +121,10 @@ const LocationPostLibrary = ({ place, onClose }: LocationPostLibraryProps) => {
         const userIds = [...new Set(postsData.map(post => post.user_id))];
         console.log('👥 Fetching profiles for users:', userIds);
         
+        // SECURITY FIX: Only select safe profile fields  
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
-          .select('id, username, full_name, avatar_url')
+          .select('id, username, avatar_url')
           .in('id', userIds);
 
         if (profilesError) {
@@ -294,12 +294,12 @@ const LocationPostLibrary = ({ place, onClose }: LocationPostLibraryProps) => {
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
               <span className="text-white text-sm font-semibold">
-                {selectedPost.profiles?.full_name?.[0] || selectedPost.profiles?.username?.[0] || 'U'}
+                {selectedPost.profiles?.username?.[0] || 'U'}
               </span>
             </div>
             <div className="flex-1">
               <div className="font-semibold text-gray-900">
-                {selectedPost.profiles?.full_name || selectedPost.profiles?.username || 'User'}
+                {selectedPost.profiles?.username || 'User'}
               </div>
               <div className="text-xs text-gray-500">
                 {formatDate(selectedPost.created_at)}

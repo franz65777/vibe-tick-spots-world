@@ -74,9 +74,10 @@ const LocationDetailModal = ({ isOpen, onClose, location }: LocationDetailModalP
       // Get user profiles for the posts
       if (postsData && postsData.length > 0) {
         const userIds = [...new Set(postsData.map(p => p.user_id))];
+        // SECURITY FIX: Only select safe profile fields
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
-          .select('id, username, full_name, avatar_url')
+          .select('id, username, avatar_url')
           .in('id', userIds);
 
         if (!profilesError && profiles) {

@@ -60,7 +60,7 @@ const FollowersModal = ({ isOpen, onClose, type }: FollowersModalProps) => {
                     </div>
                     <div>
                       <p className="font-medium text-gray-900">{user.username || 'Unknown User'}</p>
-                      <p className="text-sm text-gray-600">{user.full_name || ''}</p>
+                      <p className="text-sm text-gray-600">@{user.username}</p>
                     </div>
                   </div>
                   

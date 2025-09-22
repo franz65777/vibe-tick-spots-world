@@ -28,11 +28,26 @@ export const useUserSearch = () => {
 
     setLoading(true);
     try {
-      // Search users by username or full_name with proper case insensitive search
+      // SECURITY FIX: Only select safe, non-sensitive profile fields
       const { data: searchResults, error } = await supabase
         .from('profiles')
-        .select('*')
-        .or(`username.ilike.%${query}%,full_name.ilike.%${query}%`)
+        .select(`
+          id,
+          username,
+          bio,
+          avatar_url,
+          posts_count,
+          follower_count,
+          following_count,
+          cities_visited,
+          places_visited,
+          created_at,
+          user_type,
+          business_verified,
+          is_business_user,
+          current_city
+        `)
+        .or(`username.ilike.%${query}%`)
         .neq('id', currentUser?.id || '')
         .order('username')
         .limit(20);
@@ -57,7 +72,7 @@ export const useUserSearch = () => {
           return {
             id: user.id,
             username: user.username,
-            full_name: user.full_name,
+            full_name: null, // SECURITY: Don't expose full names in search
             avatar_url: user.avatar_url,
             bio: user.bio,
             followers_count: user.follower_count || 0,
@@ -80,9 +95,25 @@ export const useUserSearch = () => {
   const getAllUsers = async () => {
     setLoading(true);
     try {
+      // SECURITY FIX: Only select safe, non-sensitive profile fields
       const { data: allUsers, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select(`
+          id,
+          username,
+          bio,
+          avatar_url,
+          posts_count,
+          follower_count,
+          following_count,
+          cities_visited,
+          places_visited,
+          created_at,
+          user_type,
+          business_verified,
+          is_business_user,
+          current_city
+        `)
         .neq('id', currentUser?.id || '')
         .order('created_at', { ascending: false })
         .limit(50);
@@ -107,7 +138,7 @@ export const useUserSearch = () => {
           return {
             id: user.id,
             username: user.username,
-            full_name: user.full_name,
+            full_name: null, // SECURITY: Don't expose full names in user list
             avatar_url: user.avatar_url,
             bio: user.bio,
             followers_count: user.follower_count || 0,

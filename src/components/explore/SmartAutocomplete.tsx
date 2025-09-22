@@ -137,17 +137,18 @@ const SmartAutocomplete = ({
           setResults(locationResults);
         }
       } else {
+        // SECURITY FIX: Only search by username, select safe fields
         const { data } = await supabase
           .from('profiles')
-          .select('id, username, full_name, avatar_url')
-          .or(`username.ilike.%${searchQuery}%,full_name.ilike.%${searchQuery}%`)
+          .select('id, username, avatar_url')
+          .or(`username.ilike.%${searchQuery}%`)
           .limit(5);
 
         if (data) {
           const userResults: AutocompleteResult[] = data.map(profile => ({
             type: 'user' as const,
             id: profile.id,
-            title: profile.full_name || profile.username || 'User',
+            title: profile.username || 'User', // SECURITY: Don't expose full names
             subtitle: `@${profile.username || profile.id.substring(0, 8)}`,
             image: profile.avatar_url
           }));

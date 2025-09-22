@@ -86,10 +86,11 @@ const ShareModal = ({ isOpen, onClose, place }: ShareModalProps) => {
     
     setLoading(true);
     try {
+      // SECURITY FIX: Only search by username, select safe fields only
       const { data: searchResults, error } = await supabase
         .from('profiles')
-        .select('id, username, full_name, avatar_url')
-        .or(`username.ilike.%${searchQuery}%, full_name.ilike.%${searchQuery}%`)
+        .select('id, username, avatar_url')
+        .or(`username.ilike.%${searchQuery}%`)
         .neq('id', user.id)
         .limit(20);
 
@@ -98,7 +99,7 @@ const ShareModal = ({ isOpen, onClose, place }: ShareModalProps) => {
       const userList = searchResults?.map(u => ({
         id: u.id,
         username: u.username || 'Unknown',
-        full_name: u.full_name || 'Unknown User',
+        full_name: 'Unknown User', // SECURITY: Don't expose full names
         avatar_url: u.avatar_url || ''
       })) || [];
 

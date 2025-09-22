@@ -34,10 +34,27 @@ export const useUserProfile = (userId?: string) => {
       }
 
       try {
-        // Fetch user profile
+        // SECURITY FIX: Always select only safe profile fields
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('*')
+          .select(`
+            id,
+            username,
+            full_name,
+            bio,
+            avatar_url,
+            email,
+            posts_count,
+            follower_count,
+            following_count,
+            cities_visited,
+            places_visited,
+            created_at,
+            user_type,
+            business_verified,
+            is_business_user,
+            current_city
+          `)
           .eq('id', userId)
           .single();
 

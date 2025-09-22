@@ -12,7 +12,6 @@ interface FollowStats {
 interface FollowUser {
   id: string;
   username: string;
-  full_name: string;
   avatar_url: string | null;
 }
 
@@ -39,10 +38,10 @@ export const useFollowStats = () => {
       try {
         console.log('useFollowStats: Fetching stats with timeout...');
         
-        // Set a timeout for stats fetching
+        // SECURITY FIX: Use count queries without selecting all fields
         const statsPromise = Promise.all([
-          supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', user.id),
-          supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', user.id),
+          supabase.from('follows').select('id', { count: 'exact', head: true }).eq('following_id', user.id),
+          supabase.from('follows').select('id', { count: 'exact', head: true }).eq('follower_id', user.id),
           supabase.from('profiles').select('posts_count').eq('id', user.id).single()
         ]);
 
@@ -92,9 +91,9 @@ export const useFollowData = (type: 'followers' | 'following') => {
       if (!user) {
         // Demo data for when no user is available
         const demoUsers: FollowUser[] = [
-          { id: '1', username: 'demo_user1', full_name: 'Demo User 1', avatar_url: null },
-          { id: '2', username: 'demo_user2', full_name: 'Demo User 2', avatar_url: null },
-          { id: '3', username: 'demo_user3', full_name: 'Demo User 3', avatar_url: null }
+          { id: '1', username: 'demo_user1', avatar_url: null },
+          { id: '2', username: 'demo_user2', avatar_url: null },
+          { id: '3', username: 'demo_user3', avatar_url: null }
         ];
         setUsers(demoUsers);
         setLoading(false);
@@ -110,7 +109,6 @@ export const useFollowData = (type: 'followers' | 'following') => {
             profiles!${type === 'followers' ? 'follows_follower_id_fkey' : 'follows_following_id_fkey'} (
               id,
               username,
-              full_name,
               avatar_url
             )
           `);
@@ -141,11 +139,11 @@ export const useFollowData = (type: 'followers' | 'following') => {
         console.error('useFollowData: Error fetching follow data or timeout:', error);
         // Demo data on error/timeout
         const demoUsers: FollowUser[] = type === 'following' ? [
-          { id: '1', username: 'demo_followed1', full_name: 'Demo Followed 1', avatar_url: null },
-          { id: '2', username: 'demo_followed2', full_name: 'Demo Followed 2', avatar_url: null }
+          { id: '1', username: 'demo_followed1', avatar_url: null },
+          { id: '2', username: 'demo_followed2', avatar_url: null }
         ] : [
-          { id: '3', username: 'demo_follower1', full_name: 'Demo Follower 1', avatar_url: null },
-          { id: '4', username: 'demo_follower2', full_name: 'Demo Follower 2', avatar_url: null }
+          { id: '3', username: 'demo_follower1', avatar_url: null },
+          { id: '4', username: 'demo_follower2', avatar_url: null }
         ];
         setUsers(demoUsers);
       } finally {

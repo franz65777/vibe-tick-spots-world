@@ -111,16 +111,17 @@ const ExplorePage = () => {
           users: []
         };
       } else {
+        // SECURITY FIX: Only select safe profile fields, no full_name
         const {
           data: users,
           error
-        } = await supabase.from('profiles').select('id, username, full_name, avatar_url').or(`username.ilike.%${query}%, full_name.ilike.%${query}%`).limit(20);
+        } = await supabase.from('profiles').select('id, username, avatar_url').or(`username.ilike.%${query}%`).limit(20);
         if (error) throw error;
         return {
           locations: [],
           users: users?.map(user => ({
             id: user.id,
-            name: user.full_name || user.username || 'User',
+            name: user.username || 'User', // SECURITY: Only use username, not full_name
             username: user.username || `@${user.id.substring(0, 8)}`,
             avatar: user.avatar_url || 'photo-1472099645785-5658abf4ff4e',
             is_following: false
