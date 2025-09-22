@@ -149,7 +149,6 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded }: QuickAdd
         
         toast.success(`${selectedPlace.name} saved to your favorites!`);
       }
-      
       onPinAdded();
       onClose();
       setSelectedPlace(null);

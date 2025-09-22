@@ -214,7 +214,23 @@ const HomePage = () => {
       'paris': { lat: 48.8566, lng: 2.3522 },
       'new york': { lat: 40.7128, lng: -74.0060 },
       'london': { lat: 51.5074, lng: -0.1278 },
-      'tokyo': { lat: 35.6762, lng: 139.6503 }
+      'tokyo': { lat: 35.6762, lng: 139.6503 },
+      'rome': { lat: 41.9028, lng: 12.4964 },
+      'barcelona': { lat: 41.3851, lng: 2.1734 },
+      'amsterdam': { lat: 52.3676, lng: 4.9041 },
+      'berlin': { lat: 52.5200, lng: 13.4050 },
+      'madrid': { lat: 40.4168, lng: -3.7038 },
+      'lisbon': { lat: 38.7223, lng: -9.1393 },
+      'munich': { lat: 48.1351, lng: 11.5820 },
+      'vienna': { lat: 48.2082, lng: 16.3738 },
+      'zurich': { lat: 47.3769, lng: 8.5417 },
+      'dublin': { lat: 53.3498, lng: -6.2603 },
+      'stockholm': { lat: 59.3293, lng: 18.0686 },
+      'copenhagen': { lat: 55.6761, lng: 12.5683 },
+      'prague': { lat: 50.0755, lng: 14.4378 },
+      'budapest': { lat: 47.4979, lng: 19.0402 },
+      'warsaw': { lat: 52.2297, lng: 21.0122 },
+      'athens': { lat: 37.9838, lng: 23.7275 }
     };
     
     const cityKey = city.toLowerCase();

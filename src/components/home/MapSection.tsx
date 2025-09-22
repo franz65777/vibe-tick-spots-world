@@ -90,8 +90,10 @@ const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) =
   };
 
   const handlePinAdded = () => {
-    // Refresh locations after adding a new pin
-    window.location.reload();
+    // Switch to saved filter and close modal - this will trigger useMapLocations to refetch
+    setActiveMapFilter('saved');
+    setIsQuickAddModalOpen(false);
+    setNewLocationCoords(null);
   };
 
   const handleCategoryToggle = (categoryId: string) => {

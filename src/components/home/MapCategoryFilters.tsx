@@ -48,6 +48,14 @@ const MapCategoryFilters = ({
   onCategoryToggle 
 }: MapCategoryFiltersProps) => {
   
+  const handleMapFilterChange = (filter: MapFilter) => {
+    // Reset category filters when changing main filter
+    if (selectedCategories.length > 0) {
+      selectedCategories.forEach(cat => onCategoryToggle(cat));
+    }
+    onMapFilterChange(filter);
+  };
+  
   const mapFilters = [
     { id: 'following' as MapFilter, name: 'Following', icon: Users, description: 'Places from people you follow' },
     { id: 'popular' as MapFilter, name: 'Popular', icon: TrendingUp, description: 'Trending locations nearby' },
@@ -78,7 +86,7 @@ const MapCategoryFilters = ({
           return (
             <button
               key={filter.id}
-              onClick={() => onMapFilterChange(filter.id)}
+              onClick={() => handleMapFilterChange(filter.id)}
               className={cn(
                 "flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 backdrop-blur-sm border shadow-sm",
                 filterColors[filter.id]

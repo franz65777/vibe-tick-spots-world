@@ -236,48 +236,43 @@ const GlobalCitySearch = ({
     <div ref={searchRef} className="relative flex-1 max-w-md z-[100]">
       {/* Current City Display / Search Input */}
       <div className="relative">
-        {!searchQuery || searchQuery.trim() === ' ' ? (
-          // Show current city when not searching
-          <div className="flex items-center gap-3 bg-white/90 border border-gray-200 rounded-2xl h-12 px-4 hover:bg-white transition-colors cursor-pointer"
+      {!searchQuery || searchQuery.trim() === ' ' ? (
+          // Show current city when not searching - Mobile optimized
+          <div className="flex items-center gap-2 bg-white/95 border border-gray-200 rounded-full h-10 px-4 hover:bg-white transition-colors cursor-pointer shadow-sm"
                onClick={() => document.getElementById('global-city-search-input')?.focus()}>
-            <CurrentCityIcon className="w-5 h-5 text-blue-600 shrink-0" />
-            <div className="flex-1">
-              <span className="text-gray-900 font-medium">
-                {currentCityData?.name || currentCity}
+            <div className="flex-1 min-w-0">
+              <span className="text-gray-900 font-medium text-sm truncate">
+                {currentCityData?.name || currentCity || 'Select City'}
               </span>
-              {currentCityData?.country && (
-                <div className="text-xs text-gray-500">{currentCityData.country}</div>
-              )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 shrink-0">
               {geoLoading && (
-                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
               )}
               <button
                 onClick={handleLocationClick}
-                className="w-6 h-6 text-gray-400 hover:text-blue-600 transition-colors"
+                className="w-5 h-5 text-gray-400 hover:text-blue-600 transition-colors"
                 title="Detect current location"
               >
-                <Locate className="w-4 h-4" />
+                <Locate className="w-3 h-3" />
               </button>
-              <Globe className="w-4 h-4 text-gray-400" />
             </div>
           </div>
         ) : (
-          // Show search input when searching
+          // Show search input when searching - Mobile optimized
           <div className="relative">
             <Input
               id="global-city-search-input"
               type="text"
-              placeholder="Search cities worldwide..."
+              placeholder="Search cities..."
               value={searchQuery === ' ' ? '' : searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               onKeyPress={onSearchKeyPress}
               onFocus={() => searchQuery && setIsOpen(true)}
-              className="pl-4 pr-10 bg-white/90 border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-2xl h-12"
+              className="pl-4 pr-10 bg-white/95 border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-full h-10 text-sm"
               autoFocus
             />
-            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3" />
           </div>
         )}
       </div>
@@ -308,16 +303,15 @@ const GlobalCitySearch = ({
                   <button
                     key={key}
                     onClick={() => handleCityClick(data.name)}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left"
                   >
-                    <IconComponent className="w-5 h-5 text-blue-600 shrink-0" />
                     <div className="flex-1">
-                      <div className="font-medium text-gray-900">{data.name}</div>
-                      <div className="text-xs text-gray-500">{data.country} • {data.description}</div>
+                      <div className="font-medium text-gray-900 text-sm">{data.name}</div>
+                      <div className="text-xs text-gray-500">{data.country}</div>
                     </div>
                     {similarity > 0.8 && (
-                      <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                        Best match
+                      <div className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                        ★
                       </div>
                     )}
                   </button>
