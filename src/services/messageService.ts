@@ -179,18 +179,17 @@ class MessageService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      // Use secure function to fetch messages with privacy protection
       const { data: messages, error } = await supabase
-        .from('direct_messages')
-        .select('*')
-        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`)
-        .order('created_at', { ascending: true });
+        .rpc('get_secure_messages', { other_user_id: otherUserId });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching secure messages:', error);
+        return [];
+      }
 
-      // Get all unique sender IDs
+      // Get sender profiles separately for the messages
       const senderIds = [...new Set(messages?.map(m => m.sender_id) || [])];
-      
-      // Get profiles for all senders
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, username, full_name, avatar_url')
@@ -206,9 +205,9 @@ class MessageService {
           receiver_id: message.receiver_id,
           content: message.content,
           message_type: message.message_type as 'text' | 'place_share' | 'trip_share' | 'post_share',
-          shared_content: message.shared_content,
+          shared_content: null, // Not returned by secure function for privacy
           created_at: message.created_at,
-          read_at: message.read_at,
+          read_at: null, // Not returned by secure function for privacy
           is_read: message.is_read,
           sender: senderProfile ? {
             username: senderProfile.username || 'Unknown',

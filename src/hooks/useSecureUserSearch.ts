@@ -27,7 +27,7 @@ export const useSecureUserSearch = () => {
     try {
       // Use the secure search function that doesn't expose sensitive data
       const { data: searchResults, error } = await supabase
-        .rpc('search_users_safely', {
+        .rpc('search_users_securely', {
           search_query: query,
           requesting_user_id: currentUser.id
         });
@@ -53,7 +53,7 @@ export const useSecureUserSearch = () => {
     try {
       // Use the secure search function with empty query to get all users
       const { data: allUsers, error } = await supabase
-        .rpc('search_users_safely', {
+        .rpc('search_users_securely', {
           search_query: '',
           requesting_user_id: currentUser.id
         });

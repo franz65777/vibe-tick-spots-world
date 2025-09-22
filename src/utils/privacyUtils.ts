@@ -78,3 +78,40 @@ export const sanitizeUrl = (url: string): string => {
 export const limitTextLength = (text: string, maxLength: number = 1000): string => {
   return text.length > maxLength ? text.substring(0, maxLength) + '[truncated]' : text;
 };
+
+// Enhanced location privacy - add noise to coordinates
+export const addLocationNoise = (lat: number, lng: number, radiusMeters: number = 100): { lat: number, lng: number } => {
+  // Convert meters to degrees (rough approximation)
+  const deltaLat = radiusMeters / 111000; // 1 degree ≈ 111km
+  const deltaLng = radiusMeters / (111000 * Math.cos(lat * Math.PI / 180));
+  
+  return {
+    lat: lat + (Math.random() - 0.5) * 2 * deltaLat,
+    lng: lng + (Math.random() - 0.5) * 2 * deltaLng
+  };
+};
+
+// Generate privacy-safe user identifier
+export const generatePrivacySafeId = (userId: string): string => {
+  return `user_${createAnonymousHash(userId)}`;
+};
+
+// Clean sensitive data from objects
+export const cleanSensitiveData = (obj: any): any => {
+  if (!obj || typeof obj !== 'object') return obj;
+  
+  const sensitiveKeys = ['email', 'phone', 'ssn', 'creditcard', 'password', 'token', 'ip_address'];
+  const cleaned = { ...obj };
+  
+  for (const key in cleaned) {
+    if (sensitiveKeys.some(sk => key.toLowerCase().includes(sk))) {
+      delete cleaned[key];
+    } else if (typeof cleaned[key] === 'string') {
+      cleaned[key] = sanitizeText(cleaned[key]);
+    } else if (typeof cleaned[key] === 'object') {
+      cleaned[key] = cleanSensitiveData(cleaned[key]);
+    }
+  }
+  
+  return cleaned;
+};

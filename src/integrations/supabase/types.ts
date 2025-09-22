@@ -1496,6 +1496,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      cleanup_sensitive_data: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      enforce_data_retention: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       get_anonymized_analytics: {
         Args: { target_user_id: string }
         Returns: {
@@ -1505,6 +1513,13 @@ export type Database = {
           id: string
           page_url: string
           session_id: string
+        }[]
+      }
+      get_business_contact_info: {
+        Args: { business_profile_id: string; requesting_user_id: string }
+        Returns: {
+          phone_number: string
+          website_url: string
         }[]
       }
       get_location_of_the_week: {
@@ -1563,7 +1578,31 @@ export type Database = {
           username: string
         }[]
       }
+      get_secure_messages: {
+        Args: { other_user_id: string }
+        Returns: {
+          content: string
+          created_at: string
+          id: string
+          is_read: boolean
+          message_type: string
+          receiver_id: string
+          sender_id: string
+        }[]
+      }
       search_users_safely: {
+        Args: { requesting_user_id: string; search_query: string }
+        Returns: {
+          avatar_url: string
+          bio: string
+          follower_count: number
+          following_count: number
+          id: string
+          is_following: boolean
+          username: string
+        }[]
+      }
+      search_users_securely: {
         Args: { requesting_user_id: string; search_query: string }
         Returns: {
           avatar_url: string
