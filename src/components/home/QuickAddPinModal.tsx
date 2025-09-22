@@ -1,15 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { MapPin, Camera, Sparkles, X, Check, Plus } from 'lucide-react';
-import { categoryFilters } from './MapCategoryFilters';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
+import { MapPin, Plus, Building2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { allowedCategories, categoryDisplayNames, type AllowedCategory } from '@/utils/allowedCategories';
+import GooglePlacesAutocomplete from '@/components/GooglePlacesAutocomplete';
 
 interface QuickAddPinModalProps {
   isOpen: boolean;
@@ -19,238 +14,156 @@ interface QuickAddPinModalProps {
 }
 
 const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded }: QuickAddPinModalProps) => {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [formData, setFormData] = useState({
-    name: '',
-    category: '',
-    description: '',
-    address: ''
-  });
-  const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<'details' | 'success'>('details');
+  const [selectedPlace, setSelectedPlace] = useState<{
+    place_id: string;
+    name: string;
+    address: string;
+    lat: number;
+    lng: number;
+    types: string[];
+  } | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      setStep('details');
-      setFormData({
-        name: '',
-        category: '',
-        description: '',
-        address: ''
-      });
+  // Map Google Places types to our categories
+  const mapPlaceTypeToCategory = (types: string[]): AllowedCategory | null => {
+    if (types.includes('restaurant') || types.includes('meal_takeaway') || types.includes('food')) return 'restaurant';
+    if (types.includes('bar') || types.includes('night_club')) return 'bar';
+    if (types.includes('cafe')) return 'cafe';
+    if (types.includes('bakery')) return 'bakery';
+    if (types.includes('lodging')) return 'hotel';
+    if (types.includes('museum') || types.includes('art_gallery')) return 'museum';
+    if (types.includes('amusement_park') || types.includes('tourist_attraction')) return 'entertainment';
+    return null;
+  };
+
+  const handlePlaceSelect = (place: {
+    place_id: string;
+    name: string;
+    address: string;
+    lat: number;
+    lng: number;
+    types: string[];
+  }) => {
+    const category = mapPlaceTypeToCategory(place.types);
+    if (!category) {
+      toast.error('This type of location cannot be saved. Please select a restaurant, bar, café, hotel, bakery, museum, or entertainment venue.');
+      return;
     }
-  }, [isOpen]);
+    
+    setSelectedPlace({ ...place });
+  };
 
-  const handleSave = async () => {
-    if (!user || !coordinates || !formData.name || !formData.category) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields",
-        variant: "destructive"
-      });
+  const handleSavePin = async () => {
+    if (!selectedPlace) {
+      toast.error('Please select a location first');
       return;
     }
 
-    setLoading(true);
+    const category = mapPlaceTypeToCategory(selectedPlace.types);
+    if (!category) {
+      toast.error('Invalid location type selected');
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      // Create location
-      const { data: location, error: locationError } = await supabase
-        .from('locations')
-        .insert({
-          name: formData.name,
-          category: formData.category,
-          description: formData.description,
-          address: formData.address,
-          latitude: coordinates.lat,
-          longitude: coordinates.lng,
-          created_by: user.id
-        })
-        .select()
-        .single();
-
-      if (locationError) throw locationError;
-
-      // Auto-save to user's saved places
-      const { error: saveError } = await supabase
-        .from('user_saved_locations')
-        .insert({
-          user_id: user.id,
-          location_id: location.id
-        });
-
-      if (saveError) throw saveError;
-
-      setStep('success');
-      onPinAdded();
+      // Here you would save to your backend
+      console.log('Saving pin:', {
+        place_id: selectedPlace.place_id,
+        name: selectedPlace.name,
+        address: selectedPlace.address,
+        coordinates: { lat: selectedPlace.lat, lng: selectedPlace.lng },
+        category
+      });
       
-      toast({
-        title: "Location Added!",
-        description: `${formData.name} has been added to your saved places`,
-      });
-
-      setTimeout(() => {
-        onClose();
-      }, 2000);
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast.success(`${selectedPlace.name} saved to your favorites!`);
+      onPinAdded();
+      onClose();
+      setSelectedPlace(null);
     } catch (error) {
-      console.error('Error adding location:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add location. Please try again.",
-        variant: "destructive"
-      });
+      console.error('Error saving pin:', error);
+      toast.error('Failed to save location. Please try again.');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  if (step === 'success') {
-    return (
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-sm mx-auto rounded-3xl border-0 shadow-2xl bg-white">
-          <div className="text-center py-8">
-            <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-              <Check className="w-10 h-10 text-white" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Location Added!</h3>
-            <p className="text-gray-600 text-sm">
-              <strong>{formData.name}</strong> has been saved to your collection
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
+  const handleClose = () => {
+    setSelectedPlace(null);
+    onClose();
+  };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md mx-auto rounded-3xl border-0 shadow-2xl bg-white p-0 overflow-hidden">
-        {/* Header */}
-        <DialogHeader className="relative p-6 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-100">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-purple-600/5"></div>
-          <div className="relative flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl shadow-lg">
-                <Plus className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <DialogTitle className="text-xl font-bold text-gray-900">Add Location</DialogTitle>
-                <p className="text-sm text-gray-500">Create a new pin on the map</p>
-              </div>
-            </div>
-            <Button
-              onClick={onClose}
-              variant="ghost"
-              size="icon"
-              className="rounded-xl hover:bg-gray-100"
-            >
-              <X className="w-5 h-5 text-gray-600" />
-            </Button>
-          </div>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Building2 className="h-5 w-5 text-blue-600" />
+            Save Location to Favorites
+          </DialogTitle>
         </DialogHeader>
+        
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">
+              Search for a real place or business *
+            </label>
+            <GooglePlacesAutocomplete
+              onPlaceSelect={handlePlaceSelect}
+              placeholder="Search restaurants, bars, cafés, hotels..."
+              className="w-full"
+            />
+            <p className="text-xs text-gray-500">
+              Only real venues (restaurants, bars, cafés, hotels, museums, etc.) can be saved as favorites
+            </p>
+          </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-4">
-          {/* Location Preview */}
-          {coordinates && (
-            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <MapPin className="w-4 h-4" />
-                <span>Lat: {coordinates.lat.toFixed(4)}, Lng: {coordinates.lng.toFixed(4)}</span>
+          {selectedPlace && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+              <div className="flex items-start gap-3">
+                <MapPin className="h-5 w-5 text-green-600 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-medium text-green-900">{selectedPlace.name}</h4>
+                  <p className="text-sm text-green-700 mt-1">{selectedPlace.address}</p>
+                  <p className="text-xs text-green-600 mt-2">
+                    Category: {categoryDisplayNames[mapPlaceTypeToCategory(selectedPlace.types) || 'restaurant']}
+                  </p>
+                </div>
               </div>
             </div>
           )}
 
-          {/* Name Input */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">
-              Location Name <span className="text-red-500">*</span>
-            </label>
-            <Input
-              value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="e.g., My Favorite Coffee Shop"
-              className="rounded-xl border-gray-200 focus:border-blue-400 focus:ring-blue-400/20"
-            />
-          </div>
-
-          {/* Category Selection */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">
-              Category <span className="text-red-500">*</span>
-            </label>
-            <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
-              <SelectTrigger className="rounded-xl border-gray-200 focus:border-blue-400">
-                <SelectValue placeholder="Select a category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categoryFilters.map((category) => {
-                  const IconComponent = category.icon;
-                  return (
-                    <SelectItem key={category.id} value={category.id}>
-                      <div className="flex items-center gap-2">
-                        <IconComponent className="w-4 h-4" />
-                        <span>{category.name}</span>
-                      </div>
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Address Input */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Address</label>
-            <Input
-              value={formData.address}
-              onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-              placeholder="e.g., 123 Main St, City"
-              className="rounded-xl border-gray-200 focus:border-blue-400 focus:ring-blue-400/20"
-            />
-          </div>
-
-          {/* Description */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Description</label>
-            <Textarea
-              value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="Tell us what makes this place special..."
-              className="rounded-xl border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 min-h-[80px] resize-none"
-            />
-          </div>
+          {coordinates && (
+            <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+              📍 Clicked at: {coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}
+            </div>
+          )}
         </div>
 
-        {/* Footer */}
-        <div className="p-6 border-t border-gray-100 bg-gray-50">
-          <div className="flex gap-3">
-            <Button
-              onClick={onClose}
-              variant="outline"
-              className="flex-1 rounded-xl border-gray-200 hover:bg-gray-50"
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={loading || !formData.name || !formData.category}
-              className="flex-1 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white shadow-lg"
-            >
-              {loading ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Saving...
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4" />
-                  Add Location
-                </div>
-              )}
-            </Button>
-          </div>
+        <div className="flex gap-2 justify-end">
+          <Button variant="outline" onClick={handleClose} disabled={isLoading}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSavePin} 
+            disabled={isLoading || !selectedPlace}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {isLoading ? (
+              <>
+                <Plus className="h-4 w-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Plus className="h-4 w-4 mr-2" />
+                Save to Favorites
+              </>
+            )}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

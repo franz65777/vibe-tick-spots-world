@@ -160,7 +160,12 @@ const GoogleMapsSetup = ({
           streetViewControl: false,
           fullscreenControl: false,
           gestureHandling: 'greedy',
-          backgroundColor: '#f0f0f0'
+          backgroundColor: '#f0f0f0',
+          disableDefaultUI: true,
+          zoomControl: true,
+          zoomControlOptions: {
+            position: google.maps.ControlPosition.RIGHT_BOTTOM
+          }
         });
 
         if (isUnmountingRef.current) return;
@@ -487,11 +492,6 @@ const GoogleMapsSetup = ({
               <p className="text-sm text-gray-600">Loading map...</p>
               <p className="text-xs text-gray-500 mt-1">Connecting to Google Maps</p>
             </div>
-          </div>
-        )}
-        {isLoaded && (
-          <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs text-gray-600 shadow-sm">
-            Map loaded ✓
           </div>
         )}
       </div>
