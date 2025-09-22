@@ -23,8 +23,8 @@ const UserProfilePage = () => {
     if (profile?.username) {
       return profile.username.substring(0, 2).toUpperCase();
     }
-    if (profile?.full_name) {
-      return profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase();
+    if (profile?.username) {
+      return profile.username.substring(0, 2).toUpperCase();
     }
     return 'U';
   };
@@ -61,7 +61,7 @@ const UserProfilePage = () => {
   }
 
   const displayUsername = profile.username || 'Unknown User';
-  const displayFullName = profile.full_name;
+  const displayFullName = null; // SECURITY: Don't show full names for other users
 
   const renderTabContent = () => {
     switch (activeTab) {

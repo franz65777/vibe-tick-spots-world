@@ -34,29 +34,48 @@ export const useUserProfile = (userId?: string) => {
       }
 
       try {
-        // SECURITY FIX: Always select only safe profile fields
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select(`
-            id,
-            username,
-            full_name,
-            bio,
-            avatar_url,
-            email,
-            posts_count,
-            follower_count,
-            following_count,
-            cities_visited,
-            places_visited,
-            created_at,
-            user_type,
-            business_verified,
-            is_business_user,
-            current_city
-          `)
-          .eq('id', userId)
-          .single();
+        // SECURITY: Check if viewing own profile vs another user's profile
+        const isOwnProfile = currentUser?.id === userId;
+        
+        let profileData;
+        let profileError;
+
+        if (isOwnProfile) {
+          // Can access full profile data for own profile
+          const result = await supabase
+            .from('profiles')
+            .select(`
+              id,
+              username,
+              full_name,
+              bio,
+              avatar_url,
+              email,
+              posts_count,
+              follower_count,
+              following_count,
+              cities_visited,
+              places_visited,
+              created_at,
+              user_type,
+              business_verified,
+              is_business_user,
+              current_city
+            `)
+            .eq('id', userId)
+            .single();
+          
+          profileData = result.data;
+          profileError = result.error;
+        } else {
+          // Use security definer function for other users (safe data only)
+          const result = await supabase
+            .rpc('get_safe_profile_data', { profile_id: userId })
+            .single();
+          
+          profileData = result.data;
+          profileError = result.error;
+        }
 
         if (profileError) throw profileError;
 
@@ -73,13 +92,13 @@ export const useUserProfile = (userId?: string) => {
           isFollowing = !!followData;
         }
 
-        // Map database field names to interface
+        // Map database field names to interface - only include sensitive data for own profile
         setProfile({
           id: profileData.id,
           username: profileData.username,
-          full_name: profileData.full_name,
+          full_name: isOwnProfile ? profileData.full_name : null,
           avatar_url: profileData.avatar_url,
-          email: profileData.email,
+          email: isOwnProfile ? profileData.email : null,
           bio: profileData.bio,
           created_at: profileData.created_at,
           posts_count: profileData.posts_count || 0,

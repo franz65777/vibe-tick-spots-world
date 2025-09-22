@@ -149,7 +149,7 @@ const MessagesModal = ({
               </Avatar>
               <div className="flex-1 min-w-0">
                 <DialogTitle className="text-lg font-semibold text-gray-900 truncate">
-                  {getOtherParticipant(selectedThread)?.full_name || getOtherParticipant(selectedThread)?.username}
+                  {getOtherParticipant(selectedThread)?.username}
                 </DialogTitle>
                 <div className="flex items-center gap-1">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -226,7 +226,7 @@ const MessagesModal = ({
                         <div className="flex-1 min-w-0">
                           <div className="flex justify-between items-start mb-1">
                             <h3 className="font-semibold text-gray-900 truncate text-base">
-                              {otherParticipant?.full_name || otherParticipant?.username}
+                              {otherParticipant?.username}
                             </h3>
                             <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
                               {thread.last_message_at && formatMessageTime(thread.last_message_at)}

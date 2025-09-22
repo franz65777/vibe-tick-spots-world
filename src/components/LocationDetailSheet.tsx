@@ -14,7 +14,6 @@ interface Post {
   created_at: string;
   profiles: {
     username: string;
-    full_name: string;
     avatar_url?: string;
   } | null;
 }
@@ -96,7 +95,6 @@ const LocationDetailSheet = ({
           created_at,
           profiles:user_id (
             username,
-            full_name,
             avatar_url
           )
         `)
@@ -183,7 +181,7 @@ const LocationDetailSheet = ({
         </div>
         <div className="ml-3">
           <p className="font-medium text-gray-900">
-            {post.profiles?.full_name || post.profiles?.username || 'Unknown User'}
+            {post.profiles?.username || 'Unknown User'}
           </p>
           <p className="text-xs text-gray-500">
             {new Date(post.created_at).toLocaleDateString()}

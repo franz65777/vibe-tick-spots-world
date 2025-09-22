@@ -29,9 +29,6 @@ const ProfileHeader = () => {
     if (profile?.username) {
       return profile.username.substring(0, 2).toUpperCase();
     }
-    if (profile?.full_name) {
-      return profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase();
-    }
     if (user?.email) {
       return user.email.substring(0, 2).toUpperCase();
     }
@@ -47,7 +44,7 @@ const ProfileHeader = () => {
   };
 
   const displayUsername = profile?.username || user?.email?.split('@')[0] || 'user';
-  const displayFullName = profile?.full_name;
+  const displayFullName = null; // SECURITY: Don't expose full names
 
   return (
     <div className="px-4 py-4 bg-white border-b border-gray-100">

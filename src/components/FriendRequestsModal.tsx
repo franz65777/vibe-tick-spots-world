@@ -104,7 +104,7 @@ const FriendRequestsModal = ({ isOpen, onClose }: FriendRequestsModalProps) => {
                         {request.requester?.username || 'Unknown User'}
                       </p>
                       <p className="text-sm text-gray-600">
-                        {request.requester?.full_name || ''}
+                        {request.requester?.username || 'User'}
                       </p>
                       <p className="text-xs text-gray-500">
                         {new Date(request.created_at).toLocaleDateString()}

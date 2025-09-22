@@ -19,7 +19,6 @@ interface PostDetailModalProps {
     saves_count: number;
     profiles?: {
       username?: string;
-      full_name?: string;
       avatar_url?: string;
     };
   };
@@ -48,7 +47,7 @@ const PostDetailModal = ({ post, isOpen, onClose }: PostDetailModalProps) => {
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: `Check out this post by ${post.profiles?.full_name || post.profiles?.username}`,
+        title: `Check out this post by ${post.profiles?.username}`,
         text: post.caption || 'Amazing post!',
         url: window.location.href
       });
@@ -134,12 +133,12 @@ const PostDetailModal = ({ post, isOpen, onClose }: PostDetailModalProps) => {
                   <Avatar className="w-10 h-10">
                     <AvatarImage src={post.profiles?.avatar_url} />
                     <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-500 text-white">
-                      {(post.profiles?.full_name || post.profiles?.username || 'U')[0].toUpperCase()}
+                      {(post.profiles?.username || 'U')[0].toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <div className="font-semibold text-gray-900">
-                      {post.profiles?.full_name || post.profiles?.username || 'Anonymous'}
+                      {post.profiles?.username || 'Anonymous'}
                     </div>
                     <div className="text-sm text-gray-500">
                       {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
@@ -157,12 +156,12 @@ const PostDetailModal = ({ post, isOpen, onClose }: PostDetailModalProps) => {
                     <Avatar className="w-8 h-8">
                       <AvatarImage src={post.profiles?.avatar_url} />
                       <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-500 text-white text-xs">
-                        {(post.profiles?.full_name || post.profiles?.username || 'U')[0].toUpperCase()}
+                        {(post.profiles?.username || 'U')[0].toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div>
                       <span className="font-semibold text-gray-900 mr-2">
-                        {post.profiles?.full_name || post.profiles?.username || 'Anonymous'}
+                        {post.profiles?.username || 'Anonymous'}
                       </span>
                       <span className="text-gray-800">{post.caption}</span>
                     </div>

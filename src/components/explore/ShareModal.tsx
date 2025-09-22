@@ -19,7 +19,6 @@ interface ShareModalProps {
 interface User {
   id: string;
   username: string;
-  full_name: string;
   avatar_url: string;
 }
 
@@ -56,9 +55,8 @@ const ShareModal = ({ isOpen, onClose, place }: ShareModalProps) => {
           following_id,
           profiles!follows_following_id_fkey (
             id,
-            username,
-            full_name,
-            avatar_url
+          username,
+          avatar_url
           )
         `)
         .eq('follower_id', user.id);
@@ -68,7 +66,6 @@ const ShareModal = ({ isOpen, onClose, place }: ShareModalProps) => {
       const userList = followers?.map(f => ({
         id: f.profiles.id,
         username: f.profiles.username || 'Unknown',
-        full_name: f.profiles.full_name || 'Unknown User',
         avatar_url: f.profiles.avatar_url || ''
       })) || [];
 
@@ -99,7 +96,6 @@ const ShareModal = ({ isOpen, onClose, place }: ShareModalProps) => {
       const userList = searchResults?.map(u => ({
         id: u.id,
         username: u.username || 'Unknown',
-        full_name: 'Unknown User', // SECURITY: Don't expose full names
         avatar_url: u.avatar_url || ''
       })) || [];
 
@@ -215,12 +211,12 @@ const ShareModal = ({ isOpen, onClose, place }: ShareModalProps) => {
                   <Avatar className="w-10 h-10">
                     <AvatarImage src={u.avatar_url} />
                     <AvatarFallback className="bg-gray-100 text-gray-600">
-                      {(u.full_name || u.username)[0].toUpperCase()}
+                      {u.username[0].toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-gray-900 truncate">
-                      {u.full_name || u.username}
+                      {u.username}
                     </div>
                     <div className="text-sm text-gray-500 truncate">
                       @{u.username}
