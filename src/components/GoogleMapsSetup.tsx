@@ -107,13 +107,27 @@ const GoogleMapsSetup = ({
         
         await loadGoogleMapsAPI();
         
-        // Double-check everything is still ready
+        // Wait for DOM and Google Maps to be fully ready
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+        // Final check before creating map
         if (!mounted || !mapRef.current || isUnmountingRef.current) {
-          console.log('❌ Map container lost during API load');
+          console.log('❌ Final check failed - container not ready');
           return;
         }
 
-        console.log('✅ Creating Google Maps instance...');
+        // Ensure the container has dimensions
+        const rect = mapRef.current.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) {
+          console.log('❌ Container has no dimensions, retrying...', { width: rect.width, height: rect.height });
+          if (retryCount < maxRetries) {
+            retryCount++;
+            setTimeout(initMap, 1000);
+          }
+          return;
+        }
+
+        console.log('✅ Creating Google Maps instance with container size:', rect.width, 'x', rect.height);
         const map = new google.maps.Map(mapRef.current, {
           center: mapCenter,
           zoom: 13,
@@ -136,10 +150,19 @@ const GoogleMapsSetup = ({
           backgroundColor: '#f0f0f0'
         });
 
-        if (!mounted || isUnmountingRef.current) return;
+        if (isUnmountingRef.current) return;
 
         mapInstanceRef.current = map;
-        console.log('Google Maps instance created successfully');
+        console.log('✅ Google Maps instance created successfully');
+
+        // Force immediate rendering and resize
+        requestAnimationFrame(() => {
+          if (mapInstanceRef.current && !isUnmountingRef.current) {
+            console.log('🔄 Forcing immediate resize...');
+            google.maps.event.trigger(mapInstanceRef.current, 'resize');
+            mapInstanceRef.current.setCenter(mapCenter);
+          }
+        });
 
         // Add right-click listener for adding new locations
         if (onMapRightClick) {

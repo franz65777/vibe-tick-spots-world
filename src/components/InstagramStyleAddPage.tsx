@@ -6,11 +6,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import GooglePlacesAutocomplete from './GooglePlacesAutocomplete';
 
+import { allowedCategories, categoryDisplayNames, isAllowedCategory } from '@/utils/allowedCategories';
+
 const InstagramStyleAddPage = () => {
   const { user } = useAuth();
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [caption, setCaption] = useState('');
   const [selectedLocation, setSelectedLocation] = useState<any>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -107,7 +110,11 @@ const InstagramStyleAddPage = () => {
         if (existingLocation) {
           locationId = existingLocation.id;
         } else {
-          // Create new location
+          // Create new location - only if category is allowed
+          if (!selectedCategory || !isAllowedCategory(selectedCategory)) {
+            throw new Error('Please select a valid category for this location');
+          }
+
           const { data: newLocation, error: locationError } = await supabase
             .from('locations')
             .insert({
@@ -116,7 +123,7 @@ const InstagramStyleAddPage = () => {
               latitude: selectedLocation.geometry?.location?.lat(),
               longitude: selectedLocation.geometry?.location?.lng(),
               google_place_id: selectedLocation.place_id,
-              category: selectedLocation.types?.[0] || 'establishment',
+              category: selectedCategory, // Use selected category instead of guessing
               place_types: selectedLocation.types || [],
               created_by: user.id,
               pioneer_user_id: user.id
@@ -152,6 +159,7 @@ const InstagramStyleAddPage = () => {
       });
       setCaption('');
       setSelectedLocation(null);
+      setSelectedCategory('');
 
       console.log('Post created successfully!');
     } catch (error) {
@@ -243,14 +251,36 @@ const InstagramStyleAddPage = () => {
           </h3>
           <GooglePlacesAutocomplete
             onPlaceSelect={handleLocationSelect}
-            placeholder="Search for a place..."
+            placeholder="Search for a restaurant, bar, café, hotel, museum..."
             className="w-full"
           />
           {selectedLocation && (
-            <div className="mt-3 p-3 bg-blue-50 rounded-xl">
-              <p className="font-medium text-blue-900">{selectedLocation.name}</p>
-              <p className="text-blue-600 text-sm">{selectedLocation.formatted_address}</p>
-            </div>
+            <>
+              <div className="mt-3 p-3 bg-blue-50 rounded-xl">
+                <p className="font-medium text-blue-900">{selectedLocation.name}</p>
+                <p className="text-blue-600 text-sm">{selectedLocation.formatted_address}</p>
+              </div>
+              
+              {/* Category Selection */}
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  What type of place is this? *
+                </label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-blue-400 focus:ring-blue-400 bg-white"
+                  required
+                >
+                  <option value="">Select category...</option>
+                  {allowedCategories.map(category => (
+                    <option key={category} value={category}>
+                      {categoryDisplayNames[category]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -259,7 +289,7 @@ const InstagramStyleAddPage = () => {
       <div className="p-4 bg-white border-t border-gray-200">
         <Button
           onClick={handleSubmit}
-          disabled={selectedFiles.length === 0 || isUploading}
+          disabled={selectedFiles.length === 0 || isUploading || (selectedLocation && !selectedCategory)}
           className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-xl font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isUploading ? (

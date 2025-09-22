@@ -7,7 +7,6 @@ import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { Place } from '@/types/place';
 import Header from './home/Header';
 import StoriesSection from './home/StoriesSection';
-import FilterButtons from './home/FilterButtons';
 import MapSection from './home/MapSection';
 import ModalsManager from './home/ModalsManager';
 import LocationOfTheWeek from './home/LocationOfTheWeek';
@@ -315,13 +314,6 @@ const HomePage = () => {
         
         <LocationOfTheWeek 
           onLocationClick={handleLocationOfTheWeekClick}
-        />
-        
-        <FilterButtons 
-          activeFilter={activeFilter}
-          onFilterChange={handleFilterChange}
-          onCityChange={handleCityChange}
-          hasFollowedUsers={hasFollowedUsers}
         />
         
         {loading ? (
