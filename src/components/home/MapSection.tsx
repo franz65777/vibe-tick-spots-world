@@ -8,6 +8,7 @@ import PinShareModal from '../explore/PinShareModal';
 import { useMapLocations } from '@/hooks/useMapLocations';
 import { Place } from '@/types/place';
 import { PinShareData } from '@/services/pinSharingService';
+import { toast } from 'sonner';
 
 interface MapSectionProps {
   mapCenter: { lat: number; lng: number };
@@ -50,11 +51,12 @@ const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) =
 
   const handleMapRightClick = (coords: { lat: number; lng: number }) => {
     setNewLocationCoords(coords);
-    // Use quick add modal for saved locations, regular modal for others
+    // Only use quick add modal for saved locations filter
     if (activeMapFilter === 'saved') {
       setIsQuickAddModalOpen(true);
     } else {
-      setIsAddLocationModalOpen(true);
+      // For other filters, don't allow adding new locations
+      toast.info('Switch to "Saved" filter to add your favorite places');
     }
   };
 
@@ -89,7 +91,7 @@ const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) =
 
   const handlePinAdded = () => {
     // Refresh locations after adding a new pin
-    window.location.reload(); // Simple refresh for now
+    window.location.reload();
   };
 
   const handleCategoryToggle = (categoryId: string) => {

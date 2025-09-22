@@ -56,67 +56,64 @@ const MapCategoryFilters = ({
 
   return (
     <div className="absolute top-4 left-4 right-4 z-50">
-      {/* Google Maps Style Filters */}
-      <div className="flex flex-col gap-2">
-        {/* Map Mode Pills - Google Maps Style */}
+      {/* Main Map Filters - Fixed 3 buttons */}
+      <div className="grid grid-cols-3 gap-2 mb-2">
+        {mapFilters.map((filter) => {
+          const IconComponent = filter.icon;
+          const isActive = activeMapFilter === filter.id;
+          
+          return (
+            <button
+              key={filter.id}
+              onClick={() => onMapFilterChange(filter.id)}
+              className={cn(
+                "flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 backdrop-blur-sm border",
+                isActive
+                  ? "bg-black/90 text-white border-black/20 shadow-lg"
+                  : "bg-white/20 text-gray-700 border-white/30 hover:bg-white/30"
+              )}
+              title={filter.description}
+            >
+              <IconComponent className="w-4 h-4" />
+              <span className="hidden sm:inline">{filter.name}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Category Filters */}
+      {selectedCategories.length > 0 || categoryFilters.length > 0 ? (
         <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-          {mapFilters.map((filter) => {
-            const IconComponent = filter.icon;
-            const isActive = activeMapFilter === filter.id;
+          {categoryFilters.map((category) => {
+            const IconComponent = category.icon;
+            const isSelected = selectedCategories.includes(category.id);
             
             return (
               <button
-                key={filter.id}
-                onClick={() => onMapFilterChange(filter.id)}
+                key={category.id}
+                onClick={() => onCategoryToggle(category.id)}
                 className={cn(
-                  "flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 shadow-sm",
-                  isActive
-                    ? "bg-black text-white"
-                    : "bg-white/95 text-gray-700 hover:bg-white hover:shadow-md"
+                  "flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 shadow-sm backdrop-blur-sm",
+                  isSelected 
+                    ? "bg-black/90 text-white" 
+                    : "bg-white/80 text-gray-700 hover:bg-white/90"
                 )}
-                title={filter.description}
               >
                 <IconComponent className="w-4 h-4" />
-                <span className="text-sm">{filter.name}</span>
+                <span className="text-sm">{category.name}</span>
               </button>
             );
           })}
+          {selectedCategories.length > 0 && (
+            <button
+              onClick={() => selectedCategories.forEach(cat => onCategoryToggle(cat))}
+              className="flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium bg-white/80 text-gray-500 hover:bg-white/90 transition-all duration-200 shadow-sm backdrop-blur-sm"
+            >
+              Clear All
+            </button>
+          )}
         </div>
-
-        {/* Category Pills - Google Maps Style */}
-        {selectedCategories.length > 0 || categoryFilters.length > 0 ? (
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-            {categoryFilters.map((category) => {
-              const IconComponent = category.icon;
-              const isSelected = selectedCategories.includes(category.id);
-              
-              return (
-                <button
-                  key={category.id}
-                  onClick={() => onCategoryToggle(category.id)}
-                  className={cn(
-                    "flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 shadow-sm",
-                    isSelected 
-                      ? "bg-black text-white" 
-                      : "bg-white/95 text-gray-700 hover:bg-white hover:shadow-md"
-                  )}
-                >
-                  <IconComponent className="w-4 h-4" />
-                  <span className="text-sm">{category.name}</span>
-                </button>
-              );
-            })}
-            {selectedCategories.length > 0 && (
-              <button
-                onClick={() => selectedCategories.forEach(cat => onCategoryToggle(cat))}
-                className="flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium bg-white/95 text-gray-500 hover:bg-white hover:shadow-md transition-all duration-200 shadow-sm"
-              >
-                Clear All
-              </button>
-            )}
-          </div>
-        ) : null}
-      </div>
+      ) : null}
     </div>
   );
 };

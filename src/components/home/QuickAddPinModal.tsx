@@ -5,6 +5,7 @@ import { MapPin, Plus, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { allowedCategories, categoryDisplayNames, type AllowedCategory } from '@/utils/allowedCategories';
 import GooglePlacesAutocomplete from '@/components/GooglePlacesAutocomplete';
+import { supabase } from '@/integrations/supabase/client';
 
 interface QuickAddPinModalProps {
   isOpen: boolean;
@@ -67,17 +68,41 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded }: QuickAdd
 
     setIsLoading(true);
     try {
-      // Here you would save to your backend
-      console.log('Saving pin:', {
-        place_id: selectedPlace.place_id,
-        name: selectedPlace.name,
-        address: selectedPlace.address,
-        coordinates: { lat: selectedPlace.lat, lng: selectedPlace.lng },
-        category
-      });
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Get current user first
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Save to Supabase locations table
+      const { data: locationData, error: locationError } = await supabase
+        .from('locations')
+        .insert({
+          name: selectedPlace.name,
+          category: category,
+          address: selectedPlace.address,
+          latitude: selectedPlace.lat,
+          longitude: selectedPlace.lng,
+          google_place_id: selectedPlace.place_id,
+          place_types: selectedPlace.types,
+          created_by: userData.user.id,
+        })
+        .select()
+        .single();
+
+      if (locationError) throw locationError;
+
+      // Save to user's saved locations
+      if (locationData) {
+        const { error: saveError } = await supabase
+          .from('user_saved_locations')
+          .insert({
+            user_id: userData.user.id,
+            location_id: locationData.id,
+          });
+
+        if (saveError) throw saveError;
+      }
       
       toast.success(`${selectedPlace.name} saved to your favorites!`);
       onPinAdded();
