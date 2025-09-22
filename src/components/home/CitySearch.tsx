@@ -196,24 +196,24 @@ const CitySearch = ({
   };
 
   return (
-    <div ref={searchRef} className="relative flex-1 max-w-md z-[100]">
+    <div ref={searchRef} className="relative flex-1 max-w-md z-50">
       {/* Current City Display / Search Input */}
       <div className="relative">
         {!searchQuery || searchQuery.trim() === ' ' ? (
           // Show current city when not searching
-          <div className="flex items-center gap-3 bg-white/90 border border-gray-200 rounded-2xl h-12 px-4 hover:bg-white transition-colors cursor-pointer"
+          <div className="flex items-center gap-3 bg-white/90 border border-gray-200 rounded-2xl h-12 px-4 hover:bg-white transition-colors cursor-pointer touch-manipulation"
                onClick={() => document.getElementById('city-search-input')?.focus()}>
             <CurrentCityIcon className="w-5 h-5 text-blue-600 shrink-0" />
-            <span className="text-gray-900 font-medium flex-1">
+            <span className="text-gray-900 font-medium flex-1 text-sm sm:text-base truncate">
               {currentCityData?.name || currentCity}
             </span>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               {geoLoading && (
                 <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
               )}
               <button
                 onClick={handleLocationClick}
-                className="w-6 h-6 text-gray-400 hover:text-blue-600 transition-colors"
+                className="w-6 h-6 text-gray-400 hover:text-blue-600 transition-colors touch-manipulation"
                 title="Detect current location"
               >
                 <Locate className="w-4 h-4" />
@@ -232,7 +232,7 @@ const CitySearch = ({
               onChange={(e) => onSearchChange(e.target.value)}
               onKeyPress={onSearchKeyPress}
               onFocus={() => searchQuery && setIsOpen(true)}
-              className="pl-4 pr-10 bg-white/90 border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-2xl h-12"
+              className="pl-4 pr-10 bg-white/90 border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-2xl h-12 text-sm sm:text-base"
               autoFocus
             />
             <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -252,24 +252,24 @@ const CitySearch = ({
         />
       )}
 
-      {/* Dropdown Results - High z-index to appear above everything */}
+      {/* Dropdown Results - Mobile optimized z-index */}
       {isOpen && filteredCities.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 max-h-64 overflow-y-auto z-[9999] backdrop-blur-sm">
+        <div className="fixed sm:absolute top-[calc(100%+8px)] left-4 right-4 sm:left-0 sm:right-0 sm:mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 max-h-64 overflow-y-auto z-[60] backdrop-blur-sm">
           {filteredCities.map(({ key, data, similarity }) => {
             const IconComponent = data.icon;
             return (
               <button
                 key={key}
                 onClick={() => handleCityClick(data.name)}
-                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left border-b border-gray-50 last:border-b-0"
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 active:bg-gray-100 transition-colors text-left border-b border-gray-50 last:border-b-0 touch-manipulation"
               >
                 <IconComponent className="w-5 h-5 text-blue-600 shrink-0" />
-                <div className="flex-1">
-                  <div className="font-medium text-gray-900">{data.name}</div>
-                  <div className="text-xs text-gray-500">{data.description}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-gray-900 text-sm truncate">{data.name}</div>
+                  <div className="text-xs text-gray-500 truncate">{data.description}</div>
                 </div>
                 {similarity > 0.8 && (
-                  <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                  <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded shrink-0">
                     Best match
                   </div>
                 )}
@@ -279,9 +279,9 @@ const CitySearch = ({
         </div>
       )}
 
-      {/* No results - High z-index to appear above everything */}
+      {/* No results - Mobile optimized z-index */}
       {isOpen && searchQuery.trim() && searchQuery.trim() !== ' ' && filteredCities.length === 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 z-[9999] backdrop-blur-sm">
+        <div className="fixed sm:absolute top-[calc(100%+8px)] left-4 right-4 sm:left-0 sm:right-0 sm:mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 z-[60] backdrop-blur-sm">
           <div className="text-gray-500 text-sm text-center">
             <div className="mb-2">No cities found for "{searchQuery}"</div>
             <div className="text-xs">Try: Milan, Paris, New York, London, Tokyo</div>
