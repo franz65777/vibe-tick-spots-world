@@ -28,7 +28,7 @@ export const useUserSearch = () => {
 
     setLoading(true);
     try {
-      // SECURITY FIX: Only select safe, non-sensitive profile fields
+      // SECURITY FIX: Only select safe, non-sensitive profile fields (no email, full_name)
       const { data: searchResults, error } = await supabase
         .from('profiles')
         .select(`
@@ -38,14 +38,7 @@ export const useUserSearch = () => {
           avatar_url,
           posts_count,
           follower_count,
-          following_count,
-          cities_visited,
-          places_visited,
-          created_at,
-          user_type,
-          business_verified,
-          is_business_user,
-          current_city
+          following_count
         `)
         .or(`username.ilike.%${query}%`)
         .neq('id', currentUser?.id || '')
@@ -95,7 +88,7 @@ export const useUserSearch = () => {
   const getAllUsers = async () => {
     setLoading(true);
     try {
-      // SECURITY FIX: Only select safe, non-sensitive profile fields
+      // SECURITY FIX: Only select safe, non-sensitive profile fields (no email, full_name)
       const { data: allUsers, error } = await supabase
         .from('profiles')
         .select(`
@@ -105,14 +98,7 @@ export const useUserSearch = () => {
           avatar_url,
           posts_count,
           follower_count,
-          following_count,
-          cities_visited,
-          places_visited,
-          created_at,
-          user_type,
-          business_verified,
-          is_business_user,
-          current_city
+          following_count
         `)
         .neq('id', currentUser?.id || '')
         .order('created_at', { ascending: false })
