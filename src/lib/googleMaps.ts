@@ -20,20 +20,21 @@ const fetchGoogleMapsApiKey = async (): Promise<string> => {
   }
 
   try {
-    console.log('Fetching Google Maps API key from Supabase...');
+    console.log('🗺️ Fetching Google Maps API key from Supabase...');
     const { data, error } = await supabase.functions.invoke('google-maps-config');
     
     if (error) {
-      console.error('Error fetching Google Maps API key:', error);
-      throw new Error('Failed to fetch Google Maps API key');
+      console.error('❌ Error fetching Google Maps API key:', error);
+      throw new Error('Failed to fetch Google Maps API key: ' + JSON.stringify(error));
     }
     
     if (!data?.apiKey) {
+      console.error('❌ No API key returned from server, data:', data);
       throw new Error('No API key returned from server');
     }
     
     GOOGLE_MAPS_API_KEY = data.apiKey;
-    console.log('Google Maps API key fetched successfully');
+    console.log('✅ Google Maps API key fetched successfully, length:', data.apiKey.length);
     return GOOGLE_MAPS_API_KEY;
   } catch (error) {
     console.error('Error fetching Google Maps API key:', error);
@@ -51,14 +52,16 @@ export const loadGoogleMapsAPI = (): Promise<void> => {
 
     try {
       const apiKey = await fetchGoogleMapsApiKey();
-      console.log('Initializing Google Maps via official Loader...');
+      console.log('🗺️ Initializing Google Maps via official Loader with API key length:', apiKey.length);
       const loader = new Loader({
         apiKey,
         version: 'weekly',
         libraries: ['places', 'geometry']
       });
 
+      console.log('📥 Loading Google Maps API...');
       await loader.load();
+      console.log('✅ Google Maps API loaded successfully');
 
       // Wait a bit for everything to be ready
       setTimeout(() => {
