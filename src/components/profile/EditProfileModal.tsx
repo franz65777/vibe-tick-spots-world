@@ -14,7 +14,7 @@ interface EditProfileModalProps {
 const EditProfileModal = ({ isOpen, onClose, currentProfile }: EditProfileModalProps) => {
   const { updateProfile } = useProfile();
   const { user } = useAuth();
-  const [username, setUsername] = useState(currentProfile?.username || user?.email?.split('@')[0] || '');
+  const [username, setUsername] = useState(currentProfile?.username || user?.user_metadata?.username || 'user');
   const [bio, setBio] = useState(currentProfile?.bio || '');
   const [isLoading, setIsLoading] = useState(false);
 

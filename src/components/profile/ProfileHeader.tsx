@@ -29,9 +29,6 @@ const ProfileHeader = () => {
     if (profile?.username) {
       return profile.username.substring(0, 2).toUpperCase();
     }
-    if (user?.email) {
-      return user.email.substring(0, 2).toUpperCase();
-    }
     return 'U';
   };
 
@@ -43,7 +40,7 @@ const ProfileHeader = () => {
     }
   };
 
-  const displayUsername = profile?.username || user?.email?.split('@')[0] || 'user';
+  const displayUsername = profile?.username || user?.user_metadata?.username || 'user';
   const displayFullName = null; // SECURITY: Don't expose full names
 
   return (

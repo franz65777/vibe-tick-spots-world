@@ -85,13 +85,13 @@ const CommentModal = ({ isOpen, onClose, place }: CommentModalProps) => {
                 <Avatar className="w-8 h-8">
                   <AvatarImage src={comment.user?.avatar_url} />
                   <AvatarFallback className="bg-blue-100 text-blue-600 text-xs">
-                    {(comment.user?.full_name || comment.user?.username || 'U')[0].toUpperCase()}
+                    {(comment.user?.username || 'U')[0].toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-medium text-sm text-gray-900">
-                      {comment.user?.full_name || comment.user?.username || 'Anonymous'}
+                      {comment.user?.username || 'Anonymous'}
                     </span>
                     <span className="text-xs text-gray-500">
                       {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
@@ -109,7 +109,7 @@ const CommentModal = ({ isOpen, onClose, place }: CommentModalProps) => {
           <Avatar className="w-8 h-8">
             <AvatarImage src={user?.user_metadata?.avatar_url} />
             <AvatarFallback className="bg-blue-100 text-blue-600 text-xs">
-              {(user?.user_metadata?.full_name || user?.email || 'U')[0].toUpperCase()}
+              {(user?.user_metadata?.username || 'U')[0].toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 flex gap-2">

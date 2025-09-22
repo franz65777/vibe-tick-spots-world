@@ -122,14 +122,14 @@ const CommentModal = ({ isOpen, onClose, place, onCommentSubmit }: CommentModalP
                   <Avatar className="w-8 h-8 flex-shrink-0">
                     <AvatarImage src={comment.user?.avatar_url} />
                     <AvatarFallback className="bg-gray-200 text-gray-600 text-xs">
-                      {comment.user?.full_name?.[0] || comment.user?.username?.[0] || 'U'}
+                      {comment.user?.username?.[0] || 'U'}
                     </AvatarFallback>
                   </Avatar>
 
                   {/* Comment Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium text-sm">{comment.user?.full_name || comment.user?.username}</span>
+                      <span className="font-medium text-sm">{comment.user?.username}</span>
                       <span className="text-xs text-gray-500">
                         {new Date(comment.created_at).toLocaleDateString()}
                       </span>
@@ -166,7 +166,7 @@ const CommentModal = ({ isOpen, onClose, place, onCommentSubmit }: CommentModalP
             <Avatar className="w-8 h-8">
               <AvatarImage src={user?.user_metadata?.avatar_url} />
               <AvatarFallback className="bg-gray-200 text-gray-600 text-xs">
-                {user?.user_metadata?.full_name?.[0] || 'Me'}
+                {user?.user_metadata?.username?.[0] || 'Me'}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 relative">

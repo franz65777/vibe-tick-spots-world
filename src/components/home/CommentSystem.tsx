@@ -120,7 +120,7 @@ const CommentSystem = ({ placeId, isOpen, onClose }: CommentSystemProps) => {
                   <div className="bg-gray-50 rounded-2xl p-3">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-medium text-gray-900 text-sm">
-                        {comment.user?.full_name || comment.user?.username || 'Anonymous'}
+                        {comment.user?.username || 'Anonymous'}
                       </span>
                       <span className="text-gray-400 text-xs">
                         {new Date(comment.created_at).toLocaleDateString()}

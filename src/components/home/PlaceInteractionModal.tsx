@@ -23,9 +23,9 @@ const PlaceInteractionModal = ({ isOpen, onClose, mode, place }: PlaceInteractio
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(false);
   const [shareUsers] = useState([
-    { id: '1', username: 'alex_travel', full_name: 'Alex Johnson', avatar_url: null },
-    { id: '2', username: 'sarah_explorer', full_name: 'Sarah Chen', avatar_url: null },
-    { id: '3', username: 'mike_wanderer', full_name: 'Mike Rodriguez', avatar_url: null }
+    { id: '1', username: 'alex_travel', avatar_url: null },
+    { id: '2', username: 'sarah_explorer', avatar_url: null },
+    { id: '3', username: 'mike_wanderer', avatar_url: null }
   ]);
 
   useEffect(() => {
@@ -129,13 +129,13 @@ const PlaceInteractionModal = ({ isOpen, onClose, mode, place }: PlaceInteractio
                         <Avatar className="w-8 h-8">
                           <AvatarImage src={comment.user?.avatar_url} />
                           <AvatarFallback className="bg-blue-100 text-blue-600 text-xs">
-                            {comment.user?.full_name?.[0] || 'U'}
+                            {comment.user?.username?.[0] || 'U'}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <p className="font-medium text-sm text-gray-900">
-                              {comment.user?.full_name || comment.user?.username}
+                              {comment.user?.username}
                             </p>
                             <span className="text-xs text-gray-400">
                               {new Date(comment.created_at).toLocaleDateString()}
@@ -165,7 +165,7 @@ const PlaceInteractionModal = ({ isOpen, onClose, mode, place }: PlaceInteractio
                 <Avatar className="w-8 h-8">
                   <AvatarImage src={user?.user_metadata?.avatar_url} />
                   <AvatarFallback className="bg-blue-100 text-blue-600 text-xs">
-                    {user?.user_metadata?.full_name?.[0] || 'U'}
+                    {user?.user_metadata?.username?.[0] || 'U'}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 flex gap-2">
@@ -199,11 +199,11 @@ const PlaceInteractionModal = ({ isOpen, onClose, mode, place }: PlaceInteractio
                       <Avatar className="w-10 h-10">
                         <AvatarImage src={shareUser.avatar_url} />
                         <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-500 text-white text-sm">
-                          {shareUser.full_name[0]}
+                          {shareUser.username[0]}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium text-sm text-gray-900">{shareUser.full_name}</p>
+                        <p className="font-medium text-sm text-gray-900">{shareUser.username}</p>
                         <p className="text-xs text-gray-500">@{shareUser.username}</p>
                       </div>
                     </div>

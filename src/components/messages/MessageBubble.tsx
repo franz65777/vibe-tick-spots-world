@@ -24,7 +24,7 @@ const MessageBubble = ({ message, isOwnMessage, onViewPlace }: MessageBubbleProp
         <Avatar className="w-8 h-8 mt-auto">
           <AvatarImage src={message.sender?.avatar_url} />
           <AvatarFallback className="bg-gray-100 text-gray-600 text-xs">
-            {(message.sender?.full_name || message.sender?.username || 'U')[0].toUpperCase()}
+            {(message.sender?.username || 'U')[0].toUpperCase()}
           </AvatarFallback>
         </Avatar>
       )}

@@ -11,7 +11,6 @@ interface RecentSearch {
   user?: {
     id: string;
     username: string;
-    full_name: string;
     avatar_url: string;
   };
   timestamp: string;
@@ -122,7 +121,7 @@ const RecentSearches = ({ searchMode, onSearchClick, onUserClick }: RecentSearch
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm text-gray-900 truncate">
-                    {search.user.full_name || search.user.username}
+                    {search.user.username}
                   </p>
                   <p className="text-xs text-gray-500">@{search.user.username}</p>
                 </div>

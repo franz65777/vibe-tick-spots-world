@@ -112,7 +112,7 @@ const LocationDetailModal = ({ isOpen, onClose, location }: LocationDetailModalP
           if (profile && !uniqueFriends.has(profile.id)) {
             uniqueFriends.set(profile.id, {
               id: profile.id,
-              name: profile.full_name || profile.username,
+              name: profile.username,
               avatar: profile.avatar_url
             });
           }
@@ -259,7 +259,7 @@ const LocationDetailModal = ({ isOpen, onClose, location }: LocationDetailModalP
                         />
                       ) : (
                         <div className="w-6 h-6 bg-blue-500 rounded-full border-2 border-white flex items-center justify-center text-white text-xs">
-                          {((post.profiles as any)?.full_name || (post.profiles as any)?.username || 'U').charAt(0)}
+                          {((post.profiles as any)?.username || 'U').charAt(0)}
                         </div>
                       )}
                     </div>
