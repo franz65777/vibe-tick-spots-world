@@ -55,10 +55,10 @@ const MapCategoryFilters = ({
 
   return (
     <div className="absolute top-4 left-4 right-4 z-50">
-      {/* Compact Single Row Filter */}
-      <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-        {/* Map Mode Pills */}
-        <div className="flex border-b border-gray-100">
+      {/* Transparent Compact Filter */}
+      <div className="bg-black/20 backdrop-blur-md rounded-2xl border border-white/20 overflow-hidden">
+        {/* Map Mode Pills - Horizontal Scroll */}
+        <div className="flex overflow-x-auto scrollbar-hide border-b border-white/10">
           {mapFilters.map((filter, index) => {
             const IconComponent = filter.icon;
             const isActive = activeMapFilter === filter.id;
@@ -68,23 +68,23 @@ const MapCategoryFilters = ({
                 key={filter.id}
                 onClick={() => onMapFilterChange(filter.id)}
                 className={cn(
-                  "flex-1 flex items-center justify-center gap-2 px-3 py-3 transition-all duration-200 font-medium text-sm border-r border-gray-100 last:border-r-0",
+                  "flex-shrink-0 flex items-center justify-center gap-2 px-4 py-3 transition-all duration-200 font-medium text-sm border-r border-white/10 last:border-r-0 min-w-[80px]",
                   isActive
-                    ? "bg-blue-600 text-white"
-                    : "text-gray-600 hover:bg-gray-50"
+                    ? "bg-white/20 text-white"
+                    : "text-white/80 hover:bg-white/10"
                 )}
                 title={filter.description}
               >
                 <IconComponent className="w-4 h-4" />
-                <span className="hidden sm:inline">{filter.name}</span>
+                <span className="hidden sm:inline whitespace-nowrap">{filter.name}</span>
               </button>
             );
           })}
         </div>
 
-        {/* Category Chips */}
+        {/* Category Chips - Horizontal Scroll */}
         <div className="p-3">
-          <div className="flex flex-wrap gap-2">
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
             {categoryFilters.map((category) => {
               const IconComponent = category.icon;
               const isSelected = selectedCategories.includes(category.id);
@@ -94,10 +94,10 @@ const MapCategoryFilters = ({
                   key={category.id}
                   onClick={() => onCategoryToggle(category.id)}
                   className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-200 text-xs font-medium border",
+                    "flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-200 text-xs font-medium border whitespace-nowrap",
                     isSelected
-                      ? `${category.color} text-white border-transparent shadow-sm scale-105`
-                      : "bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-100"
+                      ? "bg-white text-black border-white/20 shadow-sm"
+                      : "bg-white/10 text-white/90 border-white/20 hover:bg-white/20"
                   )}
                 >
                   <IconComponent className="w-3 h-3" />
@@ -108,7 +108,7 @@ const MapCategoryFilters = ({
             {selectedCategories.length > 0 && (
               <button
                 onClick={() => selectedCategories.forEach(cat => onCategoryToggle(cat))}
-                className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 font-medium"
+                className="flex-shrink-0 px-3 py-1.5 text-xs text-white/70 hover:text-white font-medium whitespace-nowrap"
               >
                 Clear all
               </button>

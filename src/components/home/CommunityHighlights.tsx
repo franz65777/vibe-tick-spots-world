@@ -21,7 +21,7 @@ const CommunityHighlights = ({
   const { location: weeklyWinner, loading: winnerLoading } = useWeeklyWinner(currentCity);
   const { champions, loading: championsLoading } = useCommunityChampions(currentCity);
 
-  // Show a compact single row with the most engaging content
+  // Always show something engaging - prioritize weekly winner, then champion, then placeholder
   if (weeklyWinner && !winnerLoading) {
     return (
       <div className="px-4 py-2">
@@ -48,7 +48,6 @@ const CommunityHighlights = ({
     );
   }
 
-  // Show top community champion if no weekly winner
   if (champions.length > 0 && !championsLoading) {
     const topChampion = champions[0];
     return (
@@ -76,7 +75,30 @@ const CommunityHighlights = ({
     );
   }
 
-  return null; // Don't show anything if no data
+  // Show engaging placeholder when no data is available
+  return (
+    <div className="px-4 py-2">
+      <div className="bg-gradient-to-r from-accent/10 to-accent/5 rounded-lg p-3 border border-accent/20">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center">
+              <span className="text-white text-sm font-bold">🚀</span>
+            </div>
+            <div>
+              <p className="text-sm font-semibold">Start Your Journey</p>
+              <p className="text-xs text-muted-foreground">Be the first to discover amazing places in {currentCity || 'your city'}</p>
+            </div>
+          </div>
+          <button 
+            onClick={() => {/* Add location action */}}
+            className="text-xs bg-accent text-accent-foreground px-3 py-1 rounded-full hover:bg-accent/90 transition-colors"
+          >
+            Explore
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default CommunityHighlights;
