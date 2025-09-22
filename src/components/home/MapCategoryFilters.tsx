@@ -56,10 +56,10 @@ const MapCategoryFilters = ({
 
   return (
     <div className="absolute top-4 left-4 right-4 z-50">
-      {/* Transparent Compact Filter */}
-      <div className="bg-black/60 backdrop-blur-md rounded-2xl border border-white/20 overflow-hidden shadow-lg">
-        {/* Map Mode Pills - Horizontal Scroll */}
-        <div className="flex overflow-x-auto scrollbar-hide border-b border-white/20">
+      {/* Ultra Subtle Filter */}
+      <div className="bg-black/20 backdrop-blur-lg rounded-xl border border-white/10 overflow-hidden shadow-sm">
+        {/* Map Mode Pills - Minimal Design */}
+        <div className="flex overflow-x-auto scrollbar-hide">
           {mapFilters.map((filter, index) => {
             const IconComponent = filter.icon;
             const isActive = activeMapFilter === filter.id;
@@ -69,53 +69,47 @@ const MapCategoryFilters = ({
                 key={filter.id}
                 onClick={() => onMapFilterChange(filter.id)}
                 className={cn(
-                  "flex-1 flex items-center justify-center gap-2 px-3 py-3 transition-all duration-200 font-semibold text-sm border-r border-white/20 last:border-r-0",
+                  "flex-1 flex items-center justify-center gap-1.5 px-2 py-2 transition-all duration-200 text-xs font-medium",
                   isActive
-                    ? "bg-white text-black shadow-md"
-                    : "text-white/90 hover:bg-white/15 hover:text-white"
+                    ? "bg-white/90 text-black shadow-sm"
+                    : "text-white/80 hover:bg-white/10 hover:text-white"
                 )}
                 title={filter.description}
               >
-                <IconComponent className="w-4 h-4" />
-                <span className="hidden sm:inline whitespace-nowrap">{filter.name}</span>
+                <IconComponent className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline text-xs">{filter.name}</span>
               </button>
             );
           })}
         </div>
 
-        {/* Category Chips - Horizontal Scroll */}
-        <div className="p-3">
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-            {categoryFilters.map((category) => {
-              const IconComponent = category.icon;
-              const isSelected = selectedCategories.includes(category.id);
-              
-              return (
-                <button
-                  key={category.id}
-                  onClick={() => onCategoryToggle(category.id)}
-                  className={cn(
-                    "flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-200 text-xs font-semibold border whitespace-nowrap",
-                    isSelected
-                      ? "bg-white text-black border-white/30 shadow-md"
-                      : "bg-white/15 text-white border-white/30 hover:bg-white/25 hover:text-white"
-                  )}
-                >
-                  <IconComponent className="w-3 h-3" />
-                  <span>{category.name}</span>
-                </button>
-              );
-            })}
-            {selectedCategories.length > 0 && (
+        {/* Category Pills - Minimal */}
+        {selectedCategories.length > 0 && (
+          <div className="px-2 pb-2 border-t border-white/10">
+            <div className="flex gap-1 overflow-x-auto scrollbar-hide pt-2">
+              {categoryFilters.filter(cat => selectedCategories.includes(cat.id)).map((category) => {
+                const IconComponent = category.icon;
+                
+                return (
+                  <button
+                    key={category.id}
+                    onClick={() => onCategoryToggle(category.id)}
+                    className="flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-md bg-white/20 text-white text-xs font-medium hover:bg-white/30 transition-colors"
+                  >
+                    <IconComponent className="w-3 h-3" />
+                    <span>{category.name}</span>
+                  </button>
+                );
+              })}
               <button
                 onClick={() => selectedCategories.forEach(cat => onCategoryToggle(cat))}
-                className="flex-shrink-0 px-3 py-1.5 text-xs text-white/70 hover:text-white font-medium whitespace-nowrap"
+                className="flex-shrink-0 px-2 py-1 text-xs text-white/60 hover:text-white/80 font-medium"
               >
-                Clear all
+                Clear
               </button>
-            )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

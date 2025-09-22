@@ -41,6 +41,7 @@ const HomePage = () => {
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 37.7749, lng: -122.4194 });
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [scrollY, setScrollY] = useState(0);
   
   // Modal states
   const [isCreateStoryModalOpen, setIsCreateStoryModalOpen] = useState(false);
@@ -64,6 +65,13 @@ const HomePage = () => {
   const { savedPlaces } = useSavedPlaces();
 
   console.log('HomePage - pins:', pins, 'loading:', loading, 'error:', error);
+
+  // Scroll tracking for fade effects
+  useEffect(() => {
+    const handleScroll = () => setScrollY(window.scrollY);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Get user's current location on component mount
   useEffect(() => {
@@ -286,6 +294,10 @@ const HomePage = () => {
   }
 
   const topLocation = getTopLocation();
+  
+  // Calculate opacity based on scroll
+  const storiesOpacity = Math.max(0, 1 - scrollY / 200);
+  const highlightsOpacity = Math.max(0, 1 - scrollY / 250);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5 flex flex-col">
@@ -301,7 +313,10 @@ const HomePage = () => {
       />
       
       <main className="flex-1 flex flex-col max-w-7xl mx-auto w-full">
-        <div className="bg-card/80 backdrop-blur-sm border-b border-border/50 px-4 py-3 shadow-sm">
+        <div 
+          className="bg-card/80 backdrop-blur-sm border-b border-border/50 px-4 py-3 shadow-sm transition-opacity duration-200"
+          style={{ opacity: storiesOpacity }}
+        >
           <StoriesSection 
             stories={stories}
             onCreateStory={() => setIsCreateStoryModalOpen(true)}
@@ -313,7 +328,10 @@ const HomePage = () => {
         </div>
         
         {/* Community Highlights Section */}
-        <div className="bg-gradient-to-r from-card/90 via-card to-card/90 backdrop-blur-sm">
+        <div 
+          className="bg-gradient-to-r from-card/90 via-card to-card/90 backdrop-blur-sm transition-opacity duration-200"
+          style={{ opacity: highlightsOpacity }}
+        >
           <CommunityHighlights
             currentCity={currentCity}
             userLocation={userLocation}

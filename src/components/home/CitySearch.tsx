@@ -11,66 +11,46 @@ interface CitySearchProps {
   onCitySelect: (city: string) => void;
 }
 
-// City data with more appropriate landmark icons and search variations
+// Simplified city data - no icons or descriptions
 const cityData = {
   'san francisco': { 
     name: 'San Francisco', 
-    icon: Building2,
-    description: 'Golden Gate City',
     searchTerms: ['san francisco', 'sf', 'san fran', 'sanfrancisco']
   },
   'milan': { 
     name: 'Milan', 
-    icon: Church,
-    description: 'Fashion Capital',
     searchTerms: ['milan', 'milano', 'milaan', 'miland']
   },
   'paris': { 
     name: 'Paris', 
-    icon: Landmark,
-    description: 'City of Light',
     searchTerms: ['paris', 'paris', 'pariis', 'pariss']
   },
   'new york': { 
     name: 'New York', 
-    icon: Building,
-    description: 'The Big Apple',
     searchTerms: ['new york', 'ny', 'nyc', 'newyork', 'new yourk', 'new yor']
   },
   'london': { 
     name: 'London', 
-    icon: Clock,
-    description: 'Royal City',
     searchTerms: ['london', 'londdon', 'londn', 'lonon']
   },
   'tokyo': { 
     name: 'Tokyo', 
-    icon: Mountain,
-    description: 'Land of Rising Sun',
     searchTerms: ['tokyo', 'tokio', 'tokyio', 'tokya']
   },
   'rome': { 
     name: 'Rome', 
-    icon: Shield,
-    description: 'Eternal City',
     searchTerms: ['rome', 'roma', 'roome', 'rom']
   },
   'barcelona': { 
     name: 'Barcelona', 
-    icon: Church,
-    description: 'Gaudí\'s City',
     searchTerms: ['barcelona', 'barselona', 'barcellona', 'barca']
   },
   'amsterdam': { 
     name: 'Amsterdam', 
-    icon: Waves,
-    description: 'Venice of North',
     searchTerms: ['amsterdam', 'amsterdamm', 'amesterdam', 'amstrerdam']
   },
   'sydney': { 
     name: 'Sydney', 
-    icon: Waves,
-    description: 'Harbor City',
     searchTerms: ['sydney', 'sydny', 'sideny', 'sydey']
   }
 };
@@ -133,7 +113,6 @@ const CitySearch = ({
 
   // Get current city data
   const currentCityData = cityData[currentCity.toLowerCase() as keyof typeof cityData];
-  const CurrentCityIcon = currentCityData?.icon || MapPin;
 
   useEffect(() => {
     if (searchQuery.trim() && searchQuery.trim() !== ' ') {
@@ -200,10 +179,9 @@ const CitySearch = ({
       {/* Current City Display / Search Input */}
       <div className="relative">
         {!searchQuery || searchQuery.trim() === ' ' ? (
-          // Show current city when not searching
+          // Show current city when not searching - Clean design
           <div className="flex items-center gap-3 bg-white/90 border border-gray-200 rounded-2xl h-12 px-4 hover:bg-white transition-colors cursor-pointer touch-manipulation"
                onClick={() => document.getElementById('city-search-input')?.focus()}>
-            <CurrentCityIcon className="w-5 h-5 text-blue-600 shrink-0" />
             <span className="text-gray-900 font-medium flex-1 text-sm sm:text-base truncate">
               {currentCityData?.name || currentCity}
             </span>
@@ -252,22 +230,17 @@ const CitySearch = ({
         />
       )}
 
-      {/* Dropdown Results - Mobile optimized z-index */}
+      {/* Dropdown Results - Simplified */}
       {isOpen && filteredCities.length > 0 && (
         <div className="fixed sm:absolute top-[calc(100%+8px)] left-4 right-4 sm:left-0 sm:right-0 sm:mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 max-h-64 overflow-y-auto z-[60] backdrop-blur-sm">
           {filteredCities.map(({ key, data, similarity }) => {
-            const IconComponent = data.icon;
             return (
               <button
                 key={key}
                 onClick={() => handleCityClick(data.name)}
-                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 active:bg-gray-100 transition-colors text-left border-b border-gray-50 last:border-b-0 touch-manipulation"
+                className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 active:bg-gray-100 transition-colors text-left border-b border-gray-50 last:border-b-0 touch-manipulation"
               >
-                <IconComponent className="w-5 h-5 text-blue-600 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-gray-900 text-sm truncate">{data.name}</div>
-                  <div className="text-xs text-gray-500 truncate">{data.description}</div>
-                </div>
+                <div className="font-medium text-gray-900 text-sm truncate">{data.name}</div>
                 {similarity > 0.8 && (
                   <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded shrink-0">
                     Best match
