@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { MapPin, Plus, Building2 } from 'lucide-react';
@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { allowedCategories, categoryDisplayNames, type AllowedCategory } from '@/utils/allowedCategories';
 import GooglePlacesAutocomplete from '@/components/GooglePlacesAutocomplete';
 import { supabase } from '@/integrations/supabase/client';
+import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '@/lib/googleMaps';
 
 interface QuickAddPinModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded }: QuickAdd
     types: string[];
   } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [initialQuery, setInitialQuery] = useState<string>('');
 
   // Map Google Places types to our categories
   const mapPlaceTypeToCategory = (types: string[]): AllowedCategory | null => {
@@ -54,6 +56,31 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded }: QuickAdd
     setSelectedPlace({ ...place });
   };
 
+  // Suggest closest venue name when user right-clicks on map
+  useEffect(() => {
+    const fetchNearby = async () => {
+      if (!isOpen || !coordinates) return;
+      try {
+        await loadGoogleMapsAPI();
+        if (!(window as any).google?.maps?.places) return;
+        const service = new (window as any).google.maps.places.PlacesService(document.createElement('div'));
+        const request: google.maps.places.PlaceSearchRequest = {
+          location: new (window as any).google.maps.LatLng(coordinates.lat, coordinates.lng),
+          radius: 200,
+          type: ['restaurant', 'bar', 'cafe', 'bakery', 'lodging', 'museum', 'tourist_attraction', 'night_club', 'art_gallery', 'amusement_park'] as any,
+        } as any;
+
+        service.nearbySearch(request, (results: any, status: any) => {
+          if (status === (window as any).google.maps.places.PlacesServiceStatus.OK && results?.length) {
+            setInitialQuery(results[0].name);
+          }
+        });
+      } catch (e) {
+        console.warn('Nearby search failed', e);
+      }
+    };
+    fetchNearby();
+  }, [isOpen, coordinates]);
   const handleSavePin = async () => {
     if (!selectedPlace) {
       toast.error('Please select a location first');
@@ -184,6 +211,8 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded }: QuickAdd
               onPlaceSelect={handlePlaceSelect}
               placeholder="Search restaurants, bars, cafés, hotels..."
               className="w-full"
+              biasLocation={coordinates || null}
+              initialQuery={initialQuery}
             />
             <p className="text-xs text-gray-500">
               Only real venues (restaurants, bars, cafés, hotels, museums, etc.) can be saved as favorites

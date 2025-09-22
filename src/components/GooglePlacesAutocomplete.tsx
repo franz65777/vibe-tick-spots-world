@@ -15,6 +15,8 @@ interface GooglePlacesAutocompleteProps {
   }) => void;
   placeholder?: string;
   className?: string;
+  biasLocation?: { lat: number; lng: number } | null;
+  initialQuery?: string;
 }
 
 // Our specific allowed categories for pin saving
@@ -43,7 +45,9 @@ const DISALLOWED_PLACE_TYPES = [
 const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
   onPlaceSelect,
   placeholder = "Search for a location...",
-  className = ""
+  className = "",
+  biasLocation = null,
+  initialQuery
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
@@ -51,6 +55,11 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [inputValue, setInputValue] = useState('');
+
+  // Keep input in sync with initialQuery
+  useEffect(() => {
+    if (initialQuery) setInputValue(initialQuery);
+  }, [initialQuery]);
 
   useEffect(() => {
     const initializeGoogleMaps = async () => {
@@ -143,16 +152,21 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
         const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current!, options);
 
         try {
-          const userLocation = await getUserLocation();
-          // Set location bias after creating autocomplete
-          const circle = new google.maps.Circle({
-            center: userLocation,
-            radius: 10000 // 10km
-          });
-          autocomplete.setBounds(circle.getBounds()!);
-          console.log('Location bias set to user location:', userLocation);
+          if (biasLocation) {
+            const circle = new google.maps.Circle({
+              center: biasLocation,
+              radius: 2000
+            });
+            autocomplete.setBounds(circle.getBounds()!);
+            console.log('Location bias set from props:', biasLocation);
+          } else {
+            const userLocation = await getUserLocation();
+            const circle = new google.maps.Circle({ center: userLocation, radius: 10000 });
+            autocomplete.setBounds(circle.getBounds()!);
+            console.log('Location bias set to user location:', userLocation);
+          }
         } catch (err) {
-          console.log('Could not get user location, using default settings');
+          console.log('Could not get location, using default settings');
         }
 
         return autocomplete;
@@ -218,6 +232,16 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
       setIsLoaded(false);
     }
   };
+
+  // Update bounds when biasLocation changes
+  useEffect(() => {
+    if (!autocompleteRef.current || !biasLocation || !window.google) return;
+    try {
+      const circle = new google.maps.Circle({ center: biasLocation, radius: 2000 });
+      autocompleteRef.current.setBounds(circle.getBounds()!);
+      console.log('Updated autocomplete bounds from biasLocation');
+    } catch {}
+  }, [biasLocation]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);

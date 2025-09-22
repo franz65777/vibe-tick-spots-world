@@ -51,7 +51,12 @@ const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) =
 
   const handleMapRightClick = (coords: { lat: number; lng: number }) => {
     setNewLocationCoords(coords);
-    setIsQuickAddModalOpen(true);
+    // Only allow adding pins in Saved filter
+    if (activeMapFilter === 'saved') {
+      setIsQuickAddModalOpen(true);
+    } else {
+      toast.info('Switch to "Saved" to add your favorite places');
+    }
   };
 
   const handleSaveLocation = async (locationData: any) => {

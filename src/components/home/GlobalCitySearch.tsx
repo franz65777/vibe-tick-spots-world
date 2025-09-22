@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Search, MapPin, Building, Landmark, Building2, Clock, Mountain, Shield, Church, Waves, TreePine, Locate, Globe } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useGeolocation } from '@/hooks/useGeolocation';
+import { loadGoogleMapsAPI } from '@/lib/googleMaps';
 
 interface GlobalCitySearchProps {
   searchQuery: string;
