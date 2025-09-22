@@ -60,17 +60,28 @@ const MapCategoryFilters = ({
       <div className="grid grid-cols-3 gap-2 mb-2">
         {mapFilters.map((filter) => {
           const IconComponent = filter.icon;
-          const isActive = activeMapFilter === filter.id;
+            const isActive = activeMapFilter === filter.id;
+          
+          // Define colors for each filter
+          const filterColors = {
+            following: isActive 
+              ? "bg-blue-600 text-white border-blue-600" 
+              : "bg-white/90 text-blue-600 border-blue-200 hover:bg-blue-50",
+            popular: isActive 
+              ? "bg-red-600 text-white border-red-600" 
+              : "bg-white/90 text-red-600 border-red-200 hover:bg-red-50",
+            saved: isActive 
+              ? "bg-green-600 text-white border-green-600" 
+              : "bg-white/90 text-green-600 border-green-200 hover:bg-green-50"
+          };
           
           return (
             <button
               key={filter.id}
               onClick={() => onMapFilterChange(filter.id)}
               className={cn(
-                "flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 backdrop-blur-sm border",
-                isActive
-                  ? "bg-black/90 text-white border-black/20 shadow-lg"
-                  : "bg-white/20 text-gray-700 border-white/30 hover:bg-white/30"
+                "flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 backdrop-blur-sm border shadow-sm",
+                filterColors[filter.id]
               )}
               title={filter.description}
             >

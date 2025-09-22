@@ -17,18 +17,20 @@ interface GooglePlacesAutocompleteProps {
   className?: string;
 }
 
-// Allowed place types for POI filtering
-const ALLOWED_PLACE_TYPES = [
-  'cafe', 'bar', 'restaurant', 'food', 'meal_takeaway', 'bakery',
-  'park', 'museum', 'night_club', 'store', 'shopping_mall', 'shopping_center',
-  'art_gallery', 'gym', 'library', 'tourist_attraction', 'lodging',
-  'amusement_park', 'aquarium', 'beauty_salon', 'book_store', 'bowling_alley',
-  'casino', 'church', 'clothing_store', 'department_store', 'electronics_store',
-  'establishment', 'florist', 'gas_station', 'hair_care', 'hardware_store',
-  'hospital', 'jewelry_store', 'laundry', 'movie_theater', 'pharmacy',
-  'physiotherapist', 'point_of_interest', 'school', 'shoe_store', 'spa',
-  'stadium', 'subway_station', 'supermarket', 'synagogue', 'train_station',
-  'travel_agency', 'university', 'veterinary_care', 'zoo'
+// Our specific allowed categories for pin saving
+const OUR_ALLOWED_CATEGORIES = [
+  'restaurant', 'meal_takeaway', 'food', 'meal_delivery',
+  'bar', 'night_club', 'liquor_store',
+  'cafe', 'coffee_shop',
+  'bakery', 'bread_bakery',
+  'lodging', 'hotel', 'motel', 'guest_house',
+  'museum', 'art_gallery', 'cultural_center',
+  'entertainment', 'amusement_park', 'theme_park', 'movie_theater', 'casino', 'bowling_alley', 'arcade'
+];
+
+// General establishment types that are valid
+const ESTABLISHMENT_TYPES = [
+  'establishment', 'point_of_interest', 'store', 'tourist_attraction'
 ];
 
 // Disallowed administrative types
@@ -68,8 +70,8 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
         }
         
         // Small delay to ensure everything is ready
-        setTimeout(() => {
-          initializeAutocomplete();
+        setTimeout(async () => {
+          await initializeAutocomplete();
         }, 200);
         
       } catch (err) {
@@ -91,15 +93,19 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
   }, []);
 
   const isAllowedPlaceType = (types: string[]): boolean => {
-    return types.some(type => ALLOWED_PLACE_TYPES.includes(type));
+    // Check if it matches our specific categories
+    const hasOurCategory = types.some(type => OUR_ALLOWED_CATEGORIES.includes(type));
+    const hasEstablishment = types.some(type => ESTABLISHMENT_TYPES.includes(type));
+    const isNotAdministrative = !types.some(type => DISALLOWED_PLACE_TYPES.includes(type));
+    
+    return hasOurCategory || (hasEstablishment && isNotAdministrative);
   };
 
   const isDisallowedPlaceType = (types: string[]): boolean => {
-    return types.some(type => DISALLOWED_PLACE_TYPES.includes(type)) && 
-           !types.some(type => ALLOWED_PLACE_TYPES.includes(type));
+    return types.some(type => DISALLOWED_PLACE_TYPES.includes(type));
   };
 
-  const initializeAutocomplete = () => {
+  const initializeAutocomplete = async () => {
     if (!inputRef.current || !isGoogleMapsLoaded()) {
       console.error('Google Maps not loaded or input ref not available');
       setError('Location search is not available');
@@ -109,11 +115,50 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
     try {
       console.log('Creating autocomplete instance...');
       
-      const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
-        types: ['establishment'],
-        fields: ['place_id', 'name', 'formatted_address', 'geometry', 'types'],
-        componentRestrictions: {} // Allow all countries
-      });
+      // Get user's location for proximity-based search
+      const getUserLocation = (): Promise<{lat: number, lng: number}> => {
+        return new Promise((resolve, reject) => {
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+              (position) => resolve({
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+              }),
+              () => reject('Location access denied')
+            );
+          } else {
+            reject('Geolocation not supported');
+          }
+        });
+      };
+
+      // Try to get user location and set up location bias
+      const setupAutocomplete = async () => {
+        let options: google.maps.places.AutocompleteOptions = {
+          types: ['establishment'],
+          fields: ['place_id', 'name', 'formatted_address', 'geometry', 'types', 'business_status', 'rating'],
+          componentRestrictions: { country: [] } // No country restrictions
+        };
+
+        const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current!, options);
+
+        try {
+          const userLocation = await getUserLocation();
+          // Set location bias after creating autocomplete
+          const circle = new google.maps.Circle({
+            center: userLocation,
+            radius: 10000 // 10km
+          });
+          autocomplete.setBounds(circle.getBounds()!);
+          console.log('Location bias set to user location:', userLocation);
+        } catch (err) {
+          console.log('Could not get user location, using default settings');
+        }
+
+        return autocomplete;
+      };
+
+      const autocomplete = await setupAutocomplete();
 
       autocompleteRef.current = autocomplete;
 
@@ -127,17 +172,25 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
           return;
         }
 
-        // Check if place type is allowed
+        // Check if place type is allowed and business is operational
         const placeTypes = place.types || [];
+        const businessStatus = place.business_status;
+        
+        // Skip closed businesses
+        if (businessStatus === 'CLOSED_PERMANENTLY' || businessStatus === 'CLOSED_TEMPORARILY') {
+          toast.error('This business appears to be closed. Please select an active location.');
+          setInputValue('');
+          return;
+        }
         
         if (isDisallowedPlaceType(placeTypes)) {
-          toast.error('Only real venues or places can be tagged. Try searching for a business or venue.');
+          toast.error('Only real venues can be saved (restaurants, bars, cafés, hotels, museums, etc.)');
           setInputValue('');
           return;
         }
 
         if (!isAllowedPlaceType(placeTypes)) {
-          toast.error('Only real places (cafés, shops, parks, etc.) can be tagged. Try searching for a business or venue.');
+          toast.error('Only established venues can be saved. Try searching for restaurants, bars, cafés, hotels, or entertainment venues.');
           setInputValue('');
           return;
         }
@@ -217,8 +270,8 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
         </div>
       )}
       {isLoaded && !isLoading && (
-        <div className="text-xs text-green-600 mt-1">
-          Search for venues, cafés, shops, or attractions
+        <div className="text-xs text-blue-600 mt-1">
+          🍽️ Search restaurants, bars, cafés, hotels & more nearby
         </div>
       )}
     </div>

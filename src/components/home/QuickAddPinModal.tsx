@@ -74,37 +74,82 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded }: QuickAdd
         throw new Error('User not authenticated');
       }
 
-      // Save to Supabase locations table
-      const { data: locationData, error: locationError } = await supabase
+      console.log('Saving location:', {
+        name: selectedPlace.name,
+        category: category,
+        address: selectedPlace.address,
+        latitude: selectedPlace.lat,
+        longitude: selectedPlace.lng,
+        google_place_id: selectedPlace.place_id,
+        place_types: selectedPlace.types,
+        created_by: userData.user.id,
+      });
+
+      // First, check if location already exists
+      const { data: existingLocation } = await supabase
         .from('locations')
-        .insert({
-          name: selectedPlace.name,
-          category: category,
-          address: selectedPlace.address,
-          latitude: selectedPlace.lat,
-          longitude: selectedPlace.lng,
-          google_place_id: selectedPlace.place_id,
-          place_types: selectedPlace.types,
-          created_by: userData.user.id,
-        })
-        .select()
-        .single();
+        .select('id')
+        .eq('google_place_id', selectedPlace.place_id)
+        .maybeSingle();
 
-      if (locationError) throw locationError;
+      let locationId: string;
 
-      // Save to user's saved locations
-      if (locationData) {
+      if (existingLocation) {
+        // Location exists, use its ID
+        locationId = existingLocation.id;
+        console.log('Found existing location:', locationId);
+      } else {
+        // Create new location
+        const { data: newLocation, error: locationError } = await supabase
+          .from('locations')
+          .insert({
+            name: selectedPlace.name,
+            category: category,
+            address: selectedPlace.address,
+            latitude: selectedPlace.lat,
+            longitude: selectedPlace.lng,
+            google_place_id: selectedPlace.place_id,
+            place_types: selectedPlace.types,
+            created_by: userData.user.id,
+          })
+          .select('id')
+          .single();
+
+        if (locationError) {
+          console.error('Location creation error:', locationError);
+          throw locationError;
+        }
+        locationId = newLocation.id;
+        console.log('Created new location:', locationId);
+      }
+
+      // Check if user already saved this location
+      const { data: existingSave } = await supabase
+        .from('user_saved_locations')
+        .select('id')
+        .eq('user_id', userData.user.id)
+        .eq('location_id', locationId)
+        .maybeSingle();
+
+      if (existingSave) {
+        toast.info(`${selectedPlace.name} is already in your favorites!`);
+      } else {
+        // Save to user's saved locations
         const { error: saveError } = await supabase
           .from('user_saved_locations')
           .insert({
             user_id: userData.user.id,
-            location_id: locationData.id,
+            location_id: locationId,
           });
 
-        if (saveError) throw saveError;
+        if (saveError) {
+          console.error('Save location error:', saveError);
+          throw saveError;
+        }
+        
+        toast.success(`${selectedPlace.name} saved to your favorites!`);
       }
       
-      toast.success(`${selectedPlace.name} saved to your favorites!`);
       onPinAdded();
       onClose();
       setSelectedPlace(null);
