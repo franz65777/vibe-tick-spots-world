@@ -35,7 +35,7 @@ interface UseMapPinsReturn {
   hasFollowedUsers: boolean;
 }
 
-export const useMapPins = (filter: 'following' | 'popular' | 'saved' = 'following') => {
+export const useMapPins = (filter: 'following' | 'popular' | 'saved' = 'popular') => {
   const { user } = useAuth();
   const [pins, setPins] = useState<MapPin[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,31 +81,56 @@ export const useMapPins = (filter: 'following' | 'popular' | 'saved' = 'followin
         }));
 
         setHasFollowedUsers(followingLocations.length > 0);
-      } else if (filter === 'popular') {
+        } else if (filter === 'popular') {
+        console.log('🔍 Fetching popular locations...');
         const popularLocations = await backendService.getPopularLocations(cityFilter);
-        fetchedPins = popularLocations.map(location => ({
-          id: location.id,
-          name: location.name,
-          category: location.category,
-          coordinates: { 
-            lat: parseFloat(location.latitude?.toString() || '0'), 
-            lng: parseFloat(location.longitude?.toString() || '0') 
-          },
-          likes: Math.floor(Math.random() * 50) + 10,
-          isFollowing: false,
-          addedBy: 'Explorer',
-          addedDate: new Date(location.created_at).toLocaleDateString(),
-          popularity: Math.floor(Math.random() * 30) + 70,
-          city: location.city || 'Unknown',
-          isNew: Math.random() > 0.7,
-          image: undefined,
-          friendsWhoSaved: [],
-          visitors: Array.from({ length: Math.floor(Math.random() * 20) + 5 }, (_, i) => `visitor_${i}`),
-          distance: Math.random() * 15,
-          totalSaves: Math.floor(Math.random() * 25) + 5,
-          address: location.address || '',
-          google_place_id: location.google_place_id
-        }));
+        console.log('✅ Popular locations fetched:', popularLocations.length);
+        
+        // Add demo coordinates for locations without lat/lng
+        const demoCoordinates = [
+          { lat: 37.7749, lng: -122.4194 }, // San Francisco
+          { lat: 37.7849, lng: -122.4094 }, 
+          { lat: 37.7649, lng: -122.4294 }, 
+          { lat: 37.7549, lng: -122.4394 }, 
+          { lat: 37.7949, lng: -122.4094 }, 
+          { lat: 53.3498, lng: -6.2603 }, // Dublin
+          { lat: 53.3598, lng: -6.2503 }, 
+          { lat: 53.3398, lng: -6.2703 }, 
+          { lat: 40.7128, lng: -74.0060 }, // New York
+          { lat: 40.7228, lng: -74.0160 }
+        ];
+        
+        fetchedPins = popularLocations.map((location, index) => {
+          // Use actual coordinates if available, otherwise use demo coordinates
+          const hasCoordinates = location.latitude && location.longitude;
+          const coordinates = hasCoordinates 
+            ? { 
+                lat: parseFloat(location.latitude.toString()), 
+                lng: parseFloat(location.longitude.toString()) 
+              }
+            : demoCoordinates[index % demoCoordinates.length];
+            
+          return {
+            id: location.id,
+            name: location.name,
+            category: location.category,
+            coordinates,
+            likes: Math.floor(Math.random() * 50) + 10,
+            isFollowing: false,
+            addedBy: 'Explorer',
+            addedDate: new Date(location.created_at).toLocaleDateString(),
+            popularity: Math.floor(Math.random() * 30) + 70,
+            city: location.city || 'Unknown',
+            isNew: Math.random() > 0.7,
+            image: undefined,
+            friendsWhoSaved: [],
+            visitors: Array.from({ length: Math.floor(Math.random() * 20) + 5 }, (_, i) => `visitor_${i}`),
+            distance: Math.random() * 15,
+            totalSaves: Math.floor(Math.random() * 25) + 5,
+            address: location.address || '',
+            google_place_id: location.google_place_id
+          };
+        });
       } else if (filter === 'saved') {
         console.log('🔍 Fetching saved locations...');
         const { data: savedLocations, error } = await supabase
