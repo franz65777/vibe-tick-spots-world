@@ -80,6 +80,8 @@ const GoogleMapsSetup = ({
   // Initialize map with better timing
   useEffect(() => {
     let mounted = true;
+    // Reset unmount flag on mount (React StrictMode mounts twice)
+    isUnmountingRef.current = false;
     let retryCount = 0;
     const maxRetries = 3;
     
@@ -464,8 +466,8 @@ const GoogleMapsSetup = ({
     <>
       <div 
         ref={mapRef} 
-        className="w-full h-full min-h-[500px] rounded-lg overflow-hidden relative bg-gray-100"
-        style={{ minHeight: '500px' }}
+        className="w-full h-full min-h-[60vh] rounded-lg overflow-hidden relative bg-gray-100"
+        style={{ minHeight: '60vh' }}
       >
         {!isLoaded && (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
