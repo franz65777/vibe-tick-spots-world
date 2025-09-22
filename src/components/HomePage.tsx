@@ -373,6 +373,7 @@ const HomePage = () => {
           <MapSection 
             mapCenter={mapCenter}
             currentCity={currentCity}
+            activeFilter={activeFilter}
           />
         )}
       </main>

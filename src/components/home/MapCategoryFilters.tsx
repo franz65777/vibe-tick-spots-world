@@ -83,33 +83,38 @@ const MapCategoryFilters = ({
           })}
         </div>
 
-        {/* Category Pills - Minimal */}
-        {selectedCategories.length > 0 && (
-          <div className="px-2 pb-2 border-t border-white/10">
-            <div className="flex gap-1 overflow-x-auto scrollbar-hide pt-2">
-              {categoryFilters.filter(cat => selectedCategories.includes(cat.id)).map((category) => {
-                const IconComponent = category.icon;
-                
-                return (
-                  <button
-                    key={category.id}
-                    onClick={() => onCategoryToggle(category.id)}
-                    className="flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-md bg-white/20 text-white text-xs font-medium hover:bg-white/30 transition-colors"
-                  >
-                    <IconComponent className="w-3 h-3" />
-                    <span>{category.name}</span>
-                  </button>
-                );
-              })}
+        {/* Category Pills - Always visible when available */}
+        <div className="px-2 pb-2 border-t border-white/10">
+          <div className="flex gap-1 overflow-x-auto scrollbar-hide pt-2">
+            {categoryFilters.map((category) => {
+              const IconComponent = category.icon;
+              const isSelected = selectedCategories.includes(category.id);
+              
+              return (
+                <button
+                  key={category.id}
+                  onClick={() => onCategoryToggle(category.id)}
+                  className={`flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors ${
+                    isSelected 
+                      ? 'bg-white/30 text-white' 
+                      : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
+                  }`}
+                >
+                  <IconComponent className="w-3 h-3" />
+                  <span>{category.name}</span>
+                </button>
+              );
+            })}
+            {selectedCategories.length > 0 && (
               <button
                 onClick={() => selectedCategories.forEach(cat => onCategoryToggle(cat))}
                 className="flex-shrink-0 px-2 py-1 text-xs text-white/60 hover:text-white/80 font-medium"
               >
                 Clear
               </button>
-            </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

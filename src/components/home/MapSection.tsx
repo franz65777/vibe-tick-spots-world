@@ -2,22 +2,29 @@
 import React, { useState } from 'react';
 import GoogleMapsSetup from '@/components/GoogleMapsSetup';
 import AddLocationModal from './AddLocationModal';
+import QuickAddPinModal from './QuickAddPinModal';
 import MapCategoryFilters, { type MapFilter } from './MapCategoryFilters';
+import PinShareModal from '../explore/PinShareModal';
 import { useMapLocations } from '@/hooks/useMapLocations';
 import { Place } from '@/types/place';
+import { PinShareData } from '@/services/pinSharingService';
 
 interface MapSectionProps {
   mapCenter: { lat: number; lng: number };
   currentCity: string;
+  activeFilter?: MapFilter;
 }
 
-const MapSection = ({ mapCenter, currentCity }: MapSectionProps) => {
+const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) => {
   const [isAddLocationModalOpen, setIsAddLocationModalOpen] = useState(false);
+  const [isQuickAddModalOpen, setIsQuickAddModalOpen] = useState(false);
+  const [isPinShareModalOpen, setIsPinShareModalOpen] = useState(false);
   const [newLocationCoords, setNewLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  const [pinToShare, setPinToShare] = useState<PinShareData | null>(null);
   
   // Filter states
-  const [activeMapFilter, setActiveMapFilter] = useState<MapFilter>('popular');
+  const [activeMapFilter, setActiveMapFilter] = useState<MapFilter>(activeFilter || 'popular');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   
   // Fetch locations based on current filters
@@ -43,7 +50,12 @@ const MapSection = ({ mapCenter, currentCity }: MapSectionProps) => {
 
   const handleMapRightClick = (coords: { lat: number; lng: number }) => {
     setNewLocationCoords(coords);
-    setIsAddLocationModalOpen(true);
+    // Use quick add modal for saved locations, regular modal for others
+    if (activeMapFilter === 'saved') {
+      setIsQuickAddModalOpen(true);
+    } else {
+      setIsAddLocationModalOpen(true);
+    }
   };
 
   const handleSaveLocation = async (locationData: any) => {
@@ -62,6 +74,24 @@ const MapSection = ({ mapCenter, currentCity }: MapSectionProps) => {
     setSelectedPlace(place);
   };
 
+  const handlePinShare = (place: Place) => {
+    const shareData: PinShareData = {
+      place_id: place.id,
+      name: place.name,
+      category: place.category,
+      coordinates: place.coordinates,
+      address: place.address,
+      description: place.description
+    };
+    setPinToShare(shareData);
+    setIsPinShareModalOpen(true);
+  };
+
+  const handlePinAdded = () => {
+    // Refresh locations after adding a new pin
+    window.location.reload(); // Simple refresh for now
+  };
+
   const handleCategoryToggle = (categoryId: string) => {
     setSelectedCategories(prev => 
       prev.includes(categoryId) 
@@ -76,6 +106,7 @@ const MapSection = ({ mapCenter, currentCity }: MapSectionProps) => {
         <GoogleMapsSetup 
           places={places}
           onPinClick={handlePinClick}
+          onPinShare={handlePinShare}
           mapCenter={mapCenter}
           selectedPlace={selectedPlace}
           onCloseSelectedPlace={() => setSelectedPlace(null)}
@@ -106,13 +137,6 @@ const MapSection = ({ mapCenter, currentCity }: MapSectionProps) => {
           </div>
         )}
         
-        {/* Stats */}
-        <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-sm border border-gray-200 z-50">
-          <span className="text-sm text-gray-600">
-            📍 {places.length} locations • {activeMapFilter.charAt(0).toUpperCase() + activeMapFilter.slice(1)}
-            {selectedCategories.length > 0 && ` • ${selectedCategories.length} categories`}
-          </span>
-        </div>
       </div>
 
       <AddLocationModal
@@ -123,6 +147,25 @@ const MapSection = ({ mapCenter, currentCity }: MapSectionProps) => {
         }}
         coordinates={newLocationCoords}
         onSaveLocation={handleSaveLocation}
+      />
+
+      <QuickAddPinModal
+        isOpen={isQuickAddModalOpen}
+        onClose={() => {
+          setIsQuickAddModalOpen(false);
+          setNewLocationCoords(null);
+        }}
+        coordinates={newLocationCoords}
+        onPinAdded={handlePinAdded}
+      />
+
+      <PinShareModal
+        isOpen={isPinShareModalOpen}
+        onClose={() => {
+          setIsPinShareModalOpen(false);
+          setPinToShare(null);
+        }}
+        pinData={pinToShare}
       />
     </>
   );

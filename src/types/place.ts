@@ -21,5 +21,6 @@ export interface Place {
   distance?: string | number;
   totalSaves?: number;
   address?: string;
+  description?: string;
   postCount?: number; // Add missing postCount property
 }

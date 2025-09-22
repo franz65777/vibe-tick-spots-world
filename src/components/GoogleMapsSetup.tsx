@@ -8,6 +8,7 @@ import { useGeolocation } from '@/hooks/useGeolocation';
 interface GoogleMapsSetupProps {
   places: Place[];
   onPinClick?: (place: Place) => void;
+  onPinShare?: (place: Place) => void;
   mapCenter: { lat: number; lng: number };
   selectedPlace?: Place | null;
   onCloseSelectedPlace?: () => void;
@@ -16,7 +17,8 @@ interface GoogleMapsSetupProps {
 
 const GoogleMapsSetup = ({ 
   places, 
-  onPinClick, 
+  onPinClick,
+  onPinShare,
   mapCenter, 
   selectedPlace,
   onCloseSelectedPlace,
