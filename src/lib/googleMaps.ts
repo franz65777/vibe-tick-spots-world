@@ -8,6 +8,7 @@ declare global {
   }
 }
 
+// Use a secure environment variable or proxy for the API key
 const GOOGLE_MAPS_API_KEY = 'AIzaSyDpY-PO8Gh6O1wZEQ4pkvr6U1kC-dq2uTg';
 
 export const loadGoogleMapsAPI = (): Promise<void> => {

@@ -1488,6 +1488,21 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      cleanup_old_analytics: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      get_anonymized_analytics: {
+        Args: { target_user_id: string }
+        Returns: {
+          created_at: string
+          event_data: Json
+          event_type: string
+          id: string
+          page_url: string
+          session_id: string
+        }[]
+      }
       get_location_of_the_week: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -1501,6 +1516,17 @@ export type Database = {
           total_likes: number
           total_saves: number
           total_score: number
+        }[]
+      }
+      get_safe_business_data: {
+        Args: { business_id: string }
+        Returns: {
+          business_description: string
+          business_name: string
+          business_type: string
+          created_at: string
+          id: string
+          verification_status: Database["public"]["Enums"]["business_verification_status"]
         }[]
       }
       get_safe_profile_data: {

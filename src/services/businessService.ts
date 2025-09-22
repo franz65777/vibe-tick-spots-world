@@ -82,6 +82,24 @@ export const getBusinessProfile = async (userId: string): Promise<BusinessProfil
   }
 };
 
+// Secure function to get public business data (no sensitive info)
+export const getPublicBusinessData = async (businessId: string) => {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_safe_business_data', { business_id: businessId });
+
+    if (error) {
+      console.error('Error fetching public business data:', error);
+      return null;
+    }
+
+    return data?.[0] || null;
+  } catch (error) {
+    console.error('Public business data fetch error:', error);
+    return null;
+  }
+};
+
 export const claimLocation = async (businessId: string, locationId: string): Promise<LocationClaim | null> => {
   try {
     const { data, error } = await supabase
