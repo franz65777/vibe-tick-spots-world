@@ -290,21 +290,68 @@ const GlobalCitySearch = ({
 
   return (
     <div ref={searchRef} className="relative flex-1 max-w-sm z-[200]">
-      {/* Always show compact global search input */}
+      {/* Current City Display / Search Input */}
       <div className="relative">
-        <Input
+        {!searchQuery || searchQuery.trim() === ' ' ? (
+          // Show current city when not searching
+          <div className="flex items-center gap-3 bg-white/95 border border-gray-200 rounded-2xl h-12 px-4 hover:bg-white transition-all duration-200 cursor-pointer shadow-lg backdrop-blur-sm"
+               onClick={() => document.getElementById('global-city-search-input')?.focus()}>
+            <MapPin className="w-5 h-5 text-blue-600 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <span className="text-gray-900 font-semibold text-base truncate">
+                {currentCityData?.name || currentCity || 'Select City'}
+              </span>
+              {currentCityData?.country && (
+                <div className="text-xs text-gray-500">{currentCityData.country}</div>
+              )}
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {geoLoading && (
+                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              )}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleLocationClick();
+                }}
+                className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all duration-200"
+                title="Detect current location"
+              >
+                <Locate className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        ) : (
+          // Show search input when searching
+          <div className="relative">
+            <Input
+              id="global-city-search-input"
+              type="text"
+              placeholder="Search cities worldwide..."
+              value={searchQuery === ' ' ? '' : searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              onKeyPress={onSearchKeyPress}
+              onFocus={() => searchQuery && setIsOpen(true)}
+              className="pl-12 pr-12 bg-white/95 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-2xl h-12 text-base shadow-lg backdrop-blur-sm"
+              autoFocus
+            />
+            <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          </div>
+        )}
+      </div>
+
+      {/* Hidden input for focusing */}
+      {(!searchQuery || searchQuery.trim() === ' ') && (
+        <input
           id="global-city-search-input"
           type="text"
-          placeholder="Search any city worldwide (e.g. Torino, Cork, Cairo)..."
-          value={searchQuery === ' ' ? '' : searchQuery}
-          onChange={(e) => { onSearchChange(e.target.value); setIsOpen(true); }}
+          className="absolute inset-0 opacity-0 cursor-pointer"
+          onFocus={() => onSearchChange(' ')}
+          onChange={(e) => onSearchChange(e.target.value)}
           onKeyPress={onSearchKeyPress}
-          onFocus={() => setIsOpen(true)}
-          className="pl-12 pr-12 bg-white/95 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-2xl h-12 text-base shadow-lg backdrop-blur-sm"
         />
-        <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-        <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-      </div>
+      )}
 
       {/* Dropdown Results - Organized by continent */}
       {isOpen && (Object.keys(groupedCities).length > 0 || externalResults.length > 0) && (

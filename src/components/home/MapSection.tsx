@@ -110,19 +110,12 @@ const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) =
   };
 
   const handlePinAdded = () => {
-    // Force refetch saved locations after adding a pin
+    // Switch to saved filter and close modal - this will trigger useMapLocations to refetch
+    setActiveMapFilter('saved');
     setIsQuickAddModalOpen(false);
     setNewLocationCoords(null);
-    
     // Force refetch to show newly saved location
-    setTimeout(() => {
-      try { 
-        refetch?.(); 
-        toast.success('Location saved! Refreshing map...');
-      } catch (e) {
-        console.warn('Could not refresh map');
-      }
-    }, 500);
+    try { refetch?.(); } catch {}
   };
 
   const handleCategoryToggle = (categoryId: string) => {
@@ -145,6 +138,14 @@ const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) =
           onCloseSelectedPlace={() => setSelectedPlace(null)}
           onMapRightClick={handleMapRightClick}
           onMapClick={handleMapClick}
+        />
+        
+        {/* Map Category Filters */}
+        <MapCategoryFilters
+          activeMapFilter={activeMapFilter}
+          onMapFilterChange={setActiveMapFilter}
+          selectedCategories={selectedCategories}
+          onCategoryToggle={handleCategoryToggle}
         />
         
         {/* Loading/Error States */}
