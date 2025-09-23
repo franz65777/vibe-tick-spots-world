@@ -424,31 +424,27 @@ const GlobalCitySearch = ({
 
       {/* Dropdown Results */}
       {isOpen && (filteredCities.length > 0 || externalResults.length > 0) && (
-        <div className="absolute top-full left-0 w-96 mt-2 bg-card border border-border rounded-xl shadow-xl z-50 max-h-80 overflow-y-auto">
+        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-[90vw] max-w-lg mt-2 bg-card border border-border rounded-xl shadow-xl z-50 max-h-80 overflow-y-auto">
           {/* Built-in Cities */}
-          {filteredCities.map(({ key, data }) => {
-            const IconComponent = data.icon;
-            return (
-              <button
-                key={key}
-                onClick={() => handleCityClick(data.name)}
-                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-muted/50 transition-colors text-left first:rounded-t-xl border-b border-border/50 last:border-b-0"
-              >
-                <IconComponent className="w-5 h-5 text-primary flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-foreground">
-                    {data.name}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {data.country}
-                  </div>
+          {filteredCities.map(({ key, data }) => (
+            <button
+              key={key}
+              onClick={() => handleCityClick(data.name)}
+              className="w-full px-6 py-4 flex items-center justify-between hover:bg-muted/50 transition-colors text-left first:rounded-t-xl border-b border-border/50 last:border-b-0"
+            >
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-foreground text-lg">
+                  {data.name}
                 </div>
-                <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md flex-shrink-0">
-                  {data.continent}
+                <div className="text-sm text-muted-foreground">
+                  {data.country}
                 </div>
-              </button>
-            );
-          })}
+              </div>
+              <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md flex-shrink-0">
+                {data.continent}
+              </div>
+            </button>
+          ))}
 
           {/* Separator */}
           {filteredCities.length > 0 && externalResults.length > 0 && (
@@ -460,11 +456,10 @@ const GlobalCitySearch = ({
             <button
               key={`external-${index}`}
               onClick={() => handleCityClick(result.name, { lat: result.lat, lng: result.lng })}
-              className="w-full px-4 py-3 flex items-center gap-3 hover:bg-muted/50 transition-colors text-left border-b border-border/50 last:border-b-0 last:rounded-b-xl"
+              className="w-full px-6 py-4 flex items-center justify-between hover:bg-muted/50 transition-colors text-left border-b border-border/50 last:border-b-0 last:rounded-b-xl"
             >
-              <Globe className="w-5 h-5 text-muted-foreground flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <div className="font-medium text-foreground">
+                <div className="font-semibold text-foreground text-lg">
                   {result.name}
                 </div>
                 {result.subtitle && (
@@ -488,7 +483,7 @@ const GlobalCitySearch = ({
 
       {/* No Results State */}
       {isOpen && filteredCities.length === 0 && externalResults.length === 0 && searchQuery.trim() && !isFetchingExternal && (
-        <div className="absolute top-full left-0 w-96 mt-2 bg-card border border-border rounded-xl shadow-lg z-50">
+        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-[90vw] max-w-lg mt-2 bg-card border border-border rounded-xl shadow-lg z-50">
           <div className="p-4 text-center text-muted-foreground">
             <div className="mb-2">No cities found for "{searchQuery}"</div>
             <div className="text-xs">Try another spelling or a nearby city</div>
