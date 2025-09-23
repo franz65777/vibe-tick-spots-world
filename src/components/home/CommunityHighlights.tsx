@@ -67,7 +67,7 @@ const CommunityHighlights = ({
         {locations.map((location) => (
           <div 
             key={location.id}
-            className="min-w-[180px] max-w-[180px] bg-white/80 backdrop-blur-xl rounded-3xl border-0 overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-[1.02] active:scale-[0.98]"
+            className="min-w-[140px] max-w-[140px] bg-white/80 backdrop-blur-xl rounded-3xl border-0 overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-[1.02] active:scale-[0.98]"
             onClick={() => onLocationClick(location.id)}
           >
             <div className="relative">
@@ -76,7 +76,7 @@ const CommunityHighlights = ({
               
               <div className="relative p-3">
                 {/* Image */}
-                <div className="relative w-full h-24 overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 shadow-md mb-2">
+                <div className="relative w-full h-20 overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 shadow-md mb-2">
                   <img
                     src={location.image}
                     alt={location.name}
