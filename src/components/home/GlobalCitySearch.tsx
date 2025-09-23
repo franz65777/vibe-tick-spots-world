@@ -252,8 +252,10 @@ const GlobalCitySearch = ({
           .forEach((item: any) => {
             const addr = item.address || {};
             const city = addr.city || addr.town || addr.village || addr.municipality || addr.locality || addr.county || (item.display_name?.split(',')[0] || '');
+            if (!city) return;
             const country = addr.country || '';
-            const key = `${norm(city)},${norm(country)}`;
+            const state = addr.state || addr.region || addr.province || addr.county || '';
+            const key = `${norm(city)}|${norm(state)}|${norm(country)}`;
             const type = item?.type || '';
             const addresstype = item?.addresstype || '';
             const prio = Math.max(typePriority[type] || 0, typePriority[addresstype] || 0);
@@ -268,7 +270,7 @@ const GlobalCitySearch = ({
               country,
               lat: parseFloat(item.lat),
               lng: parseFloat(item.lon),
-              state: addr.state || addr.region || addr.province || addr.county || '',
+              state,
               score,
             };
 
@@ -404,59 +406,65 @@ const GlobalCitySearch = ({
 
       {/* Dropdown Results - Organized by continent */}
       {isOpen && (Object.keys(groupedCities).length > 0 || externalResults.length > 0) && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100/50 max-h-72 overflow-hidden z-[9999] backdrop-blur-xl bg-white/95">
-          <div className="overflow-y-auto max-h-72 divide-y divide-gray-50">
-            {/* External global results */}
-            {externalResults.length > 0 && (
-              <div>
-                <div className="px-4 py-2 bg-gray-50/60 text-[10px] font-bold text-gray-700 uppercase tracking-wider sticky top-0 backdrop-blur-sm">
-                  Global results
-                </div>
-                {externalResults.map((item, idx) => (
-                  <button
-                    key={`ext-${idx}`}
-                    onClick={() => handleCityClick(item.name, { lat: item.lat, lng: item.lng })}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50/60 transition-colors text-left"
-                  >
-                    <MapPin className="w-4 h-4 text-blue-600" />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-gray-900 text-sm truncate">{item.name}</div>
-                      {item.subtitle && <div className="text-xs text-gray-500 truncate">{item.subtitle}</div>}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-            {Object.entries(groupedCities).map(([continent, cities]) => (
-              <div key={continent}>
-                <div className="px-4 py-2 bg-gray-50/60 text-[10px] font-bold text-gray-700 uppercase tracking-wider sticky top-0 backdrop-blur-sm">
-                  {continent}
-                </div>
-                {cities.map(({ key, data, similarity }) => {
-                  const IconComponent = data.icon;
-                  return (
+        <>
+          <div
+            className="fixed inset-0 z-30 bg-black/30 backdrop-blur-sm animate-fade-in"
+            onClick={() => { setIsOpen(false); onSearchChange(''); }}
+          />
+          <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100/50 max-h-72 overflow-hidden z-[9999]">
+            <div className="overflow-y-auto max-h-72 divide-y divide-gray-50">
+              {/* External global results */}
+              {externalResults.length > 0 && (
+                <div>
+                  <div className="px-4 py-2 bg-gray-50/60 text-[10px] font-bold text-gray-700 uppercase tracking-wider sticky top-0 backdrop-blur-sm">
+                    Global results
+                  </div>
+                  {externalResults.map((item, idx) => (
                     <button
-                      key={key}
-                      onClick={() => handleCityClick(data.name)}
+                      key={`ext-${idx}`}
+                      onClick={() => handleCityClick(item.name, { lat: item.lat, lng: item.lng })}
                       className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50/60 transition-colors text-left"
                     >
-                      <IconComponent className="w-4 h-4 text-blue-500" />
+                      <MapPin className="w-4 h-4 text-blue-600" />
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-gray-900 text-sm truncate">{data.name}</div>
-                        <div className="text-xs text-gray-500 truncate">{data.country}</div>
+                        <div className="font-medium text-gray-900 text-sm truncate">{item.name}</div>
+                        {item.subtitle && <div className="text-xs text-gray-500 truncate">{item.subtitle}</div>}
                       </div>
-                      {similarity > 0.8 && (
-                        <div className="text-[10px] text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full font-medium">
-                          Best Match
-                        </div>
-                      )}
                     </button>
-                  );
-                })}
-              </div>
-            ))}
+                  ))}
+                </div>
+              )}
+              {Object.entries(groupedCities).map(([continent, cities]) => (
+                <div key={continent}>
+                  <div className="px-4 py-2 bg-gray-50/60 text-[10px] font-bold text-gray-700 uppercase tracking-wider sticky top-0 backdrop-blur-sm">
+                    {continent}
+                  </div>
+                  {cities.map(({ key, data, similarity }) => {
+                    const IconComponent = data.icon;
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => handleCityClick(data.name)}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50/60 transition-colors text-left"
+                      >
+                        <IconComponent className="w-4 h-4 text-blue-500" />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-gray-900 text-sm truncate">{data.name}</div>
+                          <div className="text-xs text-gray-500 truncate">{data.country}</div>
+                        </div>
+                        {similarity > 0.8 && (
+                          <div className="text-[10px] text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full font-medium">
+                            Best Match
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {isOpen && searchQuery.trim() && searchQuery.trim() !== ' ' && externalResults.length === 0 && Object.keys(groupedCities).length === 0 && (
