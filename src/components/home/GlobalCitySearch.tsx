@@ -211,11 +211,61 @@ const GlobalCitySearch = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleCityClick = (cityName: string, coords?: { lat: number; lng: number }) => {
+  // Fetch global city results from Nominatim with debounce
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (!q || q === ' ') { setExternalResults([]); return; }
+
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      try {
+        setIsFetchingExternal(true);
+        const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=8&q=${encodeURIComponent(q)}`;
+        const res = await fetch(url, { signal: controller.signal });
+        const json: any[] = await res.json();
+        const results = (json || [])
+          .filter((item: any) => ['city','town','village','municipality','locality'].includes(item?.type))
+          .map((item: any) => {
+            const city = item.address?.city || item.address?.town || item.address?.village || item.address?.municipality || item.address?.locality || (item.display_name?.split(',')[0] || '');
+            const country = item.address?.country || '';
+            return {
+              name: `${city}${country ? ', ' + country : ''}`,
+              lat: parseFloat(item.lat),
+              lng: parseFloat(item.lon),
+            };
+          });
+        setExternalResults(results);
+      } catch (e: any) {
+        if (e?.name !== 'AbortError') {
+          console.warn('City search fetch failed', e);
+          setExternalResults([]);
+        }
+      } finally {
+        setIsFetchingExternal(false);
+      }
+    }, 350);
+
+    return () => { controller.abort(); clearTimeout(timer); };
+  }, [searchQuery]);
+  const handleCityClick = async (cityName: string, coords?: { lat: number; lng: number }) => {
     console.log('Manual city selection:', cityName, coords);
     setUserHasManuallySelectedCity(true);
     setIgnoreGeoLocation(true);
-    onCitySelect(cityName, coords);
+
+    let finalCoords = coords;
+    if (!finalCoords) {
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(cityName)}`);
+        const json: any[] = await res.json();
+        if (json && json[0]) {
+          finalCoords = { lat: parseFloat(json[0].lat), lng: parseFloat(json[0].lon) };
+        }
+      } catch (e) {
+        console.warn('Fallback geocode failed', e);
+      }
+    }
+
+    onCitySelect(cityName, finalCoords);
     onSearchChange('');
     setIsOpen(false);
   };
@@ -341,7 +391,7 @@ const GlobalCitySearch = ({
                       <IconComponent className="w-5 h-5 text-blue-500 group-hover:text-blue-600 shrink-0" />
                       <div className="flex-1">
                         <div className="font-semibold text-gray-900 text-base group-hover:text-blue-900">{data.name}</div>
-                        <div className="text-sm text-gray-500 group-hover:text-gray-600">{data.country} • {data.description}</div>
+                        <div className="text-sm text-gray-500 group-hover:text-gray-600">{data.country}</div>
                       </div>
                       {similarity > 0.8 && (
                         <div className="text-xs text-blue-600 bg-blue-100 px-3 py-1 rounded-full font-medium">
