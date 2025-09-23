@@ -165,39 +165,47 @@ const GlobalCitySearch = ({
     if (hasQuery) {
       const query = searchQuery.toLowerCase().trim();
       
+      // Adjust filtering thresholds based on query length
+      const minSimilarity = query.length >= 4 ? 0.7 : 0.5; // More strict for longer queries
+      const maxResults = query.length >= 4 ? 4 : 6; // Fewer results for longer queries
+      
       // Find matches with similarity scoring
       const matches = Object.entries(globalCities)
         .map(([key, data]) => {
           let bestSimilarity = 0;
           
-          // Check city name
-          if (data.name.toLowerCase().includes(query) || query.includes(data.name.toLowerCase())) {
-            bestSimilarity = Math.max(bestSimilarity, 0.9);
-          } else {
-            const nameSimilarity = getSimilarity(query, data.name.toLowerCase());
-            bestSimilarity = Math.max(bestSimilarity, nameSimilarity);
-          }
+          // Prioritize exact matches and starts-with matches
+          const cityName = data.name.toLowerCase();
+          const cityKey = key.toLowerCase();
           
-          // Check country
-          if (data.country.toLowerCase().includes(query)) {
-            bestSimilarity = Math.max(bestSimilarity, 0.8);
+          // Exact match gets highest score
+          if (cityName === query || cityKey === query) {
+            bestSimilarity = 1.0;
           }
-          
-          // Check continent
-          if (data.continent.toLowerCase().includes(query)) {
-            bestSimilarity = Math.max(bestSimilarity, 0.7);
+          // Starts with query gets very high score
+          else if (cityName.startsWith(query) || cityKey.startsWith(query)) {
+            bestSimilarity = 0.95;
           }
-          
-          // Check key (for multi-word cities like "new york")
-          if (key.includes(query) || query.includes(key)) {
-            bestSimilarity = Math.max(bestSimilarity, 0.9);
+          // Contains query gets high score
+          else if (cityName.includes(query) || cityKey.includes(query)) {
+            bestSimilarity = 0.85;
+          }
+          // Country match gets medium score
+          else if (data.country.toLowerCase().includes(query)) {
+            bestSimilarity = 0.7;
+          }
+          // Only use similarity for potential typos with longer queries
+          else if (query.length >= 3) {
+            const nameSimilarity = getSimilarity(query, cityName);
+            const keySimilarity = getSimilarity(query, cityKey);
+            bestSimilarity = Math.max(nameSimilarity, keySimilarity);
           }
           
           return { key, data, similarity: bestSimilarity };
         })
-        .filter(item => item.similarity > 0.3) // Show more permissive matches for global search
-        .sort((a, b) => b.similarity - a.similarity) // Sort by best match first
-        .slice(0, 8); // Show more results for global search
+        .filter(item => item.similarity >= minSimilarity)
+        .sort((a, b) => b.similarity - a.similarity)
+        .slice(0, maxResults);
       
       setFilteredCities(matches);
       setIsOpen(true);
@@ -416,7 +424,7 @@ const GlobalCitySearch = ({
 
       {/* Dropdown Results */}
       {isOpen && (filteredCities.length > 0 || externalResults.length > 0) && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-xl z-50 max-h-80 overflow-y-auto">
+        <div className="absolute top-full left-0 w-96 mt-2 bg-card border border-border rounded-xl shadow-xl z-50 max-h-80 overflow-y-auto">
           {/* Built-in Cities */}
           {filteredCities.map(({ key, data }) => {
             const IconComponent = data.icon;
@@ -428,11 +436,11 @@ const GlobalCitySearch = ({
               >
                 <IconComponent className="w-5 h-5 text-primary flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-foreground truncate">
+                  <div className="font-medium text-foreground">
                     {data.name}
                   </div>
-                  <div className="text-sm text-muted-foreground truncate">
-                    {data.country} • {data.description}
+                  <div className="text-sm text-muted-foreground">
+                    {data.country}
                   </div>
                 </div>
                 <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md flex-shrink-0">
@@ -456,11 +464,11 @@ const GlobalCitySearch = ({
             >
               <Globe className="w-5 h-5 text-muted-foreground flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <div className="font-medium text-foreground truncate">
+                <div className="font-medium text-foreground">
                   {result.name}
                 </div>
                 {result.subtitle && (
-                  <div className="text-sm text-muted-foreground truncate">
+                  <div className="text-sm text-muted-foreground">
                     {result.subtitle}
                   </div>
                 )}
@@ -480,7 +488,7 @@ const GlobalCitySearch = ({
 
       {/* No Results State */}
       {isOpen && filteredCities.length === 0 && externalResults.length === 0 && searchQuery.trim() && !isFetchingExternal && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg z-50">
+        <div className="absolute top-full left-0 w-96 mt-2 bg-card border border-border rounded-xl shadow-lg z-50">
           <div className="p-4 text-center text-muted-foreground">
             <div className="mb-2">No cities found for "{searchQuery}"</div>
             <div className="text-xs">Try another spelling or a nearby city</div>
