@@ -220,20 +220,32 @@ const GlobalCitySearch = ({
     const timer = setTimeout(async () => {
       try {
         setIsFetchingExternal(true);
-        const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=8&q=${encodeURIComponent(q)}`;
+        const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=15&q=${encodeURIComponent(q)}`;
         const res = await fetch(url, { signal: controller.signal });
         const json: any[] = await res.json();
+        const allowed = ['city','town','village','municipality','locality','suburb','county'];
         const results = (json || [])
-          .filter((item: any) => ['city','town','village','municipality','locality'].includes(item?.type))
+          .filter((item: any) => {
+            const type = item?.type || '';
+            const addresstype = item?.addresstype || '';
+            const placeRank = Number(item?.place_rank || 0);
+            return (
+              allowed.includes(type) ||
+              allowed.includes(addresstype) ||
+              (type === 'administrative' && (allowed.includes(addresstype) || (placeRank >= 8 && placeRank <= 16))) ||
+              (type === 'boundary' && addresstype === 'city')
+            );
+          })
           .map((item: any) => {
-            const city = item.address?.city || item.address?.town || item.address?.village || item.address?.municipality || item.address?.locality || (item.display_name?.split(',')[0] || '');
+            const city = item.address?.city || item.address?.town || item.address?.village || item.address?.municipality || item.address?.locality || item.address?.county || (item.display_name?.split(',')[0] || '');
             const country = item.address?.country || '';
             return {
               name: `${city}${country ? ', ' + country : ''}`,
               lat: parseFloat(item.lat),
               lng: parseFloat(item.lon),
             };
-          });
+          })
+          .slice(0, 15);
         setExternalResults(results);
       } catch (e: any) {
         if (e?.name !== 'AbortError') {
