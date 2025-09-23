@@ -201,10 +201,6 @@ const GoogleMapsSetup = ({
         if (onMapClick) {
           map.addListener('click', (event: google.maps.MapMouseEvent) => {
             if (event.latLng && !isUnmountingRef.current) {
-              console.log('Map clicked at:', {
-                lat: event.latLng.lat(),
-                lng: event.latLng.lng()
-              });
               onMapClick({
                 lat: event.latLng.lat(),
                 lng: event.latLng.lng()
