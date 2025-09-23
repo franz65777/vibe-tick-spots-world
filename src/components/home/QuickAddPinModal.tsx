@@ -72,13 +72,26 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
         const service = new (window as any).google.maps.places.PlacesService(document.createElement('div'));
         const request: google.maps.places.PlaceSearchRequest = {
           location: new (window as any).google.maps.LatLng(coordinates.lat, coordinates.lng),
-          radius: 200,
+          radius: 100, // Reduced to 100m for more accurate suggestions
           type: ['restaurant', 'bar', 'cafe', 'bakery', 'lodging', 'museum', 'tourist_attraction', 'night_club', 'art_gallery', 'amusement_park'] as any,
         } as any;
 
         service.nearbySearch(request, (results: any, status: any) => {
           if (status === (window as any).google.maps.places.PlacesServiceStatus.OK && results?.length) {
-            setInitialQuery(results[0].name);
+            // Find the closest venue
+            const closestVenue = results[0];
+            console.log('Nearby venue found:', closestVenue.name);
+            setInitialQuery(closestVenue.name);
+            
+            // Show helpful toast
+            setTimeout(() => {
+              toast.info(`Found "${closestVenue.name}" nearby. Search to save it!`, { duration: 4000 });
+            }, 500);
+          } else {
+            console.log('No nearby venues found, showing generic message');
+            setTimeout(() => {
+              toast.info('Search for a nearby restaurant, bar, café, or venue to save', { duration: 3000 });
+            }, 500);
           }
         });
       } catch (e) {

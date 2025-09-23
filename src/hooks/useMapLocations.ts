@@ -212,9 +212,9 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity }: 
         }
       }
 
-      // Filter out locations with invalid coordinates
+      // Filter out locations with invalid coordinates (both 0,0)
       finalLocations = finalLocations.filter(location => 
-        location.coordinates.lat !== 0 || location.coordinates.lng !== 0
+        location.coordinates.lat !== 0 && location.coordinates.lng !== 0
       );
 
       console.log(`✅ Found ${finalLocations.length} ${mapFilter} locations`);

@@ -304,6 +304,7 @@ const GlobalCitySearch = ({
         />
         <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
         <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+      </div>
 
       {/* Dropdown Results - Organized by continent */}
       {isOpen && (Object.keys(groupedCities).length > 0 || externalResults.length > 0) && (
