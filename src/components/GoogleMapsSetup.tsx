@@ -165,7 +165,6 @@ const GoogleMapsSetup = ({
           backgroundColor: '#f0f0f0',
           disableDefaultUI: true,
           zoomControl: false,
-          clickableIcons: false,
           zoomControlOptions: {
             position: google.maps.ControlPosition.RIGHT_BOTTOM
           }

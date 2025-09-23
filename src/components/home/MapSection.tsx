@@ -71,15 +71,6 @@ const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) =
     }
   };
 
-  // Mobile-friendly tap to add a pin (only in Saved)
-  const handleMapClick = (coords: { lat: number; lng: number }) => {
-    setNewLocationCoords(coords);
-    if (activeMapFilter === 'saved') {
-      setIsQuickAddModalOpen(true);
-    } else {
-      toast.info('Switch to "Saved" to add your favorite places');
-    }
-  };
   const handleSaveLocation = async (locationData: any) => {
     try {
       console.log('Saving new location:', locationData);
@@ -137,7 +128,6 @@ const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) =
           selectedPlace={selectedPlace}
           onCloseSelectedPlace={() => setSelectedPlace(null)}
           onMapRightClick={handleMapRightClick}
-          onMapClick={handleMapClick}
         />
         
         {/* Map Category Filters */}

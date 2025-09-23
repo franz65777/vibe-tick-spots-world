@@ -57,7 +57,8 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity }: 
         longitude,
         created_by,
         created_at,
-        user_saved_locations!left(id)
+        user_saved_locations!left(id),
+        profiles!left(id, username, full_name)
       `);
 
       // Apply category filters if any selected
