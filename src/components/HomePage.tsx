@@ -2,9 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useMapPins } from '@/hooks/useMapPins';
-import { useSavedPlaces } from '@/hooks/useSavedPlaces';
-import { Place } from '@/types/place';
 import Header from './home/Header';
 import StoriesSection from './home/StoriesSection';
 import MapSection from './home/MapSection';
@@ -36,13 +33,8 @@ interface LocalPlace {
 const HomePage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [selectedCity, setSelectedCity] = useState('');
-  const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'saved'>('popular');
-  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 37.7749, lng: -122.4194 });
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [scrollY, setScrollY] = useState(0);
-  
   // Modal states
   const [isCreateStoryModalOpen, setIsCreateStoryModalOpen] = useState(false);
   const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
@@ -60,18 +52,7 @@ const HomePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentCity, setCurrentCity] = useState('');
   
-  // Use the map pins hook with the active filter 
-  const { pins, loading, error, refreshPins, hasFollowedUsers } = useMapPins(activeFilter);
-  const { savedPlaces } = useSavedPlaces();
-
-  console.log('HomePage - pins:', pins, 'loading:', loading, 'error:', error);
-
-  // Scroll tracking for fade effects
-  useEffect(() => {
-    const handleScroll = () => setScrollY(window.scrollY);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  console.log('HomePage - initializing home screen');
 
   // Get user's current location on component mount
   useEffect(() => {
@@ -131,80 +112,8 @@ const HomePage = () => {
     setCityFromLocation();
   }, [userLocation]);
 
-  // Helper function to safely extract addedBy string
-  const getAddedByName = (addedBy: any): string => {
-    if (typeof addedBy === 'string') {
-      return addedBy;
-    }
-    if (addedBy && typeof addedBy === 'object' && addedBy.name) {
-      return addedBy.name;
-    }
-    return 'unknown';
-  };
-
-  // Convert saved places or map pins to Place format for the map
-  const places: Place[] = activeFilter === 'saved' 
-    ? Object.values(savedPlaces).flat().map(savedPlace => ({
-        id: savedPlace.id,
-        name: savedPlace.name,
-        category: savedPlace.category,
-        coordinates: savedPlace.coordinates,
-        likes: 0,
-        isFollowing: false,
-        addedBy: 'You',
-        addedDate: savedPlace.savedAt,
-        popularity: 50,
-        city: savedPlace.city,
-        isNew: false,
-        image: undefined,
-        friendsWhoSaved: [],
-        visitors: [],
-        distance: 0,
-        totalSaves: 1,
-        address: ''
-      }))
-    : pins.map(pin => ({
-        id: pin.id,
-        name: pin.name,
-        category: pin.category,
-        coordinates: pin.coordinates,
-        likes: pin.likes || 0,
-        isFollowing: pin.isFollowing || false,
-        addedBy: getAddedByName(pin.addedBy),
-        addedDate: pin.addedDate,
-        popularity: pin.popularity || 0,
-        city: pin.city,
-        isNew: pin.isNew || false,
-        image: pin.image,
-        friendsWhoSaved: Array.isArray(pin.friendsWhoSaved) ? pin.friendsWhoSaved : [],
-        visitors: Array.isArray(pin.visitors) ? pin.visitors : [],
-        distance: pin.distance || 0,
-        totalSaves: pin.totalSaves || 0,
-        address: pin.address || ''
-      }));
-
-  console.log('HomePage - converted places:', places);
-
-  const getTopLocation = () => {
-    if (places.length === 0) return null;
-    
-    const sortedPlaces = [...places].sort((a, b) => {
-      const aScore = (a.popularity || 0) + (a.likes || 0) + (a.totalSaves || 0);
-      const bScore = (b.popularity || 0) + (b.likes || 0) + (b.totalSaves || 0);
-      return bScore - aScore;
-    });
-    
-    return sortedPlaces[0];
-  };
-
-  const handleFilterChange = (filter: 'following' | 'popular' | 'saved') => {
-    console.log('HomePage - Filter changed to:', filter);
-    setActiveFilter(filter);
-  };
-
   const handleCityChange = (city: string, coords?: { lat: number; lng: number }) => {
     console.log('HomePage - City changed to:', city, coords);
-    setSelectedCity(city);
     setCurrentCity(city);
 
     if (coords) {
@@ -246,44 +155,7 @@ const HomePage = () => {
       }
     }
 
-    // Refresh pins after city change
-    refreshPins(city);
   };
-
-  const handlePinClick = (place: Place) => {
-    console.log('HomePage - Pin clicked:', place.name);
-    setSelectedPlace(place);
-  };
-
-  const handleCloseSelectedPlace = () => {
-    setSelectedPlace(null);
-  };
-
-  const handleLocationOfTheWeekClick = (place: Place) => {
-    const localPlace = convertToLocalPlace(place);
-    setLocationDetailPlace(localPlace);
-    setIsLocationDetailOpen(true);
-  };
-
-  const convertToLocalPlace = (place: Place): LocalPlace => ({
-    id: place.id,
-    name: place.name,
-    category: place.category,
-    coordinates: place.coordinates,
-    likes: place.likes,
-    isFollowing: place.isFollowing,
-    addedBy: getAddedByName(place.addedBy),
-    addedDate: place.addedDate,
-    popularity: place.popularity,
-    city: place.city,
-    isNew: place.isNew,
-    image: place.image,
-    friendsWhoSaved: Array.isArray(place.friendsWhoSaved) ? place.friendsWhoSaved : [],
-    visitors: place.visitors,
-    distance: place.distance,
-    totalSaves: place.totalSaves,
-    address: place.address
-  });
 
   const stories = [
     {
@@ -318,15 +190,9 @@ const HomePage = () => {
     );
   }
 
-  const topLocation = getTopLocation();
-  
-  // Calculate opacity based on scroll
-  const storiesOpacity = Math.max(0, 1 - scrollY / 200);
-  const highlightsOpacity = Math.max(0, 1 - scrollY / 250);
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5 flex flex-col">
-      <Header 
+    <div className="h-screen w-full overflow-hidden bg-gradient-to-br from-background via-background to-accent/10 flex flex-col">
+      <Header
         searchQuery={searchQuery}
         currentCity={currentCity}
         onSearchChange={setSearchQuery}
@@ -336,74 +202,60 @@ const HomePage = () => {
         onCreateStoryClick={() => setIsCreateStoryModalOpen(true)}
         onCitySelect={handleCityChange}
       />
-      
-      <main className="flex-1 flex flex-col max-w-7xl mx-auto w-full">
-        <div 
-          className="bg-card/80 backdrop-blur-sm border-b border-border/50 px-4 py-3 shadow-sm transition-opacity duration-200"
-          style={{ opacity: storiesOpacity }}
-        >
-          <StoriesSection 
-            stories={stories}
-            onCreateStory={() => setIsCreateStoryModalOpen(true)}
-            onStoryClick={(index) => {
-              setCurrentStoryIndex(index);
-              setIsStoriesViewerOpen(true);
-            }}
-          />
-        </div>
-        
-        {/* Community Highlights Section */}
-        <div 
-          className="bg-gradient-to-r from-card/90 via-card to-card/90 backdrop-blur-sm transition-opacity duration-200"
-          style={{ opacity: highlightsOpacity }}
-        >
-          <CommunityHighlights
-            currentCity={currentCity}
-            userLocation={userLocation}
-            onLocationClick={(locationId: string, coordinates?: { lat: number; lng: number }) => {
-              if (coordinates) {
-                setMapCenter(coordinates);
-              }
-              // Navigate to explore tab for location details
-              navigate('/explore');
-            }}
-            onUserClick={(userId: string) => {
-              // Navigate to search tab for user profiles
-              navigate('/explore');
-            }}
-            onMapLocationClick={(coords: { lat: number; lng: number }) => setMapCenter(coords)}
-          />
-        </div>
-        
-        {loading ? (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center py-8">
-              <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-              <p className="text-gray-500">Loading amazing places...</p>
-            </div>
-          </div>
-        ) : error ? (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center py-8">
-              <p className="text-red-500 mb-4">Error loading places: {error}</p>
-              <button 
-                onClick={() => refreshPins()} 
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                Retry
-              </button>
-            </div>
-          </div>
-        ) : (
-          <MapSection 
+
+      <main className="relative flex-1 overflow-hidden">
+        <div className="absolute inset-0">
+          <MapSection
             mapCenter={mapCenter}
             currentCity={currentCity}
-            activeFilter={activeFilter}
           />
-        )}
+        </div>
+
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 px-4 pb-6 space-y-4">
+          <div className="pointer-events-auto rounded-3xl bg-white/90 backdrop-blur-xl shadow-xl border border-white/40">
+            <div className="px-4 pt-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-semibold text-gray-800">Stories</h2>
+                <button
+                  onClick={() => setIsCreateStoryModalOpen(true)}
+                  className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                >
+                  Create
+                </button>
+              </div>
+            </div>
+            <div className="overflow-x-auto scrollbar-hide px-2 pb-3 pt-2">
+              <StoriesSection
+                stories={stories}
+                onCreateStory={() => setIsCreateStoryModalOpen(true)}
+                onStoryClick={(index) => {
+                  setCurrentStoryIndex(index);
+                  setIsStoriesViewerOpen(true);
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="pointer-events-auto rounded-3xl bg-white/90 backdrop-blur-xl shadow-xl border border-white/40">
+            <CommunityHighlights
+              currentCity={currentCity}
+              userLocation={userLocation}
+              onLocationClick={(locationId: string, coordinates?: { lat: number; lng: number }) => {
+                if (coordinates) {
+                  setMapCenter(coordinates);
+                }
+                navigate('/explore');
+              }}
+              onUserClick={(userId: string) => {
+                navigate('/explore');
+              }}
+              onMapLocationClick={(coords: { lat: number; lng: number }) => setMapCenter(coords)}
+            />
+          </div>
+        </div>
       </main>
 
-      <ModalsManager 
+      <ModalsManager
         isCreateStoryModalOpen={isCreateStoryModalOpen}
         isNotificationsModalOpen={isNotificationsModalOpen}
         isMessagesModalOpen={isMessagesModalOpen}
@@ -419,9 +271,18 @@ const HomePage = () => {
         onCreateStoryModalClose={() => setIsCreateStoryModalOpen(false)}
         onNotificationsModalClose={() => setIsNotificationsModalOpen(false)}
         onMessagesModalClose={() => setIsMessagesModalOpen(false)}
-        onShareModalClose={() => setIsShareModalOpen(false)}
-        onCommentModalClose={() => setIsCommentModalOpen(false)}
-        onLocationDetailClose={() => setIsLocationDetailOpen(false)}
+        onShareModalClose={() => {
+          setIsShareModalOpen(false);
+          setSharePlace(null);
+        }}
+        onCommentModalClose={() => {
+          setIsCommentModalOpen(false);
+          setCommentPlace(null);
+        }}
+        onLocationDetailClose={() => {
+          setIsLocationDetailOpen(false);
+          setLocationDetailPlace(null);
+        }}
         onStoriesViewerClose={() => setIsStoriesViewerOpen(false)}
         onStoryCreated={() => {}}
         onShare={() => {}}

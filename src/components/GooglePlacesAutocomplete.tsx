@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef, useState } from 'react';
-import { MapPin, Search, AlertCircle, Loader2, Building } from 'lucide-react';
+import { Search, AlertCircle, Loader2, Building } from 'lucide-react';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '@/lib/googleMaps';
 import { toast } from 'sonner';
 
@@ -12,6 +12,8 @@ interface GooglePlacesAutocompleteProps {
     lat: number;
     lng: number;
     types: string[];
+    city?: string;
+    country?: string;
   }) => void;
   placeholder?: string;
   className?: string;
@@ -114,6 +116,26 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
     return types.some(type => DISALLOWED_PLACE_TYPES.includes(type));
   };
 
+  const extractCityFromComponents = (components?: google.maps.GeocoderAddressComponent[]) => {
+    if (!components) return undefined;
+    const candidate = components.find(component => {
+      const compTypes = component.types || [];
+      return (
+        compTypes.includes('locality') ||
+        compTypes.includes('postal_town') ||
+        compTypes.includes('administrative_area_level_2') ||
+        compTypes.includes('administrative_area_level_1')
+      );
+    });
+    return candidate?.long_name;
+  };
+
+  const extractCountryFromComponents = (components?: google.maps.GeocoderAddressComponent[]) => {
+    if (!components) return undefined;
+    const candidate = components.find(component => component.types?.includes('country'));
+    return candidate?.long_name;
+  };
+
   const initializeAutocomplete = async () => {
     if (!inputRef.current || !isGoogleMapsLoaded()) {
       console.error('Google Maps not loaded or input ref not available');
@@ -143,10 +165,9 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
 
       // Try to get user location and set up location bias
       const setupAutocomplete = async () => {
-        let options: google.maps.places.AutocompleteOptions = {
+        const options: google.maps.places.AutocompleteOptions = {
           types: ['establishment'],
-          fields: ['place_id', 'name', 'formatted_address', 'geometry', 'types', 'business_status', 'rating'],
-          componentRestrictions: { country: [] } // No country restrictions
+          fields: ['place_id', 'name', 'formatted_address', 'address_components', 'geometry', 'types', 'business_status', 'rating']
         };
 
         const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current!, options);
@@ -179,7 +200,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
       autocomplete.addListener('place_changed', () => {
         const place = autocomplete.getPlace();
         console.log('Place selected:', place);
-        
+
         if (!place || !place.geometry || !place.geometry.location) {
           console.warn('Invalid place selected');
           setError('Please select a valid location from the dropdown');
@@ -189,7 +210,8 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
         // Check if place type is allowed and business is operational
         const placeTypes = place.types || [];
         const businessStatus = place.business_status;
-        
+        const addressComponents = place.address_components || [];
+
         // Skip closed businesses
         if (businessStatus === 'CLOSED_PERMANENTLY' || businessStatus === 'CLOSED_TEMPORARILY') {
           toast.error('This business appears to be closed. Please select an active location.');
@@ -215,11 +237,14 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
           address: place.formatted_address || '',
           lat: place.geometry.location.lat(),
           lng: place.geometry.location.lng(),
-          types: placeTypes
+          types: placeTypes,
+          city: extractCityFromComponents(addressComponents),
+          country: extractCountryFromComponents(addressComponents)
         };
-        
+
         console.log('Calling onPlaceSelect with:', selectedPlace);
         onPlaceSelect(selectedPlace);
+        setInputValue(selectedPlace.name || selectedPlace.address || '');
         setError(null);
       });
 
@@ -240,7 +265,9 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
       const circle = new google.maps.Circle({ center: biasLocation, radius: 2000 });
       autocompleteRef.current.setBounds(circle.getBounds()!);
       console.log('Updated autocomplete bounds from biasLocation');
-    } catch {}
+    } catch (err) {
+      console.warn('Unable to update autocomplete bounds', err);
+    }
   }, [biasLocation]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
