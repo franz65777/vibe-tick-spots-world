@@ -220,11 +220,25 @@ const GlobalCitySearch = ({
     const timer = setTimeout(async () => {
       try {
         setIsFetchingExternal(true);
-        const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=15&q=${encodeURIComponent(q)}`;
+        const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=25&q=${encodeURIComponent(q)}`;
         const res = await fetch(url, { signal: controller.signal });
         const json: any[] = await res.json();
-        const allowed = ['city','town','village','municipality','locality','suburb','county'];
-        const results = (json || [])
+
+        const allowed = ['city','town','village','municipality','locality','suburb','county','administrative','boundary'];
+        const typePriority: Record<string, number> = {
+          city: 7, town: 6, municipality: 5, village: 4, locality: 3, suburb: 2, county: 1, administrative: 0, boundary: 0
+        };
+
+        // Normalize helper
+        const norm = (s: string) => (s || '')
+          .toLowerCase()
+          .normalize('NFKD')
+          .replace(/[^\p{L}\p{N}]+/gu, ' ')
+          .trim();
+
+        // Filter, dedupe by city+country, keep best quality entry per key
+        const dedupe = new Map<string, any>();
+        (json || [])
           .filter((item: any) => {
             const type = item?.type || '';
             const addresstype = item?.addresstype || '';
@@ -232,20 +246,46 @@ const GlobalCitySearch = ({
             return (
               allowed.includes(type) ||
               allowed.includes(addresstype) ||
-              (type === 'administrative' && (allowed.includes(addresstype) || (placeRank >= 8 && placeRank <= 16))) ||
-              (type === 'boundary' && addresstype === 'city')
+              (type === 'administrative' && (['city','town','village','municipality','county'].includes(addresstype) || (placeRank >= 8 && placeRank <= 16)))
             );
           })
-          .map((item: any) => {
-            const city = item.address?.city || item.address?.town || item.address?.village || item.address?.municipality || item.address?.locality || item.address?.county || (item.display_name?.split(',')[0] || '');
-            const country = item.address?.country || '';
-            return {
-              name: `${city}${country ? ', ' + country : ''}`,
+          .forEach((item: any) => {
+            const addr = item.address || {};
+            const city = addr.city || addr.town || addr.village || addr.municipality || addr.locality || addr.county || (item.display_name?.split(',')[0] || '');
+            const country = addr.country || '';
+            const key = `${norm(city)},${norm(country)}`;
+            const type = item?.type || '';
+            const addresstype = item?.addresstype || '';
+            const prio = Math.max(typePriority[type] || 0, typePriority[addresstype] || 0);
+            const qn = norm(q);
+            const cn = norm(city);
+            let score = prio;
+            if (cn === qn) score += 5; else if (cn.startsWith(qn)) score += 3; else if (cn.includes(qn)) score += 1;
+            score += Math.min(Number(item.place_rank || 0) / 10, 2);
+
+            const candidate = {
+              city,
+              country,
               lat: parseFloat(item.lat),
               lng: parseFloat(item.lon),
+              state: addr.state || addr.region || addr.province || addr.county || '',
+              score,
             };
-          })
-          .slice(0, 15);
+
+            const existing = dedupe.get(key);
+            if (!existing || candidate.score > existing.score) dedupe.set(key, candidate);
+          });
+
+        const results = Array.from(dedupe.values())
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 8)
+          .map((r: any) => ({
+            name: `${r.city}${r.country ? ', ' + r.country : ''}`,
+            lat: r.lat,
+            lng: r.lng,
+            subtitle: r.state || undefined,
+          }));
+
         setExternalResults(results);
       } catch (e: any) {
         if (e?.name !== 'AbortError') {
@@ -364,23 +404,23 @@ const GlobalCitySearch = ({
 
       {/* Dropdown Results - Organized by continent */}
       {isOpen && (Object.keys(groupedCities).length > 0 || externalResults.length > 0) && (
-        <div className="fixed top-16 left-4 right-4 bg-white rounded-3xl shadow-2xl border border-gray-100/50 max-h-96 overflow-hidden z-[9999] backdrop-blur-xl bg-white/95">
-          <div className="overflow-y-auto max-h-96 scrollbar-hide">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100/50 max-h-72 overflow-hidden z-[9999] backdrop-blur-xl bg-white/95">
+          <div className="overflow-y-auto max-h-72 divide-y divide-gray-50">
             {/* External global results */}
             {externalResults.length > 0 && (
-              <div className="border-b border-gray-50/50">
-                <div className="px-6 py-3 bg-gradient-to-r from-gray-50 to-blue-50/30 text-xs font-bold text-gray-700 uppercase tracking-widest sticky top-0 backdrop-blur-sm">
+              <div>
+                <div className="px-4 py-2 bg-gray-50/60 text-[10px] font-bold text-gray-700 uppercase tracking-wider sticky top-0 backdrop-blur-sm">
                   Global results
                 </div>
                 {externalResults.map((item, idx) => (
                   <button
                     key={`ext-${idx}`}
                     onClick={() => handleCityClick(item.name, { lat: item.lat, lng: item.lng })}
-                    className="w-full flex items-center gap-4 px-6 py-4 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200 text-left group"
+                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50/60 transition-colors text-left"
                   >
-                    <MapPin className="w-5 h-5 text-blue-600" />
+                    <MapPin className="w-4 h-4 text-blue-600" />
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-gray-900 truncate">{item.name}</div>
+                      <div className="font-medium text-gray-900 text-sm truncate">{item.name}</div>
                       {item.subtitle && <div className="text-xs text-gray-500 truncate">{item.subtitle}</div>}
                     </div>
                   </button>
@@ -388,8 +428,8 @@ const GlobalCitySearch = ({
               </div>
             )}
             {Object.entries(groupedCities).map(([continent, cities]) => (
-              <div key={continent} className="border-b border-gray-50/50 last:border-b-0">
-                <div className="px-6 py-3 bg-gradient-to-r from-gray-50 to-blue-50/30 text-xs font-bold text-gray-700 uppercase tracking-widest sticky top-0 backdrop-blur-sm">
+              <div key={continent}>
+                <div className="px-4 py-2 bg-gray-50/60 text-[10px] font-bold text-gray-700 uppercase tracking-wider sticky top-0 backdrop-blur-sm">
                   {continent}
                 </div>
                 {cities.map(({ key, data, similarity }) => {
@@ -398,15 +438,15 @@ const GlobalCitySearch = ({
                     <button
                       key={key}
                       onClick={() => handleCityClick(data.name)}
-                      className="w-full flex items-center gap-4 px-6 py-4 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200 text-left group"
+                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50/60 transition-colors text-left"
                     >
-                      <IconComponent className="w-5 h-5 text-blue-500 group-hover:text-blue-600 shrink-0" />
-                      <div className="flex-1">
-                        <div className="font-semibold text-gray-900 text-base group-hover:text-blue-900">{data.name}</div>
-                        <div className="text-sm text-gray-500 group-hover:text-gray-600">{data.country}</div>
+                      <IconComponent className="w-4 h-4 text-blue-500" />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-gray-900 text-sm truncate">{data.name}</div>
+                        <div className="text-xs text-gray-500 truncate">{data.country}</div>
                       </div>
                       {similarity > 0.8 && (
-                        <div className="text-xs text-blue-600 bg-blue-100 px-3 py-1 rounded-full font-medium">
+                        <div className="text-[10px] text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full font-medium">
                           Best Match
                         </div>
                       )}
