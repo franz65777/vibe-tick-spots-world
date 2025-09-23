@@ -495,10 +495,7 @@ const GoogleMapsSetup = ({
 
   return (
     <>
-      <div
-        className="relative h-full w-full rounded-3xl overflow-hidden bg-gray-100/80 shadow-inner"
-        style={{ minHeight: '100%' }}
-      >
+      <div className="relative w-full min-h-[60vh] rounded-lg overflow-hidden bg-gray-100" style={{ minHeight: '60vh' }}>
         {/* Google Maps container must be empty and dedicated to the map */}
         <div ref={mapRef} className="absolute inset-0" />
 

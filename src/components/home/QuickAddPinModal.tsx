@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { MapPin, Plus, Building2, Loader2 } from 'lucide-react';
+import { MapPin, Plus, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { categoryDisplayNames, type AllowedCategory } from '@/utils/allowedCategories';
+import { allowedCategories, categoryDisplayNames, type AllowedCategory } from '@/utils/allowedCategories';
 import GooglePlacesAutocomplete from '@/components/GooglePlacesAutocomplete';
 import { supabase } from '@/integrations/supabase/client';
-import { loadGoogleMapsAPI } from '@/lib/googleMaps';
+import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '@/lib/googleMaps';
 
 interface QuickAddPinModalProps {
   isOpen: boolean;
@@ -24,13 +24,9 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
     lat: number;
     lng: number;
     types: string[];
-    city?: string;
-    country?: string;
   } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [initialQuery, setInitialQuery] = useState<string>('');
-  const [isAutoDetecting, setIsAutoDetecting] = useState(false);
-  const [autoDetectError, setAutoDetectError] = useState<string | null>(null);
 
   // Map Google Places types to our categories
   const mapPlaceTypeToCategory = (types: string[]): AllowedCategory | null => {
@@ -44,59 +40,6 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
     return null;
   };
 
-  const extractCityFromComponents = (components?: any[]): string | undefined => {
-    if (!Array.isArray(components)) return undefined;
-    const component = components.find((comp) => {
-      const types: string[] = comp?.types || [];
-      return (
-        types.includes('locality') ||
-        types.includes('postal_town') ||
-        types.includes('administrative_area_level_2') ||
-        types.includes('administrative_area_level_1')
-      );
-    });
-    return component?.long_name;
-  };
-
-  const extractCountryFromComponents = (components?: any[]): string | undefined => {
-    if (!Array.isArray(components)) return undefined;
-    const component = components.find((comp) => (comp?.types || []).includes('country'));
-    return component?.long_name;
-  };
-
-  const selectPlaceIfValid = (
-    place: {
-      place_id: string;
-      name: string;
-      address: string;
-      lat: number;
-      lng: number;
-      types: string[];
-      city?: string;
-      country?: string;
-    },
-    { showErrors = true }: { showErrors?: boolean } = {}
-  ): boolean => {
-    const category = mapPlaceTypeToCategory(place.types);
-    if (!category) {
-      if (showErrors) {
-        toast.error('This type of location cannot be saved. Please select a restaurant, bar, café, hotel, bakery, museum, or entertainment venue.');
-      }
-      return false;
-    }
-
-    if (allowedCategoriesFilter && allowedCategoriesFilter.length > 0 && !allowedCategoriesFilter.includes(category)) {
-      if (showErrors) {
-        toast.error('This category is currently filtered out. Switch filters or pick a matching venue.');
-      }
-      return false;
-    }
-
-    setSelectedPlace({ ...place });
-    setAutoDetectError(null);
-    return true;
-  };
-
   const handlePlaceSelect = (place: {
     place_id: string;
     name: string;
@@ -104,138 +47,10 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
     lat: number;
     lng: number;
     types: string[];
-    city?: string;
-    country?: string;
   }) => {
-    selectPlaceIfValid(place, { showErrors: true });
-  };
-
-  // Suggest and auto-select closest venue name when user taps on the map
-  useEffect(() => {
-    let isCancelled = false;
-
-    const detectNearbyVenue = async () => {
-      if (!isOpen) {
-        setIsAutoDetecting(false);
-        return;
-      }
-
-      if (!coordinates) {
-        setIsAutoDetecting(false);
-        setSelectedPlace(null);
-        setInitialQuery('');
-        setAutoDetectError('Tap the map to choose where to drop your pin.');
-        return;
-      }
-
-      setIsAutoDetecting(true);
-      setAutoDetectError(null);
-      setInitialQuery('');
-      setSelectedPlace(null);
-
-      try {
-        await loadGoogleMapsAPI();
-        if (!(window as any).google?.maps?.places) {
-          if (!isCancelled) {
-            setIsAutoDetecting(false);
-            setAutoDetectError('Location search is unavailable right now. Try again in a moment.');
-          }
-          return;
-        }
-
-        const service = new (window as any).google.maps.places.PlacesService(document.createElement('div'));
-        const request: google.maps.places.PlaceSearchRequest = {
-          location: new (window as any).google.maps.LatLng(coordinates.lat, coordinates.lng),
-          rankBy: (window as any).google.maps.places.RankBy.DISTANCE,
-          type: ['restaurant', 'bar', 'cafe', 'bakery', 'lodging', 'museum', 'tourist_attraction', 'night_club', 'art_gallery', 'amusement_park'] as any,
-        } as any;
-
-        service.nearbySearch(request, async (results: any[], status: any) => {
-          if (isCancelled) return;
-
-          setIsAutoDetecting(false);
-
-          if (status !== (window as any).google.maps.places.PlacesServiceStatus.OK || !results?.length) {
-            setAutoDetectError('We could not detect a venue here. Try searching for it above.');
-            return;
-          }
-
-          const candidate = results.find((item) => mapPlaceTypeToCategory(item?.types || []) !== null) || results[0];
-          if (!candidate?.place_id) {
-            setAutoDetectError('We could not find a matching venue at this spot. Try another location.');
-            return;
-          }
-
-          const details = await new Promise<any | null>((resolve) => {
-            const detailsService = new (window as any).google.maps.places.PlacesService(document.createElement('div'));
-            detailsService.getDetails(
-              {
-                placeId: candidate.place_id,
-                fields: ['place_id', 'name', 'formatted_address', 'geometry', 'types', 'address_component'],
-              },
-              (placeResult: any, detailStatus: any) => {
-                if (detailStatus === (window as any).google.maps.places.PlacesServiceStatus.OK) {
-                  resolve(placeResult);
-                } else {
-                  resolve(null);
-                }
-              }
-            );
-          });
-
-          if (isCancelled) return;
-
-          const placeTypes: string[] = details?.types || candidate?.types || [];
-          const lat =
-            ((details?.geometry?.location as google.maps.LatLng | undefined)?.lat?.()) ??
-            ((candidate?.geometry?.location as google.maps.LatLng | undefined)?.lat?.()) ??
-            coordinates.lat;
-          const lng =
-            ((details?.geometry?.location as google.maps.LatLng | undefined)?.lng?.()) ??
-            ((candidate?.geometry?.location as google.maps.LatLng | undefined)?.lng?.()) ??
-            coordinates.lng;
-
-          const finalPlace = {
-            place_id: (details?.place_id || candidate.place_id) as string,
-            name: (details?.name || candidate.name || 'Selected place') as string,
-            address: (details?.formatted_address || candidate.vicinity || '') as string,
-            lat,
-            lng,
-            types: placeTypes,
-            city: extractCityFromComponents(details?.address_components),
-            country: extractCountryFromComponents(details?.address_components),
-          };
-
-          setInitialQuery(finalPlace.name);
-          const wasSelected = selectPlaceIfValid(finalPlace, { showErrors: false });
-          if (!wasSelected) {
-            setAutoDetectError('This venue is not eligible to be saved. Try another nearby spot or search above.');
-          }
-        });
-      } catch (e) {
-        console.warn('Nearby search failed', e);
-        if (!isCancelled) {
-          setIsAutoDetecting(false);
-          setAutoDetectError('We could not auto-detect a venue. Search for it above to save it.');
-        }
-      }
-    };
-
-    detectNearbyVenue();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [isOpen, coordinates, allowedCategoriesFilter]);
-  const handleSavePin = async () => {
-    if (!selectedPlace) {
-      toast.error('Please select a location first');
-      return;
-    }
-
-    const category = mapPlaceTypeToCategory(selectedPlace.types);
+    const category = mapPlaceTypeToCategory(place.types);
     if (!category) {
-      toast.error('Invalid location type selected');
+      toast.error('This type of location cannot be saved. Please select a restaurant, bar, café, hotel, bakery, museum, or entertainment venue.');
       return;
     }
     // Enforce current map category filters if any are selected
@@ -243,6 +58,51 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
       toast.error('This category is currently filtered out. Switch filters or pick a matching venue.');
       return;
     }
+    
+    setSelectedPlace({ ...place });
+  };
+
+  // Suggest closest venue name when user right-clicks on map
+  useEffect(() => {
+    const fetchNearby = async () => {
+      if (!isOpen || !coordinates) return;
+      try {
+        await loadGoogleMapsAPI();
+        if (!(window as any).google?.maps?.places) return;
+        const service = new (window as any).google.maps.places.PlacesService(document.createElement('div'));
+        const request: google.maps.places.PlaceSearchRequest = {
+          location: new (window as any).google.maps.LatLng(coordinates.lat, coordinates.lng),
+          radius: 200,
+          type: ['restaurant', 'bar', 'cafe', 'bakery', 'lodging', 'museum', 'tourist_attraction', 'night_club', 'art_gallery', 'amusement_park'] as any,
+        } as any;
+
+        service.nearbySearch(request, (results: any, status: any) => {
+          if (status === (window as any).google.maps.places.PlacesServiceStatus.OK && results?.length) {
+            setInitialQuery(results[0].name);
+          }
+        });
+      } catch (e) {
+        console.warn('Nearby search failed', e);
+      }
+    };
+    fetchNearby();
+  }, [isOpen, coordinates]);
+  const handleSavePin = async () => {
+    if (!selectedPlace) {
+      toast.error('Please select a location first');
+      return;
+    }
+
+  const category = mapPlaceTypeToCategory(selectedPlace.types);
+  if (!category) {
+    toast.error('Invalid location type selected');
+    return;
+  }
+  // Enforce current map category filters if any are selected
+  if (allowedCategoriesFilter && allowedCategoriesFilter.length > 0 && !allowedCategoriesFilter.includes(category)) {
+    toast.error('This category is currently filtered out. Switch filters or pick a matching venue.');
+    return;
+  }
 
     setIsLoading(true);
     try {
@@ -266,7 +126,7 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
       // First, check if location already exists
       const { data: existingLocation } = await supabase
         .from('locations')
-        .select('id, city, address')
+        .select('id')
         .eq('google_place_id', selectedPlace.place_id)
         .maybeSingle();
 
@@ -276,18 +136,6 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
         // Location exists, use its ID
         locationId = existingLocation.id;
         console.log('Found existing location:', locationId);
-        if (
-          (selectedPlace.city && !existingLocation.city) ||
-          (selectedPlace.address && selectedPlace.address !== existingLocation.address)
-        ) {
-          await supabase
-            .from('locations')
-            .update({
-              city: selectedPlace.city || existingLocation.city,
-              address: selectedPlace.address || existingLocation.address,
-            })
-            .eq('id', existingLocation.id);
-        }
       } else {
         // Create new location
         const { data: newLocation, error: locationError } = await supabase
@@ -296,7 +144,6 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
             name: selectedPlace.name,
             category: category,
             address: selectedPlace.address,
-            city: selectedPlace.city || null,
             latitude: selectedPlace.lat,
             longitude: selectedPlace.lng,
             google_place_id: selectedPlace.place_id,
@@ -343,8 +190,6 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
       onPinAdded();
       onClose();
       setSelectedPlace(null);
-      setAutoDetectError(null);
-      setInitialQuery('');
     } catch (error) {
       console.error('Error saving pin:', error);
       toast.error('Failed to save location. Please try again.');
@@ -355,9 +200,6 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
 
   const handleClose = () => {
     setSelectedPlace(null);
-    setAutoDetectError(null);
-    setInitialQuery('');
-    setIsAutoDetecting(false);
     onClose();
   };
 
@@ -376,32 +218,21 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
             <label className="text-sm font-medium text-gray-700">
               Search for a real place or business *
             </label>
-          <GooglePlacesAutocomplete
-            onPlaceSelect={handlePlaceSelect}
-            placeholder="Search restaurants, bars, cafés, hotels..."
-            className="w-full"
-            biasLocation={coordinates || null}
-            initialQuery={initialQuery}
-          />
-          <p className="text-xs text-gray-500">
-            Only real venues (restaurants, bars, cafés, hotels, museums, etc.) can be saved as favorites
-          </p>
-          {isAutoDetecting && (
-            <div className="flex items-center gap-2 text-xs text-blue-600 bg-blue-50 border border-blue-100 rounded-md px-3 py-2">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              <span>Detecting nearby venues based on your tap...</span>
-            </div>
-          )}
-          {autoDetectError && (
-            <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
-              {autoDetectError}
-            </div>
-          )}
-        </div>
+            <GooglePlacesAutocomplete
+              onPlaceSelect={handlePlaceSelect}
+              placeholder="Search restaurants, bars, cafés, hotels..."
+              className="w-full"
+              biasLocation={coordinates || null}
+              initialQuery={initialQuery}
+            />
+            <p className="text-xs text-gray-500">
+              Only real venues (restaurants, bars, cafés, hotels, museums, etc.) can be saved as favorites
+            </p>
+          </div>
 
-        {selectedPlace && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-            <div className="flex items-start gap-3">
+          {selectedPlace && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+              <div className="flex items-start gap-3">
                 <MapPin className="h-5 w-5 text-green-600 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <h4 className="font-medium text-green-900">{selectedPlace.name}</h4>
