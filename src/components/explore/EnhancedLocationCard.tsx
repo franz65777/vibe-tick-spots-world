@@ -121,25 +121,25 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
       </div>
 
       {/* Content section */}
-      <div className="p-3">
-        <div className="flex items-start justify-between mb-2">
+      <div className="p-4">
+        <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
-            <h3 className="font-semibold text-gray-900 text-base leading-tight mb-1">{place.name}</h3>
+            <h3 className="font-bold text-gray-900 text-lg leading-tight mb-1">{place.name}</h3>
             <div className="flex items-center gap-1 text-gray-500">
               <MapPin className="w-3 h-3" />
-              <span className="text-xs">{place.city || place.address?.split(',')[1]?.trim() || 'Unknown location'}</span>
+              <span className="text-sm">{place.city || place.address?.split(',')[1]?.trim() || 'Unknown location'}</span>
             </div>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="flex items-center gap-3 text-xs text-gray-600 mb-3">
+        <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
           <div className="flex items-center gap-1">
-            <Heart className="w-3 h-3 text-red-400" />
+            <Heart className="w-4 h-4 text-red-400" />
             <span>{likeCount}</span>
           </div>
           <div className="flex items-center gap-1">
-            <Users className="w-3 h-3 text-blue-400" />
+            <Users className="w-4 h-4 text-blue-400" />
             <span>{place.visitors?.length || 0}</span>
           </div>
           {place.distance && (
@@ -151,19 +151,19 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
         </div>
 
         {/* Action buttons */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <Button
             onClick={handleLikeToggle}
             disabled={loading}
             variant="ghost"
             size="sm"
-            className={`flex-1 rounded-lg transition-all duration-200 text-xs px-2 py-1 ${
+            className={`flex-1 rounded-xl transition-all duration-200 ${
               isLiked 
                 ? 'bg-red-50 text-red-600 hover:bg-red-100' 
                 : 'text-gray-600 hover:bg-red-50 hover:text-red-600'
             }`}
           >
-            <Heart className={`w-3 h-3 mr-1 ${isLiked ? 'fill-current' : ''}`} />
+            <Heart className={`w-4 h-4 mr-2 ${isLiked ? 'fill-current' : ''}`} />
             Like
           </Button>
 
@@ -172,13 +172,13 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
             disabled={loading}
             variant="ghost"
             size="sm"
-            className={`flex-1 rounded-lg transition-all duration-200 text-xs px-2 py-1 ${
+            className={`flex-1 rounded-xl transition-all duration-200 ${
               isSaved 
                 ? 'bg-blue-50 text-blue-600 hover:bg-blue-100' 
                 : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600'
             }`}
           >
-            <Bookmark className={`w-3 h-3 mr-1 ${isSaved ? 'fill-current' : ''}`} />
+            <Bookmark className={`w-4 h-4 mr-2 ${isSaved ? 'fill-current' : ''}`} />
             Save
           </Button>
 
@@ -189,9 +189,9 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
             }}
             variant="ghost"
             size="sm"
-            className="flex-1 rounded-lg text-gray-600 hover:bg-orange-50 hover:text-orange-600 transition-all duration-200 text-xs px-2 py-1"
+            className="flex-1 rounded-xl text-gray-600 hover:bg-orange-50 hover:text-orange-600 transition-all duration-200"
           >
-            <Share2 className="w-3 h-3 mr-1" />
+            <Share2 className="w-4 h-4 mr-2" />
             Share
           </Button>
         </div>

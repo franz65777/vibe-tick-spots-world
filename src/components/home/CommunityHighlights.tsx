@@ -54,12 +54,12 @@ const CommunityHighlights = ({
 
   return (
     <div className="w-full px-4 py-6">
-      {/* Compact Header */}
-      <div className="mb-4 text-center">
-        <h2 className="text-lg font-semibold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-900 bg-clip-text text-transparent mb-1">
+      {/* Minimal Header */}
+      <div className="mb-6 text-center">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-900 bg-clip-text text-transparent mb-2">
           Discover {currentCity}
         </h2>
-        <div className="w-12 h-0.5 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full mx-auto"></div>
+        <div className="w-16 h-1 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full mx-auto"></div>
       </div>
 
       {/* Horizontal Scroll Cards */}

@@ -199,26 +199,26 @@ const ExplorePage = () => {
     ? (isSearchActive ? filteredLocations : locationRecommendations)
     : (isSearchActive ? filteredUsers : userRecommendations);
   return <div className="flex flex-col h-full bg-gray-50 pt-16">
-      {/* Compact Header */}
+      {/* Simplified Header */}
       <div className="bg-white border-b border-gray-200">
-        <div className="p-3">
-          {/* Compact Search Mode Toggle */}
-          <div className="flex bg-gray-100 rounded-lg p-0.5 mb-3">
-            <button onClick={() => setSearchMode('locations')} className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all ${searchMode === 'locations' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
+        <div className="p-4">
+          {/* Search Mode Toggle */}
+          <div className="flex bg-gray-100 rounded-xl p-1 mb-4">
+            <button onClick={() => setSearchMode('locations')} className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all ${searchMode === 'locations' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
               <MapPin className="w-4 h-4" />
               Places
             </button>
-            <button onClick={() => setSearchMode('users')} className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all ${searchMode === 'users' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
+            <button onClick={() => setSearchMode('users')} className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all ${searchMode === 'users' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
               <Users className="w-4 h-4" />
               People
             </button>
           </div>
 
-          {/* Compact Search Bar */}
+          {/* Search Bar */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input type="text" placeholder={searchMode === 'locations' ? 'Search for cafes, restaurants, attractions...' : 'Search for people...'} value={searchQuery} onChange={e => handleSearch(e.target.value)} className="pl-10 pr-4 h-10 bg-gray-50 border-gray-200 focus:bg-white rounded-lg text-gray-900 placeholder-gray-500" />
-            {searchQuery && <Button onClick={clearSearch} variant="ghost" size="sm" className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 hover:bg-gray-100 rounded-full text-gray-500">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Input type="text" placeholder={searchMode === 'locations' ? 'Search for cafes, restaurants, attractions...' : 'Search for people...'} value={searchQuery} onChange={e => handleSearch(e.target.value)} className="pl-12 pr-4 h-12 bg-gray-50 border-gray-200 focus:bg-white rounded-xl text-gray-900 placeholder-gray-500" />
+            {searchQuery && <Button onClick={clearSearch} variant="ghost" size="sm" className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100 rounded-full text-gray-500">
                 ×
               </Button>}
           </div>

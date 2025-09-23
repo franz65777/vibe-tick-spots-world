@@ -16,7 +16,6 @@ interface HeaderProps {
   onMessagesClick: () => void;
   onCreateStoryClick: () => void;
   onCitySelect: (city: string, coords?: { lat: number; lng: number }) => void;
-  onSearchStateChange?: (isSearching: boolean) => void;
 }
 
 const Header = ({
@@ -27,8 +26,7 @@ const Header = ({
   onNotificationsClick,
   onMessagesClick,
   onCreateStoryClick,
-  onCitySelect,
-  onSearchStateChange
+  onCitySelect
 }: HeaderProps) => {
   const [isMessageHistoryOpen, setIsMessageHistoryOpen] = useState(false);
   const { unreadCount } = useNotifications();
@@ -43,8 +41,7 @@ const Header = ({
             onCitySelect={onCitySelect} 
             searchQuery={searchQuery} 
             onSearchChange={onSearchChange} 
-            onSearchKeyPress={onSearchKeyPress}
-            onSearchStateChange={onSearchStateChange}
+            onSearchKeyPress={onSearchKeyPress} 
           />
 
           {/* Center: Super User Badge */}
