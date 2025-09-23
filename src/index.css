@@ -154,3 +154,33 @@
     border: 1px solid rgba(255, 255, 255, 0.18);
   }
 }
+
+/* Hide Google Maps attribution and branding that can't be disabled via API */
+.gmnoprint,
+.gm-style-cc,
+.gm-bundled-control,
+[title="Toggle fullscreen view"],
+[title="Keyboard shortcuts"],
+[title="Map Data"],
+.gm-style-mtc,
+.gm-style .gm-style-cc {
+  display: none !important;
+}
+
+/* Hide Google logo specifically */
+.gm-style .gmnoprint:first-child {
+  display: none !important;
+}
+
+/* Hide "Terms" and "Report a map error" links */
+.gm-style .gmnoprint a,
+.gm-style .gmnoprint div {
+  display: none !important;
+}
+
+/* Hide zoom controls on mobile */
+@media (max-width: 768px) {
+  .gm-bundled-control-on-bottom {
+    display: none !important;
+  }
+}

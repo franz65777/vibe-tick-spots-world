@@ -285,6 +285,9 @@ const GlobalCitySearch = ({
     return acc;
   }, {} as Record<string, typeof filteredCities>);
 
+  // Show external results first if available, then grouped cities
+  const hasResults = externalResults.length > 0 || Object.keys(groupedCities).length > 0;
+
   return (
     <div ref={searchRef} className="relative flex-1 max-w-sm z-[200]">
       {/* Current City Display / Search Input */}
