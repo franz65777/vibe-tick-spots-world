@@ -407,12 +407,11 @@ const GlobalCitySearch = ({
         </div>
       )}
 
-      {/* No results */}
-      {isOpen && searchQuery.trim() && searchQuery.trim() !== ' ' && Object.keys(groupedCities).length === 0 && (
+      {isOpen && searchQuery.trim() && searchQuery.trim() !== ' ' && externalResults.length === 0 && Object.keys(groupedCities).length === 0 && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 z-[9999] backdrop-blur-sm">
           <div className="text-gray-500 text-sm text-center">
             <div className="mb-2">No cities found for "{searchQuery}"</div>
-            <div className="text-xs">Try searching for major cities like London, Tokyo, New York, or Paris</div>
+            <div className="text-xs">Try another spelling or a nearby city</div>
           </div>
         </div>
       )}
