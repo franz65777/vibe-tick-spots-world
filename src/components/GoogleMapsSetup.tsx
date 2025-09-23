@@ -13,6 +13,7 @@ interface GoogleMapsSetupProps {
   selectedPlace?: Place | null;
   onCloseSelectedPlace?: () => void;
   onMapRightClick?: (coords: { lat: number; lng: number }) => void;
+  onMapClick?: (coords: { lat: number; lng: number }) => void;
 }
 
 const GoogleMapsSetup = ({ 
@@ -22,7 +23,8 @@ const GoogleMapsSetup = ({
   mapCenter, 
   selectedPlace,
   onCloseSelectedPlace,
-  onMapRightClick 
+  onMapRightClick,
+  onMapClick 
 }: GoogleMapsSetupProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
@@ -162,7 +164,7 @@ const GoogleMapsSetup = ({
           gestureHandling: 'greedy',
           backgroundColor: '#f0f0f0',
           disableDefaultUI: true,
-          zoomControl: true,
+          zoomControl: false,
           zoomControlOptions: {
             position: google.maps.ControlPosition.RIGHT_BOTTOM
           }
@@ -187,6 +189,18 @@ const GoogleMapsSetup = ({
           map.addListener('rightclick', (event: google.maps.MapMouseEvent) => {
             if (event.latLng && !isUnmountingRef.current) {
               onMapRightClick({
+                lat: event.latLng.lat(),
+                lng: event.latLng.lng()
+              });
+            }
+          });
+        }
+
+        // Add click listener (mobile-friendly) for adding new locations
+        if (onMapClick) {
+          map.addListener('click', (event: google.maps.MapMouseEvent) => {
+            if (event.latLng && !isUnmountingRef.current) {
+              onMapClick({
                 lat: event.latLng.lat(),
                 lng: event.latLng.lng()
               });
