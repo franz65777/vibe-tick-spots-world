@@ -63,11 +63,11 @@ const CommunityHighlights = ({
       </div>
 
       {/* Horizontal Scroll Cards */}
-      <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4">
+      <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4 snap-x snap-mandatory">
         {locations.map((location) => (
           <div 
             key={location.id}
-            className="min-w-[140px] max-w-[140px] bg-white/80 backdrop-blur-xl rounded-3xl border-0 overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-[1.02] active:scale-[0.98]"
+            className="min-w-[120px] max-w-[120px] bg-white/80 backdrop-blur-xl rounded-2xl border-0 overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group snap-start"
             onClick={() => onLocationClick(location.id)}
           >
             <div className="relative">
@@ -76,26 +76,22 @@ const CommunityHighlights = ({
               
               <div className="relative p-3">
                 {/* Image */}
-                <div className="relative w-full h-20 overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 shadow-md mb-2">
+                <div className="relative w-full h-16 overflow-hidden rounded-xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 shadow-md mb-2">
                   <img
                     src={location.image}
                     alt={location.name}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                    className="w-full h-full object-cover"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.style.display = 'none';
                     }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/30 via-indigo-500/20 to-purple-600/30"></div>
                 </div>
 
                 {/* Details */}
                 <h3 className="font-bold text-sm text-gray-900 truncate group-hover:text-blue-600 transition-colors">
                   {location.name}
                 </h3>
-                <p className="text-[11px] text-gray-500 line-clamp-2 mt-1">
-                  {location.description}
-                </p>
 
                 {/* Footer */}
                 <div className="flex items-center justify-between mt-2">
