@@ -128,8 +128,8 @@ const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) =
 
   return (
     <>
-      <div className="flex-1 relative min-h-[500px]">
-        <GoogleMapsSetup 
+      <div className="relative h-full w-full min-h-[420px]">
+        <GoogleMapsSetup
           places={places}
           onPinClick={handlePinClick}
           onPinShare={handlePinShare}
