@@ -42,6 +42,7 @@ const HomePage = () => {
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 37.7749, lng: -122.4194 });
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [scrollY, setScrollY] = useState(0);
+  const [isSearching, setIsSearching] = useState(false);
   
   // Modal states
   const [isCreateStoryModalOpen, setIsCreateStoryModalOpen] = useState(false);
@@ -335,6 +336,7 @@ const HomePage = () => {
         onMessagesClick={() => setIsMessagesModalOpen(true)}
         onCreateStoryClick={() => setIsCreateStoryModalOpen(true)}
         onCitySelect={handleCityChange}
+        onSearchStateChange={setIsSearching}
       />
       
       <main className="flex-1 flex flex-col max-w-7xl mx-auto w-full">
@@ -399,6 +401,7 @@ const HomePage = () => {
             mapCenter={mapCenter}
             currentCity={currentCity}
             activeFilter={activeFilter}
+            isSearching={isSearching}
           />
         )}
       </main>

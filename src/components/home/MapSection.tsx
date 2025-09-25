@@ -14,9 +14,10 @@ interface MapSectionProps {
   mapCenter: { lat: number; lng: number };
   currentCity: string;
   activeFilter?: MapFilter;
+  isSearching?: boolean;
 }
 
-const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) => {
+const MapSection = ({ mapCenter, currentCity, activeFilter, isSearching = false }: MapSectionProps) => {
   const [isAddLocationModalOpen, setIsAddLocationModalOpen] = useState(false);
   const [isQuickAddModalOpen, setIsQuickAddModalOpen] = useState(false);
   const [isPinShareModalOpen, setIsPinShareModalOpen] = useState(false);
@@ -146,6 +147,7 @@ const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) =
           onMapFilterChange={setActiveMapFilter}
           selectedCategories={selectedCategories}
           onCategoryToggle={handleCategoryToggle}
+          isHidden={isSearching}
         />
         
         {/* Loading/Error States */}
