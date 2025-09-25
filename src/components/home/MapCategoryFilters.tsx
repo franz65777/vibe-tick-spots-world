@@ -39,15 +39,13 @@ interface MapCategoryFiltersProps {
   onMapFilterChange: (filter: MapFilter) => void;
   selectedCategories: string[];
   onCategoryToggle: (categoryId: string) => void;
-  isHidden?: boolean;
 }
 
 const MapCategoryFilters = ({ 
   activeMapFilter, 
   onMapFilterChange, 
   selectedCategories,
-  onCategoryToggle,
-  isHidden = false 
+  onCategoryToggle 
 }: MapCategoryFiltersProps) => {
   
   const handleMapFilterChange = (filter: MapFilter) => {
@@ -65,10 +63,7 @@ const MapCategoryFilters = ({
   ];
 
   return (
-    <div className={cn(
-      "absolute top-4 left-4 right-4 z-50 transition-all duration-300",
-      isHidden ? "opacity-0 pointer-events-none" : "opacity-100"
-    )}>
+    <div className="absolute top-4 left-4 right-4 z-50">
       {/* Main Map Filters - Fixed 3 buttons */}
       <div className="grid grid-cols-3 gap-2 mb-2">
         {mapFilters.map((filter) => {
