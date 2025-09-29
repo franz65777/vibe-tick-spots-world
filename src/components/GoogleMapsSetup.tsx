@@ -9,7 +9,7 @@ interface GoogleMapsSetupProps {
   places: Place[];
   onPinClick?: (place: Place) => void;
   onPinShare?: (place: Place) => void;
-  mapCenter: { lat: number; lng: number };
+  mapCenter: { lat: number; lng: number } | null;
   selectedPlace?: Place | null;
   onCloseSelectedPlace?: () => void;
   onMapRightClick?: (coords: { lat: number; lng: number }) => void;
@@ -92,6 +92,12 @@ const GoogleMapsSetup = ({
 
   // Initialize map with better timing
   useEffect(() => {
+    // Don't initialize map if we don't have a valid mapCenter yet
+    if (!mapCenter) {
+      console.log('⏳ Waiting for map center coordinates...');
+      return;
+    }
+
     let mounted = true;
     // Reset unmount flag on mount (React StrictMode mounts twice)
     isUnmountingRef.current = false;
@@ -100,7 +106,7 @@ const GoogleMapsSetup = ({
     
     const initMap = async () => {
       try {
-        console.log('🗺️ Starting Google Maps initialization, attempt:', retryCount + 1);
+        console.log('🗺️ Starting Google Maps initialization with center:', mapCenter, 'attempt:', retryCount + 1);
         // If map already exists (e.g., StrictMode re-run), don't reset loading state
         if (mapInstanceRef.current) {
           console.log('ℹ️ Map instance already exists, skipping init');
@@ -262,7 +268,7 @@ const GoogleMapsSetup = ({
         }
       }, 0);
     };
-  }, []);
+  }, [mapCenter]); // Add mapCenter as dependency
 
   // Update map center when it changes
   useEffect(() => {
@@ -518,12 +524,16 @@ const GoogleMapsSetup = ({
         <div ref={mapRef} className="absolute inset-0" />
 
         {/* Overlays rendered as siblings (not children of the map container) to avoid DOM conflicts */}
-        {!isLoaded && (
-          <div className="absolute inset-0 flex items-center justify-center z-10">
+        {(!isLoaded || !mapCenter) && (
+          <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-100">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-              <p className="text-sm text-gray-600">Loading map...</p>
-              <p className="text-xs text-gray-500 mt-1">Connecting to Google Maps</p>
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+              <p className="text-lg text-gray-700 font-medium mb-1">
+                {!mapCenter ? 'Detecting your location...' : 'Loading map...'}
+              </p>
+              <p className="text-sm text-gray-500">
+                {!mapCenter ? 'Please allow location access' : 'Connecting to Google Maps'}
+              </p>
             </div>
           </div>
         )}

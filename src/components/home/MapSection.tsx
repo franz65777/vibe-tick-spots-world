@@ -11,7 +11,7 @@ import { PinShareData } from '@/services/pinSharingService';
 import { toast } from 'sonner';
 
 interface MapSectionProps {
-  mapCenter: { lat: number; lng: number };
+  mapCenter: { lat: number; lng: number } | null;
   currentCity: string;
   activeFilter?: MapFilter;
 }
