@@ -83,19 +83,24 @@ const HomePage = () => {
             const location = { lat: latitude, lng: longitude };
             setUserLocation(location);
             setMapCenter(location);
-            console.log('User location obtained:', location);
+            console.log('✅ User location obtained:', location);
           },
           (error) => {
-            console.warn('Error getting user location:', error);
-            // Only fall back to default if geolocation fails
-            const defaultLocation = { lat: 37.7749, lng: -122.4194 };
-            setMapCenter(defaultLocation);
-            setUserLocation(defaultLocation);
+            console.error('❌ Error getting user location:', error);
+            // Don't immediately fall back - wait longer and keep trying
+            setTimeout(() => {
+              if (!mapCenter) {
+                console.warn('⚠️ Still no location after delay, using default');
+                const defaultLocation = { lat: 37.7749, lng: -122.4194 };
+                setMapCenter(defaultLocation);
+                setUserLocation(defaultLocation);
+              }
+            }, 10000); // Wait 10 seconds before using default
           },
           {
             enableHighAccuracy: true,
-            timeout: 5000,
-            maximumAge: 0
+            timeout: 15000, // Increased timeout to 15 seconds
+            maximumAge: 0 // Always get fresh location
           }
         );
       } else {
