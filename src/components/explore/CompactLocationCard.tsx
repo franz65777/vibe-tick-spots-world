@@ -266,6 +266,7 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
 
       {libraryModalOpen && (
         <LocationPostLibrary
+          isOpen={libraryModalOpen}
           onClose={() => setLibraryModalOpen(false)}
           place={place}
         />

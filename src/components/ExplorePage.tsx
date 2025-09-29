@@ -9,6 +9,7 @@ import EnhancedLocationCard from './explore/EnhancedLocationCard';
 import NoResults from './explore/NoResults';
 import UserCard from './explore/UserCard';
 import LocationDetailModal from './explore/LocationDetailModal';
+import LocationPostCards from './explore/LocationPostCards';
 
 const ExplorePage = () => {
   const {
@@ -241,9 +242,13 @@ const ExplorePage = () => {
                 </span>
               </div>}
 
-            {searchMode === 'locations' ? displayData.length > 0 ? <div className="pb-6">
-                  {displayData.map(place => <EnhancedLocationCard key={place.id} place={place} onCardClick={handleCardClick} />)}
-                </div> : <NoResults searchMode="locations" searchQuery={searchQuery} onAddLocation={handleAddLocation} /> : displayData.length > 0 ? <div className="space-y-3 px-4 pb-4">
+            {searchMode === 'locations' ? (
+              /* Show Location Post Cards for location searches */
+              <LocationPostCards 
+                searchQuery={searchQuery}
+                onLocationClick={handleCardClick}
+              />
+            ) : displayData.length > 0 ? <div className="space-y-3 px-4 pb-4">
                   {displayData.map(user => <UserCard key={user.id} user={user} onUserClick={handleUserClick} onFollowUser={handleFollowUser} onMessageUser={handleMessageUser} />)}
                 </div> : <NoResults searchMode="users" searchQuery={searchQuery} />}
           </>}
