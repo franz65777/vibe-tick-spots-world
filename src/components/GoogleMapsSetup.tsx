@@ -39,6 +39,15 @@ const GoogleMapsSetup = ({
   const [selectedLocationAddress, setSelectedLocationAddress] = useState<string>('');
   const { location, getCurrentLocation } = useGeolocation();
 
+  // Update map center when location becomes available
+  useEffect(() => {
+    if (mapInstanceRef.current && location && isLoaded) {
+      const newCenter = { lat: location.latitude, lng: location.longitude };
+      console.log('📍 Updating map to user location:', newCenter);
+      mapInstanceRef.current.setCenter(newCenter);
+    }
+  }, [location, isLoaded]);
+
   // Safe marker cleanup function
   const clearMarkers = useCallback(() => {
     if (isUnmountingRef.current) return;

@@ -93,11 +93,11 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
 
   return (
     <div 
-      className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 group"
+      className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer hover:shadow-md transition-all duration-300 group mx-4 mb-3"
       onClick={() => onCardClick(place)}
     >
-      {/* Image section */}
-      <div className="relative h-48 overflow-hidden">
+      {/* Mobile Optimized Image section */}
+      <div className="relative h-36 overflow-hidden">
         <img 
           src={getImageUrl()} 
           alt={place.name}
@@ -107,11 +107,11 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
             img.src = 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop';
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
         
         {/* Post count badge */}
         {place.postCount && place.postCount > 0 && (
-          <div className="absolute top-3 right-3">
+          <div className="absolute top-2 right-2">
             <div className="bg-black/60 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
               <MessageSquare className="w-3 h-3" />
               {place.postCount}
@@ -120,26 +120,26 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
         )}
       </div>
 
-      {/* Content section */}
-      <div className="p-4">
-        <div className="flex items-start justify-between mb-3">
+      {/* Mobile Optimized Content section */}
+      <div className="p-3">
+        <div className="flex items-start justify-between mb-2">
           <div className="flex-1">
-            <h3 className="font-bold text-gray-900 text-lg leading-tight mb-1">{place.name}</h3>
+            <h3 className="font-bold text-gray-900 text-base leading-tight mb-1">{place.name}</h3>
             <div className="flex items-center gap-1 text-gray-500">
               <MapPin className="w-3 h-3" />
-              <span className="text-sm">{place.city || place.address?.split(',')[1]?.trim() || 'Unknown location'}</span>
+              <span className="text-xs">{place.city || place.address?.split(',')[1]?.trim() || 'Unknown location'}</span>
             </div>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
+        {/* Mobile Optimized Stats */}
+        <div className="flex items-center gap-3 text-xs text-gray-600 mb-3">
           <div className="flex items-center gap-1">
-            <Heart className="w-4 h-4 text-red-400" />
+            <Heart className="w-3 h-3 text-red-400" />
             <span>{likeCount}</span>
           </div>
           <div className="flex items-center gap-1">
-            <Users className="w-4 h-4 text-blue-400" />
+            <Users className="w-3 h-3 text-blue-400" />
             <span>{place.visitors?.length || 0}</span>
           </div>
           {place.distance && (
@@ -150,20 +150,20 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
           )}
         </div>
 
-        {/* Action buttons */}
-        <div className="flex items-center gap-2">
+        {/* Mobile Optimized Action buttons */}
+        <div className="flex items-center gap-1.5">
           <Button
             onClick={handleLikeToggle}
             disabled={loading}
             variant="ghost"
             size="sm"
-            className={`flex-1 rounded-xl transition-all duration-200 ${
+            className={`flex-1 rounded-lg transition-all duration-200 h-8 text-xs ${
               isLiked 
                 ? 'bg-red-50 text-red-600 hover:bg-red-100' 
                 : 'text-gray-600 hover:bg-red-50 hover:text-red-600'
             }`}
           >
-            <Heart className={`w-4 h-4 mr-2 ${isLiked ? 'fill-current' : ''}`} />
+            <Heart className={`w-3 h-3 mr-1 ${isLiked ? 'fill-current' : ''}`} />
             Like
           </Button>
 
@@ -172,13 +172,13 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
             disabled={loading}
             variant="ghost"
             size="sm"
-            className={`flex-1 rounded-xl transition-all duration-200 ${
+            className={`flex-1 rounded-lg transition-all duration-200 h-8 text-xs ${
               isSaved 
                 ? 'bg-blue-50 text-blue-600 hover:bg-blue-100' 
                 : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600'
             }`}
           >
-            <Bookmark className={`w-4 h-4 mr-2 ${isSaved ? 'fill-current' : ''}`} />
+            <Bookmark className={`w-3 h-3 mr-1 ${isSaved ? 'fill-current' : ''}`} />
             Save
           </Button>
 
@@ -189,9 +189,9 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
             }}
             variant="ghost"
             size="sm"
-            className="flex-1 rounded-xl text-gray-600 hover:bg-orange-50 hover:text-orange-600 transition-all duration-200"
+            className="flex-1 rounded-lg text-gray-600 hover:bg-orange-50 hover:text-orange-600 transition-all duration-200 h-8 text-xs"
           >
-            <Share2 className="w-4 h-4 mr-2" />
+            <Share2 className="w-3 h-3 mr-1" />
             Share
           </Button>
         </div>

@@ -32,10 +32,11 @@ interface LocationPostLibraryProps {
     coordinates?: { lat: number; lng: number };
     postCount?: number;
   };
+  isOpen: boolean;
   onClose: () => void;
 }
 
-const LocationPostLibrary = ({ place, onClose }: LocationPostLibraryProps) => {
+const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProps) => {
   const { user } = useAuth();
   const [posts, setPosts] = useState<LocationPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -250,6 +251,8 @@ const LocationPostLibrary = ({ place, onClose }: LocationPostLibraryProps) => {
       year: 'numeric'
     });
   };
+
+  if (!isOpen) return null;
 
   if (loading) {
     return (
