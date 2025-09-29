@@ -350,11 +350,9 @@ const GlobalCitySearch = ({
             <MapPin className="w-4 h-4 text-blue-600 shrink-0" />
             <div className="flex-1 min-w-0">
               <span className="text-gray-900 font-medium text-sm truncate">
-                {geoLoading 
-                  ? 'Detecting location...' 
-                  : currentCityData?.name || currentCity || 'Search city'}
+                {currentCityData?.name || currentCity || 'Select City'}
               </span>
-              {!geoLoading && currentCityData?.country && (
+              {currentCityData?.country && (
                 <div className="text-[10px] text-gray-500 leading-none">{currentCityData.country}</div>
               )}
             </div>

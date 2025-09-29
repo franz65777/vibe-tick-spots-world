@@ -64,34 +64,18 @@ const LocationPostCards = ({ searchQuery, onLocationClick }: LocationPostCardsPr
         query = query.or(`name.ilike.%${searchQuery}%,city.ilike.%${searchQuery}%,address.ilike.%${searchQuery}%`);
       }
 
-      const { data: locationsData, error } = await query.limit(200);
+      const { data: locationsData, error } = await query.limit(50);
 
       if (error) throw error;
 
-      // SIMPLE DEDUPLICATION: Group by name + city, count all posts
+      // Group by location and get post counts with cover images
       const locationMap = new Map<string, LocationWithPosts>();
 
       locationsData?.forEach((location) => {
-        // Create a unique key based on name and city
-        const normalizedName = location.name.toLowerCase().trim().replace(/\s+/g, ' ');
-        const normalizedCity = (location.city || location.address?.split(',')[1]?.trim() || '').toLowerCase().trim();
-        const key = `${normalizedName}_${normalizedCity}`;
+        const key = location.google_place_id || `${location.latitude}-${location.longitude}`;
         
-        if (locationMap.has(key)) {
-          // Update existing entry with more posts
-          const existing = locationMap.get(key)!;
-          existing.postsCount += 1;
-          
-          // Update cover image if current location has posts and existing doesn't have an image
-          if (!existing.coverImage) {
-            const firstPost = Array.isArray(location.posts) ? location.posts[0] : null;
-            const coverImage = firstPost?.media_urls?.[0] || null;
-            if (coverImage) {
-              existing.coverImage = coverImage;
-            }
-          }
-        } else {
-          // Create new entry
+        if (!locationMap.has(key)) {
+          // Get the first image from posts as cover image
           const firstPost = Array.isArray(location.posts) ? location.posts[0] : null;
           const coverImage = firstPost?.media_urls?.[0] || null;
           
@@ -102,13 +86,17 @@ const LocationPostCards = ({ searchQuery, onLocationClick }: LocationPostCardsPr
             address: location.address,
             google_place_id: location.google_place_id,
             category: location.category,
-            postsCount: 1,
+            postsCount: Array.isArray(location.posts) ? location.posts.length : 0,
             coverImage,
             coordinates: {
               lat: parseFloat(location.latitude?.toString() || '0'),
               lng: parseFloat(location.longitude?.toString() || '0')
             }
           });
+        } else {
+          // Update post count for existing location
+          const existing = locationMap.get(key)!;
+          existing.postsCount += Array.isArray(location.posts) ? location.posts.length : 0;
         }
       });
 
@@ -117,7 +105,6 @@ const LocationPostCards = ({ searchQuery, onLocationClick }: LocationPostCardsPr
         .filter(location => location.postsCount > 0)
         .sort((a, b) => b.postsCount - a.postsCount);
 
-      console.log(`✅ Deduplicated locations: ${locationsData?.length || 0} rows → ${uniqueLocations.length} unique locations`);
       setLocations(uniqueLocations);
     } catch (error) {
       console.error('Error fetching locations with posts:', error);
@@ -125,19 +112,6 @@ const LocationPostCards = ({ searchQuery, onLocationClick }: LocationPostCardsPr
     } finally {
       setLoading(false);
     }
-  };
-
-  // Helper function to calculate distance between two coordinates (in km)
-  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-    const R = 6371; // Earth's radius in km
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
   };
 
   const handleLocationClick = (location: LocationWithPosts) => {
