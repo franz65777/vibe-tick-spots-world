@@ -233,7 +233,6 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
 
       {libraryModalOpen && (
         <LocationPostLibrary
-          isOpen={libraryModalOpen}
           onClose={() => setLibraryModalOpen(false)}
           place={place}
         />
