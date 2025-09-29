@@ -68,93 +68,47 @@ const LocationPostCards = ({ searchQuery, onLocationClick }: LocationPostCardsPr
 
       if (error) throw error;
 
-      // IMPROVED DEDUPLICATION: Use multiple strategies to identify duplicates
+      // SIMPLE DEDUPLICATION: Group by name + city, count all posts
       const locationMap = new Map<string, LocationWithPosts>();
 
       locationsData?.forEach((location) => {
-        // Strategy 1: Use Google Place ID if available (most reliable)
-        if (location.google_place_id) {
-          const key = `gp_${location.google_place_id}`;
+        // Create a unique key based on name and city
+        const normalizedName = location.name.toLowerCase().trim().replace(/\s+/g, ' ');
+        const normalizedCity = (location.city || location.address?.split(',')[1]?.trim() || '').toLowerCase().trim();
+        const key = `${normalizedName}_${normalizedCity}`;
+        
+        if (locationMap.has(key)) {
+          // Update existing entry with more posts
+          const existing = locationMap.get(key)!;
+          existing.postsCount += 1;
           
-          if (locationMap.has(key)) {
-            // Update existing entry with more posts
-            const existing = locationMap.get(key)!;
-            existing.postsCount += 1;
-          } else {
-            // Create new entry
+          // Update cover image if current location has posts and existing doesn't have an image
+          if (!existing.coverImage) {
             const firstPost = Array.isArray(location.posts) ? location.posts[0] : null;
             const coverImage = firstPost?.media_urls?.[0] || null;
-            
-            locationMap.set(key, {
-              id: location.id,
-              name: location.name,
-              city: location.city || location.address?.split(',')[1]?.trim() || 'Unknown',
-              address: location.address,
-              google_place_id: location.google_place_id,
-              category: location.category,
-              postsCount: 1,
-              coverImage,
-              coordinates: {
-                lat: parseFloat(location.latitude?.toString() || '0'),
-                lng: parseFloat(location.longitude?.toString() || '0')
-              }
-            });
+            if (coverImage) {
+              existing.coverImage = coverImage;
+            }
           }
         } else {
-          // Strategy 2: Use normalized name + city combination
-          const normalizedName = location.name.toLowerCase().trim().replace(/\s+/g, ' ');
-          const normalizedCity = (location.city || location.address?.split(',')[1]?.trim() || '').toLowerCase().trim();
-          const key = `name_${normalizedName}_${normalizedCity}`;
+          // Create new entry
+          const firstPost = Array.isArray(location.posts) ? location.posts[0] : null;
+          const coverImage = firstPost?.media_urls?.[0] || null;
           
-          if (locationMap.has(key)) {
-            // Update existing entry
-            const existing = locationMap.get(key)!;
-            existing.postsCount += 1;
-          } else {
-            // Strategy 3: Check if coordinates match any existing location (within 50 meters)
-            let foundDuplicate = false;
-            const lat = parseFloat(location.latitude?.toString() || '0');
-            const lng = parseFloat(location.longitude?.toString() || '0');
-            
-            for (const [existingKey, existingLocation] of locationMap.entries()) {
-              if (existingLocation.coordinates) {
-                const distance = calculateDistance(
-                  lat,
-                  lng,
-                  existingLocation.coordinates.lat,
-                  existingLocation.coordinates.lng
-                );
-                
-                // If within 50 meters and name is similar, consider it a duplicate
-                if (distance < 0.05 && normalizedName === existingLocation.name.toLowerCase().trim().replace(/\s+/g, ' ')) {
-                  existingLocation.postsCount += 1;
-                  foundDuplicate = true;
-                  break;
-                }
-              }
+          locationMap.set(key, {
+            id: location.id,
+            name: location.name,
+            city: location.city || location.address?.split(',')[1]?.trim() || 'Unknown',
+            address: location.address,
+            google_place_id: location.google_place_id,
+            category: location.category,
+            postsCount: 1,
+            coverImage,
+            coordinates: {
+              lat: parseFloat(location.latitude?.toString() || '0'),
+              lng: parseFloat(location.longitude?.toString() || '0')
             }
-            
-            if (!foundDuplicate) {
-              // Create new entry
-              const firstPost = Array.isArray(location.posts) ? location.posts[0] : null;
-              const coverImage = firstPost?.media_urls?.[0] || null;
-              
-              locationMap.set(key, {
-                id: location.id,
-                name: location.name,
-                city: location.city || location.address?.split(',')[1]?.trim() || 'Unknown',
-                address: location.address,
-                google_place_id: location.google_place_id,
-                category: location.category,
-                postsCount: 1,
-                coverImage,
-                coordinates: {
-                  lat,
-                  lng
-                }
-              });
-            }
-          }
+          });
         }
       });
 
