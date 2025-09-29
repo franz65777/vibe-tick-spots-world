@@ -39,7 +39,7 @@ const HomePage = () => {
   const [selectedCity, setSelectedCity] = useState('');
   const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'saved'>('popular');
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
-  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 37.7749, lng: -122.4194 });
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [scrollY, setScrollY] = useState(0);
   
@@ -87,19 +87,22 @@ const HomePage = () => {
           },
           (error) => {
             console.warn('Error getting user location:', error);
+            // Only fall back to default if geolocation fails
             const defaultLocation = { lat: 37.7749, lng: -122.4194 };
             setMapCenter(defaultLocation);
+            setUserLocation(defaultLocation);
           },
           {
             enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 300000
+            timeout: 5000,
+            maximumAge: 0
           }
         );
       } else {
         console.warn('Geolocation is not supported by this browser');
         const defaultLocation = { lat: 37.7749, lng: -122.4194 };
         setMapCenter(defaultLocation);
+        setUserLocation(defaultLocation);
       }
     };
 
@@ -392,6 +395,13 @@ const HomePage = () => {
               >
                 Retry
               </button>
+            </div>
+          </div>
+        ) : !mapCenter ? (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center py-8">
+              <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+              <p className="text-gray-500">Detecting your location...</p>
             </div>
           </div>
         ) : (
