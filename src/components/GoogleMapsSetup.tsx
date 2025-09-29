@@ -279,7 +279,15 @@ const GoogleMapsSetup = ({
 
   // Add current location marker
   useEffect(() => {
-    if (!mapInstanceRef.current || !isLoaded || !location?.latitude || !location?.longitude || isUnmountingRef.current) return;
+    if (!mapInstanceRef.current || !isLoaded || isUnmountingRef.current) return;
+    
+    // Check if we have location data
+    if (!location?.latitude || !location?.longitude) {
+      console.log('⏳ Waiting for location data...');
+      return;
+    }
+
+    console.log('📍 Adding user location marker at:', location.latitude, location.longitude);
 
     // Clear existing current location marker first
     clearCurrentLocationMarker();
@@ -294,13 +302,14 @@ const GoogleMapsSetup = ({
         title: 'Your Current Location',
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
-          scale: 8,
+          scale: 10,
           fillColor: '#4285F4',
           fillOpacity: 1,
           strokeColor: '#FFFFFF',
-          strokeWeight: 3,
+          strokeWeight: 4,
         },
         zIndex: 2000,
+        optimized: false,
       });
 
       if (isUnmountingRef.current) {
@@ -313,13 +322,13 @@ const GoogleMapsSetup = ({
       // Add pulsing circle around current location
       const pulseCircle = new google.maps.Circle({
         strokeColor: '#4285F4',
-        strokeOpacity: 0.8,
+        strokeOpacity: 0.6,
         strokeWeight: 2,
         fillColor: '#4285F4',
-        fillOpacity: 0.1,
+        fillOpacity: 0.15,
         map: mapInstanceRef.current,
         center: { lat: location.latitude, lng: location.longitude },
-        radius: 100,
+        radius: 150,
       });
 
       if (isUnmountingRef.current) {
