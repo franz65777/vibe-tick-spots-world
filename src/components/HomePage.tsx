@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useMapPins } from '@/hooks/useMapPins';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { Place } from '@/types/place';
+import { Crown, Heart, MapPin } from 'lucide-react';
 import Header from './home/Header';
 import StoriesSection from './home/StoriesSection';
 import MapSection from './home/MapSection';
@@ -325,7 +326,7 @@ const HomePage = () => {
   const highlightsOpacity = Math.max(0, 1 - scrollY / 250);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 flex flex-col">
       <Header 
         searchQuery={searchQuery}
         currentCity={currentCity}
@@ -338,41 +339,87 @@ const HomePage = () => {
       />
       
       <main className="flex-1 flex flex-col max-w-7xl mx-auto w-full">
+        {/* Stories Section with Card Overlay */}
         <div 
-          className="bg-card/80 backdrop-blur-sm border-b border-border/50 px-4 py-3 shadow-sm transition-opacity duration-200"
+          className="mx-4 mt-4 mb-3 transition-opacity duration-200"
           style={{ opacity: storiesOpacity }}
         >
-          <StoriesSection 
-            stories={stories}
-            onCreateStory={() => setIsCreateStoryModalOpen(true)}
-            onStoryClick={(index) => {
-              setCurrentStoryIndex(index);
-              setIsStoriesViewerOpen(true);
-            }}
-          />
+          <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-white/50 px-4 py-4">
+            <StoriesSection 
+              stories={stories}
+              onCreateStory={() => setIsCreateStoryModalOpen(true)}
+              onStoryClick={(index) => {
+                setCurrentStoryIndex(index);
+                setIsStoriesViewerOpen(true);
+              }}
+            />
+          </div>
         </div>
         
-        {/* Community Highlights Section */}
+        {/* Top Location Feature */}
+        {topLocation && (
+          <div 
+            className="mx-4 mb-3 transition-opacity duration-200"
+            style={{ opacity: highlightsOpacity }}
+          >
+            <div 
+              className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 group"
+              onClick={() => handleLocationOfTheWeekClick(topLocation)}
+            >
+              <div className="relative h-48 overflow-hidden">
+                <img
+                  src={topLocation.image || 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=800&h=400&fit=crop'}
+                  alt={topLocation.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                <div className="absolute top-4 right-4">
+                  <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-lg">
+                    <Crown className="w-3.5 h-3.5" />
+                    Top Spot
+                  </div>
+                </div>
+                <div className="absolute bottom-4 left-4 right-4">
+                  <h3 className="text-white text-2xl font-bold mb-1 drop-shadow-lg">
+                    {topLocation.name}
+                  </h3>
+                  <div className="flex items-center gap-4 text-white/90 text-sm">
+                    <div className="flex items-center gap-1">
+                      <Heart className="w-4 h-4" />
+                      <span>{topLocation.likes || 0}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <MapPin className="w-4 h-4" />
+                      <span>{topLocation.city || currentCity}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Community Highlights Section with Card Background */}
         <div 
-          className="bg-gradient-to-r from-card/90 via-card to-card/90 backdrop-blur-sm transition-opacity duration-200"
+          className="mx-4 mb-6 transition-opacity duration-200"
           style={{ opacity: highlightsOpacity }}
         >
-          <CommunityHighlights
-            currentCity={currentCity}
-            userLocation={userLocation}
-            onLocationClick={(locationId: string, coordinates?: { lat: number; lng: number }) => {
-              if (coordinates) {
-                setMapCenter(coordinates);
-              }
-              // Navigate to explore tab for location details
-              navigate('/explore');
-            }}
-            onUserClick={(userId: string) => {
-              // Navigate to search tab for user profiles
-              navigate('/explore');
-            }}
-            onMapLocationClick={(coords: { lat: number; lng: number }) => setMapCenter(coords)}
-          />
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-md border border-white/50 py-5">
+            <CommunityHighlights
+              currentCity={currentCity}
+              userLocation={userLocation}
+              onLocationClick={(locationId: string, coordinates?: { lat: number; lng: number }) => {
+                if (coordinates) {
+                  setMapCenter(coordinates);
+                }
+                navigate('/explore');
+              }}
+              onUserClick={(userId: string) => {
+                navigate('/explore');
+              }}
+              onMapLocationClick={(coords: { lat: number; lng: number }) => setMapCenter(coords)}
+            />
+          </div>
         </div>
         
         {loading ? (
