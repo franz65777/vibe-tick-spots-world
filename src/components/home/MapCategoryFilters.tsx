@@ -14,6 +14,7 @@ import {
   Star
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useMapFilter } from '@/contexts/MapFilterContext';
 
 export interface CategoryFilter {
   id: string;
@@ -32,34 +33,12 @@ export const categoryFilters: CategoryFilter[] = [
   { id: 'entertainment', name: 'Entertainment', icon: Star, color: 'bg-pink-500' }
 ];
 
-export type MapFilter = 'following' | 'popular' | 'saved';
-
-interface MapCategoryFiltersProps {
-  activeMapFilter: MapFilter;
-  onMapFilterChange: (filter: MapFilter) => void;
-  selectedCategories: string[];
-  onCategoryToggle: (categoryId: string) => void;
-}
-
-const MapCategoryFilters = ({ 
-  activeMapFilter, 
-  onMapFilterChange, 
-  selectedCategories,
-  onCategoryToggle 
-}: MapCategoryFiltersProps) => {
-  
-  const handleMapFilterChange = (filter: MapFilter) => {
-    // Reset category filters when changing main filter
-    if (selectedCategories.length > 0) {
-      selectedCategories.forEach(cat => onCategoryToggle(cat));
-    }
-    onMapFilterChange(filter);
-  };
-  
+const MapCategoryFilters = () => {
+  const { activeFilter, setActiveFilter, selectedCategories, toggleCategory, clearCategories } = useMapFilter();
   const mapFilters = [
-    { id: 'following' as MapFilter, name: 'Following', icon: Users, description: 'Places from people you follow' },
-    { id: 'popular' as MapFilter, name: 'Popular', icon: TrendingUp, description: 'Trending locations nearby' },
-    { id: 'saved' as MapFilter, name: 'Saved', icon: Bookmark, description: 'Your saved places' }
+    { id: 'following' as const, name: 'Following', icon: Users, description: 'Places from people you follow' },
+    { id: 'popular' as const, name: 'Popular', icon: TrendingUp, description: 'Trending locations nearby' },
+    { id: 'saved' as const, name: 'Saved', icon: Bookmark, description: 'Your saved places' }
   ];
 
   return (
@@ -68,7 +47,7 @@ const MapCategoryFilters = ({
       <div className="grid grid-cols-3 gap-2 mb-2">
         {mapFilters.map((filter) => {
           const IconComponent = filter.icon;
-            const isActive = activeMapFilter === filter.id;
+          const isActive = activeFilter === filter.id;
           
           // Define colors for each filter
           const filterColors = {
@@ -86,7 +65,7 @@ const MapCategoryFilters = ({
           return (
             <button
               key={filter.id}
-              onClick={() => handleMapFilterChange(filter.id)}
+              onClick={() => setActiveFilter(filter.id)}
               className={cn(
                 "flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 backdrop-blur-sm border shadow-sm",
                 filterColors[filter.id]
@@ -110,7 +89,7 @@ const MapCategoryFilters = ({
             return (
               <button
                 key={category.id}
-                onClick={() => onCategoryToggle(category.id)}
+                onClick={() => toggleCategory(category.id)}
                 className={cn(
                   "flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 shadow-sm backdrop-blur-sm",
                   isSelected 
@@ -125,7 +104,7 @@ const MapCategoryFilters = ({
           })}
           {selectedCategories.length > 0 && (
             <button
-              onClick={() => selectedCategories.forEach(cat => onCategoryToggle(cat))}
+              onClick={clearCategories}
               className="flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium bg-white/80 text-gray-500 hover:bg-white/90 transition-all duration-200 shadow-sm backdrop-blur-sm"
             >
               Clear All

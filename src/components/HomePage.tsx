@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { MapFilterProvider } from '@/contexts/MapFilterContext';
 import { Place } from '@/types/place';
 import { Crown, Heart, MapPin } from 'lucide-react';
 import Header from './home/Header';
@@ -115,10 +116,6 @@ const HomePage = () => {
     setCityFromLocation();
   }, [userLocation]);
 
-  const handleFilterChange = (filter: 'following' | 'popular' | 'saved') => {
-    console.log('HomePage - Filter changed to:', filter);
-    // MapSection now handles filter changes internally
-  };
 
   const handleCityChange = (city: string, coords?: { lat: number; lng: number }) => {
     console.log('HomePage - City changed to:', city, coords);
@@ -299,10 +296,11 @@ const HomePage = () => {
   }
 
   return (
-    <div className="h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 flex flex-col overflow-hidden">
-      {/* Fixed Header - ~60px */}
-      <div className="flex-shrink-0 h-[60px]">
-        <Header 
+    <MapFilterProvider>
+      <div className="h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 flex flex-col overflow-hidden">
+        {/* Fixed Header - ~60px */}
+        <div className="flex-shrink-0 h-[60px]">
+          <Header
           searchQuery={searchQuery}
           currentCity={currentCity}
           onSearchChange={setSearchQuery}
@@ -354,7 +352,6 @@ const HomePage = () => {
             <MapSection 
               mapCenter={mapCenter}
               currentCity={currentCity}
-              onFilterChange={handleFilterChange}
             />
           </div>
         </div>
@@ -385,7 +382,8 @@ const HomePage = () => {
         onCommentSubmit={() => {}}
         onStoryViewed={() => {}}
       />
-    </div>
+      </div>
+    </MapFilterProvider>
   );
 };
 

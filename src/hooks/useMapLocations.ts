@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import type { MapFilter } from '@/components/home/MapCategoryFilters';
+import type { MapFilter } from '@/contexts/MapFilterContext';
 
 interface MapLocation {
   id: string;

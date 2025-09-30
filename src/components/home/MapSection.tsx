@@ -1,11 +1,12 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import GoogleMapsSetup from '@/components/GoogleMapsSetup';
 import AddLocationModal from './AddLocationModal';
 import QuickAddPinModal from './QuickAddPinModal';
-import MapCategoryFilters, { type MapFilter } from './MapCategoryFilters';
+import MapCategoryFilters from './MapCategoryFilters';
 import PinShareModal from '../explore/PinShareModal';
 import { useMapLocations } from '@/hooks/useMapLocations';
+import { useMapFilter } from '@/contexts/MapFilterContext';
 import { Place } from '@/types/place';
 import { PinShareData } from '@/services/pinSharingService';
 import { toast } from 'sonner';
@@ -18,10 +19,9 @@ import { Badge } from '@/components/ui/badge';
 interface MapSectionProps {
   mapCenter: { lat: number; lng: number };
   currentCity: string;
-  onFilterChange?: (filter: MapFilter) => void;
 }
 
-const MapSection = ({ mapCenter, currentCity, onFilterChange }: MapSectionProps) => {
+const MapSection = ({ mapCenter, currentCity }: MapSectionProps) => {
   const [isAddLocationModalOpen, setIsAddLocationModalOpen] = useState(false);
   const [isQuickAddModalOpen, setIsQuickAddModalOpen] = useState(false);
   const [isPinShareModalOpen, setIsPinShareModalOpen] = useState(false);
@@ -30,24 +30,12 @@ const MapSection = ({ mapCenter, currentCity, onFilterChange }: MapSectionProps)
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [pinToShare, setPinToShare] = useState<PinShareData | null>(null);
   
-  // Filter states - MapSection is now the single source of truth
-  const [activeMapFilter, setActiveMapFilter] = useState<MapFilter>('popular');
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  
-  // Notify parent when filter changes
-  const handleMapFilterChange = (filter: MapFilter) => {
-    setActiveMapFilter(filter);
-    onFilterChange?.(filter);
-  };
-
-  // Reset category filters when switching between main filters
-  useEffect(() => {
-    setSelectedCategories([]);
-  }, [activeMapFilter]);
+  // Use global filter context - single source of truth
+  const { activeFilter, selectedCategories, setActiveFilter, toggleCategory } = useMapFilter();
   
   // Fetch locations based on current filters
   const { locations, loading, error, refetch } = useMapLocations({
-    mapFilter: activeMapFilter,
+    mapFilter: activeFilter,
     selectedCategories,
     currentCity
   });
@@ -71,7 +59,7 @@ const MapSection = ({ mapCenter, currentCity, onFilterChange }: MapSectionProps)
   const handleMapRightClick = (coords: { lat: number; lng: number }) => {
     setNewLocationCoords(coords);
     // Only allow adding pins in Saved filter
-    if (activeMapFilter === 'saved') {
+    if (activeFilter === 'saved') {
       setIsQuickAddModalOpen(true);
     } else {
       toast.error('Switch to "Saved" to add your favorite places', {
@@ -83,7 +71,7 @@ const MapSection = ({ mapCenter, currentCity, onFilterChange }: MapSectionProps)
   // Mobile-friendly tap to add a pin (only in Saved)
   const handleMapClick = (coords: { lat: number; lng: number }) => {
     setNewLocationCoords(coords);
-    if (activeMapFilter === 'saved') {
+    if (activeFilter === 'saved') {
       setIsQuickAddModalOpen(true);
     } else {
       toast.error('Switch to "Saved" to add your favorite places', {
@@ -122,19 +110,11 @@ const MapSection = ({ mapCenter, currentCity, onFilterChange }: MapSectionProps)
 
   const handlePinAdded = () => {
     // Switch to saved filter and close modal - this will trigger useMapLocations to refetch
-    handleMapFilterChange('saved');
+    setActiveFilter('saved');
     setIsQuickAddModalOpen(false);
     setNewLocationCoords(null);
     // Force refetch to show newly saved location
     try { refetch?.(); } catch {}
-  };
-
-  const handleCategoryToggle = (categoryId: string) => {
-    setSelectedCategories(prev => 
-      prev.includes(categoryId) 
-        ? prev.filter(id => id !== categoryId)
-        : [...prev, categoryId]
-    );
   };
 
   return (
@@ -149,16 +129,11 @@ const MapSection = ({ mapCenter, currentCity, onFilterChange }: MapSectionProps)
           onCloseSelectedPlace={() => setSelectedPlace(null)}
           onMapRightClick={handleMapRightClick}
           onMapClick={handleMapClick}
-          activeFilter={activeMapFilter}
+          activeFilter={activeFilter}
         />
         
         {/* Map Category Filters */}
-        <MapCategoryFilters
-          activeMapFilter={activeMapFilter}
-          onMapFilterChange={handleMapFilterChange}
-          selectedCategories={selectedCategories}
-          onCategoryToggle={handleCategoryToggle}
-        />
+        <MapCategoryFilters />
 
         {/* List View Toggle */}
         <div className="absolute bottom-6 right-4 z-40">
@@ -174,9 +149,9 @@ const MapSection = ({ mapCenter, currentCity, onFilterChange }: MapSectionProps)
             <SheetContent side="bottom" className="h-[70vh] rounded-t-3xl">
               <SheetHeader>
                 <SheetTitle className="flex items-center gap-2">
-                  {activeMapFilter === 'following' && 'Amici'}
-                  {activeMapFilter === 'popular' && 'Popolari'}
-                  {activeMapFilter === 'saved' && 'Salvati'} Locations
+                  {activeFilter === 'following' && 'Amici'}
+                  {activeFilter === 'popular' && 'Popolari'}
+                  {activeFilter === 'saved' && 'Salvati'} Locations
                   <Badge variant="secondary" className="ml-auto">
                     {places.length}
                   </Badge>
@@ -223,7 +198,7 @@ const MapSection = ({ mapCenter, currentCity, onFilterChange }: MapSectionProps)
                     <div className="text-center py-8 text-gray-500">
                       <List className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                       <p className="text-sm">No locations found</p>
-                      {activeMapFilter === 'saved' && (
+                      {activeFilter === 'saved' && (
                         <p className="text-xs mt-1">Tap on the map to add your first location</p>
                       )}
                     </div>
