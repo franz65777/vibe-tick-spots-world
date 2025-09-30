@@ -275,7 +275,8 @@ export async function scoreLocationForUser(
 export async function getRecommendedLocations(
   userId: string,
   city?: string,
-  limit: number = 10
+  limit: number = 10,
+  categoryFilter?: string | null
 ): Promise<
   Array<{
     id: string;
@@ -315,6 +316,11 @@ export async function getRecommendedLocations(
 
   if (city) {
     query = query.ilike('city', `%${city}%`);
+  }
+
+  // Apply category filter if provided
+  if (categoryFilter) {
+    query = query.eq('category', categoryFilter);
   }
 
   const { data: locations, error } = await query.limit(100); // Get more candidates for better filtering

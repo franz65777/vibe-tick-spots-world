@@ -28,8 +28,9 @@ interface UseRecommendedLocationsProps {
 export const useRecommendedLocations = ({ 
   currentCity, 
   userId, 
-  limit = 10
-}: UseRecommendedLocationsProps) => {
+  limit = 10,
+  categoryFilter = null
+}: UseRecommendedLocationsProps & { categoryFilter?: string | null }) => {
   const [locations, setLocations] = useState<RecommendedLocation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +48,7 @@ export const useRecommendedLocations = ({
         setError(null);
 
         // Use the new recommendation service
-        const recommendations = await getRecommendedLocations(userId, currentCity, limit);
+        const recommendations = await getRecommendedLocations(userId, currentCity, limit, categoryFilter);
         setLocations(recommendations);
 
       } catch (err: any) {
@@ -59,7 +60,7 @@ export const useRecommendedLocations = ({
     };
 
     fetchRecommendations();
-  }, [currentCity, userId, limit]);
+  }, [currentCity, userId, limit, categoryFilter]);
 
   return { locations, loading, error };
 };

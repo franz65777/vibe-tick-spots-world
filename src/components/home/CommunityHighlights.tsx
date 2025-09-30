@@ -1,8 +1,15 @@
 import React, { useState } from 'react';
 import { useRecommendedLocations } from '@/hooks/useRecommendedLocations';
-import { MapPin, TrendingUp, Tag, Flame, Sparkles, Crown } from 'lucide-react';
+import { MapPin, TrendingUp, Tag, Flame, Sparkles, Crown, Filter } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface CommunityHighlightsProps {
@@ -12,6 +19,16 @@ interface CommunityHighlightsProps {
   onUserClick: (userId: string) => void;
   onMapLocationClick: (coords: { lat: number; lng: number }) => void;
 }
+
+const categories = [
+  { value: null, label: 'All' },
+  { value: 'restaurant', label: 'Restaurants' },
+  { value: 'bar', label: 'Bars' },
+  { value: 'cafe', label: 'Cafés' },
+  { value: 'hotel', label: 'Hotels' },
+  { value: 'museum', label: 'Museums' },
+  { value: 'shopping', label: 'Shopping' },
+];
 
 const getBadgeConfig = (badge: string | null) => {
   switch (badge) {
@@ -36,10 +53,12 @@ const CommunityHighlights: React.FC<CommunityHighlightsProps> = ({
   onMapLocationClick,
 }) => {
   const { user } = useAuth();
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const { locations, loading } = useRecommendedLocations({
     currentCity,
     userId: user?.id,
-    limit: 10
+    limit: 10,
+    categoryFilter
   });
 
   const [scrollPosition, setScrollPosition] = useState(0);
@@ -91,20 +110,50 @@ const CommunityHighlights: React.FC<CommunityHighlightsProps> = ({
         <h2 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
           Discover
         </h2>
-        {locations.length > 0 && (
-          <div className="flex items-center gap-1">
-            {[...Array(Math.min(10, locations.length))].map((_, i) => (
-              <div
-                key={i}
-                className={`h-1.5 rounded-full transition-all ${
-                  (scrollPosition / 100) * locations.length > i 
-                    ? 'w-6 bg-gradient-to-r from-purple-500 to-pink-500' 
-                    : 'w-1.5 bg-gray-300'
-                }`}
-              />
-            ))}
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Category Filter */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="h-8 gap-1.5"
+              >
+                <Filter className="w-3.5 h-3.5" />
+                <span className="text-xs">
+                  {categories.find(c => c.value === categoryFilter)?.label || 'All'}
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {categories.map((category) => (
+                <DropdownMenuItem
+                  key={category.value || 'all'}
+                  onClick={() => setCategoryFilter(category.value)}
+                  className={categoryFilter === category.value ? 'bg-accent' : ''}
+                >
+                  {category.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          {/* Progress Dots */}
+          {locations.length > 0 && (
+            <div className="flex items-center gap-1">
+              {[...Array(Math.min(10, locations.length))].map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-1.5 rounded-full transition-all ${
+                    (scrollPosition / 100) * locations.length > i 
+                      ? 'w-6 bg-gradient-to-r from-purple-500 to-pink-500' 
+                      : 'w-1.5 bg-gray-300'
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <div 

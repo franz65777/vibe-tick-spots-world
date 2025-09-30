@@ -320,9 +320,9 @@ const HomePage = () => {
       </div>
       
       <main className="flex-1 flex flex-col overflow-hidden">
-        {/* Stories Section - Fixed ~140px */}
-        <div className="flex-shrink-0 h-[140px] px-4 pt-3 pb-2">
-          <div className="h-full bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200 px-4 py-3 overflow-x-auto snap-x snap-mandatory">
+        {/* Stories Section - Fixed ~110px */}
+        <div className="flex-shrink-0 h-[110px] px-4 pt-2 pb-2">
+          <div className="h-full bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200 px-3 py-2 overflow-x-auto snap-x snap-mandatory">
             <StoriesSection 
               stories={stories}
               onCreateStory={() => setIsCreateStoryModalOpen(true)}
