@@ -2,8 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useMapPins } from '@/hooks/useMapPins';
-import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { Place } from '@/types/place';
 import { Crown, Heart, MapPin } from 'lucide-react';
 import Header from './home/Header';
@@ -39,7 +37,6 @@ const HomePage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [selectedCity, setSelectedCity] = useState('');
-  const [activeFilter, setActiveFilter] = useState<'following' | 'popular' | 'saved'>('popular');
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 37.7749, lng: -122.4194 });
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -59,12 +56,6 @@ const HomePage = () => {
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [currentCity, setCurrentCity] = useState('');
-  
-  // Use the map pins hook with the active filter 
-  const { pins, loading, error, refreshPins, hasFollowedUsers } = useMapPins(activeFilter);
-  const { savedPlaces } = useSavedPlaces();
-
-  console.log('HomePage - pins:', pins, 'loading:', loading, 'error:', error);
 
   // Get user's current location on component mount
   useEffect(() => {
@@ -124,75 +115,9 @@ const HomePage = () => {
     setCityFromLocation();
   }, [userLocation]);
 
-  // Helper function to safely extract addedBy string
-  const getAddedByName = (addedBy: any): string => {
-    if (typeof addedBy === 'string') {
-      return addedBy;
-    }
-    if (addedBy && typeof addedBy === 'object' && addedBy.name) {
-      return addedBy.name;
-    }
-    return 'unknown';
-  };
-
-  // Convert saved places or map pins to Place format for the map
-  const places: Place[] = activeFilter === 'saved' 
-    ? Object.values(savedPlaces).flat().map(savedPlace => ({
-        id: savedPlace.id,
-        name: savedPlace.name,
-        category: savedPlace.category,
-        coordinates: savedPlace.coordinates,
-        likes: 0,
-        isFollowing: false,
-        addedBy: 'You',
-        addedDate: savedPlace.savedAt,
-        popularity: 50,
-        city: savedPlace.city,
-        isNew: false,
-        image: undefined,
-        friendsWhoSaved: [],
-        visitors: [],
-        distance: 0,
-        totalSaves: 1,
-        address: ''
-      }))
-    : pins.map(pin => ({
-        id: pin.id,
-        name: pin.name,
-        category: pin.category,
-        coordinates: pin.coordinates,
-        likes: pin.likes || 0,
-        isFollowing: pin.isFollowing || false,
-        addedBy: getAddedByName(pin.addedBy),
-        addedDate: pin.addedDate,
-        popularity: pin.popularity || 0,
-        city: pin.city,
-        isNew: pin.isNew || false,
-        image: pin.image,
-        friendsWhoSaved: Array.isArray(pin.friendsWhoSaved) ? pin.friendsWhoSaved : [],
-        visitors: Array.isArray(pin.visitors) ? pin.visitors : [],
-        distance: pin.distance || 0,
-        totalSaves: pin.totalSaves || 0,
-        address: pin.address || ''
-      }));
-
-  console.log('HomePage - converted places:', places);
-
-  const getTopLocation = () => {
-    if (places.length === 0) return null;
-    
-    const sortedPlaces = [...places].sort((a, b) => {
-      const aScore = (a.popularity || 0) + (a.likes || 0) + (a.totalSaves || 0);
-      const bScore = (b.popularity || 0) + (b.likes || 0) + (b.totalSaves || 0);
-      return bScore - aScore;
-    });
-    
-    return sortedPlaces[0];
-  };
-
   const handleFilterChange = (filter: 'following' | 'popular' | 'saved') => {
     console.log('HomePage - Filter changed to:', filter);
-    setActiveFilter(filter);
+    // MapSection now handles filter changes internally
   };
 
   const handleCityChange = (city: string, coords?: { lat: number; lng: number }) => {
@@ -239,8 +164,6 @@ const HomePage = () => {
       }
     }
 
-    // Refresh pins after city change
-    refreshPins(city);
   };
 
   const handlePinClick = (place: Place) => {
@@ -253,30 +176,28 @@ const HomePage = () => {
   };
 
   const handleLocationOfTheWeekClick = (place: Place) => {
-    const localPlace = convertToLocalPlace(place);
+    const localPlace: LocalPlace = {
+      id: place.id,
+      name: place.name,
+      category: place.category,
+      coordinates: place.coordinates,
+      likes: place.likes,
+      isFollowing: place.isFollowing,
+      addedBy: typeof place.addedBy === 'string' ? place.addedBy : 'unknown',
+      addedDate: place.addedDate,
+      popularity: place.popularity,
+      city: place.city,
+      isNew: place.isNew,
+      image: place.image,
+      friendsWhoSaved: Array.isArray(place.friendsWhoSaved) ? place.friendsWhoSaved : [],
+      visitors: place.visitors,
+      distance: place.distance,
+      totalSaves: place.totalSaves,
+      address: place.address
+    };
     setLocationDetailPlace(localPlace);
     setIsLocationDetailOpen(true);
   };
-
-  const convertToLocalPlace = (place: Place): LocalPlace => ({
-    id: place.id,
-    name: place.name,
-    category: place.category,
-    coordinates: place.coordinates,
-    likes: place.likes,
-    isFollowing: place.isFollowing,
-    addedBy: getAddedByName(place.addedBy),
-    addedDate: place.addedDate,
-    popularity: place.popularity,
-    city: place.city,
-    isNew: place.isNew,
-    image: place.image,
-    friendsWhoSaved: Array.isArray(place.friendsWhoSaved) ? place.friendsWhoSaved : [],
-    visitors: place.visitors,
-    distance: place.distance,
-    totalSaves: place.totalSaves,
-    address: place.address
-  });
 
   const [stories, setStories] = useState<any[]>([]);
   const [storiesLoading, setStoriesLoading] = useState(true);
@@ -377,8 +298,6 @@ const HomePage = () => {
     );
   }
 
-  const topLocation = getTopLocation();
-
   return (
     <div className="h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 flex flex-col overflow-hidden">
       {/* Fixed Header - ~60px */}
@@ -416,7 +335,7 @@ const HomePage = () => {
             <CommunityHighlights
               currentCity={currentCity}
               userLocation={userLocation}
-              topLocation={topLocation}
+              topLocation={null}
               onLocationClick={(locationId: string, coordinates?: { lat: number; lng: number }) => {
                 if (coordinates) {
                   setMapCenter(coordinates);
@@ -427,41 +346,20 @@ const HomePage = () => {
                 navigate('/explore');
               }}
               onMapLocationClick={(coords: { lat: number; lng: number }) => setMapCenter(coords)}
-              onTopLocationClick={() => topLocation && handleLocationOfTheWeekClick(topLocation)}
+              onTopLocationClick={() => {}}
             />
           </div>
         </div>
         
         {/* Map Section - Flex-1 fills remaining space */}
         <div className="flex-1 min-h-0 px-4 pb-4">
-          {loading ? (
-            <div className="h-full flex items-center justify-center bg-white/50 backdrop-blur-sm rounded-2xl">
-              <div className="text-center">
-                <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-gray-500">Loading amazing places...</p>
-              </div>
-            </div>
-          ) : error ? (
-            <div className="h-full flex items-center justify-center bg-white/50 backdrop-blur-sm rounded-2xl">
-              <div className="text-center">
-                <p className="text-red-500 mb-4">Error loading places: {error}</p>
-                <button 
-                  onClick={() => refreshPins()} 
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
-                  Retry
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="h-full">
-              <MapSection 
-                mapCenter={mapCenter}
-                currentCity={currentCity}
-                activeFilter={activeFilter}
-              />
-            </div>
-          )}
+          <div className="h-full">
+            <MapSection 
+              mapCenter={mapCenter}
+              currentCity={currentCity}
+              onFilterChange={handleFilterChange}
+            />
+          </div>
         </div>
       </main>
 

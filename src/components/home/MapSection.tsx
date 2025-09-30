@@ -9,7 +9,7 @@ import { useMapLocations } from '@/hooks/useMapLocations';
 import { Place } from '@/types/place';
 import { PinShareData } from '@/services/pinSharingService';
 import { toast } from 'sonner';
-import { Users, TrendingUp, Bookmark, List } from 'lucide-react';
+import { List } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -18,10 +18,10 @@ import { Badge } from '@/components/ui/badge';
 interface MapSectionProps {
   mapCenter: { lat: number; lng: number };
   currentCity: string;
-  activeFilter?: MapFilter;
+  onFilterChange?: (filter: MapFilter) => void;
 }
 
-const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) => {
+const MapSection = ({ mapCenter, currentCity, onFilterChange }: MapSectionProps) => {
   const [isAddLocationModalOpen, setIsAddLocationModalOpen] = useState(false);
   const [isQuickAddModalOpen, setIsQuickAddModalOpen] = useState(false);
   const [isPinShareModalOpen, setIsPinShareModalOpen] = useState(false);
@@ -30,16 +30,15 @@ const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) =
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [pinToShare, setPinToShare] = useState<PinShareData | null>(null);
   
-  // Filter states
-  const [activeMapFilter, setActiveMapFilter] = useState<MapFilter>(activeFilter || 'popular');
+  // Filter states - MapSection is now the single source of truth
+  const [activeMapFilter, setActiveMapFilter] = useState<MapFilter>('popular');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-
-  // Keep internal filter in sync with parent prop
-  useEffect(() => {
-    if (activeFilter && activeFilter !== activeMapFilter) {
-      setActiveMapFilter(activeFilter);
-    }
-  }, [activeFilter]);
+  
+  // Notify parent when filter changes
+  const handleMapFilterChange = (filter: MapFilter) => {
+    setActiveMapFilter(filter);
+    onFilterChange?.(filter);
+  };
 
   // Reset category filters when switching between main filters
   useEffect(() => {
@@ -123,7 +122,7 @@ const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) =
 
   const handlePinAdded = () => {
     // Switch to saved filter and close modal - this will trigger useMapLocations to refetch
-    setActiveMapFilter('saved');
+    handleMapFilterChange('saved');
     setIsQuickAddModalOpen(false);
     setNewLocationCoords(null);
     // Force refetch to show newly saved location
@@ -136,32 +135,6 @@ const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) =
         ? prev.filter(id => id !== categoryId)
         : [...prev, categoryId]
     );
-  };
-
-  const getFilterIcon = (filter: MapFilter) => {
-    switch (filter) {
-      case 'following':
-        return <Users className="w-4 h-4" />;
-      case 'popular':
-        return <TrendingUp className="w-4 h-4" />;
-      case 'saved':
-        return <Bookmark className="w-4 h-4" />;
-      default:
-        return null;
-    }
-  };
-
-  const getFilterLabel = (filter: MapFilter) => {
-    switch (filter) {
-      case 'following':
-        return 'Amici';
-      case 'popular':
-        return 'Popolari';
-      case 'saved':
-        return 'Salvati';
-      default:
-        return filter;
-    }
   };
 
   return (
@@ -182,30 +155,10 @@ const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) =
         {/* Map Category Filters */}
         <MapCategoryFilters
           activeMapFilter={activeMapFilter}
-          onMapFilterChange={setActiveMapFilter}
+          onMapFilterChange={handleMapFilterChange}
           selectedCategories={selectedCategories}
           onCategoryToggle={handleCategoryToggle}
         />
-
-        {/* Filter Indicator */}
-        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-40">
-          <div className="bg-white/95 backdrop-blur-md rounded-full shadow-lg border border-gray-200 px-2 py-1.5 flex items-center gap-2">
-            {(['following', 'popular', 'saved'] as MapFilter[]).map((filter) => (
-              <button
-                key={filter}
-                onClick={() => setActiveMapFilter(filter)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                  activeMapFilter === filter
-                    ? 'bg-blue-600 text-white shadow-md'
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                {getFilterIcon(filter)}
-                <span>{getFilterLabel(filter)}</span>
-              </button>
-            ))}
-          </div>
-        </div>
 
         {/* List View Toggle */}
         <div className="absolute bottom-6 right-4 z-40">
@@ -221,8 +174,9 @@ const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) =
             <SheetContent side="bottom" className="h-[70vh] rounded-t-3xl">
               <SheetHeader>
                 <SheetTitle className="flex items-center gap-2">
-                  {getFilterIcon(activeMapFilter)}
-                  {getFilterLabel(activeMapFilter)} Locations
+                  {activeMapFilter === 'following' && 'Amici'}
+                  {activeMapFilter === 'popular' && 'Popolari'}
+                  {activeMapFilter === 'saved' && 'Salvati'} Locations
                   <Badge variant="secondary" className="ml-auto">
                     {places.length}
                   </Badge>
