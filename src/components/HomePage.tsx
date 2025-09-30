@@ -12,6 +12,7 @@ import MapSection from './home/MapSection';
 import ModalsManager from './home/ModalsManager';
 import CommunityHighlights from './home/CommunityHighlights';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '@/lib/googleMaps';
+import { supabase } from '@/integrations/supabase/client';
 
 // Local interface for modal components that expect simpler Place structure
 interface LocalPlace {
@@ -286,21 +287,87 @@ const HomePage = () => {
     address: place.address
   });
 
-  const stories = [
-    {
-      id: '1',
-      userId: 'user1',
-      userName: 'John Doe',
-      userAvatar: '',
-      isViewed: false,
-      mediaUrl: '/placeholder.svg',
-      mediaType: 'image' as const,
-      locationId: 'loc1',
-      locationName: 'Sample Location',
-      locationAddress: 'Sample Address',
-      timestamp: new Date().toISOString(),
-    }
-  ];
+  const [stories, setStories] = useState<any[]>([]);
+  const [storiesLoading, setStoriesLoading] = useState(true);
+
+  // Fetch stories from followed users
+  useEffect(() => {
+    const fetchFollowedStories = async () => {
+      if (!user) return;
+
+      try {
+        setStoriesLoading(true);
+
+        // Get list of users current user is following
+        const { data: followData } = await supabase
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', user.id);
+
+        const followingIds = followData?.map(f => f.following_id) || [];
+
+        if (followingIds.length === 0) {
+          setStories([]);
+          return;
+        }
+
+        // Fetch stories from followed users (not expired)
+        const { data: storiesData, error } = await supabase
+          .from('stories')
+          .select(`
+            id,
+            user_id,
+            media_url,
+            media_type,
+            caption,
+            location_name,
+            location_address,
+            created_at
+          `)
+          .in('user_id', followingIds)
+          .gt('expires_at', new Date().toISOString())
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        // Fetch profile data separately for each user
+        const userIds = [...new Set(storiesData?.map(s => s.user_id) || [])];
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, username, avatar_url')
+          .in('id', userIds);
+
+        const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+
+        // Transform stories to expected format
+        const formattedStories = storiesData?.map(story => {
+          const profile = profilesMap.get(story.user_id);
+          return {
+            id: story.id,
+            userId: story.user_id,
+            userName: profile?.username || 'User',
+            userAvatar: profile?.avatar_url || '',
+            isViewed: false,
+            mediaUrl: story.media_url,
+            mediaType: story.media_type,
+            locationId: null,
+            locationName: story.location_name,
+            locationAddress: story.location_address,
+            timestamp: story.created_at,
+          };
+        }) || [];
+
+        setStories(formattedStories);
+      } catch (error) {
+        console.error('Error fetching followed stories:', error);
+        setStories([]);
+      } finally {
+        setStoriesLoading(false);
+      }
+    };
+
+    fetchFollowedStories();
+  }, [user]);
 
   if (!user) {
     return (
