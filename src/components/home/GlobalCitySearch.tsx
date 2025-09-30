@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { Search, MapPin, Building, Landmark, Building2, Clock, Mountain, Shield, Church, Waves, TreePine, Locate, Globe } from 'lucide-react';
+import { Search, MapPin, Building, Landmark, Building2, Clock, Mountain, Shield, Church, Waves, TreePine, Locate, Globe, TrendingUp, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useGeolocation } from '@/hooks/useGeolocation';
+import { useTrendingCities } from '@/hooks/useTrendingCities';
 import { loadGoogleMapsAPI } from '@/lib/googleMaps';
 
 interface GlobalCitySearchProps {
@@ -131,13 +133,15 @@ const GlobalCitySearch = ({
   onCitySelect 
 }: GlobalCitySearchProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [filteredCities, setFilteredCities] = useState<Array<{key: string, data: typeof globalCities[keyof typeof globalCities], similarity: number}>>([]);
+  const [filteredCities, setFilteredCities] = useState<Array<{key: string, data: typeof globalCities[keyof typeof globalCities], similarity: number, isTrending?: boolean}>>([]);
   const [userHasManuallySelectedCity, setUserHasManuallySelectedCity] = useState(false);
   const [ignoreGeoLocation, setIgnoreGeoLocation] = useState(false);
   const [externalResults, setExternalResults] = useState<Array<{ name: string; lat: number; lng: number; subtitle?: string }>>([]);
   const [isFetchingExternal, setIsFetchingExternal] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const searchRef = useRef<HTMLDivElement>(null);
   const { location, loading: geoLoading, getCurrentLocation } = useGeolocation();
+  const { trendingCities, loading: trendingLoading } = useTrendingCities();
 
   // Only update current city from geolocation if user hasn't manually selected one AND not ignoring geo
   useEffect(() => {
@@ -154,9 +158,24 @@ const GlobalCitySearch = ({
   const currentCityData = globalCities[currentCity.toLowerCase() as keyof typeof globalCities];
   const CurrentCityIcon = currentCityData?.icon || MapPin;
 
+  // Load recent searches from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem('recentCitySearches');
+    if (stored) {
+      try {
+        setRecentSearches(JSON.parse(stored));
+      } catch (e) {
+        console.error('Failed to parse recent searches', e);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (searchQuery.trim() && searchQuery.trim() !== ' ') {
       const query = searchQuery.toLowerCase().trim();
+      
+      // Get trending city names
+      const trendingCityNames = trendingCities.map(tc => tc.city.toLowerCase());
       
       // Find matches with similarity scoring
       const matches = Object.entries(globalCities)
@@ -186,11 +205,17 @@ const GlobalCitySearch = ({
             bestSimilarity = Math.max(bestSimilarity, 0.9);
           }
           
-          return { key, data, similarity: bestSimilarity };
+          // Boost score if city is trending
+          const isTrending = trendingCityNames.includes(data.name.toLowerCase());
+          if (isTrending) {
+            bestSimilarity += 0.5;
+          }
+          
+          return { key, data, similarity: bestSimilarity, isTrending };
         })
-        .filter(item => item.similarity > 0.3) // Show more permissive matches for global search
-        .sort((a, b) => b.similarity - a.similarity) // Sort by best match first
-        .slice(0, 8); // Show more results for global search
+        .filter(item => item.similarity > 0.3)
+        .sort((a, b) => b.similarity - a.similarity)
+        .slice(0, 5); // Limit to 5 results for mobile
       
       setFilteredCities(matches);
       setIsOpen(true);
@@ -198,7 +223,7 @@ const GlobalCitySearch = ({
       setFilteredCities([]);
       setIsOpen(false);
     }
-  }, [searchQuery]);
+  }, [searchQuery, trendingCities]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -280,7 +305,7 @@ const GlobalCitySearch = ({
 
         const results = Array.from(dedupe.values())
           .sort((a, b) => b.score - a.score)
-          .slice(0, 8)
+          .slice(0, 5) // Limit to 5 for mobile
           .map((r: any) => ({
             name: `${r.city}${r.country ? ', ' + r.country : ''}`,
             lat: r.lat,
@@ -305,6 +330,11 @@ const GlobalCitySearch = ({
     console.log('Manual city selection:', cityName, coords);
     setUserHasManuallySelectedCity(true);
     setIgnoreGeoLocation(true);
+
+    // Save to recent searches
+    const updated = [cityName, ...recentSearches.filter(c => c !== cityName)].slice(0, 5);
+    setRecentSearches(updated);
+    localStorage.setItem('recentCitySearches', JSON.stringify(updated));
 
     let finalCoords = coords;
     if (!finalCoords) {
@@ -345,8 +375,13 @@ const GlobalCitySearch = ({
       <div className="relative">
         {!searchQuery || searchQuery.trim() === ' ' ? (
           // Show current city when not searching
-          <div className="flex items-center gap-2 bg-white/95 border border-gray-200 rounded-xl h-10 px-3 hover:bg-white transition-all duration-200 cursor-pointer shadow-sm backdrop-blur-sm"
-               onClick={() => document.getElementById('global-city-search-input')?.focus()}>
+          <div 
+            className="flex items-center gap-2 bg-white/95 border border-gray-200 rounded-xl h-10 px-3 hover:bg-white transition-all duration-200 cursor-pointer shadow-sm backdrop-blur-sm"
+            onClick={() => {
+              onSearchChange(' ');
+              setIsOpen(true);
+            }}
+          >
             <MapPin className="w-4 h-4 text-blue-600 shrink-0" />
             <div className="flex-1 min-w-0">
               <span className="text-gray-900 font-medium text-sm truncate">
@@ -382,7 +417,7 @@ const GlobalCitySearch = ({
               value={searchQuery === ' ' ? '' : searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               onKeyPress={onSearchKeyPress}
-              onFocus={() => searchQuery && setIsOpen(true)}
+              onFocus={() => setIsOpen(true)}
               className="pl-10 pr-10 bg-white/95 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-xl h-10 text-sm shadow-sm backdrop-blur-sm"
               autoFocus
             />
@@ -392,86 +427,195 @@ const GlobalCitySearch = ({
         )}
       </div>
 
-      {/* Hidden input for focusing */}
-      {(!searchQuery || searchQuery.trim() === ' ') && (
-        <input
-          id="global-city-search-input"
-          type="text"
-          className="absolute inset-0 opacity-0 cursor-pointer"
-          onFocus={() => onSearchChange(' ')}
-          onChange={(e) => onSearchChange(e.target.value)}
-          onKeyPress={onSearchKeyPress}
-        />
-      )}
-
-      {/* Mobile Optimized Dropdown Results */}
-      {isOpen && (Object.keys(groupedCities).length > 0 || externalResults.length > 0) && (
-        <>
-          <div
-            className="fixed inset-0 z-30 bg-black/20 backdrop-blur-sm animate-fade-in"
-            onClick={() => { setIsOpen(false); onSearchChange(''); }}
-          />
-          <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-xl border border-gray-100 max-h-60 overflow-hidden z-[9999] mx-2">
-            <div className="overflow-y-auto max-h-60 divide-y divide-gray-50">
-              {/* External global results */}
-              {externalResults.length > 0 && (
-                <div>
-                  <div className="px-3 py-1.5 bg-gray-50 text-[9px] font-bold text-gray-700 uppercase tracking-wider sticky top-0">
-                    Global results
-                  </div>
-                  {externalResults.map((item, idx) => (
-                    <button
-                      key={`ext-${idx}`}
-                      onClick={() => handleCityClick(item.name, { lat: item.lat, lng: item.lng })}
-                      className="w-full flex items-center justify-center px-3 py-2 hover:bg-blue-50 transition-colors text-center"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-gray-900 text-sm truncate">{item.name}</div>
-                        {item.subtitle && <div className="text-xs text-gray-500 truncate">{item.subtitle}</div>}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-              {Object.entries(groupedCities).map(([continent, cities]) => (
-                <div key={continent}>
-                  <div className="px-3 py-1.5 bg-gray-50 text-[9px] font-bold text-gray-700 uppercase tracking-wider sticky top-0">
-                    {continent}
-                  </div>
-                  {cities.map(({ key, data, similarity }) => {
-                    return (
-                      <button
-                        key={key}
-                        onClick={() => handleCityClick(data.name)}
-                        className="w-full flex items-center justify-center px-3 py-2 hover:bg-blue-50 transition-colors text-center"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-gray-900 text-sm truncate">{data.name}</div>
-                          <div className="text-xs text-gray-500 truncate">{data.country}</div>
-                        </div>
-                        {similarity > 0.8 && (
-                          <div className="text-[9px] text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded-full font-medium ml-2">
-                            Best Match
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              ))}
+      {/* Bottom Sheet for City Selection */}
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <SheetContent 
+          side="bottom" 
+          className="h-[70vh] rounded-t-3xl border-t-0 p-0 overflow-hidden"
+        >
+          <SheetHeader className="px-6 py-4 border-b bg-gradient-to-br from-blue-50 to-white">
+            <SheetTitle className="text-lg font-semibold flex items-center gap-2">
+              <Globe className="w-5 h-5 text-blue-600" />
+              Select City
+            </SheetTitle>
+            <div className="mt-3">
+              <div className="relative">
+                <Input
+                  type="text"
+                  placeholder="Search cities worldwide..."
+                  value={searchQuery === ' ' ? '' : searchQuery}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  className="pl-10 pr-4 bg-white border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-xl h-10 text-sm"
+                />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              </div>
             </div>
-          </div>
-        </>
-      )}
+          </SheetHeader>
 
-      {isOpen && searchQuery.trim() && searchQuery.trim() !== ' ' && externalResults.length === 0 && Object.keys(groupedCities).length === 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 z-[9999] backdrop-blur-sm">
-          <div className="text-gray-500 text-sm text-center">
-            <div className="mb-2">No cities found for "{searchQuery}"</div>
-            <div className="text-xs">Try another spelling or a nearby city</div>
+          <div className="overflow-y-auto h-[calc(70vh-140px)] pb-6">
+            {!searchQuery || searchQuery.trim() === ' ' ? (
+              // Show suggested and recent when not searching
+              <div className="space-y-6 px-6 py-4">
+                {/* Suggested For You */}
+                {trendingCities.length > 0 && (
+                  <div>
+                    <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-blue-600" />
+                      Suggerite per te
+                    </h3>
+                    <div className="space-y-2">
+                      {trendingCities.map((tc) => {
+                        const cityKey = Object.keys(globalCities).find(
+                          key => globalCities[key as keyof typeof globalCities].name.toLowerCase() === tc.city.toLowerCase()
+                        );
+                        const cityData = cityKey ? globalCities[cityKey as keyof typeof globalCities] : null;
+                        const CityIcon = cityData?.icon || MapPin;
+                        
+                        return (
+                          <button
+                            key={tc.city}
+                            onClick={() => handleCityClick(tc.city)}
+                            className="w-full flex items-center gap-3 p-3 hover:bg-blue-50 rounded-xl transition-all duration-200 border border-transparent hover:border-blue-200 group"
+                          >
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                              <CityIcon className="w-5 h-5 text-white" />
+                            </div>
+                            <div className="flex-1 text-left min-w-0">
+                              <div className="font-semibold text-gray-900 text-sm">{tc.city}</div>
+                              {cityData?.country && (
+                                <div className="text-xs text-gray-500">{cityData.country}</div>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1 text-xs text-blue-600 font-medium shrink-0">
+                              <Users className="w-3 h-3" />
+                              {tc.friendCount}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Recent Searches */}
+                {recentSearches.length > 0 && (
+                  <div>
+                    <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-gray-600" />
+                      Recentemente cercate
+                    </h3>
+                    <div className="space-y-2">
+                      {recentSearches.map((city) => {
+                        const cityKey = Object.keys(globalCities).find(
+                          key => globalCities[key as keyof typeof globalCities].name.toLowerCase() === city.toLowerCase()
+                        );
+                        const cityData = cityKey ? globalCities[cityKey as keyof typeof globalCities] : null;
+                        const CityIcon = cityData?.icon || MapPin;
+                        
+                        return (
+                          <button
+                            key={city}
+                            onClick={() => handleCityClick(city)}
+                            className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 rounded-xl transition-all duration-200"
+                          >
+                            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+                              <CityIcon className="w-5 h-5 text-gray-600" />
+                            </div>
+                            <div className="flex-1 text-left min-w-0">
+                              <div className="font-medium text-gray-900 text-sm">{city}</div>
+                              {cityData?.country && (
+                                <div className="text-xs text-gray-500">{cityData.country}</div>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              // Show search results
+              <div className="px-6 py-4">
+                {isFetchingExternal && (
+                  <div className="py-4 text-center">
+                    <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                  </div>
+                )}
+
+                {/* External global results */}
+                {externalResults.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">
+                      Global Results
+                    </h3>
+                    <div className="space-y-2">
+                      {externalResults.map((item, idx) => (
+                        <button
+                          key={`ext-${idx}`}
+                          onClick={() => handleCityClick(item.name, { lat: item.lat, lng: item.lng })}
+                          className="w-full flex items-center gap-3 p-3 hover:bg-blue-50 rounded-xl transition-all duration-200"
+                        >
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shrink-0">
+                            <Globe className="w-5 h-5 text-white" />
+                          </div>
+                          <div className="flex-1 text-left min-w-0">
+                            <div className="font-semibold text-gray-900 text-sm">{item.name}</div>
+                            {item.subtitle && <div className="text-xs text-gray-500">{item.subtitle}</div>}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Grouped cities by continent */}
+                {Object.entries(groupedCities).map(([continent, cities]) => (
+                  <div key={continent} className="mb-6">
+                    <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">
+                      {continent}
+                    </h3>
+                    <div className="space-y-2">
+                      {cities.map(({ key, data, isTrending }) => {
+                        const CityIcon = data.icon;
+                        return (
+                          <button
+                            key={key}
+                            onClick={() => handleCityClick(data.name)}
+                            className="w-full flex items-center gap-3 p-3 hover:bg-blue-50 rounded-xl transition-all duration-200 group"
+                          >
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                              isTrending 
+                                ? 'bg-gradient-to-br from-blue-500 to-blue-600' 
+                                : 'bg-gray-100'
+                            }`}>
+                              <CityIcon className={`w-5 h-5 ${isTrending ? 'text-white' : 'text-gray-600'}`} />
+                            </div>
+                            <div className="flex-1 text-left min-w-0">
+                              <div className="font-semibold text-gray-900 text-sm flex items-center gap-2">
+                                {data.name}
+                                {isTrending && <TrendingUp className="w-3 h-3 text-blue-600" />}
+                              </div>
+                              <div className="text-xs text-gray-500">{data.country}</div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+
+                {filteredCities.length === 0 && externalResults.length === 0 && !isFetchingExternal && (
+                  <div className="py-8 text-center text-gray-500">
+                    <Globe className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <p className="text-sm">No cities found</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
