@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -13,6 +13,7 @@ import PostsGrid from './profile/PostsGrid';
 import TripsGrid from './profile/TripsGrid';
 import FollowersModal from './profile/FollowersModal';
 import SavedLocationsList from './profile/SavedLocationsList';
+import { useUserBadges } from '@/hooks/useUserBadges';
 
 const ProfilePage = () => {
   const { profile, loading, error } = useProfile();
@@ -24,6 +25,25 @@ const ProfilePage = () => {
     type: null
   });
   const [isLocationsListOpen, setIsLocationsListOpen] = useState(false);
+  const { badges } = useUserBadges();
+  const [lastBadgeCount, setLastBadgeCount] = useState(0);
+  const [hasNewBadges, setHasNewBadges] = useState(false);
+
+  // Track new badges
+  useEffect(() => {
+    const earnedCount = badges.filter(b => b.earned).length;
+    if (lastBadgeCount > 0 && earnedCount > lastBadgeCount) {
+      setHasNewBadges(true);
+    }
+    setLastBadgeCount(earnedCount);
+  }, [badges]);
+
+  // Clear new badge indicator when viewing badges tab
+  useEffect(() => {
+    if (activeTab === 'badges') {
+      setHasNewBadges(false);
+    }
+  }, [activeTab]);
 
   const openModal = (type: 'followers' | 'following') => {
     setModalState({ isOpen: true, type });
@@ -97,7 +117,11 @@ const ProfilePage = () => {
         onLocationsClick={handleLocationsClick}
       />
       
-      <ProfileTabs activeTab={activeTab} onTabChange={setActiveTab} />
+      <ProfileTabs 
+        activeTab={activeTab} 
+        onTabChange={setActiveTab}
+        hasNewBadges={hasNewBadges}
+      />
       
       {/* Tab Content */}
       <div className="flex-1 pb-4">
