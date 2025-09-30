@@ -33,8 +33,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('AuthProvider: Auth state changed:', event, session?.user?.email);
-        setSession(session);
-        setUser(session?.user ?? null);
+        
+        if (event === 'TOKEN_REFRESHED') {
+          console.log('AuthProvider: Token refreshed successfully');
+        }
+        
+        if (event === 'SIGNED_OUT') {
+          setSession(null);
+          setUser(null);
+        } else {
+          setSession(session);
+          setUser(session?.user ?? null);
+        }
         
         // If user just signed in, ensure profile exists with timeout
         if (event === 'SIGNED_IN' && session?.user) {
@@ -73,9 +83,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     });
 
+    // Set up automatic token refresh every 45 minutes
+    const refreshInterval = setInterval(async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        console.log('AuthProvider: Refreshing session token...');
+        const { error } = await supabase.auth.refreshSession();
+        if (error) {
+          console.error('AuthProvider: Error refreshing session, signing out:', error);
+          await supabase.auth.signOut();
+        }
+      }
+    }, 45 * 60 * 1000);
+
     return () => {
       console.log('AuthProvider: Cleaning up auth subscription');
       subscription.unsubscribe();
+      clearInterval(refreshInterval);
     };
   }, []);
 
