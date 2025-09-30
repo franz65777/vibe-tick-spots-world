@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, Plus, User, Pin } from 'lucide-react';
+import { Search, Plus, User, Pin, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const BottomNavigation = () => {
@@ -16,6 +16,7 @@ const BottomNavigation = () => {
     },
     { icon: Search, label: 'Search', path: '/explore' },
     { icon: Plus, label: 'Add', path: '/add' },
+    { icon: Activity, label: 'Feed', path: '/feed' },
     { icon: User, label: 'Profile', path: '/profile' },
   ];
 
