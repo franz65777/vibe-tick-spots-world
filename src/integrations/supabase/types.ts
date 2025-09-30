@@ -428,6 +428,41 @@ export type Database = {
           },
         ]
       }
+      interactions: {
+        Row: {
+          action_type: string
+          created_at: string
+          id: string
+          location_id: string
+          user_id: string
+          weight: number
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          id?: string
+          location_id: string
+          user_id: string
+          weight?: number
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          id?: string
+          location_id?: string
+          user_id?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interactions_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       location_claims: {
         Row: {
           business_id: string | null
@@ -1484,7 +1519,24 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      trending_locations: {
+        Row: {
+          last_updated: string | null
+          location_id: string | null
+          previous_interactions: number | null
+          recent_interactions: number | null
+          trend_ratio: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interactions_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       check_auth_rate_limit: {
@@ -1592,6 +1644,17 @@ export type Database = {
           receiver_id: string
           sender_id: string
         }[]
+      }
+      get_user_category_weights: {
+        Args: { target_user_id: string }
+        Returns: {
+          category: string
+          weight: number
+        }[]
+      }
+      refresh_trending_locations: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       search_users_safely: {
         Args: { requesting_user_id: string; search_query: string }
