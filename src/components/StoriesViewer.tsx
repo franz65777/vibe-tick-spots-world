@@ -90,12 +90,12 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex items-center justify-center">
-      {/* Progress bars */}
-      <div className="absolute top-4 left-4 right-4 flex gap-1 z-10">
+      {/* Progress bars - Enhanced horizontal indicator */}
+      <div className="absolute top-4 left-4 right-4 flex gap-1.5 z-10">
         {stories.map((_, index) => (
-          <div key={index} className="flex-1 h-1 bg-white/30 rounded-full overflow-hidden">
+          <div key={index} className="flex-1 h-1 bg-white/30 rounded-full overflow-hidden shadow-sm">
             <div
-              className="h-full bg-white transition-all duration-100"
+              className="h-full bg-gradient-to-r from-white to-blue-100 transition-all duration-100 rounded-full"
               style={{
                 width: index < currentStoryIndex ? '100%' : index === currentStoryIndex ? `${progress}%` : '0%'
               }}
@@ -114,9 +114,9 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
         <X className="w-6 h-6" />
       </Button>
 
-      {/* User info */}
-      <div className="absolute top-16 left-4 right-4 flex items-center gap-3 z-10">
-        <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
+      {/* User info - Enhanced with better visibility */}
+      <div className="absolute top-16 left-4 right-4 flex items-center gap-3 z-10 bg-black/40 backdrop-blur-sm rounded-2xl px-3 py-2 shadow-xl">
+        <div className="w-11 h-11 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
           {currentStory.userAvatar ? (
             <img 
               src={currentStory.userAvatar} 
@@ -128,8 +128,14 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
           )}
         </div>
         <div className="flex-1">
-          <p className="text-white font-semibold text-sm drop-shadow-lg">{currentStory.userName}</p>
-          <p className="text-white/80 text-xs drop-shadow">{currentStory.timestamp}</p>
+          <p className="text-white font-bold text-sm drop-shadow-lg">{currentStory.userName}</p>
+          <p className="text-white/90 text-xs drop-shadow font-medium">
+            {new Date(currentStory.timestamp).toLocaleTimeString('en-US', { 
+              hour: 'numeric', 
+              minute: '2-digit',
+              hour12: true 
+            })}
+          </p>
         </div>
       </div>
 
@@ -162,27 +168,27 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
         />
       </div>
 
-      {/* Location info */}
-      <div className="absolute bottom-6 left-4 right-4 bg-black/70 backdrop-blur-md rounded-2xl p-4 shadow-2xl border border-white/10">
-        <div className="flex items-start gap-3 mb-4">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shrink-0">
-            <MapPin className="w-5 h-5 text-white" />
+      {/* Location info - Enhanced card */}
+      <div className="absolute bottom-6 left-4 right-4 bg-black/80 backdrop-blur-lg rounded-3xl p-5 shadow-2xl border border-white/20">
+        <div className="flex items-start gap-4 mb-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shrink-0 shadow-lg">
+            <MapPin className="w-6 h-6 text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-white font-bold text-base mb-1">{currentStory.locationName}</h3>
-            <p className="text-white/70 text-sm mb-2">{currentStory.locationAddress}</p>
+            <h3 className="text-white font-bold text-lg mb-1.5 leading-tight">{currentStory.locationName}</h3>
+            <p className="text-white/80 text-sm mb-2.5 leading-snug">{currentStory.locationAddress}</p>
             {currentStory.locationCategory && (
-              <Badge className="bg-white/20 text-white border-white/30 text-xs">
+              <Badge className="bg-gradient-to-r from-blue-500/30 to-purple-500/30 text-white border-white/40 text-xs font-semibold px-3 py-1 backdrop-blur">
                 {currentStory.locationCategory}
               </Badge>
             )}
           </div>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           {onLocationClick && currentStory.locationId && (
             <Button
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium"
+              className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl font-semibold shadow-lg transition-all active:scale-95"
               onClick={() => onLocationClick(currentStory.locationId)}
             >
               <Navigation className="w-4 h-4 mr-2" />
@@ -192,7 +198,7 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
           
           {currentStory.bookingUrl && (
             <Button
-              className="flex-1 bg-white/20 hover:bg-white/30 text-white rounded-xl font-medium backdrop-blur"
+              className="flex-1 bg-white/20 hover:bg-white/30 text-white rounded-xl font-semibold backdrop-blur border border-white/30 transition-all active:scale-95"
               onClick={() => window.open(currentStory.bookingUrl, '_blank')}
             >
               <ExternalLink className="w-4 h-4 mr-2" />
