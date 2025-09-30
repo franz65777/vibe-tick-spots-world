@@ -11,6 +11,7 @@ import ProfileTabs from './profile/ProfileTabs';
 import Achievements from './profile/Achievements';
 import PostsGrid from './profile/PostsGrid';
 import TripsGrid from './profile/TripsGrid';
+import ReservationsList from './profile/ReservationsList';
 import FollowersModal from './profile/FollowersModal';
 import SavedLocationsList from './profile/SavedLocationsList';
 import { useUserBadges } from '@/hooks/useUserBadges';
@@ -89,6 +90,8 @@ const ProfilePage = () => {
         return <TripsGrid />;
       case 'badges':
         return <Achievements userId={user?.id} />;
+      case 'reservations':
+        return <ReservationsList />;
       default:
         return <PostsGrid />;
     }

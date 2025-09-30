@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { X, MapPin, Heart, Bookmark, MessageCircle, Share, Building2 } from 'lucide-react';
+import { X, MapPin, Heart, Bookmark, MessageCircle, Share, Building2, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import BookingModal from '@/components/booking/BookingModal';
+import { reservationService } from '@/services/reservationService';
 
 interface Post {
   id: string;
@@ -45,6 +47,8 @@ const LocationDetailSheet = ({
   const [claimedBy, setClaimedBy] = useState<string | null>(null);
   const [actualLocationId, setActualLocationId] = useState<string | null>(null);
   const [claiming, setClaiming] = useState(false);
+  const [locationCategory, setLocationCategory] = useState<string>('');
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen && locationId) {
@@ -64,7 +68,7 @@ const LocationDetailSheet = ({
         console.log('🔄 Converting Google Place ID to location UUID:', locationId);
         const { data: locationData, error: locationError } = await supabase
           .from('locations')
-          .select('id, claimed_by')
+          .select('id, claimed_by, category')
           .eq('google_place_id', locationId)
           .maybeSingle();
 
@@ -87,17 +91,19 @@ const LocationDetailSheet = ({
         resolvedLocationId = locationData.id;
         setActualLocationId(resolvedLocationId);
         setClaimedBy(locationData.claimed_by);
+        setLocationCategory(locationData.category || '');
         console.log('✅ Found location UUID:', resolvedLocationId);
       } else {
         // Fetch claim status for UUID
         const { data: locationData } = await supabase
           .from('locations')
-          .select('claimed_by')
+          .select('claimed_by, category')
           .eq('id', locationId)
           .maybeSingle();
         
         setActualLocationId(locationId);
         setClaimedBy(locationData?.claimed_by || null);
+        setLocationCategory(locationData?.category || '');
       }
 
       // Fetch all posts for this location with user profiles
@@ -314,12 +320,26 @@ const LocationDetailSheet = ({
             </button>
           </div>
           
-          {/* Claim/Dashboard Button */}
+          {/* Action Buttons */}
           {user && (
-            <div className="mt-3">
+            <div className="mt-3 space-y-2">
+              {/* Booking Button for Restaurants */}
+              {reservationService.isBookableLocation(locationCategory) && (
+                <Button
+                  onClick={() => setIsBookingModalOpen(true)}
+                  variant="default"
+                  size="sm"
+                  className="w-full"
+                >
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Book a Table
+                </Button>
+              )}
+
+              {/* Claim/Dashboard Button */}
               {claimedBy === user.id ? (
                 <Button
-                  onClick={() => navigate('/business-dashboard')}
+                  onClick={() => navigate('/business')}
                   variant="outline"
                   size="sm"
                   className="w-full"
@@ -331,6 +351,7 @@ const LocationDetailSheet = ({
                 <Button
                   onClick={handleClaimLocation}
                   disabled={claiming}
+                  variant="outline"
                   size="sm"
                   className="w-full"
                 >
@@ -377,6 +398,14 @@ const LocationDetailSheet = ({
           )}
         </div>
       </div>
+
+      {/* Booking Modal */}
+      <BookingModal
+        isOpen={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
+        locationId={actualLocationId || locationId}
+        locationName={locationName}
+      />
     </div>
   );
 };
