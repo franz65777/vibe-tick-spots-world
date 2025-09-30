@@ -1248,6 +1248,103 @@ export type Database = {
           },
         ]
       }
+      reservations: {
+        Row: {
+          confirmation_code: string | null
+          created_at: string | null
+          customer_email: string
+          customer_name: string
+          customer_phone: string | null
+          id: string
+          location_id: string
+          party_size: number
+          reservation_date: string
+          reservation_time: string
+          special_requests: string | null
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          confirmation_code?: string | null
+          created_at?: string | null
+          customer_email: string
+          customer_name: string
+          customer_phone?: string | null
+          id?: string
+          location_id: string
+          party_size: number
+          reservation_date: string
+          reservation_time: string
+          special_requests?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          confirmation_code?: string | null
+          created_at?: string | null
+          customer_email?: string
+          customer_name?: string
+          customer_phone?: string | null
+          id?: string
+          location_id?: string
+          party_size?: number
+          reservation_date?: string
+          reservation_time?: string
+          special_requests?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_availability: {
+        Row: {
+          created_at: string | null
+          day_of_week: number
+          id: string
+          is_available: boolean | null
+          location_id: string
+          max_party_size: number
+          time_slot: string
+        }
+        Insert: {
+          created_at?: string | null
+          day_of_week: number
+          id?: string
+          is_available?: boolean | null
+          location_id: string
+          max_party_size?: number
+          time_slot: string
+        }
+        Update: {
+          created_at?: string | null
+          day_of_week?: number
+          id?: string
+          is_available?: boolean | null
+          location_id?: string
+          max_party_size?: number
+          time_slot?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_availability_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_places: {
         Row: {
           city: string | null
@@ -1806,6 +1903,10 @@ export type Database = {
       enforce_data_retention: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      generate_confirmation_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       get_anonymized_analytics: {
         Args: { target_user_id: string }
