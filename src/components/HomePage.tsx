@@ -231,7 +231,11 @@ const HomePage = () => {
             caption,
             location_name,
             location_address,
-            created_at
+            created_at,
+            location_id,
+            locations (
+              category
+            )
           `)
           .in('user_id', followingIds)
           .gt('expires_at', new Date().toISOString())
@@ -251,6 +255,8 @@ const HomePage = () => {
         // Transform stories to expected format
         const formattedStories = storiesData?.map(story => {
           const profile = profilesMap.get(story.user_id);
+          const locationCategory = story.locations?.category || null;
+          
           return {
             id: story.id,
             userId: story.user_id,
@@ -259,10 +265,11 @@ const HomePage = () => {
             isViewed: false,
             mediaUrl: story.media_url,
             mediaType: story.media_type,
-            locationId: null,
+            locationId: story.location_id,
             locationName: story.location_name,
             locationAddress: story.location_address,
             timestamp: story.created_at,
+            locationCategory: locationCategory
           };
         }) || [];
 
@@ -313,9 +320,9 @@ const HomePage = () => {
       </div>
       
       <main className="flex-1 flex flex-col overflow-hidden">
-        {/* Stories Section - Fixed ~130px */}
-        <div className="flex-shrink-0 h-[130px] px-4 pt-3 pb-2">
-          <div className="h-full bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200 px-4 py-3 overflow-hidden">
+        {/* Stories Section - Fixed ~140px */}
+        <div className="flex-shrink-0 h-[140px] px-4 pt-3 pb-2">
+          <div className="h-full bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200 px-4 py-3 overflow-x-auto snap-x snap-mandatory">
             <StoriesSection 
               stories={stories}
               onCreateStory={() => setIsCreateStoryModalOpen(true)}
