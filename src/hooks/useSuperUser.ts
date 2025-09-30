@@ -10,6 +10,9 @@ interface SuperUser {
   level: number;
   weekly_contributions: number;
   total_contributions: number;
+  current_streak?: number;
+  longest_streak?: number;
+  last_activity_date?: string;
   created_at: string;
   updated_at: string;
 }

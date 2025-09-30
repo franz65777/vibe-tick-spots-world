@@ -290,17 +290,45 @@ export const useUserBadges = (userId?: string) => {
 
       // Progressive Content Badges
       {
-        id: 'content-creator',
-        name: 'Content Creator',
-        description: 'Create 5+ posts',
+        id: 'photographer',
+        name: 'Photographer',
+        description: 'Upload 10 stories with images',
         icon: '📸',
         category: 'engagement',
         level: 'bronze',
-        gradient: 'from-purple-400 to-pink-500',
-        earned: stats.postsCount >= 5,
+        gradient: 'from-indigo-400 to-purple-500',
+        earned: stats.postsCount >= 10,
         progress: stats.postsCount,
-        maxProgress: 5,
-        earnedDate: stats.postsCount >= 5 ? new Date().toISOString() : undefined,
+        maxProgress: 10,
+        earnedDate: stats.postsCount >= 10 ? new Date().toISOString() : undefined,
+        nextBadgeId: 'local-guide'
+      },
+      {
+        id: 'local-guide',
+        name: 'Local Guide',
+        description: 'Review 20 places',
+        icon: '🗺️',
+        category: 'engagement',
+        level: 'silver',
+        gradient: 'from-green-400 to-emerald-500',
+        earned: stats.postsCount >= 20,
+        progress: stats.postsCount,
+        maxProgress: 20,
+        earnedDate: stats.postsCount >= 20 ? new Date().toISOString() : undefined,
+        nextBadgeId: 'content-creator'
+      },
+      {
+        id: 'content-creator',
+        name: 'Content Creator',
+        description: 'Create 30+ posts',
+        icon: '🎥',
+        category: 'engagement',
+        level: 'gold',
+        gradient: 'from-purple-400 to-pink-500',
+        earned: stats.postsCount >= 30,
+        progress: stats.postsCount,
+        maxProgress: 30,
+        earnedDate: stats.postsCount >= 30 ? new Date().toISOString() : undefined,
         nextBadgeId: 'prolific-poster'
       },
       {

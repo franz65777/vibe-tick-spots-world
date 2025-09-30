@@ -202,6 +202,57 @@ export type Database = {
           },
         ]
       }
+      challenges: {
+        Row: {
+          category: string | null
+          challenge_type: string
+          city: string | null
+          created_at: string | null
+          description: string
+          end_date: string
+          id: string
+          is_active: boolean | null
+          reward_badge_id: string | null
+          reward_points: number
+          start_date: string
+          target_action: string
+          target_count: number
+          title: string
+        }
+        Insert: {
+          category?: string | null
+          challenge_type: string
+          city?: string | null
+          created_at?: string | null
+          description: string
+          end_date: string
+          id?: string
+          is_active?: boolean | null
+          reward_badge_id?: string | null
+          reward_points?: number
+          start_date: string
+          target_action: string
+          target_count?: number
+          title: string
+        }
+        Update: {
+          category?: string | null
+          challenge_type?: string
+          city?: string | null
+          created_at?: string | null
+          description?: string
+          end_date?: string
+          id?: string
+          is_active?: boolean | null
+          reward_badge_id?: string | null
+          reward_points?: number
+          start_date?: string
+          target_action?: string
+          target_count?: number
+          title?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           chat_id: string
@@ -1345,8 +1396,11 @@ export type Database = {
       super_users: {
         Row: {
           created_at: string | null
+          current_streak: number | null
           id: string
+          last_activity_date: string | null
           level: number | null
+          longest_streak: number | null
           points: number | null
           status: string
           total_contributions: number | null
@@ -1356,8 +1410,11 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          current_streak?: number | null
           id?: string
+          last_activity_date?: string | null
           level?: number | null
+          longest_streak?: number | null
           points?: number | null
           status?: string
           total_contributions?: number | null
@@ -1367,8 +1424,11 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          current_streak?: number | null
           id?: string
+          last_activity_date?: string | null
           level?: number | null
+          longest_streak?: number | null
           points?: number | null
           status?: string
           total_contributions?: number | null
@@ -1454,6 +1514,47 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_challenge_progress: {
+        Row: {
+          challenge_id: string
+          completed: boolean | null
+          completed_at: string | null
+          created_at: string | null
+          current_count: number | null
+          id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          current_count?: number | null
+          id?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          current_count?: number | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_challenge_progress_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
             referencedColumns: ["id"]
           },
         ]
@@ -1682,6 +1783,14 @@ export type Database = {
         Args: { user_ip: unknown }
         Returns: boolean
       }
+      check_challenge_completion: {
+        Args: {
+          action_city?: string
+          action_type: string
+          target_user_id: string
+        }
+        Returns: undefined
+      }
       cleanup_expired_stories: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -1843,6 +1952,10 @@ export type Database = {
           is_following: boolean
           username: string
         }[]
+      }
+      update_user_streak: {
+        Args: { target_user_id: string }
+        Returns: undefined
       }
     }
     Enums: {

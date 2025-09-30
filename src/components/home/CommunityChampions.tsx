@@ -1,6 +1,8 @@
 import React from 'react';
 import { Trophy, Medal, Award, Heart, Camera, TrendingUp } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 interface Champion {
   id: string;
@@ -18,6 +20,8 @@ interface CommunityChampionsProps {
 }
 
 const CommunityChampions = ({ champions, onUserClick }: CommunityChampionsProps) => {
+  const navigate = useNavigate();
+  
   const getRankIcon = (rank: number) => {
     switch (rank) {
       case 1: return <Trophy className="w-5 h-5 text-yellow-500" />;
@@ -124,10 +128,18 @@ const CommunityChampions = ({ champions, onUserClick }: CommunityChampionsProps)
           ))}
         </div>
 
-        <div className="mt-4 text-center">
+        <div className="mt-4 text-center space-y-2">
           <p className="text-sm text-gray-600">
             Share amazing locations to join the leaderboard! 🚀
           </p>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => navigate('/leaderboard')}
+            className="w-full"
+          >
+            View Full Leaderboard
+          </Button>
         </div>
       </div>
     </Card>

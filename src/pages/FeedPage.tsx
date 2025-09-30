@@ -4,9 +4,11 @@ import { getUserFeed, getFeedEventDisplay, FeedItem as FeedItemType } from '@/se
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Heart, MessageCircle, Bookmark, MapPin } from 'lucide-react';
+import { Heart, MessageCircle, Bookmark, MapPin, Activity } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import ChallengesSection from '@/components/gamification/ChallengesSection';
+import AuthenticatedLayout from '@/components/AuthenticatedLayout';
 
 const FeedPage = () => {
   const { user } = useAuth();
@@ -46,19 +48,23 @@ const FeedPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 pb-20">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-lg border-b border-gray-200 px-4 py-4">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-          Feed
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          See what your friends are discovering
-        </p>
-      </div>
+    <AuthenticatedLayout>
+      <div className="min-h-screen bg-background pb-20">
+        {/* Header */}
+        <div className="bg-primary text-primary-foreground p-4 sticky top-0 z-10">
+          <div className="flex items-center gap-2">
+            <Activity className="w-6 h-6" />
+            <h1 className="text-xl font-bold">Activity Feed</h1>
+          </div>
+        </div>
 
-      {/* Feed Content */}
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+        {/* Challenges Section */}
+        <div className="max-w-2xl mx-auto px-4 mt-4">
+          <ChallengesSection />
+        </div>
+
+        {/* Feed Content */}
+        <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
         {loading ? (
           // Loading skeletons
           Array.from({ length: 5 }).map((_, i) => (
@@ -183,8 +189,9 @@ const FeedPage = () => {
             );
           })
         )}
+        </div>
       </div>
-    </div>
+    </AuthenticatedLayout>
   );
 };
 

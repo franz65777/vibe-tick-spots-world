@@ -16,6 +16,7 @@ import ExplorePage from '@/components/ExplorePage';
 import ProfilePage from '@/components/ProfilePage';
 import AddLocationPage from '@/components/AddLocationPage';
 import FeedPage from '@/pages/FeedPage';
+import LeaderboardPage from '@/pages/LeaderboardPage';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import './App.css';
@@ -44,6 +45,7 @@ function App() {
                       <Route path="/explore" element={<ExplorePage />} />
                       <Route path="/add" element={<AddLocationPage />} />
                       <Route path="/feed" element={<FeedPage />} />
+                      <Route path="/leaderboard" element={<LeaderboardPage />} />
                       <Route path="/profile" element={<ProfilePage />} />
                       <Route path="/business" element={<BusinessDashboardPage />} />
                       <Route path="/subscription" element={<SubscriptionPage />} />
