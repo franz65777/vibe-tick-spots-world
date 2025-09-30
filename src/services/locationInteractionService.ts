@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { trackInteraction } from './recommendationService';
 
 export interface LocationInteraction {
   id: string;
@@ -72,6 +73,14 @@ class LocationInteractionService {
         return false;
       }
 
+      // Track the save interaction for recommendations
+      try {
+        await trackInteraction(user.user.id, locationId, 'save');
+      } catch (trackError) {
+        console.error('Error tracking save interaction:', trackError);
+        // Don't fail the save if tracking fails
+      }
+
       return true;
     } catch (error) {
       console.error('Save location error:', error);
@@ -140,6 +149,14 @@ class LocationInteractionService {
             user_id: user.user.id,
             location_id: locationId
           });
+
+        // Track the like interaction for recommendations
+        try {
+          await trackInteraction(user.user.id, locationId, 'like');
+        } catch (trackError) {
+          console.error('Error tracking like interaction:', trackError);
+          // Don't fail the like if tracking fails
+        }
 
         // Get updated count
         const { count } = await supabase
