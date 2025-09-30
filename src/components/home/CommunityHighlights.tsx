@@ -1,166 +1,192 @@
 import React from 'react';
-import { MapPin, Heart, Users, Star, Crown, Sparkles, TrendingUp } from 'lucide-react';
-import { useNearbyLocations } from '@/hooks/useNearbyLocations';
-import { cn } from '@/lib/utils';
+import { MapPin, Users, Crown, Sparkles, TrendingUp, Tag } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRecommendedLocations } from '@/hooks/useRecommendedLocations';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 
 interface CommunityHighlightsProps {
   currentCity: string;
   userLocation: { lat: number; lng: number } | null;
-  topLocation?: any;
+  topLocation: any;
   onLocationClick: (locationId: string, coordinates?: { lat: number; lng: number }) => void;
   onUserClick: (userId: string) => void;
-  onMapLocationClick: (coordinates: { lat: number; lng: number }) => void;
-  onTopLocationClick?: () => void;
+  onMapLocationClick: (coords: { lat: number; lng: number }) => void;
+  onTopLocationClick: () => void;
 }
 
-// Mock data for nearby featured locations - in real app this would come from API
-const getMockFeaturedLocations = (city: string) => [
-  {
-    id: '1',
-    name: 'Artisan Coffee Co.',
-    type: 'business_offer',
-    description: '20% off this week',
-    image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=80&h=80&fit=crop&crop=center',
-    stats: { saves: 12, followers: 8 },
-    badge: '20% OFF'
-  },
-  {
-    id: '2', 
-    name: 'Central Park',
-    type: 'popular',
-    description: 'Saved by 15 people you follow',
-    image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=80&h=80&fit=crop&crop=center',
-    stats: { saves: 15, followers: 15 },
-    badge: 'Popular'
-  },
-  {
-    id: '3',
-    name: 'Luna Rooftop',
-    type: 'weekly_winner',
-    description: 'This week\'s most loved spot',
-    image: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=80&h=80&fit=crop&crop=center',
-    stats: { saves: 24, followers: 10 },
-    badge: 'Featured'
+const getBadgeConfig = (badge: string | null) => {
+  switch (badge) {
+    case 'offer':
+      return {
+        icon: <Tag className="w-3 h-3" />,
+        text: 'OFFERTA',
+        className: 'bg-gradient-to-r from-red-500 to-pink-500 text-white'
+      };
+    case 'popular':
+      return {
+        icon: <TrendingUp className="w-3 h-3" />,
+        text: 'POPOLARE',
+        className: 'bg-gradient-to-r from-orange-500 to-amber-500 text-white'
+      };
+    case 'recommended':
+      return {
+        icon: <Sparkles className="w-3 h-3" />,
+        text: 'CONSIGLIATO',
+        className: 'bg-gradient-to-r from-blue-500 to-purple-500 text-white'
+      };
+    default:
+      return null;
   }
-];
+};
 
-const CommunityHighlights = ({ 
-  currentCity, 
+const CommunityHighlights = ({
+  currentCity,
   userLocation,
   topLocation,
-  onLocationClick, 
-  onUserClick, 
+  onLocationClick,
   onMapLocationClick,
-  onTopLocationClick
+  onTopLocationClick,
 }: CommunityHighlightsProps) => {
-  // Use the mock data for now
-  const locations = getMockFeaturedLocations(currentCity);
+  const { user } = useAuth();
+  const { locations, loading } = useRecommendedLocations({
+    currentCity,
+    userId: user?.id,
+    limit: 10
+  });
+
+  if (loading) {
+    return (
+      <div className="px-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles className="w-5 h-5 text-blue-600" />
+          <h2 className="text-lg font-bold text-gray-900">Scopri</h2>
+        </div>
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="min-w-[160px] h-48 bg-gray-200 rounded-2xl animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Find the highest scored location for "Top Spot"
+  const topSpot = topLocation || (locations.length > 0 ? locations[0] : null);
 
   return (
-    <div className="w-full">
-      {/* Header */}
-      <div className="mb-5 px-4 text-center">
-        <h2 className="text-xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-900 bg-clip-text text-transparent mb-2">
-          Discover {currentCity}
-        </h2>
-        <div className="w-16 h-1 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full mx-auto"></div>
+    <div className="px-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-5 h-5 text-blue-600" />
+          <h2 className="text-lg font-bold text-gray-900">Scopri</h2>
+        </div>
+        {topSpot && (
+          <button
+            onClick={onTopLocationClick}
+            className="flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-full text-xs font-bold hover:scale-105 transition-transform shadow-md"
+          >
+            <Crown className="w-3.5 h-3.5" />
+            Top Spot
+          </button>
+        )}
       </div>
 
-      {/* Cards */}
-      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide px-4 snap-x snap-mandatory">
-        {/* Top Location Card */}
-        {topLocation && (
-          <div 
-            className="min-w-[200px] max-w-[200px] bg-white/95 backdrop-blur-xl rounded-xl border-2 border-yellow-200 overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group snap-start"
-            onClick={onTopLocationClick}
-          >
-            <div className="relative h-32 overflow-hidden">
-              <img
-                src={topLocation.image || 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=400&h=250&fit=crop'}
-                alt={topLocation.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-              <div className="absolute top-2 right-2">
-                <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-2 py-1 rounded-full text-[9px] font-bold flex items-center gap-1 shadow-lg">
-                  <Crown className="w-3 h-3" />
-                  Top Spot
+      <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2">
+        {locations.map((location) => {
+          const badgeConfig = getBadgeConfig(location.badge);
+          
+          return (
+            <button
+              key={location.id}
+              onClick={() => onLocationClick(location.id, {
+                lat: location.latitude,
+                lng: location.longitude
+              })}
+              className="min-w-[160px] h-52 relative rounded-2xl overflow-hidden snap-start group cursor-pointer hover:scale-[1.02] transition-transform shadow-lg"
+            >
+              {/* Image */}
+              <div className="absolute inset-0">
+                {location.image_url ? (
+                  <img
+                    src={location.image_url}
+                    alt={location.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400" />
+                )}
+              </div>
+
+              {/* Gradient Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+
+              {/* Badge */}
+              {badgeConfig && (
+                <div className="absolute top-2 right-2 z-10">
+                  <Badge className={`${badgeConfig.className} flex items-center gap-1 px-2 py-1 text-[10px] font-bold shadow-lg`}>
+                    {badgeConfig.icon}
+                    {badgeConfig.text}
+                  </Badge>
+                </div>
+              )}
+
+              {/* Friends Saved Indicator */}
+              {location.friends_saved > 0 && (
+                <div className="absolute top-2 left-2 z-10 flex items-center gap-1">
+                  <div className="flex -space-x-1">
+                    {location.friend_avatars.slice(0, 3).map((avatar, idx) => (
+                      <Avatar key={idx} className="w-5 h-5 border-2 border-white">
+                        <AvatarImage src={avatar} />
+                        <AvatarFallback className="text-[8px]">F</AvatarFallback>
+                      </Avatar>
+                    ))}
+                  </div>
+                  {location.friends_saved > 3 && (
+                    <span className="text-[10px] font-bold text-white bg-black/50 px-1.5 py-0.5 rounded-full">
+                      +{location.friends_saved - 3}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Content */}
+              <div className="absolute bottom-0 left-0 right-0 p-3 z-10">
+                <div className="flex items-start gap-2 mb-1">
+                  <MapPin className="w-3.5 h-3.5 text-white mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-white font-bold text-sm leading-tight line-clamp-2 mb-1">
+                      {location.name}
+                    </h3>
+                    {location.description && (
+                      <p className="text-white/80 text-[11px] leading-tight line-clamp-1">
+                        {location.description}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-1 mt-1">
+                      <span className="text-white/70 text-[10px]">{location.category}</span>
+                      {location.city && (
+                        <>
+                          <span className="text-white/40 text-[10px]">•</span>
+                          <span className="text-white/70 text-[10px]">{location.city}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="absolute bottom-2 left-2 right-2">
-                <h3 className="text-white text-sm font-bold mb-1 drop-shadow-lg truncate">
-                  {topLocation.name}
-                </h3>
-                <div className="flex items-center gap-2 text-white/90 text-[10px]">
-                  <div className="flex items-center gap-0.5">
-                    <Heart className="w-3 h-3" />
-                    <span>{topLocation.likes || 0}</span>
-                  </div>
-                  <div className="flex items-center gap-0.5">
-                    <MapPin className="w-3 h-3" />
-                    <span className="truncate">{topLocation.city || currentCity}</span>
-                  </div>
-                </div>
-              </div>
+            </button>
+          );
+        })}
+
+        {locations.length === 0 && !loading && (
+          <div className="min-w-[160px] h-52 flex items-center justify-center bg-gray-100 rounded-2xl">
+            <div className="text-center px-4">
+              <MapPin className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+              <p className="text-sm text-gray-500">Nessun luogo trovato</p>
             </div>
           </div>
         )}
-        
-        {/* Regular Location Cards */}
-        {locations.map((location) => (
-          <div 
-            key={location.id}
-            className="min-w-[130px] max-w-[130px] bg-white/95 backdrop-blur-xl rounded-xl border border-gray-100 overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group snap-start"
-            onClick={() => onLocationClick(location.id)}
-          >
-            <div className="relative">
-              {/* Premium Gradient Background */}
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-indigo-500/5 to-purple-500/10"></div>
-              
-              <div className="relative p-3">
-                {/* Image */}
-                <div className="relative w-full h-20 overflow-hidden rounded-lg bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 shadow-sm mb-2.5">
-                  <img
-                    src={location.image}
-                    alt={location.name}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                    }}
-                  />
-                </div>
-
-                {/* Details */}
-                <h3 className="font-bold text-sm text-gray-900 truncate group-hover:text-blue-600 transition-colors mb-2">
-                  {location.name}
-                </h3>
-
-                {/* Footer */}
-                <div className="flex items-center justify-between gap-1">
-                  <div className="flex items-center gap-1">
-                    <Heart className="w-3.5 h-3.5 text-gray-500" />
-                    <span className="text-xs font-medium text-gray-600">{location.stats.saves}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Users className="w-3.5 h-3.5 text-gray-500" />
-                    <span className="text-xs font-medium text-gray-600">{location.stats.followers}</span>
-                  </div>
-                  {location.badge && (
-                    <div className={cn(
-                      "px-2 py-0.5 rounded-full text-[9px] font-bold shrink-0 shadow-sm",
-                      location.type === 'business_offer' && "bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-700 border border-emerald-200",
-                      location.type === 'popular' && "bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 border border-blue-200", 
-                      location.type === 'weekly_winner' && "bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border border-purple-200"
-                    )}>
-                      {location.badge}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
       </div>
     </div>
   );
