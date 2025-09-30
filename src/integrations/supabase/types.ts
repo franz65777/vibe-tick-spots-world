@@ -53,6 +53,39 @@ export type Database = {
         }
         Relationships: []
       }
+      app_events: {
+        Row: {
+          category: string | null
+          city: string | null
+          created_at: string
+          event_data: Json | null
+          event_type: string
+          feature: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          city?: string | null
+          created_at?: string
+          event_data?: Json | null
+          event_type: string
+          feature?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          city?: string | null
+          created_at?: string
+          event_data?: Json | null
+          event_type?: string
+          feature?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       badges: {
         Row: {
           criteria: Json
@@ -1784,6 +1817,27 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_saved_locations: {
         Row: {
           created_at: string
@@ -1876,6 +1930,33 @@ export type Database = {
       }
     }
     Functions: {
+      calculate_day1_retention: {
+        Args: { end_date: string; start_date: string }
+        Returns: {
+          cohort_date: string
+          retained_users: number
+          retention_rate: number
+          total_users: number
+        }[]
+      }
+      calculate_day30_retention: {
+        Args: { end_date: string; start_date: string }
+        Returns: {
+          cohort_date: string
+          retained_users: number
+          retention_rate: number
+          total_users: number
+        }[]
+      }
+      calculate_day7_retention: {
+        Args: { end_date: string; start_date: string }
+        Returns: {
+          cohort_date: string
+          retained_users: number
+          retention_rate: number
+          total_users: number
+        }[]
+      }
       check_auth_rate_limit: {
         Args: { user_ip: unknown }
         Returns: boolean
@@ -1926,6 +2007,18 @@ export type Database = {
           website_url: string
         }[]
       }
+      get_dau: {
+        Args: { target_date: string }
+        Returns: number
+      }
+      get_feature_usage: {
+        Args: { end_date: string; start_date: string }
+        Returns: {
+          feature: string
+          unique_users: number
+          usage_count: number
+        }[]
+      }
       get_location_of_the_week: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -1941,6 +2034,10 @@ export type Database = {
           total_score: number
         }[]
       }
+      get_mau: {
+        Args: { target_month: string }
+        Returns: number
+      }
       get_public_business_data: {
         Args: { business_id: string }
         Returns: {
@@ -1950,6 +2047,17 @@ export type Database = {
           created_at: string
           id: string
           verification_status: Database["public"]["Enums"]["business_verification_status"]
+        }[]
+      }
+      get_retention_by_city: {
+        Args: { end_date: string; start_date: string }
+        Returns: {
+          city: string
+          day1_rate: number
+          day1_retained: number
+          day7_rate: number
+          day7_retained: number
+          total_users: number
         }[]
       }
       get_safe_business_data: {
@@ -2026,6 +2134,13 @@ export type Database = {
           username: string
         }[]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       refresh_trending_locations: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -2060,6 +2175,7 @@ export type Database = {
       }
     }
     Enums: {
+      app_role: "admin" | "moderator" | "user"
       business_verification_status: "pending" | "verified" | "rejected"
       friend_request_status: "pending" | "accepted" | "declined" | "blocked"
       notification_type: "event" | "discount" | "announcement" | "special_offer"
@@ -2192,6 +2308,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "moderator", "user"],
       business_verification_status: ["pending", "verified", "rejected"],
       friend_request_status: ["pending", "accepted", "declined", "blocked"],
       notification_type: ["event", "discount", "announcement", "special_offer"],
