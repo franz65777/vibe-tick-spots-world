@@ -517,6 +517,7 @@ export type Database = {
           address: string | null
           category: string
           city: string | null
+          claimed_by: string | null
           country: string | null
           created_at: string | null
           created_by: string | null
@@ -536,6 +537,7 @@ export type Database = {
           address?: string | null
           category: string
           city?: string | null
+          claimed_by?: string | null
           country?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -555,6 +557,7 @@ export type Database = {
           address?: string | null
           category?: string
           city?: string | null
+          claimed_by?: string | null
           country?: string | null
           created_at?: string | null
           created_by?: string | null

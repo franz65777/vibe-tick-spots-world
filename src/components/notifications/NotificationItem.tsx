@@ -2,7 +2,7 @@
 import { formatDistanceToNow } from 'date-fns';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageCircle, UserPlus, MapPin, Gift, Star, Camera } from 'lucide-react';
+import { Heart, MessageCircle, UserPlus, MapPin, Gift, Star, Camera, Calendar, Tag, Megaphone, Sparkles } from 'lucide-react';
 
 interface NotificationItemProps {
   notification: {
@@ -68,6 +68,30 @@ const NotificationItem = ({ notification, onMarkAsRead, onAction }: Notification
         gradient: 'bg-gradient-to-r from-rose-500 to-pink-500',
         bgColor: 'bg-rose-50',
         borderColor: 'border-rose-200'
+      },
+      event: {
+        icon: <Calendar className="w-5 h-5 text-white" />,
+        gradient: 'bg-gradient-to-r from-blue-600 to-indigo-600',
+        bgColor: 'bg-blue-50',
+        borderColor: 'border-blue-200'
+      },
+      discount: {
+        icon: <Tag className="w-5 h-5 text-white" />,
+        gradient: 'bg-gradient-to-r from-green-600 to-emerald-600',
+        bgColor: 'bg-green-50',
+        borderColor: 'border-green-200'
+      },
+      announcement: {
+        icon: <Megaphone className="w-5 h-5 text-white" />,
+        gradient: 'bg-gradient-to-r from-orange-600 to-red-600',
+        bgColor: 'bg-orange-50',
+        borderColor: 'border-orange-200'
+      },
+      special_offer: {
+        icon: <Sparkles className="w-5 h-5 text-white" />,
+        gradient: 'bg-gradient-to-r from-purple-600 to-pink-600',
+        bgColor: 'bg-purple-50',
+        borderColor: 'border-purple-200'
       }
     };
     

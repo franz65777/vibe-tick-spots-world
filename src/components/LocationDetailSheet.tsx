@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { X, MapPin, Heart, Bookmark, MessageCircle, Share } from 'lucide-react';
+import { X, MapPin, Heart, Bookmark, MessageCircle, Share, Building2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 
 interface Post {
   id: string;
@@ -34,10 +37,14 @@ const LocationDetailSheet = ({
   onClose
 }: LocationDetailSheetProps) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [followingPosts, setFollowingPosts] = useState<Post[]>([]);
   const [otherPosts, setOtherPosts] = useState<Post[]>([]);
+  const [claimedBy, setClaimedBy] = useState<string | null>(null);
+  const [actualLocationId, setActualLocationId] = useState<string | null>(null);
+  const [claiming, setClaiming] = useState(false);
 
   useEffect(() => {
     if (isOpen && locationId) {
@@ -50,14 +57,14 @@ const LocationDetailSheet = ({
       setLoading(true);
       console.log('🔍 Fetching posts for location:', locationId);
 
-      let actualLocationId = locationId;
+      let resolvedLocationId = locationId;
 
       // Handle both UUID and Google Place ID formats
       if (!locationId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
         console.log('🔄 Converting Google Place ID to location UUID:', locationId);
         const { data: locationData, error: locationError } = await supabase
           .from('locations')
-          .select('id')
+          .select('id, claimed_by')
           .eq('google_place_id', locationId)
           .maybeSingle();
 
@@ -77,8 +84,20 @@ const LocationDetailSheet = ({
           return;
         }
 
-        actualLocationId = locationData.id;
-        console.log('✅ Found location UUID:', actualLocationId);
+        resolvedLocationId = locationData.id;
+        setActualLocationId(resolvedLocationId);
+        setClaimedBy(locationData.claimed_by);
+        console.log('✅ Found location UUID:', resolvedLocationId);
+      } else {
+        // Fetch claim status for UUID
+        const { data: locationData } = await supabase
+          .from('locations')
+          .select('claimed_by')
+          .eq('id', locationId)
+          .maybeSingle();
+        
+        setActualLocationId(locationId);
+        setClaimedBy(locationData?.claimed_by || null);
       }
 
       // Fetch all posts for this location with user profiles
@@ -98,7 +117,7 @@ const LocationDetailSheet = ({
             avatar_url
           )
         `)
-        .eq('location_id', actualLocationId)
+        .eq('location_id', resolvedLocationId)
         .order('created_at', { ascending: false });
 
       if (postsError) {
@@ -110,7 +129,7 @@ const LocationDetailSheet = ({
       }
 
       if (!postsData || postsData.length === 0) {
-        console.log('📝 No posts found for location:', actualLocationId);
+        console.log('📝 No posts found for location:', resolvedLocationId);
         setPosts([]);
         setFollowingPosts([]);
         setOtherPosts([]);
@@ -159,6 +178,40 @@ const LocationDetailSheet = ({
       setOtherPosts([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleClaimLocation = async () => {
+    if (!user) {
+      toast.error('Please sign in to claim this location');
+      return;
+    }
+
+    if (!actualLocationId) {
+      toast.error('Location not found');
+      return;
+    }
+
+    setClaiming(true);
+    try {
+      const { error } = await supabase
+        .from('locations')
+        .update({ claimed_by: user.id })
+        .eq('id', actualLocationId)
+        .is('claimed_by', null);
+
+      if (error) {
+        console.error('Error claiming location:', error);
+        toast.error('Failed to claim location. It may already be claimed.');
+      } else {
+        setClaimedBy(user.id);
+        toast.success('Location claimed successfully!');
+      }
+    } catch (error) {
+      console.error('Error claiming location:', error);
+      toast.error('Failed to claim location');
+    } finally {
+      setClaiming(false);
     }
   };
 
@@ -242,22 +295,51 @@ const LocationDetailSheet = ({
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center sm:justify-center">
       <div className="bg-white w-full sm:w-full sm:max-w-2xl sm:max-h-[80vh] rounded-t-2xl sm:rounded-2xl overflow-hidden">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center">
-            <MapPin className="w-5 h-5 text-blue-600 mr-2" />
-            <div>
-              <h2 className="font-semibold text-gray-900">{locationName}</h2>
-              {locationAddress && (
-                <p className="text-sm text-gray-500">{locationAddress}</p>
-              )}
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center flex-1">
+              <MapPin className="w-5 h-5 text-blue-600 mr-2" />
+              <div>
+                <h2 className="font-semibold text-gray-900">{locationName}</h2>
+                {locationAddress && (
+                  <p className="text-sm text-gray-500">{locationAddress}</p>
+                )}
+              </div>
             </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          
+          {/* Claim/Dashboard Button */}
+          {user && (
+            <div className="mt-3">
+              {claimedBy === user.id ? (
+                <Button
+                  onClick={() => navigate('/business-dashboard')}
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                >
+                  <Building2 className="w-4 h-4 mr-2" />
+                  Go to Business Dashboard
+                </Button>
+              ) : !claimedBy ? (
+                <Button
+                  onClick={handleClaimLocation}
+                  disabled={claiming}
+                  size="sm"
+                  className="w-full"
+                >
+                  <Building2 className="w-4 h-4 mr-2" />
+                  {claiming ? 'Claiming...' : 'Claim this business'}
+                </Button>
+              ) : null}
+            </div>
+          )}
         </div>
 
         {/* Content */}
