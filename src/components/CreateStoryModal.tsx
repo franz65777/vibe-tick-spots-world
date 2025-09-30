@@ -1,10 +1,12 @@
 import React, { useState, useRef } from 'react';
-import { X, Camera, Image, MapPin, Loader2, Upload, Plus } from 'lucide-react';
+import { X, Camera, Image, MapPin, Loader2, Upload, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import GooglePlacesAutocomplete from './GooglePlacesAutocomplete';
 import { useStories } from '@/hooks/useStories';
+import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { extractImageMetadata, getLocationFromCoordinates } from '@/utils/imageUtils';
 
 interface CreateStoryModalProps {
@@ -15,6 +17,7 @@ interface CreateStoryModalProps {
 
 const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalProps) => {
   const { uploadStory, uploading } = useStories();
+  const { savedPlaces } = useSavedPlaces();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [caption, setCaption] = useState('');
@@ -27,7 +30,18 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
   } | null>(null);
   const [step, setStep] = useState<'upload' | 'details'>('upload');
   const [autoDetectingLocation, setAutoDetectingLocation] = useState(false);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [locationSearch, setLocationSearch] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Flatten saved places for selection
+  const allSavedPlaces = Object.values(savedPlaces).flat();
+  const filteredSavedPlaces = locationSearch 
+    ? allSavedPlaces.filter(place => 
+        place.name.toLowerCase().includes(locationSearch.toLowerCase()) ||
+        place.city?.toLowerCase().includes(locationSearch.toLowerCase())
+      )
+    : allSavedPlaces;
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -79,7 +93,10 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
   };
 
   const handleSubmit = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile || !location) {
+      alert('Please select a location for your story');
+      return;
+    }
 
     try {
       await uploadStory(
@@ -104,6 +121,8 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
     setLocation(null);
     setStep('upload');
     setAutoDetectingLocation(false);
+    setShowLocationPicker(false);
+    setLocationSearch('');
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
     }
@@ -216,25 +235,104 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-blue-600" />
-                  Location
+                  <MapPin className="w-4 h-4 text-red-600" />
+                  Location <span className="text-red-600">*</span>
                   {autoDetectingLocation && (
                     <Loader2 className="w-3 h-3 animate-spin text-blue-600" />
                   )}
                 </label>
-                <GooglePlacesAutocomplete
-                  onPlaceSelect={handleLocationSelect}
-                  placeholder="Search or auto-detected location..."
-                  className="rounded-lg border-gray-200 focus:border-blue-400"
-                />
-                {location && (
-                  <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="flex items-start gap-2">
-                      <MapPin className="w-4 h-4 text-blue-600 mt-0.5" />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-blue-900 text-sm truncate">{location.name}</p>
-                        <p className="text-blue-600 text-xs truncate">{location.address}</p>
+                
+                {!location ? (
+                  <div className="space-y-3">
+                    {/* Saved Places */}
+                    {allSavedPlaces.length > 0 && (
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-medium text-gray-600">Your Saved Places</span>
+                          <button
+                            onClick={() => setShowLocationPicker(!showLocationPicker)}
+                            className="text-xs text-blue-600 hover:text-blue-700"
+                          >
+                            {showLocationPicker ? 'Hide' : 'Show All'}
+                          </button>
+                        </div>
+                        
+                        {showLocationPicker && (
+                          <div className="mb-3">
+                            <div className="relative">
+                              <Input
+                                value={locationSearch}
+                                onChange={(e) => setLocationSearch(e.target.value)}
+                                placeholder="Search your places..."
+                                className="pl-8 text-sm"
+                              />
+                              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                            </div>
+                            <ScrollArea className="h-40 mt-2 border rounded-lg">
+                              {filteredSavedPlaces.length > 0 ? (
+                                <div className="p-2 space-y-1">
+                                  {filteredSavedPlaces.slice(0, 10).map((place) => (
+                                    <button
+                                      key={place.id}
+                                      onClick={() => {
+                                        setLocation({
+                                          place_id: place.id,
+                                          name: place.name,
+                                          address: place.city || '',
+                                          lat: place.coordinates.lat,
+                                          lng: place.coordinates.lng,
+                                        });
+                                        setShowLocationPicker(false);
+                                      }}
+                                      className="w-full text-left px-3 py-2 hover:bg-blue-50 rounded-lg transition-colors"
+                                    >
+                                      <div className="flex items-start gap-2">
+                                        <MapPin className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
+                                        <div className="flex-1 min-w-0">
+                                          <p className="font-medium text-sm text-gray-900 truncate">{place.name}</p>
+                                          {place.category && (
+                                            <p className="text-xs text-gray-500 truncate">{place.category}</p>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </button>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="p-4 text-center text-sm text-gray-500">
+                                  No saved places found
+                                </div>
+                              )}
+                            </ScrollArea>
+                          </div>
+                        )}
                       </div>
+                    )}
+                    
+                    {/* Search New Location */}
+                    <div>
+                      <span className="text-xs font-medium text-gray-600 block mb-2">Or Search New Location</span>
+                      <GooglePlacesAutocomplete
+                        onPlaceSelect={handleLocationSelect}
+                        placeholder="Search for a place..."
+                        className="rounded-lg border-gray-200 focus:border-blue-400"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                    <div className="flex items-start gap-2">
+                      <MapPin className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-green-900 text-sm truncate">{location.name}</p>
+                        <p className="text-green-600 text-xs truncate">{location.address}</p>
+                      </div>
+                      <button
+                        onClick={() => setLocation(null)}
+                        className="text-green-600 hover:text-green-700"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 )}
@@ -253,8 +351,8 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
               </Button>
               <Button
                 onClick={handleSubmit}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
-                disabled={uploading}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50"
+                disabled={uploading || !location}
               >
                 {uploading ? (
                   <>

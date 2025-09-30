@@ -1,5 +1,4 @@
-
-import { Plus, Utensils, Hotel, Wine, MoreHorizontal } from 'lucide-react';
+import { Plus, Utensils, Hotel, Wine, MapPin, Plane, ShoppingBag, Camera } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 interface Story {
@@ -10,6 +9,7 @@ interface Story {
   isViewed: boolean;
   locationId: string;
   locationName: string;
+  locationAddress?: string;
   locationCategory?: string;
 }
 
@@ -19,40 +19,27 @@ interface StoriesSectionProps {
   onStoryClick?: (index: number) => void;
 }
 
-// Generate profile picture based on user name
-const getProfilePicture = (userName: string) => {
-  const profilePics = [
-    'photo-1507003211169-0a1dd7228f2d',
-    'photo-1494790108755-2616b5a5c75b',
-    'photo-1527980965255-d3b416303d12',
-    'photo-1438761681033-6461ffad8d80',
-    'photo-1500648767791-00dcc994a43e',
-    'photo-1534528741775-53994a69daeb',
-    'photo-1552058544-f2b08422138a',
-    'photo-1487412720507-e7ab37603c6f',
-  ];
-  
-  // Safe fallback for undefined userName
-  if (!userName || typeof userName !== 'string') {
-    return profilePics[0];
-  }
-  
-  const index = userName.charCodeAt(0) % profilePics.length;
-  return profilePics[index];
-};
-
 const getCategoryIcon = (category: string) => {
   switch (category?.toLowerCase()) {
     case 'restaurant':
     case 'cafe':
-      return <Utensils className="w-2.5 h-2.5 text-white" />;
+    case 'food':
+      return <Utensils className="w-3 h-3 text-white" />;
     case 'hotel':
-      return <Hotel className="w-2.5 h-2.5 text-white" />;
+    case 'lodging':
+      return <Hotel className="w-3 h-3 text-white" />;
     case 'bar':
     case 'nightlife':
-      return <Wine className="w-2.5 h-2.5 text-white" />;
+      return <Wine className="w-3 h-3 text-white" />;
+    case 'shopping':
+      return <ShoppingBag className="w-3 h-3 text-white" />;
+    case 'tourist_attraction':
+    case 'museum':
+      return <Camera className="w-3 h-3 text-white" />;
+    case 'airport':
+      return <Plane className="w-3 h-3 text-white" />;
     default:
-      return <Utensils className="w-2.5 h-2.5 text-white" />;
+      return <MapPin className="w-3 h-3 text-white" />;
   }
 };
 
@@ -60,15 +47,33 @@ const getCategoryColor = (category: string) => {
   switch (category?.toLowerCase()) {
     case 'restaurant':
     case 'cafe':
-      return 'from-orange-500 to-red-500';
+    case 'food':
+      return 'from-orange-400 to-red-500';
     case 'hotel':
-      return 'from-blue-500 to-indigo-500';
+    case 'lodging':
+      return 'from-blue-400 to-indigo-500';
     case 'bar':
     case 'nightlife':
-      return 'from-purple-500 to-pink-500';
+      return 'from-purple-400 to-pink-500';
+    case 'shopping':
+      return 'from-pink-400 to-rose-500';
+    case 'tourist_attraction':
+    case 'museum':
+      return 'from-green-400 to-emerald-500';
+    case 'airport':
+      return 'from-cyan-400 to-blue-500';
     default:
-      return 'from-orange-500 to-red-500';
+      return 'from-gray-400 to-gray-500';
   }
+};
+
+const getInitials = (name: string) => {
+  if (!name || typeof name !== 'string') return 'U';
+  const parts = name.trim().split(' ');
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  return name[0]?.toUpperCase() || 'U';
 };
 
 const StoriesSection = ({ stories = [], onCreateStory, onStoryClick }: StoriesSectionProps) => {
@@ -82,85 +87,65 @@ const StoriesSection = ({ stories = [], onCreateStory, onStoryClick }: StoriesSe
   }, {} as Record<string, Story[]>);
 
   return (
-    <div className="flex gap-3 px-1 py-1">
+    <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide px-2 py-2">
       {/* Add Story Button */}
-      <div className="flex flex-col items-center gap-1.5 min-w-[60px]">
+      <div className="flex flex-col items-center gap-2 min-w-[72px] snap-start">
         <div className="relative">
           <div 
-            className="w-14 h-14 border-2 border-dashed border-gray-300 rounded-full flex items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all duration-300 hover:scale-105"
+            className="w-16 h-16 border-2 border-dashed border-gray-300 rounded-full flex items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 transition-all duration-300 hover:scale-105 bg-white shadow-sm"
             onClick={onCreateStory}
           >
-            <Plus className="w-5 h-5 text-gray-400" />
+            <Plus className="w-6 h-6 text-gray-400" />
+          </div>
+          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+            <Plus className="w-4 h-4 text-white" />
           </div>
         </div>
-        <span className="text-xs text-gray-500 font-medium text-center">Add</span>
+        <span className="text-[11px] text-gray-600 font-medium text-center">Your Story</span>
       </div>
 
       {/* User Stories */}
       {Object.entries(groupedStories).map(([userId, userStories]) => {
         const mainStory = userStories[0];
-        const uniqueCategories = [...new Set(userStories.map(story => story.locationCategory))];
-        const displayCategories = uniqueCategories.slice(0, 2);
-        const hasMoreCategories = uniqueCategories.length > 2;
-        const profilePic = getProfilePicture(mainStory.userName);
+        const hasUnviewed = userStories.some(s => !s.isViewed);
         
         return (
-          <div key={userId} className="flex flex-col items-center gap-1.5 min-w-[60px]">
+          <div key={userId} className="flex flex-col items-center gap-2 min-w-[72px] snap-start">
             <div className="relative">
-              {/* Main Story Circle */}
+              {/* Main Story Circle with Gradient Border */}
               <div 
-                className={`w-14 h-14 rounded-full p-0.5 cursor-pointer transition-all duration-300 hover:scale-105 relative ${
-                  mainStory.isViewed 
-                    ? 'bg-gradient-to-br from-gray-300 to-gray-400' 
-                    : 'bg-gradient-to-br from-pink-500 via-purple-500 to-blue-500'
+                className={`w-16 h-16 rounded-full p-[2px] cursor-pointer transition-all duration-300 hover:scale-105 ${
+                  hasUnviewed
+                    ? 'bg-gradient-to-tr from-purple-600 via-pink-600 to-orange-500'
+                    : 'bg-gray-300'
                 }`}
                 onClick={() => onStoryClick && onStoryClick(stories.findIndex(s => s.id === mainStory.id))}
               >
-                <div className="w-full h-full rounded-full bg-white p-0.5">
-                  <Avatar className="w-full h-full rounded-full">
+                <div className="w-full h-full rounded-full bg-white p-[2px]">
+                  <Avatar className="w-full h-full">
                     <AvatarImage 
-                      src={`https://images.unsplash.com/${profilePic}?w=60&h=60&fit=crop&crop=face`} 
-                      alt={mainStory.userName || 'User'}
-                      className="object-cover rounded-full"
+                      src={mainStory.userAvatar} 
+                      alt={mainStory.userName}
+                      className="object-cover"
                     />
-                    <AvatarFallback className="text-xs font-semibold bg-gradient-to-br from-blue-100 to-purple-100 rounded-full">
-                      {(mainStory.userName && mainStory.userName[0]) || 'U'}
+                    <AvatarFallback className="text-sm font-bold bg-gradient-to-br from-blue-100 to-purple-100">
+                      {getInitials(mainStory.userName)}
                     </AvatarFallback>
                   </Avatar>
                 </div>
-                
-                {/* Category Icons at bottom right */}
-                <div className="absolute -bottom-0.5 -right-0.5 flex items-end">
-                  {displayCategories.map((category, index) => (
-                    <div 
-                      key={category}
-                      className={`w-5 h-5 bg-gradient-to-br ${getCategoryColor(category || '')} rounded-full flex items-center justify-center shadow-lg border border-white`}
-                      style={{
-                        marginLeft: index > 0 ? '-6px' : '0',
-                        zIndex: displayCategories.length - index
-                      }}
-                    >
-                      {getCategoryIcon(category || '')}
-                    </div>
-                  ))}
-                  
-                  {/* More indicator */}
-                  {hasMoreCategories && (
-                    <div 
-                      className="w-5 h-5 bg-gradient-to-br from-gray-500 to-gray-600 rounded-full flex items-center justify-center shadow-lg border border-white"
-                      style={{
-                        marginLeft: '-6px',
-                        zIndex: 0
-                      }}
-                    >
-                      <MoreHorizontal className="w-2.5 h-2.5 text-white" />
-                    </div>
-                  )}
-                </div>
               </div>
+              
+              {/* Category Badge */}
+              {mainStory.locationCategory && (
+                <div 
+                  className={`absolute -bottom-1 -right-1 w-6 h-6 bg-gradient-to-br ${getCategoryColor(mainStory.locationCategory)} rounded-full flex items-center justify-center shadow-lg border-2 border-white`}
+                >
+                  {getCategoryIcon(mainStory.locationCategory)}
+                </div>
+              )}
             </div>
-            <span className="text-xs text-gray-700 font-semibold text-center truncate max-w-[60px]">
-              {mainStory.userName || 'User'}
+            <span className="text-[11px] text-gray-700 font-semibold text-center truncate max-w-[72px]">
+              {mainStory.userName}
             </span>
           </div>
         );
