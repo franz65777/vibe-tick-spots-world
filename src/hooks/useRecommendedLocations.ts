@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+// Recommendation scoring weights - adjust these to tune the algorithm
+const GLOBAL_POPULARITY_WEIGHT = 0.3;
+const CATEGORY_MATCH_WEIGHT = 0.5;
+const FRIEND_SCORE_WEIGHT = 0.2;
+const TREND_BOOST = 1.2;
+const RECENCY_WEIGHT = 0.1;
+const TREND_THRESHOLD_PERCENT = 20; // % increase to qualify as trending
+
 interface RecommendedLocation {
   id: string;
   name: string;
@@ -12,7 +20,7 @@ interface RecommendedLocation {
   image_url: string | null;
   description: string | null;
   score: number;
-  badge: 'offer' | 'popular' | 'recommended' | null;
+  badge: 'offer' | 'popular' | 'recommended' | 'trending' | null;
   friends_saved: number;
   friend_avatars: string[];
   is_promoted?: boolean;
@@ -28,7 +36,7 @@ interface UseRecommendedLocationsProps {
 export const useRecommendedLocations = ({ 
   currentCity, 
   userId, 
-  limit = 10 
+  limit = 10
 }: UseRecommendedLocationsProps) => {
   const [locations, setLocations] = useState<RecommendedLocation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -153,7 +161,41 @@ export const useRecommendedLocations = ({
           (businessLocationsData || []).map(l => l.location_id)
         );
 
-        // 7. Calculate scores for each location
+        // 7. Get user's interaction history to determine recency
+        const { data: userInteractions } = await supabase
+          .from('user_saved_locations')
+          .select('location_id')
+          .eq('user_id', userId);
+        
+        const interactedLocationIds = new Set(
+          (userInteractions || []).map(i => i.location_id)
+        );
+
+        // 8. Calculate trend data (last 7 days vs previous 7 days)
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const fourteenDaysAgo = new Date();
+        fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+        const { data: recentActivity } = await supabase
+          .from('user_saved_locations')
+          .select('location_id, created_at')
+          .in('location_id', locationIds)
+          .gte('created_at', fourteenDaysAgo.toISOString());
+
+        const trendMap = new Map<string, { recent: number; previous: number }>();
+        (recentActivity || []).forEach((item: any) => {
+          const existing = trendMap.get(item.location_id) || { recent: 0, previous: 0 };
+          const itemDate = new Date(item.created_at);
+          if (itemDate >= sevenDaysAgo) {
+            existing.recent += 1;
+          } else {
+            existing.previous += 1;
+          }
+          trendMap.set(item.location_id, existing);
+        });
+
+        // 9. Calculate scores for each location
         const scoredLocations = (locationsData || []).map((loc: any) => {
           const likesCount = Array.isArray(loc.location_likes) ? loc.location_likes.length : 0;
           const savesCount = Array.isArray(loc.user_saved_locations) ? loc.user_saved_locations.length : 0;
@@ -164,18 +206,38 @@ export const useRecommendedLocations = ({
           const friendSaves = friendSavesMap.get(loc.id);
           const friendScore = friendSaves ? friendSaves.count : 0;
 
-          // Scoring algorithm: 0.3*global + 0.5*category + 0.2*friends
-          const score = 
-            (globalPopularity * 0.3) + 
-            (categoryMatch * 100 * 0.5) + 
-            (friendScore * 0.2);
+          // Calculate recency boost
+          const hasInteracted = interactedLocationIds.has(loc.id);
+          const recencyBoost = hasInteracted ? 0 : RECENCY_WEIGHT * 100;
 
-          let badge: 'offer' | 'popular' | 'recommended' | null = null;
+          // Calculate trend boost
+          const trendData = trendMap.get(loc.id) || { recent: 0, previous: 0 };
+          const trendGrowth = trendData.previous > 0 
+            ? ((trendData.recent - trendData.previous) / trendData.previous) * 100 
+            : 0;
+          const isTrending = trendGrowth > TREND_THRESHOLD_PERCENT;
+
+          // Base score calculation
+          let score = 
+            (globalPopularity * GLOBAL_POPULARITY_WEIGHT) + 
+            (categoryMatch * 100 * CATEGORY_MATCH_WEIGHT) + 
+            (friendScore * FRIEND_SCORE_WEIGHT) +
+            recencyBoost;
+
+          // Apply trend boost
+          if (isTrending) {
+            score *= TREND_BOOST;
+          }
+
+          // Badge assignment with priority
+          let badge: 'offer' | 'popular' | 'recommended' | 'trending' | null = null;
           if (locationsWithOffers.has(loc.id)) {
             badge = 'offer';
-          } else if (globalPopularity > 20) {
+          } else if (isTrending) {
+            badge = 'trending';
+          } else if (globalPopularity > 30) {
             badge = 'popular';
-          } else if (categoryMatch > 0.1) {
+          } else if (categoryMatch > 0.1 || friendScore > 0) {
             badge = 'recommended';
           }
 

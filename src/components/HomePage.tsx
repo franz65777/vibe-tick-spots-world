@@ -335,18 +335,15 @@ const HomePage = () => {
             <CommunityHighlights
               currentCity={currentCity}
               userLocation={userLocation}
-              topLocation={null}
               onLocationClick={(locationId: string, coordinates?: { lat: number; lng: number }) => {
                 if (coordinates) {
                   setMapCenter(coordinates);
                 }
-                navigate('/explore');
               }}
               onUserClick={(userId: string) => {
                 navigate('/explore');
               }}
               onMapLocationClick={(coords: { lat: number; lng: number }) => setMapCenter(coords)}
-              onTopLocationClick={() => {}}
             />
           </div>
         </div>
