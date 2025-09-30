@@ -87,21 +87,21 @@ const StoriesSection = ({ stories = [], onCreateStory, onStoryClick }: StoriesSe
   }, {} as Record<string, Story[]>);
 
   return (
-    <div className="flex gap-5 overflow-x-auto snap-x snap-mandatory scrollbar-hide px-2 py-2">
+    <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide px-2 py-2">
       {/* Add Story Button */}
-      <div className="flex flex-col items-center gap-2 min-w-[80px] snap-start">
+      <div className="flex flex-col items-center gap-2 min-w-[72px] snap-start">
         <div className="relative">
           <div 
-            className="w-[68px] h-[68px] border-3 border-dashed border-blue-300 rounded-full flex items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50/70 transition-all duration-300 hover:scale-105 bg-white shadow-lg active:scale-95"
+            className="w-16 h-16 border-2 border-dashed border-gray-300 rounded-full flex items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 transition-all duration-300 hover:scale-105 bg-white shadow-sm"
             onClick={onCreateStory}
           >
-            <Plus className="w-8 h-8 text-blue-500" />
+            <Plus className="w-6 h-6 text-gray-400" />
           </div>
-          <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
             <Plus className="w-4 h-4 text-white" />
           </div>
         </div>
-        <span className="text-xs text-gray-700 font-semibold text-center">Add story</span>
+        <span className="text-[11px] text-gray-600 font-medium text-center">Your Story</span>
       </div>
 
       {/* User Stories */}
@@ -110,41 +110,41 @@ const StoriesSection = ({ stories = [], onCreateStory, onStoryClick }: StoriesSe
         const hasUnviewed = userStories.some(s => !s.isViewed);
         
         return (
-          <div key={userId} className="flex flex-col items-center gap-2 min-w-[80px] snap-start">
+          <div key={userId} className="flex flex-col items-center gap-2 min-w-[72px] snap-start">
             <div className="relative">
-              {/* Main Story Circle with Enhanced Gradient Border */}
+              {/* Main Story Circle with Gradient Border */}
               <div 
-                className={`w-[68px] h-[68px] rounded-full p-[3px] cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg ${
+                className={`w-16 h-16 rounded-full p-[2px] cursor-pointer transition-all duration-300 hover:scale-105 ${
                   hasUnviewed
-                    ? 'bg-gradient-to-tr from-purple-600 via-pink-600 to-orange-500 animate-pulse'
-                    : 'bg-gradient-to-tr from-gray-300 to-gray-400'
+                    ? 'bg-gradient-to-tr from-purple-600 via-pink-600 to-orange-500'
+                    : 'bg-gray-300'
                 }`}
                 onClick={() => onStoryClick && onStoryClick(stories.findIndex(s => s.id === mainStory.id))}
               >
-                <div className="w-full h-full rounded-full bg-white p-[3px]">
-                  <Avatar className="w-full h-full ring-2 ring-white">
+                <div className="w-full h-full rounded-full bg-white p-[2px]">
+                  <Avatar className="w-full h-full">
                     <AvatarImage 
                       src={mainStory.userAvatar} 
                       alt={mainStory.userName}
                       className="object-cover"
                     />
-                    <AvatarFallback className="text-base font-bold bg-gradient-to-br from-blue-100 to-purple-100">
+                    <AvatarFallback className="text-sm font-bold bg-gradient-to-br from-blue-100 to-purple-100">
                       {getInitials(mainStory.userName)}
                     </AvatarFallback>
                   </Avatar>
                 </div>
               </div>
               
-              {/* Category Badge - Only show if location exists */}
-              {mainStory.locationCategory && mainStory.locationName && (
+              {/* Category Badge */}
+              {mainStory.locationCategory && (
                 <div 
-                  className={`absolute -bottom-1 -right-1 w-7 h-7 bg-gradient-to-br ${getCategoryColor(mainStory.locationCategory)} rounded-full flex items-center justify-center shadow-lg border-2 border-white`}
+                  className={`absolute -bottom-1 -right-1 w-6 h-6 bg-gradient-to-br ${getCategoryColor(mainStory.locationCategory)} rounded-full flex items-center justify-center shadow-lg border-2 border-white`}
                 >
                   {getCategoryIcon(mainStory.locationCategory)}
                 </div>
               )}
             </div>
-            <span className="text-xs text-gray-800 font-semibold text-center truncate max-w-[80px]">
+            <span className="text-[11px] text-gray-700 font-semibold text-center truncate max-w-[72px]">
               {mainStory.userName}
             </span>
           </div>
