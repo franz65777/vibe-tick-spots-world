@@ -9,6 +9,11 @@ import { useMapLocations } from '@/hooks/useMapLocations';
 import { Place } from '@/types/place';
 import { PinShareData } from '@/services/pinSharingService';
 import { toast } from 'sonner';
+import { Users, TrendingUp, Bookmark, List } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 
 interface MapSectionProps {
   mapCenter: { lat: number; lng: number };
@@ -20,6 +25,7 @@ const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) =
   const [isAddLocationModalOpen, setIsAddLocationModalOpen] = useState(false);
   const [isQuickAddModalOpen, setIsQuickAddModalOpen] = useState(false);
   const [isPinShareModalOpen, setIsPinShareModalOpen] = useState(false);
+  const [isListViewOpen, setIsListViewOpen] = useState(false);
   const [newLocationCoords, setNewLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [pinToShare, setPinToShare] = useState<PinShareData | null>(null);
@@ -47,7 +53,7 @@ const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) =
     currentCity
   });
 
-  // Convert locations to Place format for GoogleMapsSetup
+  // Convert locations to Place format for GoogleMapsSetup with creator info
   const places: Place[] = locations.map(location => ({
     id: location.id,
     name: location.name,
@@ -57,8 +63,10 @@ const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) =
     isFollowing: location.isFollowing || false,
     isNew: location.isNew || false,
     isSaved: location.isSaved || false,
-    likes: 0, // Default value
-    visitors: [] // Default value as string array
+    likes: 0,
+    visitors: [],
+    createdBy: location.user_id,
+    createdAt: location.created_at
   }));
 
   const handleMapRightClick = (coords: { lat: number; lng: number }) => {
@@ -67,7 +75,9 @@ const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) =
     if (activeMapFilter === 'saved') {
       setIsQuickAddModalOpen(true);
     } else {
-      toast.info('Switch to "Saved" to add your favorite places');
+      toast.error('Switch to "Saved" to add your favorite places', {
+        description: 'You can only add pins when viewing your saved locations'
+      });
     }
   };
 
@@ -77,7 +87,9 @@ const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) =
     if (activeMapFilter === 'saved') {
       setIsQuickAddModalOpen(true);
     } else {
-      toast.info('Switch to "Saved" to add your favorite places');
+      toast.error('Switch to "Saved" to add your favorite places', {
+        description: 'You can only add pins when viewing your saved locations'
+      });
     }
   };
   const handleSaveLocation = async (locationData: any) => {
@@ -126,6 +138,32 @@ const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) =
     );
   };
 
+  const getFilterIcon = (filter: MapFilter) => {
+    switch (filter) {
+      case 'following':
+        return <Users className="w-4 h-4" />;
+      case 'popular':
+        return <TrendingUp className="w-4 h-4" />;
+      case 'saved':
+        return <Bookmark className="w-4 h-4" />;
+      default:
+        return null;
+    }
+  };
+
+  const getFilterLabel = (filter: MapFilter) => {
+    switch (filter) {
+      case 'following':
+        return 'Amici';
+      case 'popular':
+        return 'Popolari';
+      case 'saved':
+        return 'Salvati';
+      default:
+        return filter;
+    }
+  };
+
   return (
     <>
       <div className="flex-1 relative min-h-[500px]">
@@ -138,6 +176,7 @@ const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) =
           onCloseSelectedPlace={() => setSelectedPlace(null)}
           onMapRightClick={handleMapRightClick}
           onMapClick={handleMapClick}
+          activeFilter={activeMapFilter}
         />
         
         {/* Map Category Filters */}
@@ -147,10 +186,103 @@ const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) =
           selectedCategories={selectedCategories}
           onCategoryToggle={handleCategoryToggle}
         />
+
+        {/* Filter Indicator */}
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-40">
+          <div className="bg-white/95 backdrop-blur-md rounded-full shadow-lg border border-gray-200 px-2 py-1.5 flex items-center gap-2">
+            {(['following', 'popular', 'saved'] as MapFilter[]).map((filter) => (
+              <button
+                key={filter}
+                onClick={() => setActiveMapFilter(filter)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  activeMapFilter === filter
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                {getFilterIcon(filter)}
+                <span>{getFilterLabel(filter)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* List View Toggle */}
+        <div className="absolute bottom-6 right-4 z-40">
+          <Sheet open={isListViewOpen} onOpenChange={setIsListViewOpen}>
+            <SheetTrigger asChild>
+              <Button
+                size="icon"
+                className="rounded-full bg-white/95 backdrop-blur-md shadow-lg border border-gray-200 hover:bg-white"
+              >
+                <List className="w-5 h-5 text-gray-700" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="h-[70vh] rounded-t-3xl">
+              <SheetHeader>
+                <SheetTitle className="flex items-center gap-2">
+                  {getFilterIcon(activeMapFilter)}
+                  {getFilterLabel(activeMapFilter)} Locations
+                  <Badge variant="secondary" className="ml-auto">
+                    {places.length}
+                  </Badge>
+                </SheetTitle>
+              </SheetHeader>
+              <ScrollArea className="h-[calc(70vh-80px)] mt-4">
+                <div className="space-y-3 pr-4">
+                  {places.map((place) => (
+                    <button
+                      key={place.id}
+                      onClick={() => {
+                        handlePinClick(place);
+                        setIsListViewOpen(false);
+                      }}
+                      className="w-full flex items-start gap-3 p-3 bg-white border border-gray-200 rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-all text-left"
+                    >
+                      <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-lg shrink-0">
+                        {place.name[0]?.toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-gray-900 truncate">
+                          {place.name}
+                        </h4>
+                        <p className="text-sm text-gray-500 truncate">
+                          {place.address || place.category}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          {place.isFollowing && (
+                            <Badge className="bg-blue-100 text-blue-700 text-xs">
+                              Following
+                            </Badge>
+                          )}
+                          {place.isSaved && (
+                            <Badge className="bg-green-100 text-green-700 text-xs">
+                              Saved
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                  
+                  {places.length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      <List className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                      <p className="text-sm">No locations found</p>
+                      {activeMapFilter === 'saved' && (
+                        <p className="text-xs mt-1">Tap on the map to add your first location</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            </SheetContent>
+          </Sheet>
+        </div>
         
         {/* Loading/Error States */}
         {loading && (
-          <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-sm border border-gray-200 z-50">
+          <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-sm border border-gray-200 z-50">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
               <span className="text-sm text-gray-600">Loading locations...</span>
@@ -159,7 +291,7 @@ const MapSection = ({ mapCenter, currentCity, activeFilter }: MapSectionProps) =
         )}
         
         {error && (
-          <div className="absolute bottom-4 right-4 bg-red-50 border border-red-200 rounded-lg px-3 py-2 shadow-sm z-50">
+          <div className="absolute bottom-4 left-4 bg-red-50 border border-red-200 rounded-lg px-3 py-2 shadow-sm z-50">
             <span className="text-sm text-red-600">Error: {error}</span>
           </div>
         )}

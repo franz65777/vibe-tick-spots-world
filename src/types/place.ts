@@ -17,10 +17,13 @@ export interface Place {
   } | string;
   addedDate?: string;
   isFollowing?: boolean;
+  isSaved?: boolean;
   popularity?: number;
   distance?: string | number;
   totalSaves?: number;
   address?: string;
   description?: string;
-  postCount?: number; // Add missing postCount property
+  postCount?: number;
+  createdBy?: string;
+  createdAt?: string;
 }

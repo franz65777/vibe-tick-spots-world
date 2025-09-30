@@ -14,6 +14,7 @@ interface GoogleMapsSetupProps {
   onCloseSelectedPlace?: () => void;
   onMapRightClick?: (coords: { lat: number; lng: number }) => void;
   onMapClick?: (coords: { lat: number; lng: number }) => void;
+  activeFilter?: string;
 }
 
 const GoogleMapsSetup = ({ 
@@ -24,7 +25,8 @@ const GoogleMapsSetup = ({
   selectedPlace,
   onCloseSelectedPlace,
   onMapRightClick,
-  onMapClick 
+  onMapClick,
+  activeFilter
 }: GoogleMapsSetupProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
