@@ -1645,6 +1645,16 @@ export type Database = {
           sender_id: string
         }[]
       }
+      get_trending_data: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          last_updated: string
+          location_id: string
+          previous_interactions: number
+          recent_interactions: number
+          trend_ratio: number
+        }[]
+      }
       get_user_category_weights: {
         Args: { target_user_id: string }
         Returns: {
