@@ -1,7 +1,8 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface Badge {
   id: string;
@@ -42,6 +43,7 @@ export const useUserBadges = (userId?: string) => {
     tripsCount: 0
   });
   const [loading, setLoading] = useState(true);
+  const previousEarnedBadges = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (targetUserId) {
@@ -112,6 +114,7 @@ export const useUserBadges = (userId?: string) => {
   };
 
   const calculateProgressiveBadges = (stats: UserStats) => {
+    const currentEarnedIds = new Set<string>();
     const allBadges: Badge[] = [
       // Progressive Explorer Badges (City-based)
       {
@@ -328,6 +331,24 @@ export const useUserBadges = (userId?: string) => {
         earnedDate: stats.postsCount >= 100 ? new Date().toISOString() : undefined
       }
     ];
+
+    // Track earned badges for notifications
+    allBadges.forEach(badge => {
+      if (badge.earned) {
+        currentEarnedIds.add(badge.id);
+        
+        // Check if this is a newly earned badge
+        if (!previousEarnedBadges.current.has(badge.id) && user?.id === targetUserId) {
+          toast.success(`${badge.icon} New Badge Unlocked: ${badge.name}`, {
+            duration: 5000,
+            description: badge.description
+          });
+        }
+      }
+    });
+
+    // Update previous earned badges
+    previousEarnedBadges.current = currentEarnedIds;
 
     // Filter badges to show only current level and next level for each category
     const filteredBadges = filterProgressiveBadges(allBadges);

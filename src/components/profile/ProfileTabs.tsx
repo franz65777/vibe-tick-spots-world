@@ -1,14 +1,16 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Award, MapPin, Grid3X3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 interface ProfileTabsProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  hasNewBadges?: boolean;
 }
 
-const ProfileTabs = ({ activeTab, onTabChange }: ProfileTabsProps) => {
+const ProfileTabs = ({ activeTab, onTabChange, hasNewBadges = false }: ProfileTabsProps) => {
   return (
     <div className="px-4">
       <div className="flex bg-gray-100 rounded-xl p-1 mb-4">
@@ -39,7 +41,7 @@ const ProfileTabs = ({ activeTab, onTabChange }: ProfileTabsProps) => {
         <button
           onClick={() => onTabChange('badges')}
           className={cn(
-            "flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2",
+            "relative flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2",
             activeTab === 'badges'
               ? "bg-blue-600 text-white shadow-sm"
               : "text-gray-600"
@@ -47,6 +49,9 @@ const ProfileTabs = ({ activeTab, onTabChange }: ProfileTabsProps) => {
         >
           <Award className="w-4 h-4" />
           Badges
+          {hasNewBadges && activeTab !== 'badges' && (
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+          )}
         </button>
       </div>
     </div>

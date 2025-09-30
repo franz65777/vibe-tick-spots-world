@@ -72,7 +72,10 @@ export const useSuperUser = (): UseSuperUserReturn => {
   };
 
   const isElite = superUser?.status === 'elite' || (superUser?.level || 0) >= 10;
-  const levelProgress = superUser ? (superUser.points % 100) : 0;
+  
+  // Calculate level progress correctly - points needed for next level
+  const currentLevelPoints = superUser ? (superUser.points % 100) : 0;
+  const levelProgress = currentLevelPoints;
 
   return {
     superUser,

@@ -5,16 +5,19 @@ import { Input } from '@/components/ui/input';
 import { searchService } from '@/services/searchService';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 import EnhancedLocationCard from './explore/EnhancedLocationCard';
 import NoResults from './explore/NoResults';
 import UserCard from './explore/UserCard';
 import LocationDetailModal from './explore/LocationDetailModal';
 import LocationPostCards from './explore/LocationPostCards';
+import CommunityChampions from './home/CommunityChampions';
+import { useCommunityChampions } from '@/hooks/useCommunityChampions';
+import { Card } from '@/components/ui/card';
 
 const ExplorePage = () => {
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState<'locations' | 'users'>('locations');
   const [isSearching, setIsSearching] = useState(false);
@@ -25,6 +28,8 @@ const ExplorePage = () => {
   const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<any>(null);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [currentCity, setCurrentCity] = useState<string>('Unknown City');
+  const { champions } = useCommunityChampions(currentCity);
 
   const handleAddLocation = () => {
     console.log('Navigate to add location');
@@ -164,8 +169,8 @@ const ExplorePage = () => {
   const handleComment = (place: any) => {
     console.log('Comment on place:', place.name);
   };
-  const handleUserClick = (user: any) => {
-    console.log('User clicked:', user.name);
+  const handleUserClick = (userId: string) => {
+    navigate(`/profile/${userId}`);
   };
   const handleFollowUser = async (userId: string) => {
     if (!user) return;
@@ -236,6 +241,16 @@ const ExplorePage = () => {
               </span>
             </div>
           </div> : <>
+            {/* Community Champions Section - Show when not searching */}
+            {!isSearchActive && champions.length > 0 && (
+              <div className="px-4 py-4">
+                <CommunityChampions 
+                  champions={champions} 
+                  onUserClick={handleUserClick}
+                />
+              </div>
+            )}
+
             {displayData.length > 0 && <div className="px-4 py-3 bg-white border-b border-gray-100">
                 <span className="text-sm text-gray-600 font-medium">
                   {displayData.length} {searchMode === 'locations' ? 'place' : 'person'}{displayData.length !== 1 ? 's' : ''} found
@@ -249,7 +264,7 @@ const ExplorePage = () => {
                 onLocationClick={handleCardClick}
               />
             ) : displayData.length > 0 ? <div className="space-y-3 px-4 pb-4">
-                  {displayData.map(user => <UserCard key={user.id} user={user} onUserClick={handleUserClick} onFollowUser={handleFollowUser} onMessageUser={handleMessageUser} />)}
+                  {displayData.map(user => <UserCard key={user.id} user={user} onUserClick={() => handleUserClick(user.id)} onFollowUser={handleFollowUser} onMessageUser={handleMessageUser} />)}
                 </div> : <NoResults searchMode="users" searchQuery={searchQuery} />}
           </>}
       </div>
