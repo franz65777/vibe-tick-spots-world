@@ -6,9 +6,11 @@ import { cn } from '@/lib/utils';
 interface CommunityHighlightsProps {
   currentCity: string;
   userLocation: { lat: number; lng: number } | null;
+  topLocation?: any;
   onLocationClick: (locationId: string, coordinates?: { lat: number; lng: number }) => void;
   onUserClick: (userId: string) => void;
   onMapLocationClick: (coordinates: { lat: number; lng: number }) => void;
+  onTopLocationClick?: () => void;
 }
 
 // Mock data for nearby featured locations - in real app this would come from API
@@ -45,9 +47,11 @@ const getMockFeaturedLocations = (city: string) => [
 const CommunityHighlights = ({ 
   currentCity, 
   userLocation,
+  topLocation,
   onLocationClick, 
   onUserClick, 
-  onMapLocationClick 
+  onMapLocationClick,
+  onTopLocationClick
 }: CommunityHighlightsProps) => {
   // Use the mock data for now
   const locations = getMockFeaturedLocations(currentCity);
@@ -64,6 +68,45 @@ const CommunityHighlights = ({
 
       {/* Cards */}
       <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide px-4 snap-x snap-mandatory">
+        {/* Top Location Card */}
+        {topLocation && (
+          <div 
+            className="min-w-[200px] max-w-[200px] bg-white/95 backdrop-blur-xl rounded-xl border-2 border-yellow-200 overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group snap-start"
+            onClick={onTopLocationClick}
+          >
+            <div className="relative h-32 overflow-hidden">
+              <img
+                src={topLocation.image || 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=400&h=250&fit=crop'}
+                alt={topLocation.name}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+              <div className="absolute top-2 right-2">
+                <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-2 py-1 rounded-full text-[9px] font-bold flex items-center gap-1 shadow-lg">
+                  <Crown className="w-3 h-3" />
+                  Top Spot
+                </div>
+              </div>
+              <div className="absolute bottom-2 left-2 right-2">
+                <h3 className="text-white text-sm font-bold mb-1 drop-shadow-lg truncate">
+                  {topLocation.name}
+                </h3>
+                <div className="flex items-center gap-2 text-white/90 text-[10px]">
+                  <div className="flex items-center gap-0.5">
+                    <Heart className="w-3 h-3" />
+                    <span>{topLocation.likes || 0}</span>
+                  </div>
+                  <div className="flex items-center gap-0.5">
+                    <MapPin className="w-3 h-3" />
+                    <span className="truncate">{topLocation.city || currentCity}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Regular Location Cards */}
         {locations.map((location) => (
           <div 
             key={location.id}

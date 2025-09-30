@@ -356,49 +356,6 @@ const HomePage = () => {
           </div>
         </div>
         
-        {/* Top Location Feature */}
-        {topLocation && (
-          <div 
-            className="mx-4 mb-3 transition-opacity duration-200"
-            style={{ opacity: highlightsOpacity }}
-          >
-            <div 
-              className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 group"
-              onClick={() => handleLocationOfTheWeekClick(topLocation)}
-            >
-              <div className="relative h-48 overflow-hidden">
-                <img
-                  src={topLocation.image || 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=800&h=400&fit=crop'}
-                  alt={topLocation.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-                <div className="absolute top-4 right-4">
-                  <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-lg">
-                    <Crown className="w-3.5 h-3.5" />
-                    Top Spot
-                  </div>
-                </div>
-                <div className="absolute bottom-4 left-4 right-4">
-                  <h3 className="text-white text-2xl font-bold mb-1 drop-shadow-lg">
-                    {topLocation.name}
-                  </h3>
-                  <div className="flex items-center gap-4 text-white/90 text-sm">
-                    <div className="flex items-center gap-1">
-                      <Heart className="w-4 h-4" />
-                      <span>{topLocation.likes || 0}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <MapPin className="w-4 h-4" />
-                      <span>{topLocation.city || currentCity}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-        
         {/* Community Highlights Section with Card Background */}
         <div 
           className="mx-4 mb-6 transition-opacity duration-200"
@@ -408,6 +365,7 @@ const HomePage = () => {
             <CommunityHighlights
               currentCity={currentCity}
               userLocation={userLocation}
+              topLocation={topLocation}
               onLocationClick={(locationId: string, coordinates?: { lat: number; lng: number }) => {
                 if (coordinates) {
                   setMapCenter(coordinates);
@@ -418,6 +376,7 @@ const HomePage = () => {
                 navigate('/explore');
               }}
               onMapLocationClick={(coords: { lat: number; lng: number }) => setMapCenter(coords)}
+              onTopLocationClick={() => topLocation && handleLocationOfTheWeekClick(topLocation)}
             />
           </div>
         </div>
