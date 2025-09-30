@@ -43,8 +43,6 @@ const HomePage = () => {
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 37.7749, lng: -122.4194 });
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [scrollY, setScrollY] = useState(0);
-  
   // Modal states
   const [isCreateStoryModalOpen, setIsCreateStoryModalOpen] = useState(false);
   const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
@@ -67,13 +65,6 @@ const HomePage = () => {
   const { savedPlaces } = useSavedPlaces();
 
   console.log('HomePage - pins:', pins, 'loading:', loading, 'error:', error);
-
-  // Scroll tracking for fade effects
-  useEffect(() => {
-    const handleScroll = () => setScrollY(window.scrollY);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   // Get user's current location on component mount
   useEffect(() => {
@@ -387,31 +378,27 @@ const HomePage = () => {
   }
 
   const topLocation = getTopLocation();
-  
-  // Calculate opacity based on scroll
-  const storiesOpacity = Math.max(0, 1 - scrollY / 200);
-  const highlightsOpacity = Math.max(0, 1 - scrollY / 250);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 flex flex-col">
-      <Header 
-        searchQuery={searchQuery}
-        currentCity={currentCity}
-        onSearchChange={setSearchQuery}
-        onSearchKeyPress={() => {}}
-        onNotificationsClick={() => setIsNotificationsModalOpen(true)}
-        onMessagesClick={() => setIsMessagesModalOpen(true)}
-        onCreateStoryClick={() => setIsCreateStoryModalOpen(true)}
-        onCitySelect={handleCityChange}
-      />
+    <div className="h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 flex flex-col overflow-hidden">
+      {/* Fixed Header - ~60px */}
+      <div className="flex-shrink-0 h-[60px]">
+        <Header 
+          searchQuery={searchQuery}
+          currentCity={currentCity}
+          onSearchChange={setSearchQuery}
+          onSearchKeyPress={() => {}}
+          onNotificationsClick={() => setIsNotificationsModalOpen(true)}
+          onMessagesClick={() => setIsMessagesModalOpen(true)}
+          onCreateStoryClick={() => setIsCreateStoryModalOpen(true)}
+          onCitySelect={handleCityChange}
+        />
+      </div>
       
-      <main className="flex-1 flex flex-col max-w-7xl mx-auto w-full">
-        {/* Stories Section with Card Overlay */}
-        <div 
-          className="mx-4 mt-4 mb-3 transition-opacity duration-200"
-          style={{ opacity: storiesOpacity }}
-        >
-          <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-white/50 px-4 py-4">
+      <main className="flex-1 flex flex-col overflow-hidden">
+        {/* Stories Section - Fixed ~100px */}
+        <div className="flex-shrink-0 h-[100px] px-4 pt-3 pb-2">
+          <div className="h-full bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-white/50 px-4 py-3 overflow-hidden">
             <StoriesSection 
               stories={stories}
               onCreateStory={() => setIsCreateStoryModalOpen(true)}
@@ -423,12 +410,9 @@ const HomePage = () => {
           </div>
         </div>
         
-        {/* Community Highlights Section with Card Background */}
-        <div 
-          className="mx-4 mb-6 transition-opacity duration-200"
-          style={{ opacity: highlightsOpacity }}
-        >
-          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-md border border-white/50 py-5">
+        {/* Community Highlights Section - Fixed ~120px */}
+        <div className="flex-shrink-0 h-[120px] px-4 py-2">
+          <div className="h-full bg-white/90 backdrop-blur-sm rounded-2xl shadow-md border border-white/50 py-3 overflow-hidden">
             <CommunityHighlights
               currentCity={currentCity}
               userLocation={userLocation}
@@ -448,32 +432,37 @@ const HomePage = () => {
           </div>
         </div>
         
-        {loading ? (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center py-8">
-              <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-              <p className="text-gray-500">Loading amazing places...</p>
+        {/* Map Section - Flex-1 fills remaining space */}
+        <div className="flex-1 min-h-0 px-4 pb-4">
+          {loading ? (
+            <div className="h-full flex items-center justify-center bg-white/50 backdrop-blur-sm rounded-2xl">
+              <div className="text-center">
+                <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+                <p className="text-gray-500">Loading amazing places...</p>
+              </div>
             </div>
-          </div>
-        ) : error ? (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center py-8">
-              <p className="text-red-500 mb-4">Error loading places: {error}</p>
-              <button 
-                onClick={() => refreshPins()} 
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                Retry
-              </button>
+          ) : error ? (
+            <div className="h-full flex items-center justify-center bg-white/50 backdrop-blur-sm rounded-2xl">
+              <div className="text-center">
+                <p className="text-red-500 mb-4">Error loading places: {error}</p>
+                <button 
+                  onClick={() => refreshPins()} 
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Retry
+                </button>
+              </div>
             </div>
-          </div>
-        ) : (
-          <MapSection 
-            mapCenter={mapCenter}
-            currentCity={currentCity}
-            activeFilter={activeFilter}
-          />
-        )}
+          ) : (
+            <div className="h-full">
+              <MapSection 
+                mapCenter={mapCenter}
+                currentCity={currentCity}
+                activeFilter={activeFilter}
+              />
+            </div>
+          )}
+        </div>
       </main>
 
       <ModalsManager 
