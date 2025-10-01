@@ -325,7 +325,7 @@ const HomePage = () => {
         />
       
       <main className="flex-1 flex flex-col overflow-hidden">
-        {/* Stories Section - Expanded height */}
+        {/* Stories Section - 90px no background */}
         <div className="h-[90px] flex-shrink-0">
           <StoriesSection
             stories={stories}
@@ -337,8 +337,8 @@ const HomePage = () => {
           />
         </div>
         
-        {/* Discover Section - Increased height, no white container */}
-        <div className="h-[120px] flex-shrink-0">
+        {/* Discover Section - 170px, no white container */}
+        <div className="h-[170px] flex-shrink-0">
           <CommunityHighlights
             currentCity={currentCity}
             userLocation={userLocation}
@@ -354,7 +354,7 @@ const HomePage = () => {
           />
         </div>
         
-        {/* Map Section - Limited to 55-60% of viewport */}
+        {/* Map Section - 55% viewport max */}
         <div className="flex-1 max-h-[55vh] min-h-[50vh]">
           <MapSection
             mapCenter={mapCenter}
