@@ -164,11 +164,11 @@ const CommunityHighlights: React.FC<CommunityHighlightsProps> = ({
         {topLocation && (
           <button
             onClick={handleTopSpotClick}
-            className="flex-shrink-0 snap-center min-w-[180px] h-56 rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-pink-500 p-4 text-white hover:scale-[1.02] transition-transform shadow-xl flex flex-col items-center justify-center relative overflow-hidden group"
+            className="flex-shrink-0 snap-center min-w-[150px] h-[190px] rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-pink-500 p-3 text-white hover:scale-[1.02] transition-transform shadow-xl flex flex-col items-center justify-center relative overflow-hidden group"
           >
             <div className="absolute inset-0 bg-gradient-to-br from-yellow-300/20 to-transparent group-hover:from-yellow-300/40 transition-all" />
-            <Crown className="w-12 h-12 mb-3 drop-shadow-lg animate-pulse" />
-            <span className="text-lg font-bold text-center drop-shadow-lg relative z-10">Top Spot</span>
+            <Crown className="w-10 h-10 mb-2 drop-shadow-lg animate-pulse" />
+            <span className="text-base font-bold text-center drop-shadow-lg relative z-10">Top Spot</span>
             <span className="text-xs font-medium mt-1 opacity-90 relative z-10">Tap to explore</span>
           </button>
         )}
@@ -184,7 +184,7 @@ const CommunityHighlights: React.FC<CommunityHighlightsProps> = ({
                 onMapLocationClick({ lat: location.latitude, lng: location.longitude });
                 onLocationClick(location.id, { lat: location.latitude, lng: location.longitude });
               }}
-              className="flex-shrink-0 snap-center min-w-[180px] h-56 rounded-2xl overflow-hidden hover:scale-[1.02] transition-transform shadow-lg relative group"
+              className="flex-shrink-0 snap-center min-w-[150px] h-[190px] rounded-2xl overflow-hidden hover:scale-[1.02] transition-transform shadow-lg relative group"
             >
               {/* Image with gradient overlay */}
               <div className="absolute inset-0">
@@ -250,9 +250,9 @@ const CommunityHighlights: React.FC<CommunityHighlightsProps> = ({
 
         {/* Empty state */}
         {locations.length === 0 && (
-          <div className="w-full h-56 flex items-center justify-center text-gray-400">
+          <div className="w-full h-[190px] flex items-center justify-center text-gray-400">
             <div className="text-center">
-              <MapPin className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <MapPin className="w-10 h-10 mx-auto mb-2 opacity-50" />
               <p className="text-sm">No recommendations yet</p>
             </div>
           </div>

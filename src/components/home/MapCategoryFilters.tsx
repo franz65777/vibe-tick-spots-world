@@ -38,13 +38,14 @@ const MapCategoryFilters = () => {
   const mapFilters = [
     { id: 'following' as const, name: 'Following', icon: Users, description: 'Places from people you follow' },
     { id: 'popular' as const, name: 'Popular', icon: TrendingUp, description: 'Trending locations nearby' },
+    { id: 'recommended' as const, name: 'For You', icon: Star, description: 'Personalized recommendations' },
     { id: 'saved' as const, name: 'Saved', icon: Bookmark, description: 'Your saved places' }
   ];
 
   return (
     <div className="absolute top-4 left-4 right-4 z-50">
-      {/* Main Map Filters - Fixed 3 buttons */}
-      <div className="grid grid-cols-3 gap-2 mb-2">
+      {/* Main Map Filters - 4 buttons */}
+      <div className="grid grid-cols-4 gap-1.5 mb-2">
         {mapFilters.map((filter) => {
           const IconComponent = filter.icon;
           const isActive = activeFilter === filter.id;
@@ -57,6 +58,9 @@ const MapCategoryFilters = () => {
             popular: isActive 
               ? "bg-red-600 text-white border-red-600" 
               : "bg-white/90 text-red-600 border-red-200 hover:bg-red-50",
+            recommended: isActive 
+              ? "bg-purple-600 text-white border-purple-600" 
+              : "bg-white/90 text-purple-600 border-purple-200 hover:bg-purple-50",
             saved: isActive 
               ? "bg-green-600 text-white border-green-600" 
               : "bg-white/90 text-green-600 border-green-200 hover:bg-green-50"
@@ -67,13 +71,13 @@ const MapCategoryFilters = () => {
               key={filter.id}
               onClick={() => setActiveFilter(filter.id)}
               className={cn(
-                "flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 backdrop-blur-sm border shadow-sm",
-                filterColors[filter.id]
+                "flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 backdrop-blur-sm border shadow-sm",
+                filterColors[filter.id as keyof typeof filterColors]
               )}
               title={filter.description}
             >
-              <IconComponent className="w-4 h-4" />
-              <span className="hidden sm:inline">{filter.name}</span>
+              <IconComponent className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline text-xs">{filter.name}</span>
             </button>
           );
         })}

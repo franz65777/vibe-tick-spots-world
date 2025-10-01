@@ -5,7 +5,7 @@ export const RECOMMENDATION_WEIGHTS = {
   PERSONAL_MATCH: 0.4,
   FRIEND_BOOST: 0.3,
   TREND_BOOST: 0.2,
-  GLOBAL_POPULARITY: 0.1,
+  RECENCY: 0.1,
 };
 
 // Scoring thresholds
@@ -47,7 +47,7 @@ interface LocationScore {
   personalMatch: number;
   friendBoost: number;
   trendBoost: number;
-  globalPopularity: number;
+  recencyBoost: number;
   badge: 'offer' | 'popular' | 'recommended' | 'trending' | null;
 }
 
@@ -217,6 +217,8 @@ export async function scoreLocationForUser(
     category: string;
     likes_count?: number;
     saves_count?: number;
+    created_at?: string;
+    updated_at?: string;
   },
   userProfile: UserProfileVector,
   friendInfluence: Map<string, FriendInfluence>,
@@ -236,24 +238,27 @@ export async function scoreLocationForUser(
   const isTrending = trendRatio >= SCORING_THRESHOLDS.TRENDING_RATIO;
   const trendBoost = isTrending ? (trendRatio - 1) * 50 : 0;
 
-  // 4. Global popularity (normalized)
-  const likesCount = location.likes_count || 0;
-  const savesCount = location.saves_count || 0;
-  const globalPopularity = Math.min((likesCount + savesCount * 2) / 10, 10);
+  // 4. Recency boost (locations created/updated in last 2 weeks get bonus)
+  const twoWeeksAgo = new Date();
+  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+  const updatedDate = location.updated_at ? new Date(location.updated_at) : new Date(location.created_at || 0);
+  const isRecent = updatedDate > twoWeeksAgo;
+  const daysSinceUpdate = Math.max(0, (Date.now() - updatedDate.getTime()) / (1000 * 60 * 60 * 24));
+  const recencyBoost = isRecent ? Math.max(0, 10 - daysSinceUpdate / 2) : 0;
 
   // Calculate weighted score
   const score =
     personalMatch * RECOMMENDATION_WEIGHTS.PERSONAL_MATCH +
     friendBoost * RECOMMENDATION_WEIGHTS.FRIEND_BOOST +
     trendBoost * RECOMMENDATION_WEIGHTS.TREND_BOOST +
-    globalPopularity * RECOMMENDATION_WEIGHTS.GLOBAL_POPULARITY;
+    recencyBoost * RECOMMENDATION_WEIGHTS.RECENCY;
 
   // Determine badge
   let badge: 'offer' | 'popular' | 'recommended' | 'trending' | null = null;
   if (isTrending) {
     badge = 'trending';
-  } else if (likesCount + savesCount >= SCORING_THRESHOLDS.POPULAR_THRESHOLD) {
-    badge = 'popular';
+  } else if (isRecent) {
+    badge = 'offer';
   } else if (categoryPreference > 0.1 || friendCount > 0) {
     badge = 'recommended';
   }
@@ -264,7 +269,7 @@ export async function scoreLocationForUser(
     personalMatch,
     friendBoost,
     trendBoost,
-    globalPopularity,
+    recencyBoost,
     badge,
   };
 }
@@ -310,6 +315,8 @@ export async function getRecommendedLocations(
       longitude,
       image_url,
       description,
+      created_at,
+      updated_at,
       location_likes(count),
       user_saved_locations(count)
     `);
@@ -351,6 +358,8 @@ export async function getRecommendedLocations(
           category: loc.category,
           likes_count: likesCount,
           saves_count: savesCount,
+          created_at: loc.created_at,
+          updated_at: loc.updated_at,
         },
         userProfile,
         friendInfluence,
