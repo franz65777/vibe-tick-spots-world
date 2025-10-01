@@ -1,8 +1,9 @@
-import { MapPin, Calendar, Users, Heart, Bookmark, Plus, Eye } from 'lucide-react';
+import { MapPin, Calendar, Users, Heart, Bookmark, Plus, Eye, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import TripDetailModal from './TripDetailModal';
 import CreateTripModal from './CreateTripModal';
 import ShareModal from '../home/ShareModal';
+import { AiAssistantModal } from '../ai/AiAssistantModal';
 
 interface Trip {
   id: string;
@@ -32,6 +33,7 @@ const TripsGrid = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [tripToShare, setTripToShare] = useState<Trip | null>(null);
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [userTrips, setUserTrips] = useState<Trip[]>([
     {
       id: '1',
@@ -159,41 +161,66 @@ const TripsGrid = () => {
 
   if (userTrips.length === 0) {
     return (
-      <div className="px-4">
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
-            <MapPin className="w-10 h-10 text-white" />
+      <>
+        <div className="px-4">
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+              <MapPin className="w-10 h-10 text-white" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Create Your First Trip</h3>
+            <p className="text-gray-600 text-sm mb-6 max-w-xs">Turn your saved places into organized travel guides to share with friends</p>
+            
+            <div className="flex flex-col gap-3 w-full max-w-xs">
+              <button 
+                onClick={() => setIsAiModalOpen(true)}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+              >
+                <Sparkles className="w-5 h-5" />
+                Plan with AI Assistant
+              </button>
+              
+              <button 
+                onClick={() => setShowCreateModal(true)}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+              >
+                <Plus className="w-5 h-5" />
+                Create Trip Manually
+              </button>
+            </div>
           </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">Create Your First Trip</h3>
-          <p className="text-gray-600 text-sm mb-6 max-w-xs">Turn your saved places into organized travel guides to share with friends</p>
-          <button 
-            onClick={() => setShowCreateModal(true)}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl text-sm font-semibold flex items-center gap-2 hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
-          >
-            <Plus className="w-5 h-5" />
-            Create Trip
-          </button>
-        </div>
 
-        <CreateTripModal 
-          isOpen={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
-          onCreateTrip={handleCreateTrip}
-        />
-      </div>
+          <CreateTripModal 
+            isOpen={showCreateModal}
+            onClose={() => setShowCreateModal(false)}
+            onCreateTrip={handleCreateTrip}
+          />
+          
+          <AiAssistantModal 
+            isOpen={isAiModalOpen}
+            onClose={() => setIsAiModalOpen(false)}
+          />
+        </div>
+      </>
     );
   }
 
   return (
     <div className="px-4">
-      {/* Create Trip Button */}
-      <div className="mb-6">
+      {/* Action Buttons */}
+      <div className="mb-6 grid grid-cols-2 gap-3">
+        <button 
+          onClick={() => setIsAiModalOpen(true)}
+          className="bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+        >
+          <Sparkles className="w-5 h-5" />
+          AI Assistant
+        </button>
         <button 
           onClick={() => setShowCreateModal(true)}
-          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+          className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
         >
           <Plus className="w-5 h-5" />
-          Create New Trip
+          Create Trip
         </button>
       </div>
 
@@ -339,6 +366,11 @@ const TripsGrid = () => {
         item={tripToShare}
         itemType="trip"
         onShare={handleShare}
+      />
+      
+      <AiAssistantModal 
+        isOpen={isAiModalOpen}
+        onClose={() => setIsAiModalOpen(false)}
       />
     </div>
   );
