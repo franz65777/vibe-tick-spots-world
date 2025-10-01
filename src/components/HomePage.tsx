@@ -328,40 +328,6 @@ const HomePage = () => {
       </div>
       
       <main className="flex-1 flex flex-col overflow-hidden">
-        {/* Quick Access Bar */}
-        <div className="flex-shrink-0 px-4 py-2 flex gap-2 overflow-x-auto scrollbar-hide bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate('/feed')}
-            className="flex-shrink-0 gap-2"
-            aria-label="View activity feed"
-          >
-            <Activity className="w-4 h-4" />
-            <span className="text-sm">Feed</span>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsMessagesModalOpen(true)}
-            className="flex-shrink-0 gap-2"
-            aria-label="Open messages"
-          >
-            <MessageCircle className="w-4 h-4" />
-            <span className="text-sm">Chat</span>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate('/feed')}
-            className="flex-shrink-0 gap-2"
-            aria-label="View challenges"
-          >
-            <Trophy className="w-4 h-4" />
-            <span className="text-sm">Challenges</span>
-          </Button>
-        </div>
-
         {/* Stories Section - Reduced by 20% */}
         <div className="flex-shrink-0 h-[88px] px-4 pt-2 pb-2">
           <div className="h-full bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200 px-3 py-2 overflow-x-auto snap-x snap-mandatory">
