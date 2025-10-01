@@ -1,10 +1,8 @@
 
 import React, { useState } from 'react';
-import { Bell, MessageSquare, BellRing } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Bell, MessageSquare } from 'lucide-react';
 import GlobalCitySearch from './GlobalCitySearch';
 import MessageHistoryModal from './MessageHistoryModal';
-import SuperUserBadge from '../SuperUserBadge';
 import { useNotifications } from '@/hooks/useNotifications';
 
 interface HeaderProps {
@@ -34,23 +32,20 @@ const Header = ({
   return (
     <>
       <header className="bg-white border-b border-gray-100 sticky top-0 z-40 shadow-sm">
-        <div className="flex items-center justify-between px-4 py-3">
-          {/* Left: City Selection */}
-          <GlobalCitySearch 
-            currentCity={currentCity} 
-            onCitySelect={onCitySelect} 
-            searchQuery={searchQuery} 
-            onSearchChange={onSearchChange} 
-            onSearchKeyPress={onSearchKeyPress} 
-          />
-
-          {/* Center: Super User Badge */}
-          <div className="flex-1 flex justify-center">
-            <SuperUserBadge />
+        <div className="flex items-center justify-between px-4 py-3 gap-3">
+          {/* Left: City Selection - Now with more space */}
+          <div className="flex-1 min-w-0">
+            <GlobalCitySearch 
+              currentCity={currentCity} 
+              onCitySelect={onCitySelect} 
+              searchQuery={searchQuery} 
+              onSearchChange={onSearchChange} 
+              onSearchKeyPress={onSearchKeyPress} 
+            />
           </div>
 
           {/* Right: Action Buttons */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-shrink-0">
             {/* Notifications Button */}
             <button 
               onClick={onNotificationsClick} 
