@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
@@ -16,6 +15,7 @@ import ExplorePage from '@/components/ExplorePage';
 import ProfilePage from '@/components/ProfilePage';
 import AddLocationPage from '@/components/AddLocationPage';
 import FeedPage from '@/pages/FeedPage';
+import ActivityFeedPage from '@/pages/ActivityFeedPage';
 import LeaderboardPage from '@/pages/LeaderboardPage';
 import AdminAnalyticsPage from '@/pages/AdminAnalyticsPage';
 import { Toaster } from '@/components/ui/toaster';
@@ -53,6 +53,7 @@ function AppContent() {
                 <Route path="/explore" element={<ExplorePage />} />
                 <Route path="/add" element={<AddLocationPage />} />
                 <Route path="/feed" element={<FeedPage />} />
+                <Route path="/activity" element={<ActivityFeedPage />} />
                 <Route path="/leaderboard" element={<LeaderboardPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/business" element={<BusinessDashboardPage />} />

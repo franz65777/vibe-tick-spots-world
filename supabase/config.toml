@@ -31,6 +31,9 @@ verify_jwt = true
 [functions.ai-travel-assistant]
 verify_jwt = true
 
+[functions.update-recommendations]
+verify_jwt = false
+
 [db]
 # Port to use for the local database URL.
 port = 54322

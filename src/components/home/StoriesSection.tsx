@@ -26,22 +26,22 @@ const getCategoryIcon = (category: string) => {
     case 'restaurant':
     case 'cafe':
     case 'food':
-      return <Utensils className="w-3 h-3 text-white" />;
+      return <Utensils className="w-2 h-2 text-white" />;
     case 'hotel':
     case 'lodging':
-      return <Hotel className="w-3 h-3 text-white" />;
+      return <Hotel className="w-2 h-2 text-white" />;
     case 'bar':
     case 'nightlife':
-      return <Wine className="w-3 h-3 text-white" />;
+      return <Wine className="w-2 h-2 text-white" />;
     case 'shopping':
-      return <ShoppingBag className="w-3 h-3 text-white" />;
+      return <ShoppingBag className="w-2 h-2 text-white" />;
     case 'tourist_attraction':
     case 'museum':
-      return <Camera className="w-3 h-3 text-white" />;
+      return <Camera className="w-2 h-2 text-white" />;
     case 'airport':
-      return <Plane className="w-3 h-3 text-white" />;
+      return <Plane className="w-2 h-2 text-white" />;
     default:
-      return <MapPin className="w-3 h-3 text-white" />;
+      return <MapPin className="w-2 h-2 text-white" />;
   }
 };
 

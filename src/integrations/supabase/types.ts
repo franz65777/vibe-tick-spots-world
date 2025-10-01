@@ -1817,6 +1817,42 @@ export type Database = {
           },
         ]
       }
+      user_recommendations: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          friends_saved: number | null
+          id: string
+          location_id: string
+          score: number
+          total_saves: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          friends_saved?: number | null
+          id?: string
+          location_id: string
+          score?: number
+          total_saves?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          friends_saved?: number | null
+          id?: string
+          location_id?: string
+          score?: number
+          total_saves?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null

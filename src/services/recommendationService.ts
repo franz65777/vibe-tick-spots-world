@@ -275,7 +275,7 @@ export async function scoreLocationForUser(
 }
 
 /**
- * Get recommended locations for a user
+ * Get recommended locations for a user using precomputed recommendations
  */
 export async function getRecommendedLocations(
   userId: string,
@@ -299,10 +299,101 @@ export async function getRecommendedLocations(
     friend_avatars: string[];
   }>
 > {
-  // 1. Get user profile
-  const userProfile = await getUserProfileVector(userId);
+  // Fetch precomputed recommendations from the user_recommendations table
+  let query = supabase
+    .from('user_recommendations')
+    .select(`
+      score,
+      friends_saved,
+      category,
+      locations!inner (
+        id,
+        name,
+        category,
+        address,
+        city,
+        latitude,
+        longitude,
+        image_url,
+        description
+      )
+    `)
+    .eq('user_id', userId)
+    .order('score', { ascending: false });
 
-  // 2. Get candidate locations
+  // Apply category filter if provided
+  if (categoryFilter) {
+    query = query.eq('category', categoryFilter);
+  }
+
+  const { data, error } = await query.limit(limit);
+
+  if (error) {
+    console.error('Error fetching recommendations:', error);
+    // Fallback to basic recommendations if user_recommendations is empty
+    return await getFallbackRecommendations(userId, city, limit, categoryFilter);
+  }
+
+  if (!data || data.length === 0) {
+    // No precomputed recommendations, use fallback
+    return await getFallbackRecommendations(userId, city, limit, categoryFilter);
+  }
+
+  // Get friend avatars for locations
+  const locationIds = data.map((rec: any) => rec.locations.id);
+  const friendInfluence = await getFriendInfluence(userId, locationIds);
+
+  // Transform and enrich the data
+  const recommendations = data
+    .filter((rec: any) => {
+      // Apply city filter if provided
+      if (city && !rec.locations.city?.toLowerCase().includes(city.toLowerCase())) {
+        return false;
+      }
+      return true;
+    })
+    .map((rec: any) => {
+      const location = rec.locations;
+      const friendData = friendInfluence.get(location.id);
+
+      // Determine badge based on score
+      let badge: 'offer' | 'popular' | 'recommended' | 'trending' | null = null;
+      if (rec.score > 0.7) {
+        badge = 'recommended';
+      } else if (rec.friends_saved > 5) {
+        badge = 'trending';
+      }
+
+      return {
+        id: location.id,
+        name: location.name,
+        category: location.category,
+        address: location.address || '',
+        city: location.city || '',
+        latitude: location.latitude,
+        longitude: location.longitude,
+        image_url: location.image_url,
+        description: location.description,
+        score: rec.score,
+        badge,
+        friends_saved: rec.friends_saved,
+        friend_avatars: friendData?.friendAvatars || [],
+      };
+    });
+
+  return recommendations.slice(0, limit);
+}
+
+/**
+ * Fallback recommendations when user_recommendations table is empty
+ */
+async function getFallbackRecommendations(
+  userId: string,
+  city?: string,
+  limit: number = 10,
+  categoryFilter?: string | null
+): Promise<any[]> {
+  // Get popular locations from the current city
   let query = supabase
     .from('locations')
     .select(`
@@ -315,79 +406,37 @@ export async function getRecommendedLocations(
       longitude,
       image_url,
       description,
-      created_at,
-      updated_at,
-      location_likes(count),
       user_saved_locations(count)
-    `);
+    `)
+    .order('created_at', { ascending: false });
 
   if (city) {
     query = query.ilike('city', `%${city}%`);
   }
 
-  // Apply category filter if provided
   if (categoryFilter) {
     query = query.eq('category', categoryFilter);
   }
 
-  const { data: locations, error } = await query.limit(100); // Get more candidates for better filtering
+  const { data: locations } = await query.limit(limit);
 
-  if (error || !locations) {
-    console.error('Error fetching locations:', error);
-    return [];
-  }
+  if (!locations) return [];
 
-  const locationIds = locations.map((l) => l.id);
-
-  // 3. Get friend influence and trending data in parallel
-  const [friendInfluence, trendData] = await Promise.all([
-    getFriendInfluence(userId, locationIds),
-    getTrendingData(),
-  ]);
-
-  // 4. Score each location
-  const scoredLocations = await Promise.all(
-    locations.map(async (loc: any) => {
-      const likesCount = Array.isArray(loc.location_likes) ? loc.location_likes.length : 0;
-      const savesCount = Array.isArray(loc.user_saved_locations) ? loc.user_saved_locations.length : 0;
-
-      const scoreData = await scoreLocationForUser(
-        userId,
-        loc.id,
-        {
-          category: loc.category,
-          likes_count: likesCount,
-          saves_count: savesCount,
-          created_at: loc.created_at,
-          updated_at: loc.updated_at,
-        },
-        userProfile,
-        friendInfluence,
-        trendData
-      );
-
-      const friendData = friendInfluence.get(loc.id);
-
-      return {
-        id: loc.id,
-        name: loc.name,
-        category: loc.category,
-        address: loc.address || '',
-        city: loc.city || '',
-        latitude: loc.latitude,
-        longitude: loc.longitude,
-        image_url: loc.image_url,
-        description: loc.description,
-        score: scoreData.score,
-        badge: scoreData.badge,
-        friends_saved: friendData?.friendCount || 0,
-        friend_avatars: friendData?.friendAvatars || [],
-      };
-    })
-  );
-
-  // 5. Sort by score and return top results
-  return scoredLocations.sort((a, b) => b.score - a.score).slice(0, limit);
+  return locations.map((loc: any) => ({
+    id: loc.id,
+    name: loc.name,
+    category: loc.category,
+    address: loc.address || '',
+    city: loc.city || '',
+    latitude: loc.latitude,
+    longitude: loc.longitude,
+    image_url: loc.image_url,
+    description: loc.description,
+    score: 0.5,
+    badge: 'recommended' as const,
+    friends_saved: 0,
+    friend_avatars: [],
+  }));
 }
 
 /**
