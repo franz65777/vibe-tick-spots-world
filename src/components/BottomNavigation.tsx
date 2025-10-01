@@ -1,9 +1,7 @@
-
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, Plus, User, Pin, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import SuperUserBadge from './SuperUserBadge';
 
 const BottomNavigation = () => {
   const navigate = useNavigate();
@@ -23,12 +21,6 @@ const BottomNavigation = () => {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 z-50 shadow-lg">
-      {/* Super User Badge at the top of navigation */}
-      <div className="flex justify-center py-2 border-b border-gray-100">
-        <SuperUserBadge />
-      </div>
-      
-      {/* Navigation Items */}
       <div className="px-4 py-2">
         <div className="flex justify-around items-center max-w-md mx-auto">
         {navItems.map((item) => {

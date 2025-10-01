@@ -119,8 +119,8 @@ const MapSection = ({ mapCenter, currentCity }: MapSectionProps) => {
 
   return (
     <>
-      <div className="flex-1 relative min-h-[500px]">
-        <GoogleMapsSetup 
+      <div className="flex-1 relative min-h-[500px] w-full rounded-none">
+        <GoogleMapsSetup
           places={places}
           onPinClick={handlePinClick}
           onPinShare={handlePinShare}
@@ -131,19 +131,16 @@ const MapSection = ({ mapCenter, currentCity }: MapSectionProps) => {
           onMapClick={handleMapClick}
           activeFilter={activeFilter}
         />
-        
-        {/* Map Category Filters */}
-        <MapCategoryFilters />
 
-        {/* List View Toggle */}
-        <div className="absolute bottom-6 right-4 z-40">
+        {/* List View Toggle - Modern Icon */}
+        <div className="absolute bottom-8 right-4 z-40">
           <Sheet open={isListViewOpen} onOpenChange={setIsListViewOpen}>
             <SheetTrigger asChild>
               <Button
                 size="icon"
-                className="rounded-full bg-white/95 backdrop-blur-md shadow-lg border border-gray-200 hover:bg-white"
+                className="rounded-full bg-white/95 backdrop-blur-md shadow-lg border border-gray-200 hover:bg-white w-12 h-12"
               >
-                <List className="w-5 h-5 text-gray-700" />
+                <List className="w-6 h-6 text-gray-700" />
               </Button>
             </SheetTrigger>
             <SheetContent side="bottom" className="h-[70vh] rounded-t-3xl">

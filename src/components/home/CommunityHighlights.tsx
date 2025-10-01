@@ -138,16 +138,16 @@ const CommunityHighlights: React.FC<CommunityHighlightsProps> = ({
             </DropdownMenuContent>
           </DropdownMenu>
           
-          {/* Progress Dots */}
+          {/* Progress Dots - Larger and more visible */}
           {locations.length > 0 && (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               {[...Array(Math.min(10, locations.length))].map((_, i) => (
                 <div
                   key={i}
-                  className={`h-1.5 rounded-full transition-all ${
+                  className={`h-2 rounded-full transition-all duration-300 ${
                     (scrollPosition / 100) * locations.length > i 
-                      ? 'w-6 bg-gradient-to-r from-purple-500 to-pink-500' 
-                      : 'w-1.5 bg-gray-300'
+                      ? 'w-8 bg-gradient-to-r from-purple-500 to-pink-500 shadow-md' 
+                      : 'w-2 bg-gray-300'
                   }`}
                 />
               ))}
@@ -157,14 +157,15 @@ const CommunityHighlights: React.FC<CommunityHighlightsProps> = ({
       </div>
 
       <div 
-        className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory"
+        className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide scroll-smooth"
+        style={{ scrollSnapType: 'x mandatory' }}
         onScroll={handleScroll}
       >
         {/* Top Spot Button */}
         {topLocation && (
           <button
             onClick={handleTopSpotClick}
-            className="flex-shrink-0 snap-center min-w-[150px] h-[190px] rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-pink-500 p-3 text-white hover:scale-[1.02] transition-transform shadow-xl flex flex-col items-center justify-center relative overflow-hidden group"
+            className="flex-shrink-0 snap-center min-w-[170px] h-[190px] rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-pink-500 p-3 text-white hover:scale-[1.02] transition-transform shadow-xl flex flex-col items-center justify-center relative overflow-hidden group"
           >
             <div className="absolute inset-0 bg-gradient-to-br from-yellow-300/20 to-transparent group-hover:from-yellow-300/40 transition-all" />
             <Crown className="w-10 h-10 mb-2 drop-shadow-lg animate-pulse" />
@@ -184,7 +185,7 @@ const CommunityHighlights: React.FC<CommunityHighlightsProps> = ({
                 onMapLocationClick({ lat: location.latitude, lng: location.longitude });
                 onLocationClick(location.id, { lat: location.latitude, lng: location.longitude });
               }}
-              className="flex-shrink-0 snap-center min-w-[150px] h-[190px] rounded-2xl overflow-hidden hover:scale-[1.02] transition-transform shadow-lg relative group"
+              className="flex-shrink-0 snap-center min-w-[170px] h-[190px] rounded-2xl overflow-hidden hover:scale-[1.02] transition-transform shadow-lg relative group"
             >
               {/* Image with gradient overlay */}
               <div className="absolute inset-0">

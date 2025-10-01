@@ -8,6 +8,7 @@ import { Crown, Heart, MapPin, Activity, MessageCircle, Trophy } from 'lucide-re
 import Header from './home/Header';
 import StoriesSection from './home/StoriesSection';
 import MapSection from './home/MapSection';
+import MapFiltersBar from './home/MapFiltersBar';
 import ModalsManager from './home/ModalsManager';
 import CommunityHighlights from './home/CommunityHighlights';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '@/lib/googleMaps';
@@ -328,10 +329,10 @@ const HomePage = () => {
       </div>
       
       <main className="flex-1 flex flex-col overflow-hidden">
-        {/* Stories Section - Reduced by 20% */}
-        <div className="flex-shrink-0 h-[88px] px-4 pt-2 pb-2">
-          <div className="h-full bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200 px-3 py-2 overflow-x-auto snap-x snap-mandatory">
-            <StoriesSection 
+        {/* Stories Section - Enhanced */}
+        <div className="flex-shrink-0 h-[120px] px-4 pt-2 pb-2">
+          <div className="h-full bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200 px-3 py-2 overflow-x-auto snap-x snap-mandatory scrollbar-hide">
+            <StoriesSection
               stories={stories}
               onCreateStory={() => setIsCreateStoryModalOpen(true)}
               onStoryClick={(index) => {
@@ -342,8 +343,8 @@ const HomePage = () => {
           </div>
         </div>
         
-        {/* Community Highlights Section - Reduced by 15% */}
-        <div className="flex-shrink-0 h-[102px] px-4 py-2">
+        {/* Community Highlights Section - Enhanced */}
+        <div className="flex-shrink-0 h-[140px] px-4 py-2">
           <div className="h-full bg-white/90 backdrop-blur-sm rounded-2xl shadow-md border border-white/50 py-3 overflow-hidden">
             <CommunityHighlights
               currentCity={currentCity}
@@ -361,9 +362,12 @@ const HomePage = () => {
           </div>
         </div>
         
-        {/* Map Section - Reduced by 5% with max-height constraint */}
-        <div className="flex-1 min-h-0 px-4 pb-4 max-h-[55vh]">
-          <div className="h-full">
+        {/* Map Filters Bar - Fixed below content */}
+        <MapFiltersBar />
+        
+        {/* Map Section - Elegant & Integrated */}
+        <div className="flex-1 min-h-0 max-h-[45vh]">
+          <div className="h-full w-full">
             <MapSection 
               mapCenter={mapCenter}
               currentCity={currentCity}
