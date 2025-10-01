@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { getCachedData } from './performanceService';
 
 export interface FeedItem {
   id: string;
@@ -14,22 +15,30 @@ export interface FeedItem {
 }
 
 /**
- * Get activity feed for the current user
+ * Get activity feed for the current user with caching
  */
 export async function getUserFeed(userId: string, limit: number = 50): Promise<FeedItem[]> {
-  try {
-    const { data, error } = await supabase.rpc('get_user_feed', {
-      target_user_id: userId,
-      feed_limit: limit,
-    });
+  const cacheKey = `user-feed-${userId}-${limit}`;
+  
+  return getCachedData(
+    cacheKey,
+    async () => {
+      try {
+        const { data, error } = await supabase.rpc('get_user_feed', {
+          target_user_id: userId,
+          feed_limit: limit,
+        });
 
-    if (error) throw error;
+        if (error) throw error;
 
-    return (data || []) as FeedItem[];
-  } catch (error) {
-    console.error('Error fetching user feed:', error);
-    return [];
-  }
+        return (data || []) as FeedItem[];
+      } catch (error) {
+        console.error('Error fetching user feed:', error);
+        return [];
+      }
+    },
+    2 * 60 * 1000 // Cache for 2 minutes
+  );
 }
 
 /**

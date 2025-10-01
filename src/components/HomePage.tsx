@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { MapFilterProvider } from '@/contexts/MapFilterContext';
 import { Place } from '@/types/place';
-import { Crown, Heart, MapPin } from 'lucide-react';
+import { Crown, Heart, MapPin, Activity, MessageCircle, Trophy } from 'lucide-react';
 import Header from './home/Header';
 import StoriesSection from './home/StoriesSection';
 import MapSection from './home/MapSection';
@@ -12,6 +12,8 @@ import ModalsManager from './home/ModalsManager';
 import CommunityHighlights from './home/CommunityHighlights';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '@/lib/googleMaps';
 import { supabase } from '@/integrations/supabase/client';
+import { ThemeToggle } from './ThemeToggle';
+import { Button } from './ui/button';
 
 // Local interface for modal components that expect simpler Place structure
 interface LocalPlace {
@@ -304,9 +306,9 @@ const HomePage = () => {
 
   return (
     <MapFilterProvider>
-      <div className="h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 flex flex-col overflow-hidden">
-        {/* Fixed Header - ~60px */}
-        <div className="flex-shrink-0 h-[60px]">
+      <div className="h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex flex-col overflow-hidden">
+        {/* Fixed Header with Theme Toggle - ~60px */}
+        <div className="flex-shrink-0 h-[60px] flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
           <Header
           searchQuery={searchQuery}
           currentCity={currentCity}
@@ -317,9 +319,44 @@ const HomePage = () => {
           onCreateStoryClick={() => setIsCreateStoryModalOpen(true)}
           onCitySelect={handleCityChange}
         />
+        <ThemeToggle />
       </div>
       
       <main className="flex-1 flex flex-col overflow-hidden">
+        {/* Quick Access Bar */}
+        <div className="flex-shrink-0 px-4 py-2 flex gap-2 overflow-x-auto scrollbar-hide bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/feed')}
+            className="flex-shrink-0 gap-2"
+            aria-label="View activity feed"
+          >
+            <Activity className="w-4 h-4" />
+            <span className="text-sm">Feed</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsMessagesModalOpen(true)}
+            className="flex-shrink-0 gap-2"
+            aria-label="Open messages"
+          >
+            <MessageCircle className="w-4 h-4" />
+            <span className="text-sm">Chat</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/feed')}
+            className="flex-shrink-0 gap-2"
+            aria-label="View challenges"
+          >
+            <Trophy className="w-4 h-4" />
+            <span className="text-sm">Challenges</span>
+          </Button>
+        </div>
+
         {/* Stories Section - Reduced by 20% */}
         <div className="flex-shrink-0 h-[88px] px-4 pt-2 pb-2">
           <div className="h-full bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200 px-3 py-2 overflow-x-auto snap-x snap-mandatory">

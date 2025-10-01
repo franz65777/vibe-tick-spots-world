@@ -1,11 +1,12 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { X, Bell, CheckCheck, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { useNotifications } from '@/hooks/useNotifications';
 import NotificationItem from '@/components/notifications/NotificationItem';
+import { NotificationPreferences } from '@/components/notifications/NotificationPreferences';
 
 interface NotificationsModalProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ interface NotificationsModalProps {
 
 const NotificationsModal = ({ isOpen, onClose }: NotificationsModalProps) => {
   const { notifications, unreadCount, loading, markAsRead, markAllAsRead } = useNotifications();
+  const [showSettings, setShowSettings] = useState(false);
 
   const handleMarkAsRead = async (notificationId: string) => {
     await markAsRead([notificationId]);
@@ -77,9 +79,13 @@ const NotificationsModal = ({ isOpen, onClose }: NotificationsModalProps) => {
           </div>
         </div>
 
-        {/* Notifications List */}
+        {/* Notifications List or Settings */}
         <ScrollArea className="flex-1">
-          {loading ? (
+          {showSettings ? (
+            <div className="p-4">
+              <NotificationPreferences />
+            </div>
+          ) : loading ? (
             <div className="flex items-center justify-center py-16">
               <div className="flex items-center gap-3">
                 <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -115,18 +121,18 @@ const NotificationsModal = ({ isOpen, onClose }: NotificationsModalProps) => {
         </ScrollArea>
 
         {/* Footer with settings */}
-        {notifications.length > 0 && (
-          <div className="p-4 border-t border-gray-100 bg-gray-50">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg"
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              Notification Settings
-            </Button>
-          </div>
-        )}
+        <div className="p-4 border-t border-gray-100 bg-gray-50">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowSettings(!showSettings)}
+            className="w-full text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg"
+            aria-label={showSettings ? 'View notifications' : 'Open notification settings'}
+          >
+            <Settings className="w-4 h-4 mr-2" />
+            {showSettings ? 'Back to Notifications' : 'Notification Settings'}
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Search, Send, ArrowLeft, Phone, Video, MoreHorizontal, Smile, Paperclip, Mic } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { messageService, MessageThread, DirectMessage } from '@/services/messageService';
+import { realtimeChatService } from '@/services/realtimeChatService';
 import { formatDistanceToNow } from 'date-fns';
 import PlaceMessageCard from './messages/PlaceMessageCard';
 import PostMessageCard from './messages/PostMessageCard';
@@ -48,6 +49,28 @@ const MessagesModal = ({
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Setup realtime subscription for selected thread
+  useEffect(() => {
+    if (!selectedThread || !user) return;
+
+    const otherUserId = selectedThread.participant_1_id === user.id 
+      ? selectedThread.participant_2_id 
+      : selectedThread.participant_1_id;
+
+    const unsubscribe = realtimeChatService.subscribeToThread(
+      user.id,
+      otherUserId,
+      (newMessage) => {
+        setMessages((prev) => [...prev, newMessage as DirectMessage]);
+        scrollToBottom();
+      }
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, [selectedThread, user]);
   const loadThreads = async () => {
     if (!user) return;
     setLoading(true);
