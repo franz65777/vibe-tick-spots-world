@@ -280,7 +280,7 @@ const GlobalCitySearch = ({
             if (!city) return;
             const country = addr.country || '';
             const state = addr.state || addr.region || addr.province || addr.county || '';
-            const key = `${norm(city)}|${norm(state)}|${norm(country)}`;
+            const key = `${norm(city)}|${norm(country)}`;
             const type = item?.type || '';
             const addresstype = item?.addresstype || '';
             const prio = Math.max(typePriority[type] || 0, typePriority[addresstype] || 0);
@@ -370,7 +370,7 @@ const GlobalCitySearch = ({
   }, {} as Record<string, typeof filteredCities>);
 
   return (
-    <div ref={searchRef} className="relative flex-1 max-w-lg z-[200]">
+    <div ref={searchRef} className="relative flex-1 flex-grow max-w-full z-[200]">
       {/* Current City Display / Search Input - Mobile Optimized */}
       <div className="relative">
         {!searchQuery || searchQuery.trim() === ' ' ? (
@@ -431,7 +431,7 @@ const GlobalCitySearch = ({
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetContent 
           side="bottom" 
-          className="h-[70vh] rounded-t-3xl border-t-0 p-0 overflow-hidden"
+          className="h-[70vh] rounded-t-3xl border-t-0 p-0 overflow-hidden bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg shadow-none"
         >
           <SheetHeader className="px-6 py-4 border-b bg-gradient-to-br from-blue-50 to-white">
             <SheetTitle className="text-lg font-semibold flex items-center gap-2">

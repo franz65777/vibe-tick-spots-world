@@ -312,9 +312,8 @@ const HomePage = () => {
   return (
     <MapFilterProvider>
       <div className="h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex flex-col overflow-hidden">
-        {/* Fixed Header with Theme Toggle - ~60px */}
-        <div className="flex-shrink-0 h-[60px] flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-          <Header
+        {/* Fixed Header - ~60px */}
+        <Header
           searchQuery={searchQuery}
           currentCity={currentCity}
           onSearchChange={setSearchQuery}
@@ -324,22 +323,18 @@ const HomePage = () => {
           onCreateStoryClick={() => setIsCreateStoryModalOpen(true)}
           onCitySelect={handleCityChange}
         />
-        <ThemeToggle />
-      </div>
       
       <main className="flex-1 flex flex-col overflow-hidden">
-        {/* Stories Section - Compact */}
-        <div className="flex-shrink-0 h-[60px] px-4 pt-1 pb-1">
-          <div className="h-full bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 px-3 py-1 overflow-x-auto snap-x snap-mandatory scrollbar-hide">
-            <StoriesSection
-              stories={stories}
-              onCreateStory={() => setIsCreateStoryModalOpen(true)}
-              onStoryClick={(index) => {
-                setCurrentStoryIndex(index);
-                setIsStoriesViewerOpen(true);
-              }}
-            />
-          </div>
+        {/* Stories Section - Expanded */}
+        <div className="flex-shrink-0 h-[90px] overflow-x-auto snap-x snap-mandatory scrollbar-hide">
+          <StoriesSection
+            stories={stories}
+            onCreateStory={() => setIsCreateStoryModalOpen(true)}
+            onStoryClick={(index) => {
+              setCurrentStoryIndex(index);
+              setIsStoriesViewerOpen(true);
+            }}
+          />
         </div>
         
         {/* Community Highlights Section - Compact */}

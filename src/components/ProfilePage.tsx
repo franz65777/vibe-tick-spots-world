@@ -15,6 +15,7 @@ import ReservationsList from './profile/ReservationsList';
 import FollowersModal from './profile/FollowersModal';
 import SavedLocationsList from './profile/SavedLocationsList';
 import { useUserBadges } from '@/hooks/useUserBadges';
+import { ThemeToggle } from './ThemeToggle';
 
 const ProfilePage = () => {
   const { profile, loading, error } = useProfile();
@@ -99,6 +100,10 @@ const ProfilePage = () => {
 
   return (
     <div className="flex flex-col h-full bg-white">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200">
+        <h1 className="text-lg font-semibold">Profilo</h1>
+        <ThemeToggle />
+      </div>
       <ProfileHeader />
       
       {/* Business Dashboard Link */}

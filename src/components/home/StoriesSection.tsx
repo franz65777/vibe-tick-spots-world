@@ -98,76 +98,74 @@ const StoriesSection = ({ stories = [], onCreateStory, onStoryClick }: StoriesSe
   };
 
   return (
-    <div className="flex gap-3 px-1 py-1">
-      {/* Add Story Button - Compact */}
-      <div className="flex flex-col items-center gap-1 min-w-[50px] snap-start">
+    <div className="flex gap-4 px-3 py-2">
+      {/* Add Story Button */}
+      <div className="flex flex-col items-center gap-1.5 min-w-[60px] snap-start">
         <div className="relative">
           <div 
-            className="w-11 h-11 border-2 border-dashed border-blue-300 dark:border-blue-500 rounded-full flex items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50/70 dark:hover:bg-blue-900/30 transition-all duration-300 hover:scale-110 bg-white dark:bg-gray-800 shadow-lg active:scale-95"
+            className="w-[52px] h-[52px] border-2 border-dashed border-blue-400 dark:border-blue-500 rounded-full flex items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50/70 dark:hover:bg-blue-900/30 transition-all duration-300 hover:scale-110 shadow-md active:scale-95"
             onClick={onCreateStory}
           >
-            <Plus className="w-5 h-5 text-blue-500" />
+            <Plus className="w-6 h-6 text-blue-500" />
           </div>
-          <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-md border-2 border-white dark:border-gray-800">
-            <Plus className="w-2.5 h-2.5 text-white" />
+          <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-md border-2 border-white dark:border-gray-900">
+            <Plus className="w-3 h-3 text-white" />
           </div>
         </div>
-        <span className="text-[9px] text-gray-700 dark:text-gray-300 font-semibold text-center">Add</span>
+        <span className="text-[10px] text-gray-700 dark:text-gray-300 font-semibold text-center">Add</span>
       </div>
 
-      {/* User Stories - Compact */}
+      {/* User Stories */}
       {Object.entries(groupedStories).map(([userId, userStories]) => {
         const mainStory = userStories[0];
         const hasUnviewed = userStories.some(s => !s.isViewed);
         const isNew = isNewStory(mainStory.timestamp);
         
         return (
-          <div key={userId} className="flex flex-col items-center gap-1 min-w-[50px] snap-start">
+          <div key={userId} className="flex flex-col items-center gap-1.5 min-w-[60px] snap-start">
             <div className="relative">
-              {/* New Story Indicator */}
-              {isNew && (
-                <div className="absolute -top-1.5 -right-0.5 z-20">
-                  <Badge className="bg-gradient-to-r from-pink-500 to-orange-500 text-white text-[7px] px-1 py-0 shadow-lg">
+              {/* New Story Indicator - Only for unviewed */}
+              {isNew && hasUnviewed && (
+                <div className="absolute -top-2 -right-2 z-20 animate-pulse">
+                  <Badge className="bg-gradient-to-r from-pink-500 to-orange-500 text-white text-[8px] px-1.5 py-0.5 shadow-lg animate-[pulse_2s_ease-in-out_infinite]">
                     NEW
                   </Badge>
                 </div>
               )}
               
-              {/* Main Story Circle - Compact */}
+              {/* Main Story Circle */}
               <div 
-                className={`w-11 h-11 rounded-full p-[2px] cursor-pointer transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg ${
+                className={`w-[52px] h-[52px] rounded-full p-[1.5px] cursor-pointer transition-all duration-300 hover:scale-110 active:scale-95 shadow-md ${
                   hasUnviewed
                     ? 'bg-gradient-to-tr from-purple-600 via-pink-600 to-orange-500'
                     : 'bg-gradient-to-tr from-gray-300 dark:from-gray-600 to-gray-400 dark:to-gray-700'
-                } ${isNew && hasUnviewed ? 'ring-2 ring-pink-300 ring-offset-2' : ''}`}
+                }`}
                 onClick={() => onStoryClick && onStoryClick(stories.findIndex(s => s.id === mainStory.id))}
               >
-                <div className="w-full h-full rounded-full bg-white dark:bg-gray-800 p-[1.5px]">
-                  <Avatar className="w-full h-full ring-1 ring-white dark:ring-gray-800">
-                    <AvatarImage 
-                      src={mainStory.userAvatar} 
-                      alt={mainStory.userName}
-                      className="object-cover"
-                    />
-                    <AvatarFallback className="text-xs font-bold bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900">
-                      {getInitials(mainStory.userName)}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
+                <Avatar className="w-full h-full">
+                  <AvatarImage 
+                    src={mainStory.userAvatar} 
+                    alt={mainStory.userName}
+                    className="object-cover"
+                  />
+                  <AvatarFallback className="text-sm font-bold bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900">
+                    {getInitials(mainStory.userName)}
+                  </AvatarFallback>
+                </Avatar>
               </div>
               
-              {/* Category Badge - Compact */}
+              {/* Category Badge */}
               {mainStory.locationCategory && (
                 <div 
-                  className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-gradient-to-br ${getCategoryColor(mainStory.locationCategory)} rounded-full flex items-center justify-center shadow-md border border-white dark:border-gray-800`}
+                  className={`absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-br ${getCategoryColor(mainStory.locationCategory)} rounded-full flex items-center justify-center shadow-md border border-white dark:border-gray-900`}
                 >
-                  <div className="w-2 h-2 flex items-center justify-center">
+                  <div className="w-2.5 h-2.5 flex items-center justify-center">
                     {getCategoryIcon(mainStory.locationCategory)}
                   </div>
                 </div>
               )}
             </div>
-            <span className="text-[9px] text-gray-800 dark:text-gray-200 font-semibold text-center truncate max-w-[50px]">
+            <span className="text-[10px] text-gray-800 dark:text-gray-200 font-semibold text-center truncate max-w-[60px]">
               {mainStory.userName}
             </span>
           </div>
