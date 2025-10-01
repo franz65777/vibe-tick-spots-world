@@ -325,8 +325,8 @@ const HomePage = () => {
         />
       
       <main className="flex-1 flex flex-col overflow-hidden">
-        {/* Stories Section - Expanded */}
-        <div className="flex-shrink-0 h-[90px] overflow-x-auto snap-x snap-mandatory scrollbar-hide">
+        {/* Stories Section - Expanded height */}
+        <div className="h-[90px] flex-shrink-0">
           <StoriesSection
             stories={stories}
             onCreateStory={() => setIsCreateStoryModalOpen(true)}
@@ -337,33 +337,29 @@ const HomePage = () => {
           />
         </div>
         
-        {/* Community Highlights Section - Compact */}
-        <div className="flex-shrink-0 h-[70px] px-4 py-1">
-          <div className="h-full bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-md border border-white/50 dark:border-gray-700/50 py-2 overflow-hidden">
-            <CommunityHighlights
-              currentCity={currentCity}
-              userLocation={userLocation}
-              onLocationClick={(locationId: string, coordinates?: { lat: number; lng: number }) => {
-                if (coordinates) {
-                  setMapCenter(coordinates);
-                }
-              }}
-              onUserClick={(userId: string) => {
-                navigate('/explore');
-              }}
-              onMapLocationClick={(coords: { lat: number; lng: number }) => setMapCenter(coords)}
-            />
-          </div>
+        {/* Discover Section - Increased height, no white container */}
+        <div className="h-[120px] flex-shrink-0">
+          <CommunityHighlights
+            currentCity={currentCity}
+            userLocation={userLocation}
+            onLocationClick={(locationId: string, coordinates?: { lat: number; lng: number }) => {
+              if (coordinates) {
+                setMapCenter(coordinates);
+              }
+            }}
+            onUserClick={(userId: string) => {
+              navigate('/explore');
+            }}
+            onMapLocationClick={(coords: { lat: number; lng: number }) => setMapCenter(coords)}
+          />
         </div>
         
-        {/* Map Section - Full Focus */}
-        <div className="flex-1 min-h-0">
-          <div className="h-full w-full">
-            <MapSection
-              mapCenter={mapCenter}
-              currentCity={currentCity}
-            />
-          </div>
+        {/* Map Section - Limited to 55-60% of viewport */}
+        <div className="flex-1 max-h-[55vh] min-h-[50vh]">
+          <MapSection
+            mapCenter={mapCenter}
+            currentCity={currentCity}
+          />
         </div>
       </main>
 

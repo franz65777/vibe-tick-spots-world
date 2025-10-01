@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { MapIcon, Search, PlusCircle, MessageSquare, User } from 'lucide-react';
+import { MapPin, Search, Plus, Newspaper, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNotifications } from '@/hooks/useNotifications';
 import { Badge } from './ui/badge';
@@ -12,7 +12,7 @@ const BottomNavigation = () => {
 
   const navItems = [
     { 
-      icon: MapIcon, 
+      icon: MapPin, 
       label: 'Map', 
       path: '/',
       fillable: true
@@ -24,14 +24,14 @@ const BottomNavigation = () => {
       fillable: false
     },
     { 
-      icon: PlusCircle, 
+      icon: Plus, 
       label: 'Add', 
       path: '/add',
       isCenter: true,
       fillable: true
     },
     { 
-      icon: MessageSquare, 
+      icon: Newspaper, 
       label: 'Feed', 
       path: '/feed',
       badge: unreadCount,
@@ -46,23 +46,24 @@ const BottomNavigation = () => {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white/90 via-white/80 to-white/60 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-gray-900/60 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-700/50 z-50">
-      <div className="px-6 py-2">
-        <div className="flex justify-around items-end max-w-md mx-auto relative">
+    <nav className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white/90 via-white/80 to-white/60 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-gray-900/60 backdrop-blur-md border-t border-gray-200/50 dark:border-gray-700/50 z-50">
+      <div className="max-w-screen-xl mx-auto px-6 h-16 flex items-center justify-around">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
           
-          // Floating Action Button for center item
+          // Center button - reduced size, aligned with other buttons
           if (item.isCenter) {
             return (
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className="absolute left-1/2 -translate-x-1/2 -top-6 w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 dark:from-blue-600 dark:to-purple-700 text-white shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center z-10"
+                className="relative flex flex-col items-center gap-1 py-2 px-4"
                 aria-label={item.label}
               >
-                <Icon className="w-8 h-8" fill="currentColor" />
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95">
+                  <Icon className="w-5 h-5 text-white" />
+                </div>
               </button>
             );
           }
@@ -72,37 +73,38 @@ const BottomNavigation = () => {
               key={item.path}
               onClick={() => navigate(item.path)}
               className={cn(
-                "flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-all duration-300 relative",
+                "relative flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-all duration-200",
                 isActive 
                   ? "text-blue-600 dark:text-blue-400" 
                   : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
               )}
               aria-label={item.label}
             >
-              {item.badge && item.badge > 0 && (
-                <Badge className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center p-0 bg-red-500 text-white text-[10px] rounded-full">
-                  {item.badge > 9 ? '9+' : item.badge}
-                </Badge>
-              )}
               <Icon 
                 className={cn(
-                  "w-6 h-6 transition-all duration-300", 
+                  "w-6 h-6 transition-all duration-200", 
                   isActive && "scale-110"
                 )} 
                 fill={isActive && item.fillable ? "currentColor" : "none"}
               />
               <span className={cn(
-                "text-[10px] font-medium mt-1",
-                isActive && "font-bold"
+                "text-xs font-medium",
+                isActive ? "text-blue-600 dark:text-blue-400" : "text-gray-600 dark:text-gray-400"
               )}>
                 {item.label}
               </span>
+              {item.badge && item.badge > 0 && (
+                <div className="absolute top-1 right-3 min-w-[16px] h-4 bg-red-500 rounded-full flex items-center justify-center px-1 animate-pulse">
+                  <span className="text-white text-[10px] font-bold">
+                    {item.badge > 9 ? '9+' : item.badge}
+                  </span>
+                </div>
+              )}
             </button>
           );
         })}
       </div>
-    </div>
-    </div>
+    </nav>
   );
 };
 

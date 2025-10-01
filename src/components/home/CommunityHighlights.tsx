@@ -105,11 +105,9 @@ const CommunityHighlights: React.FC<CommunityHighlightsProps> = ({
   }
 
   return (
-    <div className="px-4">
+    <section className="px-4 py-2">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-          Discover
-        </h2>
+        <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Discover</h2>
         <div className="flex items-center gap-2">
           {/* Category Filter */}
           <DropdownMenu>
@@ -260,7 +258,7 @@ const CommunityHighlights: React.FC<CommunityHighlightsProps> = ({
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 };
 

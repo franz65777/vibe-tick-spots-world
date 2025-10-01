@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Bell, MessageCircle } from 'lucide-react';
+import { Bell, Send } from 'lucide-react';
 import GlobalCitySearch from './GlobalCitySearch';
 import MessageHistoryModal from './MessageHistoryModal';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -67,10 +67,10 @@ const Header = ({
             <button 
               onClick={onMessagesClick} 
               className="relative p-2.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all duration-200 active:scale-95"
+              aria-label="Open messages"
             >
               <div className="relative">
-                <MessageCircle className="w-5 h-5" />
-                {/* TODO: Add unread message count when available */}
+                <Send className="w-5 h-5" />
               </div>
             </button>
           </div>

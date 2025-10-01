@@ -350,7 +350,7 @@ const GlobalCitySearch = ({
     }
 
     onCitySelect(cityName, finalCoords);
-    onSearchChange('');
+    onSearchChange(''); // Clear search query
     setIsOpen(false);
   };
 
