@@ -4,6 +4,7 @@ import GoogleMapsSetup from '@/components/GoogleMapsSetup';
 import AddLocationModal from './AddLocationModal';
 import QuickAddPinModal from './QuickAddPinModal';
 import MapCategoryFilters from './MapCategoryFilters';
+import { cn } from '@/lib/utils';
 import PinShareModal from '../explore/PinShareModal';
 import { useMapLocations } from '@/hooks/useMapLocations';
 import { useMapFilter } from '@/contexts/MapFilterContext';
@@ -119,7 +120,7 @@ const MapSection = ({ mapCenter, currentCity }: MapSectionProps) => {
 
   return (
     <>
-      <div className="flex-1 relative min-h-[500px] w-full rounded-none">
+      <div className="flex-1 relative min-h-[500px] w-full rounded-none overflow-hidden">
         <GoogleMapsSetup
           places={places}
           onPinClick={handlePinClick}
@@ -131,6 +132,9 @@ const MapSection = ({ mapCenter, currentCity }: MapSectionProps) => {
           onMapClick={handleMapClick}
           activeFilter={activeFilter}
         />
+
+        {/* Map Category Filters - Inside Map */}
+        <MapCategoryFilters />
 
         {/* List View Toggle - Modern Icon */}
         <div className="absolute bottom-8 right-4 z-40">

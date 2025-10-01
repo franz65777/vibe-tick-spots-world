@@ -157,24 +157,24 @@ const CommunityHighlights: React.FC<CommunityHighlightsProps> = ({
       </div>
 
       <div 
-        className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide scroll-smooth"
+        className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide scroll-smooth"
         style={{ scrollSnapType: 'x mandatory' }}
         onScroll={handleScroll}
       >
-        {/* Top Spot Button */}
+        {/* Top Spot Button - Compact */}
         {topLocation && (
           <button
             onClick={handleTopSpotClick}
-            className="flex-shrink-0 snap-center min-w-[170px] h-[190px] rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-pink-500 p-3 text-white hover:scale-[1.02] transition-transform shadow-xl flex flex-col items-center justify-center relative overflow-hidden group"
+            className="flex-shrink-0 snap-center min-w-[90px] h-[95px] rounded-lg bg-gradient-to-br from-amber-400 via-orange-500 to-pink-500 p-2 text-white hover:scale-[1.02] transition-transform shadow-xl flex flex-col items-center justify-center relative overflow-hidden group"
+            aria-label="View top spot of the week"
           >
             <div className="absolute inset-0 bg-gradient-to-br from-yellow-300/20 to-transparent group-hover:from-yellow-300/40 transition-all" />
-            <Crown className="w-10 h-10 mb-2 drop-shadow-lg animate-pulse" />
-            <span className="text-base font-bold text-center drop-shadow-lg relative z-10">Top Spot</span>
-            <span className="text-xs font-medium mt-1 opacity-90 relative z-10">Tap to explore</span>
+            <Crown className="w-6 h-6 mb-1 drop-shadow-lg animate-pulse" />
+            <span className="text-xs font-bold text-center drop-shadow-lg relative z-10">Top</span>
           </button>
         )}
 
-        {/* Location Cards */}
+        {/* Location Cards - Compact */}
         {locations.map((location) => {
           const badgeConfig = getBadgeConfig(location.badge);
           
@@ -185,7 +185,8 @@ const CommunityHighlights: React.FC<CommunityHighlightsProps> = ({
                 onMapLocationClick({ lat: location.latitude, lng: location.longitude });
                 onLocationClick(location.id, { lat: location.latitude, lng: location.longitude });
               }}
-              className="flex-shrink-0 snap-center min-w-[170px] h-[190px] rounded-2xl overflow-hidden hover:scale-[1.02] transition-transform shadow-lg relative group"
+              className="flex-shrink-0 snap-center min-w-[113px] h-[95px] rounded-lg overflow-hidden hover:scale-[1.02] transition-transform shadow-lg relative group"
+              aria-label={`View ${location.name}`}
             >
               {/* Image with gradient overlay */}
               <div className="absolute inset-0">
@@ -201,47 +202,47 @@ const CommunityHighlights: React.FC<CommunityHighlightsProps> = ({
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
               </div>
 
-              {/* Friend Avatars - Top Left */}
+              {/* Friend Avatars - Compact */}
               {location.friends_saved > 0 && location.friend_avatars.length > 0 && (
-                <div className="absolute top-3 left-3 flex items-center z-10">
-                  <div className="flex -space-x-2">
-                    {location.friend_avatars.slice(0, 3).map((avatar, idx) => (
-                      <Avatar key={idx} className="w-8 h-8 border-2 border-white shadow-lg">
+                <div className="absolute top-1 left-1 flex items-center z-10">
+                  <div className="flex -space-x-1">
+                    {location.friend_avatars.slice(0, 2).map((avatar, idx) => (
+                      <Avatar key={idx} className="w-5 h-5 border border-white shadow-md">
                         <AvatarImage src={avatar} />
-                        <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white text-xs">
+                        <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white text-[8px]">
                           {idx + 1}
                         </AvatarFallback>
                       </Avatar>
                     ))}
                   </div>
-                  {location.friends_saved > 3 && (
-                    <div className="ml-1 bg-white/90 backdrop-blur-sm rounded-full px-2 py-0.5 text-xs font-bold text-gray-900 shadow-lg">
-                      +{location.friends_saved - 3}
+                  {location.friends_saved > 2 && (
+                    <div className="ml-0.5 bg-white/90 backdrop-blur-sm rounded-full px-1 py-0 text-[8px] font-bold text-gray-900 shadow-md">
+                      +{location.friends_saved - 2}
                     </div>
                   )}
                 </div>
               )}
 
-              {/* Badge - Top Right */}
+              {/* Badge - Compact */}
               {badgeConfig && (
-                <div className={`absolute top-3 right-3 ${badgeConfig.className} px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg backdrop-blur-sm z-10`}>
-                  <badgeConfig.icon className="w-3 h-3" />
+                <div className={`absolute top-1 right-1 ${badgeConfig.className} px-1 py-0.5 rounded-full text-[8px] font-bold flex items-center gap-0.5 shadow-md backdrop-blur-sm z-10`}>
+                  <badgeConfig.icon className="w-2 h-2" />
                   {badgeConfig.text}
                 </div>
               )}
 
-              {/* Location Info - Bottom */}
-              <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
-                <h3 className="text-white font-bold text-base mb-1 line-clamp-1 drop-shadow-lg">
+              {/* Location Info - Compact */}
+              <div className="absolute bottom-0 left-0 right-0 p-2 z-10">
+                <h3 className="text-white font-bold text-xs mb-0.5 line-clamp-1 drop-shadow-lg">
                   {location.name}
                 </h3>
-                <div className="flex items-center gap-1 text-white/90 text-xs mb-2">
-                  <MapPin className="w-3 h-3" />
+                <div className="flex items-center gap-0.5 text-white/90 text-[9px] mb-1">
+                  <MapPin className="w-2 h-2" />
                   <span className="line-clamp-1 drop-shadow">{location.address}</span>
                 </div>
                 
-                {/* Category badge with icon */}
-                <div className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-md rounded-full px-2 py-1 text-white text-xs font-medium">
+                {/* Category badge */}
+                <div className="inline-flex items-center gap-0.5 bg-white/20 backdrop-blur-md rounded-full px-1.5 py-0.5 text-white text-[8px] font-medium">
                   <span className="capitalize">{location.category}</span>
                 </div>
               </div>
@@ -249,12 +250,12 @@ const CommunityHighlights: React.FC<CommunityHighlightsProps> = ({
           );
         })}
 
-        {/* Empty state */}
+        {/* Empty state - Compact */}
         {locations.length === 0 && (
-          <div className="w-full h-[190px] flex items-center justify-center text-gray-400">
+          <div className="w-full h-[95px] flex items-center justify-center text-gray-400 dark:text-gray-500">
             <div className="text-center">
-              <MapPin className="w-10 h-10 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">No recommendations yet</p>
+              <MapPin className="w-6 h-6 mx-auto mb-1 opacity-50" />
+              <p className="text-xs">No recommendations yet</p>
             </div>
           </div>
         )}
