@@ -371,45 +371,44 @@ const GlobalCitySearch = ({
 
   return (
     <div ref={searchRef} className="relative flex-1 flex-grow max-w-full z-[200]">
-      {/* Current City Display / Search Input - Mobile Optimized */}
+      {/* Current City Display / Search Input - Modern Design */}
       <div className="relative">
         {!searchQuery || searchQuery.trim() === ' ' ? (
-          // Show current city when not searching
+          // Show current city when not searching - Modern clean design
           <div 
-            className="flex items-center gap-2 bg-white/95 border border-gray-200 rounded-xl h-10 px-3 hover:bg-white transition-all duration-200 cursor-pointer shadow-sm backdrop-blur-sm"
+            className="flex items-center gap-3 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-2xl h-14 px-5 hover:shadow-md transition-all cursor-pointer touch-manipulation shadow-sm"
             onClick={() => {
               onSearchChange(' ');
               setIsOpen(true);
             }}
           >
-            <MapPin className="w-4 h-4 text-blue-600 shrink-0" />
+            <MapPin className="w-5 h-5 text-primary shrink-0" />
             <div className="flex-1 min-w-0">
-              <span className="text-gray-900 font-medium text-sm truncate">
+              <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Location</div>
+              <div className="text-sm font-semibold text-foreground truncate">
                 {currentCityData?.name || currentCity || 'Select City'}
-              </span>
-              {currentCityData?.country && (
-                <div className="text-[10px] text-gray-500 leading-none">{currentCityData.country}</div>
-              )}
+              </div>
             </div>
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               {geoLoading && (
-                <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
               )}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   handleLocationClick();
                 }}
-                className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all duration-200"
+                className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20 transition-colors touch-manipulation"
                 title="Detect current location"
               >
-                <Locate className="w-3 h-3" />
+                <Locate className="w-4 h-4" />
               </button>
             </div>
           </div>
         ) : (
           // Show search input when searching
           <div className="relative">
+            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
               id="global-city-search-input"
               type="text"
@@ -418,11 +417,9 @@ const GlobalCitySearch = ({
               onChange={(e) => onSearchChange(e.target.value)}
               onKeyPress={onSearchKeyPress}
               onFocus={() => setIsOpen(true)}
-              className="pl-10 pr-10 bg-white/95 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-xl h-10 text-sm shadow-sm backdrop-blur-sm"
+              className="pl-12 pr-4 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-primary/20 rounded-2xl h-14 text-sm font-medium shadow-sm"
               autoFocus
             />
-            <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           </div>
         )}
       </div>
@@ -431,11 +428,11 @@ const GlobalCitySearch = ({
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetContent 
           side="bottom" 
-          className="h-[70vh] rounded-t-3xl border-t-0 p-0 overflow-hidden bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg shadow-none"
+          className="h-[70vh] rounded-t-3xl border-t-0 p-0 overflow-hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl shadow-2xl"
         >
-          <SheetHeader className="px-6 py-4 border-b bg-gradient-to-br from-blue-50 to-white">
+          <SheetHeader className="px-6 py-4 border-b border-gray-200 dark:border-gray-800 bg-gradient-to-br from-primary/5 to-transparent">
             <SheetTitle className="text-lg font-semibold flex items-center gap-2">
-              <Globe className="w-5 h-5 text-blue-600" />
+              <Globe className="w-5 h-5 text-primary" />
               Select City
             </SheetTitle>
             <div className="mt-3">
@@ -445,9 +442,9 @@ const GlobalCitySearch = ({
                   placeholder="Search cities worldwide..."
                   value={searchQuery === ' ' ? '' : searchQuery}
                   onChange={(e) => onSearchChange(e.target.value)}
-                  className="pl-10 pr-4 bg-white border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-xl h-10 text-sm"
+                  className="pl-10 pr-4 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-xl h-10 text-sm"
                 />
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               </div>
             </div>
           </SheetHeader>
@@ -459,9 +456,9 @@ const GlobalCitySearch = ({
                 {/* Suggested For You */}
                 {trendingCities.length > 0 && (
                   <div>
-                    <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3 flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-blue-600" />
-                      Suggerite per te
+                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-primary" />
+                      Suggested For You
                     </h3>
                     <div className="space-y-2">
                       {trendingCities.map((tc) => {
@@ -475,18 +472,18 @@ const GlobalCitySearch = ({
                           <button
                             key={tc.city}
                             onClick={() => handleCityClick(tc.city)}
-                            className="w-full flex items-center gap-3 p-3 hover:bg-blue-50 rounded-xl transition-all duration-200 border border-transparent hover:border-blue-200 group"
+                            className="w-full flex items-center gap-3 p-3 hover:bg-accent rounded-xl transition-all duration-200 border border-transparent hover:border-primary/20 group touch-manipulation"
                           >
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                              <CityIcon className="w-5 h-5 text-white" />
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                              <CityIcon className="w-5 h-5 text-primary-foreground" />
                             </div>
                             <div className="flex-1 text-left min-w-0">
-                              <div className="font-semibold text-gray-900 text-sm">{tc.city}</div>
+                              <div className="font-semibold text-foreground text-sm">{tc.city}</div>
                               {cityData?.country && (
-                                <div className="text-xs text-gray-500">{cityData.country}</div>
+                                <div className="text-xs text-muted-foreground">{cityData.country}</div>
                               )}
                             </div>
-                            <div className="flex items-center gap-1 text-xs text-blue-600 font-medium shrink-0">
+                            <div className="flex items-center gap-1 text-xs text-primary font-medium shrink-0">
                               <Users className="w-3 h-3" />
                               {tc.friendCount}
                             </div>
@@ -500,9 +497,9 @@ const GlobalCitySearch = ({
                 {/* Recent Searches */}
                 {recentSearches.length > 0 && (
                   <div>
-                    <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3 flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-gray-600" />
-                      Recentemente cercate
+                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-muted-foreground" />
+                      Recent Searches
                     </h3>
                     <div className="space-y-2">
                       {recentSearches.map((city) => {
@@ -516,15 +513,15 @@ const GlobalCitySearch = ({
                           <button
                             key={city}
                             onClick={() => handleCityClick(city)}
-                            className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 rounded-xl transition-all duration-200"
+                            className="w-full flex items-center gap-3 p-3 hover:bg-accent rounded-xl transition-all duration-200 touch-manipulation"
                           >
-                            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-                              <CityIcon className="w-5 h-5 text-gray-600" />
+                            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0">
+                              <CityIcon className="w-5 h-5 text-muted-foreground" />
                             </div>
                             <div className="flex-1 text-left min-w-0">
-                              <div className="font-medium text-gray-900 text-sm">{city}</div>
+                              <div className="font-medium text-foreground text-sm">{city}</div>
                               {cityData?.country && (
-                                <div className="text-xs text-gray-500">{cityData.country}</div>
+                                <div className="text-xs text-muted-foreground">{cityData.country}</div>
                               )}
                             </div>
                           </button>
@@ -539,14 +536,14 @@ const GlobalCitySearch = ({
               <div className="px-6 py-4">
                 {isFetchingExternal && (
                   <div className="py-4 text-center">
-                    <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
                   </div>
                 )}
 
                 {/* External global results */}
                 {externalResults.length > 0 && (
                   <div className="mb-6">
-                    <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">
+                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
                       Global Results
                     </h3>
                     <div className="space-y-2">

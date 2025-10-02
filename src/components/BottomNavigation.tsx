@@ -1,11 +1,15 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Map, PlusCircle, Activity, UserCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useStories } from '@/hooks/useStories';
 import { Badge } from './ui/badge';
+import navHomeIcon from '@/assets/nav-home.png';
+import navSearchIcon from '@/assets/nav-search.png';
+import navAddIcon from '@/assets/nav-add.png';
+import navFeedIcon from '@/assets/nav-feed.png';
+import navProfileIcon from '@/assets/nav-profile.png';
 
 const BottomNavigation = () => {
   const navigate = useNavigate();
@@ -29,36 +33,31 @@ const BottomNavigation = () => {
 
   const navItems = [
     { 
-      icon: Home, 
+      icon: navHomeIcon, 
       label: 'Home', 
       path: '/',
-      fillable: true,
       hasIndicator: hasNewStories
     },
     { 
-      icon: Map, 
+      icon: navSearchIcon, 
       label: 'Discover', 
-      path: '/explore',
-      fillable: false
+      path: '/explore'
     },
     { 
-      icon: PlusCircle, 
+      icon: navAddIcon, 
       label: 'Add', 
       path: '/add',
-      isCenter: true,
-      fillable: false
+      isCenter: true
     },
     { 
-      icon: Activity, 
+      icon: navFeedIcon, 
       label: 'Feed', 
-      path: '/feed',
-      fillable: false
+      path: '/feed'
     },
     { 
-      icon: UserCircle, 
+      icon: navProfileIcon, 
       label: 'Profile', 
       path: '/profile',
-      fillable: true,
       badge: unreadCount
     },
   ];
@@ -71,7 +70,6 @@ const BottomNavigation = () => {
     >
       <div className="max-w-screen-xl mx-auto px-4 h-20 flex items-end justify-around pb-2" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
         {navItems.map((item) => {
-          const Icon = item.icon;
           const isActive = location.pathname === item.path;
           
           // Center FAB - elevated and larger
@@ -80,16 +78,16 @@ const BottomNavigation = () => {
               <button
                 key={item.path}
                 onClick={() => handleNavClick(item.path, item.label)}
-                className="flex flex-col items-center justify-center transition-all duration-200 active:scale-95 relative group -mt-8"
+                className="flex flex-col items-center justify-center transition-all duration-200 active:scale-95 relative group -mt-6"
                 aria-label={item.label}
                 aria-current={isActive ? 'page' : undefined}
               >
-                <div className="relative">
-                  <div className="w-16 h-16 bg-gradient-to-br from-[#0E7C86] to-[#0a5d64] rounded-full flex items-center justify-center shadow-2xl group-hover:shadow-[0_8px_30px_rgba(14,124,134,0.4)] group-hover:scale-105 transition-all duration-300 ring-4 ring-white dark:ring-gray-900">
-                    <Icon className="w-8 h-8 text-white" strokeWidth={2} />
-                  </div>
-                  {/* Pulse effect */}
-                  <div className="absolute inset-0 rounded-full bg-[#0E7C86] opacity-20 animate-[ping_2s_ease-in-out_infinite]"></div>
+                <div className="relative w-16 h-16">
+                  <img 
+                    src={item.icon} 
+                    alt={item.label}
+                    className="w-full h-full object-contain drop-shadow-lg group-hover:scale-105 transition-transform duration-300"
+                  />
                 </div>
               </button>
             );
@@ -108,13 +106,13 @@ const BottomNavigation = () => {
               aria-current={isActive ? 'page' : undefined}
             >
               <div className="relative mb-1">
-                <Icon 
+                <img 
+                  src={item.icon} 
+                  alt={item.label}
                   className={cn(
-                    "w-7 h-7 transition-all duration-200",
-                    isActive ? 'text-[#0E7C86] dark:text-[#10a8b5]' : 'text-[#64748B] dark:text-gray-400'
+                    "w-12 h-12 object-contain transition-all duration-200",
+                    isActive ? 'opacity-100' : 'opacity-60'
                   )}
-                  fill={isActive && item.fillable ? "currentColor" : "none"}
-                  strokeWidth={isActive ? 2.5 : 2}
                 />
                 
                 {/* Notification badge - inside icon */}
@@ -132,15 +130,10 @@ const BottomNavigation = () => {
               
               <span className={cn(
                 "text-xs font-medium transition-all duration-200",
-                isActive ? 'text-[#0E7C86] dark:text-[#10a8b5]' : 'text-[#64748B] dark:text-gray-400'
+                isActive ? 'text-foreground' : 'text-muted-foreground'
               )}>
                 {item.label}
               </span>
-              
-              {/* Active indicator line */}
-              {isActive && (
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-1 bg-[#0E7C86] dark:bg-[#10a8b5] rounded-full animate-fade-in"></div>
-              )}
             </button>
           );
         })}
