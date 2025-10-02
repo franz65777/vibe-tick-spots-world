@@ -3,6 +3,7 @@ import { useState, useRef } from 'react';
 import { Search, MapPin, Users, X, Settings } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 import SmartAutocomplete from './SmartAutocomplete';
 import SearchFilters from './SearchFilters';
 
@@ -49,8 +50,33 @@ const EnhancedSearchHeader = ({
     setTimeout(() => setShowAutocomplete(false), 200);
   };
 
-  const handleAutocompleteSelect = (result: any) => {
-    onSearchQueryChange(result.title);
+  const handleAutocompleteSelect = async (result: any) => {
+    // Record search history
+    if (result.type === 'place' || result.type === 'user') {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from('search_history').insert({
+            user_id: user.id,
+            search_query: result.title,
+            search_type: searchMode
+          });
+        }
+      } catch (error) {
+        console.error('Error recording search history:', error);
+      }
+    }
+
+    // Navigate to detail or profile
+    if (result.type === 'place') {
+      // For places, we need to trigger the location detail modal
+      // This will be handled by the parent component through the search query
+      onSearchQueryChange(result.title);
+    } else if (result.type === 'user') {
+      // Navigate to user profile
+      window.location.href = `/profile/${result.id}`;
+    }
+    
     setShowAutocomplete(false);
     searchInputRef.current?.blur();
   };
