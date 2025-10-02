@@ -1,68 +1,95 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { MapPin, Search, Plus, Newspaper, User } from 'lucide-react';
+import { Home, Search, PlusCircle, Bookmark, UserCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useAnalytics } from '@/hooks/useAnalytics';
+import { useStories } from '@/hooks/useStories';
 import { Badge } from './ui/badge';
 
 const BottomNavigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { unreadCount } = useNotifications();
+  const { trackEvent } = useAnalytics();
+  const { stories } = useStories();
+  
+  // Check for new stories (posted in last 24 hours)
+  const hasNewStories = stories.some(story => {
+    const storyDate = new Date(story.created_at);
+    const now = new Date();
+    const hoursDiff = (now.getTime() - storyDate.getTime()) / (1000 * 60 * 60);
+    return hoursDiff < 24;
+  });
+
+  const handleNavClick = (path: string, label: string) => {
+    navigate(path);
+    trackEvent('nav_tab_clicked', { tab: label.toLowerCase() });
+  };
 
   const navItems = [
     { 
-      icon: MapPin, 
-      label: 'Map', 
+      icon: Home, 
+      label: 'Home', 
       path: '/',
-      fillable: true
+      fillable: true,
+      hasIndicator: hasNewStories
     },
     { 
       icon: Search, 
-      label: 'Search', 
+      label: 'Explore', 
       path: '/explore',
       fillable: false
     },
     { 
-      icon: Plus, 
+      icon: PlusCircle, 
       label: 'Add', 
       path: '/add',
       isCenter: true,
+      fillable: false
+    },
+    { 
+      icon: Bookmark, 
+      label: 'Saved', 
+      path: '/saved',
       fillable: true
     },
     { 
-      icon: Newspaper, 
-      label: 'Feed', 
-      path: '/feed',
-      badge: unreadCount,
-      fillable: true
-    },
-    { 
-      icon: User, 
+      icon: UserCircle, 
       label: 'Profile', 
       path: '/profile',
-      fillable: false
+      fillable: true,
+      badge: unreadCount
     },
   ];
 
   return (
-    <nav className="fixed bottom-4 left-4 right-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg rounded-t-3xl shadow-2xl border-t border-gray-200/50 dark:border-gray-700/50 z-50">
-      <div className="max-w-screen-xl mx-auto px-6 h-16 flex items-center justify-around safe-area-pb">
+    <nav 
+      className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.3)] border-t border-gray-100 dark:border-gray-800 z-50"
+      role="navigation"
+      aria-label="Main navigation"
+    >
+      <div className="max-w-screen-xl mx-auto px-4 h-20 flex items-end justify-around pb-2" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
           
-          // Center button - smaller, aligned with others
+          // Center FAB - elevated and larger
           if (item.isCenter) {
             return (
               <button
                 key={item.path}
-                onClick={() => navigate(item.path)}
-                className="relative flex flex-col items-center gap-1 py-2 px-4"
+                onClick={() => handleNavClick(item.path, item.label)}
+                className="flex flex-col items-center justify-center transition-all duration-200 active:scale-95 relative group -mt-8"
                 aria-label={item.label}
+                aria-current={isActive ? 'page' : undefined}
               >
-                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95">
-                  <Icon className="w-5 h-5 text-white" />
+                <div className="relative">
+                  <div className="w-16 h-16 bg-gradient-to-br from-[#0E7C86] to-[#0a5d64] rounded-full flex items-center justify-center shadow-2xl group-hover:shadow-[0_8px_30px_rgba(14,124,134,0.4)] group-hover:scale-105 transition-all duration-300 ring-4 ring-white dark:ring-gray-900">
+                    <Icon className="w-8 h-8 text-white" strokeWidth={2} />
+                  </div>
+                  {/* Pulse effect */}
+                  <div className="absolute inset-0 rounded-full bg-[#0E7C86] opacity-20 animate-[ping_2s_ease-in-out_infinite]"></div>
                 </div>
               </button>
             );
@@ -71,36 +98,48 @@ const BottomNavigation = () => {
           return (
             <button
               key={item.path}
-              onClick={() => navigate(item.path)}
+              onClick={() => handleNavClick(item.path, item.label)}
               className={cn(
-                "relative flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-all duration-200",
-                isActive 
-                  ? "text-blue-600 dark:text-blue-400" 
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                "flex flex-col items-center justify-center flex-1 py-2 px-2 transition-all duration-200 relative group",
+                isActive ? 'scale-105' : 'scale-100',
+                "active:scale-95"
               )}
               aria-label={item.label}
+              aria-current={isActive ? 'page' : undefined}
             >
-              <Icon 
-                className={cn(
-                  "w-6 h-6 transition-all duration-200", 
-                  isActive && "scale-110"
-                )} 
-                fill={isActive && item.fillable ? "currentColor" : "none"}
-              />
-              {isActive && (
-                <span className={cn(
-                  "text-xs font-medium",
-                  "text-blue-600 dark:text-blue-400"
-                )}>
-                  {item.label}
-                </span>
-              )}
-              {item.badge && item.badge > 0 && (
-                <div className="absolute top-1 right-3 min-w-[16px] h-4 bg-red-500 rounded-full flex items-center justify-center px-1 animate-pulse">
-                  <span className="text-white text-[10px] font-bold">
-                    {item.badge > 9 ? '9+' : item.badge}
+              <div className="relative mb-1">
+                <Icon 
+                  className={cn(
+                    "w-7 h-7 transition-all duration-200",
+                    isActive ? 'text-[#0E7C86] dark:text-[#10a8b5]' : 'text-[#64748B] dark:text-gray-400'
+                  )}
+                  fill={isActive && item.fillable ? "currentColor" : "none"}
+                  strokeWidth={isActive ? 2.5 : 2}
+                />
+                
+                {/* Notification badge */}
+                {item.badge && item.badge > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 animate-pulse shadow-lg">
+                    {item.badge > 99 ? '99+' : item.badge}
                   </span>
-                </div>
+                )}
+                
+                {/* New stories indicator */}
+                {item.hasIndicator && !isActive && (
+                  <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-yellow-400 rounded-full border-2 border-white dark:border-gray-900 animate-pulse shadow-sm"></span>
+                )}
+              </div>
+              
+              <span className={cn(
+                "text-xs font-medium transition-all duration-200",
+                isActive ? 'text-[#0E7C86] dark:text-[#10a8b5]' : 'text-[#64748B] dark:text-gray-400'
+              )}>
+                {item.label}
+              </span>
+              
+              {/* Active indicator line */}
+              {isActive && (
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-1 bg-[#0E7C86] dark:bg-[#10a8b5] rounded-full animate-fade-in"></div>
               )}
             </button>
           );
