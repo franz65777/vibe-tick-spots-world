@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Search, PlusCircle, Bookmark, UserCircle } from 'lucide-react';
+import { Home, Map, PlusCircle, Activity, UserCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useAnalytics } from '@/hooks/useAnalytics';
@@ -36,8 +36,8 @@ const BottomNavigation = () => {
       hasIndicator: hasNewStories
     },
     { 
-      icon: Search, 
-      label: 'Explore', 
+      icon: Map, 
+      label: 'Discover', 
       path: '/explore',
       fillable: false
     },
@@ -49,10 +49,10 @@ const BottomNavigation = () => {
       fillable: false
     },
     { 
-      icon: Bookmark, 
-      label: 'Saved', 
-      path: '/saved',
-      fillable: true
+      icon: Activity, 
+      label: 'Feed', 
+      path: '/feed',
+      fillable: false
     },
     { 
       icon: UserCircle, 

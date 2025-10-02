@@ -179,41 +179,47 @@ const CitySearch = ({
       {/* Current City Display / Search Input */}
       <div className="relative">
         {!searchQuery || searchQuery.trim() === ' ' ? (
-          // Show current city when not searching - Clean design
-          <div className="flex items-center gap-3 bg-white/90 border border-gray-200 rounded-2xl h-12 px-4 hover:bg-white transition-colors cursor-pointer touch-manipulation"
+          // Show current city when not searching - Modern clean design
+          <div className="flex items-center gap-3 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-2xl h-14 px-5 hover:shadow-md transition-all cursor-pointer touch-manipulation shadow-sm"
                onClick={() => document.getElementById('city-search-input')?.focus()}>
-            <span className="text-gray-900 font-medium flex-1 text-sm sm:text-base truncate">
-              {currentCityData?.name || currentCity}
-            </span>
+            <MapPin className="w-5 h-5 text-primary shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Location</div>
+              <div className="text-sm font-semibold text-foreground truncate">
+                {currentCityData?.name || currentCity}
+              </div>
+            </div>
             <div className="flex items-center gap-2 shrink-0">
               {geoLoading && (
-                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
               )}
               <button
-                onClick={handleLocationClick}
-                className="w-6 h-6 text-gray-400 hover:text-blue-600 transition-colors touch-manipulation"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleLocationClick();
+                }}
+                className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20 transition-colors touch-manipulation"
                 title="Detect current location"
               >
                 <Locate className="w-4 h-4" />
               </button>
-              <Search className="w-4 h-4 text-gray-400" />
             </div>
           </div>
         ) : (
           // Show search input when searching
           <div className="relative">
+            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
               id="city-search-input"
               type="text"
-              placeholder="Search cities..."
+              placeholder="Search any city worldwide..."
               value={searchQuery === ' ' ? '' : searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               onKeyPress={onSearchKeyPress}
               onFocus={() => searchQuery && setIsOpen(true)}
-              className="pl-4 pr-10 bg-white/90 border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-2xl h-12 text-sm sm:text-base"
+              className="pl-12 pr-4 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-primary/20 rounded-2xl h-14 text-sm font-medium shadow-sm"
               autoFocus
             />
-            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           </div>
         )}
       </div>
@@ -230,35 +236,39 @@ const CitySearch = ({
         />
       )}
 
-      {/* Dropdown Results - Simplified */}
+      {/* Dropdown Results - Modern design */}
       {isOpen && filteredCities.length > 0 && (
-        <div className="fixed sm:absolute top-[calc(100%+8px)] left-4 right-4 sm:left-0 sm:right-0 sm:mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 max-h-64 overflow-y-auto z-[60] backdrop-blur-sm">
-          {filteredCities.map(({ key, data, similarity }) => {
-            return (
-              <button
-                key={key}
-                onClick={() => handleCityClick(data.name)}
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 active:bg-gray-100 transition-colors text-left border-b border-gray-50 last:border-b-0 touch-manipulation"
-              >
-                <div className="font-medium text-gray-900 text-sm truncate">{data.name}</div>
-                {similarity > 0.8 && (
-                  <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded shrink-0">
-                    Best match
+        <div className="fixed sm:absolute top-[calc(100%+8px)] left-4 right-4 sm:left-0 sm:right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 max-h-80 overflow-y-auto z-[60]">
+          <div className="p-2">
+            {filteredCities.map(({ key, data, similarity }) => {
+              return (
+                <button
+                  key={key}
+                  onClick={() => handleCityClick(data.name)}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700 transition-colors text-left rounded-xl touch-manipulation group"
+                >
+                  <MapPin className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-foreground text-sm truncate">{data.name}</div>
                   </div>
-                )}
-              </button>
-            );
-          })}
+                  {similarity > 0.8 && (
+                    <div className="text-xs font-medium text-primary bg-primary/10 px-2.5 py-1 rounded-full shrink-0">
+                      Best match
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
-      {/* No results - Mobile optimized z-index */}
+      {/* No results - Modern design */}
       {isOpen && searchQuery.trim() && searchQuery.trim() !== ' ' && filteredCities.length === 0 && (
-        <div className="fixed sm:absolute top-[calc(100%+8px)] left-4 right-4 sm:left-0 sm:right-0 sm:mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 z-[60] backdrop-blur-sm">
-          <div className="text-gray-500 text-sm text-center">
-            <div className="mb-2">No cities found for "{searchQuery}"</div>
-            <div className="text-xs">Try: Milan, Paris, New York, London, Tokyo</div>
-          </div>
+        <div className="fixed sm:absolute top-[calc(100%+8px)] left-4 right-4 sm:left-0 sm:right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-6 z-[60] text-center">
+          <MapPin className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+          <div className="text-foreground font-semibold mb-1">No cities found</div>
+          <div className="text-sm text-muted-foreground mb-3">Try searching for: Milan, Paris, New York, London, Tokyo</div>
         </div>
       )}
     </div>
