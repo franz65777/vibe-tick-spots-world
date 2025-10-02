@@ -117,16 +117,16 @@ const BottomNavigation = () => {
                   strokeWidth={isActive ? 2.5 : 2}
                 />
                 
-                {/* Notification badge */}
+                {/* Notification badge - inside icon */}
                 {item.badge && item.badge > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 animate-pulse shadow-lg">
-                    {item.badge > 99 ? '99+' : item.badge}
+                  <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-0.5 shadow-lg ring-2 ring-white dark:ring-gray-900">
+                    {item.badge > 9 ? '9+' : item.badge}
                   </span>
                 )}
                 
                 {/* New stories indicator */}
                 {item.hasIndicator && !isActive && (
-                  <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-yellow-400 rounded-full border-2 border-white dark:border-gray-900 animate-pulse shadow-sm"></span>
+                  <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-yellow-400 rounded-full border-2 border-white dark:border-gray-900 shadow-sm"></span>
                 )}
               </div>
               

@@ -4,6 +4,9 @@ import { loadGoogleMapsAPI } from '@/lib/googleMaps';
 import { Place } from '@/types/place';
 import LocationDetailSheet from './LocationDetailSheet';
 import { useGeolocation } from '@/hooks/useGeolocation';
+import { lightMapStyle, darkMapStyle } from '@/utils/mapStyles';
+import { createCustomMarker } from '@/utils/mapPinCreator';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 interface GoogleMapsSetupProps {
   places: Place[];
@@ -36,10 +39,12 @@ const GoogleMapsSetup = ({
   const pulseAnimationRef = useRef<NodeJS.Timeout | null>(null);
   const isUnmountingRef = useRef(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
   const [selectedLocationName, setSelectedLocationName] = useState<string>('');
   const [selectedLocationAddress, setSelectedLocationAddress] = useState<string>('');
   const { location, getCurrentLocation } = useGeolocation();
+  const { trackEvent } = useAnalytics();
 
   // Safe marker cleanup function
   const clearMarkers = useCallback(() => {
@@ -81,6 +86,19 @@ const GoogleMapsSetup = ({
     } catch (error) {
       console.warn('Error clearing current location marker:', error);
     }
+  }, []);
+
+  // Detect dark mode
+  useEffect(() => {
+    const checkDarkMode = () => {
+      setIsDarkMode(document.documentElement.classList.contains('dark'));
+    };
+    
+    checkDarkMode();
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    
+    return () => observer.disconnect();
   }, []);
 
   // Initialize map with better timing
@@ -148,18 +166,7 @@ const GoogleMapsSetup = ({
         const map = new google.maps.Map(mapRef.current, {
           center: mapCenter,
           zoom: 13,
-          styles: [
-            {
-              featureType: 'poi',
-              elementType: 'labels',
-              stylers: [{ visibility: 'off' }]
-            },
-            {
-              featureType: 'transit',
-              elementType: 'labels',
-              stylers: [{ visibility: 'off' }]
-            }
-          ],
+          styles: isDarkMode ? darkMapStyle : lightMapStyle,
           mapTypeControl: false,
           streetViewControl: false,
           fullscreenControl: false,
@@ -375,25 +382,18 @@ const GoogleMapsSetup = ({
         if (isUnmountingRef.current) return;
         
         try {
-          // Create a more visually appealing custom pin
-          const pinColor = place.isFollowing ? '#3B82F6' : '#10B981';
-          const pinSize = place.isNew ? 12 : 10;
-          
-          const marker = new google.maps.Marker({
-            position: place.coordinates,
-            map: mapInstanceRef.current,
-            title: place.name,
-            icon: {
-              path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-              scale: pinSize,
-              fillColor: pinColor,
-              fillOpacity: 0.9,
-              strokeColor: '#FFFFFF',
-              strokeWeight: 2,
-              rotation: 180,
-              anchor: new google.maps.Point(0, 0),
-            },
-            zIndex: place.isNew ? 1000 : 100,
+          if (!place.coordinates?.lat || !place.coordinates?.lng) return;
+
+          const position = {
+            lat: place.coordinates.lat,
+            lng: place.coordinates.lng,
+          };
+
+          const marker = createCustomMarker(mapInstanceRef.current!, position, {
+            category: place.category || 'attraction',
+            isSaved: place.isSaved,
+            friendAvatars: [], // TODO: fetch friend data from backend
+            isDarkMode,
           });
 
           if (isUnmountingRef.current) {
@@ -405,51 +405,23 @@ const GoogleMapsSetup = ({
           marker.addListener('click', () => {
             if (isUnmountingRef.current) return;
             
+            // Animate pin
+            marker.setAnimation(google.maps.Animation.BOUNCE);
+            setTimeout(() => marker.setAnimation(null), 700);
+            
+            // Track analytics
+            trackEvent('map_pin_clicked', {
+              place_id: place.id,
+              category: place.category,
+              source_tab: 'map',
+            });
+            
             console.log('Pin clicked:', place.name);
             setSelectedLocationId(place.id);
             setSelectedLocationName(place.name);
             setSelectedLocationAddress(place.address || '');
             if (onPinClick) {
               onPinClick(place);
-            }
-          });
-
-          // Add hover effects
-          marker.addListener('mouseover', () => {
-            if (isUnmountingRef.current) return;
-            
-            try {
-              marker.setIcon({
-                path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-                scale: pinSize + 2,
-                fillColor: pinColor,
-                fillOpacity: 1,
-                strokeColor: '#FFFFFF',
-                strokeWeight: 3,
-                rotation: 180,
-                anchor: new google.maps.Point(0, 0),
-              });
-            } catch (error) {
-              console.warn('Error on marker mouseover:', error);
-            }
-          });
-
-          marker.addListener('mouseout', () => {
-            if (isUnmountingRef.current) return;
-            
-            try {
-              marker.setIcon({
-                path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-                scale: pinSize,
-                fillColor: pinColor,
-                fillOpacity: 0.9,
-                strokeColor: '#FFFFFF',
-                strokeWeight: 2,
-                rotation: 180,
-                anchor: new google.maps.Point(0, 0),
-              });
-            } catch (error) {
-              console.warn('Error on marker mouseout:', error);
             }
           });
 

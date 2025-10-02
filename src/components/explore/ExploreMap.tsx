@@ -3,6 +3,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '@/lib/googleMaps';
 import { getCategoryIcon, getCategoryColor } from '@/utils/categoryIcons';
 import { CategoryType } from './CategoryFilter';
+import { lightMapStyle, darkMapStyle } from '@/utils/mapStyles';
+import { createCustomMarker } from '@/utils/mapPinCreator';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 interface MapPin {
   id: string;
@@ -29,6 +32,21 @@ const ExploreMap = ({ pins, activeFilter, selectedCategory, onPinClick, mapCente
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const { trackEvent } = useAnalytics();
+
+  // Detect dark mode
+  useEffect(() => {
+    const checkDarkMode = () => {
+      setIsDarkMode(document.documentElement.classList.contains('dark'));
+    };
+    
+    checkDarkMode();
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    
+    return () => observer.disconnect();
+  }, []);
 
   // Get user's current location
   useEffect(() => {
@@ -87,18 +105,7 @@ const ExploreMap = ({ pins, activeFilter, selectedCategory, onPinClick, mapCente
           const mapOptions: google.maps.MapOptions = {
             center: center,
             zoom: 13,
-            styles: [
-              {
-                featureType: 'poi',
-                elementType: 'labels',
-                stylers: [{ visibility: 'off' }]
-              },
-              {
-                featureType: 'transit',
-                elementType: 'labels',
-                stylers: [{ visibility: 'off' }]
-              }
-            ],
+            styles: isDarkMode ? darkMapStyle : lightMapStyle,
             mapTypeControl: false,
             streetViewControl: false,
             fullscreenControl: false,
@@ -139,31 +146,42 @@ const ExploreMap = ({ pins, activeFilter, selectedCategory, onPinClick, mapCente
       markersRef.current.forEach(marker => marker.setMap(null));
       markersRef.current = [];
 
-      // Add new markers with category-specific styling
+      // Add new markers with custom category pins
       filteredPins.forEach((pin, index) => {
         if (pin.coordinates) {
-          // Create custom marker icon based on category and filter
-          const markerIcon = {
-            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-              <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="18" cy="18" r="12" fill="${activeFilter === 'popular' ? '#EF4444' : activeFilter === 'following' ? '#3B82F6' : '#6B7280'}" stroke="white" stroke-width="3"/>
-                <circle cx="18" cy="18" r="6" fill="white"/>
-                ${activeFilter === 'popular' ? '<circle cx="18" cy="18" r="3" fill="#EF4444"/>' : ''}
-              </svg>
-            `),
-            scaledSize: new window.google.maps.Size(36, 36),
-            anchor: new window.google.maps.Point(18, 18)
-          };
+          // Calculate popular score for display
+          const popularScore = activeFilter === 'popular' && pin.likes 
+            ? Math.min(9.9, (pin.likes / 10)).toFixed(1) 
+            : undefined;
 
-          const marker = new window.google.maps.Marker({
-            position: pin.coordinates,
-            map: mapInstanceRef.current,
-            title: pin.name,
-            icon: markerIcon,
-            animation: window.google.maps.Animation.DROP
+          const marker = createCustomMarker(mapInstanceRef.current!, pin.coordinates, {
+            category: pin.category || 'attraction',
+            isSaved: pin.isFollowing,
+            friendAvatars: [], // TODO: fetch friend data from backend
+            popularScore: popularScore ? parseFloat(popularScore) : undefined,
+            isDarkMode,
           });
 
+          // Add click listener
           marker.addListener('click', () => {
+            // Animate pin on click
+            marker.setAnimation(google.maps.Animation.BOUNCE);
+            setTimeout(() => marker.setAnimation(null), 700);
+            
+            // Track analytics
+            trackEvent('map_pin_clicked', {
+              place_id: pin.id,
+              category: pin.category,
+              source_tab: activeFilter,
+            });
+            
+            if (popularScore) {
+              trackEvent('map_pin_score_shown', {
+                place_id: pin.id,
+                score: popularScore,
+              });
+            }
+            
             onPinClick(pin);
           });
 
