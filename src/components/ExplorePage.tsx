@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, MapPin, Users, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import UnifiedSearchOverlay from './explore/UnifiedSearchOverlay';
 import { searchService } from '@/services/searchService';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -30,9 +31,16 @@ const ExplorePage = () => {
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [currentCity, setCurrentCity] = useState<string>('Unknown City');
   const { champions } = useCommunityChampions(currentCity);
+  const [showSearchOverlay, setShowSearchOverlay] = useState(false);
 
   const handleAddLocation = () => {
     console.log('Navigate to add location');
+  };
+
+  const handleCitySelect = (city: string, coordinates: { lat: number; lng: number }) => {
+    setCurrentCity(city);
+    // Update map center or reload locations for the new city
+    console.log('Selected city:', city, coordinates);
   };
 
   // Load ALL locations with posts - IMPROVED DEDUPLICATION
@@ -223,7 +231,14 @@ const ExplorePage = () => {
           {/* Search Bar */}
           <div className="relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <Input type="text" placeholder={searchMode === 'locations' ? 'Search for cafes, restaurants, attractions...' : 'Search for people...'} value={searchQuery} onChange={e => handleSearch(e.target.value)} className="pl-12 pr-4 h-12 bg-gray-50 border-gray-200 focus:bg-white rounded-xl text-gray-900 placeholder-gray-500" />
+            <Input 
+              type="text" 
+              placeholder={searchMode === 'locations' ? 'Search for cafes, restaurants, attractions...' : 'Search for people...'} 
+              value={searchQuery} 
+              onFocus={() => setShowSearchOverlay(true)}
+              onChange={e => handleSearch(e.target.value)} 
+              className="pl-12 pr-4 h-12 bg-gray-50 border-gray-200 focus:bg-white rounded-xl text-gray-900 placeholder-gray-500" 
+            />
             {searchQuery && <Button onClick={clearSearch} variant="ghost" size="sm" className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100 rounded-full text-gray-500">
                 ×
               </Button>}
@@ -275,6 +290,13 @@ const ExplorePage = () => {
         isOpen={isLocationModalOpen}
         onClose={() => setIsLocationModalOpen(false)}
         location={selectedLocation}
+      />
+
+      {/* Unified Search Overlay */}
+      <UnifiedSearchOverlay
+        isOpen={showSearchOverlay}
+        onClose={() => setShowSearchOverlay(false)}
+        onCitySelect={handleCitySelect}
       />
     </div>;
 };
