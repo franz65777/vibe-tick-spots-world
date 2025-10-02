@@ -45,9 +45,12 @@ const SimpleHomePage = () => {
   };
 
   const handleCityChange = (city: string) => {
-    setSelectedCity(city);
-    setCurrentCity(city);
-    refreshPins(city);
+    console.log('HomePage - City changed to:', city, { _type: typeof city, value: JSON.stringify(city) });
+    if (city && typeof city === 'string') {
+      setSelectedCity(city);
+      setCurrentCity(city);
+      refreshPins(city);
+    }
   };
 
   const handleLocationOfTheWeekClick = (place: Place) => {

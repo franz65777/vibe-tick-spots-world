@@ -5,11 +5,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useStories } from '@/hooks/useStories';
 import { Badge } from './ui/badge';
-import navHomeIcon from '@/assets/nav-home.png';
-import navSearchIcon from '@/assets/nav-search.png';
-import navAddIcon from '@/assets/nav-add.png';
-import navFeedIcon from '@/assets/nav-feed.png';
-import navProfileIcon from '@/assets/nav-profile.png';
+import { Home, Search, PlusCircle, Activity, User } from 'lucide-react';
 
 const BottomNavigation = () => {
   const navigate = useNavigate();
@@ -33,29 +29,29 @@ const BottomNavigation = () => {
 
   const navItems = [
     { 
-      icon: navHomeIcon, 
-      label: 'Home', 
+      icon: Home, 
+      label: 'Explore', 
       path: '/',
       hasIndicator: hasNewStories
     },
     { 
-      icon: navSearchIcon, 
-      label: 'Discover', 
+      icon: Search, 
+      label: 'Search', 
       path: '/explore'
     },
     { 
-      icon: navAddIcon, 
+      icon: PlusCircle, 
       label: 'Add', 
       path: '/add',
       isCenter: true
     },
     { 
-      icon: navFeedIcon, 
+      icon: Activity, 
       label: 'Feed', 
       path: '/feed'
     },
     { 
-      icon: navProfileIcon, 
+      icon: User, 
       label: 'Profile', 
       path: '/profile',
       badge: unreadCount
@@ -74,6 +70,7 @@ const BottomNavigation = () => {
           
           // Center FAB - elevated and larger
           if (item.isCenter) {
+            const Icon = item.icon;
             return (
               <button
                 key={item.path}
@@ -82,17 +79,14 @@ const BottomNavigation = () => {
                 aria-label={item.label}
                 aria-current={isActive ? 'page' : undefined}
               >
-                <div className="relative w-16 h-16">
-                  <img 
-                    src={item.icon} 
-                    alt={item.label}
-                    className="w-full h-full object-contain drop-shadow-lg group-hover:scale-105 transition-transform duration-300"
-                  />
+                <div className="relative w-14 h-14 bg-primary rounded-full shadow-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
+                  <Icon className="w-7 h-7 text-primary-foreground" />
                 </div>
               </button>
             );
           }
           
+          const Icon = item.icon;
           return (
             <button
               key={item.path}
@@ -106,31 +100,29 @@ const BottomNavigation = () => {
               aria-current={isActive ? 'page' : undefined}
             >
               <div className="relative mb-1">
-                <img 
-                  src={item.icon} 
-                  alt={item.label}
+                <Icon 
                   className={cn(
-                    "w-12 h-12 object-contain transition-all duration-200",
-                    isActive ? 'opacity-100' : 'opacity-60'
+                    "w-6 h-6 transition-all duration-200",
+                    isActive ? 'text-primary' : 'text-muted-foreground'
                   )}
                 />
                 
-                {/* Notification badge - inside icon */}
+                {/* Notification badge - top right corner */}
                 {item.badge && item.badge > 0 && (
-                  <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-0.5 shadow-lg ring-2 ring-white dark:ring-gray-900">
+                  <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-1 shadow-lg ring-2 ring-background">
                     {item.badge > 9 ? '9+' : item.badge}
                   </span>
                 )}
                 
                 {/* New stories indicator */}
                 {item.hasIndicator && !isActive && (
-                  <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-yellow-400 rounded-full border-2 border-white dark:border-gray-900 shadow-sm"></span>
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-yellow-400 rounded-full border-2 border-background shadow-sm"></span>
                 )}
               </div>
               
               <span className={cn(
                 "text-xs font-medium transition-all duration-200",
-                isActive ? 'text-foreground' : 'text-muted-foreground'
+                isActive ? 'text-primary' : 'text-muted-foreground'
               )}>
                 {item.label}
               </span>
