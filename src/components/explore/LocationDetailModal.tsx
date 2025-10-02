@@ -1,10 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Heart, Bookmark, Share2, MapPin, Users, MessageSquare } from 'lucide-react';
+import { X, Phone, Navigation, Bookmark, Check, Users, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { locationInteractionService } from '@/services/locationInteractionService';
+import { useAnalytics } from '@/hooks/useAnalytics';
+import { toast } from 'sonner';
 
 interface LocationDetailModalProps {
   isOpen: boolean;
@@ -14,17 +17,20 @@ interface LocationDetailModalProps {
 
 const LocationDetailModal = ({ isOpen, onClose, location }: LocationDetailModalProps) => {
   const { user } = useAuth();
+  const { trackEvent } = useAnalytics();
   const [posts, setPosts] = useState<any[]>([]);
   const [friendsWhoPosted, setFriendsWhoPosted] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
-  const [likeCount, setLikeCount] = useState(0);
+  const [isVisited, setIsVisited] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
+  const [loadingPhone, setLoadingPhone] = useState(false);
 
   useEffect(() => {
     if (isOpen && location) {
       loadLocationData();
       loadInteractionStatus();
+      loadPlaceDetails();
     }
   }, [isOpen, location]);
 
@@ -128,190 +134,286 @@ const LocationDetailModal = ({ isOpen, onClose, location }: LocationDetailModalP
   };
 
   const loadInteractionStatus = async () => {
-    if (!location?.id) return;
+    if (!location?.id || !user) return;
 
     try {
-      const [liked, saved, count] = await Promise.all([
-        locationInteractionService.isLocationLiked(location.id),
-        locationInteractionService.isLocationSaved(location.id),
-        locationInteractionService.getLocationLikeCount(location.id)
-      ]);
-      
-      setIsLiked(liked);
+      const saved = await locationInteractionService.isLocationSaved(location.id);
       setIsSaved(saved);
-      setLikeCount(count);
+      
+      // Check if visited (check if user has posts at this location)
+      const { data: userPosts } = await supabase
+        .from('posts')
+        .select('id')
+        .eq('location_id', location.id)
+        .eq('user_id', user.id)
+        .limit(1);
+      
+      setIsVisited((userPosts?.length || 0) > 0);
     } catch (error) {
       console.error('Error loading interaction status:', error);
     }
   };
 
-  const handleLikeToggle = async () => {
+  const loadPlaceDetails = async () => {
+    if (!location?.google_place_id) return;
+    
+    setLoadingPhone(true);
     try {
-      const result = await locationInteractionService.toggleLocationLike(location.id);
-      setIsLiked(result.liked);
-      setLikeCount(result.count);
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${location.google_place_id}&fields=formatted_phone_number&key=AIzaSyBMQn6bdmj-wg9xPWyuDOhT-O3sJT9FmKs`
+      );
+      const data = await response.json();
+      if (data.result?.formatted_phone_number) {
+        setPhoneNumber(data.result.formatted_phone_number);
+      }
     } catch (error) {
-      console.error('Error toggling like:', error);
+      console.error('Error fetching place details:', error);
+    } finally {
+      setLoadingPhone(false);
+    }
+  };
+
+  const handleGetDirections = () => {
+    if (location?.coordinates) {
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${location.coordinates.lat},${location.coordinates.lng}`;
+      window.open(url, '_blank');
+      trackEvent('directions_clicked', { place_id: location.id, place_name: location.name });
+    }
+  };
+
+  const handleCall = () => {
+    if (phoneNumber) {
+      window.location.href = `tel:${phoneNumber}`;
+      trackEvent('call_clicked', { place_id: location.id, place_name: location.name });
     }
   };
 
   const handleSaveToggle = async () => {
+    if (!user) {
+      toast.error('Please sign in to save locations');
+      return;
+    }
+    
     try {
       if (isSaved) {
         await locationInteractionService.unsaveLocation(location.id);
         setIsSaved(false);
+        toast.success('Removed from saved');
       } else {
         await locationInteractionService.saveLocation(location.id, location);
         setIsSaved(true);
+        setIsVisited(false); // Mutually exclusive
+        toast.success('Saved for later');
+        trackEvent('save_clicked', { place_id: location.id, place_name: location.name });
       }
     } catch (error) {
       console.error('Error toggling save:', error);
+      toast.error('Failed to save location');
+    }
+  };
+
+  const handleVisitedToggle = async () => {
+    if (!user) {
+      toast.error('Please sign in to mark as visited');
+      return;
+    }
+    
+    try {
+      if (isVisited) {
+        // Remove visited status (would need to delete user's posts or use a separate table)
+        toast.info('To unmark as visited, delete your posts from this location');
+        return;
+      }
+      
+      // Mark as visited by creating a post or using a separate visited table
+      // For now, just toggle the state and prompt user to add a post
+      setIsVisited(true);
+      setIsSaved(false); // Mutually exclusive
+      toast.success('Marked as visited! Add a post to share your experience');
+      trackEvent('visited_marked', { place_id: location.id, place_name: location.name });
+    } catch (error) {
+      console.error('Error toggling visited:', error);
+      toast.error('Failed to mark as visited');
     }
   };
 
   if (!isOpen) return null;
 
+  // Calculate total friends who interacted (visitors + savers)
+  const totalFriends = friendsWhoPosted.length;
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
         {/* Header */}
-        <div className="flex justify-between items-center p-4 border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-              <MapPin className="w-6 h-6 text-white" />
+        <div className="relative p-6 border-b border-gray-100 dark:border-gray-800">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{location.name}</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{location.category}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-500">{location.address}</p>
             </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">{location.name}</h2>
-              <p className="text-gray-500 text-sm">{location.address}</p>
-            </div>
+            <Button onClick={onClose} variant="ghost" size="icon" className="rounded-full shrink-0">
+              <X className="w-5 h-5" />
+            </Button>
           </div>
-          <Button onClick={onClose} variant="ghost" size="sm" className="rounded-full">
-            <X className="w-5 h-5" />
-          </Button>
         </div>
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
-          {/* Stats */}
-          <div className="p-4 border-b border-gray-100">
-            <div className="flex items-center gap-6 text-sm text-gray-600">
-              <div className="flex items-center gap-1">
-                <Heart className="w-4 h-4 text-red-400" />
-                <span>{likeCount} likes</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <MessageSquare className="w-4 h-4 text-blue-400" />
-                <span>{posts.length} posts</span>
-              </div>
-              {friendsWhoPosted.length > 0 && (
-                <div className="flex items-center gap-1">
-                  <Users className="w-4 h-4 text-green-400" />
-                  <span>{friendsWhoPosted.length} friends posted here</span>
+          {/* Action Buttons */}
+          <div className="p-4 border-b border-gray-100 dark:border-gray-800">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Button
+                onClick={handleGetDirections}
+                variant="outline"
+                className="rounded-xl h-auto py-3 flex flex-col items-center gap-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-500 transition-all"
+              >
+                <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center">
+                  <Navigation className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 </div>
-              )}
-            </div>
+                <span className="text-xs font-medium">Directions</span>
+              </Button>
 
-            {/* Friends who posted */}
-            {friendsWhoPosted.length > 0 && (
-              <div className="mt-3">
-                <p className="text-sm font-medium text-gray-700 mb-2">Friends who posted here:</p>
-                <div className="flex gap-2 flex-wrap">
-                  {friendsWhoPosted.map(friend => (
-                    <div key={friend.id} className="flex items-center gap-2 bg-blue-50 rounded-full px-3 py-1">
-                      {friend.avatar ? (
-                        <img src={friend.avatar} alt={friend.name} className="w-6 h-6 rounded-full" />
-                      ) : (
-                        <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">
-                          {friend.name.charAt(0)}
-                        </div>
-                      )}
-                      <span className="text-sm font-medium text-blue-700">{friend.name}</span>
-                    </div>
-                  ))}
+              {phoneNumber && (
+                <Button
+                  onClick={handleCall}
+                  variant="outline"
+                  className="rounded-xl h-auto py-3 flex flex-col items-center gap-2 hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-500 transition-all"
+                >
+                  <div className="w-10 h-10 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center">
+                    <Phone className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  </div>
+                  <span className="text-xs font-medium">Call</span>
+                </Button>
+              )}
+
+              <Button
+                onClick={handleSaveToggle}
+                variant="outline"
+                className={`rounded-xl h-auto py-3 flex flex-col items-center gap-2 transition-all ${
+                  isSaved 
+                    ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-500 text-amber-600' 
+                    : 'hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:border-amber-500'
+                }`}
+              >
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  isSaved ? 'bg-amber-100 dark:bg-amber-900/40' : 'bg-gray-100 dark:bg-gray-800'
+                }`}>
+                  <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current text-amber-600 dark:text-amber-400' : 'text-gray-600 dark:text-gray-400'}`} />
                 </div>
-              </div>
-            )}
+                <span className="text-xs font-medium">{isSaved ? 'Saved' : 'Save'}</span>
+              </Button>
+
+              <Button
+                onClick={handleVisitedToggle}
+                variant="outline"
+                className={`rounded-xl h-auto py-3 flex flex-col items-center gap-2 transition-all ${
+                  isVisited 
+                    ? 'bg-green-50 dark:bg-green-900/20 border-green-500 text-green-600' 
+                    : 'hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-500'
+                }`}
+              >
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  isVisited ? 'bg-green-100 dark:bg-green-900/40' : 'bg-gray-100 dark:bg-gray-800'
+                }`}>
+                  <Check className={`w-5 h-5 ${isVisited ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-gray-400'}`} />
+                </div>
+                <span className="text-xs font-medium">{isVisited ? 'Visited' : 'Mark Visited'}</span>
+              </Button>
+            </div>
           </div>
 
-          {/* Posts Grid */}
+          {/* Friends Section */}
+          {totalFriends > 0 && (
+            <div className="p-4 border-b border-gray-100 dark:border-gray-800">
+              <div className="flex items-center gap-3 mb-3">
+                <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                  {totalFriends} {totalFriends === 1 ? 'friend has' : 'friends have'} been here
+                </h3>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {friendsWhoPosted.slice(0, 8).map(friend => (
+                  <div key={friend.id} className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 rounded-full px-3 py-1.5 border border-blue-100 dark:border-blue-800">
+                    <Avatar className="w-6 h-6">
+                      <AvatarImage src={friend.avatar} alt={friend.name} />
+                      <AvatarFallback className="text-xs bg-blue-500 text-white">
+                        {friend.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-xs font-medium text-blue-700 dark:text-blue-300">{friend.name}</span>
+                  </div>
+                ))}
+                {friendsWhoPosted.length > 8 && (
+                  <div className="flex items-center px-3 py-1.5">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">+{friendsWhoPosted.length - 8} more</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Map Snippet */}
+          {location.coordinates && (
+            <div className="p-4 border-b border-gray-100 dark:border-gray-800">
+              <div className="w-full h-48 bg-gray-100 dark:bg-gray-800 rounded-2xl overflow-hidden">
+                <iframe
+                  title="Location map"
+                  width="100%"
+                  height="100%"
+                  frameBorder="0"
+                  style={{ border: 0 }}
+                  src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBMQn6bdmj-wg9xPWyuDOhT-O3sJT9FmKs&q=${location.coordinates.lat},${location.coordinates.lng}&zoom=15`}
+                  allowFullScreen
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Library Feed */}
           <div className="p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <MessageSquare className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                Photos & Videos from the community
+              </h3>
+              <span className="text-sm text-gray-500 dark:text-gray-400">({posts.length})</span>
+            </div>
+            
             {loading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
-                <p className="text-gray-500 mt-2">Loading posts...</p>
+              <div className="text-center py-12">
+                <div className="animate-spin w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
+                <p className="text-gray-500 dark:text-gray-400 mt-3 text-sm">Loading posts...</p>
               </div>
             ) : posts.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {posts.map(post => (
-                  <div key={post.id} className="aspect-square rounded-xl overflow-hidden relative group cursor-pointer">
+                  <div key={post.id} className="aspect-square rounded-xl overflow-hidden relative group cursor-pointer shadow-sm hover:shadow-md transition-shadow">
                     <img 
                       src={post.media_urls[0]} 
                       alt={post.caption || 'Post'} 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                     />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
-                    <div className="absolute bottom-2 left-2 flex items-center gap-1">
-                      {(post.profiles as any)?.avatar_url ? (
-                        <img 
-                          src={(post.profiles as any).avatar_url} 
-                          alt={(post.profiles as any).username} 
-                          className="w-6 h-6 rounded-full border-2 border-white"
-                        />
-                      ) : (
-                        <div className="w-6 h-6 bg-blue-500 rounded-full border-2 border-white flex items-center justify-center text-white text-xs">
-                          {((post.profiles as any)?.username || 'U').charAt(0)}
-                        </div>
-                      )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="absolute bottom-2 left-2 flex items-center gap-2">
+                      <Avatar className="w-7 h-7 border-2 border-white shadow-sm">
+                        <AvatarImage src={(post.profiles as any)?.avatar_url} alt={(post.profiles as any)?.username} />
+                        <AvatarFallback className="text-xs bg-blue-500 text-white">
+                          {((post.profiles as any)?.username || 'U').charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12">
-                <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500">No posts yet</p>
-                <p className="text-gray-400 text-sm">Be the first to post about this place!</p>
+              <div className="text-center py-16 bg-gray-50 dark:bg-gray-800/50 rounded-2xl">
+                <MessageSquare className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                <p className="text-gray-600 dark:text-gray-400 font-medium mb-1">No posts yet</p>
+                <p className="text-gray-400 dark:text-gray-500 text-sm">Be the first to share this place!</p>
               </div>
             )}
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="p-4 border-t border-gray-100">
-          <div className="flex gap-3">
-            <Button
-              onClick={handleLikeToggle}
-              variant="ghost"
-              className={`flex-1 rounded-xl transition-all duration-200 ${
-                isLiked 
-                  ? 'bg-red-50 text-red-600 hover:bg-red-100' 
-                  : 'text-gray-600 hover:bg-red-50 hover:text-red-600'
-              }`}
-            >
-              <Heart className={`w-4 h-4 mr-2 ${isLiked ? 'fill-current' : ''}`} />
-              Like
-            </Button>
-
-            <Button
-              onClick={handleSaveToggle}
-              variant="ghost"
-              className={`flex-1 rounded-xl transition-all duration-200 ${
-                isSaved 
-                  ? 'bg-blue-50 text-blue-600 hover:bg-blue-100' 
-                  : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600'
-              }`}
-            >
-              <Bookmark className={`w-4 h-4 mr-2 ${isSaved ? 'fill-current' : ''}`} />
-              Save
-            </Button>
-
-            <Button
-              variant="ghost"
-              className="flex-1 rounded-xl text-gray-600 hover:bg-orange-50 hover:text-orange-600 transition-all duration-200"
-            >
-              <Share2 className="w-4 h-4 mr-2" />
-              Share
-            </Button>
           </div>
         </div>
       </div>
