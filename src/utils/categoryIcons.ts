@@ -58,13 +58,17 @@ export const getCategoryColor = (category: string) => {
     case 'cafe':
     case 'coffee':
     case 'coffee shop':
+    case 'café':
       return 'text-amber-600';
+    case 'bakery':
+      return 'text-yellow-600';
     case 'shopping':
     case 'shop':
     case 'store':
     case 'mall':
       return 'text-purple-500';
     case 'bar':
+    case 'bar & pub':
     case 'nightlife':
     case 'club':
       return 'text-pink-500';
@@ -80,6 +84,8 @@ export const getCategoryColor = (category: string) => {
     case 'gallery':
     case 'cultural':
       return 'text-indigo-500';
+    case 'entertainment':
+      return 'text-purple-600';
     default:
       return 'text-red-500'; // Default fallback
   }

@@ -14,21 +14,26 @@ export interface PinOptions {
 export const createCustomPin = (options: PinOptions): string => {
   const { category, isSaved, friendAvatars = [], popularScore, isDarkMode } = options;
   
-  const pinColor = isSaved ? '#0E7C86' : (isDarkMode ? '#374151' : '#ffffff');
-  const iconColor = isSaved ? '#ffffff' : '#0E7C86';
+  const pinColor = isSaved ? 'hsl(var(--primary))' : (isDarkMode ? '#374151' : '#ffffff');
+  const strokeColor = isSaved ? '#ffffff' : 'hsl(var(--primary))';
   const glowColor = isSaved ? 'rgba(14, 124, 134, 0.4)' : 'transparent';
   
-  // Get category icon name
+  // Better category icon mapping
   const iconMap: Record<string, string> = {
     restaurant: '🍴',
     food: '🍴',
     cafe: '☕',
+    café: '☕',
     coffee: '☕',
+    bakery: '🥐',
     bar: '🍺',
+    'bar & pub': '🍺',
     nightlife: '🎶',
     club: '🎶',
     museum: '🏛️',
     gallery: '🎨',
+    hotel: '🏨',
+    entertainment: '🎭',
     park: '🌳',
     nature: '🌳',
     attraction: '📸',
@@ -37,46 +42,50 @@ export const createCustomPin = (options: PinOptions): string => {
   
   const emoji = iconMap[category.toLowerCase()] || '📍';
   
-  // Create SVG
+  // Create SVG with larger size
   const svg = `
-    <svg width="48" height="60" viewBox="0 0 48 60" xmlns="http://www.w3.org/2000/svg">
+    <svg width="56" height="70" viewBox="0 0 56 70" xmlns="http://www.w3.org/2000/svg">
       <defs>
         ${isSaved ? `
           <filter id="glow">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
             <feMerge>
               <feMergeNode in="coloredBlur"/>
               <feMergeNode in="SourceGraphic"/>
             </feMerge>
           </filter>
         ` : ''}
+        <filter id="shadow">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
       </defs>
       
       <!-- Glow effect for saved pins -->
-      ${isSaved ? `<circle cx="24" cy="24" r="20" fill="${glowColor}" filter="url(#glow)"/>` : ''}
+      ${isSaved ? `<circle cx="28" cy="28" r="24" fill="${glowColor}" filter="url(#glow)"/>` : ''}
       
-      <!-- Main pin circle -->
-      <circle cx="24" cy="24" r="16" fill="${pinColor}" stroke="${iconColor}" stroke-width="2" 
-        ${isSaved ? 'filter="url(#glow)"' : ''}
+      <!-- Main pin circle with shadow -->
+      <circle cx="28" cy="28" r="20" fill="${pinColor}" stroke="${strokeColor}" stroke-width="2.5" 
+        filter="url(#shadow)"
       />
       
-      <!-- Category emoji -->
-      <text x="24" y="30" text-anchor="middle" font-size="18">${emoji}</text>
+      <!-- Category emoji - larger -->
+      <text x="28" y="35" text-anchor="middle" font-size="22">${emoji}</text>
       
       <!-- Popular score badge -->
       ${popularScore ? `
-        <circle cx="38" cy="14" r="10" fill="#fbbf24" stroke="#ffffff" stroke-width="2"/>
-        <text x="38" y="18" text-anchor="middle" font-size="9" font-weight="bold" fill="#1f2937">${popularScore}</text>
+        <circle cx="44" cy="16" r="11" fill="#fbbf24" stroke="#ffffff" stroke-width="2.5"/>
+        <text x="44" y="20" text-anchor="middle" font-size="10" font-weight="bold" fill="#1f2937">${popularScore}</text>
       ` : ''}
       
       <!-- Friend avatars badge -->
       ${friendAvatars.length > 0 ? `
-        <circle cx="10" cy="14" r="8" fill="#10b981" stroke="#ffffff" stroke-width="2"/>
-        <text x="10" y="17" text-anchor="middle" font-size="8" font-weight="bold" fill="#ffffff">${friendAvatars.length}</text>
+        <circle cx="12" cy="16" r="10" fill="#10b981" stroke="#ffffff" stroke-width="2.5"/>
+        <text x="12" y="20" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">${friendAvatars.length}</text>
       ` : ''}
       
-      <!-- Pin tail -->
-      <path d="M 24 40 L 24 55 L 24 40" stroke="${iconColor}" stroke-width="2" fill="none"/>
+      <!-- Pin tail - more prominent -->
+      <path d="M 28 48 L 28 65" stroke="${strokeColor}" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="28" cy="65" r="2" fill="${strokeColor}"/>
     </svg>
   `;
   
@@ -93,8 +102,8 @@ export const createCustomMarker = (
 ): google.maps.Marker => {
   const icon = {
     url: createCustomPin(options),
-    scaledSize: new google.maps.Size(48, 60),
-    anchor: new google.maps.Point(24, 55),
+    scaledSize: new google.maps.Size(56, 70),
+    anchor: new google.maps.Point(28, 65),
   };
   
   return new google.maps.Marker({

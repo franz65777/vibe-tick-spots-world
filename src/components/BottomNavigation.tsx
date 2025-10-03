@@ -31,8 +31,7 @@ const BottomNavigation = () => {
     { 
       icon: Home, 
       label: 'Explore', 
-      path: '/',
-      hasIndicator: hasNewStories
+      path: '/'
     },
     { 
       icon: Search, 
@@ -41,7 +40,7 @@ const BottomNavigation = () => {
     },
     { 
       icon: PlusCircle, 
-      label: 'Add', 
+      label: '', 
       path: '/add',
       isCenter: true
     },
@@ -60,27 +59,34 @@ const BottomNavigation = () => {
 
   return (
     <nav 
-      className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.3)] border-t border-gray-100 dark:border-gray-800 z-50"
+      className="fixed bottom-0 left-0 right-0 z-50"
       role="navigation"
       aria-label="Main navigation"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <div className="max-w-screen-xl mx-auto px-4 h-20 flex items-end justify-around pb-2" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
+      {/* Glassy background with blur */}
+      <div className="absolute inset-0 bg-background/80 backdrop-blur-xl border-t border-border/50" />
+      
+      <div className="relative max-w-screen-xl mx-auto px-6 h-[72px] flex items-center justify-around">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           
-          // Center FAB - elevated and larger
+          // Center FAB - modern elevated button
           if (item.isCenter) {
             const Icon = item.icon;
             return (
               <button
                 key={item.path}
                 onClick={() => handleNavClick(item.path, item.label)}
-                className="flex flex-col items-center justify-center transition-all duration-200 active:scale-95 relative group -mt-6"
-                aria-label={item.label}
+                className="relative -mt-8"
+                aria-label="Add"
                 aria-current={isActive ? 'page' : undefined}
               >
-                <div className="relative w-14 h-14 bg-primary rounded-full shadow-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
-                  <Icon className="w-7 h-7 text-primary-foreground" />
+                <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/80 shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-200">
+                  <Icon className="w-8 h-8 text-primary-foreground" strokeWidth={2.5} />
+                  
+                  {/* Subtle ring effect */}
+                  <div className="absolute inset-0 rounded-full ring-4 ring-background" />
                 </div>
               </button>
             );
@@ -91,38 +97,35 @@ const BottomNavigation = () => {
             <button
               key={item.path}
               onClick={() => handleNavClick(item.path, item.label)}
-              className={cn(
-                "flex flex-col items-center justify-center flex-1 py-2 px-2 transition-all duration-200 relative group",
-                isActive ? 'scale-105' : 'scale-100',
-                "active:scale-95"
-              )}
+              className="flex flex-col items-center justify-center gap-1 min-w-[64px] py-2 transition-all duration-200 active:scale-95 relative"
               aria-label={item.label}
               aria-current={isActive ? 'page' : undefined}
             >
-              <div className="relative mb-1">
+              <div className="relative">
                 <Icon 
                   className={cn(
-                    "w-6 h-6 transition-all duration-200",
-                    isActive ? 'text-primary' : 'text-muted-foreground'
+                    "w-6 h-6 transition-colors duration-200",
+                    isActive ? 'text-foreground' : 'text-muted-foreground'
                   )}
+                  strokeWidth={isActive ? 2.5 : 2}
                 />
                 
-                {/* Notification badge - top right corner */}
-                {item.badge && item.badge > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-1 shadow-lg ring-2 ring-background">
-                    {item.badge > 9 ? '9+' : item.badge}
-                  </span>
+                {/* Active indicator dot */}
+                {isActive && (
+                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
                 )}
                 
-                {/* New stories indicator */}
-                {item.hasIndicator && !isActive && (
-                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-yellow-400 rounded-full border-2 border-background shadow-sm"></span>
+                {/* Notification badge */}
+                {item.badge && item.badge > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shadow-lg">
+                    {item.badge > 9 ? '9+' : item.badge}
+                  </span>
                 )}
               </div>
               
               <span className={cn(
-                "text-xs font-medium transition-all duration-200",
-                isActive ? 'text-primary' : 'text-muted-foreground'
+                "text-[11px] font-medium transition-colors duration-200",
+                isActive ? 'text-foreground' : 'text-muted-foreground'
               )}>
                 {item.label}
               </span>

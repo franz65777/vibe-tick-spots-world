@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { mapGooglePlaceTypeToCategory } from '@/utils/allowedCategories';
 
 export interface Location {
   id: string;
@@ -92,12 +93,19 @@ export const locationService = {
         location = existingLocationByNameAddress;
         console.log('✅ Location exists by name/address, using existing:', location.name);
       } else {
-        // Create new location hub
+        // Create new location hub with better category mapping
         console.log('🆕 Creating new location hub:', locationData.name);
+        
+        // Use the category mapping if we have types from Google Places
+        const category = (locationData.metadata?.types) 
+          ? mapGooglePlaceTypeToCategory(locationData.metadata.types)
+          : locationData.category;
+        
         const { data: newLocation, error } = await supabase
           .from('locations')
           .insert({
             ...locationData,
+            category,
             created_by: user.user.id,
             pioneer_user_id: user.user.id,
           })
@@ -106,7 +114,7 @@ export const locationService = {
 
         if (error) throw error;
         location = newLocation;
-        console.log('✅ Created new location hub:', location.name);
+        console.log('✅ Created new location hub with category:', location.category);
       }
 
       // Save location for current user

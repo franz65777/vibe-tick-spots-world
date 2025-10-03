@@ -134,8 +134,8 @@ const MapSection = ({ mapCenter, currentCity }: MapSectionProps) => {
           activeFilter={activeFilter}
         />
 
-        {/* Map Category Filters - Inside Map */}
-        <MapCategoryFilters />
+        {/* Map Category Filters - Hidden when pin detail is open */}
+        {!selectedPlace && <MapCategoryFilters />}
 
         {/* List View Toggle - Modern Icon */}
         <div className="absolute bottom-8 right-4 z-40">

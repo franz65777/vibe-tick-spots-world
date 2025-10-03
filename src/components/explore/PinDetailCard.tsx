@@ -6,6 +6,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { locationInteractionService } from '@/services/locationInteractionService';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { supabase } from '@/integrations/supabase/client';
+import VisitedModal from './VisitedModal';
 
 interface PinDetailCardProps {
   place: any;
@@ -17,6 +18,20 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
   const [isSaved, setIsSaved] = useState(false);
   const [loading, setLoading] = useState(false);
   const [posts, setPosts] = useState<any[]>([]);
+  const [showVisitedModal, setShowVisitedModal] = useState(false);
+
+  const fetchPosts = async () => {
+    if (place.id) {
+      const { data } = await supabase
+        .from('posts')
+        .select('*, profiles(*)')
+        .eq('location_id', place.id)
+        .order('created_at', { ascending: false })
+        .limit(3);
+      
+      if (data) setPosts(data);
+    }
+  };
 
   useEffect(() => {
     const checkInteractions = async () => {
@@ -28,19 +43,6 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
         
         setIsLiked(liked);
         setIsSaved(saved);
-      }
-    };
-
-    const fetchPosts = async () => {
-      if (place.id) {
-        const { data } = await supabase
-          .from('posts')
-          .select('*, profiles(*)')
-          .eq('location_id', place.id)
-          .order('created_at', { ascending: false })
-          .limit(3);
-        
-        if (data) setPosts(data);
       }
     };
 
@@ -72,7 +74,14 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
   };
 
   const handleDirections = () => {
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${place.coordinates.lat},${place.coordinates.lng}`;
+    // Detect device and use appropriate maps app
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const coords = `${place.coordinates.lat},${place.coordinates.lng}`;
+    
+    const url = isIOS 
+      ? `maps://maps.apple.com/?daddr=${coords}`
+      : `https://www.google.com/maps/dir/?api=1&destination=${coords}`;
+    
     window.open(url, '_blank');
   };
 
@@ -121,6 +130,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
             </Button>
 
             <Button
+              onClick={() => setShowVisitedModal(true)}
               variant="outline"
               className="flex flex-col items-center gap-1 h-auto py-3"
             >
@@ -184,6 +194,15 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
           )}
         </ScrollArea>
       </div>
+      
+      {/* Visited Modal */}
+      {showVisitedModal && (
+        <VisitedModal
+          place={place}
+          onClose={() => setShowVisitedModal(false)}
+          onSuccess={fetchPosts}
+        />
+      )}
     </div>
   );
 };
