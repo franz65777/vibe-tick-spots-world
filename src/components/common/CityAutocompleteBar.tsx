@@ -22,8 +22,6 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    let listener: google.maps.MapsEventListener | null = null;
-
     const init = async () => {
       try {
         setIsLoading(true);
@@ -39,16 +37,62 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
         const ac = new window.google.maps.places.Autocomplete(inputRef.current, options);
         autocompleteRef.current = ac;
 
-        ac.addListener('place_changed', () => {
+        // Use callback ref to ensure latest handlers
+        const placeChangedListener = ac.addListener('place_changed', () => {
           const place = ac.getPlace();
           if (!place || !place.geometry || !place.geometry.location) return;
           const lat = place.geometry.location.lat();
           const lng = place.geometry.location.lng();
           const label = place.name || place.formatted_address || '';
+          
+          // Immediately call handlers
           onCitySelect(label, { lat, lng });
-          // Clear input after selection so bar shows current city summary again
           onSearchChange('');
         });
+
+        // Style the dropdown
+        const styleDropdown = () => {
+          const pac = document.querySelector('.pac-container') as HTMLElement;
+          if (pac) {
+            pac.style.cssText = `
+              margin-top: 8px;
+              border-radius: 16px;
+              border: 1px solid hsl(var(--border));
+              box-shadow: 0 10px 40px hsl(var(--foreground) / 0.12);
+              background: hsl(var(--background));
+              overflow: hidden;
+              z-index: 9999;
+            `;
+            
+            const items = pac.querySelectorAll('.pac-item');
+            items.forEach((item: Element) => {
+              const el = item as HTMLElement;
+              el.style.cssText = `
+                padding: 12px 16px;
+                cursor: pointer;
+                border-bottom: 1px solid hsl(var(--border));
+                color: hsl(var(--foreground));
+                transition: all 0.2s;
+              `;
+              el.addEventListener('mouseenter', () => {
+                el.style.background = 'hsl(var(--accent))';
+              });
+              el.addEventListener('mouseleave', () => {
+                el.style.background = 'transparent';
+              });
+            });
+            
+            const icons = pac.querySelectorAll('.pac-icon');
+            icons.forEach((icon: Element) => {
+              (icon as HTMLElement).style.color = 'hsl(var(--primary))';
+            });
+          }
+        };
+
+        // Apply styles after short delay
+        setTimeout(styleDropdown, 100);
+        inputRef.current?.addEventListener('focus', () => setTimeout(styleDropdown, 100));
+
       } finally {
         setIsLoading(false);
       }
@@ -60,7 +104,6 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
       if (autocompleteRef.current && (window as any).google?.maps?.event) {
         (window as any).google.maps.event.clearInstanceListeners(autocompleteRef.current);
       }
-      if (listener) listener.remove();
     };
   }, [onCitySelect, onSearchChange]);
 
