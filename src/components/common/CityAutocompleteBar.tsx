@@ -45,9 +45,10 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
           const lng = place.geometry.location.lng();
           const label = place.name || place.formatted_address || '';
           
-          // Immediately call handlers
+          // Immediately call handlers and fill the input
           onCitySelect(label, { lat, lng });
-          onSearchChange('');
+          onSearchChange(label);
+          inputRef.current?.blur();
         });
 
         // Style the dropdown
@@ -126,13 +127,6 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
         />
       </div>
 
-      {/* Compact current city pill below when not typing */}
-      {!searchQuery && currentCity && (
-        <div className="mt-1 inline-flex items-center gap-2 text-xs text-muted-foreground">
-          <MapPin className="w-3.5 h-3.5" />
-          <span>Current: <span className="text-foreground font-medium">{currentCity}</span></span>
-        </div>
-      )}
     </div>
   );
 };

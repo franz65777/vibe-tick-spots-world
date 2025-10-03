@@ -56,63 +56,80 @@ const NearbyPlacesSuggestions: React.FC<NearbyPlacesSuggestionsProps> = ({
   };
 
   useEffect(() => {
-    const fetchNearbyPlaces = async () => {
+    let cancelled = false;
+    const fetchPlaces = async () => {
       try {
         setIsLoading(true);
         await loadGoogleMapsAPI();
-        if (!(window as any).google?.maps?.places) return;
+        const g = (window as any).google;
+        if (!g?.maps?.places) { setIsLoading(false); return; }
 
-        const service = new (window as any).google.maps.places.PlacesService(document.createElement('div'));
-        const location = new (window as any).google.maps.LatLng(coordinates.lat, coordinates.lng);
+        const service = new g.maps.places.PlacesService(document.createElement('div'));
+        const location = new g.maps.LatLng(coordinates.lat, coordinates.lng);
 
-        // Search for places matching our categories
-        const request: google.maps.places.PlaceSearchRequest = {
-          location,
-          radius: 500, // 500m radius
-          type: ['restaurant', 'bar', 'cafe', 'bakery', 'lodging', 'museum', 'tourist_attraction', 'night_club', 'art_gallery', 'amusement_park'] as any,
-        } as any;
+        const toNearbyPlace = (place: any): NearbyPlace | null => {
+          const category = mapPlaceTypeToCategory(place.types || []);
+          if (!category || !place.geometry?.location) return null; // Only our categories
+          const distance = calculateDistance(
+            coordinates.lat,
+            coordinates.lng,
+            place.geometry.location.lat(),
+            place.geometry.location.lng()
+          );
+          return {
+            place_id: place.place_id,
+            name: place.name,
+            address: place.vicinity || place.formatted_address || '',
+            lat: place.geometry.location.lat(),
+            lng: place.geometry.location.lng(),
+            types: place.types || [],
+            distance,
+            category
+          };
+        };
 
-        service.nearbySearch(request, (results: any, status: any) => {
-          if (status === (window as any).google.maps.places.PlacesServiceStatus.OK && results) {
-            const places: NearbyPlace[] = results
-              .map((place: any) => {
-                const category = mapPlaceTypeToCategory(place.types || []);
-                if (!category) return null; // Filter out non-matching categories
+        const finalize = (raw: any[]) => {
+          const mapped = raw.map(toNearbyPlace).filter(Boolean) as NearbyPlace[];
+          const dedup = Array.from(new Map(mapped.map(p => [p.place_id, p])).values());
+          const sorted = dedup.sort((a, b) => (a.distance || 0) - (b.distance || 0)).slice(0, 5);
+          if (!cancelled) setNearbyPlaces(sorted);
+        };
 
-                const distance = calculateDistance(
-                  coordinates.lat,
-                  coordinates.lng,
-                  place.geometry.location.lat(),
-                  place.geometry.location.lng()
-                );
+        // If user typed something, run a text search near the pin
+        if (searchQuery.trim().length >= 2) {
+          const req: google.maps.places.TextSearchRequest = { location, radius: 2000, query: searchQuery } as any;
+          service.textSearch(req, (results: any, status: any) => {
+            if (status === g.maps.places.PlacesServiceStatus.OK && results) finalize(results);
+            setIsLoading(false);
+          });
+          return;
+        }
 
-                return {
-                  place_id: place.place_id,
-                  name: place.name,
-                  address: place.vicinity || '',
-                  lat: place.geometry.location.lat(),
-                  lng: place.geometry.location.lng(),
-                  types: place.types || [],
-                  distance,
-                  category
-                };
-              })
-              .filter((p: any) => p !== null)
-              .sort((a: NearbyPlace, b: NearbyPlace) => (a.distance || 0) - (b.distance || 0))
-              .slice(0, 5); // Top 5 closest
-
-            setNearbyPlaces(places);
-          }
-          setIsLoading(false);
-        });
+        // Otherwise fetch by types in parallel and merge
+        const types = ['restaurant','bar','cafe','bakery','lodging','museum','tourist_attraction','night_club','art_gallery','amusement_park'];
+        const all: any[] = [];
+        await Promise.all(
+          types.map(type => new Promise<void>(resolve => {
+            const req: google.maps.places.PlaceSearchRequest = { location, radius: 800, type: type as any } as any;
+            service.nearbySearch(req, (results: any, status: any) => {
+              if (status === g.maps.places.PlacesServiceStatus.OK && results) {
+                all.push(...results);
+              }
+              resolve();
+            });
+          }))
+        );
+        finalize(all);
+        setIsLoading(false);
       } catch (error) {
         console.error('Error fetching nearby places:', error);
         setIsLoading(false);
       }
     };
 
-    fetchNearbyPlaces();
-  }, [coordinates]);
+    fetchPlaces();
+    return () => { cancelled = true; };
+  }, [coordinates, searchQuery]);
 
   const filteredPlaces = searchQuery
     ? nearbyPlaces.filter(place =>
