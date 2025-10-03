@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Bell, Send } from 'lucide-react';
-import GlobalCitySearch from './GlobalCitySearch';
+import CityAutocompleteBar from '../common/CityAutocompleteBar';
 import MessageHistoryModal from './MessageHistoryModal';
 import { useNotifications } from '@/hooks/useNotifications';
 
@@ -35,12 +35,12 @@ const Header = ({
         <div className="flex items-center justify-between px-4 py-3 gap-3">
           {/* Left: City Selection - Now with more space */}
           <div className="flex-1 min-w-0">
-            <GlobalCitySearch 
-              currentCity={currentCity} 
-              onCitySelect={onCitySelect} 
-              searchQuery={searchQuery} 
-              onSearchChange={onSearchChange} 
-              onSearchKeyPress={onSearchKeyPress} 
+            <CityAutocompleteBar 
+              currentCity={currentCity}
+              onCitySelect={onCitySelect}
+              searchQuery={searchQuery}
+              onSearchChange={onSearchChange}
+              onSearchKeyPress={onSearchKeyPress}
             />
           </div>
 
