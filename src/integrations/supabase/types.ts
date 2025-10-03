@@ -1903,47 +1903,6 @@ export type Database = {
           },
         ]
       }
-      weekly_location_metrics: {
-        Row: {
-          created_at: string | null
-          id: string
-          likes_count: number | null
-          location_id: string
-          saves_count: number | null
-          updated_at: string | null
-          visits_count: number | null
-          week_start: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          likes_count?: number | null
-          location_id: string
-          saves_count?: number | null
-          updated_at?: string | null
-          visits_count?: number | null
-          week_start: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          likes_count?: number | null
-          location_id?: string
-          saves_count?: number | null
-          updated_at?: string | null
-          visits_count?: number | null
-          week_start?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "weekly_location_metrics_location_id_fkey"
-            columns: ["location_id"]
-            isOneToOne: false
-            referencedRelation: "locations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
     }
     Views: {
       trending_locations: {
@@ -2053,21 +2012,6 @@ export type Database = {
           feature: string
           unique_users: number
           usage_count: number
-        }[]
-      }
-      get_location_of_the_week: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          image_url: string
-          latitude: number
-          location_address: string
-          location_category: string
-          location_id: string
-          location_name: string
-          longitude: number
-          total_likes: number
-          total_saves: number
-          total_score: number
         }[]
       }
       get_mau: {

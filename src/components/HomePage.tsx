@@ -179,30 +179,6 @@ const HomePage = () => {
     setSelectedPlace(null);
   };
 
-  const handleLocationOfTheWeekClick = (place: Place) => {
-    const localPlace: LocalPlace = {
-      id: place.id,
-      name: place.name,
-      category: place.category,
-      coordinates: place.coordinates,
-      likes: place.likes,
-      isFollowing: place.isFollowing,
-      addedBy: typeof place.addedBy === 'string' ? place.addedBy : 'unknown',
-      addedDate: place.addedDate,
-      popularity: place.popularity,
-      city: place.city,
-      isNew: place.isNew,
-      image: place.image,
-      friendsWhoSaved: Array.isArray(place.friendsWhoSaved) ? place.friendsWhoSaved : [],
-      visitors: place.visitors,
-      distance: place.distance,
-      totalSaves: place.totalSaves,
-      address: place.address
-    };
-    setLocationDetailPlace(localPlace);
-    setIsLocationDetailOpen(true);
-  };
-
   const [stories, setStories] = useState<any[]>([]);
   const [storiesLoading, setStoriesLoading] = useState(true);
 
