@@ -66,35 +66,25 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
       return;
     }
 
-  const category = mapPlaceTypeToCategory(selectedPlace.types);
-  if (!category) {
-    toast.error('Invalid location type selected');
-    return;
-  }
-  // Enforce current map category filters if any are selected
-  if (allowedCategoriesFilter && allowedCategoriesFilter.length > 0 && !allowedCategoriesFilter.includes(category)) {
-    toast.error('This category is currently filtered out. Switch filters or pick a matching venue.');
-    return;
-  }
+    const category = mapPlaceTypeToCategory(selectedPlace.types);
+    if (!category) {
+      toast.error('Invalid location type selected');
+      return;
+    }
+    
+    // Enforce current map category filters if any are selected
+    if (allowedCategoriesFilter && allowedCategoriesFilter.length > 0 && !allowedCategoriesFilter.includes(category)) {
+      toast.error('This category is currently filtered out. Switch filters or pick a matching venue.');
+      return;
+    }
 
     setIsLoading(true);
     try {
       // Get current user first
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData.user) {
         throw new Error('User not authenticated');
       }
-
-      console.log('Saving location:', {
-        name: selectedPlace.name,
-        category: category,
-        address: selectedPlace.address,
-        latitude: selectedPlace.lat,
-        longitude: selectedPlace.lng,
-        google_place_id: selectedPlace.place_id,
-        place_types: selectedPlace.types,
-        created_by: userData.user.id,
-      });
 
       // First, check if location already exists
       const { data: existingLocation } = await supabase
@@ -106,9 +96,7 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
       let locationId: string;
 
       if (existingLocation) {
-        // Location exists, use its ID
         locationId = existingLocation.id;
-        console.log('Found existing location:', locationId);
       } else {
         // Create new location
         const { data: newLocation, error: locationError } = await supabase
@@ -127,11 +115,9 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
           .single();
 
         if (locationError) {
-          console.error('Location creation error:', locationError);
-          throw locationError;
+          throw new Error('Failed to create location: ' + locationError.message);
         }
         locationId = newLocation.id;
-        console.log('Created new location:', locationId);
       }
 
       // Check if user already saved this location
@@ -144,28 +130,31 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
 
       if (existingSave) {
         toast.info(`${selectedPlace.name} is already in your favorites!`);
-      } else {
-        // Save to user's saved locations
-        const { error: saveError } = await supabase
-          .from('user_saved_locations')
-          .insert({
-            user_id: userData.user.id,
-            location_id: locationId,
-          });
-
-        if (saveError) {
-          console.error('Save location error:', saveError);
-          throw saveError;
-        }
-        
-        toast.success(`${selectedPlace.name} saved to your favorites!`);
+        onPinAdded();
+        onClose();
+        setSelectedPlace(null);
+        return;
       }
+
+      // Save to user's saved locations
+      const { error: saveError } = await supabase
+        .from('user_saved_locations')
+        .insert({
+          user_id: userData.user.id,
+          location_id: locationId,
+        });
+
+      if (saveError) {
+        throw new Error('Failed to save location: ' + saveError.message);
+      }
+      
+      toast.success(`${selectedPlace.name} saved to your favorites!`);
       onPinAdded();
       onClose();
       setSelectedPlace(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving pin:', error);
-      toast.error('Failed to save location. Please try again.');
+      toast.error(error?.message || 'Failed to save location. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -207,12 +196,6 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
                   </p>
                 </div>
               </div>
-            </div>
-          )}
-
-          {coordinates && (
-            <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
-              📍 Clicked at: {coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}
             </div>
           )}
         </div>

@@ -51,48 +51,26 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
           inputRef.current?.blur();
         });
 
-        // Style the dropdown
-        const styleDropdown = () => {
+        // Position dropdown correctly
+        const positionDropdown = () => {
           const pac = document.querySelector('.pac-container') as HTMLElement;
-          if (pac) {
-            pac.style.cssText = `
-              margin-top: 8px;
-              border-radius: 16px;
-              border: 1px solid hsl(var(--border));
-              box-shadow: 0 10px 40px hsl(var(--foreground) / 0.12);
-              background: hsl(var(--background));
-              overflow: hidden;
-              z-index: 9999;
-            `;
-            
-            const items = pac.querySelectorAll('.pac-item');
-            items.forEach((item: Element) => {
-              const el = item as HTMLElement;
-              el.style.cssText = `
-                padding: 12px 16px;
-                cursor: pointer;
-                border-bottom: 1px solid hsl(var(--border));
-                color: hsl(var(--foreground));
-                transition: all 0.2s;
-              `;
-              el.addEventListener('mouseenter', () => {
-                el.style.background = 'hsl(var(--accent))';
-              });
-              el.addEventListener('mouseleave', () => {
-                el.style.background = 'transparent';
-              });
-            });
-            
-            const icons = pac.querySelectorAll('.pac-icon');
-            icons.forEach((icon: Element) => {
-              (icon as HTMLElement).style.color = 'hsl(var(--primary))';
-            });
+          if (pac && inputRef.current) {
+            const rect = inputRef.current.getBoundingClientRect();
+            pac.style.position = 'fixed';
+            pac.style.top = `${rect.bottom + 8}px`;
+            pac.style.left = `${rect.left}px`;
+            pac.style.width = `${rect.width}px`;
           }
         };
 
-        // Apply styles after short delay
-        setTimeout(styleDropdown, 100);
-        inputRef.current?.addEventListener('focus', () => setTimeout(styleDropdown, 100));
+        // Apply positioning on input focus and typing
+        inputRef.current?.addEventListener('focus', () => {
+          setTimeout(positionDropdown, 50);
+        });
+        
+        inputRef.current?.addEventListener('input', () => {
+          setTimeout(positionDropdown, 50);
+        });
 
       } finally {
         setIsLoading(false);
