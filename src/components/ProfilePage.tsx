@@ -105,8 +105,8 @@ const ProfilePage = () => {
       </div>
       <ProfileHeader />
       
-      {/* Business Dashboard Link */}
-      <div className="px-4 py-2">
+      {/* Business Dashboard Links */}
+      <div className="px-4 py-2 space-y-2">
         <Button
           onClick={() => navigate('/business')}
           variant="outline"
@@ -114,6 +114,14 @@ const ProfilePage = () => {
         >
           <Building2 className="w-4 h-4 mr-2" />
           Business Dashboard
+        </Button>
+        <Button
+          onClick={() => navigate('/business-claim')}
+          variant="outline"
+          className="w-full border-purple-200 text-purple-700 hover:bg-purple-50"
+        >
+          <Building2 className="w-4 h-4 mr-2" />
+          Richiedi Account Business
         </Button>
       </div>
       

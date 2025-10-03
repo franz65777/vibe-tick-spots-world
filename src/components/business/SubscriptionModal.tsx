@@ -49,8 +49,7 @@ const SubscriptionModal = ({ isOpen, onClose, claimRequestId }: SubscriptionModa
         .from('profiles')
         .update({
           is_business_user: true,
-          business_verified: true,
-          user_type: 'premium'
+          business_verified: true
         })
         .eq('id', user.id);
 

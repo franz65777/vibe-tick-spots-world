@@ -110,6 +110,62 @@ export type Database = {
         }
         Relationships: []
       }
+      business_claim_requests: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          business_name: string
+          business_type: string
+          contact_email: string
+          contact_phone: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          location_id: string | null
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          business_name: string
+          business_type: string
+          contact_email: string
+          contact_phone?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          location_id?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          business_name?: string
+          business_type?: string
+          contact_email?: string
+          contact_phone?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          location_id?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_claim_requests_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_notifications: {
         Row: {
           business_id: string | null
@@ -231,6 +287,56 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: true
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_subscriptions: {
+        Row: {
+          claim_request_id: string | null
+          created_at: string | null
+          end_date: string | null
+          id: string
+          next_billing_date: string | null
+          plan_type: string
+          price: number
+          start_date: string
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          claim_request_id?: string | null
+          created_at?: string | null
+          end_date?: string | null
+          id?: string
+          next_billing_date?: string | null
+          plan_type?: string
+          price: number
+          start_date: string
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          claim_request_id?: string | null
+          created_at?: string | null
+          end_date?: string | null
+          id?: string
+          next_billing_date?: string | null
+          plan_type?: string
+          price?: number
+          start_date?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_subscriptions_claim_request_id_fkey"
+            columns: ["claim_request_id"]
+            isOneToOne: false
+            referencedRelation: "business_claim_requests"
             referencedColumns: ["id"]
           },
         ]

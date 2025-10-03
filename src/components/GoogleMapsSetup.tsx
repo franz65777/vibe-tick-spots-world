@@ -20,6 +20,8 @@ interface GoogleMapsSetupProps {
   activeFilter?: string;
 }
 
+import PinDetailCard from './explore/PinDetailCard';
+
 const GoogleMapsSetup = ({ 
   places, 
   onPinClick,
@@ -486,20 +488,11 @@ const GoogleMapsSetup = ({
         )}
       </div>
       
-      {selectedLocationId && (
-        <LocationDetailSheet
-          locationId={selectedLocationId}
-          locationName={selectedLocationName}
-          locationAddress={selectedLocationAddress}
-          isOpen={!!selectedLocationId}
-          onClose={() => {
-            setSelectedLocationId(null);
-            setSelectedLocationName('');
-            setSelectedLocationAddress('');
-            if (onCloseSelectedPlace) {
-              onCloseSelectedPlace();
-            }
-          }}
+      {/* Pin Detail Card */}
+      {selectedPlace && (
+        <PinDetailCard
+          place={selectedPlace}
+          onClose={onCloseSelectedPlace}
         />
       )}
     </>

@@ -7,6 +7,7 @@ import AuthPage from '@/pages/AuthPage';
 import Index from '@/pages/Index';
 import BusinessDashboardPage from '@/pages/BusinessDashboardPage';
 import SubscriptionPage from '@/pages/SubscriptionPage';
+import BusinessClaimPage from '@/pages/BusinessClaimPage';
 import TermsPage from '@/pages/TermsPage';
 import PrivacyPage from '@/pages/PrivacyPage';
 import NotFound from '@/pages/NotFound';
@@ -57,6 +58,7 @@ function AppContent() {
                 <Route path="/leaderboard" element={<LeaderboardPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/business" element={<BusinessDashboardPage />} />
+                <Route path="/business-claim" element={<BusinessClaimPage />} />
                 <Route path="/subscription" element={<SubscriptionPage />} />
                 <Route path="/profile/:userId" element={<UserProfilePage />} />
                 <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />

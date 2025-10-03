@@ -33,10 +33,13 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity }: 
   const { user } = useAuth();
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setLocations([]);
+      return;
+    }
     
     fetchLocations();
-  }, [mapFilter, selectedCategories, currentCity, user]);
+  }, [mapFilter, selectedCategories.join(','), currentCity, user?.id]);
 
   const fetchLocations = async () => {
     if (!user) return;
