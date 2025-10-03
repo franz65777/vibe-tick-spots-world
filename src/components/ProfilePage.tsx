@@ -65,9 +65,9 @@ const ProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col h-full bg-white">
+      <div className="flex flex-col h-full bg-background">
         <div className="flex items-center justify-center h-64">
-          <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+          <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
         </div>
       </div>
     );
@@ -75,9 +75,9 @@ const ProfilePage = () => {
 
   if (error) {
     return (
-      <div className="flex flex-col h-full bg-white">
+      <div className="flex flex-col h-full bg-background">
         <div className="flex items-center justify-center h-64">
-          <p className="text-red-600">Error loading profile: {error}</p>
+          <p className="text-destructive">Error loading profile: {error}</p>
         </div>
       </div>
     );
@@ -99,10 +99,9 @@ const ProfilePage = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-        <h1 className="text-lg font-semibold">Profilo</h1>
-        <ThemeToggle />
+    <div className="flex flex-col h-full bg-background">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+        <h1 className="text-lg font-semibold text-foreground">Profilo</h1>
       </div>
       <ProfileHeader />
       

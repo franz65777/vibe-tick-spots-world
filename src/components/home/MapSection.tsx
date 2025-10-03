@@ -93,6 +93,7 @@ const MapSection = ({ mapCenter, currentCity }: MapSectionProps) => {
   };
 
   const handlePinClick = (place: Place) => {
+    console.log('Pin clicked:', place);
     setSelectedPlace(place);
   };
 
