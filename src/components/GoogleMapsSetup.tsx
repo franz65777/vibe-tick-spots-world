@@ -31,6 +31,11 @@ const GoogleMapsSetup = ({
   onMapClick,
   activeFilter
 }: GoogleMapsSetupProps) => {
+  const onMapRightClickRef = useRef(onMapRightClick);
+  const onMapClickRef = useRef(onMapClick);
+  useEffect(() => { onMapRightClickRef.current = onMapRightClick; }, [onMapRightClick]);
+  useEffect(() => { onMapClickRef.current = onMapClick; }, [onMapClick]);
+
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
@@ -194,29 +199,25 @@ const GoogleMapsSetup = ({
           }
         });
 
-        // Add right-click listener for adding new locations
-        if (onMapRightClick) {
-          map.addListener('rightclick', (event: google.maps.MapMouseEvent) => {
-            if (event.latLng && !isUnmountingRef.current) {
-              onMapRightClick({
-                lat: event.latLng.lat(),
-                lng: event.latLng.lng()
-              });
-            }
-          });
-        }
+        // Add right-click listener (reads latest handler via ref)
+        map.addListener('rightclick', (event: google.maps.MapMouseEvent) => {
+          if (event.latLng && !isUnmountingRef.current) {
+            onMapRightClickRef.current?.({
+              lat: event.latLng.lat(),
+              lng: event.latLng.lng()
+            });
+          }
+        });
 
-        // Add click listener (mobile-friendly) for adding new locations
-        if (onMapClick) {
-          map.addListener('click', (event: google.maps.MapMouseEvent) => {
-            if (event.latLng && !isUnmountingRef.current) {
-              onMapClick({
-                lat: event.latLng.lat(),
-                lng: event.latLng.lng()
-              });
-            }
-          });
-        }
+        // Add click listener (mobile-friendly) - uses latest handler via ref
+        map.addListener('click', (event: google.maps.MapMouseEvent) => {
+          if (event.latLng && !isUnmountingRef.current) {
+            onMapClickRef.current?.({
+              lat: event.latLng.lat(),
+              lng: event.latLng.lng()
+            });
+          }
+        });
 
         if (mounted && !isUnmountingRef.current) {
           setIsLoaded(true);
