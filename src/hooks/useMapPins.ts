@@ -56,31 +56,108 @@ export const useMapPins = (filter: 'following' | 'popular' | 'saved' = 'popular'
 
       if (filter === 'following') {
         console.log('🔍 Fetching following locations...');
-        const followingLocations = await locationInteractionService.getFollowingLocations(user.id);
-        console.log('✅ Following locations:', followingLocations.length);
         
-        fetchedPins = followingLocations.map(location => ({
-          id: location.id,
-          name: location.name,
-          category: location.category,
-          coordinates: location.coordinates,
-          likes: location.likes || 0,
-          isFollowing: true,
-          addedBy: location.addedBy,
-          addedDate: location.addedDate,
-          popularity: location.popularity || 75,
-          city: location.city,
-          isNew: false,
-          image: location.image,
-          friendsWhoSaved: location.friendsWhoSaved || [],
-          visitors: location.visitors || [],
-          distance: location.distance,
-          totalSaves: location.totalSaves || 0,
-          address: location.address,
-          google_place_id: location.google_place_id
-        }));
+        // First get users that the current user follows
+        const { data: followedUsers, error: followError } = await supabase
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', user.id);
 
-        setHasFollowedUsers(followingLocations.length > 0);
+        if (followError || !followedUsers || followedUsers.length === 0) {
+          console.log('❌ No followed users found');
+          setHasFollowedUsers(false);
+          setPins([]);
+          setLoading(false);
+          return;
+        }
+
+        const followedUserIds = followedUsers.map(f => f.following_id);
+        console.log('✅ Following user IDs:', followedUserIds);
+
+        // Get saved locations from followed users
+        const { data: savedLocations, error: savedError } = await supabase
+          .from('user_saved_locations')
+          .select(`
+            location_id,
+            user_id,
+            created_at,
+            locations!inner(
+              id,
+              name,
+              address,
+              latitude,
+              longitude,
+              category,
+              google_place_id
+            )
+          `)
+          .in('user_id', followedUserIds);
+
+        if (savedError) {
+          console.error('❌ Following saved locations error:', savedError);
+          setPins([]);
+          setLoading(false);
+          return;
+        }
+
+        console.log('✅ Saved locations from followed users:', savedLocations?.length || 0);
+
+        if (!savedLocations || savedLocations.length === 0) {
+          setHasFollowedUsers(true);
+          setPins([]);
+          setLoading(false);
+          return;
+        }
+
+        // Get user profiles for attribution
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, username, full_name, avatar_url')
+          .in('id', followedUserIds);
+
+        const profileMap = new Map();
+        profiles?.forEach(profile => {
+          profileMap.set(profile.id, profile);
+        });
+
+        // Transform saved locations into MapPin format, deduplicate by google_place_id or id
+        const locationMap = new Map();
+        
+        savedLocations.forEach(saved => {
+          const location = saved.locations as any;
+          const locationKey = location.google_place_id || location.id;
+          const userProfile = profileMap.get(saved.user_id);
+          
+          if (!locationMap.has(locationKey)) {
+            locationMap.set(locationKey, {
+              id: location.id,
+              name: location.name,
+              category: location.category,
+              coordinates: { 
+                lat: parseFloat(location.latitude?.toString() || '0'), 
+                lng: parseFloat(location.longitude?.toString() || '0') 
+              },
+              likes: 0,
+              isFollowing: true,
+              addedBy: userProfile?.full_name || userProfile?.username || 'Someone',
+              addedDate: new Date(saved.created_at).toLocaleDateString(),
+              popularity: 75,
+              city: location.address?.split(',')[1]?.trim() || 'Unknown',
+              isNew: false,
+              image: undefined,
+              friendsWhoSaved: [],
+              visitors: [],
+              distance: Math.random() * 10,
+              totalSaves: 0,
+              address: location.address || '',
+              google_place_id: location.google_place_id
+            });
+          }
+        });
+
+        fetchedPins = Array.from(locationMap.values());
+        console.log('✅ Final following pins:', fetchedPins.length);
+        setHasFollowedUsers(followedUsers.length > 0);
         } else if (filter === 'popular') {
         console.log('🔍 Fetching popular locations...');
         const popularLocations = await backendService.getPopularLocations(cityFilter);

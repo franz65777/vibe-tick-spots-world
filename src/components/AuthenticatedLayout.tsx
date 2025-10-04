@@ -1,6 +1,6 @@
 
 import React from 'react';
-import BottomNavigation from './BottomNavigation';
+import NewBottomNavigation from './NewBottomNavigation';
 
 interface AuthenticatedLayoutProps {
   children: React.ReactNode;
@@ -12,7 +12,7 @@ const AuthenticatedLayout: React.FC<AuthenticatedLayoutProps> = ({ children }) =
       <div className="pb-16">
         {children}
       </div>
-      <BottomNavigation />
+      <NewBottomNavigation />
     </div>
   );
 };

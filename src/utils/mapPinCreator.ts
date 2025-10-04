@@ -18,29 +18,36 @@ export const createCustomPin = (options: PinOptions): string => {
   const strokeColor = isSaved ? '#ffffff' : 'hsl(var(--primary))';
   const glowColor = isSaved ? 'rgba(14, 124, 134, 0.4)' : 'transparent';
   
-  // Better category icon mapping
-  const iconMap: Record<string, string> = {
-    restaurant: '🍴',
-    food: '🍴',
-    cafe: '☕',
-    café: '☕',
-    coffee: '☕',
-    bakery: '🥐',
-    bar: '🍸',
-    'bar & pub': '🍸',
-    nightlife: '🎶',
-    club: '🎶',
-    museum: '🏛️',
-    gallery: '🎨',
-    hotel: '🏨',
-    entertainment: '🎭',
-    park: '🌳',
-    nature: '🌳',
-    attraction: '📸',
-    landmark: '📸',
+  // Use actual category images for pins
+  const getMapIcon = (category: string) => {
+    const categoryLower = category.toLowerCase();
+    switch (categoryLower) {
+      case 'hotel':
+        return '🏨';
+      case 'cafe':
+      case 'café':
+      case 'coffee':
+        return '☕';
+      case 'bar':
+      case 'bar & pub':
+        return '🍸';
+      case 'restaurant':
+      case 'food':
+      case 'dining':
+        return '🍴';
+      case 'bakery':
+        return '🥐';
+      case 'museum':
+      case 'gallery':
+        return '🏛️';
+      case 'entertainment':
+        return '🎭';
+      default:
+        return '📍';
+    }
   };
   
-  const emoji = iconMap[category.toLowerCase()] || '📍';
+  const emoji = getMapIcon(category);
   
   // Create SVG with larger size
   const svg = `

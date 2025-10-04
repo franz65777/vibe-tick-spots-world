@@ -3,9 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useAnalytics } from '@/hooks/useAnalytics';
-import { Home, Search, Plus, Activity, User } from 'lucide-react';
 
-const BottomNavigation = () => {
+const NewBottomNavigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { unreadCount } = useNotifications();
@@ -18,27 +17,51 @@ const BottomNavigation = () => {
 
   const navItems = [
     { 
-      icon: Home, 
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9,22 9,12 15,12 15,22"/>
+        </svg>
+      ),
       label: 'Explore', 
       path: '/'
     },
     { 
-      icon: Search, 
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.35-4.35"/>
+        </svg>
+      ),
       label: 'Search', 
       path: '/explore'
     },
     { 
-      icon: Plus, 
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      ),
       label: 'Add', 
       path: '/add'
     },
     { 
-      icon: Activity, 
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+        </svg>
+      ),
       label: 'Feed', 
       path: '/feed'
     },
     { 
-      icon: User, 
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+      ),
       label: 'Profile', 
       path: '/profile',
       badge: unreadCount
@@ -47,7 +70,7 @@ const BottomNavigation = () => {
 
   return (
     <nav 
-      className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-border"
+      className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200"
       role="navigation"
       aria-label="Main navigation"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
@@ -55,7 +78,6 @@ const BottomNavigation = () => {
       <div className="relative max-w-screen-xl mx-auto px-4 h-16 flex items-center justify-around">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
-          const Icon = item.icon;
           
           return (
             <button
@@ -66,17 +88,16 @@ const BottomNavigation = () => {
               aria-current={isActive ? 'page' : undefined}
             >
               <div className="relative">
-                <Icon 
-                  className={cn(
-                    "w-6 h-6 transition-colors duration-200",
-                    isActive ? 'text-primary' : 'text-muted-foreground'
-                  )}
-                  strokeWidth={2}
-                />
+                <div className={cn(
+                  "transition-colors duration-200",
+                  isActive ? 'text-primary' : 'text-gray-400'
+                )}>
+                  {item.icon}
+                </div>
                 
                 {/* Notification badge */}
                 {item.badge && item.badge > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                  <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
                     {item.badge > 9 ? '9+' : item.badge}
                   </span>
                 )}
@@ -84,7 +105,7 @@ const BottomNavigation = () => {
               
               <span className={cn(
                 "text-[11px] font-medium transition-colors duration-200",
-                isActive ? 'text-primary' : 'text-muted-foreground'
+                isActive ? 'text-primary' : 'text-gray-400'
               )}>
                 {item.label}
               </span>
@@ -96,4 +117,4 @@ const BottomNavigation = () => {
   );
 };
 
-export default BottomNavigation;
+export default NewBottomNavigation;
