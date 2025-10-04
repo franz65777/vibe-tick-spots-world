@@ -2120,6 +2120,20 @@ export type Database = {
           usage_count: number
         }[]
       }
+      get_following_saved_locations: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          address: string
+          category: string
+          city: string
+          created_at: string
+          created_by: string
+          id: string
+          latitude: number
+          longitude: number
+          name: string
+        }[]
+      }
       get_mau: {
         Args: { target_month: string }
         Returns: number

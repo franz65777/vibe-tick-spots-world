@@ -77,51 +77,29 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity }: 
 
       switch (mapFilter) {
         case 'following': {
-          // Get locations saved by people the user follows
-          const { data: followingData } = await supabase
-            .from('follows')
-            .select('following_id')
-            .eq('follower_id', user.id);
+          // Use secure function to get locations saved by people the user follows
+          const { data: followingLocations, error: followingError } = await supabase
+            .rpc('get_following_saved_locations');
 
-          if (followingData && followingData.length > 0) {
-            const followingIds = followingData.map(f => f.following_id);
-            
-            const { data: followingLocations } = await supabase
-              .from('user_saved_locations')
-              .select(`
-                location_id,
-                locations!inner(
-                  id,
-                  name,
-                  category,
-                  address,
-                  city,
-                  latitude,
-                  longitude,
-                  created_by,
-                  created_at
-                )
-              `)
-              .in('user_id', followingIds);
-
-            if (followingLocations) {
-                finalLocations = followingLocations
-                  .filter(item => item.locations)
-                  .map(item => ({
-                    id: item.locations.id,
-                    name: item.locations.name,
-                    category: item.locations.category,
-                    address: item.locations.address,
-                    city: item.locations.city,
-                    coordinates: {
-                      lat: Number(item.locations.latitude) || 0,
-                      lng: Number(item.locations.longitude) || 0
-                    },
-                    isFollowing: true,
-                    user_id: item.locations.created_by,
-                    created_at: item.locations.created_at
-                  }));
-            }
+          if (followingError) {
+            console.error('Error fetching following locations:', followingError);
+            finalLocations = [];
+          } else if (followingLocations) {
+            finalLocations = followingLocations
+              .map(location => ({
+                id: location.id,
+                name: location.name,
+                category: location.category,
+                address: location.address,
+                city: location.city,
+                coordinates: {
+                  lat: Number(location.latitude) || 0,
+                  lng: Number(location.longitude) || 0
+                },
+                isFollowing: true,
+                user_id: location.created_by,
+                created_at: location.created_at
+              }));
           }
           break;
         }

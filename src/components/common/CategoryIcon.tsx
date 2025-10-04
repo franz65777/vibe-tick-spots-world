@@ -1,10 +1,11 @@
 import React from 'react';
-import bakeryBarMuseum from '@/assets/category-bakery-bar-museum.png';
-import hotel from '@/assets/category-hotel-transparent.png';
-import cafe from '@/assets/category-cafe-transparent.png';
-import bar from '@/assets/category-bar-transparent.png';
-import restaurant from '@/assets/category-restaurant-transparent.png';
-import entertainment from '@/assets/category-entertainment-transparent.png';
+import hotel from '@/assets/category-hotel-upload.png';
+import cafe from '@/assets/category-cafe-upload.png';
+import bar from '@/assets/category-bar-upload.png';
+import restaurant from '@/assets/category-restaurant-upload.png';
+import entertainment from '@/assets/category-entertainment-upload.png';
+import bakery from '@/assets/category-bakery-upload.png';
+import museum from '@/assets/category-museum-upload.png';
 
 interface CategoryIconProps {
   category: string;
@@ -17,12 +18,12 @@ export const CategoryIcon: React.FC<CategoryIconProps> = ({ category, className 
     
     switch (categoryLower) {
       case 'bakery':
-        return { src: bakeryBarMuseum, style: { objectFit: 'cover', objectPosition: '0% 50%', transform: 'scale(1.5)', width: '33.33%', marginLeft: '0%' } };
+        return { src: bakery, style: { objectFit: 'contain' } };
       case 'bar':
       case 'bar & pub':
         return { src: bar, style: { objectFit: 'contain' } };
       case 'museum':
-        return { src: bakeryBarMuseum, style: { objectFit: 'cover', objectPosition: '100% 50%', transform: 'scale(1.5)', width: '33.33%', marginLeft: '-66.66%' } };
+        return { src: museum, style: { objectFit: 'contain' } };
       case 'hotel':
         return { src: hotel, style: { objectFit: 'contain' } };
       case 'cafe':
