@@ -243,8 +243,8 @@ const LocationDetailModal = ({ isOpen, onClose, location }: LocationDetailModalP
   const totalFriends = friendsWhoPosted.length;
 
   return (
-    <Drawer open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }} shouldScaleBackground>
-      <DrawerContent snapPoints={[0.35, 0.9]} className="max-h-[90vh]">
+    <Drawer open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }} shouldScaleBackground snapPoints={[0.35, 0.9]}>
+      <DrawerContent className="max-h-[90vh]">
         <div className="overflow-y-auto">
           {/* Peek Header Area */}
           <div className="p-4 border-b border-gray-100 dark:border-gray-800">
