@@ -220,24 +220,33 @@ const ExplorePage = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="px-4 py-8">
+                  <div className="px-4 py-12">
                     {isSearchActive ? (
                       <NoResults searchMode="users" searchQuery={searchQuery} />
                     ) : (
-                      <div className="text-center">
-                        <p className="text-gray-500 mb-6">Find people to follow and connect with</p>
+                      <div className="text-center max-w-md mx-auto">
+                        <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
+                          <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                          </svg>
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Discover People</h3>
+                        <p className="text-sm text-gray-500 mb-6">Find friends and local experts to follow</p>
                         <Button 
-                          onClick={() => {/* TODO: Implement invite */}}
-                          variant="outline"
-                          className="mb-4"
+                          onClick={() => {/* TODO: Implement invite */}} 
+                          variant="outline" 
+                          className="mb-8"
                         >
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
                           Invite Friends
                         </Button>
-                        <div className="mt-8">
-                          <h3 className="text-sm font-semibold text-gray-700 mb-4">Suggested Users</h3>
-                          <div className="text-sm text-gray-500">
-                            Start searching to discover people near you
-                          </div>
+                        <div className="bg-gray-50 rounded-xl p-6">
+                          <h4 className="text-sm font-semibold text-gray-900 mb-3">💡 Pro Tip</h4>
+                          <p className="text-xs text-gray-600 leading-relaxed">
+                            Search for people by name to discover new connections and see what places they're exploring
+                          </p>
                         </div>
                       </div>
                     )}

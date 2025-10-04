@@ -31,6 +31,8 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
+  const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
+  const [touchOffset, setTouchOffset] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     if (isOpen) {
@@ -153,6 +155,7 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
       // Move to next after animation
       setTimeout(() => {
         setSwipeDirection(null);
+        setTouchOffset({ x: 0, y: 0 });
         setCurrentIndex(prev => prev + 1);
       }, 300);
     } catch (error) {
@@ -162,6 +165,35 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
     }
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    setTouchStart({ x: touch.clientX, y: touch.clientY });
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStart) return;
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - touchStart.x;
+    const deltaY = touch.clientY - touchStart.y;
+    setTouchOffset({ x: deltaX, y: deltaY });
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart) return;
+    
+    const swipeThreshold = 100;
+    if (Math.abs(touchOffset.x) > swipeThreshold) {
+      if (touchOffset.x > 0) {
+        handleSwipe('right');
+      } else {
+        handleSwipe('left');
+      }
+    } else {
+      setTouchOffset({ x: 0, y: 0 });
+    }
+    setTouchStart(null);
+  };
+
   if (!isOpen) return null;
 
   const currentLocation = locations[currentIndex];
@@ -169,16 +201,23 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
 
   return (
     <div className="w-full h-full bg-white flex flex-col">
-      <div className="relative w-full h-full flex flex-col">
+      <div className="relative w-full h-full flex flex-col bg-gray-50">
         {/* Header */}
-        <div className="flex-shrink-0 p-4 flex justify-between items-center bg-white border-b border-gray-200">
+        <div className="flex-shrink-0 p-4 flex justify-between items-center bg-white/90 backdrop-blur-sm absolute top-0 left-0 right-0 z-10">
           <h2 className="text-xl font-bold text-gray-900">Discover Places</h2>
           <button
             onClick={onClose}
-            className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center"
+            className="w-10 h-10 rounded-full bg-white shadow-lg hover:bg-gray-50 flex items-center justify-center transition-all"
           >
-            <X className="w-5 h-5 text-gray-900" />
+            <X className="w-6 h-6 text-gray-900" />
           </button>
+        </div>
+        
+        {/* Counter - Top Right */}
+        <div className="absolute top-20 right-4 px-3 py-1.5 rounded-full bg-white shadow-lg z-10">
+          <span className="text-sm font-semibold text-gray-900">
+            {currentIndex + 1} / {locations.length}
+          </span>
         </div>
 
         {loading ? (
@@ -195,79 +234,96 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
             <Button onClick={onClose}>Close</Button>
           </div>
         ) : currentLocation ? (
-          <>
-            {/* Card */}
+          <div className="flex-1 flex items-center justify-center p-4 pt-20">
+            {/* Swipeable Card */}
             <div
-              className={`flex-1 flex flex-col transition-transform duration-300 ${
-                swipeDirection === 'left'
-                  ? '-translate-x-full opacity-0'
-                  : swipeDirection === 'right'
-                  ? 'translate-x-full opacity-0'
-                  : ''
-              }`}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              className="w-full max-w-md h-[600px] transition-transform duration-300"
+              style={{
+                transform: swipeDirection 
+                  ? swipeDirection === 'left' 
+                    ? 'translateX(-120%) rotate(-15deg)' 
+                    : 'translateX(120%) rotate(15deg)'
+                  : `translateX(${touchOffset.x}px) rotate(${touchOffset.x * 0.05}deg)`,
+                opacity: swipeDirection ? 0 : 1 - Math.abs(touchOffset.x) / 500
+              }}
             >
-              {/* Image */}
-              <div className="flex-1 relative bg-gradient-to-br from-gray-200 to-gray-300">
-                {currentLocation.image_url ? (
-                  <img
-                    src={currentLocation.image_url}
-                    alt={currentLocation.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <CategoryIcon category={currentLocation.category} className="w-24 h-24 opacity-30" />
-                  </div>
-                )}
-                
-                {/* Overlay info */}
-                <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
-                  <div className="flex items-start gap-3">
-                    <CategoryIcon category={currentLocation.category} className="w-8 h-8" />
+              <div className="relative w-full h-full rounded-3xl overflow-hidden shadow-2xl bg-white">
+                {/* Image */}
+                <div className="absolute inset-0">
+                  {currentLocation.image_url ? (
+                    <img
+                      src={currentLocation.image_url}
+                      alt={currentLocation.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300">
+                      <CategoryIcon category={currentLocation.category} className="w-32 h-32 opacity-30" />
+                    </div>
+                  )}
+                  
+                  {/* Gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                </div>
+
+                {/* Info at bottom */}
+                <div className="absolute bottom-0 left-0 right-0 p-6">
+                  <div className="flex items-start gap-3 mb-6">
+                    <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center">
+                      <CategoryIcon category={currentLocation.category} className="w-7 h-7" />
+                    </div>
                     <div className="flex-1">
-                      <h3 className="text-2xl font-bold text-white mb-1">
+                      <h3 className="text-2xl font-bold text-white mb-2">
                         {currentLocation.name}
                       </h3>
-                      <div className="flex items-center gap-2 text-white/80 text-sm">
+                      <div className="flex items-center gap-2 text-white/90 text-sm mb-1">
                         <MapPin className="w-4 h-4" />
                         <span>{currentLocation.city}</span>
                       </div>
                       {currentLocation.address && (
-                        <p className="text-white/60 text-xs mt-1 line-clamp-2">
+                        <p className="text-white/70 text-xs line-clamp-1">
                           {currentLocation.address}
                         </p>
                       )}
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Action buttons */}
-              <div className="p-6 flex items-center justify-center gap-6 bg-white">
-                <button
-                  onClick={() => handleSwipe('left')}
-                  className="w-16 h-16 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center shadow-lg transition-all hover:scale-110"
-                  aria-label="Skip"
-                >
-                  <X className="w-8 h-8 text-gray-600" />
-                </button>
-                <button
-                  onClick={() => handleSwipe('right')}
-                  className="w-20 h-20 rounded-full bg-gradient-to-br from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 flex items-center justify-center shadow-xl transition-all hover:scale-110"
-                  aria-label="Save"
-                >
-                  <Heart className="w-10 h-10 text-white fill-white" />
-                </button>
-              </div>
-
-              {/* Counter */}
-              <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-white/90 backdrop-blur-sm">
-                <span className="text-sm font-medium text-gray-900">
-                  {currentIndex + 1} / {locations.length}
-                </span>
+                {/* Swipe indicators */}
+                {touchOffset.x > 50 && (
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-6xl rotate-12 pointer-events-none">
+                    👀
+                  </div>
+                )}
+                {touchOffset.x < -50 && (
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-6xl -rotate-12 pointer-events-none">
+                    ✕
+                  </div>
+                )}
               </div>
             </div>
-          </>
+
+            {/* Action buttons - Below card */}
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center justify-center gap-6">
+              <button
+                onClick={() => handleSwipe('left')}
+                className="w-16 h-16 rounded-full bg-white shadow-xl hover:shadow-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                aria-label="Skip"
+              >
+                <X className="w-8 h-8 text-gray-700" />
+              </button>
+              <button
+                onClick={() => handleSwipe('right')}
+                className="w-20 h-20 rounded-full bg-gradient-to-br from-pink-500 to-orange-500 shadow-xl hover:shadow-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 text-4xl"
+                aria-label="Save for later"
+              >
+                👀
+              </button>
+            </div>
+          </div>
         ) : null}
       </div>
     </div>

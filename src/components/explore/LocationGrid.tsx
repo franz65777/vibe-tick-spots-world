@@ -76,21 +76,13 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
         .select('location_id, user_id')
         .in('location_id', locationIds);
 
-      // Track which locations current user has saved
-      const userSaved = new Set<string>();
       const savesMap = new Map<string, number>();
-      
       savesData?.forEach(save => {
         savesMap.set(save.location_id, (savesMap.get(save.location_id) || 0) + 1);
-        if (user && save.user_id === user.id) {
-          userSaved.add(save.location_id);
-        }
       });
 
-      setUserSavedIds(userSaved);
-
-      // Group by google_place_id
-      const locationMap = new Map<string, LocationCard>();
+      // Group by google_place_id and collect all location IDs for the same place
+      const locationMap = new Map<string, LocationCard & { allLocationIds: string[] }>();
 
       locationsData?.forEach((location) => {
         const key = location.google_place_id || `${location.latitude}-${location.longitude}`;
@@ -109,13 +101,37 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
             coordinates: {
               lat: parseFloat(location.latitude?.toString() || '0'),
               lng: parseFloat(location.longitude?.toString() || '0')
-            }
+            },
+            allLocationIds: [location.id]
           });
+        } else {
+          // Same place, different location record - add the ID and update save count
+          const existing = locationMap.get(key)!;
+          existing.allLocationIds.push(location.id);
+          existing.savesCount = Math.max(existing.savesCount, savesMap.get(location.id) || 0);
         }
       });
 
+      // Check if user saved ANY of the location IDs for each place
+      const userSavedKeys = new Set<string>();
+      locationMap.forEach((loc, key) => {
+        if (loc.allLocationIds.some(id => savesData?.some(s => s.location_id === id && s.user_id === user?.id))) {
+          userSavedKeys.add(key);
+        }
+      });
+
+      // Convert to simple LocationCard array and track which ones are saved
+      const finalUserSavedIds = new Set<string>();
+      locationMap.forEach((loc, key) => {
+        if (userSavedKeys.has(key)) {
+          finalUserSavedIds.add(loc.id);
+        }
+      });
+      setUserSavedIds(finalUserSavedIds);
+
       // Sort by saves count (most popular first)
       const uniqueLocations = Array.from(locationMap.values())
+        .map(({ allLocationIds, ...rest }) => rest) // Remove allLocationIds from final output
         .sort((a, b) => b.savesCount - a.savesCount);
 
       setLocations(uniqueLocations);
@@ -140,12 +156,27 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
       const isSaved = userSavedIds.has(locationId);
       
       if (isSaved) {
-        // Unsave
-        await supabase
-          .from('user_saved_locations')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('location_id', locationId);
+        // Unsave - need to delete ALL saves for this location (in case there are duplicates)
+        const location = locations.find(l => l.id === locationId);
+        if (location) {
+          // Find all location IDs with same google_place_id or coordinates
+          const { data: allLocationData } = await supabase
+            .from('locations')
+            .select('id')
+            .or(
+              location.google_place_id 
+                ? `google_place_id.eq.${location.google_place_id}` 
+                : `and(latitude.eq.${location.coordinates.lat},longitude.eq.${location.coordinates.lng})`
+            );
+          
+          const allIds = allLocationData?.map(l => l.id) || [locationId];
+          
+          await supabase
+            .from('user_saved_locations')
+            .delete()
+            .eq('user_id', user.id)
+            .in('location_id', allIds);
+        }
         
         const newSet = new Set(userSavedIds);
         newSet.delete(locationId);
