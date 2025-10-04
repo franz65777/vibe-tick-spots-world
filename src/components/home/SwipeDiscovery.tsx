@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import likeIcon from '@/assets/icon-like-pin.png';
 import xIcon from '@/assets/icon-x-red.png';
+import hourglassIcon from '@/assets/icon-hourglass.png';
 
 interface SwipeLocation {
   id: string;
@@ -73,13 +74,22 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
 
       const followingIds = followingData?.map(f => f.following_id) || [];
 
+      console.log('🔍 Following users:', followingIds.length);
+
       // Get locations saved by users I follow (excluding ones I swiped/saved)
       let locationsToShow: SwipeLocation[] = [];
       if (followingIds.length > 0) {
-        const { data: friendsSaves } = await supabase
+        const { data: friendsSaves, error: savesError } = await supabase
           .from('user_saved_locations')
-          .select('location_id')
-          .in('user_id', followingIds);
+          .select('location_id, created_at')
+          .in('user_id', followingIds)
+          .order('created_at', { ascending: false })
+          .limit(50); // Get more to filter from
+
+        console.log('📍 Friends saves:', friendsSaves?.length);
+        if (savesError) {
+          console.error('Error fetching friends saves:', savesError);
+        }
 
         const friendsSavedLocationIds = Array.from(new Set(friendsSaves?.map(s => s.location_id) || []));
 
@@ -88,12 +98,20 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
           id => !swipedIds.includes(id) && !savedIds.includes(id)
         );
 
+        console.log('✅ Filtered location IDs:', filteredIds.length);
+
         if (filteredIds.length > 0) {
           const { data: locationsData, error } = await supabase
             .from('locations')
             .select('id, name, category, city, address, image_url, latitude, longitude')
             .in('id', filteredIds)
             .limit(10);
+
+          if (error) {
+            console.error('Error fetching locations:', error);
+          } else {
+            console.log('🎉 Fetched locations:', locationsData?.length);
+          }
 
           if (!error && locationsData) {
             locationsToShow = locationsData.map(loc => ({
@@ -114,6 +132,7 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
 
       // Shuffle and take 10
       const shuffled = locationsToShow.sort(() => Math.random() - 0.5).slice(0, 10);
+      console.log('🎲 Final shuffled locations to show:', shuffled.length);
       setLocations(shuffled);
       setCurrentIndex(0);
     } catch (error) {
@@ -292,7 +311,7 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
                 className="transition-all hover:scale-110 active:scale-95"
                 aria-label="Save for later"
               >
-                <img src={likeIcon} alt="Save" className="w-14 h-14" />
+                <img src={hourglassIcon} alt="Save for later" className="w-14 h-14" />
               </button>
             </div>
           </div>

@@ -57,6 +57,7 @@ const HomePage = () => {
   const [locationDetailPlace, setLocationDetailPlace] = useState<LocalPlace | null>(null);
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const [isSwipeDiscoveryOpen, setIsSwipeDiscoveryOpen] = useState(false);
+  const [isMapExpanded, setIsMapExpanded] = useState(false);
   
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -98,28 +99,37 @@ const HomePage = () => {
   // Derive city name from geolocation via Google Geocoder
   useEffect(() => {
     const setCityFromLocation = async () => {
-      if (!userLocation) return;
+      if (!userLocation || !isGoogleMapsLoaded()) return;
+      
       try {
-        await loadGoogleMapsAPI();
-        if (!(isGoogleMapsLoaded() && (window as any).google?.maps?.Geocoder)) return;
-        const geocoder = new (window as any).google.maps.Geocoder();
-        geocoder.geocode({ location: userLocation }, (results: any, status: any) => {
-          if (status === 'OK' && results?.[0]) {
-            const comps = results[0].address_components || [];
-            const cityComp = comps.find((c: any) => c.types.includes('locality'))
-              || comps.find((c: any) => c.types.includes('postal_town'))
-              || comps.find((c: any) => c.types.includes('administrative_area_level_1'));
-            const cityName = cityComp?.long_name || '';
-            if (cityName) setCurrentCity(cityName);
+        const geocoder = new window.google.maps.Geocoder();
+        const result = await geocoder.geocode({ location: userLocation });
+        
+        if (result.results && result.results[0]) {
+          // Look for city in address components
+          const cityComponent = result.results[0].address_components.find(
+            (c) => c.types.includes('locality') || c.types.includes('administrative_area_level_2')
+          );
+          
+          if (cityComponent) {
+            const city = cityComponent.long_name;
+            setCurrentCity(city);
+            setSearchQuery(city); // Set the search query to show current city
+            console.log('Current city set to:', city);
           }
-        });
-      } catch (e) {
-        console.warn('Reverse geocoding failed', e);
+        }
+      } catch (error) {
+        console.error('Error geocoding location:', error);
       }
     };
-    setCityFromLocation();
-  }, [userLocation]);
 
+    // Wait a bit for Google Maps API to load
+    const timer = setTimeout(() => {
+      setCityFromLocation();
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [userLocation]);
 
   const handleCityChange = (city: string, coords?: { lat: number; lng: number }) => {
     console.log('HomePage - City changed to:', city, coords);
@@ -336,12 +346,14 @@ const HomePage = () => {
           </div>
         )}
         
-        {/* Map Section - expanded to take more space */}
+        {/* Map Section - reduced by 20%, with expand functionality */}
         {!isSwipeDiscoveryOpen && (
-          <div className="flex-1">
+          <div className={isMapExpanded ? "fixed inset-0 z-50 bg-white dark:bg-gray-900" : "h-[40vh] flex-shrink-0"}>
             <MapSection
               mapCenter={mapCenter}
               currentCity={currentCity}
+              isExpanded={isMapExpanded}
+              onToggleExpand={() => setIsMapExpanded(!isMapExpanded)}
             />
           </div>
         )}

@@ -11,7 +11,7 @@ import { useMapFilter } from '@/contexts/MapFilterContext';
 import { Place } from '@/types/place';
 import { PinShareData } from '@/services/pinSharingService';
 import { toast } from 'sonner';
-import { List } from 'lucide-react';
+import { List, Maximize2, Minimize2 } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -20,9 +20,11 @@ import { Badge } from '@/components/ui/badge';
 interface MapSectionProps {
   mapCenter: { lat: number; lng: number };
   currentCity: string;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
 }
 
-const MapSection = ({ mapCenter, currentCity }: MapSectionProps) => {
+const MapSection = ({ mapCenter, currentCity, isExpanded = false, onToggleExpand }: MapSectionProps) => {
   const [isAddLocationModalOpen, setIsAddLocationModalOpen] = useState(false);
   const [isQuickAddModalOpen, setIsQuickAddModalOpen] = useState(false);
   const [isPinShareModalOpen, setIsPinShareModalOpen] = useState(false);
@@ -139,8 +141,24 @@ const MapSection = ({ mapCenter, currentCity }: MapSectionProps) => {
         {/* Map Category Filters - Hidden when pin detail is open */}
         {!selectedPlace && <MapCategoryFilters />}
 
-        {/* List View Toggle - Modern Icon */}
-        <div className="absolute bottom-8 right-4 z-40">
+        {/* Map Controls - List View and Expand Toggle */}
+        <div className="absolute bottom-8 right-4 z-40 flex gap-2">
+          {/* Expand/Collapse Button */}
+          {onToggleExpand && (
+            <Button
+              onClick={onToggleExpand}
+              size="icon"
+              className="rounded-full bg-white/95 backdrop-blur-md shadow-lg border border-gray-200 hover:bg-white w-12 h-12"
+            >
+              {isExpanded ? (
+                <Minimize2 className="w-6 h-6 text-gray-700" />
+              ) : (
+                <Maximize2 className="w-6 h-6 text-gray-700" />
+              )}
+            </Button>
+          )}
+
+          {/* List View Toggle */}
           <Sheet open={isListViewOpen} onOpenChange={setIsListViewOpen}>
             <SheetTrigger asChild>
               <Button

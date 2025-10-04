@@ -33,11 +33,12 @@ const NotificationsModal = ({ isOpen, onClose }: NotificationsModalProps) => {
     switch (notification.type) {
       case 'follow':
         if (notification.data?.user_id) {
-          navigate(`/user/${notification.data.user_id}`);
+          navigate(`/profile/${notification.data.user_id}`);
         }
         break;
       case 'like':
         if (notification.data?.post_id) {
+          // Navigate to own profile to see the liked post
           navigate(`/profile`);
         }
         break;

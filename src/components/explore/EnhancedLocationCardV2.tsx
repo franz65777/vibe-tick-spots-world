@@ -130,10 +130,10 @@ const EnhancedLocationCardV2 = ({ place, onCardClick }: EnhancedLocationCardV2Pr
           ))}
         </div>
 
-        {/* Address and Metadata */}
+        {/* City Name */}
         <div className="flex items-start gap-2 text-sm text-muted-foreground">
           <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-          <span className="line-clamp-2">{place.address || 'Address not available'}</span>
+          <span className="line-clamp-1">{place.city || place.address?.split(',')[1]?.trim() || 'Unknown City'}</span>
         </div>
 
         {/* Action Buttons */}
