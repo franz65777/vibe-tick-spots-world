@@ -65,47 +65,55 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
 
       const savedIds = savedData?.map(s => s.location_id) || [];
 
-      // Fetch random locations (excluding already swiped/saved)
-      let query = supabase
-        .from('locations')
-        .select('id, name, category, city, address, image_url, latitude, longitude')
-        .limit(50);
+      // Get users I follow
+      const { data: followingData } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', user.id);
 
-      if (swipedIds.length > 0) {
-        query = query.not('id', 'in', `(${swipedIds.join(',')})`);
-      }
-      if (savedIds.length > 0) {
-        query = query.not('id', 'in', `(${savedIds.join(',')})`);
-      }
+      const followingIds = followingData?.map(f => f.following_id) || [];
 
-      const { data: locationsData, error } = await query;
+      // Get locations saved by users I follow (excluding ones I swiped/saved)
+      let locationsToShow: SwipeLocation[] = [];
+      if (followingIds.length > 0) {
+        const { data: friendsSaves } = await supabase
+          .from('user_saved_locations')
+          .select('location_id')
+          .in('user_id', followingIds);
 
-      if (error) throw error;
+        const friendsSavedLocationIds = Array.from(new Set(friendsSaves?.map(s => s.location_id) || []));
 
-      // Filter by proximity and select 10 random
-      const nearbyLocations = locationsData
-        ?.filter(loc => {
-          const lat = parseFloat(loc.latitude?.toString() || '0');
-          const lng = parseFloat(loc.longitude?.toString() || '0');
-          if (!lat || !lng) return false;
-          const distance = calculateDistance(userLocation, { lat, lng });
-          return distance <= 50; // Within 50km for discovery
-        })
-        .map(loc => ({
-          id: loc.id,
-          name: loc.name,
-          category: loc.category,
-          city: loc.city || 'Unknown',
-          address: loc.address,
-          image_url: loc.image_url,
-          coordinates: {
-            lat: parseFloat(loc.latitude?.toString() || '0'),
-            lng: parseFloat(loc.longitude?.toString() || '0')
+        // Filter out already swiped/saved
+        const filteredIds = friendsSavedLocationIds.filter(
+          id => !swipedIds.includes(id) && !savedIds.includes(id)
+        );
+
+        if (filteredIds.length > 0) {
+          const { data: locationsData, error } = await supabase
+            .from('locations')
+            .select('id, name, category, city, address, image_url, latitude, longitude')
+            .in('id', filteredIds)
+            .limit(10);
+
+          if (!error && locationsData) {
+            locationsToShow = locationsData.map(loc => ({
+              id: loc.id,
+              name: loc.name,
+              category: loc.category,
+              city: loc.city || 'Unknown',
+              address: loc.address,
+              image_url: loc.image_url,
+              coordinates: {
+                lat: parseFloat(loc.latitude?.toString() || '0'),
+                lng: parseFloat(loc.longitude?.toString() || '0')
+              }
+            }));
           }
-        })) || [];
+        }
+      }
 
       // Shuffle and take 10
-      const shuffled = nearbyLocations.sort(() => Math.random() - 0.5).slice(0, 10);
+      const shuffled = locationsToShow.sort(() => Math.random() - 0.5).slice(0, 10);
       setLocations(shuffled);
       setCurrentIndex(0);
     } catch (error) {
@@ -114,20 +122,6 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
     } finally {
       setLoading(false);
     }
-  };
-
-  const calculateDistance = (
-    a: { lat: number; lng: number },
-    b: { lat: number; lng: number }
-  ) => {
-    const toRad = (v: number) => (v * Math.PI) / 180;
-    const R = 6371; // km
-    const dLat = toRad(b.lat - a.lat);
-    const dLng = toRad(b.lng - a.lng);
-    const lat1 = toRad(a.lat);
-    const lat2 = toRad(b.lat);
-    const s = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
-    return 2 * R * Math.asin(Math.min(1, Math.sqrt(s)));
   };
 
   const handleSwipe = async (direction: 'left' | 'right') => {
@@ -203,17 +197,14 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
   return (
     <div className="w-full h-full bg-white flex flex-col">
       <div className="relative w-full h-full flex flex-col bg-gray-50">
-        {/* Header */}
-        <div className="flex-shrink-0 p-4 flex justify-between items-center bg-white/90 backdrop-blur-sm absolute top-0 left-0 right-0 z-10">
-          <div className="flex-shrink-0 p-4 flex justify-between items-center bg-white/90 backdrop-blur-sm absolute top-0 left-0 right-0 z-10">
-            <h2 className="text-xl font-bold text-gray-900 line-clamp-1">{currentLocation?.name || 'Discover Places'}</h2>
-            <button
-              onClick={onClose}
-              className="w-10 h-10 rounded-full bg-white shadow-lg ring-1 ring-black/5 hover:bg-gray-50 flex items-center justify-center transition-all"
-            >
-              <X className="w-6 h-6 text-gray-900" />
-            </button>
-          </div>
+        {/* Header - only X button and counter */}
+        <div className="flex-shrink-0 p-4 flex justify-end items-center bg-white/90 backdrop-blur-sm absolute top-0 left-0 right-0 z-10">
+          <button
+            onClick={onClose}
+            className="w-10 h-10 rounded-full bg-white shadow-lg ring-1 ring-black/5 hover:bg-gray-50 flex items-center justify-center transition-all"
+          >
+            <X className="w-6 h-6 text-gray-900" />
+          </button>
         </div>
         
         {/* Counter - Top Right */}
@@ -243,7 +234,7 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
-              className="w-full max-w-md h-[520px] transition-transform duration-300"
+              className="w-full max-w-md h-[400px] transition-transform duration-300"
               style={{
                 transform: swipeDirection 
                   ? swipeDirection === 'left' 
@@ -272,12 +263,12 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                 </div>
 
-                {/* Top Info - name at top */}
-                <div className="absolute top-0 left-0 right-0 p-4 flex items-start justify-between pointer-events-none">
-                  <div className="max-w-[75%]">
-                    <h3 className="text-2xl font-bold text-white drop-shadow">{currentLocation.name}</h3>
+                {/* Bottom Info - name only */}
+                <div className="absolute bottom-0 left-0 right-0 p-6 flex items-start justify-between pointer-events-none">
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold text-white drop-shadow mb-1">{currentLocation.name}</h3>
                     {currentLocation.city && (
-                      <div className="flex items-center gap-2 text-white/90 text-sm mt-1">
+                      <div className="flex items-center gap-2 text-white/90 text-sm">
                         <MapPin className="w-4 h-4" />
                         <span>{currentLocation.city}</span>
                       </div>
@@ -287,21 +278,21 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
               </div>
             </div>
 
-            {/* Action buttons - Positioned higher */}
-            <div className="absolute bottom-24 left-1/2 -translate-x-1/2 flex items-center justify-center gap-8">
+            {/* Action buttons - Positioned higher, no backgrounds */}
+            <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex items-center justify-center gap-10">
               <button
                 onClick={() => handleSwipe('left')}
-                className="w-16 h-16 flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                className="transition-all hover:scale-110 active:scale-95"
                 aria-label="Skip"
               >
-                <img src={xIcon} alt="Skip" className="w-16 h-16" />
+                <img src={xIcon} alt="Skip" className="w-14 h-14" />
               </button>
               <button
                 onClick={() => handleSwipe('right')}
-                className="w-16 h-16 flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                className="transition-all hover:scale-110 active:scale-95"
                 aria-label="Save for later"
               >
-                <img src={likeIcon} alt="Save" className="w-16 h-16" />
+                <img src={likeIcon} alt="Save" className="w-14 h-14" />
               </button>
             </div>
           </div>

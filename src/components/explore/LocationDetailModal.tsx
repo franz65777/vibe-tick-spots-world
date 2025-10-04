@@ -243,7 +243,7 @@ const LocationDetailModal = ({ isOpen, onClose, location }: LocationDetailModalP
   const totalFriends = friendsWhoPosted.length;
 
   return (
-    <Drawer open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }} modal snapPoints={[0.4, 1]}>
+    <Drawer open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }} modal={false} snapPoints={[0.5, 1]}>
       <DrawerContent className="max-h-[95vh] flex flex-col">
         <div className="flex-1 overflow-y-auto">
           {/* Peek Header Area */}
