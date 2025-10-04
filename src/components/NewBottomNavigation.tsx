@@ -1,14 +1,12 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { useNotifications } from '@/hooks/useNotifications';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { Map, Search, Plus, Activity, User } from 'lucide-react';
 
 const NewBottomNavigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { unreadCount } = useNotifications();
   const { trackEvent } = useAnalytics();
 
   const handleNavClick = (path: string, label: string) => {
@@ -40,8 +38,7 @@ const NewBottomNavigation = () => {
     { 
       icon: <User size={24} strokeWidth={2} />, 
       label: 'Profile', 
-      path: '/profile',
-      badge: unreadCount
+      path: '/profile'
     },
   ];
 
@@ -71,11 +68,7 @@ const NewBottomNavigation = () => {
                   )}>
                     {item.icon}
                   </div>
-                  {item.badge && item.badge > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
-                      {item.badge > 9 ? '9+' : item.badge}
-                    </span>
-                  )}
+                  {/* badge removed as requested */}
                 </div>
                 <span className={cn(
                   "text-[11px] font-medium transition-colors duration-200",

@@ -202,12 +202,20 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity }: 
         }
       }
 
-      // Filter out locations with invalid coordinates
-      finalLocations = finalLocations.filter(location => 
-        location.coordinates.lat !== 0 || location.coordinates.lng !== 0
-      );
+      // Deduplicate by location id
+      const byId = new Map<string, MapLocation>();
+      for (const loc of finalLocations) {
+        if (loc?.id) byId.set(loc.id, loc);
+      }
+      finalLocations = Array.from(byId.values());
 
-      console.log(`✅ Found ${finalLocations.length} ${mapFilter} locations`);
+      // Filter out locations with invalid coordinates
+      finalLocations = finalLocations.filter((location) => {
+        const { lat, lng } = location.coordinates || { lat: 0, lng: 0 };
+        return Number.isFinite(lat) && Number.isFinite(lng) && !(lat === 0 && lng === 0);
+      });
+
+      console.log(`✅ Found ${finalLocations.length} ${mapFilter} locations (after dedupe)`);
       setLocations(finalLocations);
 
     } catch (err: any) {
