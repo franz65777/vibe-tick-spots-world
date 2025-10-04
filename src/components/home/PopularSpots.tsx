@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, MapPin, Users } from 'lucide-react';
+import { TrendingUp, MapPin, Users, Flame } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
-// Removed library import - clicking only zooms map
+import SwipeDiscovery from './SwipeDiscovery';
+import fireIcon from '@/assets/fire-icon.png';
 
 interface PopularSpot {
   id: string;
@@ -29,6 +30,7 @@ const PopularSpots = ({ userLocation, onLocationClick }: PopularSpotsProps) => {
   const { user } = useAuth();
   const [popularSpots, setPopularSpots] = useState<PopularSpot[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSwipeOpen, setIsSwipeOpen] = useState(false);
 
   useEffect(() => {
     fetchPopularSpots();
@@ -106,12 +108,12 @@ const PopularSpots = ({ userLocation, onLocationClick }: PopularSpotsProps) => {
         }
       });
 
-      // Filter by proximity (<= 15km) and sort by saves, then distance
+      // Filter by proximity (<= 2km) and sort by saves, then distance
       const allSpots = Array.from(locationMap.values());
       const withDistance = userLocation
         ? allSpots.map((s) => ({ ...s, __dist: distanceKm(s.coordinates, userLocation) }))
         : allSpots.map((s) => ({ ...s, __dist: Infinity }));
-      const filtered = userLocation ? withDistance.filter((s: any) => s.__dist <= 15) : withDistance;
+      const filtered = userLocation ? withDistance.filter((s: any) => s.__dist <= 2) : withDistance;
       const topSpots = filtered
         .sort((a: any, b: any) => (b.savesCount - a.savesCount) || (a.__dist - b.__dist))
         .slice(0, 10)
@@ -155,6 +157,13 @@ const PopularSpots = ({ userLocation, onLocationClick }: PopularSpotsProps) => {
               <p className="text-xs text-gray-500">Most saved locations</p>
             </div>
           </div>
+          <button
+            onClick={() => setIsSwipeOpen(true)}
+            className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 flex items-center justify-center shadow-lg transition-all hover:scale-110"
+            aria-label="Discover places"
+          >
+            <img src={fireIcon} alt="Discover" className="w-6 h-6" />
+          </button>
         </div>
 
         {/* Horizontal chips - minimal, no images */}
@@ -176,6 +185,11 @@ const PopularSpots = ({ userLocation, onLocationClick }: PopularSpotsProps) => {
         </div>
       </div>
 
+      <SwipeDiscovery
+        isOpen={isSwipeOpen}
+        onClose={() => setIsSwipeOpen(false)}
+        userLocation={userLocation}
+      />
     </>
   );
 };

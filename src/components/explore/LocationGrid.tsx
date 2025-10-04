@@ -143,30 +143,34 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
 
   return (
     <>
-      <div className="grid grid-cols-4 gap-2 px-2 pb-20">
+      <div className="grid grid-cols-2 gap-3 px-4 pb-20">
         {locations.map((location) => (
           <div
             key={location.id}
             onClick={() => handleLocationClick(location)}
-            className="relative bg-white rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-shadow border border-gray-100 p-2"
+            className="relative bg-white rounded-xl overflow-hidden cursor-pointer hover:shadow-lg transition-all border border-gray-200 p-3"
           >
             {/* Saves Badge */}
             {location.savesCount > 0 && (
-              <div className="absolute top-1 right-1 bg-black/70 backdrop-blur-sm px-1.5 py-0.5 rounded-full">
+              <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm px-2 py-1 rounded-full">
                 <span className="text-xs font-medium text-white">{location.savesCount}</span>
               </div>
             )}
 
-            {/* Compact content */}
-            <div className="flex items-center gap-2">
-              <CategoryIcon category={location.category} className="w-5 h-5" />
-              <div className="min-w-0">
-                <h4 className="font-medium text-xs text-gray-900 line-clamp-1">
+            {/* Content */}
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <CategoryIcon category={location.category} className="w-8 h-8" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h4 className="font-semibold text-sm text-gray-900 line-clamp-2 mb-1">
                   {location.name}
                 </h4>
-                <p className="text-[10px] text-gray-500 line-clamp-1">
-                  {location.city}
-                </p>
+                <div className="flex items-center gap-1 text-xs text-gray-500">
+                  <span className="capitalize">{location.category}</span>
+                  <span>•</span>
+                  <span className="line-clamp-1">{location.city}</span>
+                </div>
               </div>
             </div>
           </div>

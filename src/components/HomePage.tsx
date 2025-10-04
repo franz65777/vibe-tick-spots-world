@@ -313,8 +313,8 @@ const HomePage = () => {
           />
         </div>
         
-        {/* Discover Section - 170px, no white container */}
-        <div className="h-[170px] flex-shrink-0">
+        {/* Discover Section - 130px, no white container */}
+        <div className="h-[130px] flex-shrink-0">
           <CommunityHighlights
             currentCity={currentCity}
             userLocation={userLocation}
@@ -330,8 +330,8 @@ const HomePage = () => {
           />
         </div>
         
-        {/* Map Section - 55% viewport max */}
-        <div className="flex-1 max-h-[55vh] min-h-[50vh]">
+        {/* Map Section - expanded to take more space */}
+        <div className="flex-1">
           <MapSection
             mapCenter={mapCenter}
             currentCity={currentCity}
