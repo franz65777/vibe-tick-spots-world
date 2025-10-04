@@ -26,8 +26,8 @@ const StoriesSection = ({ stories = [], onCreateStory, onStoryClick }: StoriesSe
         aria-label="Create new story"
       >
         <div className="relative">
-          <div className="w-[52px] h-[52px] rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-md">
-            <Plus className="w-5 h-5 text-white" />
+          <div className="w-[52px] h-[52px] rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center">
+            <Plus className="w-5 h-5 text-gray-700 dark:text-gray-200" />
           </div>
         </div>
         <span className="text-[10px] font-medium text-gray-700 dark:text-gray-300">Your Story</span>
@@ -42,20 +42,15 @@ const StoriesSection = ({ stories = [], onCreateStory, onStoryClick }: StoriesSe
           aria-label={`View ${story.userName}'s story`}
         >
           <div className={cn(
-            "relative rounded-full p-[2px]",
-            story.isViewed ? "bg-gray-300 dark:bg-gray-600" : "bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600"
+            "relative rounded-full p-[2px] border-2",
+            story.isViewed ? "border-gray-300 dark:border-gray-600" : "border-blue-500 dark:border-blue-400"
           )}>
-            <Avatar className="w-[52px] h-[52px] ring-2 ring-white dark:ring-gray-800">
+            <Avatar className="w-[52px] h-[52px]">
               <AvatarImage src={story.userAvatar} alt={story.userName} />
-              <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-500 text-white text-sm font-semibold">
+              <AvatarFallback className="bg-transparent text-gray-700 dark:text-gray-200 text-sm font-semibold">
                 {story.userName.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            {!story.isViewed && (
-              <div className="absolute -top-1 -right-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-lg animate-pulse">
-                NEW
-              </div>
-            )}
           </div>
           <span className="text-[10px] font-medium text-gray-700 dark:text-gray-300 truncate max-w-[56px]">
             {story.userName}

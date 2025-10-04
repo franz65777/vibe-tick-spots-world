@@ -4,7 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { CategoryIcon } from '@/components/common/CategoryIcon';
+import likeIcon from '@/assets/icon-like-pin.png';
+import xIcon from '@/assets/icon-x-red.png';
 
 interface SwipeLocation {
   id: string;
@@ -242,7 +243,7 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
-              className="w-full max-w-md h-[600px] transition-transform duration-300"
+              className="w-full max-w-md h-[520px] transition-transform duration-300"
               style={{
                 transform: swipeDirection 
                   ? swipeDirection === 'left' 
@@ -262,8 +263,8 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300">
-                      <CategoryIcon category={currentLocation.category} className="w-32 h-32 opacity-30" />
+                    <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                      <div className="w-24 h-24 rounded-full bg-white/60" />
                     </div>
                   )}
                   
