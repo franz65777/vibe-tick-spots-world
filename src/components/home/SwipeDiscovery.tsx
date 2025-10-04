@@ -168,16 +168,16 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
   const hasMore = currentIndex < locations.length;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-      <div className="relative w-full max-w-md h-[600px] bg-white rounded-2xl overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 z-50 bg-white flex flex-col">
+      <div className="relative w-full h-full flex flex-col">
         {/* Header */}
-        <div className="absolute top-0 left-0 right-0 z-10 p-4 flex justify-between items-center bg-gradient-to-b from-black/50 to-transparent">
-          <h2 className="text-xl font-bold text-white">Discover Places</h2>
+        <div className="flex-shrink-0 p-4 flex justify-between items-center bg-white border-b border-gray-200">
+          <h2 className="text-xl font-bold text-gray-900">Discover Places</h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30"
+            className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center"
           >
-            <X className="w-5 h-5 text-white" />
+            <X className="w-5 h-5 text-gray-900" />
           </button>
         </div>
 
@@ -198,7 +198,7 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
           <>
             {/* Card */}
             <div
-              className={`h-full flex flex-col transition-transform duration-300 ${
+              className={`flex-1 flex flex-col transition-transform duration-300 ${
                 swipeDirection === 'left'
                   ? '-translate-x-full opacity-0'
                   : swipeDirection === 'right'
@@ -261,7 +261,7 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
               </div>
 
               {/* Counter */}
-              <div className="absolute top-20 right-4 px-3 py-1 rounded-full bg-white/90 backdrop-blur-sm">
+              <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-white/90 backdrop-blur-sm">
                 <span className="text-sm font-medium text-gray-900">
                   {currentIndex + 1} / {locations.length}
                 </span>

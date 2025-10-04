@@ -159,10 +159,10 @@ const PopularSpots = ({ userLocation, onLocationClick }: PopularSpotsProps) => {
           </div>
           <button
             onClick={() => setIsSwipeOpen(true)}
-            className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 flex items-center justify-center shadow-lg transition-all hover:scale-110"
+            className="w-10 h-10 flex items-center justify-center transition-all hover:scale-110"
             aria-label="Discover places"
           >
-            <img src={fireIcon} alt="Discover" className="w-6 h-6" />
+            <img src={fireIcon} alt="Discover" className="w-8 h-8" />
           </button>
         </div>
 

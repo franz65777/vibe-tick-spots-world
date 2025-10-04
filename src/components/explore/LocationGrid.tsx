@@ -148,30 +148,28 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
           <div
             key={location.id}
             onClick={() => handleLocationClick(location)}
-            className="relative bg-white rounded-xl overflow-hidden cursor-pointer hover:shadow-lg transition-all border border-gray-200 p-3"
+            className="relative bg-white rounded-xl overflow-hidden cursor-pointer hover:shadow-lg transition-all border border-gray-200 p-4"
           >
-            {/* Saves Badge */}
+            {/* Category Icon - Small at top left */}
+            <div className="absolute top-2 left-2">
+              <CategoryIcon category={location.category} className="w-5 h-5" />
+            </div>
+
+            {/* Saved Badge - Top right */}
             {location.savesCount > 0 && (
-              <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm px-2 py-1 rounded-full">
-                <span className="text-xs font-medium text-white">{location.savesCount}</span>
+              <div className="absolute top-2 right-2 bg-blue-600 rounded-full p-1.5">
+                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
+                </svg>
               </div>
             )}
 
             {/* Content */}
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0">
-                <CategoryIcon category={location.category} className="w-8 h-8" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h4 className="font-semibold text-sm text-gray-900 line-clamp-2 mb-1">
-                  {location.name}
-                </h4>
-                <div className="flex items-center gap-1 text-xs text-gray-500">
-                  <span className="capitalize">{location.category}</span>
-                  <span>•</span>
-                  <span className="line-clamp-1">{location.city}</span>
-                </div>
-              </div>
+            <div className="pt-6">
+              <h4 className="font-semibold text-base text-gray-900 line-clamp-2 mb-1">
+                {location.name}
+              </h4>
+              <p className="text-xs text-gray-500 line-clamp-1">{location.city}</p>
             </div>
           </div>
         ))}
