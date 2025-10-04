@@ -5,6 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocationInteraction } from '@/hooks/useLocationInteraction';
+import { locationInteractionService } from '@/services/locationInteractionService';
+import PlaceInteractionModal from '@/components/home/PlaceInteractionModal';
+import { toast } from 'sonner';
 
 interface LocationPost {
   id: string;
@@ -44,6 +47,7 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
   const [selectedPost, setSelectedPost] = useState<LocationPost | null>(null);
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
+  const [showComments, setShowComments] = useState(false);
 
   const displayCity = place.city || place.address?.split(',')[1]?.trim() || 'Unknown City';
   const { trackSave, trackVisit } = useLocationInteraction();
@@ -254,6 +258,22 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
     });
   };
 
+  const handleSaveLocation = async () => {
+    const ok = await locationInteractionService.saveLocation(place.id);
+    if (ok) {
+      toast.success('Saved for later');
+    } else {
+      toast.error('Failed to save');
+    }
+  };
+
+  const handleVisited = async () => {
+    try {
+      await trackVisit(place.id);
+    } catch {}
+    setShowComments(true);
+  };
+
   if (!isOpen) return null;
 
   if (loading) {
@@ -404,12 +424,12 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
       {/* Actions */}
       <div className="bg-white px-4 py-3 border-b">
         <div className="flex items-center gap-2">
-          <Button size="sm" variant="secondary" onClick={() => trackSave(place.id)}>Save</Button>
-          <Button size="sm" variant="secondary" onClick={() => trackVisit(place.id)}>Visited</Button>
+          <Button size="sm" variant="secondary" onClick={handleSaveLocation}>Save</Button>
+          <Button size="sm" variant="secondary" onClick={handleVisited}>Visited</Button>
           <Button size="sm" variant="secondary" onClick={() => {
             const url = place.google_place_id
               ? `https://www.google.com/maps/search/?api=1&query=place_id:${place.google_place_id}`
-              : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name + ' ' + (displayCity || ''))}`;
+              : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(place.name + ' ' + (displayCity || ''))}`;
             window.open(url, '_blank');
           }}>Get Directions</Button>
         </div>
@@ -454,6 +474,14 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
           </div>
         )}
       </div>
+
+      {/* Visited -> comments modal */}
+      <PlaceInteractionModal
+        isOpen={showComments}
+        onClose={() => setShowComments(false)}
+        mode="comments"
+        place={{ id: place.id, name: place.name, category: place.category, coordinates: place.coordinates }}
+      />
     </div>
   );
 };

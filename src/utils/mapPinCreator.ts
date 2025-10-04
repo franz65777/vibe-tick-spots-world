@@ -19,6 +19,19 @@ const getCategoryAsset = (category: string) => {
   return restaurantIcon;
 };
 
+// Fallback emoji for inline SVG rendering inside data URI
+const getCategoryEmoji = (category: string): string => {
+  const c = category.toLowerCase();
+  if (c.includes('hotel')) return '🛏️';
+  if (c.includes('cafe') || c.includes('café') || c.includes('coffee')) return '☕';
+  if (c.includes('bar') || c.includes('pub')) return '🍺';
+  if (c.includes('entertain')) return '🎭';
+  if (c.includes('restaurant') || c.includes('food') || c.includes('dining')) return '🍽️';
+  if (c.includes('bakery')) return '🥐';
+  if (c.includes('museum')) return '🏛️';
+  return '📍';
+};
+
 export interface PinOptions {
   category: string;
   isSaved?: boolean;
@@ -77,23 +90,19 @@ export const createCustomPin = (options: PinOptions): string => {
     return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
   }
 
-  // Regular pin with category icon
+  // Regular pin with category emoji (embedded text ensures reliable rendering in data URIs)
+  const emoji = getCategoryEmoji(category);
   const svg = `
-    <svg width="28" height="38" viewBox="0 0 28 38" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <svg width="28" height="38" viewBox="0 0 28 38" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <filter id="shadow-${uid}" x="-50%" y="-50%" width="200%" height="200%">
           <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-opacity="0.2"/>
         </filter>
-        <clipPath id="circleClip-${uid}">
-          <circle cx="14" cy="14" r="6" />
-        </clipPath>
       </defs>
       <g filter="url(#shadow-${uid})">
-        <path d="M14 2c6.627 0 12 5.373 12 12 0 8-12 20-12 20S2 22 2 14C2 7.373 7.373 2 14 2z" fill="#FFFFFF" stroke="${stroke}" stroke-width="1.5"/>
-        <circle cx="14" cy="14" r="7" fill="#FFFFFF" stroke="${stroke}" stroke-width="1"/>
-        <g clip-path="url(#circleClip-${uid})">
-          <image xlink:href="${assetUrl}" href="${assetUrl}" x="8" y="8" width="12" height="12" preserveAspectRatio="xMidYMid meet"/>
-        </g>
+        <path d=\"M14 2c6.627 0 12 5.373 12 12 0 8-12 20-12 20S2 22 2 14C2 7.373 7.373 2 14 2z\" fill=\"#FFFFFF\" stroke=\"${stroke}\" stroke-width=\"1.5\"/>
+        <circle cx=\"14\" cy=\"14\" r=\"7\" fill=\"#FFFFFF\" stroke=\"${stroke}\" stroke-width=\"1\"/>
+        <text x=\"14\" y=\"16\" font-family=\"Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif\" font-size=\"10\" text-anchor=\"middle\" dominant-baseline=\"middle\">${emoji}</text>
       </g>
     </svg>`;
 
@@ -108,16 +117,68 @@ export const createCustomMarker = (
   position: google.maps.LatLngLiteral,
   options: PinOptions
 ): google.maps.Marker => {
+  // Create marker with a placeholder (emoji-based) icon first
   const icon: google.maps.Icon = {
     url: createCustomPin(options),
     scaledSize: new google.maps.Size(28, 38),
     anchor: new google.maps.Point(14, 36),
   };
-  
-  return new google.maps.Marker({
+
+  const marker = new google.maps.Marker({
     map,
     position,
     icon,
     animation: google.maps.Animation.DROP,
   });
+
+  // Then embed the category PNG inside the SVG asynchronously for crisp icons
+  try {
+    const stroke = options.isSaved ? '#2D6CF6' : '#CBD5E1';
+    const assetUrl = getCategoryAsset(options.category);
+    const uid = Math.random().toString(36).slice(2, 8);
+
+    fetch(assetUrl)
+      .then((res) => res.blob())
+      .then((blob) =>
+        new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        })
+      )
+      .then((dataUrl) => {
+        const svg = `
+          <svg width="28" height="38" viewBox="0 0 28 38" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <filter id="shadow-${uid}" x="-50%" y="-50%" width="200%" height="200%">
+                <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-opacity="0.2"/>
+              </filter>
+              <clipPath id="circleClip-${uid}">
+                <circle cx="14" cy="14" r="6" />
+              </clipPath>
+            </defs>
+            <g filter="url(#shadow-${uid})">
+              <path d="M14 2c6.627 0 12 5.373 12 12 0 8-12 20-12 20S2 22 2 14C2 7.373 7.373 2 14 2z" fill="#FFFFFF" stroke="${stroke}" stroke-width="1.5"/>
+              <circle cx="14" cy="14" r="7" fill="#FFFFFF" stroke="${stroke}" stroke-width="1"/>
+              <g clip-path="url(#circleClip-${uid})">
+                <image href="${dataUrl}" x="8" y="8" width="12" height="12" preserveAspectRatio="xMidYMid meet"/>
+              </g>
+            </g>
+          </svg>`;
+
+        const updatedIcon: google.maps.Icon = {
+          url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+          scaledSize: new google.maps.Size(28, 38),
+          anchor: new google.maps.Point(14, 36),
+        };
+        marker.setIcon(updatedIcon);
+      })
+      .catch(() => {
+        // keep placeholder
+      });
+  } catch {
+    // noop
+  }
+
+  return marker;
 };

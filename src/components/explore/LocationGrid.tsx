@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import LocationPostLibrary from './LocationPostLibrary';
 import { AllowedCategory, categoryDisplayNames } from '@/utils/allowedCategories';
+import { CategoryIcon } from '@/components/common/CategoryIcon';
 
 interface LocationGridProps {
   searchQuery?: string;
@@ -50,13 +51,8 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
           address,
           google_place_id,
           latitude,
-          longitude,
-          posts!inner(
-            id,
-            media_urls
-          )
-        `)
-        .not('posts', 'is', null);
+          longitude
+        `);
 
       // Apply search filter
       if (searchQuery && searchQuery.trim()) {
@@ -91,9 +87,6 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
         const key = location.google_place_id || `${location.latitude}-${location.longitude}`;
         
         if (!locationMap.has(key)) {
-          const firstPost = Array.isArray(location.posts) ? location.posts[0] : null;
-          const coverImage = firstPost?.media_urls?.[0] || null;
-          
           locationMap.set(key, {
             id: location.id,
             name: location.name,
@@ -101,8 +94,8 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
             city: location.city || location.address?.split(',')[1]?.trim() || 'Unknown',
             address: location.address,
             google_place_id: location.google_place_id,
-            coverImage,
-            postsCount: Array.isArray(location.posts) ? location.posts.length : 0,
+            coverImage: null,
+            postsCount: 0,
             savesCount: savesMap.get(location.id) || 0,
             coordinates: {
               lat: parseFloat(location.latitude?.toString() || '0'),
@@ -155,36 +148,26 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
           <div
             key={location.id}
             onClick={() => handleLocationClick(location)}
-            className="bg-white rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-shadow border border-gray-100"
+            className="relative bg-white rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-shadow border border-gray-100 p-2"
           >
-            {/* Cover Image */}
-            <div className="relative h-24 bg-gray-100">
-              {location.coverImage ? (
-                <img
-                  src={location.coverImage}
-                  alt={location.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-blue-50 to-indigo-100" />
-              )}
-              
-              {/* Saves Badge */}
-              {location.savesCount > 0 && (
-                <div className="absolute top-1 right-1 bg-black/70 backdrop-blur-sm px-1.5 py-0.5 rounded-full">
-                  <span className="text-xs font-medium text-white">{location.savesCount}</span>
-                </div>
-              )}
-            </div>
+            {/* Saves Badge */}
+            {location.savesCount > 0 && (
+              <div className="absolute top-1 right-1 bg-black/70 backdrop-blur-sm px-1.5 py-0.5 rounded-full">
+                <span className="text-xs font-medium text-white">{location.savesCount}</span>
+              </div>
+            )}
 
-            {/* Card Content */}
-            <div className="p-2">
-              <h4 className="font-medium text-xs text-gray-900 line-clamp-1 mb-0.5">
-                {location.name}
-              </h4>
-              <p className="text-xs text-gray-500 line-clamp-1">
-                {location.city}
-              </p>
+            {/* Compact content */}
+            <div className="flex items-center gap-2">
+              <CategoryIcon category={location.category} className="w-5 h-5" />
+              <div className="min-w-0">
+                <h4 className="font-medium text-xs text-gray-900 line-clamp-1">
+                  {location.name}
+                </h4>
+                <p className="text-[10px] text-gray-500 line-clamp-1">
+                  {location.city}
+                </p>
+              </div>
             </div>
           </div>
         ))}

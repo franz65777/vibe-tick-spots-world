@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { TrendingUp, MapPin, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { CategoryIcon } from '@/components/common/CategoryIcon';
 // Removed library import - clicking only zooms map
 
 interface PopularSpot {
@@ -49,7 +50,7 @@ const PopularSpots = ({ userLocation, onLocationClick }: PopularSpotsProps) => {
     try {
       setLoading(true);
 
-      // Fetch locations with their save counts
+      // Fetch locations (no posts filter) to base popularity on saves
       const { data: locationsData, error: locationsError } = await supabase
         .from('locations')
         .select(`
@@ -60,14 +61,9 @@ const PopularSpots = ({ userLocation, onLocationClick }: PopularSpotsProps) => {
           address,
           google_place_id,
           latitude,
-          longitude,
-          posts!inner(
-            id,
-            media_urls
-          )
+          longitude
         `)
-        .not('posts', 'is', null)
-        .limit(50);
+        .limit(100);
 
       if (locationsError) throw locationsError;
 
@@ -90,10 +86,7 @@ const PopularSpots = ({ userLocation, onLocationClick }: PopularSpotsProps) => {
         const key = location.google_place_id || `${location.latitude}-${location.longitude}`;
         
         if (!locationMap.has(key)) {
-          const firstPost = Array.isArray(location.posts) ? location.posts[0] : null;
-          const coverImage = firstPost?.media_urls?.[0] || null;
           const savesCount = savesMap.get(location.id) || 0;
-          
           // Only include locations with at least 1 save
           if (savesCount > 0) {
             locationMap.set(key, {
@@ -104,7 +97,6 @@ const PopularSpots = ({ userLocation, onLocationClick }: PopularSpotsProps) => {
               address: location.address,
               google_place_id: location.google_place_id,
               savesCount,
-              coverImage,
               coordinates: {
                 lat: parseFloat(location.latitude?.toString() || '0'),
                 lng: parseFloat(location.longitude?.toString() || '0')
@@ -165,49 +157,21 @@ const PopularSpots = ({ userLocation, onLocationClick }: PopularSpotsProps) => {
           </div>
         </div>
 
-        {/* Horizontal Scrolling Spots */}
-        <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+        {/* Horizontal chips - minimal, no images */}
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
           {popularSpots.map((spot) => (
-            <div
+            <button
               key={spot.id}
               onClick={() => handleSpotClick(spot)}
-              className="flex-shrink-0 w-36 cursor-pointer group"
+              className="flex-shrink-0 px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 flex items-center gap-2"
+              aria-label={`Zoom to ${spot.name}`}
             >
-              {/* Spot Image */}
-              <div className="relative h-36 rounded-xl overflow-hidden mb-2 bg-gray-100">
-                {spot.coverImage ? (
-                  <img
-                    src={spot.coverImage}
-                    alt={spot.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500" />
-                )}
-                
-                {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                
-                {/* Saves Badge */}
-                <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1">
-                  <Users className="w-3 h-3 text-gray-700" />
-                  <span className="text-xs font-semibold text-gray-900">{spot.savesCount}</span>
-                </div>
-
-                {/* Location Name */}
-                <div className="absolute bottom-0 left-0 right-0 p-2">
-                  <p className="text-xs font-semibold text-white line-clamp-2 mb-0.5">
-                    {spot.name}
-                  </p>
-                  <div className="flex items-center gap-1">
-                    <MapPin className="w-3 h-3 text-white/80" />
-                    <p className="text-xs text-white/80 line-clamp-1">
-                      {spot.city}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
+              <CategoryIcon category={spot.category} className="w-5 h-5" />
+              <span className="text-xs font-medium text-gray-900 line-clamp-1 max-w-[160px]">
+                {spot.name}
+              </span>
+              <span className="ml-1 text-[10px] text-gray-500">{spot.savesCount}</span>
+            </button>
           ))}
         </div>
       </div>
