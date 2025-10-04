@@ -1,4 +1,9 @@
 import { getCategoryIcon } from './categoryIcons';
+import hotelIcon from '@/assets/category-hotel-transparent.png';
+import cafeIcon from '@/assets/category-cafe-transparent.png';
+import barIcon from '@/assets/category-bar-transparent.png';
+import restaurantIcon from '@/assets/category-restaurant-transparent.png';
+import entertainmentIcon from '@/assets/category-entertainment-transparent.png';
 
 export interface PinOptions {
   category: string;
@@ -12,91 +17,19 @@ export interface PinOptions {
  * Creates a custom SVG marker for Google Maps with category icon
  */
 export const createCustomPin = (options: PinOptions): string => {
-  const { category, isSaved, friendAvatars = [], popularScore, isDarkMode } = options;
-  
-  const pinColor = isSaved ? 'hsl(var(--primary))' : (isDarkMode ? '#374151' : '#ffffff');
-  const strokeColor = isSaved ? '#ffffff' : 'hsl(var(--primary))';
-  const glowColor = isSaved ? 'rgba(14, 124, 134, 0.4)' : 'transparent';
-  
-  // Use actual category images for pins
-  const getMapIcon = (category: string) => {
-    const categoryLower = category.toLowerCase();
-    switch (categoryLower) {
-      case 'hotel':
-        return '🏨';
-      case 'cafe':
-      case 'café':
-      case 'coffee':
-        return '☕';
-      case 'bar':
-      case 'bar & pub':
-        return '🍸';
-      case 'restaurant':
-      case 'food':
-      case 'dining':
-        return '🍴';
-      case 'bakery':
-        return '🥐';
-      case 'museum':
-      case 'gallery':
-        return '🏛️';
-      case 'entertainment':
-        return '🎭';
-      default:
-        return '📍';
-    }
-  };
-  
-  const emoji = getMapIcon(category);
-  
-  // Create SVG with larger size
-  const svg = `
-    <svg width="56" height="70" viewBox="0 0 56 70" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        ${isSaved ? `
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-            <feMerge>
-              <feMergeNode in="coloredBlur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
-        ` : ''}
-        <filter id="shadow">
-          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.3"/>
-        </filter>
-      </defs>
-      
-      <!-- Glow effect for saved pins -->
-      ${isSaved ? `<circle cx="28" cy="28" r="24" fill="${glowColor}" filter="url(#glow)"/>` : ''}
-      
-      <!-- Main pin circle with shadow -->
-      <circle cx="28" cy="28" r="20" fill="${pinColor}" stroke="${strokeColor}" stroke-width="2.5" 
-        filter="url(#shadow)"
-      />
-      
-      <!-- Category emoji - larger -->
-      <text x="28" y="35" text-anchor="middle" font-size="22">${emoji}</text>
-      
-      <!-- Popular score badge -->
-      ${popularScore ? `
-        <circle cx="44" cy="16" r="11" fill="#fbbf24" stroke="#ffffff" stroke-width="2.5"/>
-        <text x="44" y="20" text-anchor="middle" font-size="10" font-weight="bold" fill="#1f2937">${popularScore}</text>
-      ` : ''}
-      
-      <!-- Friend avatars badge -->
-      ${friendAvatars.length > 0 ? `
-        <circle cx="12" cy="16" r="10" fill="#10b981" stroke="#ffffff" stroke-width="2.5"/>
-        <text x="12" y="20" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff">${friendAvatars.length}</text>
-      ` : ''}
-      
-      <!-- Pin tail - more prominent -->
-      <path d="M 28 48 L 28 65" stroke="${strokeColor}" stroke-width="3" stroke-linecap="round"/>
-      <circle cx="28" cy="65" r="2" fill="${strokeColor}"/>
-    </svg>
-  `;
-  
-  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+  // For now, return a simple data URL since we're using direct assets
+  return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIxMCIgZmlsbD0iIzAwN2NmZiIvPjwvc3ZnPgo=';
+};
+
+// Map category to asset URL (transparent background)
+const getCategoryAsset = (category: string) => {
+  const c = category.toLowerCase();
+  if (c.includes('hotel')) return hotelIcon;
+  if (c.includes('cafe') || c.includes('café') || c.includes('coffee')) return cafeIcon;
+  if (c.includes('bar') || c.includes('pub')) return barIcon;
+  if (c.includes('entertain')) return entertainmentIcon;
+  if (c.includes('restaurant') || c.includes('food') || c.includes('dining')) return restaurantIcon;
+  return restaurantIcon;
 };
 
 /**
@@ -107,10 +40,11 @@ export const createCustomMarker = (
   position: google.maps.LatLngLiteral,
   options: PinOptions
 ): google.maps.Marker => {
-  const icon = {
-    url: createCustomPin(options),
-    scaledSize: new google.maps.Size(56, 70),
-    anchor: new google.maps.Point(28, 65),
+  const assetUrl = getCategoryAsset(options.category);
+  const icon: google.maps.Icon = {
+    url: assetUrl,
+    scaledSize: new google.maps.Size(40, 40),
+    anchor: new google.maps.Point(20, 20),
   };
   
   return new google.maps.Marker({

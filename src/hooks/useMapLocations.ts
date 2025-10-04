@@ -105,35 +105,22 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity }: 
               .in('user_id', followingIds);
 
             if (followingLocations) {
-              finalLocations = followingLocations
-                .filter(item => item.locations)
-                .map(item => ({
-                  id: item.locations.id,
-                  name: item.locations.name,
-                  category: item.locations.category,
-                  address: item.locations.address,
-                  city: item.locations.city,
-                  coordinates: {
-                    lat: Number(item.locations.latitude) || 0,
-                    lng: Number(item.locations.longitude) || 0
-                  },
-                  isFollowing: true,
-                  user_id: item.locations.created_by,
-                  created_at: item.locations.created_at
-                }))
-                .filter(location => {
-                  // Apply category filter
-                  if (selectedCategories.length > 0 && !selectedCategories.includes(location.category)) {
-                    return false;
-                  }
-                  // Apply city filter
-                  if (currentCity && currentCity !== 'Unknown City') {
-                    const cityMatch = location.city?.toLowerCase().includes(currentCity.toLowerCase()) ||
-                                    location.address?.toLowerCase().includes(currentCity.toLowerCase());
-                    return cityMatch;
-                  }
-                  return true;
-                });
+                finalLocations = followingLocations
+                  .filter(item => item.locations)
+                  .map(item => ({
+                    id: item.locations.id,
+                    name: item.locations.name,
+                    category: item.locations.category,
+                    address: item.locations.address,
+                    city: item.locations.city,
+                    coordinates: {
+                      lat: Number(item.locations.latitude) || 0,
+                      lng: Number(item.locations.longitude) || 0
+                    },
+                    isFollowing: true,
+                    user_id: item.locations.created_by,
+                    created_at: item.locations.created_at
+                  }));
             }
           }
           break;
