@@ -32,6 +32,7 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
   const [loading, setLoading] = useState(true);
   const [selectedLocation, setSelectedLocation] = useState<LocationCard | null>(null);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+  const [userSavedIds, setUserSavedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchLocations();
@@ -68,17 +69,25 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
 
       if (error) throw error;
 
-      // Get saves count for each location
+      // Get ALL saves for these locations (from all users)
       const locationIds = locationsData?.map(l => l.id) || [];
       const { data: savesData } = await supabase
         .from('user_saved_locations')
-        .select('location_id')
+        .select('location_id, user_id')
         .in('location_id', locationIds);
 
+      // Track which locations current user has saved
+      const userSaved = new Set<string>();
       const savesMap = new Map<string, number>();
+      
       savesData?.forEach(save => {
         savesMap.set(save.location_id, (savesMap.get(save.location_id) || 0) + 1);
+        if (user && save.user_id === user.id) {
+          userSaved.add(save.location_id);
+        }
       });
+
+      setUserSavedIds(userSaved);
 
       // Group by google_place_id
       const locationMap = new Map<string, LocationCard>();
@@ -123,6 +132,45 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
     setIsLibraryOpen(true);
   };
 
+  const handleSaveToggle = async (e: React.MouseEvent, locationId: string) => {
+    e.stopPropagation();
+    if (!user) return;
+
+    try {
+      const isSaved = userSavedIds.has(locationId);
+      
+      if (isSaved) {
+        // Unsave
+        await supabase
+          .from('user_saved_locations')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('location_id', locationId);
+        
+        const newSet = new Set(userSavedIds);
+        newSet.delete(locationId);
+        setUserSavedIds(newSet);
+      } else {
+        // Save
+        await supabase
+          .from('user_saved_locations')
+          .insert({
+            user_id: user.id,
+            location_id: locationId
+          });
+        
+        const newSet = new Set(userSavedIds);
+        newSet.add(locationId);
+        setUserSavedIds(newSet);
+      }
+
+      // Refresh locations to update save counts
+      fetchLocations();
+    } catch (error) {
+      console.error('Error toggling save:', error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -144,35 +192,45 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
   return (
     <>
       <div className="grid grid-cols-2 gap-3 px-4 pb-20">
-        {locations.map((location) => (
-          <div
-            key={location.id}
-            onClick={() => handleLocationClick(location)}
-            className="relative bg-white rounded-xl overflow-hidden cursor-pointer hover:shadow-lg transition-all border border-gray-200 p-4"
-          >
-            {/* Category Icon - Small at top left */}
-            <div className="absolute top-2 left-2">
-              <CategoryIcon category={location.category} className="w-5 h-5" />
-            </div>
+        {locations.map((location) => {
+          const isSaved = userSavedIds.has(location.id);
+          
+          return (
+            <div
+              key={location.id}
+              onClick={() => handleLocationClick(location)}
+              className="relative bg-white rounded-xl overflow-hidden cursor-pointer hover:shadow-lg transition-all border border-gray-200 p-4"
+            >
+              {/* Category Icon - Bigger at top left */}
+              <div className="absolute top-2 left-2">
+                <CategoryIcon category={location.category} className="w-8 h-8" />
+              </div>
 
-            {/* Saved Badge - Top right */}
-            {location.savesCount > 0 && (
-              <div className="absolute top-2 right-2 bg-blue-600 rounded-full p-1.5">
-                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+              {/* Saved Icon - Top right - Clickable */}
+              <button
+                onClick={(e) => handleSaveToggle(e, location.id)}
+                className={`absolute top-2 right-2 rounded-full p-1.5 transition-colors ${
+                  isSaved 
+                    ? 'bg-blue-600 hover:bg-blue-700' 
+                    : 'bg-gray-200 hover:bg-gray-300'
+                }`}
+                aria-label={isSaved ? 'Unsave location' : 'Save location'}
+              >
+                <svg className={`w-3.5 h-3.5 ${isSaved ? 'text-white' : 'text-gray-600'}`} fill="currentColor" viewBox="0 0 20 20">
                   <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
                 </svg>
-              </div>
-            )}
+              </button>
 
-            {/* Content */}
-            <div className="pt-6">
-              <h4 className="font-semibold text-base text-gray-900 line-clamp-2 mb-1">
-                {location.name}
-              </h4>
-              <p className="text-xs text-gray-500 line-clamp-1">{location.city}</p>
+              {/* Content */}
+              <div className="pt-8">
+                <h4 className="font-semibold text-base text-gray-900 line-clamp-2 mb-1">
+                  {location.name}
+                </h4>
+                <p className="text-xs text-gray-500 line-clamp-1">{location.city}</p>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Location Post Library Modal */}

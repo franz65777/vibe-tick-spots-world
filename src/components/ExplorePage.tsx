@@ -134,8 +134,8 @@ const ExplorePage = () => {
   const displayUsers = isSearchActive ? filteredUsers : userRecommendations;
   return <div className="flex flex-col h-full bg-gray-50">
       {/* Simplified Header */}
-      <div className="bg-white border-b border-gray-200 pt-16">
-        <div className="p-4">
+      <div className="bg-white border-b border-gray-200 pt-12">
+        <div className="p-4 pt-2">
           {/* Search Mode Toggle */}
           <div className="flex bg-gray-100 rounded-xl p-1 mb-4">
             <button onClick={() => setSearchMode('locations')} className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all ${searchMode === 'locations' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
@@ -220,7 +220,28 @@ const ExplorePage = () => {
                     ))}
                   </div>
                 ) : (
-                  <NoResults searchMode="users" searchQuery={searchQuery} />
+                  <div className="px-4 py-8">
+                    {isSearchActive ? (
+                      <NoResults searchMode="users" searchQuery={searchQuery} />
+                    ) : (
+                      <div className="text-center">
+                        <p className="text-gray-500 mb-6">Find people to follow and connect with</p>
+                        <Button 
+                          onClick={() => {/* TODO: Implement invite */}}
+                          variant="outline"
+                          className="mb-4"
+                        >
+                          Invite Friends
+                        </Button>
+                        <div className="mt-8">
+                          <h3 className="text-sm font-semibold text-gray-700 mb-4">Suggested Users</h3>
+                          <div className="text-sm text-gray-500">
+                            Start searching to discover people near you
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </>
             )}

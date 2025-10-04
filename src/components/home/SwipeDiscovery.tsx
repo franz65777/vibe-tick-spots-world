@@ -168,7 +168,7 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
   const hasMore = currentIndex < locations.length;
 
   return (
-    <div className="fixed inset-0 z-50 bg-white flex flex-col">
+    <div className="w-full h-full bg-white flex flex-col">
       <div className="relative w-full h-full flex flex-col">
         {/* Header */}
         <div className="flex-shrink-0 p-4 flex justify-between items-center bg-white border-b border-gray-200">

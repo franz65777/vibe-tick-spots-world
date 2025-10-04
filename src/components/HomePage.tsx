@@ -10,6 +10,7 @@ import StoriesSection from './home/StoriesSection';
 import MapSection from './home/MapSection';
 import ModalsManager from './home/ModalsManager';
 import CommunityHighlights from './home/CommunityHighlights';
+import SwipeDiscovery from './home/SwipeDiscovery';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '@/lib/googleMaps';
 import { supabase } from '@/integrations/supabase/client';
 import { ThemeToggle } from './ThemeToggle';
@@ -55,6 +56,7 @@ const HomePage = () => {
   const [commentPlace, setCommentPlace] = useState<LocalPlace | null>(null);
   const [locationDetailPlace, setLocationDetailPlace] = useState<LocalPlace | null>(null);
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
+  const [isSwipeDiscoveryOpen, setIsSwipeDiscoveryOpen] = useState(false);
   
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -314,29 +316,45 @@ const HomePage = () => {
         </div>
         
         {/* Discover Section - 130px, no white container */}
-        <div className="h-[130px] flex-shrink-0">
-          <CommunityHighlights
-            currentCity={currentCity}
-            userLocation={userLocation}
-            onLocationClick={(locationId: string, coordinates?: { lat: number; lng: number }) => {
-              if (coordinates) {
-                setMapCenter(coordinates);
-              }
-            }}
-            onUserClick={(userId: string) => {
-              navigate('/explore');
-            }}
-            onMapLocationClick={(coords: { lat: number; lng: number }) => setMapCenter(coords)}
-          />
-        </div>
+        {!isSwipeDiscoveryOpen && (
+          <div className="h-[130px] flex-shrink-0">
+            <CommunityHighlights
+              currentCity={currentCity}
+              userLocation={userLocation}
+              onLocationClick={(locationId: string, coordinates?: { lat: number; lng: number }) => {
+                if (coordinates) {
+                  setMapCenter(coordinates);
+                }
+              }}
+              onUserClick={(userId: string) => {
+                navigate('/explore');
+              }}
+              onMapLocationClick={(coords: { lat: number; lng: number }) => setMapCenter(coords)}
+              onSwipeDiscoveryOpen={() => setIsSwipeDiscoveryOpen(true)}
+            />
+          </div>
+        )}
         
         {/* Map Section - expanded to take more space */}
-        <div className="flex-1">
-          <MapSection
-            mapCenter={mapCenter}
-            currentCity={currentCity}
-          />
-        </div>
+        {!isSwipeDiscoveryOpen && (
+          <div className="flex-1">
+            <MapSection
+              mapCenter={mapCenter}
+              currentCity={currentCity}
+            />
+          </div>
+        )}
+
+        {/* Swipe Discovery - Full screen when open */}
+        {isSwipeDiscoveryOpen && (
+          <div className="flex-1">
+            <SwipeDiscovery
+              isOpen={isSwipeDiscoveryOpen}
+              onClose={() => setIsSwipeDiscoveryOpen(false)}
+              userLocation={userLocation}
+            />
+          </div>
+        )}
       </main>
 
       <ModalsManager 

@@ -3,7 +3,6 @@ import { TrendingUp, MapPin, Users, Flame } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
-import SwipeDiscovery from './SwipeDiscovery';
 import fireIcon from '@/assets/fire-icon.png';
 
 interface PopularSpot {
@@ -24,13 +23,13 @@ interface PopularSpot {
 interface PopularSpotsProps {
   userLocation: { lat: number; lng: number } | null;
   onLocationClick?: (coords: { lat: number; lng: number }) => void;
+  onSwipeDiscoveryOpen?: () => void;
 }
 
-const PopularSpots = ({ userLocation, onLocationClick }: PopularSpotsProps) => {
+const PopularSpots = ({ userLocation, onLocationClick, onSwipeDiscoveryOpen }: PopularSpotsProps) => {
   const { user } = useAuth();
   const [popularSpots, setPopularSpots] = useState<PopularSpot[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isSwipeOpen, setIsSwipeOpen] = useState(false);
 
   useEffect(() => {
     fetchPopularSpots();
@@ -52,7 +51,7 @@ const PopularSpots = ({ userLocation, onLocationClick }: PopularSpotsProps) => {
     try {
       setLoading(true);
 
-      // Fetch locations (no posts filter) to base popularity on saves
+      // Fetch ALL locations from ALL users
       const { data: locationsData, error: locationsError } = await supabase
         .from('locations')
         .select(`
@@ -65,11 +64,11 @@ const PopularSpots = ({ userLocation, onLocationClick }: PopularSpotsProps) => {
           latitude,
           longitude
         `)
-        .limit(100);
+        .limit(200);
 
       if (locationsError) throw locationsError;
 
-      // Get saves count for all locations
+      // Get ALL saves from ALL users for these locations
       const locationIds = locationsData?.map(l => l.id) || [];
       const { data: savesData } = await supabase
         .from('user_saved_locations')
@@ -158,7 +157,7 @@ const PopularSpots = ({ userLocation, onLocationClick }: PopularSpotsProps) => {
             </div>
           </div>
           <button
-            onClick={() => setIsSwipeOpen(true)}
+            onClick={onSwipeDiscoveryOpen}
             className="w-10 h-10 flex items-center justify-center transition-all hover:scale-110"
             aria-label="Discover places"
           >
@@ -185,11 +184,6 @@ const PopularSpots = ({ userLocation, onLocationClick }: PopularSpotsProps) => {
         </div>
       </div>
 
-      <SwipeDiscovery
-        isOpen={isSwipeOpen}
-        onClose={() => setIsSwipeOpen(false)}
-        userLocation={userLocation}
-      />
     </>
   );
 };

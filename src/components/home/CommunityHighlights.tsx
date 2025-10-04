@@ -7,6 +7,7 @@ interface CommunityHighlightsProps {
   onLocationClick: (locationId: string, coordinates?: { lat: number; lng: number }) => void;
   onUserClick: (userId: string) => void;
   onMapLocationClick: (coords: { lat: number; lng: number }) => void;
+  onSwipeDiscoveryOpen?: () => void;
 }
 
 const CommunityHighlights: React.FC<CommunityHighlightsProps> = ({
@@ -15,12 +16,14 @@ const CommunityHighlights: React.FC<CommunityHighlightsProps> = ({
   onLocationClick,
   onUserClick,
   onMapLocationClick,
+  onSwipeDiscoveryOpen,
 }) => {
   return (
     <div className="h-full bg-white/50 backdrop-blur-sm border-y border-gray-100">
       <PopularSpots
         userLocation={userLocation}
         onLocationClick={onMapLocationClick}
+        onSwipeDiscoveryOpen={onSwipeDiscoveryOpen}
       />
     </div>
   );
