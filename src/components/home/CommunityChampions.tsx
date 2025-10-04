@@ -54,93 +54,73 @@ const CommunityChampions = ({ champions, onUserClick }: CommunityChampionsProps)
   }
 
   return (
-    <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-      <div className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Trophy className="w-6 h-6 text-blue-600" />
-          <h3 className="text-lg font-bold text-gray-900">Community Champions</h3>
-          <div className="ml-auto bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-semibold">
+    <Card className="bg-white border border-gray-200">
+      <div className="p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Trophy className="w-5 h-5 text-blue-600" />
+          <h3 className="text-base font-bold text-gray-900">Top Contributors</h3>
+          <div className="ml-auto bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-semibold">
             This Week
           </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-2">
           {champions.map((champion) => (
             <div
               key={champion.id}
               onClick={() => onUserClick(champion.id)}
-              className={`relative overflow-hidden rounded-xl p-4 cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-md bg-gradient-to-r ${getRankColor(champion.rank)}`}
+              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
             >
-              <div className="flex items-center gap-3">
-                {/* Rank Badge */}
-                <div className="flex-shrink-0">
-                  {getRankIcon(champion.rank)}
-                </div>
+              {/* Rank Badge */}
+              <div className="flex-shrink-0 w-6 flex justify-center">
+                {getRankIcon(champion.rank)}
+              </div>
 
-                {/* Avatar */}
-                <div className="relative">
-                  {champion.avatar_url ? (
-                    <img 
-                      src={champion.avatar_url}
-                      alt={champion.username}
-                      className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-semibold text-sm border-2 border-white shadow-sm">
-                      {champion.username?.charAt(0).toUpperCase() || 'U'}
-                    </div>
-                  )}
-                  {champion.rank <= 3 && (
-                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full flex items-center justify-center">
-                      <span className="text-xs text-white font-bold">{champion.rank}</span>
-                    </div>
-                  )}
-                </div>
+              {/* Avatar */}
+              <div className="relative flex-shrink-0">
+                {champion.avatar_url ? (
+                  <img 
+                    src={champion.avatar_url}
+                    alt={champion.username}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-semibold text-sm">
+                    {champion.username?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                )}
+              </div>
 
-                {/* User Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-semibold text-gray-900 truncate">@{champion.username}</h4>
-                    {champion.rank === 1 && <span className="text-xs">👑</span>}
-                  </div>
-                  <div className="flex items-center gap-3 text-sm text-gray-600">
-                    <div className="flex items-center gap-1">
-                      <Camera className="w-3 h-3" />
-                      <span>{champion.posts_count} posts</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <TrendingUp className="w-3 h-3" />
-                      <span>{champion.follower_count} followers</span>
-                    </div>
-                  </div>
+              {/* User Info */}
+              <div className="flex-1 min-w-0">
+                <h4 className="font-semibold text-sm text-gray-900 truncate">
+                  @{champion.username}
+                  {champion.rank === 1 && <span className="ml-1">👑</span>}
+                </h4>
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <span>{champion.posts_count} posts</span>
+                  <span>•</span>
+                  <span>{champion.follower_count} followers</span>
                 </div>
+              </div>
 
-                {/* Weekly Likes */}
-                <div className="text-right">
-                  <div className="flex items-center gap-1 text-red-500">
-                    <Heart className="w-4 h-4 fill-current" />
-                    <span className="font-bold text-gray-900">{champion.weekly_likes}</span>
-                  </div>
-                  <span className="text-xs text-gray-500">this week</span>
-                </div>
+              {/* Weekly Likes */}
+              <div className="flex items-center gap-1 text-red-500">
+                <Heart className="w-3.5 h-3.5 fill-current" />
+                <span className="font-bold text-sm text-gray-900">{champion.weekly_likes}</span>
               </div>
             </div>
           ))}
         </div>
 
-        <div className="mt-4 text-center space-y-2">
-          <p className="text-sm text-gray-600">
-            Share amazing locations to join the leaderboard! 🚀
-          </p>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => navigate('/leaderboard')}
-            className="w-full"
-          >
-            View Full Leaderboard
-          </Button>
-        </div>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => navigate('/leaderboard')}
+          className="w-full mt-3 text-sm"
+        >
+          View Full Leaderboard
+        </Button>
       </div>
     </Card>
   );

@@ -1,20 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Users, Plus } from 'lucide-react';
+import { Search, MapPin, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import UnifiedSearchOverlay from './explore/UnifiedSearchOverlay';
 import { searchService } from '@/services/searchService';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import EnhancedLocationCard from './explore/EnhancedLocationCard';
 import NoResults from './explore/NoResults';
 import UserCard from './explore/UserCard';
 import LocationDetailModal from './explore/LocationDetailModal';
 import LocationPostCards from './explore/LocationPostCards';
 import CommunityChampions from './home/CommunityChampions';
 import { useCommunityChampions } from '@/hooks/useCommunityChampions';
-import { Card } from '@/components/ui/card';
 
 const ExplorePage = () => {
   const { user } = useAuth();
@@ -31,17 +28,6 @@ const ExplorePage = () => {
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [currentCity, setCurrentCity] = useState<string>('Unknown City');
   const { champions } = useCommunityChampions(currentCity);
-  const [showSearchOverlay, setShowSearchOverlay] = useState(false);
-
-  const handleAddLocation = () => {
-    console.log('Navigate to add location');
-  };
-
-  const handleCitySelect = (city: string, coordinates: { lat: number; lng: number }) => {
-    setCurrentCity(city);
-    // Update map center or reload locations for the new city
-    console.log('Selected city:', city, coordinates);
-  };
 
   // Load ALL locations with posts - IMPROVED DEDUPLICATION
   useEffect(() => {
@@ -235,7 +221,6 @@ const ExplorePage = () => {
               type="text" 
               placeholder={searchMode === 'locations' ? 'Search for cafes, restaurants, attractions...' : 'Search for people...'} 
               value={searchQuery} 
-              onFocus={() => setShowSearchOverlay(true)}
               onChange={e => handleSearch(e.target.value)} 
               className="pl-12 pr-4 h-12 bg-gray-50 border-gray-200 focus:bg-white rounded-xl text-gray-900 placeholder-gray-500" 
             />
@@ -256,8 +241,8 @@ const ExplorePage = () => {
               </span>
             </div>
           </div> : <>
-            {/* Community Champions Section - Show when not searching */}
-            {!isSearchActive && champions.length > 0 && (
+            {/* Community Champions Section - Show only in People mode when not searching */}
+            {!isSearchActive && searchMode === 'users' && champions.length > 0 && (
               <div className="px-4 py-4">
                 <CommunityChampions 
                   champions={champions} 
@@ -284,19 +269,11 @@ const ExplorePage = () => {
           </>}
       </div>
 
-      {/* Floating Add Button */}
       {/* Location Detail Modal */}
       <LocationDetailModal
         isOpen={isLocationModalOpen}
         onClose={() => setIsLocationModalOpen(false)}
         location={selectedLocation}
-      />
-
-      {/* Unified Search Overlay */}
-      <UnifiedSearchOverlay
-        isOpen={showSearchOverlay}
-        onClose={() => setShowSearchOverlay(false)}
-        onCitySelect={handleCitySelect}
       />
     </div>;
 };

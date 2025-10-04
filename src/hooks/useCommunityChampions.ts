@@ -36,7 +36,7 @@ export const useCommunityChampions = (currentCity?: string) => {
       monday.setDate(now.getDate() - (now.getDay() + 6) % 7);
       monday.setHours(0, 0, 0, 0);
 
-      // Simplified query to get top users from post engagement  
+      // Fetch top users with actual engagement metrics
       const { data, error: queryError } = await supabase
         .from('profiles')
         .select(`
@@ -50,7 +50,7 @@ export const useCommunityChampions = (currentCity?: string) => {
         .not('username', 'is', null)
         .gt('posts_count', 0)
         .order('posts_count', { ascending: false })
-        .limit(20);
+        .limit(50);
 
       if (queryError) {
         console.error('❌ Error fetching champions:', queryError);
@@ -58,29 +58,64 @@ export const useCommunityChampions = (currentCity?: string) => {
       }
 
       if (data && data.length > 0) {
-        // For now, create mock weekly likes based on their stats
-        // In production, you'd query actual weekly engagement data
-        const championsData = data
+        // For each user, count their actual weekly likes
+        const championsWithLikes = await Promise.all(
+          data.map(async (profile) => {
+            // First get the user's posts
+            const { data: userPosts } = await supabase
+              .from('posts')
+              .select('id')
+              .eq('user_id', profile.id);
+
+            const postIds = userPosts?.map(p => p.id) || [];
+
+            // Count actual post likes from this week for those posts
+            let likesCount = 0;
+            if (postIds.length > 0) {
+              const { count } = await supabase
+                .from('post_likes')
+                .select('id', { count: 'exact', head: true })
+                .gte('created_at', monday.toISOString())
+                .in('post_id', postIds);
+              
+              likesCount = count || 0;
+            }
+
+            return {
+              ...profile,
+              weekly_likes: likesCount
+            };
+          })
+        );
+
+        // Filter by city and sort by weekly engagement
+        const filteredChampions = championsWithLikes
           .filter(profile => {
-            // Filter by city if provided
             if (currentCity && currentCity !== 'Unknown City') {
-              return profile.current_city?.toLowerCase().includes(currentCity.toLowerCase()) || Math.random() > 0.7;
+              return profile.current_city?.toLowerCase().includes(currentCity.toLowerCase());
             }
             return true;
           })
+          .sort((a, b) => {
+            // Sort by weekly likes first, then posts count
+            if (b.weekly_likes !== a.weekly_likes) {
+              return b.weekly_likes - a.weekly_likes;
+            }
+            return (b.posts_count || 0) - (a.posts_count || 0);
+          })
+          .slice(0, 5)
           .map((profile, index) => ({
             id: profile.id,
             username: profile.username || `user_${profile.id.slice(0, 8)}`,
             avatar_url: profile.avatar_url,
             posts_count: profile.posts_count || 0,
             follower_count: profile.follower_count || 0,
-            weekly_likes: Math.max(1, Math.floor((profile.posts_count || 0) * 0.3) + Math.floor(Math.random() * 5)),
+            weekly_likes: profile.weekly_likes,
             rank: index + 1
-          }))
-          .slice(0, 5);
+          }));
 
-        console.log('✅ Champions found:', championsData.length);
-        setChampions(championsData);
+        console.log('✅ Champions found:', filteredChampions.length);
+        setChampions(filteredChampions);
       } else {
         setChampions([]);
       }
