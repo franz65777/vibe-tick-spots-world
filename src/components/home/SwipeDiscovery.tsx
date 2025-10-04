@@ -284,29 +284,24 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
                     )}
                   </div>
                 </div>
-
-                {/* Category icon bottom-right */}
-                <div className="absolute bottom-4 right-4 w-12 h-12 rounded-2xl bg-black/30 backdrop-blur-md flex items-center justify-center">
-                  <CategoryIcon category={currentLocation.category} className="w-7 h-7 text-white" />
-                </div>
               </div>
             </div>
 
-            {/* Action buttons - Below card */}
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center justify-center gap-6">
+            {/* Action buttons - Positioned higher */}
+            <div className="absolute bottom-24 left-1/2 -translate-x-1/2 flex items-center justify-center gap-8">
               <button
                 onClick={() => handleSwipe('left')}
-                className="w-16 h-16 rounded-full bg-white shadow-xl hover:shadow-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                className="w-16 h-16 flex items-center justify-center transition-all hover:scale-110 active:scale-95"
                 aria-label="Skip"
               >
-                <X className="w-8 h-8 text-gray-700" />
+                <img src={xIcon} alt="Skip" className="w-16 h-16" />
               </button>
               <button
                 onClick={() => handleSwipe('right')}
-                className="w-20 h-20 rounded-full bg-gradient-to-br from-pink-500 to-orange-500 shadow-xl hover:shadow-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 text-4xl"
+                className="w-16 h-16 flex items-center justify-center transition-all hover:scale-110 active:scale-95"
                 aria-label="Save for later"
               >
-                👀
+                <img src={likeIcon} alt="Save" className="w-16 h-16" />
               </button>
             </div>
           </div>

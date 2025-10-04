@@ -81,18 +81,27 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
         savesMap.set(save.location_id, (savesMap.get(save.location_id) || 0) + 1);
       });
 
-      // Group by google_place_id and collect all location IDs for the same place
+      // Group by google_place_id OR by normalized name+city+coords to ensure truly unique places
       const locationMap = new Map<string, LocationCard & { allLocationIds: string[] }>();
 
       locationsData?.forEach((location) => {
+        // Helper to round coordinates to 4 decimals for grouping
         const round = (n: any) => {
           const v = parseFloat(n?.toString() || '0');
-          return Number.isFinite(v) ? Math.round(v * 10000) / 10000 : 0; // 4 decimals
+          return Number.isFinite(v) ? Math.round(v * 10000) / 10000 : 0;
         };
-        const norm = (s?: string | null) => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+        
+        // Normalize text for comparison
+        const norm = (s?: string | null) => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+        
+        // Create a unique key: use google_place_id if available, otherwise use name+city+coords
         const coordKey = `${round(location.latitude)}-${round(location.longitude)}`;
-        const nameCityKey = `${norm(location.name)}|${norm(location.city || location.address?.split(',')[1])}`;
-        const key = location.google_place_id || `${nameCityKey}|${coordKey}`;
+        const nameKey = norm(location.name);
+        const cityKey = norm(location.city || location.address?.split(',')[1]);
+        
+        // Primary key: google_place_id
+        // Fallback key: normalized name + city + coordinates
+        const key = location.google_place_id || `${nameKey}_${cityKey}_${coordKey}`;
         
         if (!locationMap.has(key)) {
           locationMap.set(key, {
@@ -112,27 +121,33 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
             allLocationIds: [location.id]
           });
         } else {
+          // Merge: collect all IDs and take max saves
           const existing = locationMap.get(key)!;
           existing.allLocationIds.push(location.id);
-          existing.savesCount = Math.max(existing.savesCount, savesMap.get(location.id) || 0);
+          const thisSaves = savesMap.get(location.id) || 0;
+          if (thisSaves > existing.savesCount) {
+            existing.savesCount = thisSaves;
+          }
         }
       });
 
-      // Check if user saved ANY of the location IDs for each place
+      // Check if user saved ANY of the location IDs for each unique place
       const userSavedKeys = new Set<string>();
-      locationMap.forEach((loc, key) => {
-        if (loc.allLocationIds.some(id => savesData?.some(s => s.location_id === id && s.user_id === user?.id))) {
-          userSavedKeys.add(key);
-        }
-      });
-
-      // Convert to simple LocationCard array and track which ones are saved
       const finalUserSavedIds = new Set<string>();
+      
       locationMap.forEach((loc, key) => {
-        if (userSavedKeys.has(key)) {
+        // Check if user saved any of the related location IDs
+        const userSavedAny = loc.allLocationIds.some(id => 
+          savesData?.some(s => s.location_id === id && s.user_id === user?.id)
+        );
+        
+        if (userSavedAny) {
+          userSavedKeys.add(key);
+          // Mark the primary ID as saved for UI display
           finalUserSavedIds.add(loc.id);
         }
       });
+      
       setUserSavedIds(finalUserSavedIds);
 
       // Sort by saves count (most popular first)

@@ -243,9 +243,9 @@ const LocationDetailModal = ({ isOpen, onClose, location }: LocationDetailModalP
   const totalFriends = friendsWhoPosted.length;
 
   return (
-    <Drawer open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }} shouldScaleBackground snapPoints={[0.35, 0.9]}>
-      <DrawerContent className="max-h-[90vh]">
-        <div className="overflow-y-auto">
+    <Drawer open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }} modal snapPoints={[0.4, 1]}>
+      <DrawerContent className="max-h-[95vh] flex flex-col">
+        <div className="flex-1 overflow-y-auto">
           {/* Peek Header Area */}
           <div className="p-4 border-b border-gray-100 dark:border-gray-800">
             <div className="flex items-start justify-between gap-4">
