@@ -303,17 +303,18 @@ const HomePage = () => {
         />
       
       <main className="flex-1 flex flex-col overflow-hidden">
-        {/* Stories Section - 90px no background */}
-        <div className="h-[90px] flex-shrink-0">
-          <StoriesSection
-            stories={stories}
-            onCreateStory={() => setIsCreateStoryModalOpen(true)}
-            onStoryClick={(index) => {
-              setCurrentStoryIndex(index);
-              setIsStoriesViewerOpen(true);
-            }}
-          />
-        </div>
+        {!isSwipeDiscoveryOpen && (
+          <div className="h-[90px] flex-shrink-0">
+            <StoriesSection
+              stories={stories}
+              onCreateStory={() => setIsCreateStoryModalOpen(true)}
+              onStoryClick={(index) => {
+                setCurrentStoryIndex(index);
+                setIsStoriesViewerOpen(true);
+              }}
+            />
+          </div>
+        )}
         
         {/* Discover Section - 130px, no white container */}
         {!isSwipeDiscoveryOpen && (

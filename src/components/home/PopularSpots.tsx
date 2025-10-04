@@ -178,7 +178,6 @@ const PopularSpots = ({ userLocation, onLocationClick, onSwipeDiscoveryOpen }: P
               <span className="text-xs font-medium text-gray-900 line-clamp-1 max-w-[160px]">
                 {spot.name}
               </span>
-              <span className="ml-1 text-[10px] text-gray-500">{spot.savesCount}</span>
             </button>
           ))}
         </div>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { X, Phone, Navigation, Bookmark, Check, Users, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { locationInteractionService } from '@/services/locationInteractionService';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { toast } from 'sonner';
+import { Drawer, DrawerContent, DrawerClose } from '@/components/ui/drawer';
 
 interface LocationDetailModalProps {
   isOpen: boolean;
@@ -243,144 +243,64 @@ const LocationDetailModal = ({ isOpen, onClose, location }: LocationDetailModalP
   const totalFriends = friendsWhoPosted.length;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
-        {/* Header */}
-        <div className="relative p-6 border-b border-gray-100 dark:border-gray-800">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{location.name}</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{location.category}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-500">{location.address}</p>
+    <Drawer open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }} shouldScaleBackground>
+      <DrawerContent snapPoints={[0.35, 0.9]} className="max-h-[90vh]">
+        <div className="overflow-y-auto">
+          {/* Peek Header Area */}
+          <div className="p-4 border-b border-gray-100 dark:border-gray-800">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{location.name}</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{location.city || location.address}</p>
+              </div>
+              <DrawerClose asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <X className="w-5 h-5" />
+                </Button>
+              </DrawerClose>
             </div>
-            <Button onClick={onClose} variant="ghost" size="icon" className="rounded-full shrink-0">
-              <X className="w-5 h-5" />
-            </Button>
           </div>
-        </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto">
           {/* Action Buttons */}
           <div className="p-4 border-b border-gray-100 dark:border-gray-800">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <Button
-                onClick={handleGetDirections}
-                variant="outline"
-                className="rounded-xl h-auto py-3 flex flex-col items-center gap-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-500 transition-all"
-              >
+            <div className="grid grid-cols-3 gap-3">
+              <Button onClick={handleSaveToggle} variant="outline" className={`rounded-xl h-auto py-3 flex flex-col items-center gap-2 ${isSaved ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-500 text-amber-600' : ''}`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isSaved ? 'bg-amber-100 dark:bg-amber-900/40' : 'bg-gray-100 dark:bg-gray-800'}`}>
+                  <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current text-amber-600 dark:text-amber-400' : 'text-gray-600 dark:text-gray-400'}`} />
+                </div>
+                <span className="text-xs font-medium">{isSaved ? 'Saved' : 'Save'}</span>
+              </Button>
+              <Button onClick={handleVisitedToggle} variant="outline" className={`rounded-xl h-auto py-3 flex flex-col items-center gap-2 ${isVisited ? 'bg-green-50 dark:bg-green-900/20 border-green-500 text-green-600' : ''}`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isVisited ? 'bg-green-100 dark:bg-green-900/40' : 'bg-gray-100 dark:bg-gray-800'}`}>
+                  <Check className={`w-5 h-5 ${isVisited ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-gray-400'}`} />
+                </div>
+                <span className="text-xs font-medium">{isVisited ? 'Visited' : 'Mark Visited'}</span>
+              </Button>
+              <Button onClick={handleGetDirections} variant="outline" className="rounded-xl h-auto py-3 flex flex-col items-center gap-2">
                 <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center">
                   <Navigation className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <span className="text-xs font-medium">Directions</span>
               </Button>
-
-              {phoneNumber && (
-                <Button
-                  onClick={handleCall}
-                  variant="outline"
-                  className="rounded-xl h-auto py-3 flex flex-col items-center gap-2 hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-500 transition-all"
-                >
-                  <div className="w-10 h-10 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center">
-                    <Phone className="w-5 h-5 text-green-600 dark:text-green-400" />
-                  </div>
-                  <span className="text-xs font-medium">Call</span>
-                </Button>
-              )}
-
-              <Button
-                onClick={handleSaveToggle}
-                variant="outline"
-                className={`rounded-xl h-auto py-3 flex flex-col items-center gap-2 transition-all ${
-                  isSaved 
-                    ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-500 text-amber-600' 
-                    : 'hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:border-amber-500'
-                }`}
-              >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  isSaved ? 'bg-amber-100 dark:bg-amber-900/40' : 'bg-gray-100 dark:bg-gray-800'
-                }`}>
-                  <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current text-amber-600 dark:text-amber-400' : 'text-gray-600 dark:text-gray-400'}`} />
-                </div>
-                <span className="text-xs font-medium">{isSaved ? 'Saved' : 'Save'}</span>
-              </Button>
-
-              <Button
-                onClick={handleVisitedToggle}
-                variant="outline"
-                className={`rounded-xl h-auto py-3 flex flex-col items-center gap-2 transition-all ${
-                  isVisited 
-                    ? 'bg-green-50 dark:bg-green-900/20 border-green-500 text-green-600' 
-                    : 'hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-500'
-                }`}
-              >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  isVisited ? 'bg-green-100 dark:bg-green-900/40' : 'bg-gray-100 dark:bg-gray-800'
-                }`}>
-                  <Check className={`w-5 h-5 ${isVisited ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-gray-400'}`} />
-                </div>
-                <span className="text-xs font-medium">{isVisited ? 'Visited' : 'Mark Visited'}</span>
-              </Button>
             </div>
           </div>
 
-          {/* Friends Section */}
-          {totalFriends > 0 && (
-            <div className="p-4 border-b border-gray-100 dark:border-gray-800">
-              <div className="flex items-center gap-3 mb-3">
-                <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                  {totalFriends} {totalFriends === 1 ? 'friend has' : 'friends have'} been here
-                </h3>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {friendsWhoPosted.slice(0, 8).map(friend => (
-                  <div key={friend.id} className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 rounded-full px-3 py-1.5 border border-blue-100 dark:border-blue-800">
-                    <Avatar className="w-6 h-6">
-                      <AvatarImage src={friend.avatar} alt={friend.name} />
-                      <AvatarFallback className="text-xs bg-blue-500 text-white">
-                        {friend.name.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-xs font-medium text-blue-700 dark:text-blue-300">{friend.name}</span>
-                  </div>
-                ))}
-                {friendsWhoPosted.length > 8 && (
-                  <div className="flex items-center px-3 py-1.5">
-                    <span className="text-xs text-gray-500 dark:text-gray-400">+{friendsWhoPosted.length - 8} more</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Map Snippet */}
+          {/* Map snippet and Library - scrollable section */}
           {location.coordinates && (
             <div className="p-4 border-b border-gray-100 dark:border-gray-800">
-              <div className="w-full h-48 bg-gray-100 dark:bg-gray-800 rounded-2xl overflow-hidden">
-                <iframe
-                  title="Location map"
-                  width="100%"
-                  height="100%"
-                  frameBorder="0"
-                  style={{ border: 0 }}
-                  src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBMQn6bdmj-wg9xPWyuDOhT-O3sJT9FmKs&q=${location.coordinates.lat},${location.coordinates.lng}&zoom=15`}
-                  allowFullScreen
-                />
+              <div className="w-full h-40 bg-gray-100 dark:bg-gray-800 rounded-2xl overflow-hidden">
+                <iframe title="Location map" width="100%" height="100%" frameBorder="0" style={{ border: 0 }} src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBMQn6bdmj-wg9xPWyuDOhT-O3sJT9FmKs&q=${location.coordinates.lat},${location.coordinates.lng}&zoom=15`} allowFullScreen />
               </div>
             </div>
           )}
 
-          {/* Library Feed */}
           <div className="p-4">
             <div className="flex items-center gap-2 mb-4">
               <MessageSquare className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-              <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-                Photos & Videos from the community
-              </h3>
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white">Photos & Videos from the community</h3>
               <span className="text-sm text-gray-500 dark:text-gray-400">({posts.length})</span>
             </div>
-            
+
             {loading ? (
               <div className="text-center py-12">
                 <div className="animate-spin w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
@@ -390,20 +310,8 @@ const LocationDetailModal = ({ isOpen, onClose, location }: LocationDetailModalP
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {posts.map(post => (
                   <div key={post.id} className="aspect-square rounded-xl overflow-hidden relative group cursor-pointer shadow-sm hover:shadow-md transition-shadow">
-                    <img 
-                      src={post.media_urls[0]} 
-                      alt={post.caption || 'Post'} 
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
+                    <img src={post.media_urls[0]} alt={post.caption || 'Post'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    <div className="absolute bottom-2 left-2 flex items-center gap-2">
-                      <Avatar className="w-7 h-7 border-2 border-white shadow-sm">
-                        <AvatarImage src={(post.profiles as any)?.avatar_url} alt={(post.profiles as any)?.username} />
-                        <AvatarFallback className="text-xs bg-blue-500 text-white">
-                          {((post.profiles as any)?.username || 'U').charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </div>
                   </div>
                 ))}
               </div>
@@ -416,8 +324,8 @@ const LocationDetailModal = ({ isOpen, onClose, location }: LocationDetailModalP
             )}
           </div>
         </div>
-      </div>
-    </div>
+      </DrawerContent>
+    </Drawer>
   );
 };
 

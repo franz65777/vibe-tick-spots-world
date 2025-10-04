@@ -85,7 +85,14 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
       const locationMap = new Map<string, LocationCard & { allLocationIds: string[] }>();
 
       locationsData?.forEach((location) => {
-        const key = location.google_place_id || `${location.latitude}-${location.longitude}`;
+        const round = (n: any) => {
+          const v = parseFloat(n?.toString() || '0');
+          return Number.isFinite(v) ? Math.round(v * 10000) / 10000 : 0; // 4 decimals
+        };
+        const norm = (s?: string | null) => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+        const coordKey = `${round(location.latitude)}-${round(location.longitude)}`;
+        const nameCityKey = `${norm(location.name)}|${norm(location.city || location.address?.split(',')[1])}`;
+        const key = location.google_place_id || `${nameCityKey}|${coordKey}`;
         
         if (!locationMap.has(key)) {
           locationMap.set(key, {
@@ -105,7 +112,6 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
             allLocationIds: [location.id]
           });
         } else {
-          // Same place, different location record - add the ID and update save count
           const existing = locationMap.get(key)!;
           existing.allLocationIds.push(location.id);
           existing.savesCount = Math.max(existing.savesCount, savesMap.get(location.id) || 0);

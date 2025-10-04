@@ -204,13 +204,15 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
       <div className="relative w-full h-full flex flex-col bg-gray-50">
         {/* Header */}
         <div className="flex-shrink-0 p-4 flex justify-between items-center bg-white/90 backdrop-blur-sm absolute top-0 left-0 right-0 z-10">
-          <h2 className="text-xl font-bold text-gray-900">Discover Places</h2>
-          <button
-            onClick={onClose}
-            className="w-10 h-10 rounded-full bg-white shadow-lg hover:bg-gray-50 flex items-center justify-center transition-all"
-          >
-            <X className="w-6 h-6 text-gray-900" />
-          </button>
+          <div className="flex-shrink-0 p-4 flex justify-between items-center bg-white/90 backdrop-blur-sm absolute top-0 left-0 right-0 z-10">
+            <h2 className="text-xl font-bold text-gray-900 line-clamp-1">{currentLocation?.name || 'Discover Places'}</h2>
+            <button
+              onClick={onClose}
+              className="w-10 h-10 rounded-full bg-white shadow-lg ring-1 ring-black/5 hover:bg-gray-50 flex items-center justify-center transition-all"
+            >
+              <X className="w-6 h-6 text-gray-900" />
+            </button>
+          </div>
         </div>
         
         {/* Counter - Top Right */}
@@ -234,7 +236,7 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
             <Button onClick={onClose}>Close</Button>
           </div>
         ) : currentLocation ? (
-          <div className="flex-1 flex items-center justify-center p-4 pt-20">
+          <div className="flex-1 flex items-center justify-center p-4 pt-14">
             {/* Swipeable Card */}
             <div
               onTouchStart={handleTouchStart}
@@ -269,40 +271,23 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                 </div>
 
-                {/* Info at bottom */}
-                <div className="absolute bottom-0 left-0 right-0 p-6">
-                  <div className="flex items-start gap-3 mb-6">
-                    <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center">
-                      <CategoryIcon category={currentLocation.category} className="w-7 h-7" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-2xl font-bold text-white mb-2">
-                        {currentLocation.name}
-                      </h3>
-                      <div className="flex items-center gap-2 text-white/90 text-sm mb-1">
+                {/* Top Info - name at top */}
+                <div className="absolute top-0 left-0 right-0 p-4 flex items-start justify-between pointer-events-none">
+                  <div className="max-w-[75%]">
+                    <h3 className="text-2xl font-bold text-white drop-shadow">{currentLocation.name}</h3>
+                    {currentLocation.city && (
+                      <div className="flex items-center gap-2 text-white/90 text-sm mt-1">
                         <MapPin className="w-4 h-4" />
                         <span>{currentLocation.city}</span>
                       </div>
-                      {currentLocation.address && (
-                        <p className="text-white/70 text-xs line-clamp-1">
-                          {currentLocation.address}
-                        </p>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Swipe indicators */}
-                {touchOffset.x > 50 && (
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-6xl rotate-12 pointer-events-none">
-                    👀
-                  </div>
-                )}
-                {touchOffset.x < -50 && (
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-6xl -rotate-12 pointer-events-none">
-                    ✕
-                  </div>
-                )}
+                {/* Category icon bottom-right */}
+                <div className="absolute bottom-4 right-4 w-12 h-12 rounded-2xl bg-black/30 backdrop-blur-md flex items-center justify-center">
+                  <CategoryIcon category={currentLocation.category} className="w-7 h-7 text-white" />
+                </div>
               </div>
             </div>
 
