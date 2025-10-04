@@ -81,81 +81,88 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
         savesMap.set(save.location_id, (savesMap.get(save.location_id) || 0) + 1);
       });
 
-      // Group by google_place_id OR by normalized name+city+coords to ensure truly unique places
-      const locationMap = new Map<string, LocationCard & { allLocationIds: string[] }>();
+      // Group by canonical place using google_place_id when available,
+      // otherwise fall back to normalized name + city. Also link records that
+      // share the same name+city with a record that has a google_place_id.
+      type Grouped = LocationCard & { allLocationIds: string[]; nameCityKey: string; gpKey?: string };
+      const groups = new Map<string, Grouped>(); // canonical key -> group
+      const nameCityIndex = new Map<string, string>(); // nameCityKey -> canonical key
 
-      locationsData?.forEach((location) => {
-        // Helper to round coordinates to 4 decimals for grouping
-        const round = (n: any) => {
-          const v = parseFloat(n?.toString() || '0');
-          return Number.isFinite(v) ? Math.round(v * 10000) / 10000 : 0;
-        };
-        
-        // Normalize text for comparison
-        const norm = (s?: string | null) => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
-        
-        // Create a unique key: use google_place_id if available, otherwise use name+city+coords
-        const coordKey = `${round(location.latitude)}-${round(location.longitude)}`;
-        const nameKey = norm(location.name);
-        const cityKey = norm(location.city || location.address?.split(',')[1]);
-        
-        // Primary key: google_place_id
-        // Fallback key: normalized name + city + coordinates
-        const key = location.google_place_id || `${nameKey}_${cityKey}_${coordKey}`;
-        
-        if (!locationMap.has(key)) {
-          locationMap.set(key, {
-            id: location.id,
-            name: location.name,
-            category: location.category,
-            city: location.city || location.address?.split(',')[1]?.trim() || 'Unknown',
-            address: location.address,
-            google_place_id: location.google_place_id,
+      const norm = (s?: string | null) => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+      const toNameCityKey = (loc: any) => {
+        const cityFromAddr = loc.address?.split(',')[1]?.trim();
+        const nameKey = norm(loc.name);
+        const cityKey = norm(loc.city || cityFromAddr);
+        return `${nameKey}_${cityKey}`;
+      };
+
+      locationsData?.forEach((loc) => {
+        const nameCityKey = toNameCityKey(loc);
+        const gpKey = loc.google_place_id ? `gp:${loc.google_place_id}` : undefined;
+
+        // Resolve existing canonical key if any
+        let canonicalKey: string | undefined = gpKey && groups.has(gpKey)
+          ? gpKey
+          : nameCityIndex.get(nameCityKey);
+
+        // If none exists, create a new group using the most stable key
+        if (!canonicalKey) {
+          canonicalKey = gpKey || `nc:${nameCityKey}`;
+          groups.set(canonicalKey, {
+            id: loc.id,
+            name: loc.name,
+            category: loc.category,
+            city: loc.city || loc.address?.split(',')[1]?.trim() || 'Unknown',
+            address: loc.address,
+            google_place_id: loc.google_place_id,
             coverImage: null,
             postsCount: 0,
-            savesCount: savesMap.get(location.id) || 0,
+            savesCount: 0,
             coordinates: {
-              lat: parseFloat(location.latitude?.toString() || '0'),
-              lng: parseFloat(location.longitude?.toString() || '0')
+              lat: parseFloat(loc.latitude?.toString() || '0'),
+              lng: parseFloat(loc.longitude?.toString() || '0'),
             },
-            allLocationIds: [location.id]
+            allLocationIds: [loc.id],
+            nameCityKey,
+            gpKey,
           });
+          // Index by name+city for future matches (even if later we see a gpKey)
+          nameCityIndex.set(nameCityKey, canonicalKey);
         } else {
-          // Merge: collect all IDs and take max saves
-          const existing = locationMap.get(key)!;
-          existing.allLocationIds.push(location.id);
-          const thisSaves = savesMap.get(location.id) || 0;
-          if (thisSaves > existing.savesCount) {
-            existing.savesCount = thisSaves;
-          }
+          // Merge into existing group
+          const g = groups.get(canonicalKey)!;
+          g.allLocationIds.push(loc.id);
+          // Prefer filling missing metadata
+          if (!g.google_place_id && loc.google_place_id) g.google_place_id = loc.google_place_id;
+          if (!g.address && loc.address) g.address = loc.address;
+          // Keep coordinates from the first seen; do not override
         }
+
+        // Accumulate saves per location id (computed below once we have savesMap)
+      });
+
+      // Aggregate saves across grouped location ids
+      groups.forEach((g) => {
+        g.savesCount = g.allLocationIds.reduce((sum, id) => sum + (savesMap.get(id) || 0), 0);
       });
 
       // Check if user saved ANY of the location IDs for each unique place
-      const userSavedKeys = new Set<string>();
       const finalUserSavedIds = new Set<string>();
-      
-      locationMap.forEach((loc, key) => {
-        // Check if user saved any of the related location IDs
-        const userSavedAny = loc.allLocationIds.some(id => 
-          savesData?.some(s => s.location_id === id && s.user_id === user?.id)
+      groups.forEach((g) => {
+        const userSavedAny = g.allLocationIds.some((id) =>
+          savesData?.some((s) => s.location_id === id && s.user_id === user?.id)
         );
-        
-        if (userSavedAny) {
-          userSavedKeys.add(key);
-          // Mark the primary ID as saved for UI display
-          finalUserSavedIds.add(loc.id);
-        }
+        if (userSavedAny) finalUserSavedIds.add(g.id);
       });
-      
       setUserSavedIds(finalUserSavedIds);
 
-      // Sort by saves count (most popular first)
-      const uniqueLocations = Array.from(locationMap.values())
-        .map(({ allLocationIds, ...rest }) => rest) // Remove allLocationIds from final output
+      // Sort by saves count (most popular first) and strip internal fields
+      const uniqueLocations = Array.from(groups.values())
+        .map(({ allLocationIds, nameCityKey, gpKey, ...rest }) => rest)
         .sort((a, b) => b.savesCount - a.savesCount);
 
       setLocations(uniqueLocations);
+
     } catch (error) {
       console.error('Error fetching locations:', error);
       setLocations([]);
