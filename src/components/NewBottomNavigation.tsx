@@ -57,18 +57,15 @@ const NewBottomNavigation = () => {
               <button
                 key={item.path}
                 onClick={() => handleNavClick(item.path, item.label)}
-                className="flex flex-col items-center justify-center gap-1 min-w-[64px] py-2 transition-colors duration-200 relative"
+                className="flex flex-col items-center justify-center gap-1 min-w-[64px] py-2 transition-colors duration-200"
                 aria-label={item.label}
                 aria-current={isActive ? 'page' : undefined}
               >
-                <div className="relative">
-                  <div className={cn(
-                    "transition-colors duration-200",
-                    isActive ? 'text-primary' : 'text-muted-foreground'
-                  )}>
-                    {item.icon}
-                  </div>
-                  {/* badge removed as requested */}
+                <div className={cn(
+                  "transition-colors duration-200",
+                  isActive ? 'text-primary' : 'text-muted-foreground'
+                )}>
+                  {item.icon}
                 </div>
                 <span className={cn(
                   "text-[11px] font-medium transition-colors duration-200",
