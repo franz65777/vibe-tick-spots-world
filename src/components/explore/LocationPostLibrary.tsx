@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLocationInteraction } from '@/hooks/useLocationInteraction';
 
 interface LocationPost {
   id: string;
@@ -45,6 +46,7 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
   const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
 
   const displayCity = place.city || place.address?.split(',')[1]?.trim() || 'Unknown City';
+  const { trackSave, trackVisit } = useLocationInteraction();
 
   useEffect(() => {
     fetchLocationPosts();
@@ -399,7 +401,21 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
         </div>
       </div>
 
-      {/* Posts Grid */}
+      {/* Actions */}
+      <div className="bg-white px-4 py-3 border-b">
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="secondary" onClick={() => trackSave(place.id)}>Save</Button>
+          <Button size="sm" variant="secondary" onClick={() => trackVisit(place.id)}>Visited</Button>
+          <Button size="sm" variant="secondary" onClick={() => {
+            const url = place.google_place_id
+              ? `https://www.google.com/maps/search/?api=1&query=place_id:${place.google_place_id}`
+              : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name + ' ' + (displayCity || ''))}`;
+            window.open(url, '_blank');
+          }}>Get Directions</Button>
+        </div>
+      </div>
+
+      {/* Posts Library - horizontal scroll */}
       <div className="flex-1 overflow-y-auto bg-gray-50">
         {posts.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center px-8">
@@ -413,11 +429,11 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-1 p-1">
+          <div className="flex gap-2 overflow-x-auto p-3 pb-4">
             {posts.map((post) => (
               <div
                 key={post.id}
-                className="aspect-square bg-gray-200 relative cursor-pointer hover:opacity-80 transition-opacity"
+                className="relative w-40 h-40 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-90 transition"
                 onClick={() => setSelectedPost(post)}
               >
                 {post.media_urls && post.media_urls.length > 0 && (
@@ -433,20 +449,6 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
                     +{post.media_urls.length - 1}
                   </div>
                 )}
-                
-                {/* Engagement overlay */}
-                <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
-                  <div className="flex items-center gap-4 text-white text-sm font-medium">
-                    <span className="flex items-center gap-1">
-                      <Heart className="w-4 h-4" />
-                      {post.likes_count}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <MessageCircle className="w-4 h-4" />
-                      {post.comments_count}
-                    </span>
-                  </div>
-                </div>
               </div>
             ))}
           </div>

@@ -9,28 +9,20 @@ interface SimpleCategoryFilterProps {
 
 const SimpleCategoryFilter = ({ selectedCategory, onCategorySelect }: SimpleCategoryFilterProps) => {
   return (
-    <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
+    <div className="grid grid-cols-7 gap-2">
       {allowedCategories.map((category) => {
         const isSelected = selectedCategory === category;
         return (
           <button
             key={category}
             onClick={() => onCategorySelect(isSelected ? null : category)}
-            className={`flex-shrink-0 flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
-              isSelected
-                ? 'bg-gray-900'
-                : 'bg-gray-50 hover:bg-gray-100'
-            }`}
+            className={`flex items-center justify-center rounded-md transition-transform ${isSelected ? 'ring-2 ring-primary' : ''}`}
+            aria-label={categoryDisplayNames[category]}
           >
             <CategoryIcon
               category={category}
-              className={`w-8 h-8 ${isSelected ? 'opacity-100' : 'opacity-70'}`}
+              className={`w-7 h-7 ${isSelected ? 'opacity-100' : 'opacity-80'}`}
             />
-            <span className={`text-xs font-medium ${
-              isSelected ? 'text-white' : 'text-gray-600'
-            }`}>
-              {categoryDisplayNames[category]}
-            </span>
           </button>
         );
       })}

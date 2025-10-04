@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { TrendingUp, MapPin, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import LocationPostLibrary from '../explore/LocationPostLibrary';
+// Removed library import - clicking only zooms map
 
 interface PopularSpot {
   id: string;
@@ -28,12 +28,22 @@ const PopularSpots = ({ userLocation, onLocationClick }: PopularSpotsProps) => {
   const { user } = useAuth();
   const [popularSpots, setPopularSpots] = useState<PopularSpot[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedSpot, setSelectedSpot] = useState<PopularSpot | null>(null);
-  const [isLibraryOpen, setIsLibraryOpen] = useState(false);
 
   useEffect(() => {
     fetchPopularSpots();
   }, [userLocation]);
+
+  // Haversine distance in km
+  const distanceKm = (a: {lat:number;lng:number}, b: {lat:number;lng:number}) => {
+    const toRad = (v: number) => (v * Math.PI) / 180;
+    const R = 6371; // km
+    const dLat = toRad(b.lat - a.lat);
+    const dLng = toRad(b.lng - a.lng);
+    const lat1 = toRad(a.lat);
+    const lat2 = toRad(b.lat);
+    const s = Math.sin(dLat/2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng/2) ** 2;
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(s)));
+  };
 
   const fetchPopularSpots = async () => {
     try {
@@ -104,10 +114,16 @@ const PopularSpots = ({ userLocation, onLocationClick }: PopularSpotsProps) => {
         }
       });
 
-      // Sort by saves count and take top 5
-      const topSpots = Array.from(locationMap.values())
-        .sort((a, b) => b.savesCount - a.savesCount)
-        .slice(0, 5);
+      // Filter by proximity (<= 15km) and sort by saves, then distance
+      const allSpots = Array.from(locationMap.values());
+      const withDistance = userLocation
+        ? allSpots.map((s) => ({ ...s, __dist: distanceKm(s.coordinates, userLocation) }))
+        : allSpots.map((s) => ({ ...s, __dist: Infinity }));
+      const filtered = userLocation ? withDistance.filter((s: any) => s.__dist <= 15) : withDistance;
+      const topSpots = filtered
+        .sort((a: any, b: any) => (b.savesCount - a.savesCount) || (a.__dist - b.__dist))
+        .slice(0, 10)
+        .map(({ __dist, ...rest }: any) => rest);
 
       setPopularSpots(topSpots);
     } catch (error) {
@@ -119,8 +135,6 @@ const PopularSpots = ({ userLocation, onLocationClick }: PopularSpotsProps) => {
   };
 
   const handleSpotClick = (spot: PopularSpot) => {
-    setSelectedSpot(spot);
-    setIsLibraryOpen(true);
     onLocationClick?.(spot.coordinates);
   };
 
@@ -198,22 +212,6 @@ const PopularSpots = ({ userLocation, onLocationClick }: PopularSpotsProps) => {
         </div>
       </div>
 
-      {/* Location Post Library Modal */}
-      {selectedSpot && (
-        <LocationPostLibrary
-          place={{
-            id: selectedSpot.id,
-            name: selectedSpot.name,
-            city: selectedSpot.city,
-            google_place_id: selectedSpot.google_place_id
-          }}
-          isOpen={isLibraryOpen}
-          onClose={() => {
-            setIsLibraryOpen(false);
-            setSelectedSpot(null);
-          }}
-        />
-      )}
     </>
   );
 };

@@ -52,6 +52,7 @@ export const createCustomPin = (options: PinOptions): string => {
   const { category, isSaved, isRecommended, recommendationScore } = options;
   const assetUrl = getCategoryAsset(category);
   const stroke = isSaved ? '#2D6CF6' : '#CBD5E1';
+  const uid = Math.random().toString(36).slice(2, 8);
 
   // For recommended pins, show score instead of icon
   if (isRecommended && recommendationScore !== undefined) {
@@ -60,13 +61,13 @@ export const createCustomPin = (options: PinOptions): string => {
     const displayScore = score.toFixed(1);
 
     const svg = `
-      <svg width="28" height="38" viewBox="0 0 28 38" xmlns="http://www.w3.org/2000/svg">
+      <svg width="28" height="38" viewBox="0 0 28 38" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
         <defs>
-          <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+          <filter id="shadow-${uid}" x="-50%" y="-50%" width="200%" height="200%">
             <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-opacity="0.2"/>
           </filter>
         </defs>
-        <g filter="url(#shadow)">
+        <g filter="url(#shadow-${uid})">
           <path d="M14 2c6.627 0 12 5.373 12 12 0 8-12 20-12 20S2 22 2 14C2 7.373 7.373 2 14 2z" fill="#FFFFFF" stroke="${stroke}" stroke-width="1.5"/>
           <circle cx="14" cy="14" r="8" fill="${fillColor}" stroke="${stroke}" stroke-width="1"/>
           <text x="14" y="17" font-family="Arial, sans-serif" font-size="7" font-weight="bold" fill="#FFFFFF" text-anchor="middle">${displayScore}</text>
@@ -78,20 +79,20 @@ export const createCustomPin = (options: PinOptions): string => {
 
   // Regular pin with category icon
   const svg = `
-    <svg width="28" height="38" viewBox="0 0 28 38" xmlns="http://www.w3.org/2000/svg">
+    <svg width="28" height="38" viewBox="0 0 28 38" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
       <defs>
-        <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+        <filter id="shadow-${uid}" x="-50%" y="-50%" width="200%" height="200%">
           <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-opacity="0.2"/>
         </filter>
-        <clipPath id="circleClip">
+        <clipPath id="circleClip-${uid}">
           <circle cx="14" cy="14" r="6" />
         </clipPath>
       </defs>
-      <g filter="url(#shadow)">
+      <g filter="url(#shadow-${uid})">
         <path d="M14 2c6.627 0 12 5.373 12 12 0 8-12 20-12 20S2 22 2 14C2 7.373 7.373 2 14 2z" fill="#FFFFFF" stroke="${stroke}" stroke-width="1.5"/>
         <circle cx="14" cy="14" r="7" fill="#FFFFFF" stroke="${stroke}" stroke-width="1"/>
-        <g clip-path="url(#circleClip)">
-          <image href="${assetUrl}" x="8" y="8" width="12" height="12" preserveAspectRatio="xMidYMid meet"/>
+        <g clip-path="url(#circleClip-${uid})">
+          <image xlink:href="${assetUrl}" href="${assetUrl}" x="8" y="8" width="12" height="12" preserveAspectRatio="xMidYMid meet"/>
         </g>
       </g>
     </svg>`;

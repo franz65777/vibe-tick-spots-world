@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import LocationPostLibrary from './LocationPostLibrary';
-import { AllowedCategory } from '@/utils/allowedCategories';
+import { AllowedCategory, categoryDisplayNames } from '@/utils/allowedCategories';
 
 interface LocationGridProps {
   searchQuery?: string;
