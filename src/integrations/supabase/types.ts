@@ -841,6 +841,30 @@ export type Database = {
           },
         ]
       }
+      location_swipes: {
+        Row: {
+          created_at: string
+          id: string
+          location_id: string
+          swiped_right: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          location_id: string
+          swiped_right?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location_id?: string
+          swiped_right?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       locations: {
         Row: {
           address: string | null

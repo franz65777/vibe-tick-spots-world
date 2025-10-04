@@ -47,12 +47,12 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
       // Get locations user has already swiped today
       const today = new Date().toISOString().split('T')[0];
       const { data: swipedData } = await supabase
-        .from('location_swipes')
+        .from('location_swipes' as any)
         .select('location_id')
         .eq('user_id', user.id)
         .gte('created_at', today);
 
-      const swipedIds = swipedData?.map(s => s.location_id) || [];
+      const swipedIds = (swipedData as any[])?.map((s: any) => s.location_id) || [];
 
       // Get locations user has already saved
       const { data: savedData } = await supabase
@@ -135,7 +135,7 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
 
     try {
       // Record swipe
-      await supabase.from('location_swipes').insert({
+      await supabase.from('location_swipes' as any).insert({
         user_id: user.id,
         location_id: location.id,
         swiped_right: direction === 'right'
