@@ -2,7 +2,6 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import AuthenticatedLayout from './AuthenticatedLayout';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -31,11 +30,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   console.log('ProtectedRoute: User authenticated, rendering protected content');
-  return (
-    <AuthenticatedLayout>
-      {children}
-    </AuthenticatedLayout>
-  );
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;
