@@ -16,6 +16,8 @@ interface MapLocation {
   isFollowing?: boolean;
   isNew?: boolean;
   isSaved?: boolean;
+  isRecommended?: boolean;
+  recommendationScore?: number;
   user_id: string;
   created_at: string;
 }
@@ -101,6 +103,34 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity }: 
                 created_at: location.created_at
               }));
           }
+          break;
+        }
+
+        case 'recommended': {
+          // Get recommended locations using the recommendation service
+          const { getRecommendedLocations } = await import('@/services/recommendationService');
+          const recommendations = await getRecommendedLocations(
+            user.id,
+            currentCity && currentCity !== 'Unknown City' ? currentCity : undefined,
+            100,
+            selectedCategories.length === 1 ? selectedCategories[0] : null
+          );
+
+          finalLocations = recommendations.map(rec => ({
+            id: rec.id,
+            name: rec.name,
+            category: rec.category,
+            address: rec.address,
+            city: rec.city,
+            coordinates: {
+              lat: Number(rec.latitude) || 0,
+              lng: Number(rec.longitude) || 0
+            },
+            isRecommended: true,
+            recommendationScore: rec.score * 10, // Convert 0-1 score to 1-10
+            user_id: user.id,
+            created_at: new Date().toISOString()
+          }));
           break;
         }
 

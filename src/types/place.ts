@@ -18,6 +18,8 @@ export interface Place {
   addedDate?: string;
   isFollowing?: boolean;
   isSaved?: boolean;
+  isRecommended?: boolean;
+  recommendationScore?: number;
   popularity?: number;
   distance?: string | number;
   totalSaves?: number;

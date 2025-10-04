@@ -395,6 +395,8 @@ const GoogleMapsSetup = ({
           const marker = createCustomMarker(mapInstanceRef.current!, position, {
             category: place.category || 'attraction',
             isSaved: place.isSaved,
+            isRecommended: place.isRecommended,
+            recommendationScore: place.recommendationScore,
             friendAvatars: [], // TODO: fetch friend data from backend
             isDarkMode,
           });

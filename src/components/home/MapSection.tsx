@@ -51,6 +51,8 @@ const MapSection = ({ mapCenter, currentCity }: MapSectionProps) => {
     isFollowing: location.isFollowing || false,
     isNew: location.isNew || false,
     isSaved: location.isSaved || false,
+    isRecommended: location.isRecommended || false,
+    recommendationScore: location.recommendationScore,
     likes: 0,
     visitors: [],
     createdBy: location.user_id,
