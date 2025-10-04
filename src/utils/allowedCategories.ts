@@ -30,41 +30,50 @@ export const mapGooglePlaceTypeToCategory = (types: string[]): AllowedCategory =
   if (!types || types.length === 0) return 'restaurant';
   
   // Priority order for categorization (most specific first)
+  // Check in order: bakery > bar/pub > cafe > museum > entertainment > hotel > restaurant
   const categoryMap: Record<string, AllowedCategory> = {
-    // Bakery - highest priority for bakery-specific types
+    // Bakery - highest priority (most specific)
     'bakery': 'bakery',
     
-    // Bar - specific bar types
+    // Bar - alcohol-serving establishments
     'bar': 'bar',
     'night_club': 'bar',
     'pub': 'bar',
+    'liquor_store': 'bar',
     
     // Cafe - coffee/tea specific
     'cafe': 'cafe',
     'coffee_shop': 'cafe',
     
-    // Restaurant - general dining
-    'restaurant': 'restaurant',
-    'meal_delivery': 'restaurant',
-    'meal_takeaway': 'restaurant',
-    
-    // Hotel - accommodation
-    'lodging': 'hotel',
-    'hotel': 'hotel',
-    
-    // Museum - cultural
+    // Museum - cultural/art
     'museum': 'museum',
     'art_gallery': 'museum',
+    'aquarium': 'museum',
+    'zoo': 'museum',
     
-    // Entertainment
+    // Entertainment - fun activities
     'movie_theater': 'entertainment',
     'amusement_park': 'entertainment',
     'bowling_alley': 'entertainment',
     'casino': 'entertainment',
+    'stadium': 'entertainment',
+    'park': 'entertainment',
     'tourist_attraction': 'entertainment',
+    
+    // Hotel - accommodation
+    'lodging': 'hotel',
+    'hotel': 'hotel',
+    'guest_house': 'hotel',
+    'campground': 'hotel',
+    
+    // Restaurant - general dining (lowest priority)
+    'restaurant': 'restaurant',
+    'food': 'restaurant',
+    'meal_delivery': 'restaurant',
+    'meal_takeaway': 'restaurant',
   };
   
-  // Check types in order of priority
+  // Check types in order of array (Google prioritizes them)
   for (const type of types) {
     const mappedCategory = categoryMap[type];
     if (mappedCategory) {

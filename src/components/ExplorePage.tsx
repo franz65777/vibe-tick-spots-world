@@ -9,9 +9,11 @@ import { useNavigate } from 'react-router-dom';
 import NoResults from './explore/NoResults';
 import UserCard from './explore/UserCard';
 import LocationDetailModal from './explore/LocationDetailModal';
-import LocationPostCards from './explore/LocationPostCards';
+import LocationGrid from './explore/LocationGrid';
 import CommunityChampions from './home/CommunityChampions';
 import { useCommunityChampions } from '@/hooks/useCommunityChampions';
+import SimpleCategoryFilter from './explore/SimpleCategoryFilter';
+import { AllowedCategory } from '@/utils/allowedCategories';
 
 const ExplorePage = () => {
   const { user } = useAuth();
@@ -19,136 +21,71 @@ const ExplorePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState<'locations' | 'users'>('locations');
   const [isSearching, setIsSearching] = useState(false);
-  const [locationRecommendations, setLocationRecommendations] = useState<any[]>([]);
   const [userRecommendations, setUserRecommendations] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [filteredLocations, setFilteredLocations] = useState<any[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<any>(null);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [currentCity, setCurrentCity] = useState<string>('Unknown City');
+  const [selectedCategory, setSelectedCategory] = useState<AllowedCategory | null>(null);
   const { champions } = useCommunityChampions(currentCity);
 
-  // Load ALL locations with posts - IMPROVED DEDUPLICATION
+  // Load user recommendations only
   useEffect(() => {
-    const loadRecommendations = async () => {
-      if (!user) return;
+    const loadUserRecommendations = async () => {
+      if (!user || searchMode !== 'users') return;
       setLoading(true);
       try {
-        console.log('🔍 Loading UNIQUE locations with posts...');
-        const locations = await searchService.getLocationRecommendations(user.id);
-        console.log('✅ Loaded DEDUPLICATED location recommendations:', locations.length);
-        setLocationRecommendations(locations);
         const users = await searchService.getUserRecommendations(user.id);
         setUserRecommendations(users);
       } catch (error) {
-        console.error('❌ Error loading recommendations:', error);
-        setLocationRecommendations([]);
+        console.error('❌ Error loading user recommendations:', error);
         setUserRecommendations([]);
       } finally {
         setLoading(false);
       }
     };
-    loadRecommendations();
-  }, [user]);
+    loadUserRecommendations();
+  }, [user, searchMode]);
 
-  // Search for real data
+  // Search for users only
   const performSearch = async (query: string) => {
-    if (!user || !query.trim()) return {
-      locations: [],
+    if (!user || !query.trim() || searchMode !== 'users') return {
       users: []
     };
     try {
-      if (searchMode === 'locations') {
-        console.log('🔍 Searching locations with posts...');
-        const {
-          data: locations,
-          error
-        } = await supabase.from('locations').select(`
-            id,
-            name,
-            category,
-            address,
-            city,
-            latitude,
-            longitude,
-            google_place_id,
-            created_at,
-            posts!inner(id)
-          `).or(`name.ilike.%${query}%, address.ilike.%${query}%, city.ilike.%${query}%`).not('posts', 'is', null).limit(20);
-        if (error) throw error;
-        
-        // Group by google_place_id to ensure only 1 library per location
-        const uniqueResults = new Map();
-        locations?.forEach(location => {
-          const key = location.google_place_id || `${location.latitude}-${location.longitude}`;
-          if (!uniqueResults.has(key)) {
-            const postCount = Array.isArray(location.posts) ? location.posts.length : 0;
-            if (postCount > 0) {
-              uniqueResults.set(key, {
-                id: location.id,
-                name: location.name,
-                category: location.category,
-                address: location.address,
-                city: location.city || location.address?.split(',')[1]?.trim() || 'Unknown',
-                coordinates: {
-                  lat: parseFloat(location.latitude?.toString() || '0'),
-                  lng: parseFloat(location.longitude?.toString() || '0')
-                },
-                likes: 0,
-                totalSaves: 0,
-                visitors: [],
-                isNew: false,
-                distance: Math.random() * 5,
-                google_place_id: location.google_place_id,
-                postCount: postCount
-              });
-            }
-          }
-        });
-        return {
-          locations: Array.from(uniqueResults.values()),
-          users: []
-        };
-      } else {
-        // SECURITY FIX: Only select safe profile fields, no full_name
-        const {
-          data: users,
-          error
-        } = await supabase.from('profiles').select('id, username, avatar_url').or(`username.ilike.%${query}%`).limit(20);
-        if (error) throw error;
-        return {
-          locations: [],
-          users: users?.map(user => ({
-            id: user.id,
-            name: user.username || 'User', // SECURITY: Only use username, not full_name
-            username: user.username || `@${user.id.substring(0, 8)}`,
-            avatar: user.avatar_url || 'photo-1472099645785-5658abf4ff4e',
-            is_following: false
-          })) || []
-        };
-      }
+      const {
+        data: users,
+        error
+      } = await supabase.from('profiles').select('id, username, avatar_url').or(`username.ilike.%${query}%`).limit(20);
+      if (error) throw error;
+      return {
+        users: users?.map(user => ({
+          id: user.id,
+          name: user.username || 'User',
+          username: user.username || `@${user.id.substring(0, 8)}`,
+          avatar: user.avatar_url || 'photo-1472099645785-5658abf4ff4e',
+          is_following: false
+        })) || []
+      };
     } catch (error) {
       console.error('❌ Search error:', error);
       return {
-        locations: [],
         users: []
       };
     }
   };
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
-    if (query.trim()) {
+    if (query.trim() && searchMode === 'users') {
       setIsSearching(true);
       const results = await performSearch(query);
-      setFilteredLocations(results.locations);
       setFilteredUsers(results.users);
       if (user) {
         await searchService.saveSearchHistory(user.id, query, searchMode);
       }
       setTimeout(() => setIsSearching(false), 500);
     } else {
-      setFilteredLocations([]);
       setFilteredUsers([]);
     }
   };
@@ -191,13 +128,10 @@ const ExplorePage = () => {
   };
   const clearSearch = () => {
     setSearchQuery('');
-    setFilteredLocations([]);
     setFilteredUsers([]);
   };
   const isSearchActive = searchQuery.trim().length > 0;
-  const displayData = searchMode === 'locations' 
-    ? (isSearchActive ? filteredLocations : locationRecommendations)
-    : (isSearchActive ? filteredUsers : userRecommendations);
+  const displayUsers = isSearchActive ? filteredUsers : userRecommendations;
   return <div className="flex flex-col h-full bg-gray-50 pt-16">
       {/* Simplified Header */}
       <div className="bg-white border-b border-gray-200">
@@ -233,40 +167,65 @@ const ExplorePage = () => {
 
       {/* Results */}
       <div className="flex-1 overflow-y-auto">
-        {loading || isSearching ? <div className="flex items-center justify-center py-20">
+        {loading || isSearching ? (
+          <div className="flex items-center justify-center py-20">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
               <span className="text-gray-600 font-medium">
-                {isSearching ? 'Searching...' : 'Loading amazing places...'}
+                {isSearching ? 'Searching...' : 'Loading...'}
               </span>
             </div>
-          </div> : <>
-            {/* Community Champions Section - Show only in People mode when not searching */}
-            {!isSearchActive && searchMode === 'users' && champions.length > 0 && (
-              <div className="px-4 py-4">
-                <CommunityChampions 
-                  champions={champions} 
-                  onUserClick={handleUserClick}
-                />
-              </div>
-            )}
-
-            {displayData.length > 0 && <div className="px-4 py-3 bg-white border-b border-gray-100">
-                <span className="text-sm text-gray-600 font-medium">
-                  {displayData.length} {searchMode === 'locations' ? 'place' : 'person'}{displayData.length !== 1 ? 's' : ''} found
-                </span>
-              </div>}
-
+          </div>
+        ) : (
+          <>
             {searchMode === 'locations' ? (
-              /* Show Location Post Cards for location searches */
-              <LocationPostCards 
-                searchQuery={searchQuery}
-                onLocationClick={handleCardClick}
-              />
-            ) : displayData.length > 0 ? <div className="space-y-3 px-4 pb-4">
-                  {displayData.map(user => <UserCard key={user.id} user={user} onUserClick={() => handleUserClick(user.id)} onFollowUser={handleFollowUser} onMessageUser={handleMessageUser} />)}
-                </div> : <NoResults searchMode="users" searchQuery={searchQuery} />}
-          </>}
+              <>
+                {/* Category Filter */}
+                <div className="px-4 py-3 bg-white border-b border-gray-100">
+                  <SimpleCategoryFilter
+                    selectedCategory={selectedCategory}
+                    onCategorySelect={setSelectedCategory}
+                  />
+                </div>
+
+                {/* Location Grid */}
+                <LocationGrid
+                  searchQuery={searchQuery}
+                  selectedCategory={selectedCategory}
+                />
+              </>
+            ) : (
+              <>
+                {/* Community Champions - Only in People mode */}
+                {!isSearchActive && champions.length > 0 && (
+                  <div className="px-4 py-4">
+                    <CommunityChampions 
+                      champions={champions} 
+                      onUserClick={handleUserClick}
+                    />
+                  </div>
+                )}
+
+                {/* User Results */}
+                {displayUsers.length > 0 ? (
+                  <div className="space-y-3 px-4 pb-4">
+                    {displayUsers.map(user => (
+                      <UserCard 
+                        key={user.id} 
+                        user={user} 
+                        onUserClick={() => handleUserClick(user.id)} 
+                        onFollowUser={handleFollowUser} 
+                        onMessageUser={handleMessageUser} 
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <NoResults searchMode="users" searchQuery={searchQuery} />
+                )}
+              </>
+            )}
+          </>
+        )}
       </div>
 
       {/* Location Detail Modal */}

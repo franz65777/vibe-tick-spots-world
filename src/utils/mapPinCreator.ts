@@ -84,14 +84,14 @@ export const createCustomPin = (options: PinOptions): string => {
           <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-opacity="0.2"/>
         </filter>
         <clipPath id="circleClip">
-          <circle cx="14" cy="14" r="6.5" />
+          <circle cx="14" cy="14" r="6" />
         </clipPath>
       </defs>
       <g filter="url(#shadow)">
         <path d="M14 2c6.627 0 12 5.373 12 12 0 8-12 20-12 20S2 22 2 14C2 7.373 7.373 2 14 2z" fill="#FFFFFF" stroke="${stroke}" stroke-width="1.5"/>
-        <circle cx="14" cy="14" r="7.5" fill="#FFFFFF" stroke="${stroke}" stroke-width="1"/>
+        <circle cx="14" cy="14" r="7" fill="#FFFFFF" stroke="${stroke}" stroke-width="1"/>
         <g clip-path="url(#circleClip)">
-          <image href="${assetUrl}" x="7.5" y="7.5" width="13" height="13" preserveAspectRatio="xMidYMid meet"/>
+          <image href="${assetUrl}" x="8" y="8" width="12" height="12" preserveAspectRatio="xMidYMid meet"/>
         </g>
       </g>
     </svg>`;
