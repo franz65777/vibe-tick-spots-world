@@ -172,7 +172,7 @@ class LocationInteractionService {
     }
   }
 
-  // Get locations for following feed (locations from followed users)
+  // Get locations for following feed (locations saved by followed users)
   async getFollowingLocations(userId: string): Promise<any[]> {
     try {
       // Get users that the current user follows
@@ -182,16 +182,20 @@ class LocationInteractionService {
         .eq('follower_id', userId);
 
       if (followError || !followedUsers || followedUsers.length === 0) {
+        console.log('No followed users found');
         return [];
       }
 
       const followedUserIds = followedUsers.map(f => f.following_id);
+      console.log('Following user IDs:', followedUserIds);
 
-      // Get posts from followed users with location data
-      const { data: posts, error: postsError } = await supabase
-        .from('posts')
+      // Get saved locations from followed users
+      const { data: savedLocations, error: savedError } = await supabase
+        .from('user_saved_locations')
         .select(`
-          *,
+          location_id,
+          user_id,
+          created_at,
           locations!inner(
             id,
             name,
@@ -202,16 +206,20 @@ class LocationInteractionService {
             google_place_id
           )
         `)
-        .in('user_id', followedUserIds)
-        .not('location_id', 'is', null)
-        .order('created_at', { ascending: false });
+        .in('user_id', followedUserIds);
 
-      if (postsError) {
-        console.error('Following locations error:', postsError);
+      if (savedError) {
+        console.error('Following saved locations error:', savedError);
         return [];
       }
 
-      // Get user profiles separately to avoid join issues
+      console.log('Saved locations from followed users:', savedLocations?.length || 0);
+
+      if (!savedLocations || savedLocations.length === 0) {
+        return [];
+      }
+
+      // Get user profiles for attribution
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, username, full_name, avatar_url')
@@ -227,13 +235,13 @@ class LocationInteractionService {
         profileMap.set(profile.id, profile);
       });
 
-      // Transform posts into location format
+      // Transform saved locations into location format, deduplicate by google_place_id or id
       const locationMap = new Map();
       
-      posts?.forEach(post => {
-        const location = post.locations;
+      savedLocations.forEach(saved => {
+        const location = saved.locations as any;
         const locationKey = location.google_place_id || location.id;
-        const userProfile = profileMap.get(post.user_id);
+        const userProfile = profileMap.get(saved.user_id);
         
         if (!locationMap.has(locationKey)) {
           locationMap.set(locationKey, {
@@ -247,11 +255,11 @@ class LocationInteractionService {
             likes: 0,
             isFollowing: true,
             addedBy: userProfile?.full_name || userProfile?.username || 'Someone',
-            addedDate: new Date(post.created_at).toLocaleDateString(),
+            addedDate: new Date(saved.created_at).toLocaleDateString(),
             popularity: 75,
             city: location.address?.split(',')[1]?.trim() || 'Unknown',
             isNew: false,
-            image: post.media_urls?.[0],
+            image: undefined,
             friendsWhoSaved: [],
             visitors: [],
             distance: Math.random() * 10,
@@ -262,7 +270,9 @@ class LocationInteractionService {
         }
       });
 
-      return Array.from(locationMap.values());
+      const locations = Array.from(locationMap.values());
+      console.log('Final following locations:', locations.length);
+      return locations;
     } catch (error) {
       console.error('Get following locations error:', error);
       return [];
