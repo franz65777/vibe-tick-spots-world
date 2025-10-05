@@ -179,46 +179,45 @@ class MessageService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Use secure function to fetch messages with privacy protection
+      // Fetch messages directly to include shared_content (RLS restricts to participants)
       const { data: messages, error } = await supabase
-        .rpc('get_secure_messages', { other_user_id: otherUserId });
+        .from('direct_messages')
+        .select('*')
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`)
+        .order('created_at', { ascending: true });
 
       if (error) {
-        console.error('Error fetching secure messages:', error);
+        console.error('Error fetching messages:', error);
         return [];
       }
 
-      // Get sender profiles separately for the messages
+      // Get sender profiles for display
       const senderIds = [...new Set(messages?.map(m => m.sender_id) || [])];
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, username, full_name, avatar_url')
         .in('id', senderIds);
 
-      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+      const profileMap = new Map((profiles || []).map(p => [p.id, p]));
 
-      return (messages || []).map(message => {
+      return (messages || []).map((message) => {
         const senderProfile = profileMap.get(message.sender_id);
         return {
           id: message.id,
           sender_id: message.sender_id,
           receiver_id: message.receiver_id,
-          content: message.content,
+          content: message.content || undefined,
           message_type: message.message_type as 'text' | 'place_share' | 'trip_share' | 'post_share',
-          shared_content: null, // Not returned by secure function for privacy
+          shared_content: message.shared_content || undefined,
           created_at: message.created_at,
-          read_at: null, // Not returned by secure function for privacy
-          is_read: message.is_read,
+          read_at: message.read_at || undefined,
+          is_read: !!message.is_read,
           sender: senderProfile ? {
             username: senderProfile.username || 'Unknown',
             full_name: senderProfile.full_name || 'Unknown User',
             avatar_url: senderProfile.avatar_url || ''
-          } : {
-            username: 'Unknown',
-            full_name: 'Unknown User',
-            avatar_url: ''
-          }
-        };
+          } : undefined
+        } as DirectMessage;
       });
     } catch (error) {
       console.error('Error fetching messages:', error);
