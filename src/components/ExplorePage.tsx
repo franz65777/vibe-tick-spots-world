@@ -31,15 +31,17 @@ const ExplorePage = () => {
   const [selectedCategory, setSelectedCategory] = useState<AllowedCategory | null>(null);
   const { champions } = useCommunityChampions(currentCity);
 
-  // Check for shared place from DM
+  // Check for shared place from DM and open LocationDetailModal
   useEffect(() => {
     const checkForSharedPlace = () => {
       const state = window.history.state as { sharedPlace?: any } | null;
       if (state?.sharedPlace) {
         const place = state.sharedPlace;
-        // Normalize the place data structure
+        console.log('📍 Opening shared place from DM:', place);
+        
+        // Normalize the place data structure for LocationDetailModal
         const normalizedPlace = {
-          id: place.id || place.place_id || '',
+          id: place.id || place.place_id || place.google_place_id || '',
           google_place_id: place.google_place_id || place.place_id || '',
           name: place.name || '',
           category: place.category || 'place',
@@ -47,9 +49,14 @@ const ExplorePage = () => {
           city: place.city || '',
           coordinates: place.coordinates || { lat: 0, lng: 0 },
           image: place.image || '',
+          likes: 0,
+          totalSaves: 0,
+          postCount: 0
         };
+        
         setSelectedLocation(normalizedPlace);
         setIsLocationModalOpen(true);
+        
         // Clear the state
         window.history.replaceState({}, '', '/explore');
       }

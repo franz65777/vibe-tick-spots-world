@@ -367,8 +367,8 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
 
         {/* Chat View */}
         {view === 'chat' && (
-          <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-950">
-            <ScrollArea className="flex-1 p-4">
+          <div className="flex-1 flex flex-col min-h-0 bg-gray-50 dark:bg-gray-950">
+            <div className="flex-1 overflow-y-auto p-4">
               {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -441,7 +441,7 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
                   <div ref={messagesEndRef} />
                 </div>
               )}
-            </ScrollArea>
+            </div>
 
             {/* Message Input */}
             <div className="p-4 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">

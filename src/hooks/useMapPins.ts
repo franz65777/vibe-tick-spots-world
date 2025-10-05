@@ -273,6 +273,25 @@ export const useMapPins = (filter: 'following' | 'popular' | 'saved' = 'popular'
 
   useEffect(() => {
     fetchPins();
+    
+    // Set up realtime subscription for new saves to refresh pins
+    if (!user) return;
+    
+    const channel = supabase
+      .channel('map-pins-refresh')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'saved_places' }, () => {
+        console.log('🔄 Saved places changed, refreshing pins...');
+        fetchPins();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_saved_locations' }, () => {
+        console.log('🔄 User saved locations changed, refreshing pins...');
+        fetchPins();
+      })
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user, filter]);
 
   const refreshPins = (cityFilter?: string) => {
