@@ -30,7 +30,7 @@ export const useCityEngagement = (cityName: string | null) => {
       setLoading(true);
       try {
         console.log('🔍 Fetching city engagement for:', cityName);
-        const { data, error } = await supabase.rpc('get_city_engagement', { p_city: cityName, p_user: user.id });
+        const { data, error } = await supabase.rpc('get_city_engagement', { p_city: cityName, p_user: user.id } as any);
         if (error) {
           console.error('❌ RPC error:', error);
           throw error;
