@@ -66,7 +66,7 @@ const NearbyPlacesSuggestions: React.FC<NearbyPlacesSuggestionsProps> = ({
 
   // Debounce the query so we only search when user pauses typing
   useEffect(() => {
-    const id = setTimeout(() => setDebouncedQuery(searchQuery), 600);
+    const id = setTimeout(() => setDebouncedQuery(searchQuery), 300);
     return () => clearTimeout(id);
   }, [searchQuery]);
 
@@ -122,12 +122,12 @@ const NearbyPlacesSuggestions: React.FC<NearbyPlacesSuggestionsProps> = ({
           return;
         }
 
-        // Otherwise fetch by types in parallel and merge
+        // Otherwise fetch by types in parallel and merge (faster radius)
         const types = ['restaurant','bar','cafe','bakery','lodging','museum','tourist_attraction','night_club','art_gallery','amusement_park'];
         const all: any[] = [];
         await Promise.all(
           types.map(type => new Promise<void>(resolve => {
-            const req: google.maps.places.PlaceSearchRequest = { location, radius: 800, type: type as any } as any;
+            const req: google.maps.places.PlaceSearchRequest = { location, radius: 500, type: type as any } as any;
             service.nearbySearch(req, (results: any, status: any) => {
               if (status === g.maps.places.PlacesServiceStatus.OK && results) {
                 all.push(...results);
@@ -292,14 +292,14 @@ const NearbyPlacesSuggestions: React.FC<NearbyPlacesSuggestionsProps> = ({
           )}
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0 px-6 pb-6">
-          <Button onClick={onClose} variant="outline" className="flex-1">
+        <DialogFooter className="gap-2 sm:gap-0 px-6 pb-6 flex-row">
+          <Button onClick={onClose} variant="outline" className="flex-1 rounded-xl">
             Cancel
           </Button>
           {selectedPlace && isPlaceSaved(selectedPlace.place_id) ? (
             <Button 
               disabled
-              className="flex-1 bg-green-500 hover:bg-green-500"
+              className="flex-1 bg-green-500 hover:bg-green-500 rounded-xl"
             >
               <CheckCircle2 className="w-4 h-4 mr-2" />
               Already Saved
@@ -308,7 +308,7 @@ const NearbyPlacesSuggestions: React.FC<NearbyPlacesSuggestionsProps> = ({
             <Button 
               onClick={handleSaveClick} 
               disabled={!selectedPlace || saving}
-              className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+              className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 rounded-xl"
             >
               {saving ? (
                 <>

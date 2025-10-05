@@ -25,12 +25,18 @@ export const usePinEngagement = (locationId: string | null, googlePlaceId: strin
     const fetchEngagement = async () => {
       setLoading(true);
       try {
+        console.log('🔍 Fetching pin engagement for:', { locationId, googlePlaceId });
         const { data, error } = await supabase.rpc('get_pin_engagement', {
           p_location_id: locationId || null,
           p_google_place_id: googlePlaceId || null
         });
         
-        if (error) throw error;
+        if (error) {
+          console.error('❌ RPC error:', error);
+          throw error;
+        }
+
+        console.log('📊 Pin engagement raw data:', data);
 
         const totalSaves = (data?.[0]?.total_saves as number) || 0;
         const followedUsers = ((data?.[0]?.followed_users as any) || []) as Array<{
@@ -39,12 +45,14 @@ export const usePinEngagement = (locationId: string | null, googlePlaceId: strin
           avatar_url: string | null;
         }>;
 
+        console.log('✅ Parsed:', { totalSaves, followedUsersCount: followedUsers.length });
+
         setEngagement({
           totalSaves,
           followedUsers,
         });
       } catch (error) {
-        console.error('Error fetching pin engagement:', error);
+        console.error('❌ Error fetching pin engagement:', error);
         setEngagement(null);
       } finally {
         setLoading(false);

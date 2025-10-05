@@ -26,59 +26,42 @@ export const useSavedPlaces = () => {
       console.log('useSavedPlaces: Loading saved places for user:', user?.id);
       
       if (!user) {
-        // Demo data for when no user is available
-        const demoSavedPlaces: SavedPlacesData = {
-          "Milan": [
-            { id: 'milan1', name: 'Café Milano', category: 'cafe', city: 'Milan', coordinates: { lat: 45.4642, lng: 9.1900 }, savedAt: '2024-05-28' },
-            { id: 'milan2', name: 'Duomo Restaurant', category: 'restaurant', city: 'Milan', coordinates: { lat: 45.4640, lng: 9.1896 }, savedAt: '2024-05-20' },
-            { id: 'milan3', name: 'Navigli Bar', category: 'bar', city: 'Milan', coordinates: { lat: 45.4583, lng: 9.1756 }, savedAt: '2024-06-01' }
-          ],
-          "Paris": [
-            { id: 'paris1', name: 'Café de Flore', category: 'cafe', city: 'Paris', coordinates: { lat: 48.8542, lng: 2.3320 }, savedAt: '2024-05-15' },
-            { id: 'paris2', name: 'Le Jules Verne', category: 'restaurant', city: 'Paris', coordinates: { lat: 48.8584, lng: 2.2945 }, savedAt: '2024-05-30' }
-          ],
-          "San Francisco": [
-            { id: 'sf1', name: 'Golden Gate Café', category: 'cafe', city: 'San Francisco', coordinates: { lat: 37.8199, lng: -122.4783 }, savedAt: '2024-06-05' },
-            { id: 'sf2', name: 'Fisherman\'s Wharf Restaurant', category: 'restaurant', city: 'San Francisco', coordinates: { lat: 37.8080, lng: -122.4177 }, savedAt: '2024-06-03' },
-            { id: 'sf3', name: 'Union Square Hotel', category: 'hotel', city: 'San Francisco', coordinates: { lat: 37.7879, lng: -122.4075 }, savedAt: '2024-06-01' },
-            { id: 'sf4', name: 'Lombard Street View', category: 'attraction', city: 'San Francisco', coordinates: { lat: 37.8021, lng: -122.4187 }, savedAt: '2024-05-28' },
-            { id: 'sf5', name: 'Castro Theatre', category: 'entertainment', city: 'San Francisco', coordinates: { lat: 37.7609, lng: -122.4350 }, savedAt: '2024-05-25' }
-          ]
-        };
-        setSavedPlaces(demoSavedPlaces);
+        setSavedPlaces({});
         setLoading(false);
         return;
       }
 
       try {
-        // Fetch real saved places from database
-        const locations = await backendService.getUserSavedLocations(user.id);
-        
+        // Fetch saved places from saved_places table
+        const { data: savedPlacesData, error } = await supabase
+          .from('saved_places')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
         // Group by city
         const groupedByCity: SavedPlacesData = {};
-        locations.forEach(location => {
-          const city = location.city || 'Unknown';
+        (savedPlacesData || []).forEach(place => {
+          const city = place.city || 'Unknown';
           if (!groupedByCity[city]) {
             groupedByCity[city] = [];
           }
           
           groupedByCity[city].push({
-            id: location.id,
-            name: location.name,
-            category: location.category,
+            id: place.place_id,
+            name: place.place_name,
+            category: place.place_category || 'place',
             city: city,
-            coordinates: {
-              lat: Number(location.latitude) || 0,
-              lng: Number(location.longitude) || 0
-            },
-            savedAt: location.created_at || new Date().toISOString()
+            coordinates: (place.coordinates as any) || { lat: 0, lng: 0 },
+            savedAt: place.created_at || new Date().toISOString()
           });
         });
 
         setSavedPlaces(groupedByCity);
       } catch (error) {
         console.error('Error loading saved places:', error);
-        // Fall back to demo data on error
         setSavedPlaces({});
       } finally {
         setLoading(false);
@@ -95,35 +78,58 @@ export const useSavedPlaces = () => {
     }
 
     try {
-      // Save to database
-      const result = await backendService.saveLocation(user.id, place.id);
-      
-      if (result.success) {
-        // Update local state
-        const newPlace: SavedPlace = {
-          ...place,
-          savedAt: new Date().toISOString()
-        };
+      // Check if already saved
+      const { data: existing } = await supabase
+        .from('saved_places')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('place_id', place.id)
+        .maybeSingle();
 
-        setSavedPlaces(prev => {
-          const updated = { ...prev };
-          if (!updated[place.city]) {
-            updated[place.city] = [];
-          }
-          
-          // Check if place is already saved
-          const isAlreadySaved = updated[place.city].some(p => p.id === place.id);
-          if (!isAlreadySaved) {
-            updated[place.city].push(newPlace);
-          }
-          
-          return updated;
-        });
-
-        console.log('Place saved:', place.name, 'in', place.city);
+      if (existing) {
+        console.log('Place already saved:', place.name);
+        return;
       }
+
+      // Save to database
+      const { error } = await supabase
+        .from('saved_places')
+        .insert({
+          user_id: user.id,
+          place_id: place.id,
+          place_name: place.name,
+          place_category: place.category,
+          city: place.city,
+          coordinates: place.coordinates
+        });
+      
+      if (error) throw error;
+
+      // Update local state
+      const newPlace: SavedPlace = {
+        ...place,
+        savedAt: new Date().toISOString()
+      };
+
+      setSavedPlaces(prev => {
+        const updated = { ...prev };
+        if (!updated[place.city]) {
+          updated[place.city] = [];
+        }
+        
+        // Check if place is already in local state
+        const isAlreadySaved = updated[place.city].some(p => p.id === place.id);
+        if (!isAlreadySaved) {
+          updated[place.city].push(newPlace);
+        }
+        
+        return updated;
+      });
+
+      console.log('Place saved:', place.name, 'in', place.city);
     } catch (error) {
       console.error('Error saving place:', error);
+      throw error;
     }
   };
 
@@ -135,26 +141,31 @@ export const useSavedPlaces = () => {
 
     try {
       // Remove from database
-      const result = await backendService.unsaveLocation(user.id, placeId);
+      const { error } = await supabase
+        .from('saved_places')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('place_id', placeId);
       
-      if (result.success) {
-        // Update local state
-        setSavedPlaces(prev => {
-          const updated = { ...prev };
-          if (updated[city]) {
-            updated[city] = updated[city].filter(p => p.id !== placeId);
-            // Remove city if no places left
-            if (updated[city].length === 0) {
-              delete updated[city];
-            }
-          }
-          return updated;
-        });
+      if (error) throw error;
 
-        console.log('Place unsaved:', placeId, 'from', city);
-      }
+      // Update local state
+      setSavedPlaces(prev => {
+        const updated = { ...prev };
+        if (updated[city]) {
+          updated[city] = updated[city].filter(p => p.id !== placeId);
+          // Remove city if no places left
+          if (updated[city].length === 0) {
+            delete updated[city];
+          }
+        }
+        return updated;
+      });
+
+      console.log('Place unsaved:', placeId, 'from', city);
     } catch (error) {
       console.error('Error unsaving place:', error);
+      throw error;
     }
   };
 

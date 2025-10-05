@@ -81,7 +81,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
         // Small delay to ensure everything is ready
         setTimeout(async () => {
           await initializeAutocomplete();
-        }, 200);
+        }, 100);
         
       } catch (err) {
         console.error('Error loading Google Maps:', err);
@@ -280,7 +280,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
         <input
           ref={inputRef}
           type="text"
-          placeholder={isLoading ? "Loading location search..." : placeholder}
+          placeholder={isLoading ? "Loading..." : placeholder}
           className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed shadow-sm"
           disabled={!isLoaded || isLoading}
           value={inputValue}
