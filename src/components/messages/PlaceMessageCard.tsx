@@ -34,7 +34,8 @@ const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => 
       'bg-gradient-to-br from-orange-400 to-orange-600',
       'bg-gradient-to-br from-pink-400 to-pink-600',
     ];
-    const colorIndex = placeData.id.length % colors.length;
+    const seedSource = (placeData.id || placeData.place_id || placeData.google_place_id || placeData.name || '0').toString();
+    const colorIndex = seedSource.length % colors.length;
     return colors[colorIndex];
   };
 
