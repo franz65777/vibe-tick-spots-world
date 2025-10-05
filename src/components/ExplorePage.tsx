@@ -31,35 +31,6 @@ const ExplorePage = () => {
   const [selectedCategory, setSelectedCategory] = useState<AllowedCategory | null>(null);
   const { champions } = useCommunityChampions(currentCity);
 
-  // Check for shared place from DM
-  useEffect(() => {
-    const checkForSharedPlace = () => {
-      const state = window.history.state as { sharedPlace?: any } | null;
-      if (state?.sharedPlace) {
-        const place = state.sharedPlace;
-        // Normalize the place data structure
-        const normalizedPlace = {
-          id: place.id || place.place_id || '',
-          google_place_id: place.google_place_id || place.place_id || '',
-          name: place.name || '',
-          category: place.category || 'place',
-          address: place.address || '',
-          city: place.city || '',
-          coordinates: place.coordinates || { lat: 0, lng: 0 },
-          image: place.image || '',
-        };
-        setSelectedLocation(normalizedPlace);
-        setIsLocationModalOpen(true);
-        // Clear the state
-        window.history.replaceState({}, '', '/explore');
-      }
-    };
-
-    checkForSharedPlace();
-    window.addEventListener('popstate', checkForSharedPlace);
-    return () => window.removeEventListener('popstate', checkForSharedPlace);
-  }, []);
-
   // Load user recommendations only
   useEffect(() => {
     const loadUserRecommendations = async () => {

@@ -400,14 +400,7 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
                               {message.message_type === 'place_share' && (
                                 <PlaceMessageCard
                                   placeData={message.shared_content}
-                                  onViewPlace={(placeData) => {
-                                    // Close the message modal
-                                    onClose();
-                                    // Navigate to /explore with the place in state
-                                    const navPath = '/explore';
-                                    window.history.pushState({ sharedPlace: placeData }, '', navPath);
-                                    window.dispatchEvent(new PopStateEvent('popstate'));
-                                  }}
+                                  onViewPlace={() => {}}
                                 />
                               )}
                               {message.message_type === 'post_share' && (

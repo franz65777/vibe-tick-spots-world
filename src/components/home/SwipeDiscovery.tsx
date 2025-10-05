@@ -291,7 +291,7 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
   return (
     <div className="w-full h-full bg-white flex flex-col">
       <div className="relative w-full h-full flex flex-col bg-gray-50">
-        {/* Header - only X button */}
+        {/* Header - only X button and counter */}
         <div className="flex-shrink-0 p-4 flex justify-end items-center bg-white/90 backdrop-blur-sm absolute top-0 left-0 right-0 z-10">
           <button
             onClick={onClose}
@@ -300,6 +300,15 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
             <X className="w-6 h-6 text-gray-900" />
           </button>
         </div>
+        
+        {/* Counter - Top Right (only when a card is active) */}
+        {hasMore && currentLocation && (
+          <div className="absolute top-20 right-4 px-3 py-1.5 rounded-full bg-white shadow-lg z-10">
+            <span className="text-sm font-semibold text-gray-900">
+              {currentIndex + 1} / {locations.length}
+            </span>
+          </div>
+        )}
 
         {loading ? (
           <div className="h-full flex items-center justify-center">
@@ -313,7 +322,7 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
               </div>
             </div>
         ) : currentLocation ? (
-          <div className="flex-1 flex items-center justify-center p-4 pt-20">
+          <div className="flex-1 flex items-center justify-center p-4 pt-14">
             {/* Swipeable Card */}
             <div
               onTouchStart={handleTouchStart}

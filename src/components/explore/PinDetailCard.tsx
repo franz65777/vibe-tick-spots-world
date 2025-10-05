@@ -116,44 +116,44 @@ const [showVisitedModal, setShowVisitedModal] = useState(false);
         <ScrollArea className="max-h-[70vh]">
           {/* Action Buttons */}
           <div className="p-4 grid grid-cols-4 gap-2">
-          <Button
-            onClick={handleSaveToggle}
-            disabled={loading}
-            variant="outline"
-            className={`flex flex-col items-center gap-1 h-auto py-3 ${
-              isSaved ? 'bg-blue-50 border-blue-300 text-blue-600' : ''
-            }`}
-          >
-            <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
-            <span className="text-xs">{isSaved ? 'Saved' : 'Save'}</span>
-          </Button>
+            <Button
+              onClick={handleSaveToggle}
+              disabled={loading}
+              variant="outline"
+              className={`flex flex-col items-center gap-1 h-auto py-3 ${
+                isSaved ? 'bg-blue-50 border-blue-300 text-blue-600' : ''
+              }`}
+            >
+              <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
+              <span className="text-xs">{isSaved ? 'Salvato' : 'Salva'}</span>
+            </Button>
 
-          <Button
-            onClick={() => setShowVisitedModal(true)}
-            variant="outline"
-            className="flex flex-col items-center gap-1 h-auto py-3"
-          >
-            <Heart className="w-5 h-5" />
-            <span className="text-xs">Visited</span>
-          </Button>
+            <Button
+              onClick={() => setShowVisitedModal(true)}
+              variant="outline"
+              className="flex flex-col items-center gap-1 h-auto py-3"
+            >
+              <Heart className="w-5 h-5" />
+              <span className="text-xs">Visitato</span>
+            </Button>
 
-          <Button
-            onClick={handleDirections}
-            variant="outline"
-            className="flex flex-col items-center gap-1 h-auto py-3"
-          >
-            <Navigation className="w-5 h-5" />
-            <span className="text-xs">Directions</span>
-          </Button>
+            <Button
+              onClick={handleDirections}
+              variant="outline"
+              className="flex flex-col items-center gap-1 h-auto py-3"
+            >
+              <Navigation className="w-5 h-5" />
+              <span className="text-xs">Indicazioni</span>
+            </Button>
 
-          <Button
-            onClick={() => setShareOpen(true)}
-            variant="outline"
-            className="flex flex-col items-center gap-1 h-auto py-3"
-          >
-            <Share2 className="w-5 h-5" />
-            <span className="text-xs">Share</span>
-          </Button>
+            <Button
+              onClick={() => setShareOpen(true)}
+              variant="outline"
+              className="flex flex-col items-center gap-1 h-auto py-3"
+            >
+              <Share2 className="w-5 h-5" />
+              <span className="text-xs">Condividi</span>
+            </Button>
           </div>
 
           {/* Community Posts */}
@@ -161,7 +161,7 @@ const [showVisitedModal, setShowVisitedModal] = useState(false);
             <div className="px-4 pb-4">
               <div className="flex items-center gap-2 mb-3">
                 <MessageSquare className="w-4 h-4 text-gray-500" />
-                <h4 className="font-semibold text-sm text-gray-900">Community posts</h4>
+                <h4 className="font-semibold text-sm text-gray-900">Post dalla community</h4>
               </div>
               <div className="space-y-3">
                 {posts.map((post) => (
@@ -196,7 +196,7 @@ const [showVisitedModal, setShowVisitedModal] = useState(false);
           {posts.length === 0 && (
             <div className="px-4 pb-4 text-center text-gray-500 text-sm">
               <MessageSquare className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-              <p>No community posts</p>
+              <p>Nessun post dalla community</p>
             </div>
           )}
         </ScrollArea>

@@ -28,10 +28,4 @@ export interface Place {
   postCount?: number;
   createdBy?: string;
   createdAt?: string;
-  google_place_id?: string;
-  friendsSaved?: Array<{
-    id: string;
-    name: string;
-    avatar: string;
-  }>;
 }

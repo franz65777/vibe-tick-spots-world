@@ -2169,13 +2169,6 @@ export type Database = {
         Args: { target_month: string }
         Returns: number
       }
-      get_pin_engagement: {
-        Args: { p_google_place_id: string; p_location_id: string }
-        Returns: {
-          followed_users: Json
-          total_saves: number
-        }[]
-      }
       get_public_business_data: {
         Args: { business_id: string }
         Returns: {
