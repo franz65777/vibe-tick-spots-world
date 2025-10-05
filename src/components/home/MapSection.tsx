@@ -277,7 +277,7 @@ const MapSection = ({ mapCenter, currentCity, isExpanded = false, onToggleExpand
           setIsPinShareModalOpen(false);
           setPinToShare(null);
         }}
-        pinData={pinToShare}
+        place={pinToShare || selectedPlace}
       />
     </>
   );

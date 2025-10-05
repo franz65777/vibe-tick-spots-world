@@ -51,7 +51,8 @@ const UserCard = ({
 
   const handleMessageClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onMessageUser(user.id);
+    // Navigate to messages with this user
+    navigate(`/?view=messages&userId=${user.id}`);
   };
 
   const handleRowClick = (e: React.MouseEvent) => {

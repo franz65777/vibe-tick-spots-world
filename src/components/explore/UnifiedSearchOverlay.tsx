@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, MapPin, Loader2 } from 'lucide-react';
 import { loadGoogleMapsAPI } from '@/lib/googleMaps';
+import { useCityEngagement } from '@/hooks/useCityEngagement';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import CityEngagementCard from './CityEngagementCard';
 
 interface UnifiedSearchOverlayProps {
   isOpen: boolean;
@@ -186,22 +189,14 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
       <div className="flex-1 overflow-y-auto px-4 py-4 bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
         {!query.trim() && (
           <div className="space-y-3 mb-4">
-            <div className="flex flex-wrap gap-2">
-              {(trendingCities.length ? trendingCities : popularCities.map(c => ({ name: c.name, count: 0 }))).map((item) => (
-                <button
-                  key={item.name}
-                  onClick={() => selectCityByName(item.name)}
-                  className="px-3 py-1.5 bg-white hover:bg-gray-50 rounded-lg text-sm font-medium text-gray-800 transition-all shadow-sm hover:shadow border border-gray-100 flex items-center gap-2"
-                >
-                  <span>{item.name}</span>
-                  {'count' in item && item.count > 0 && (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
-                      {item.count}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
+            {(trendingCities.length ? trendingCities : popularCities.map(c => ({ name: c.name, count: 0 }))).map((item) => (
+              <CityEngagementCard
+                key={item.name}
+                cityName={item.name}
+                onClick={() => selectCityByName(item.name)}
+                baseCount={'count' in item ? item.count : 0}
+              />
+            ))}
           </div>
         )}
 
@@ -213,27 +208,13 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
         )}
 
         {results.length > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {results.map((city, index) => (
-              <button
+              <CityEngagementCard
                 key={index}
+                cityName={city.name}
                 onClick={() => handleCitySelect(city)}
-                className="w-full text-left p-4 bg-white hover:bg-gray-50 rounded-xl transition-all border border-gray-100 shadow-md hover:shadow-lg"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
-                    <MapPin className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-base text-gray-900 mb-1">
-                      {city.name}
-                    </div>
-                    <div className="text-sm text-gray-600 line-clamp-2">
-                      {city.address}
-                    </div>
-                  </div>
-                </div>
-              </button>
+              />
             ))}
           </div>
         )}

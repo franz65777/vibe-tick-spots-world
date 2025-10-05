@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Phone, Navigation, Bookmark, Check, Users, MessageSquare } from 'lucide-react';
+import { X, Phone, Navigation, Bookmark, Check, Users, MessageSquare, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,6 +8,7 @@ import { locationInteractionService } from '@/services/locationInteractionServic
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { toast } from 'sonner';
 import { Drawer, DrawerContent, DrawerClose } from '@/components/ui/drawer';
+import PinShareModal from './PinShareModal';
 
 interface LocationDetailModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ const LocationDetailModal = ({ isOpen, onClose, location }: LocationDetailModalP
   const [isVisited, setIsVisited] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
   const [loadingPhone, setLoadingPhone] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen && location) {
@@ -277,10 +279,22 @@ const LocationDetailModal = ({ isOpen, onClose, location }: LocationDetailModalP
                 <span className="text-xs font-medium">{isVisited ? 'Visited' : 'Mark Visited'}</span>
               </Button>
               <Button onClick={handleGetDirections} variant="outline" className="rounded-xl h-auto py-3 flex flex-col items-center gap-2">
-                <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center">
-                  <Navigation className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                  <Navigation className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                 </div>
                 <span className="text-xs font-medium">Directions</span>
+              </Button>
+            </div>
+            
+            {/* Share Button */}
+            <div className="mt-3">
+              <Button
+                onClick={() => setIsShareModalOpen(true)}
+                variant="outline"
+                className="w-full rounded-xl py-3 flex items-center justify-center gap-2"
+              >
+                <Share2 className="w-5 h-5" />
+                <span className="font-medium">Share</span>
               </Button>
             </div>
           </div>
@@ -325,6 +339,13 @@ const LocationDetailModal = ({ isOpen, onClose, location }: LocationDetailModalP
           </div>
         </div>
       </DrawerContent>
+      
+      {/* Pin Share Modal */}
+      <PinShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        place={location}
+      />
     </Drawer>
   );
 };

@@ -49,7 +49,7 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
       setLoading(true);
       console.log('🔄 Fetching swipe locations for user:', user.id);
 
-      // Testing: reset timer and always show full quota of 10 cards
+      // Reset for testing: show 10 cards immediately
       const since = new Date(Date.now() + 60 * 1000).toISOString(); // future time -> zero recent swipes
       const { data: swipedData } = await supabase
         .from('location_swipes')

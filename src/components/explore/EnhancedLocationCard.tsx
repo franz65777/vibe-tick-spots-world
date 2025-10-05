@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { MapPin, Heart, Bookmark, Users, MessageSquare, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { locationInteractionService } from '@/services/locationInteractionService';
+import PinShareModal from './PinShareModal';
 
 interface EnhancedLocationCardProps {
   place: any;
@@ -14,6 +15,7 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
   const [isSaved, setIsSaved] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   useEffect(() => {
     const checkInteractions = async () => {
@@ -185,7 +187,7 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
           <Button
             onClick={(e) => {
               e.stopPropagation();
-              // Handle share
+              setIsShareModalOpen(true);
             }}
             variant="ghost"
             size="sm"
@@ -196,6 +198,13 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
           </Button>
         </div>
       </div>
+      
+      {/* Share Modal */}
+      <PinShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        place={place}
+      />
     </div>
   );
 };
