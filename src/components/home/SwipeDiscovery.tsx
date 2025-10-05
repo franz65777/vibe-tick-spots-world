@@ -5,10 +5,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import xIcon from '@/assets/icon-x-red.png';
-import saveLaterIcon from '@/assets/icon-like-pin.png';
+import hourglassIcon from '@/assets/icon-like-pin.png';
 
 interface SwipeLocation {
   id: string;
+  place_id: string;
   name: string;
   category: string;
   city: string;
@@ -42,38 +43,43 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
   }, [isOpen, userLocation]);
 
   const fetchDailyLocations = async () => {
-    if (!user || !userLocation) return;
+    if (!user) return;
 
     try {
       setLoading(true);
+      console.log('🔄 Fetching swipe locations for user:', user.id);
 
       // 12h window limit
       const since = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
 
-      // Swipes in the last 12h
+      // Get swipes in the last 12h
       const { data: swipedData } = await supabase
-        .from('location_swipes' as any)
+        .from('location_swipes')
         .select('location_id, created_at')
         .eq('user_id', user.id)
         .gte('created_at', since);
 
-      const swipedIds = (swipedData as any[])?.map((s: any) => s.location_id) || [];
-      const usedCount = (swipedData as any[])?.length || 0;
+      const swipedLocationIds = (swipedData || []).map((s) => s.location_id);
+      const usedCount = (swipedData || []).length;
       const remainingQuota = Math.max(0, 10 - usedCount);
 
+      console.log(`📊 Used ${usedCount}/10 swipes in last 12h, remaining: ${remainingQuota}`);
+
       if (remainingQuota === 0) {
+        console.log('❌ No remaining quota');
         setLocations([]);
         setCurrentIndex(0);
         setLoading(false);
         return;
       }
 
-      // Current user's saved places (google place ids) to exclude
+      // Get my saved place_ids to exclude
       const { data: mySavedPlaces } = await supabase
         .from('saved_places')
         .select('place_id')
         .eq('user_id', user.id);
-      const mySavedPlaceIds = new Set((mySavedPlaces || []).map((s: any) => s.place_id));
+      const mySavedPlaceIds = new Set((mySavedPlaces || []).map((s) => s.place_id));
+      console.log(`🔖 I have ${mySavedPlaceIds.size} saved places`);
 
       // Get users I follow
       const { data: followingData } = await supabase
@@ -82,80 +88,87 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
         .eq('follower_id', user.id);
 
       const followingIds = followingData?.map(f => f.following_id) || [];
+      console.log(`👥 Following ${followingIds.length} users:`, followingIds);
 
-      console.log('🔍 Following users:', followingIds);
-      console.log('🔍 Following users count:', followingIds.length);
-
-      // Get locations saved by followed users (via saved_places -> locations.google_place_id)
-      let locationsToShow: SwipeLocation[] = [];
-      if (followingIds.length > 0) {
-        const { data: friendsSaves, error: savesError } = await supabase
-          .from('saved_places')
-          .select('place_id, created_at, user_id')
-          .in('user_id', followingIds)
-          .order('created_at', { ascending: false })
-          .limit(200);
-
-        console.log('📍 Friends saved places:', friendsSaves);
-        console.log('📍 Friends saved place_ids count:', friendsSaves?.length);
-        if (savesError) {
-          console.error('❌ Error fetching friends saves:', savesError);
-        }
-
-        const friendPlaceIds = Array.from(new Set((friendsSaves || []).map((s: any) => s.place_id)));
-        console.log('🎯 Unique friend place_ids:', friendPlaceIds);
-        
-        const filteredPlaceIds = friendPlaceIds.filter(pid => !mySavedPlaceIds.has(pid));
-        console.log('✅ Filtered place_ids (not already saved by me):', filteredPlaceIds);
-
-        if (filteredPlaceIds.length > 0) {
-          const { data: locationsData, error } = await supabase
-            .from('locations')
-            .select('id, name, category, city, address, image_url, latitude, longitude, google_place_id')
-            .in('google_place_id', filteredPlaceIds)
-            .limit(200);
-
-          console.log('📍 Locations found matching place_ids:', locationsData);
-          if (error) {
-            console.error('❌ Error fetching locations:', error);
-          }
-
-          if (locationsData && !error) {
-            // Filter out locations swiped in last 12h
-            const candidate = locationsData.filter(loc => !swipedIds.includes(loc.id));
-            console.log('🎲 Candidates after filtering swiped:', candidate.length);
-            
-            // Shuffle
-            const shuffled = candidate.sort(() => Math.random() - 0.5);
-            const limited = shuffled.slice(0, remainingQuota);
-
-            locationsToShow = limited.map(loc => ({
-              id: loc.id,
-              name: loc.name,
-              category: loc.category,
-              city: loc.city || 'Unknown',
-              address: loc.address || undefined,
-              image_url: loc.image_url || undefined,
-              coordinates: {
-                lat: parseFloat(loc.latitude?.toString() || '0'),
-                lng: parseFloat(loc.longitude?.toString() || '0')
-              }
-            }));
-          }
-        } else {
-          console.log('⚠️ No filtered place_ids to query');
-        }
-      } else {
+      if (followingIds.length === 0) {
         console.log('⚠️ Not following any users');
+        setLocations([]);
+        setCurrentIndex(0);
+        setLoading(false);
+        return;
       }
 
-      // Shuffle and take up to 10
-      const shuffled = locationsToShow.sort(() => Math.random() - 0.5).slice(0, 10);
-      console.log('🎲 Final shuffled locations to show:', shuffled);
-      setLocations(shuffled);
+      // Get ALL saved_places from followed users
+      const { data: friendsSaves, error: savesError } = await supabase
+        .from('saved_places')
+        .select('place_id, place_name, place_category, city, coordinates, created_at, user_id')
+        .in('user_id', followingIds);
+
+      if (savesError) {
+        console.error('❌ Error fetching friends saves:', savesError);
+      }
+
+      console.log(`📍 Friends have saved ${friendsSaves?.length || 0} places total`);
+
+      if (!friendsSaves || friendsSaves.length === 0) {
+        console.log('⚠️ No saved places from followed users');
+        setLocations([]);
+        setCurrentIndex(0);
+        setLoading(false);
+        return;
+      }
+
+      // Filter out places I've already saved
+      const filteredSaves = friendsSaves.filter(s => !mySavedPlaceIds.has(s.place_id));
+      console.log(`✅ After filtering my saves: ${filteredSaves.length} candidates`);
+
+      // Filter out places I've swiped in last 12h (using place_id)
+      let swipedPlaceIds: Set<string> = new Set();
+      if (swipedLocationIds.length > 0) {
+        const { data: swipedLocations } = await supabase
+          .from('locations')
+          .select('google_place_id')
+          .in('id', swipedLocationIds);
+        swipedPlaceIds = new Set((swipedLocations || []).map(l => l.google_place_id).filter(Boolean));
+      }
+
+      const candidateSaves = filteredSaves.filter(s => !swipedPlaceIds.has(s.place_id));
+      console.log(`🎯 After filtering swiped: ${candidateSaves.length} final candidates`);
+
+      if (candidateSaves.length === 0) {
+        console.log('⚠️ No new locations to show');
+        setLocations([]);
+        setCurrentIndex(0);
+        setLoading(false);
+        return;
+      }
+
+      // Shuffle and limit to remaining quota
+      const shuffled = candidateSaves.sort(() => Math.random() - 0.5).slice(0, remainingQuota);
+      console.log(`🎲 Showing ${shuffled.length} locations`);
+
+      // Map to SwipeLocation format
+      const locationsToShow: SwipeLocation[] = shuffled.map(save => {
+        const coords = save.coordinates as any;
+        return {
+          id: save.place_id,
+          place_id: save.place_id,
+          name: save.place_name,
+          category: save.place_category || 'Unknown',
+          city: save.city || 'Unknown',
+          address: undefined,
+          image_url: undefined,
+          coordinates: {
+            lat: coords?.lat || 0,
+            lng: coords?.lng || 0
+          }
+        };
+      });
+
+      setLocations(locationsToShow);
       setCurrentIndex(0);
     } catch (error) {
-      console.error('Error fetching swipe locations:', error);
+      console.error('❌ Error fetching swipe locations:', error);
       toast.error('Failed to load locations');
     } finally {
       setLoading(false);
@@ -169,18 +182,61 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
     setSwipeDirection(direction);
 
     try {
+      // First, get or create the location in the locations table
+      let locationId: string | null = null;
+
+      // Check if location already exists
+      const { data: existingLocation } = await supabase
+        .from('locations')
+        .select('id')
+        .eq('google_place_id', location.place_id)
+        .single();
+
+      if (existingLocation) {
+        locationId = existingLocation.id;
+      } else {
+        // Create new location
+        const { data: newLocation, error: createError } = await supabase
+          .from('locations')
+          .insert({
+            google_place_id: location.place_id,
+            name: location.name,
+            category: location.category,
+            city: location.city,
+            address: location.address,
+            image_url: location.image_url,
+            latitude: location.coordinates.lat,
+            longitude: location.coordinates.lng,
+            created_by: user.id
+          })
+          .select('id')
+          .single();
+
+        if (createError) {
+          console.error('Error creating location:', createError);
+          toast.error('Failed to save location');
+          setSwipeDirection(null);
+          return;
+        }
+        locationId = newLocation.id;
+      }
+
       // Record swipe
-      await supabase.from('location_swipes' as any).insert({
+      await supabase.from('location_swipes').insert({
         user_id: user.id,
-        location_id: location.id,
+        location_id: locationId,
         swiped_right: direction === 'right'
       });
 
       if (direction === 'right') {
-        // Save location
-        await supabase.from('user_saved_locations').insert({
+        // Save to saved_places
+        await supabase.from('saved_places').insert({
           user_id: user.id,
-          location_id: location.id
+          place_id: location.place_id,
+          place_name: location.name,
+          place_category: location.category,
+          city: location.city,
+          coordinates: location.coordinates
         });
         toast.success(`${location.name} saved!`);
       }
@@ -264,7 +320,7 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
               <Heart className="w-10 h-10 text-white" />
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-2">That's all for today!</h3>
-            <p className="text-gray-600 mb-6">Come back tomorrow for more discoveries</p>
+            <p className="text-gray-600 mb-6">Come back in 12 hours for more discoveries</p>
             <Button onClick={onClose}>Close</Button>
           </div>
         ) : currentLocation ? (
@@ -332,7 +388,7 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
                 className="transition-all hover:scale-110 active:scale-95"
                 aria-label="Save for later"
               >
-                <img src={saveLaterIcon} alt="Save for later" className="w-14 h-14" />
+                <img src={hourglassIcon} alt="Save for later" className="w-14 h-14" />
               </button>
             </div>
           </div>

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { MapPin, Loader2, Search } from 'lucide-react';
+import { MapPin, Loader2, Search, Check } from 'lucide-react';
 import { loadGoogleMapsAPI } from '@/lib/googleMaps';
 import { allowedCategories, categoryDisplayNames, type AllowedCategory } from '@/utils/allowedCategories';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
+import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 
 interface NearbyPlace {
   place_id: string;
@@ -32,6 +33,7 @@ const NearbyPlacesSuggestions: React.FC<NearbyPlacesSuggestionsProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
+  const { isPlaceSaved } = useSavedPlaces();
 
   // Map Google Places types to our categories
   const mapPlaceTypeToCategory = (types: string[]): AllowedCategory | null => {
@@ -176,39 +178,53 @@ const NearbyPlacesSuggestions: React.FC<NearbyPlacesSuggestionsProps> = ({
               <p className="text-xs text-muted-foreground mb-2">
                 Tap a suggestion below or keep typing to search:
               </p>
-              {filteredPlaces.map((place) => (
-                <button
-                  key={place.place_id}
-                  onClick={() => onPlaceSelect(place)}
-                  className={`w-full flex items-start gap-3 p-4 rounded-2xl border transition-all text-left ${
-                    selectedPlaceId === place.place_id
-                      ? 'bg-primary/10 border-primary shadow-sm'
-                      : 'bg-background border-border hover:bg-accent hover:border-accent-foreground/20'
-                  }`}
-                >
-                  <CategoryIcon category={categoryDisplayNames[place.category!]} className="w-10 h-10 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-foreground text-sm leading-snug">
-                      {place.name}
-                    </h4>
-                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-2">
-                      {place.address}
-                    </p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Badge variant="secondary" className="text-[10px] px-2 py-0.5 h-5">
-                        {categoryDisplayNames[place.category!]}
-                      </Badge>
-                      {place.distance !== undefined && (
-                        <span className="text-[10px] text-muted-foreground">
-                          {place.distance < 100
-                            ? `${Math.round(place.distance)}m away`
-                            : `${(place.distance / 1000).toFixed(1)}km away`}
-                        </span>
-                      )}
+              {filteredPlaces.map((place) => {
+                const isSaved = isPlaceSaved(place.place_id);
+                
+                return (
+                  <button
+                    key={place.place_id}
+                    onClick={() => onPlaceSelect(place)}
+                    className={`w-full flex items-start gap-3 p-4 rounded-2xl border transition-all text-left ${
+                      selectedPlaceId === place.place_id
+                        ? isSaved
+                          ? 'bg-green-500/10 border-green-500 shadow-sm'
+                          : 'bg-primary/10 border-primary shadow-sm'
+                        : 'bg-background border-border hover:bg-accent hover:border-accent-foreground/20'
+                    }`}
+                  >
+                    <CategoryIcon category={categoryDisplayNames[place.category!]} className="w-10 h-10 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <h4 className="font-medium text-foreground text-sm leading-snug flex-1">
+                          {place.name}
+                        </h4>
+                        {isSaved && (
+                          <div className="flex items-center gap-1 bg-green-500/20 px-2 py-0.5 rounded-full">
+                            <Check className="w-3 h-3 text-green-600" />
+                            <span className="text-[10px] font-medium text-green-600">Saved</span>
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-2">
+                        {place.address}
+                      </p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Badge variant="secondary" className="text-[10px] px-2 py-0.5 h-5">
+                          {categoryDisplayNames[place.category!]}
+                        </Badge>
+                        {place.distance !== undefined && (
+                          <span className="text-[10px] text-muted-foreground">
+                            {place.distance < 100
+                              ? `${Math.round(place.distance)}m away`
+                              : `${(place.distance / 1000).toFixed(1)}km away`}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </>
           ) : (
             <div className="text-center py-8 text-muted-foreground">

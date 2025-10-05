@@ -104,31 +104,31 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b">
+      <div className="sticky top-0 z-10 bg-background/98 backdrop-blur-md border-b">
         <div className="flex items-center gap-3 p-4">
           <Button
             variant="ghost"
             size="icon"
             onClick={onClose}
-            className="h-10 w-10 rounded-full"
+            className="h-9 w-9 rounded-full"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </Button>
-          <h2 className="text-xl font-bold">Search Cities</h2>
+          <h2 className="text-lg font-bold">Search Cities</h2>
         </div>
 
         {/* Search Bar */}
-        <div className="bg-background/95 backdrop-blur-sm px-4 pb-4">
+        <div className="bg-background/98 backdrop-blur-md px-4 pb-4">
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Search for any city in the world..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 pr-12 h-14 text-base rounded-full bg-background border-2 border-border shadow-sm"
+              className="pl-10 pr-10 h-11 text-sm rounded-full bg-background border-2 border-border shadow-sm"
               autoFocus
             />
             {searchQuery && (
@@ -136,9 +136,9 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
                 variant="ghost"
                 size="icon"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
               >
-                <X className="h-4 w-4" />
+                <X className="h-3 w-3" />
               </Button>
             )}
           </div>
@@ -146,47 +146,45 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
       </div>
 
       {/* Content */}
-      <div className="overflow-y-auto h-[calc(100vh-140px)] pb-20">
+      <div className="overflow-y-auto h-[calc(100vh-120px)] pb-20">
         {searching ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="flex flex-col items-center gap-3">
-              <Loader2 className="w-8 h-8 text-primary animate-spin" />
-              <span className="text-muted-foreground">Searching cities...</span>
+          <div className="flex items-center justify-center py-16">
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="w-6 h-6 text-primary animate-spin" />
+              <span className="text-sm text-muted-foreground">Searching cities...</span>
             </div>
           </div>
         ) : cityResults.length > 0 ? (
-          <div className="px-4 py-4">
-            <h3 className="text-sm font-semibold text-foreground mb-3">Cities</h3>
-            <div className="space-y-2">
+          <div className="px-4 py-3">
+            <div className="space-y-1.5">
               {cityResults.map((city) => (
                 <button
                   key={city.place_id}
                   onClick={() => handleCitySelect(city)}
-                  className="w-full flex items-center gap-4 p-4 rounded-2xl bg-card hover:bg-accent border border-border transition-all text-left group"
+                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-card hover:bg-accent border border-border transition-all text-left group"
                 >
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors">
-                    <MapPin className="h-6 w-6 text-primary" />
+                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors">
+                    <MapPin className="h-4 w-4 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-lg text-foreground">{city.name}</div>
-                    <div className="text-sm text-muted-foreground truncate">{city.formatted_address}</div>
+                    <div className="font-semibold text-sm text-foreground">{city.name}</div>
+                    <div className="text-xs text-muted-foreground truncate">{city.formatted_address}</div>
                   </div>
                 </button>
               ))}
             </div>
           </div>
         ) : searchQuery ? (
-          <div className="flex flex-col items-center justify-center py-20 px-4">
-            <MapPin className="h-16 w-16 text-muted-foreground/30 mb-4" />
-            <p className="text-lg font-medium text-foreground text-center">No cities found</p>
-            <p className="text-sm text-muted-foreground text-center mt-2">
+          <div className="flex flex-col items-center justify-center py-16 px-4">
+            <MapPin className="h-12 w-12 text-muted-foreground/30 mb-3" />
+            <p className="text-base font-medium text-foreground text-center">No cities found</p>
+            <p className="text-xs text-muted-foreground text-center mt-1">
               Try searching for a different city name
             </p>
           </div>
         ) : (
-          <div className="px-4 py-4">
-            <h3 className="text-sm font-semibold text-foreground mb-3">Popular Cities</h3>
-            <div className="space-y-2">
+          <div className="px-4 py-3">
+            <div className="space-y-1.5">
               {[
                 { name: 'Dublin', country: 'Ireland' },
                 { name: 'London', country: 'United Kingdom' },
@@ -200,14 +198,14 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
                 <button
                   key={city.name}
                   onClick={() => setSearchQuery(city.name)}
-                  className="w-full flex items-center gap-4 p-4 rounded-2xl bg-card hover:bg-accent border border-border transition-all text-left"
+                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-card hover:bg-accent border border-border transition-all text-left"
                 >
-                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                    <TrendingUp className="h-5 w-5 text-primary" />
+                  <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                    <TrendingUp className="h-4 w-4 text-primary" />
                   </div>
                   <div>
-                    <div className="font-semibold text-foreground">{city.name}</div>
-                    <div className="text-sm text-muted-foreground">{city.country}</div>
+                    <div className="font-semibold text-sm text-foreground">{city.name}</div>
+                    <div className="text-xs text-muted-foreground">{city.country}</div>
                   </div>
                 </button>
               ))}
