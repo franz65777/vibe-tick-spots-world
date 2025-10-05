@@ -188,7 +188,7 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-4 py-4 bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
         {!query.trim() && (
-          <div className="space-y-3 mb-4">
+          <div className="flex flex-wrap gap-2 mb-4">
             {(trendingCities.length ? trendingCities : popularCities.map(c => ({ name: c.name, count: 0 }))).map((item) => (
               <CityEngagementCard
                 key={item.name}
@@ -208,7 +208,7 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
         )}
 
         {results.length > 0 && (
-          <div className="space-y-3">
+          <div className="flex flex-wrap gap-2">
             {results.map((city, index) => (
               <CityEngagementCard
                 key={index}

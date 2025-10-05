@@ -34,27 +34,59 @@ export const useCityEngagement = (cityName: string | null) => {
 
         const followingIds = followsData?.map(f => f.following_id) || [];
 
-        // Get all saves for this city
+        // Get all saves for this city from saved_places (Google places)
         const { data: allSaves } = await supabase
           .from('saved_places')
           .select('user_id, place_id')
           .ilike('city', cityName);
 
-        const totalPins = allSaves?.length || 0;
+        // Count unique Google place_ids
+        const uniqueSavedPlaceIds = new Set((allSaves || []).map((s: any) => s.place_id));
 
-        // Get unique followed users who saved in this city
-        const followedUserIds = [...new Set(
-          allSaves
-            ?.filter(s => followingIds.includes(s.user_id))
-            .map(s => s.user_id) || []
-        )];
+        // Also include saves from internal locations via user_saved_locations + locations.city
+        const { data: cityLocations } = await supabase
+          .from('locations')
+          .select('id')
+          .ilike('city', cityName);
 
-        // Fetch profiles of followed users
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, username, avatar_url')
-          .in('id', followedUserIds)
-          .limit(3);
+        const locationIds = (cityLocations || []).map((l: any) => l.id);
+        let userSavedFromLocations: { user_id: string; location_id: string }[] = [];
+        if (locationIds.length > 0) {
+          const { data: usl } = await supabase
+            .from('user_saved_locations')
+            .select('user_id, location_id')
+            .in('location_id', locationIds);
+          userSavedFromLocations = usl || [];
+        }
+
+        // Count unique internal location_ids
+        const uniqueInternalLocationIds = new Set(userSavedFromLocations.map((r) => r.location_id));
+
+        // Total unique pins across both systems
+        const totalPins = uniqueSavedPlaceIds.size + uniqueInternalLocationIds.size;
+
+        // Get unique followed users who saved in this city (from both tables)
+        const followedFromSavedPlaces = new Set(
+          (allSaves || [])
+            .filter((s: any) => followingIds.includes(s.user_id))
+            .map((s: any) => s.user_id)
+        );
+
+        const followedFromUSL = new Set(
+          userSavedFromLocations
+            .filter((r) => followingIds.includes(r.user_id))
+            .map((r) => r.user_id)
+        );
+
+        const followedUserIds = Array.from(new Set([...followedFromSavedPlaces, ...followedFromUSL])).slice(0, 3);
+
+        // Fetch profiles of followed users (limit 3)
+        const { data: profiles } = followedUserIds.length
+          ? await supabase
+              .from('profiles')
+              .select('id, username, avatar_url')
+              .in('id', followedUserIds)
+          : { data: [] as any } as any;
 
         setEngagement({
           city: cityName,
