@@ -348,7 +348,7 @@ const HomePage = () => {
         
         {/* Map Section - reduced by 20%, with expand functionality */}
         {!isSwipeDiscoveryOpen && (
-          <div className={isMapExpanded ? "fixed inset-0 z-50 bg-white dark:bg-gray-900" : "h-[40vh] flex-shrink-0"}>
+          <div className={isMapExpanded ? "fixed inset-0 z-50 bg-background" : "h-[35vh] flex-shrink-0"}>
             <MapSection
               mapCenter={mapCenter}
               currentCity={currentCity}

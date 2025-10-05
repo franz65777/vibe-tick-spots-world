@@ -142,18 +142,18 @@ const MapSection = ({ mapCenter, currentCity, isExpanded = false, onToggleExpand
         {!selectedPlace && <MapCategoryFilters />}
 
         {/* Map Controls - List View and Expand Toggle */}
-        <div className="absolute bottom-8 right-4 z-40 flex gap-2">
+        <div className="absolute bottom-6 right-3 z-40 flex flex-col gap-2">
           {/* Expand/Collapse Button */}
           {onToggleExpand && (
             <Button
               onClick={onToggleExpand}
               size="icon"
-              className="rounded-full bg-white/95 backdrop-blur-md shadow-lg border border-gray-200 hover:bg-white w-12 h-12"
+              className="rounded-full bg-background/95 backdrop-blur-md shadow-md border border-border hover:bg-accent w-10 h-10 transition-all"
             >
               {isExpanded ? (
-                <Minimize2 className="w-6 h-6 text-gray-700" />
+                <Minimize2 className="w-4 h-4 text-foreground" />
               ) : (
-                <Maximize2 className="w-6 h-6 text-gray-700" />
+                <Maximize2 className="w-4 h-4 text-foreground" />
               )}
             </Button>
           )}
@@ -163,9 +163,9 @@ const MapSection = ({ mapCenter, currentCity, isExpanded = false, onToggleExpand
             <SheetTrigger asChild>
               <Button
                 size="icon"
-                className="rounded-full bg-white/95 backdrop-blur-md shadow-lg border border-gray-200 hover:bg-white w-12 h-12"
+                className="rounded-full bg-background/95 backdrop-blur-md shadow-md border border-border hover:bg-accent w-10 h-10 transition-all"
               >
-                <List className="w-6 h-6 text-gray-700" />
+                <List className="w-4 h-4 text-foreground" />
               </Button>
             </SheetTrigger>
             <SheetContent side="bottom" className="h-[70vh] rounded-t-3xl">

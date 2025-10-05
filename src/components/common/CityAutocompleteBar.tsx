@@ -90,21 +90,20 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
     <div className="group relative">
       <div className="relative">
         {isLoading ? (
-          <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-primary animate-spin" />
+          <Loader2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground animate-spin" />
         ) : (
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+          <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         )}
         <input
           ref={inputRef}
           type="text"
-          placeholder={isLoading ? 'Loading city search…' : 'Search any city worldwide…'}
+          placeholder={isLoading ? 'Loading…' : currentCity || 'Search any city worldwide'}
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           onKeyPress={onSearchKeyPress}
-          className="w-full h-12 pl-10 pr-4 rounded-2xl bg-background/80 backdrop-blur-xl border border-border shadow-[0_6px_20px_hsl(var(--foreground)/0.06)] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition placeholder:text-muted-foreground text-foreground"
+          className="w-full h-11 pl-11 pr-4 rounded-full bg-background border border-input shadow-sm focus:outline-none focus:ring-1 focus:ring-ring focus:border-input transition-all placeholder:text-muted-foreground text-sm font-medium text-foreground"
         />
       </div>
-
     </div>
   );
 };

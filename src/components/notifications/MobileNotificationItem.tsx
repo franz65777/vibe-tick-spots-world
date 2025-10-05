@@ -69,32 +69,32 @@ const MobileNotificationItem = ({ notification, onMarkAsRead, onAction }: Mobile
 
   return (
     <div 
-      className={`flex items-center gap-3 p-4 border-b border-gray-50 cursor-pointer active:bg-gray-50 transition-colors ${
-        !notification.is_read ? 'bg-blue-50/30' : 'bg-white'
+      className={`flex items-start gap-3 p-4 cursor-pointer active:bg-accent/50 transition-colors ${
+        !notification.is_read ? 'bg-muted/30' : 'bg-background'
       }`}
       onClick={handleClick}
     >
       {/* Icon */}
-      <div className={`flex-shrink-0 w-10 h-10 rounded-full border flex items-center justify-center ${getIconBackground()}`}>
+      <div className={`flex-shrink-0 w-11 h-11 rounded-full border flex items-center justify-center ${getIconBackground()}`}>
         {getIcon()}
       </div>
       
       {/* Content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between mb-1">
-          <h4 className="font-semibold text-gray-900 text-sm leading-tight">{notification.title}</h4>
+      <div className="flex-1 min-w-0 pt-0.5">
+        <div className="flex items-start gap-2 mb-0.5">
+          <h4 className="font-semibold text-foreground text-[15px] leading-tight flex-1">{notification.title}</h4>
           {!notification.is_read && (
-            <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-1"></div>
+            <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-1.5"></div>
           )}
         </div>
-        <p className="text-gray-600 text-sm leading-relaxed line-clamp-2 mb-1">{notification.message}</p>
-        <p className="text-gray-400 text-xs">
+        <p className="text-muted-foreground text-[13px] leading-relaxed line-clamp-2 mb-1.5">{notification.message}</p>
+        <p className="text-muted-foreground/60 text-xs">
           {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
         </p>
       </div>
       
       {/* Arrow */}
-      <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+      <ChevronRight className="w-4 h-4 text-muted-foreground/40 flex-shrink-0 mt-3" />
     </div>
   );
 };
