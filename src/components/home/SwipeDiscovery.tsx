@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import xIcon from '@/assets/icon-x-red.png';
-import hourglassIcon from '@/assets/hourglass-3d.png';
+import saveLaterIcon from '@/assets/icon-like-pin.png';
 
 interface SwipeLocation {
   id: string;
@@ -83,7 +83,8 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
 
       const followingIds = followingData?.map(f => f.following_id) || [];
 
-      console.log('🔍 Following users:', followingIds.length);
+      console.log('🔍 Following users:', followingIds);
+      console.log('🔍 Following users count:', followingIds.length);
 
       // Get locations saved by followed users (via saved_places -> locations.google_place_id)
       let locationsToShow: SwipeLocation[] = [];
@@ -95,13 +96,17 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
           .order('created_at', { ascending: false })
           .limit(200);
 
-        console.log('📍 Friends saved place_ids:', friendsSaves?.length);
+        console.log('📍 Friends saved places:', friendsSaves);
+        console.log('📍 Friends saved place_ids count:', friendsSaves?.length);
         if (savesError) {
-          console.error('Error fetching friends saves:', savesError);
+          console.error('❌ Error fetching friends saves:', savesError);
         }
 
         const friendPlaceIds = Array.from(new Set((friendsSaves || []).map((s: any) => s.place_id)));
+        console.log('🎯 Unique friend place_ids:', friendPlaceIds);
+        
         const filteredPlaceIds = friendPlaceIds.filter(pid => !mySavedPlaceIds.has(pid));
+        console.log('✅ Filtered place_ids (not already saved by me):', filteredPlaceIds);
 
         if (filteredPlaceIds.length > 0) {
           const { data: locationsData, error } = await supabase
@@ -110,13 +115,16 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
             .in('google_place_id', filteredPlaceIds)
             .limit(200);
 
+          console.log('📍 Locations found matching place_ids:', locationsData);
           if (error) {
-            console.error('Error fetching locations:', error);
+            console.error('❌ Error fetching locations:', error);
           }
 
           if (locationsData && !error) {
             // Filter out locations swiped in last 12h
             const candidate = locationsData.filter(loc => !swipedIds.includes(loc.id));
+            console.log('🎲 Candidates after filtering swiped:', candidate.length);
+            
             // Shuffle
             const shuffled = candidate.sort(() => Math.random() - 0.5);
             const limited = shuffled.slice(0, remainingQuota);
@@ -134,12 +142,16 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
               }
             }));
           }
+        } else {
+          console.log('⚠️ No filtered place_ids to query');
         }
+      } else {
+        console.log('⚠️ Not following any users');
       }
 
-      // Shuffle and take 10
+      // Shuffle and take up to 10
       const shuffled = locationsToShow.sort(() => Math.random() - 0.5).slice(0, 10);
-      console.log('🎲 Final shuffled locations to show:', shuffled.length);
+      console.log('🎲 Final shuffled locations to show:', shuffled);
       setLocations(shuffled);
       setCurrentIndex(0);
     } catch (error) {
@@ -320,7 +332,7 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
                 className="transition-all hover:scale-110 active:scale-95"
                 aria-label="Save for later"
               >
-                <img src={hourglassIcon} alt="Save for later" className="w-14 h-14" />
+                <img src={saveLaterIcon} alt="Save for later" className="w-14 h-14" />
               </button>
             </div>
           </div>

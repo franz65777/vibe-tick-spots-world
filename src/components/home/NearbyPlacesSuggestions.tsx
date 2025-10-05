@@ -59,7 +59,7 @@ const NearbyPlacesSuggestions: React.FC<NearbyPlacesSuggestionsProps> = ({
 
   // Debounce the query so we only search when user pauses typing
   useEffect(() => {
-    const id = setTimeout(() => setDebouncedQuery(searchQuery), 500);
+    const id = setTimeout(() => setDebouncedQuery(searchQuery), 600);
     return () => clearTimeout(id);
   }, [searchQuery]);
 
@@ -180,7 +180,7 @@ const NearbyPlacesSuggestions: React.FC<NearbyPlacesSuggestionsProps> = ({
                 <button
                   key={place.place_id}
                   onClick={() => onPlaceSelect(place)}
-                  className={`w-full flex items-start gap-3 p-3 rounded-xl border transition-all text-left ${
+                  className={`w-full flex items-start gap-3 p-4 rounded-2xl border transition-all text-left ${
                     selectedPlaceId === place.place_id
                       ? 'bg-primary/10 border-primary shadow-sm'
                       : 'bg-background border-border hover:bg-accent hover:border-accent-foreground/20'
@@ -188,14 +188,14 @@ const NearbyPlacesSuggestions: React.FC<NearbyPlacesSuggestionsProps> = ({
                 >
                   <CategoryIcon category={categoryDisplayNames[place.category!]} className="w-10 h-10 shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-foreground truncate text-sm">
+                    <h4 className="font-medium text-foreground text-sm leading-snug">
                       {place.name}
                     </h4>
-                    <p className="text-xs text-muted-foreground truncate mt-0.5">
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-2">
                       {place.address}
                     </p>
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <Badge variant="secondary" className="text-[10px] px-2 py-0 h-5">
+                    <div className="flex items-center gap-2 mt-2">
+                      <Badge variant="secondary" className="text-[10px] px-2 py-0.5 h-5">
                         {categoryDisplayNames[place.category!]}
                       </Badge>
                       {place.distance !== undefined && (
