@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronLeft, MapPin, Calendar, Users, Heart, MessageCircle, Share2, Bookmark, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocationInteraction } from '@/hooks/useLocationInteraction';
@@ -274,22 +275,11 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
     setShowComments(true);
   };
 
-  if (!isOpen) return null;
-
-  if (loading) {
-    return (
-      <div className="fixed inset-0 bg-white z-50 flex items-center justify-center">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-gray-600 font-medium">Loading posts...</span>
-        </div>
-      </div>
-    );
-  }
-
   if (selectedPost) {
     return (
-      <div className="fixed inset-0 bg-black z-50 flex flex-col">
+      <Drawer open={!!selectedPost} onOpenChange={(open) => !open && setSelectedPost(null)}>
+        <DrawerContent className="h-[95vh]">
+          <div className="fixed inset-0 bg-black z-50 flex flex-col h-full">
         {/* Individual Post View */}
         <div className="flex items-center justify-between p-4 bg-black text-white">
           <Button
@@ -376,14 +366,26 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
                 <Bookmark className={`w-4 h-4 ${savedPosts.has(selectedPost.id) ? 'fill-current' : ''}`} />
               </Button>
             </div>
+            </div>
           </div>
         </div>
-      </div>
+        </DrawerContent>
+      </Drawer>
     );
   }
 
   return (
-    <div className="fixed inset-0 bg-white z-50 flex flex-col">
+    <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()} modal={false}>
+      <DrawerContent className="h-[90vh]">
+        {loading ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-gray-600 font-medium">Loading posts...</span>
+            </div>
+          </div>
+        ) : (
+        <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="bg-white px-4 py-4 flex items-center gap-3 shadow-sm border-b">
         <Button
@@ -475,14 +477,17 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
         )}
       </div>
 
-      {/* Visited -> comments modal */}
-      <PlaceInteractionModal
-        isOpen={showComments}
-        onClose={() => setShowComments(false)}
-        mode="comments"
-        place={{ id: place.id, name: place.name, category: place.category, coordinates: place.coordinates }}
-      />
-    </div>
+        {/* Visited -> comments modal */}
+        <PlaceInteractionModal
+          isOpen={showComments}
+          onClose={() => setShowComments(false)}
+          mode="comments"
+          place={{ id: place.id, name: place.name, category: place.category, coordinates: place.coordinates }}
+        />
+      </div>
+      )}
+      </DrawerContent>
+    </Drawer>
   );
 };
 

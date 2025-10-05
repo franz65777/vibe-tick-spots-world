@@ -125,7 +125,7 @@ const MapSection = ({ mapCenter, currentCity, isExpanded = false, onToggleExpand
 
   return (
     <>
-      <div className="flex-1 relative min-h-[500px] w-full rounded-none overflow-hidden">
+      <div className={`${isExpanded ? 'fixed inset-0 w-screen h-screen' : 'flex-1 relative min-h-[500px]'} w-full overflow-hidden`}>
         <GoogleMapsSetup
           places={places}
           onPinClick={handlePinClick}
