@@ -8,13 +8,15 @@ import { getCategoryColor } from '@/utils/categoryIcons';
 
 interface PlaceMessageCardProps {
   placeData: {
-    id: string;
+    id?: string;
+    place_id?: string;
     name: string;
     category: string;
     address?: string;
     city?: string;
     image?: string;
     coordinates?: { lat: number; lng: number };
+    google_place_id?: string;
   };
   onViewPlace: (place: any) => void;
 }
@@ -83,7 +85,7 @@ const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => 
             }}
           >
             <ExternalLink className="w-3 h-3 mr-1" />
-            View Place
+            Open in Search
           </Button>
         </div>
       </CardContent>

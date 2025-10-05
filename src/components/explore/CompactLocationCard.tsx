@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Heart, Bookmark, MessageCircle, Share2, MapPin, Star, Camera } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Heart, Bookmark, MessageCircle, Share2, MapPin, Star, Camera, Users } from 'lucide-react';
 import { Place } from '@/types/place';
 import { usePlaceEngagement } from '@/hooks/usePlaceEngagement';
+import { usePinEngagement } from '@/hooks/usePinEngagement';
 import { imageService } from '@/services/imageService';
 import CommentModal from './CommentModal';
 import PinShareModal from './PinShareModal';
@@ -18,6 +20,7 @@ interface CompactLocationCardProps {
 
 const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) => {
   const { isLiked, isSaved, toggleLike, toggleSave } = usePlaceEngagement();
+  const { engagement } = usePinEngagement(place.id, place.google_place_id || null);
   const [isLiking, setIsLiking] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [commentModalOpen, setCommentModalOpen] = useState(false);
@@ -186,13 +189,21 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
                   <span className="font-semibold text-gray-700">{place.likes || 0}</span>
                 </div>
                 <div className="flex items-center gap-0.5">
-                  <Bookmark className="w-2.5 h-2.5 text-blue-500" />
-                  <span className="font-semibold text-gray-700">{place.totalSaves || 0}</span>
+                  <Users className="w-2.5 h-2.5 text-blue-500" />
+                  <span className="font-semibold text-gray-700">{engagement?.totalSaves || 0}</span>
                 </div>
-                <div className="flex items-center gap-0.5">
-                  <MessageCircle className="w-2.5 h-2.5 text-green-500" />
-                  <span className="font-semibold text-gray-700">0</span>
-                </div>
+                {engagement && engagement.followedUsers.length > 0 && (
+                  <div className="flex items-center -space-x-1.5">
+                    {engagement.followedUsers.slice(0, 3).map((user) => (
+                      <Avatar key={user.id} className="w-4 h-4 border-2 border-white">
+                        <AvatarImage src={user.avatar_url || ''} />
+                        <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white text-[8px]">
+                          {user.username?.[0]?.toUpperCase() || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
