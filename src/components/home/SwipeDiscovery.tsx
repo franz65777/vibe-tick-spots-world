@@ -4,9 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import likeIcon from '@/assets/icon-like-pin.png';
 import xIcon from '@/assets/icon-x-red.png';
-import hourglassIcon from '@/assets/icon-hourglass.png';
+import hourglassIcon from '@/assets/hourglass-3d.png';
 
 interface SwipeLocation {
   id: string;
@@ -48,23 +47,33 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
     try {
       setLoading(true);
 
-      // Get locations user has already swiped today
-      const today = new Date().toISOString().split('T')[0];
+      // 12h window limit
+      const since = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
+
+      // Swipes in the last 12h
       const { data: swipedData } = await supabase
         .from('location_swipes' as any)
-        .select('location_id')
+        .select('location_id, created_at')
         .eq('user_id', user.id)
-        .gte('created_at', today);
+        .gte('created_at', since);
 
       const swipedIds = (swipedData as any[])?.map((s: any) => s.location_id) || [];
+      const usedCount = (swipedData as any[])?.length || 0;
+      const remainingQuota = Math.max(0, 10 - usedCount);
 
-      // Get locations user has already saved
-      const { data: savedData } = await supabase
-        .from('user_saved_locations')
-        .select('location_id')
+      if (remainingQuota === 0) {
+        setLocations([]);
+        setCurrentIndex(0);
+        setLoading(false);
+        return;
+      }
+
+      // Current user's saved places (google place ids) to exclude
+      const { data: mySavedPlaces } = await supabase
+        .from('saved_places')
+        .select('place_id')
         .eq('user_id', user.id);
-
-      const savedIds = savedData?.map(s => s.location_id) || [];
+      const mySavedPlaceIds = new Set((mySavedPlaces || []).map((s: any) => s.place_id));
 
       // Get users I follow
       const { data: followingData } = await supabase
@@ -76,51 +85,49 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
 
       console.log('🔍 Following users:', followingIds.length);
 
-      // Get locations saved by users I follow (excluding ones I swiped/saved)
+      // Get locations saved by followed users (via saved_places -> locations.google_place_id)
       let locationsToShow: SwipeLocation[] = [];
       if (followingIds.length > 0) {
         const { data: friendsSaves, error: savesError } = await supabase
-          .from('user_saved_locations')
-          .select('location_id, created_at')
+          .from('saved_places')
+          .select('place_id, created_at, user_id')
           .in('user_id', followingIds)
           .order('created_at', { ascending: false })
-          .limit(50); // Get more to filter from
+          .limit(200);
 
-        console.log('📍 Friends saves:', friendsSaves?.length);
+        console.log('📍 Friends saved place_ids:', friendsSaves?.length);
         if (savesError) {
           console.error('Error fetching friends saves:', savesError);
         }
 
-        const friendsSavedLocationIds = Array.from(new Set(friendsSaves?.map(s => s.location_id) || []));
+        const friendPlaceIds = Array.from(new Set((friendsSaves || []).map((s: any) => s.place_id)));
+        const filteredPlaceIds = friendPlaceIds.filter(pid => !mySavedPlaceIds.has(pid));
 
-        // Filter out already swiped/saved
-        const filteredIds = friendsSavedLocationIds.filter(
-          id => !swipedIds.includes(id) && !savedIds.includes(id)
-        );
-
-        console.log('✅ Filtered location IDs:', filteredIds.length);
-
-        if (filteredIds.length > 0) {
+        if (filteredPlaceIds.length > 0) {
           const { data: locationsData, error } = await supabase
             .from('locations')
-            .select('id, name, category, city, address, image_url, latitude, longitude')
-            .in('id', filteredIds)
-            .limit(10);
+            .select('id, name, category, city, address, image_url, latitude, longitude, google_place_id')
+            .in('google_place_id', filteredPlaceIds)
+            .limit(200);
 
           if (error) {
             console.error('Error fetching locations:', error);
-          } else {
-            console.log('🎉 Fetched locations:', locationsData?.length);
           }
 
-          if (!error && locationsData) {
-            locationsToShow = locationsData.map(loc => ({
+          if (locationsData && !error) {
+            // Filter out locations swiped in last 12h
+            const candidate = locationsData.filter(loc => !swipedIds.includes(loc.id));
+            // Shuffle
+            const shuffled = candidate.sort(() => Math.random() - 0.5);
+            const limited = shuffled.slice(0, remainingQuota);
+
+            locationsToShow = limited.map(loc => ({
               id: loc.id,
               name: loc.name,
               category: loc.category,
               city: loc.city || 'Unknown',
-              address: loc.address,
-              image_url: loc.image_url,
+              address: loc.address || undefined,
+              image_url: loc.image_url || undefined,
               coordinates: {
                 lat: parseFloat(loc.latitude?.toString() || '0'),
                 lng: parseFloat(loc.longitude?.toString() || '0')
@@ -226,12 +233,14 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
           </button>
         </div>
         
-        {/* Counter - Top Right */}
-        <div className="absolute top-20 right-4 px-3 py-1.5 rounded-full bg-white shadow-lg z-10">
-          <span className="text-sm font-semibold text-gray-900">
-            {currentIndex + 1} / {locations.length}
-          </span>
-        </div>
+        {/* Counter - Top Right (only when a card is active) */}
+        {hasMore && currentLocation && (
+          <div className="absolute top-20 right-4 px-3 py-1.5 rounded-full bg-white shadow-lg z-10">
+            <span className="text-sm font-semibold text-gray-900">
+              {currentIndex + 1} / {locations.length}
+            </span>
+          </div>
+        )}
 
         {loading ? (
           <div className="h-full flex items-center justify-center">

@@ -31,6 +31,7 @@ const NearbyPlacesSuggestions: React.FC<NearbyPlacesSuggestionsProps> = ({
   const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
 
   // Map Google Places types to our categories
   const mapPlaceTypeToCategory = (types: string[]): AllowedCategory | null => {
@@ -55,6 +56,12 @@ const NearbyPlacesSuggestions: React.FC<NearbyPlacesSuggestionsProps> = ({
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c * 1000; // Return in meters
   };
+
+  // Debounce the query so we only search when user pauses typing
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedQuery(searchQuery), 500);
+    return () => clearTimeout(id);
+  }, [searchQuery]);
 
   useEffect(() => {
     let cancelled = false;
@@ -96,9 +103,9 @@ const NearbyPlacesSuggestions: React.FC<NearbyPlacesSuggestionsProps> = ({
           if (!cancelled) setNearbyPlaces(sorted);
         };
 
-        // If user typed something, run a text search near the pin
-        if (searchQuery.trim().length >= 2) {
-          const req: google.maps.places.TextSearchRequest = { location, radius: 2000, query: searchQuery } as any;
+        // If user typed something, run a text search near the pin (debounced)
+        if (debouncedQuery.trim().length >= 2) {
+          const req: google.maps.places.TextSearchRequest = { location, radius: 2000, query: debouncedQuery } as any;
           service.textSearch(req, (results: any, status: any) => {
             if (status === g.maps.places.PlacesServiceStatus.OK && results) finalize(results);
             setIsLoading(false);
@@ -130,7 +137,7 @@ const NearbyPlacesSuggestions: React.FC<NearbyPlacesSuggestionsProps> = ({
 
     fetchPlaces();
     return () => { cancelled = true; };
-  }, [coordinates, searchQuery]);
+  }, [coordinates, debouncedQuery]);
 
   const filteredPlaces = searchQuery
     ? nearbyPlaces.filter(place =>
