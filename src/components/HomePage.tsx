@@ -15,6 +15,7 @@ import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '@/lib/googleMaps';
 import { supabase } from '@/integrations/supabase/client';
 import { ThemeToggle } from './ThemeToggle';
 import { Button } from './ui/button';
+import UnifiedSearchOverlay from './explore/UnifiedSearchOverlay';
 
 // Local interface for modal components that expect simpler Place structure
 interface LocalPlace {
@@ -62,6 +63,7 @@ const HomePage = () => {
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [currentCity, setCurrentCity] = useState('');
+  const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
 
   // Get user's current location on component mount
   useEffect(() => {
@@ -310,6 +312,7 @@ const HomePage = () => {
           onMessagesClick={() => setIsMessagesModalOpen(true)}
           onCreateStoryClick={() => setIsCreateStoryModalOpen(true)}
           onCitySelect={handleCityChange}
+          onOpenSearchOverlay={() => setIsSearchOverlayOpen(true)}
         />
       
       <main className="flex-1 flex flex-col overflow-hidden">
@@ -369,6 +372,17 @@ const HomePage = () => {
           </div>
         )}
       </main>
+
+      {/* Full-screen Search Overlay (fades background) */}
+      <UnifiedSearchOverlay
+        isOpen={isSearchOverlayOpen}
+        onClose={() => setIsSearchOverlayOpen(false)}
+        onCitySelect={(city, coords) => {
+          handleCityChange(city, coords);
+          setSearchQuery(city);
+          setIsSearchOverlayOpen(false);
+        }}
+      />
 
       <ModalsManager 
         isCreateStoryModalOpen={isCreateStoryModalOpen}

@@ -44,7 +44,7 @@ const NewBottomNavigation = () => {
 
   return (
     <nav 
-      className="fixed bottom-0 left-0 right-0 z-50"
+      className="fixed bottom-0 left-0 right-0 z-40"
       role="navigation"
       aria-label="Main navigation"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}

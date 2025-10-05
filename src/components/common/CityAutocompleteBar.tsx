@@ -8,6 +8,7 @@ interface CityAutocompleteBarProps {
   onSearchChange: (value: string) => void;
   onSearchKeyPress: (e: React.KeyboardEvent) => void;
   onCitySelect: (city: string, coords?: { lat: number; lng: number }) => void;
+  onFocusOpen?: () => void;
 }
 
 const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
@@ -101,6 +102,7 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           onKeyPress={onSearchKeyPress}
+          onFocus={() => onFocusOpen?.()}
           className="w-full h-11 pl-11 pr-4 rounded-full bg-background border border-input shadow-sm focus:outline-none focus:ring-1 focus:ring-ring focus:border-input transition-all placeholder:text-muted-foreground text-sm font-medium text-foreground"
         />
       </div>

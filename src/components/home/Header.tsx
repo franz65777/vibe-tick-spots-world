@@ -14,6 +14,7 @@ interface HeaderProps {
   onMessagesClick: () => void;
   onCreateStoryClick: () => void;
   onCitySelect: (city: string, coords?: { lat: number; lng: number }) => void;
+  onOpenSearchOverlay: () => void;
 }
 
 const Header = ({
@@ -41,6 +42,7 @@ const Header = ({
               searchQuery={searchQuery}
               onSearchChange={onSearchChange}
               onSearchKeyPress={onSearchKeyPress}
+              onFocusOpen={onOpenSearchOverlay}
             />
           </div>
 

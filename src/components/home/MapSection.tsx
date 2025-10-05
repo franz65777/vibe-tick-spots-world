@@ -125,7 +125,7 @@ const MapSection = ({ mapCenter, currentCity, isExpanded = false, onToggleExpand
 
   return (
     <>
-      <div className={`${isExpanded ? 'fixed inset-0 w-screen h-screen' : 'flex-1 relative min-h-[500px]'} w-full overflow-hidden`}>
+      <div className={`${isExpanded ? 'fixed inset-0 w-screen h-screen p-3' : 'flex-1 relative min-h-[500px]'} w-full overflow-hidden`}>
         <GoogleMapsSetup
           places={places}
           onPinClick={handlePinClick}
@@ -136,6 +136,7 @@ const MapSection = ({ mapCenter, currentCity, isExpanded = false, onToggleExpand
           onMapRightClick={handleMapRightClick}
           onMapClick={handleMapClick}
           activeFilter={activeFilter}
+          fullScreen={isExpanded}
         />
 
         {/* Map Category Filters - Hidden when pin detail is open */}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MapPin, Navigation, Heart, Bookmark, MessageSquare, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { locationInteractionService } from '@/services/locationInteractionService';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
@@ -86,11 +87,8 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center" onClick={onClose}>
-      <div 
-        className="bg-white w-full max-w-md max-h-[85vh] sm:rounded-3xl rounded-t-3xl overflow-hidden shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Drawer open={true} onOpenChange={(open) => { if (!open) onClose(); }} modal={false}>
+      <DrawerContent className="max-h-[90vh] rounded-t-3xl">
         {/* Header */}
         <div className="relative p-6 border-b border-gray-100">
           <Button
@@ -101,7 +99,6 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
           >
             <X className="w-5 h-5" />
           </Button>
-          
           <div className="flex items-start gap-3">
             <CategoryIcon category={place.category} className="w-10 h-10" />
             <div className="flex-1">
@@ -114,7 +111,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
           </div>
         </div>
 
-        <ScrollArea className="max-h-[60vh]">
+        <ScrollArea className="max-h-[70vh]">
           {/* Action Buttons */}
           <div className="p-4 grid grid-cols-3 gap-2">
             <Button
@@ -155,7 +152,6 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                 <MessageSquare className="w-4 h-4 text-gray-500" />
                 <h4 className="font-semibold text-sm text-gray-900">Post dalla community</h4>
               </div>
-              
               <div className="space-y-3">
                 {posts.map((post) => (
                   <div key={post.id} className="bg-gray-50 rounded-xl p-3">
@@ -193,17 +189,8 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
             </div>
           )}
         </ScrollArea>
-      </div>
-      
-      {/* Visited Modal */}
-      {showVisitedModal && (
-        <VisitedModal
-          place={place}
-          onClose={() => setShowVisitedModal(false)}
-          onSuccess={fetchPosts}
-        />
-      )}
-    </div>
+      </DrawerContent>
+    </Drawer>
   );
 };
 

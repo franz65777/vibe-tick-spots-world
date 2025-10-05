@@ -18,6 +18,7 @@ interface GoogleMapsSetupProps {
   onMapRightClick?: (coords: { lat: number; lng: number }) => void;
   onMapClick?: (coords: { lat: number; lng: number }) => void;
   activeFilter?: string;
+  fullScreen?: boolean;
 }
 
 import PinDetailCard from './explore/PinDetailCard';
@@ -31,7 +32,8 @@ const GoogleMapsSetup = ({
   onCloseSelectedPlace,
   onMapRightClick,
   onMapClick,
-  activeFilter
+  activeFilter,
+  fullScreen
 }: GoogleMapsSetupProps) => {
   const onMapRightClickRef = useRef(onMapRightClick);
   const onMapClickRef = useRef(onMapClick);
@@ -474,7 +476,7 @@ const GoogleMapsSetup = ({
 
   return (
     <>
-      <div className="relative w-full min-h-[60vh] rounded-lg overflow-hidden bg-gray-100" style={{ minHeight: '60vh' }}>
+      <div className={fullScreen ? 'relative w-full h-full rounded-2xl overflow-hidden bg-background' : 'relative w-full min-h-[60vh] rounded-lg overflow-hidden bg-gray-100'} style={fullScreen ? undefined : { minHeight: '60vh' }}>
         {/* Google Maps container must be empty and dedicated to the map */}
         <div ref={mapRef} className="absolute inset-0" />
 
