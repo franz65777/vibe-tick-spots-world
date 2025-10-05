@@ -15,6 +15,7 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
   const inputRef = useRef<HTMLInputElement>(null);
   const [autocompleteService, setAutocompleteService] = useState<any>(null);
   const [placesService, setPlacesService] = useState<any>(null);
+  const [trendingCities, setTrendingCities] = useState<{ name: string; count: number }[]>([]);
 
   const popularCities = [
     { name: 'Dublin', lat: 53.3498053, lng: -6.2603097 },
@@ -45,6 +46,33 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
         }
       });
     }
+  }, [isOpen]);
+
+  // Close overlay with Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose]);
+
+  // Fetch trending cities (global engagement counts)
+  useEffect(() => {
+    if (!isOpen) return;
+    fetch('/functions/v1/trending-cities')
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data) => {
+        const items = (data?.cities || []).map((c: any) => ({
+          name: c.city as string,
+          count: Number(c.total) || 0,
+        }));
+        setTrendingCities(items);
+      })
+      .catch(() => {
+        // ignore errors, we'll fallback to static list
+      });
   }, [isOpen]);
 
   useEffect(() => {
@@ -103,6 +131,23 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
     );
   };
 
+  const selectCityByName = (name: string) => {
+    const google = (window as any).google;
+    if (!placesService || !google) return;
+    setLoading(true);
+    placesService.textSearch({ query: name }, (results: any[], status: any) => {
+      if (status === google.maps.places.PlacesServiceStatus.OK && results?.[0]?.geometry) {
+        const r = results[0];
+        handleCitySelect({
+          name: r.name || name,
+          lat: r.geometry.location.lat(),
+          lng: r.geometry.location.lng()
+        } as any);
+      }
+      setLoading(false);
+    });
+  };
+  
   const handleCitySelect = (city: { name: string; lat: number; lng: number }) => {
     if (onCitySelect) {
       onCitySelect(city.name, { lat: city.lat, lng: city.lng });
@@ -112,10 +157,12 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
     onClose();
   };
 
+  if (!isOpen) return null;
+
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-lg z-50 flex flex-col">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-lg z-50 flex flex-col" onClick={onClose}>
       {/* Header with integrated search */}
-      <div className="bg-white px-4 py-4 flex items-center gap-3 shadow-lg">
+      <div className="bg-white px-4 py-3 flex items-center gap-3 shadow-lg" onClick={(e) => e.stopPropagation()}>
         <button
           onClick={onClose}
           className="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
@@ -136,17 +183,22 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4 py-4">
+      <div className="flex-1 overflow-y-auto px-4 py-4 bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
         {!query.trim() && (
           <div className="space-y-3 mb-4">
             <div className="flex flex-wrap gap-2">
-              {popularCities.map((city) => (
+              {(trendingCities.length ? trendingCities : popularCities.map(c => ({ name: c.name, count: 0 }))).map((item) => (
                 <button
-                  key={city.name}
-                  onClick={() => handleCitySelect(city)}
-                  className="px-4 py-2 bg-white hover:bg-gray-50 rounded-xl text-sm font-medium text-gray-800 transition-all shadow-md hover:shadow-lg border border-gray-100"
+                  key={item.name}
+                  onClick={() => selectCityByName(item.name)}
+                  className="px-3 py-1.5 bg-white hover:bg-gray-50 rounded-lg text-sm font-medium text-gray-800 transition-all shadow-sm hover:shadow border border-gray-100 flex items-center gap-2"
                 >
-                  {city.name}
+                  <span>{item.name}</span>
+                  {'count' in item && item.count > 0 && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                      {item.count}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>

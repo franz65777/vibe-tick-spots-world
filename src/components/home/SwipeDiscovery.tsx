@@ -49,11 +49,8 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
       setLoading(true);
       console.log('🔄 Fetching swipe locations for user:', user.id);
 
-      // 12h window limit (temporarily set to 1 minute for testing)
-      const since = new Date(Date.now() - 1 * 60 * 1000).toISOString(); // 1 minute for testing
-      // const since = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(); // Uncomment for production
-
-      // Get swipes in the last 12h
+      // Testing: reset timer and always show full quota of 10 cards
+      const since = new Date(Date.now() + 60 * 1000).toISOString(); // future time -> zero recent swipes
       const { data: swipedData } = await supabase
         .from('location_swipes')
         .select('location_id, created_at')
@@ -61,18 +58,8 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
         .gte('created_at', since);
 
       const swipedLocationIds = (swipedData || []).map((s) => s.location_id);
-      const usedCount = (swipedData || []).length;
-      const remainingQuota = Math.max(0, 10 - usedCount);
-
-      console.log(`📊 Used ${usedCount}/10 swipes in last 12h, remaining: ${remainingQuota}`);
-
-      if (remainingQuota === 0) {
-        console.log('❌ No remaining quota');
-        setLocations([]);
-        setCurrentIndex(0);
-        setLoading(false);
-        return;
-      }
+      const remainingQuota = 10;
+      console.log('🧪 Testing mode: timer reset. Showing 10 cards.');
 
       // Get my saved place_ids to exclude
       const { data: mySavedPlaces } = await supabase
