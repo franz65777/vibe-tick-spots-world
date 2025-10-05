@@ -210,7 +210,8 @@ export const useMapPins = (filter: 'following' | 'popular' | 'saved' = 'popular'
         });
       } else if (filter === 'saved') {
         console.log('🔍 Fetching saved locations...');
-        const { data: savedLocations, error } = await supabase
+        // Internal saved locations
+        const { data: savedLocations, error: uslError } = await supabase
           .from('user_saved_locations')
           .select(`
             location_id,
@@ -227,39 +228,88 @@ export const useMapPins = (filter: 'following' | 'popular' | 'saved' = 'popular'
           `)
           .eq('user_id', user.id);
 
-        if (error) {
-          console.error('Error fetching saved locations:', error);
-          throw error;
+        if (uslError) {
+          console.error('Error fetching saved locations:', uslError);
+          throw uslError;
         }
 
-        fetchedPins = savedLocations?.map(item => {
-          const location = item.locations as any;
-          return {
-            id: location.id,
-            name: location.name,
-            category: location.category,
-            coordinates: { 
-              lat: parseFloat(location.latitude?.toString() || '0'), 
-              lng: parseFloat(location.longitude?.toString() || '0') 
-            },
-            likes: 0,
-            isFollowing: false,
-            addedBy: 'You',
-            addedDate: new Date(item.created_at).toLocaleDateString(),
-            popularity: 75,
-            city: location.address?.split(',')[1]?.trim() || 'Unknown',
-            isNew: false,
-            image: undefined,
-            friendsWhoSaved: [],
-            visitors: [],
-            distance: Math.random() * 10,
-            totalSaves: 1,
-            address: location.address || '',
-            google_place_id: location.google_place_id
-          };
-        }) || [];
+        // Google saved places
+        const { data: savedPlaces, error: spError } = await supabase
+          .from('saved_places')
+          .select('place_id, place_name, place_category, city, coordinates, created_at')
+          .eq('user_id', user.id);
 
-        console.log('✅ Saved locations:', fetchedPins.length);
+        if (spError) {
+          console.error('Error fetching saved places:', spError);
+          throw spError;
+        }
+
+        // Deduplicate by google_place_id/place_id first, then fallback to internal id
+        const locationMap = new Map<string, any>();
+
+        (savedLocations || []).forEach(item => {
+          const location = item.locations as any;
+          const key = location.google_place_id || location.id;
+          if (!locationMap.has(key)) {
+            locationMap.set(key, {
+              id: location.id,
+              name: location.name,
+              category: location.category,
+              coordinates: { 
+                lat: parseFloat(location.latitude?.toString() || '0'), 
+                lng: parseFloat(location.longitude?.toString() || '0') 
+              },
+              likes: 0,
+              isFollowing: false,
+              addedBy: 'You',
+              addedDate: new Date(item.created_at).toLocaleDateString(),
+              popularity: 75,
+              city: location.address?.split(',')[1]?.trim() || 'Unknown',
+              isNew: false,
+              image: undefined,
+              friendsWhoSaved: [],
+              visitors: [],
+              distance: Math.random() * 10,
+              totalSaves: 1,
+              address: location.address || '',
+              google_place_id: location.google_place_id
+            });
+          }
+        });
+
+        (savedPlaces || []).forEach(sp => {
+          const coords = (sp.coordinates as any) || {};
+          const key = sp.place_id;
+          if (!locationMap.has(key)) {
+            locationMap.set(key, {
+              id: sp.place_id,
+              name: sp.place_name,
+              category: sp.place_category || 'Unknown',
+              coordinates: { 
+                lat: parseFloat((coords.lat ?? 0).toString()), 
+                lng: parseFloat((coords.lng ?? 0).toString()) 
+              },
+              likes: 0,
+              isFollowing: false,
+              addedBy: 'You',
+              addedDate: new Date(sp.created_at).toLocaleDateString(),
+              popularity: 75,
+              city: sp.city || 'Unknown',
+              isNew: false,
+              image: undefined,
+              friendsWhoSaved: [],
+              visitors: [],
+              distance: Math.random() * 10,
+              totalSaves: 1,
+              address: '',
+              google_place_id: sp.place_id
+            });
+          }
+        });
+
+        fetchedPins = Array.from(locationMap.values());
+
+        console.log('✅ Saved locations (combined):', fetchedPins.length);
       }
 
       setPins(fetchedPins);

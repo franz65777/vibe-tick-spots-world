@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLocationInteraction } from '@/hooks/useLocationInteraction';
 import { locationInteractionService } from '@/services/locationInteractionService';
 import PlaceInteractionModal from '@/components/home/PlaceInteractionModal';
+import PinShareModal from './PinShareModal';
 import { toast } from 'sonner';
 
 interface LocationPost {
@@ -49,6 +50,7 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
   const [showComments, setShowComments] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   const displayCity = place.city || place.address?.split(',')[1]?.trim() || 'Unknown City';
   const { trackSave, trackVisit } = useLocationInteraction();
@@ -434,6 +436,7 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
               : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(place.name + ' ' + (displayCity || ''))}`;
             window.open(url, '_blank');
           }}>Get Directions</Button>
+          <Button size="sm" variant="secondary" onClick={() => setIsShareModalOpen(true)}>Share</Button>
         </div>
       </div>
 

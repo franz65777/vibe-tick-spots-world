@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import xIcon from '@/assets/icon-x-red.png';
-import hourglassIcon from '@/assets/icon-like-pin.png';
+import hourglassIcon from '@/assets/swipe-pin.png';
 
 interface SwipeLocation {
   id: string;
