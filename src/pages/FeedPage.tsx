@@ -2,12 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getUserFeed, getFeedEventDisplay, FeedItem as FeedItemType } from '@/services/feedService';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Heart, MessageCircle, Bookmark, MapPin, Activity } from 'lucide-react';
+import { MapPin, Sparkles, TrendingUp } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
-import ChallengesSection from '@/components/gamification/ChallengesSection';
 import AuthenticatedLayout from '@/components/AuthenticatedLayout';
 
 const FeedPage = () => {
@@ -49,80 +47,84 @@ const FeedPage = () => {
 
   return (
     <AuthenticatedLayout>
-      <div className="min-h-screen bg-background pb-20">
-        {/* Header */}
-        <div className="bg-primary text-primary-foreground p-4 sticky top-0 z-10">
-          <div className="flex items-center gap-2">
-            <Activity className="w-6 h-6" />
-            <h1 className="text-xl font-bold">Activity Feed</h1>
+      <div className="min-h-screen bg-gray-50 pb-20">
+        {/* Modern Header */}
+        <div className="bg-white border-b border-gray-200 pt-12">
+          <div className="p-4 pt-2">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">Your Feed</h1>
+                <p className="text-xs text-gray-500">See what your friends are discovering</p>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Challenges Section */}
-        <div className="max-w-2xl mx-auto px-4 mt-4">
-          <ChallengesSection />
-        </div>
-
         {/* Feed Content */}
-        <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+        <div className="max-w-2xl mx-auto px-4 py-4">
         {loading ? (
           // Loading skeletons
-          Array.from({ length: 5 }).map((_, i) => (
-            <Card key={i} className="overflow-hidden">
-              <CardContent className="p-4">
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-2xl p-4 shadow-sm">
                 <div className="flex items-start gap-3">
-                  <Skeleton className="w-12 h-12 rounded-full" />
+                  <Skeleton className="w-12 h-12 rounded-full flex-shrink-0" />
                   <div className="flex-1 space-y-2">
                     <Skeleton className="h-4 w-3/4" />
                     <Skeleton className="h-3 w-1/2" />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))
+              </div>
+            ))}
+          </div>
         ) : feedItems.length === 0 ? (
           // Empty state
-          <Card className="p-8 text-center">
-            <MapPin className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+          <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
+              <TrendingUp className="w-10 h-10 text-purple-600" />
+            </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              No activity yet
+              Your feed is empty
             </h3>
-            <p className="text-sm text-gray-500 mb-4">
-              Follow friends to see their discoveries here
+            <p className="text-sm text-gray-600 mb-6 max-w-sm mx-auto">
+              Start following people to see their latest discoveries and activities
             </p>
             <button
               onClick={() => navigate('/explore')}
-              className="px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full font-medium hover:shadow-lg transition-shadow"
+              className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:scale-105"
             >
               Discover People
             </button>
-          </Card>
+          </div>
         ) : (
           // Feed items
-          feedItems.map((item) => {
-            const display = getFeedEventDisplay(item.event_type);
-            
-            return (
-              <Card
-                key={item.id}
-                className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => handleItemClick(item)}
-              >
-                <CardContent className="p-4">
+          <div className="space-y-3">
+            {feedItems.map((item) => {
+              const display = getFeedEventDisplay(item.event_type);
+              
+              return (
+                <div
+                  key={item.id}
+                  className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                  onClick={() => handleItemClick(item)}
+                >
                   <div className="flex items-start gap-3">
                     {/* User Avatar */}
-                    <Avatar className="w-12 h-12">
+                    <Avatar className="w-12 h-12 flex-shrink-0">
                       <AvatarImage src={item.avatar_url || ''} />
-                      <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white">
+                      <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white font-semibold">
                         {item.username?.[0]?.toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start justify-between gap-2 mb-1">
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm">
+                          <p className="text-sm leading-snug">
                             <span className="font-semibold text-gray-900">
                               {item.username}
                             </span>
@@ -135,59 +137,33 @@ const FeedPage = () => {
                               </span>
                             )}
                           </p>
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-xs text-gray-500 mt-0.5">
                             {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
                           </p>
                         </div>
-                        <span className="text-2xl">{display.icon}</span>
+                        <span className="text-xl">{display.icon}</span>
                       </div>
 
                       {/* Post content if available */}
                       {item.content && (
-                        <p className="text-sm text-gray-700 mt-2 line-clamp-2">
+                        <p className="text-sm text-gray-700 mt-2 line-clamp-2 bg-gray-50 rounded-lg p-2">
                           {item.content}
                         </p>
                       )}
 
-                      {/* Quick actions */}
-                      <div className="flex items-center gap-4 mt-3">
-                        <button
-                          className="flex items-center gap-1 text-gray-500 hover:text-red-500 transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // Handle like
-                          }}
-                        >
-                          <Heart className="w-4 h-4" />
-                          <span className="text-xs">Like</span>
-                        </button>
-                        <button
-                          className="flex items-center gap-1 text-gray-500 hover:text-blue-500 transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // Handle comment
-                          }}
-                        >
-                          <MessageCircle className="w-4 h-4" />
-                          <span className="text-xs">Comment</span>
-                        </button>
-                        <button
-                          className="flex items-center gap-1 text-gray-500 hover:text-purple-500 transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // Handle save
-                          }}
-                        >
-                          <Bookmark className="w-4 h-4" />
-                          <span className="text-xs">Save</span>
-                        </button>
-                      </div>
+                      {/* Location badge if available */}
+                      {item.location_name && (
+                        <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-600">
+                          <MapPin className="w-3.5 h-3.5" />
+                          <span className="truncate">{item.location_name}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })
+                </div>
+              );
+            })}
+          </div>
         )}
         </div>
       </div>

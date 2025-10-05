@@ -49,8 +49,9 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
       setLoading(true);
       console.log('🔄 Fetching swipe locations for user:', user.id);
 
-      // 12h window limit
-      const since = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
+      // 12h window limit (temporarily set to 1 minute for testing)
+      const since = new Date(Date.now() - 1 * 60 * 1000).toISOString(); // 1 minute for testing
+      // const since = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(); // Uncomment for production
 
       // Get swipes in the last 12h
       const { data: swipedData } = await supabase

@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { MapPin, Loader2, Search, Check } from 'lucide-react';
+import { MapPin, Loader2, Search, CheckCircle2, Plus } from 'lucide-react';
 import { loadGoogleMapsAPI } from '@/lib/googleMaps';
 import { allowedCategories, categoryDisplayNames, type AllowedCategory } from '@/utils/allowedCategories';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
+import { toast } from 'sonner';
 
 interface NearbyPlace {
   place_id: string;
@@ -20,20 +23,22 @@ interface NearbyPlace {
 
 interface NearbyPlacesSuggestionsProps {
   coordinates: { lat: number; lng: number };
-  onPlaceSelect: (place: NearbyPlace) => void;
-  selectedPlaceId?: string;
+  onClose: () => void;
+  isOpen: boolean;
 }
 
 const NearbyPlacesSuggestions: React.FC<NearbyPlacesSuggestionsProps> = ({
   coordinates,
-  onPlaceSelect,
-  selectedPlaceId
+  onClose,
+  isOpen
 }) => {
   const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
-  const { isPlaceSaved } = useSavedPlaces();
+  const [selectedPlace, setSelectedPlace] = useState<NearbyPlace | null>(null);
+  const [saving, setSaving] = useState(false);
+  const { isPlaceSaved, savePlace } = useSavedPlaces();
 
   // Map Google Places types to our categories
   const mapPlaceTypeToCategory = (types: string[]): AllowedCategory | null => {
@@ -66,6 +71,8 @@ const NearbyPlacesSuggestions: React.FC<NearbyPlacesSuggestionsProps> = ({
   }, [searchQuery]);
 
   useEffect(() => {
+    if (!isOpen) return;
+    
     let cancelled = false;
     const fetchPlaces = async () => {
       try {
@@ -101,7 +108,7 @@ const NearbyPlacesSuggestions: React.FC<NearbyPlacesSuggestionsProps> = ({
         const finalize = (raw: any[]) => {
           const mapped = raw.map(toNearbyPlace).filter(Boolean) as NearbyPlace[];
           const dedup = Array.from(new Map(mapped.map(p => [p.place_id, p])).values());
-          const sorted = dedup.sort((a, b) => (a.distance || 0) - (b.distance || 0)).slice(0, 5);
+          const sorted = dedup.sort((a, b) => (a.distance || 0) - (b.distance || 0)).slice(0, 15);
           if (!cancelled) setNearbyPlaces(sorted);
         };
 
@@ -139,7 +146,30 @@ const NearbyPlacesSuggestions: React.FC<NearbyPlacesSuggestionsProps> = ({
 
     fetchPlaces();
     return () => { cancelled = true; };
-  }, [coordinates, debouncedQuery]);
+  }, [coordinates, debouncedQuery, isOpen]);
+
+  const handleSaveClick = async () => {
+    if (!selectedPlace) return;
+    
+    setSaving(true);
+    try {
+      await savePlace({
+        id: selectedPlace.place_id,
+        name: selectedPlace.name,
+        category: selectedPlace.category || 'entertainment',
+        city: selectedPlace.address.split(',')[1]?.trim() || 'Unknown',
+        coordinates: { lat: selectedPlace.lat, lng: selectedPlace.lng }
+      });
+      
+      toast.success(`${selectedPlace.name} saved to favorites!`);
+      onClose();
+    } catch (error) {
+      console.error('Error saving place:', error);
+      toast.error('Failed to save place');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const filteredPlaces = searchQuery
     ? nearbyPlaces.filter(place =>
@@ -147,95 +177,155 @@ const NearbyPlacesSuggestions: React.FC<NearbyPlacesSuggestionsProps> = ({
       )
     : nearbyPlaces;
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="w-6 h-6 text-primary animate-spin" />
-        <span className="ml-2 text-sm text-muted-foreground">Finding nearby places...</span>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-3">
-      {/* Search input */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <input
-          type="text"
-          placeholder="Filter results or type to search..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full h-10 pl-10 pr-4 rounded-xl bg-muted/50 border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 transition text-sm"
-        />
-      </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[85vh] p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b">
+          <DialogTitle className="flex items-center gap-2 text-xl">
+            <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+              <MapPin className="w-5 h-5 text-blue-600" />
+            </div>
+            Save Location to Favorites
+          </DialogTitle>
+        </DialogHeader>
 
-      {/* Nearby places list */}
-      <ScrollArea className="h-[280px]">
-        <div className="space-y-2 pr-2">
-          {filteredPlaces.length > 0 ? (
-            <>
-              <p className="text-xs text-muted-foreground mb-2">
-                Tap a suggestion below or keep typing to search:
-              </p>
-              {filteredPlaces.map((place) => {
-                const isSaved = isPlaceSaved(place.place_id);
-                
-                return (
-                  <button
-                    key={place.place_id}
-                    onClick={() => onPlaceSelect(place)}
-                    className={`w-full flex items-start gap-3 p-4 rounded-2xl border transition-all text-left ${
-                      selectedPlaceId === place.place_id
-                        ? isSaved
-                          ? 'bg-green-500/10 border-green-500 shadow-sm'
-                          : 'bg-primary/10 border-primary shadow-sm'
-                        : 'bg-background border-border hover:bg-accent hover:border-accent-foreground/20'
-                    }`}
-                  >
-                    <CategoryIcon category={categoryDisplayNames[place.category!]} className="w-10 h-10 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <h4 className="font-medium text-foreground text-sm leading-snug flex-1">
-                          {place.name}
-                        </h4>
-                        {isSaved && (
-                          <div className="flex items-center gap-1 bg-green-500/20 px-2 py-0.5 rounded-full">
-                            <Check className="w-3 h-3 text-green-600" />
-                            <span className="text-[10px] font-medium text-green-600">Saved</span>
-                          </div>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-2">
-                        {place.address}
-                      </p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Badge variant="secondary" className="text-[10px] px-2 py-0.5 h-5">
-                          {categoryDisplayNames[place.category!]}
-                        </Badge>
-                        {place.distance !== undefined && (
-                          <span className="text-[10px] text-muted-foreground">
-                            {place.distance < 100
-                              ? `${Math.round(place.distance)}m away`
-                              : `${(place.distance / 1000).toFixed(1)}km away`}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </>
+        <div className="px-6 py-4 space-y-4 overflow-y-auto max-h-[60vh]">
+          {/* Search input */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Filter results or type to search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-12 pl-11 pr-4 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition text-base"
+            />
+          </div>
+
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+              <span className="ml-3 text-gray-600">Finding nearby places...</span>
+            </div>
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <MapPin className="w-10 h-10 mx-auto mb-2 opacity-30" />
-              <p className="text-sm">No matching places nearby</p>
-              <p className="text-xs mt-1">Try typing a different name</p>
+            <>
+              {filteredPlaces.length > 0 ? (
+                <>
+                  <p className="text-sm text-gray-600">
+                    Tap a suggestion below or keep typing to search:
+                  </p>
+                  <div className="space-y-2">
+                    {filteredPlaces.map((place) => {
+                      const isSaved = isPlaceSaved(place.place_id);
+                      const isSelected = selectedPlace?.place_id === place.place_id;
+                      
+                      return (
+                        <div key={place.place_id} className="relative">
+                          <button
+                            onClick={() => setSelectedPlace(place)}
+                            className={`w-full flex items-start gap-3 p-4 rounded-2xl border-2 transition-all text-left ${
+                              isSelected
+                                ? 'bg-blue-50 border-blue-500 shadow-md'
+                                : isSaved
+                                ? 'bg-green-50 border-green-300 hover:border-green-400'
+                                : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                            }`}
+                          >
+                            <CategoryIcon category={categoryDisplayNames[place.category!]} className="w-12 h-12 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-semibold text-gray-900 text-base leading-tight line-clamp-2 mb-1">
+                                {place.name}
+                              </h4>
+                              <p className="text-sm text-gray-600 line-clamp-2 mb-2">
+                                {place.address}
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="secondary" className="text-xs">
+                                  {categoryDisplayNames[place.category!]}
+                                </Badge>
+                                {place.distance !== undefined && (
+                                  <span className="text-xs text-gray-500">
+                                    {place.distance < 100
+                                      ? `${Math.round(place.distance)}m away`
+                                      : `${(place.distance / 1000).toFixed(1)}km away`}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </button>
+                          {isSaved && (
+                            <div className="absolute top-3 right-3 z-10">
+                              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500 rounded-full shadow-md">
+                                <CheckCircle2 className="w-4 h-4 text-white" />
+                                <span className="text-xs font-semibold text-white">Saved</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  <MapPin className="w-16 h-16 mx-auto mb-3 opacity-30" />
+                  <p className="text-base font-medium">No matching places nearby</p>
+                  <p className="text-sm mt-1">Try typing a different name</p>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Selected place preview */}
+          {selectedPlace && (
+            <div className="mt-4 p-4 bg-green-50 border-2 border-green-500 rounded-xl">
+              <div className="flex items-center gap-2 mb-2">
+                <MapPin className="w-5 h-5 text-green-600" />
+                <span className="text-sm font-semibold text-green-700">Selected Location:</span>
+              </div>
+              <p className="font-semibold text-gray-900 mb-1">{selectedPlace.name}</p>
+              <p className="text-sm text-gray-600 mb-2">{selectedPlace.address}</p>
+              <Badge variant="secondary" className="text-xs">
+                Category: {categoryDisplayNames[selectedPlace.category!]}
+              </Badge>
             </div>
           )}
         </div>
-      </ScrollArea>
-    </div>
+
+        <DialogFooter className="gap-2 sm:gap-0 px-6 pb-6">
+          <Button onClick={onClose} variant="outline" className="flex-1">
+            Cancel
+          </Button>
+          {selectedPlace && isPlaceSaved(selectedPlace.place_id) ? (
+            <Button 
+              disabled
+              className="flex-1 bg-green-500 hover:bg-green-500"
+            >
+              <CheckCircle2 className="w-4 h-4 mr-2" />
+              Already Saved
+            </Button>
+          ) : (
+            <Button 
+              onClick={handleSaveClick} 
+              disabled={!selectedPlace || saving}
+              className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Save to Favorites
+                </>
+              )}
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

@@ -165,66 +165,16 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
     onClose();
   };
 
-  return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Building2 className="h-5 w-5 text-blue-600" />
-            Save Location to Favorites
-          </DialogTitle>
-        </DialogHeader>
-        
-        <div className="space-y-4 py-4">
-          {coordinates && (
-            <NearbyPlacesSuggestions
-              coordinates={coordinates}
-              onPlaceSelect={handlePlaceSelect}
-              selectedPlaceId={selectedPlace?.place_id}
-            />
-          )}
-
-          {selectedPlace && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-              <div className="flex items-start gap-3">
-                <MapPin className="h-5 w-5 text-green-600 mt-0.5" />
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-green-900">{selectedPlace.name}</h4>
-                  <p className="text-sm text-green-700 mt-1">{selectedPlace.address}</p>
-                  <p className="text-xs text-green-600 mt-2">
-                    Category: {categoryDisplayNames[mapPlaceTypeToCategory(selectedPlace.types) || 'restaurant']}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="flex gap-2 justify-end">
-          <Button variant="outline" onClick={handleClose} disabled={isLoading}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSavePin} 
-            disabled={isLoading || !selectedPlace}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            {isLoading ? (
-              <>
-                <Plus className="h-4 w-4 mr-2 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Plus className="h-4 w-4 mr-2" />
-                Save to Favorites
-              </>
-            )}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
+  return coordinates ? (
+    <NearbyPlacesSuggestions
+      coordinates={coordinates}
+      onClose={() => {
+        onPinAdded();
+        onClose();
+      }}
+      isOpen={isOpen}
+    />
+  ) : null;
 };
 
 export default QuickAddPinModal;
