@@ -2132,6 +2132,13 @@ export type Database = {
           website_url: string
         }[]
       }
+      get_city_engagement: {
+        Args: { p_city: string }
+        Returns: {
+          followed_users: Json
+          total_pins: number
+        }[]
+      }
       get_dau: {
         Args: { target_date: string }
         Returns: number

@@ -20,9 +20,9 @@ const CityEngagementCard = ({ cityName, onClick, baseCount = 0 }: CityEngagement
   return (
     <button
       onClick={onClick}
-      className="inline-flex items-center gap-2 px-3 py-1.5 bg-white hover:bg-gray-50 rounded-full transition-all border border-gray-200 shadow-sm hover:shadow-md"
+      className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 rounded-full transition-all border border-gray-200 shadow-sm hover:shadow-md"
     >
-      <span className="font-semibold text-gray-900 truncate max-w-[100px]">{cityName}</span>
+      <span className="font-semibold text-gray-900 whitespace-nowrap">{cityName}</span>
 
       <span className="ml-1 inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
         <MapPin className="w-3 h-3" />

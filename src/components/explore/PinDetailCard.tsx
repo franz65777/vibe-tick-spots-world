@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Navigation, Heart, Bookmark, MessageSquare, X } from 'lucide-react';
+import { MapPin, Navigation, Heart, Bookmark, MessageSquare, X, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
@@ -8,6 +8,7 @@ import { locationInteractionService } from '@/services/locationInteractionServic
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { supabase } from '@/integrations/supabase/client';
 import VisitedModal from './VisitedModal';
+import PinShareModal from './PinShareModal';
 
 interface PinDetailCardProps {
   place: any;
@@ -19,7 +20,8 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
   const [isSaved, setIsSaved] = useState(false);
   const [loading, setLoading] = useState(false);
   const [posts, setPosts] = useState<any[]>([]);
-  const [showVisitedModal, setShowVisitedModal] = useState(false);
+const [showVisitedModal, setShowVisitedModal] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const fetchPosts = async () => {
     if (place.id) {
@@ -113,7 +115,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
 
         <ScrollArea className="max-h-[70vh]">
           {/* Action Buttons */}
-          <div className="p-4 grid grid-cols-3 gap-2">
+          <div className="p-4 grid grid-cols-4 gap-2">
             <Button
               onClick={handleSaveToggle}
               disabled={loading}
@@ -142,6 +144,15 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
             >
               <Navigation className="w-5 h-5" />
               <span className="text-xs">Indicazioni</span>
+            </Button>
+
+            <Button
+              onClick={() => setShareOpen(true)}
+              variant="outline"
+              className="flex flex-col items-center gap-1 h-auto py-3"
+            >
+              <Share2 className="w-5 h-5" />
+              <span className="text-xs">Condividi</span>
             </Button>
           </div>
 
@@ -189,6 +200,12 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
             </div>
           )}
         </ScrollArea>
+
+        <PinShareModal
+          isOpen={shareOpen}
+          onClose={() => setShareOpen(false)}
+          place={place}
+        />
       </DrawerContent>
     </Drawer>
   );

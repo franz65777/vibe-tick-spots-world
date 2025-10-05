@@ -64,14 +64,23 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
         .eq('user_id', user.id);
 
       const swipedLocationIds = (swipedData || []).map((s) => s.location_id);
-      const remainingQuota = 20;
+
+      // Map swiped location ids -> google_place_id to avoid repeats by place
+      let swipedPlaceIds: Set<string> = new Set();
+      if (swipedLocationIds.length > 0) {
+        const { data: swipedLocations } = await supabase
+          .from('locations')
+          .select('google_place_id')
+          .in('id', swipedLocationIds);
+        swipedPlaceIds = new Set((swipedLocations || []).map(l => l.google_place_id).filter(Boolean) as string[]);
+      }
 
       // Get my saved place_ids to exclude
       const { data: mySavedPlaces } = await supabase
         .from('saved_places')
         .select('place_id')
         .eq('user_id', user.id);
-      const mySavedPlaceIds = new Set((mySavedPlaces || []).map((s) => s.place_id));
+      const mySavedPlaceIds = new Set((mySavedPlaces || []).map((s) => s.place_id) as string[]);
       console.log(`🔖 I have ${mySavedPlaceIds.size} saved places`);
 
       // Get users I follow
@@ -80,55 +89,58 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
         .select('following_id')
         .eq('follower_id', user.id);
 
-      const followingIds = followingData?.map(f => f.following_id) || [];
-      console.log(`👥 Following ${followingIds.length} users:`, followingIds);
+      const followingIds = followingData?.map((f) => f.following_id) || [];
+      console.log(`👥 Following ${followingIds.length} users`);
 
-      if (followingIds.length === 0) {
-        console.log('⚠️ Not following any users');
-        setLocations([]);
-        setCurrentIndex(0);
-        setLoading(false);
-        return;
+      let candidates: {
+        place_id: string;
+        place_name: string;
+        place_category: string | null;
+        city: string | null;
+        coordinates: { lat: number; lng: number } | null;
+      }[] = [];
+
+      if (followingIds.length > 0) {
+        // Saved places from followed users
+        const { data: friendsSaves, error: savesError } = await supabase
+          .from('saved_places')
+          .select('place_id, place_name, place_category, city, coordinates, created_at, user_id')
+          .in('user_id', followingIds);
+        if (savesError) console.error('❌ Error fetching friends saves:', savesError);
+        candidates = (friendsSaves || []).map((s) => ({
+          place_id: s.place_id,
+          place_name: s.place_name,
+          place_category: s.place_category || 'Unknown',
+          city: s.city || 'Unknown',
+          coordinates: (s.coordinates as any) || null,
+        }));
       }
 
-      // Get ALL saved_places from followed users
-      const { data: friendsSaves, error: savesError } = await supabase
-        .from('saved_places')
-        .select('place_id, place_name, place_category, city, coordinates, created_at, user_id')
-        .in('user_id', followingIds);
-
-      if (savesError) {
-        console.error('❌ Error fetching friends saves:', savesError);
-      }
-
-      console.log(`📍 Friends have saved ${friendsSaves?.length || 0} places total`);
-
-      if (!friendsSaves || friendsSaves.length === 0) {
-        console.log('⚠️ No saved places from followed users');
-        setLocations([]);
-        setCurrentIndex(0);
-        setLoading(false);
-        return;
-      }
-
-      // Filter out places I've already saved
-      const filteredSaves = friendsSaves.filter(s => !mySavedPlaceIds.has(s.place_id));
-      console.log(`✅ After filtering my saves: ${filteredSaves.length} candidates`);
-
-      // Filter out places I've swiped in last 12h (using place_id)
-      let swipedPlaceIds: Set<string> = new Set();
-      if (swipedLocationIds.length > 0) {
-        const { data: swipedLocations } = await supabase
+      // Fallback: if no follows or no candidates, show recent public locations (with google_place_id)
+      if (candidates.length === 0) {
+        const { data: recentLocations } = await supabase
           .from('locations')
-          .select('google_place_id')
-          .in('id', swipedLocationIds);
-        swipedPlaceIds = new Set((swipedLocations || []).map(l => l.google_place_id).filter(Boolean));
+          .select('google_place_id, name, category, city, address, image_url, latitude, longitude, created_at')
+          .not('google_place_id', 'is', null)
+          .order('created_at', { ascending: false })
+          .limit(60);
+        candidates = (recentLocations || []).map((l: any) => ({
+          place_id: l.google_place_id,
+          place_name: l.name,
+          place_category: l.category || 'Unknown',
+          city: l.city || 'Unknown',
+          coordinates: { lat: Number(l.latitude) || 0, lng: Number(l.longitude) || 0 },
+        }));
       }
 
-      const candidateSaves = filteredSaves.filter(s => !swipedPlaceIds.has(s.place_id));
-      console.log(`🎯 After filtering swiped: ${candidateSaves.length} final candidates`);
+      // Filter out already saved/swiped and invalid
+      const filtered = candidates.filter((c) =>
+        c.place_id &&
+        !mySavedPlaceIds.has(c.place_id) &&
+        !swipedPlaceIds.has(c.place_id)
+      );
 
-      if (candidateSaves.length === 0) {
+      if (filtered.length === 0) {
         console.log('⚠️ No new locations to show');
         setLocations([]);
         setCurrentIndex(0);
@@ -136,27 +148,22 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
         return;
       }
 
-      // Shuffle and limit to remaining quota
-      const shuffled = candidateSaves.sort(() => Math.random() - 0.5).slice(0, remainingQuota);
-      console.log(`🎲 Showing ${shuffled.length} locations`);
+      // Shuffle and take a chunk
+      const shuffled = filtered.sort(() => Math.random() - 0.5).slice(0, 20);
 
-      // Map to SwipeLocation format
-      const locationsToShow: SwipeLocation[] = shuffled.map(save => {
-        const coords = save.coordinates as any;
-        return {
-          id: save.place_id,
-          place_id: save.place_id,
-          name: save.place_name,
-          category: save.place_category || 'Unknown',
-          city: save.city || 'Unknown',
-          address: undefined,
-          image_url: undefined,
-          coordinates: {
-            lat: coords?.lat || 0,
-            lng: coords?.lng || 0
-          }
-        };
-      });
+      const locationsToShow: SwipeLocation[] = shuffled.map((save) => ({
+        id: save.place_id,
+        place_id: save.place_id,
+        name: save.place_name,
+        category: save.place_category || 'Unknown',
+        city: save.city || 'Unknown',
+        address: undefined,
+        image_url: undefined,
+        coordinates: {
+          lat: save.coordinates?.lat || 0,
+          lng: save.coordinates?.lng || 0,
+        },
+      }));
 
       setLocations(locationsToShow);
       setCurrentIndex(0);
@@ -307,13 +314,13 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
           <div className="h-full flex items-center justify-center">
             <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
           </div>
-        ) : !hasMore ? (
-          <div className="h-full flex items-center justify-center p-8 text-center">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
-              <span className="text-gray-600">Loading more...</span>
+          ) : !hasMore ? (
+            <div className="h-full flex items-center justify-center p-8 text-center">
+              <div className="space-y-3">
+                <div className="text-gray-700 font-medium">No locations right now</div>
+                <Button onClick={fetchDailyLocations} variant="outline" className="mx-auto">Refresh</Button>
+              </div>
             </div>
-          </div>
         ) : currentLocation ? (
           <div className="flex-1 flex items-center justify-center p-4 pt-14">
             {/* Swipeable Card */}
