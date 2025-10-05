@@ -42,6 +42,14 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
     }
   }, [isOpen, userLocation]);
 
+  // Auto-load more when reaching near the end
+  useEffect(() => {
+    if (!isOpen) return;
+    if (locations.length > 0 && currentIndex >= locations.length - 2 && !loading) {
+      fetchDailyLocations();
+    }
+  }, [currentIndex, locations.length, isOpen, loading]);
+
   const fetchDailyLocations = async () => {
     if (!user) return;
 
@@ -49,17 +57,14 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
       setLoading(true);
       console.log('🔄 Fetching swipe locations for user:', user.id);
 
-      // Reset for testing: show 10 cards immediately
-      const since = new Date(Date.now() + 60 * 1000).toISOString(); // future time -> zero recent swipes
+      // Exclude all previously swiped locations to avoid repeats
       const { data: swipedData } = await supabase
         .from('location_swipes')
         .select('location_id, created_at')
-        .eq('user_id', user.id)
-        .gte('created_at', since);
+        .eq('user_id', user.id);
 
       const swipedLocationIds = (swipedData || []).map((s) => s.location_id);
-      const remainingQuota = 10;
-      console.log('🧪 Testing mode: timer reset. Showing 10 cards.');
+      const remainingQuota = 20;
 
       // Get my saved place_ids to exclude
       const { data: mySavedPlaces } = await supabase
@@ -303,13 +308,11 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
             <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : !hasMore ? (
-          <div className="h-full flex flex-col items-center justify-center p-8 text-center">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center mb-4">
-              <Heart className="w-10 h-10 text-white" />
+          <div className="h-full flex items-center justify-center p-8 text-center">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              <span className="text-gray-600">Loading more...</span>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">That's all for today!</h3>
-            <p className="text-gray-600 mb-6">Come back in 12 hours for more discoveries</p>
-            <Button onClick={onClose}>Close</Button>
           </div>
         ) : currentLocation ? (
           <div className="flex-1 flex items-center justify-center p-4 pt-14">

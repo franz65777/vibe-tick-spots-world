@@ -35,10 +35,11 @@ export const useCityEngagement = (cityName: string | null) => {
         const followingIds = followsData?.map(f => f.following_id) || [];
 
         // Get all saves for this city from saved_places (Google places)
+        const normalizedCity = cityName.split(',')[0].trim();
         const { data: allSaves } = await supabase
           .from('saved_places')
-          .select('user_id, place_id')
-          .ilike('city', cityName);
+          .select('user_id, place_id, city')
+          .ilike('city', `%${normalizedCity}%`);
 
         // Count unique Google place_ids
         const uniqueSavedPlaceIds = new Set((allSaves || []).map((s: any) => s.place_id));
@@ -46,8 +47,8 @@ export const useCityEngagement = (cityName: string | null) => {
         // Also include saves from internal locations via user_saved_locations + locations.city
         const { data: cityLocations } = await supabase
           .from('locations')
-          .select('id')
-          .ilike('city', cityName);
+          .select('id, city')
+          .ilike('city', `%${normalizedCity}%`);
 
         const locationIds = (cityLocations || []).map((l: any) => l.id);
         let userSavedFromLocations: { user_id: string; location_id: string }[] = [];

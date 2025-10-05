@@ -214,6 +214,23 @@ const ExploreMap = ({ pins, activeFilter, selectedCategory, onPinClick, mapCente
     }
   }, [filteredPins, activeFilter, isLoaded, onPinClick]);
 
+  // Recenter to current user location whenever tab becomes visible
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((pos) => {
+          const center = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          setUserLocation(center);
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.setCenter(center);
+          }
+        });
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, []);
+
   if (error) {
     return (
       <div className="w-full h-[60vh] bg-red-50 border border-red-200 rounded-lg flex items-center justify-center">

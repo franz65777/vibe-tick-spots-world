@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Phone, Globe, Navigation } from 'lucide-react';
+import { Phone, Globe, Navigation, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -8,6 +8,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import PinShareModal from '@/components/explore/PinShareModal';
 
 interface PlaceActionButtonsProps {
   place: any;
@@ -15,6 +16,7 @@ interface PlaceActionButtonsProps {
 
 const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
   const [directionsModalOpen, setDirectionsModalOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const handleCall = () => {
     // In production, fetch phone number from Google Places API
@@ -81,6 +83,16 @@ const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
           <Navigation className="w-4 h-4" />
           Directions
         </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShareOpen(true)}
+          className="flex-1 gap-2"
+        >
+          <Share2 className="w-4 h-4" />
+          Share
+        </Button>
       </div>
 
       {/* Directions Modal */}
@@ -138,6 +150,9 @@ const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Share Modal */}
+      <PinShareModal isOpen={shareOpen} onClose={() => setShareOpen(false)} place={place} />
     </>
   );
 };

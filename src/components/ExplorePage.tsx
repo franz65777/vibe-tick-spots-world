@@ -55,19 +55,19 @@ const ExplorePage = () => {
       users: []
     };
     try {
-      const {
-        data: users,
-        error
-      } = await supabase.from('profiles').select('id, username, avatar_url').or(`username.ilike.%${query}%`).limit(20);
+      const { data: results, error } = await supabase
+        .rpc('search_users_securely', { search_query: query, requesting_user_id: user.id });
       if (error) throw error;
       return {
-        users: users?.map(user => ({
-          id: user.id,
-          name: user.username || 'User',
-          username: user.username || `@${user.id.substring(0, 8)}`,
-          avatar: user.avatar_url || 'photo-1472099645785-5658abf4ff4e',
-          is_following: false
-        })) || []
+        users: (results || []).map((u: any) => ({
+          id: u.id,
+          name: u.username || 'User',
+          username: u.username || `@${u.id.substring(0, 8)}`,
+          avatar: u.avatar_url || 'photo-1472099645785-5658abf4ff4e',
+          is_following: !!u.is_following,
+          follower_count: u.follower_count,
+          bio: u.bio
+        }))
       };
     } catch (error) {
       console.error('❌ Search error:', error);
@@ -118,8 +118,14 @@ const ExplorePage = () => {
           following_id: userId
         });
       }
-      const users = await searchService.getUserRecommendations(user.id);
-      setUserRecommendations(users);
+      // Refresh current search results to reflect new follow state
+      if (searchQuery.trim()) {
+        const results = await performSearch(searchQuery);
+        setFilteredUsers(results.users);
+      } else {
+        const users = await searchService.getUserRecommendations(user.id);
+        setUserRecommendations(users);
+      }
     } catch (error) {
       console.error('Error toggling follow:', error);
     }

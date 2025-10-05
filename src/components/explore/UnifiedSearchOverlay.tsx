@@ -68,10 +68,15 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data) => {
         const items = (data?.cities || []).map((c: any) => ({
-          name: c.city as string,
+          name: String(c.city || '').split(',')[0].trim(),
           count: Number(c.total) || 0,
         }));
-        setTrendingCities(items);
+        const unique = new Map<string, { name: string; count: number }>();
+        items.forEach((i) => {
+          const key = i.name.toLowerCase();
+          if (!unique.has(key)) unique.set(key, i);
+        });
+        setTrendingCities(Array.from(unique.values()));
       })
       .catch(() => {
         // ignore errors, we'll fallback to static list
@@ -123,7 +128,12 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
           );
 
           Promise.all(cityPromises).then((cities) => {
-            setResults(cities.filter(Boolean) as CityResult[]);
+            const deduped = new Map<string, CityResult>();
+            (cities.filter(Boolean) as CityResult[]).forEach((c) => {
+              const key = c.name.split(',')[0].trim().toLowerCase();
+              if (!deduped.has(key)) deduped.set(key, c);
+            });
+            setResults(Array.from(deduped.values()));
             setLoading(false);
           });
         } else {
@@ -209,10 +219,10 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
 
         {results.length > 0 && (
           <div className="flex flex-wrap gap-2">
-            {results.map((city, index) => (
+            {Array.from(new Map(results.map(r => [r.name.split(',')[0].trim().toLowerCase(), r])).values()).map((city, index) => (
               <CityEngagementCard
                 key={index}
-                cityName={city.name}
+                cityName={city.name.split(',')[0].trim()}
                 onClick={() => handleCitySelect(city)}
               />
             ))}

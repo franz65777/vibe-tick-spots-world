@@ -7,7 +7,7 @@ import { Place } from '@/types/place';
 import { usePlaceEngagement } from '@/hooks/usePlaceEngagement';
 import { imageService } from '@/services/imageService';
 import CommentModal from './CommentModal';
-import ShareModal from './ShareModal';
+import PinShareModal from './PinShareModal';
 import LocationPostLibrary from './LocationPostLibrary';
 import { getCategoryColor } from '@/utils/categoryIcons';
 
@@ -258,7 +258,7 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
         place={place}
       />
 
-      <ShareModal
+      <PinShareModal
         isOpen={shareModalOpen}
         onClose={() => setShareModalOpen(false)}
         place={place}
