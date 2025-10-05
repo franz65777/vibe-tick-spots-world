@@ -7,6 +7,7 @@ import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { Calendar, Users, TrendingUp, Activity, MapPin, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import DataFixUtility from '@/components/admin/DataFixUtility';
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))', 'hsl(var(--muted))'];
 
@@ -67,6 +68,9 @@ export default function AdminAnalyticsPage() {
           </SelectContent>
         </Select>
       </div>
+
+      {/* Data Fix Utility */}
+      <DataFixUtility />
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

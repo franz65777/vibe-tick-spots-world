@@ -17,6 +17,7 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
   onSearchChange,
   onSearchKeyPress,
   onCitySelect,
+  onFocusOpen,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);

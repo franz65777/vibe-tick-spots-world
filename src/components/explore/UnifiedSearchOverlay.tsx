@@ -219,7 +219,7 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background border-b">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b">
         <div className="flex items-center gap-3 p-4">
           <Button
             variant="ghost"
@@ -233,21 +233,23 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
         </div>
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'places' | 'users')} className="w-full">
-          <TabsList className="w-full grid grid-cols-2 h-12 rounded-none bg-muted/30">
-            <TabsTrigger value="places" className="gap-2">
-              <MapPin className="h-4 w-4" />
-              Places
-            </TabsTrigger>
-            <TabsTrigger value="users" className="gap-2">
-              <Users className="h-4 w-4" />
-              Users
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="bg-background/95 backdrop-blur-sm px-4 pb-2">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'places' | 'users')} className="w-full">
+            <TabsList className="w-full grid grid-cols-2 h-12 rounded-xl bg-muted/30">
+              <TabsTrigger value="places" className="gap-2 rounded-lg">
+                <MapPin className="h-4 w-4" />
+                Places
+              </TabsTrigger>
+              <TabsTrigger value="users" className="gap-2 rounded-lg">
+                <Users className="h-4 w-4" />
+                Users
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
 
         {/* Search Bar */}
-        <div className="p-4 pb-2">
+        <div className="bg-background/95 backdrop-blur-sm px-4 pb-3">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
@@ -255,7 +257,7 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
               placeholder={activeTab === 'places' ? 'Search places or cities...' : 'Search people...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 pr-4 h-12 text-base rounded-xl bg-muted/50"
+              className="pl-12 pr-12 h-12 text-base rounded-2xl bg-background border-border shadow-sm"
               autoFocus
             />
             {searchQuery && (

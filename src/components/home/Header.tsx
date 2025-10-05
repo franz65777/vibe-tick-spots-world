@@ -25,7 +25,8 @@ const Header = ({
   onNotificationsClick,
   onMessagesClick,
   onCreateStoryClick,
-  onCitySelect
+  onCitySelect,
+  onOpenSearchOverlay
 }: HeaderProps) => {
   const [isMessageHistoryOpen, setIsMessageHistoryOpen] = useState(false);
   const { unreadCount } = useNotifications();
