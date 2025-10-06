@@ -306,7 +306,15 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
             <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
           </div>
 ) : !hasMore ? (
-          <div className="h-full flex items-center justify-center p-8 text-center">
+          <div className="h-full flex items-center justify-center p-8 text-center relative">
+            {/* Exit button visible even when empty */}
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white flex items-center justify-center transition-all z-10"
+              aria-label="Close"
+            >
+              <X className="w-6 h-6 text-gray-900" />
+            </button>
             <div className="space-y-5 max-w-sm">
               <div className="flex items-center justify-center">
                 <img src={swipeSave} alt="Explore" className="w-20 h-20 opacity-80" />

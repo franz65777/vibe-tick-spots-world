@@ -26,8 +26,8 @@ const RecentUserSearches = () => {
     if (!user) return;
 
     try {
-      // Get recent user searches by target_user_id
-      const { data: searchHistory } = await supabase
+      // Prefer ID-based history for accuracy
+      const { data: idHistory } = await supabase
         .from('search_history')
         .select('target_user_id, searched_at')
         .eq('user_id', user.id)
@@ -36,55 +36,72 @@ const RecentUserSearches = () => {
         .order('searched_at', { ascending: false })
         .limit(10);
 
-      if (!searchHistory || searchHistory.length === 0) {
+      if (idHistory && idHistory.length > 0) {
+        const userIds = [...new Set(idHistory.map(s => s.target_user_id).filter(Boolean))];
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, username, avatar_url')
+          .in('id', userIds)
+          .limit(10);
+
+        const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        const { data: stories } = await supabase
+          .from('stories')
+          .select('user_id')
+          .in('user_id', (profiles || []).map(p => p.id))
+          .gt('created_at', dayAgo);
+        const userIdsWithStories = new Set(stories?.map(s => s.user_id) || []);
+
+        const usersWithData = (profiles || []).map(profile => {
+          const searchRecord = idHistory.find(s => s.target_user_id === profile.id);
+          return {
+            ...profile,
+            searched_at: searchRecord?.searched_at || new Date().toISOString(),
+            has_active_story: userIdsWithStories.has(profile.id)
+          };
+        }).sort((a, b) => new Date(b.searched_at).getTime() - new Date(a.searched_at).getTime());
+
+        setRecentUsers(usersWithData);
+        return;
+      }
+
+      // Fallback: username-based history (legacy)
+      const { data: nameHistory } = await supabase
+        .from('search_history')
+        .select('search_query, searched_at')
+        .eq('user_id', user.id)
+        .eq('search_type', 'users')
+        .order('searched_at', { ascending: false })
+        .limit(10);
+
+      if (!nameHistory || nameHistory.length === 0) {
         setRecentUsers([]);
         return;
       }
 
-      // Get unique user IDs
-      const userIds = [...new Set(searchHistory.map(s => s.target_user_id).filter(Boolean))];
-
-      if (userIds.length === 0) {
-        setRecentUsers([]);
-        return;
-      }
-
-      // Fetch user profiles by ID
+      const usernames = [...new Set(nameHistory.map(s => s.search_query))];
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, username, avatar_url')
-        .in('id', userIds)
+        .in('username', usernames)
         .limit(10);
 
-      if (!profiles) {
-        setRecentUsers([]);
-        return;
-      }
-
-      // Check for active stories (created in last 24h)
       const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
       const { data: stories } = await supabase
         .from('stories')
         .select('user_id')
-        .in('user_id', profiles.map(p => p.id))
+        .in('user_id', (profiles || []).map(p => p.id))
         .gt('created_at', dayAgo);
-
       const userIdsWithStories = new Set(stories?.map(s => s.user_id) || []);
 
-      // Map with search dates and story status
-      const usersWithData = profiles.map(profile => {
-        const searchRecord = searchHistory.find(s => s.target_user_id === profile.id);
+      const usersWithData = (profiles || []).map(profile => {
+        const searchRecord = nameHistory.find(s => s.search_query === profile.username);
         return {
           ...profile,
           searched_at: searchRecord?.searched_at || new Date().toISOString(),
           has_active_story: userIdsWithStories.has(profile.id)
         };
-      });
-
-      // Sort by most recent search
-      usersWithData.sort((a, b) => 
-        new Date(b.searched_at).getTime() - new Date(a.searched_at).getTime()
-      );
+      }).sort((a, b) => new Date(b.searched_at).getTime() - new Date(a.searched_at).getTime());
 
       setRecentUsers(usersWithData);
     } catch (error) {
