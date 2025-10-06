@@ -404,21 +404,21 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
               </div>
             </div>
 
-            {/* Action buttons - Positioned higher, no backgrounds */}
+            {/* Action buttons - Positioned higher, bigger icons, no backgrounds */}
             <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex items-center justify-center gap-10">
               <button
                 onClick={() => handleSwipe('left')}
                 className="transition-all hover:scale-110 active:scale-95"
                 aria-label="Skip"
               >
-                <img src={xIcon} alt="Skip" className="w-14 h-14" />
+                <img src={xIcon} alt="Skip" className="w-20 h-20 drop-shadow-lg" style={{ filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3))' }} />
               </button>
               <button
                 onClick={() => handleSwipe('right')}
                 className="transition-all hover:scale-110 active:scale-95"
                 aria-label="Save for later"
               >
-                <img src={hourglassIcon} alt="Save for later" className="w-14 h-14" />
+                <img src={hourglassIcon} alt="Save for later" className="w-20 h-20 drop-shadow-lg" style={{ filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3))' }} />
               </button>
             </div>
           </div>

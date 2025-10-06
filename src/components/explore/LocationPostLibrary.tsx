@@ -262,11 +262,53 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
   };
 
   const handleSaveLocation = async () => {
-    const ok = await locationInteractionService.saveLocation(place.id);
-    if (ok) {
-      toast.success('Saved for later');
-    } else {
-      toast.error('Failed to save');
+    if (!user) {
+      toast.error('Please log in to save locations');
+      return;
+    }
+
+    try {
+      // Prepare location data for saving
+      const locationData = {
+        google_place_id: place.google_place_id || place.id,
+        name: place.name,
+        address: place.address,
+        latitude: place.coordinates?.lat || 0,
+        longitude: place.coordinates?.lng || 0,
+        category: place.category || 'place',
+        types: []
+      };
+
+      // Save using locationInteractionService which handles location creation
+      const ok = await locationInteractionService.saveLocation(place.id, locationData);
+      
+      if (ok) {
+        // Also save to saved_places for Google Places (ignore duplicates)
+        if (place.google_place_id || place.coordinates) {
+          const { error } = await supabase
+            .from('saved_places')
+            .insert({
+              user_id: user.id,
+              place_id: place.google_place_id || place.id,
+              place_name: place.name,
+              place_category: place.category,
+              city: displayCity,
+              coordinates: place.coordinates
+            });
+          
+          // Ignore duplicate errors
+          if (error && !error.message.includes('duplicate')) {
+            console.error('Error saving to saved_places:', error);
+          }
+        }
+        
+        toast.success('Location saved successfully!');
+      } else {
+        toast.error('Failed to save location');
+      }
+    } catch (error) {
+      console.error('Error saving location:', error);
+      toast.error('Failed to save location');
     }
   };
 
