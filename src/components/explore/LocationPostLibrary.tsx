@@ -10,7 +10,6 @@ import { locationInteractionService } from '@/services/locationInteractionServic
 import PlaceInteractionModal from '@/components/home/PlaceInteractionModal';
 import PinShareModal from './PinShareModal';
 import { toast } from 'sonner';
-
 interface LocationPost {
   id: string;
   user_id: string;
@@ -26,7 +25,6 @@ interface LocationPost {
     avatar_url: string;
   } | null;
 }
-
 interface LocationPostLibraryProps {
   place: {
     id: string;
@@ -35,15 +33,23 @@ interface LocationPostLibraryProps {
     address?: string;
     city?: string;
     google_place_id?: string;
-    coordinates?: { lat: number; lng: number };
+    coordinates?: {
+      lat: number;
+      lng: number;
+    };
     postCount?: number;
   };
   isOpen: boolean;
   onClose: () => void;
 }
-
-const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProps) => {
-  const { user } = useAuth();
+const LocationPostLibrary = ({
+  place,
+  isOpen,
+  onClose
+}: LocationPostLibraryProps) => {
+  const {
+    user
+  } = useAuth();
   const [posts, setPosts] = useState<LocationPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPost, setSelectedPost] = useState<LocationPost | null>(null);
@@ -53,14 +59,15 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [postsPage, setPostsPage] = useState(1);
   const [hasMorePosts, setHasMorePosts] = useState(true);
-
   const displayCity = place?.city || place?.address?.split(',')[1]?.trim() || 'Unknown City';
-  const { trackSave, trackVisit } = useLocationInteraction();
+  const {
+    trackSave,
+    trackVisit
+  } = useLocationInteraction();
 
   // All hooks MUST be called before any early returns
   useEffect(() => {
     if (!place?.id) return;
-    
     fetchLocationPosts();
     if (user) {
       fetchUserInteractions();
@@ -71,22 +78,17 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
   if (!place) {
     return null;
   }
-
   const fetchLocationPosts = async (page: number = 1) => {
     try {
       setLoading(true);
       console.log('🔍 FETCHING POSTS FOR LOCATION:', place.name, 'ID:', place.id, 'Page:', page);
-      
       let locationIds = [place.id];
-
       if (place.google_place_id) {
         console.log('📍 Finding all locations with Google Place ID:', place.google_place_id);
-        
-        const { data: relatedLocations, error: locationError } = await supabase
-          .from('locations')
-          .select('id, name, google_place_id')
-          .or(`google_place_id.eq.${place.google_place_id},name.ilike.${place.name}`);
-
+        const {
+          data: relatedLocations,
+          error: locationError
+        } = await supabase.from('locations').select('id, name, google_place_id').or(`google_place_id.eq.${place.google_place_id},name.ilike.${place.name}`);
         if (locationError) {
           console.error('❌ Error finding related locations:', locationError);
         } else if (relatedLocations) {
@@ -94,11 +96,10 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
           console.log('✅ Found related location IDs:', locationIds);
         }
       } else {
-        const { data: nameMatchLocations, error: nameError } = await supabase
-          .from('locations')
-          .select('id, name')
-          .ilike('name', place.name);
-
+        const {
+          data: nameMatchLocations,
+          error: nameError
+        } = await supabase.from('locations').select('id, name').ilike('name', place.name);
         if (nameError) {
           console.error('❌ Error finding locations by name:', nameError);
         } else if (nameMatchLocations) {
@@ -106,19 +107,16 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
           console.log('✅ Found name-matched location IDs:', locationIds);
         }
       }
-
       if (!locationIds.includes(place.id)) {
         locationIds.push(place.id);
       }
-
       console.log('🎯 FINAL LOCATION IDs TO SEARCH:', locationIds);
-
       const limit = 8;
       const offset = (page - 1) * limit;
-
-      const { data: postsData, error: postsError } = await supabase
-        .from('posts')
-        .select(`
+      const {
+        data: postsData,
+        error: postsError
+      } = await supabase.from('posts').select(`
           id,
           user_id,
           caption,
@@ -129,39 +127,31 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
           created_at,
           metadata,
           location_id
-        `)
-        .in('location_id', locationIds)
-        .order('created_at', { ascending: false })
-        .range(offset, offset + limit - 1);
-
+        `).in('location_id', locationIds).order('created_at', {
+        ascending: false
+      }).range(offset, offset + limit - 1);
       if (postsError) {
         console.error('❌ Error fetching posts:', postsError);
         throw postsError;
       }
-
       console.log('📊 RAW POSTS FOUND:', postsData?.length || 0);
-
       if (postsData && postsData.length > 0) {
         const userIds = [...new Set(postsData.map(post => post.user_id))];
         console.log('👥 Fetching profiles for users:', userIds);
-        
-        // SECURITY FIX: Only select safe profile fields  
-        const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, username, avatar_url')
-          .in('id', userIds);
 
+        // SECURITY FIX: Only select safe profile fields  
+        const {
+          data: profilesData,
+          error: profilesError
+        } = await supabase.from('profiles').select('id, username, avatar_url').in('id', userIds);
         if (profilesError) {
           console.error('❌ Error fetching profiles:', profilesError);
         }
-
         const postsWithProfiles = postsData.map(post => ({
           ...post,
           profiles: profilesData?.find(profile => profile.id === post.user_id) || null
         }));
-
         console.log(`✅ FINAL POSTS COUNT: ${postsWithProfiles.length} for location: ${place.name}`);
-        
         if (page === 1) {
           setPosts(postsWithProfiles);
         } else {
@@ -184,106 +174,78 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
       setLoading(false);
     }
   };
-
   const loadMorePosts = () => {
     const nextPage = postsPage + 1;
     setPostsPage(nextPage);
     fetchLocationPosts(nextPage);
   };
-
   const fetchUserInteractions = async () => {
     if (!user) return;
-
     try {
-      const { data: likes } = await supabase
-        .from('post_likes')
-        .select('post_id')
-        .eq('user_id', user.id);
-
-      const { data: saves } = await supabase
-        .from('post_saves')
-        .select('post_id')
-        .eq('user_id', user.id);
-
+      const {
+        data: likes
+      } = await supabase.from('post_likes').select('post_id').eq('user_id', user.id);
+      const {
+        data: saves
+      } = await supabase.from('post_saves').select('post_id').eq('user_id', user.id);
       setLikedPosts(new Set(likes?.map(l => l.post_id) || []));
       setSavedPosts(new Set(saves?.map(s => s.post_id) || []));
     } catch (error) {
       console.error('Error fetching user interactions:', error);
     }
   };
-
   const handleLike = async (postId: string) => {
     if (!user) return;
-
     try {
       const isLiked = likedPosts.has(postId);
-      
       if (isLiked) {
-        await supabase
-          .from('post_likes')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('post_id', postId);
-        
+        await supabase.from('post_likes').delete().eq('user_id', user.id).eq('post_id', postId);
         setLikedPosts(prev => {
           const next = new Set(prev);
           next.delete(postId);
           return next;
         });
       } else {
-        await supabase
-          .from('post_likes')
-          .insert({ user_id: user.id, post_id: postId });
-        
+        await supabase.from('post_likes').insert({
+          user_id: user.id,
+          post_id: postId
+        });
         setLikedPosts(prev => new Set([...prev, postId]));
       }
-
-      setPosts(prev => prev.map(post => 
-        post.id === postId 
-          ? { ...post, likes_count: post.likes_count + (isLiked ? -1 : 1) }
-          : post
-      ));
+      setPosts(prev => prev.map(post => post.id === postId ? {
+        ...post,
+        likes_count: post.likes_count + (isLiked ? -1 : 1)
+      } : post));
     } catch (error) {
       console.error('Error toggling like:', error);
     }
   };
-
   const handleSave = async (postId: string) => {
     if (!user) return;
-
     try {
       const isSaved = savedPosts.has(postId);
-      
       if (isSaved) {
-        await supabase
-          .from('post_saves')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('post_id', postId);
-        
+        await supabase.from('post_saves').delete().eq('user_id', user.id).eq('post_id', postId);
         setSavedPosts(prev => {
           const next = new Set(prev);
           next.delete(postId);
           return next;
         });
       } else {
-        await supabase
-          .from('post_saves')
-          .insert({ user_id: user.id, post_id: postId });
-        
+        await supabase.from('post_saves').insert({
+          user_id: user.id,
+          post_id: postId
+        });
         setSavedPosts(prev => new Set([...prev, postId]));
       }
-
-      setPosts(prev => prev.map(post => 
-        post.id === postId 
-          ? { ...post, saves_count: post.saves_count + (isSaved ? -1 : 1) }
-          : post
-      ));
+      setPosts(prev => prev.map(post => post.id === postId ? {
+        ...post,
+        saves_count: post.saves_count + (isSaved ? -1 : 1)
+      } : post));
     } catch (error) {
       console.error('Error toggling save:', error);
     }
   };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
@@ -291,13 +253,11 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
       year: 'numeric'
     });
   };
-
   const handleSaveLocation = async () => {
     if (!user) {
       toast.error('Please log in to save locations');
       return;
     }
-
     try {
       // Prepare location data for saving
       const locationData = {
@@ -312,27 +272,25 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
 
       // Save using locationInteractionService which handles location creation
       const ok = await locationInteractionService.saveLocation(place.id, locationData);
-      
       if (ok) {
         // Also save to saved_places for Google Places (ignore duplicates)
         if (place.google_place_id || place.coordinates) {
-          const { error } = await supabase
-            .from('saved_places')
-            .insert({
-              user_id: user.id,
-              place_id: place.google_place_id || place.id,
-              place_name: place.name,
-              place_category: place.category,
-              city: displayCity,
-              coordinates: place.coordinates
-            });
-          
+          const {
+            error
+          } = await supabase.from('saved_places').insert({
+            user_id: user.id,
+            place_id: place.google_place_id || place.id,
+            place_name: place.name,
+            place_category: place.category,
+            city: displayCity,
+            coordinates: place.coordinates
+          });
+
           // Ignore duplicate errors
           if (error && !error.message.includes('duplicate')) {
             console.error('Error saving to saved_places:', error);
           }
         }
-        
         toast.success('Location saved successfully!');
       } else {
         toast.error('Failed to save location');
@@ -342,27 +300,19 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
       toast.error('Failed to save location');
     }
   };
-
   const handleVisited = async () => {
     try {
       await trackVisit(place.id);
     } catch {}
     setShowComments(true);
   };
-
   if (selectedPost) {
-    return (
-      <Drawer open={!!selectedPost} onOpenChange={(open) => !open && setSelectedPost(null)}>
+    return <Drawer open={!!selectedPost} onOpenChange={open => !open && setSelectedPost(null)}>
         <DrawerContent className="h-[95vh]">
           <div className="fixed inset-0 bg-black z-50 flex flex-col h-full">
         {/* Individual Post View */}
         <div className="flex items-center justify-between p-4 bg-black text-white">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSelectedPost(null)}
-            className="text-white hover:bg-white/20"
-          >
+          <Button variant="ghost" size="sm" onClick={() => setSelectedPost(null)} className="text-white hover:bg-white/20">
             <ChevronLeft className="w-5 h-5" />
           </Button>
           <h2 className="font-semibold text-white">{place.name}</h2>
@@ -370,13 +320,7 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
         </div>
 
         <div className="flex-1 flex items-center justify-center bg-black">
-          {selectedPost.media_urls && selectedPost.media_urls.length > 0 && (
-            <img
-              src={selectedPost.media_urls[0]}
-              alt="Post"
-              className="max-w-full max-h-full object-contain"
-            />
-          )}
+          {selectedPost.media_urls && selectedPost.media_urls.length > 0 && <img src={selectedPost.media_urls[0]} alt="Post" className="max-w-full max-h-full object-contain" />}
         </div>
 
         {/* Post Info */}
@@ -397,11 +341,9 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
             </div>
           </div>
 
-          {selectedPost.caption && (
-            <p className="text-gray-700 mb-4 leading-relaxed">
+          {selectedPost.caption && <p className="text-gray-700 mb-4 leading-relaxed">
               {selectedPost.caption}
-            </p>
-          )}
+            </p>}
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6 text-sm text-gray-500">
@@ -420,24 +362,10 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
             </div>
 
             <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleLike(selectedPost.id)}
-                className={`${
-                  likedPosts.has(selectedPost.id) ? 'text-red-600' : 'text-gray-600'
-                }`}
-              >
+              <Button variant="ghost" size="sm" onClick={() => handleLike(selectedPost.id)} className={`${likedPosts.has(selectedPost.id) ? 'text-red-600' : 'text-gray-600'}`}>
                 <Heart className={`w-4 h-4 ${likedPosts.has(selectedPost.id) ? 'fill-current' : ''}`} />
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleSave(selectedPost.id)}
-                className={`${
-                  savedPosts.has(selectedPost.id) ? 'text-blue-600' : 'text-gray-600'
-                }`}
-              >
+              <Button variant="ghost" size="sm" onClick={() => handleSave(selectedPost.id)} className={`${savedPosts.has(selectedPost.id) ? 'text-blue-600' : 'text-gray-600'}`}>
                 <Bookmark className={`w-4 h-4 ${savedPosts.has(selectedPost.id) ? 'fill-current' : ''}`} />
               </Button>
             </div>
@@ -445,30 +373,19 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
           </div>
         </div>
         </DrawerContent>
-      </Drawer>
-    );
+      </Drawer>;
   }
-
-  return (
-    <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()} modal={false}>
+  return <Drawer open={isOpen} onOpenChange={open => !open && onClose()} modal={false}>
       <DrawerContent className="h-[90vh]">
-        {loading ? (
-          <div className="flex items-center justify-center h-full">
+        {loading ? <div className="flex items-center justify-center h-full">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
               <span className="text-gray-600 font-medium">Loading posts...</span>
             </div>
-          </div>
-        ) : (
-        <div className="flex flex-col h-full overflow-hidden">
+          </div> : <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="bg-white px-4 py-4 flex items-center gap-3 shadow-sm border-b">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onClose}
-          className="p-2 hover:bg-gray-100 rounded-full"
-        >
+        <Button variant="ghost" size="sm" onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
           <ChevronLeft className="w-5 h-5" />
         </Button>
         
@@ -477,8 +394,8 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <MapPin className="w-4 h-4" />
             <span>{displayCity}</span>
-            <span>•</span>
-            <span className="text-xs">{posts.length} posts</span>
+            
+            
           </div>
         </div>
 
@@ -498,19 +415,16 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
           <Button size="sm" variant="secondary" onClick={handleSaveLocation}>Save</Button>
           <Button size="sm" variant="secondary" onClick={handleVisited}>Visited</Button>
           <Button size="sm" variant="secondary" onClick={() => {
-            const url = place.google_place_id
-              ? `https://www.google.com/maps/search/?api=1&query=place_id:${place.google_place_id}`
-              : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(place.name + ' ' + (displayCity || ''))}`;
-            window.open(url, '_blank');
-          }}>Get Directions</Button>
+              const url = place.google_place_id ? `https://www.google.com/maps/search/?api=1&query=place_id:${place.google_place_id}` : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(place.name + ' ' + (displayCity || ''))}`;
+              window.open(url, '_blank');
+            }}>Get Directions</Button>
           <Button size="sm" variant="secondary" onClick={() => setIsShareModalOpen(true)}>Share</Button>
         </div>
       </div>
 
       {/* Posts Library - vertical grid */}
       <div className="flex-1 overflow-y-auto bg-gray-50">
-        {posts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center px-8">
+        {posts.length === 0 ? <div className="flex flex-col items-center justify-center h-full text-center px-8">
             <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
               <MapPin className="w-10 h-10 text-gray-400" />
             </div>
@@ -519,25 +433,11 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
             <Button className="bg-blue-600 hover:bg-blue-700">
               Share Your Experience
             </Button>
-          </div>
-        ) : (
-          <div className="p-3">
+          </div> : <div className="p-3">
             <div className="grid grid-cols-2 gap-3">
-              {posts.map((post) => (
-                <div
-                  key={post.id}
-                  className="relative h-48 bg-gray-200 rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition shadow-sm"
-                  onClick={() => setSelectedPost(post)}
-                >
-                  {post.media_urls && post.media_urls.length > 0 && (
-                    <>
-                      <img
-                        src={post.media_urls[0]}
-                        alt="Post"
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                        decoding="async"
-                      />
+              {posts.map(post => <div key={post.id} className="relative h-48 bg-gray-200 rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition shadow-sm" onClick={() => setSelectedPost(post)}>
+                  {post.media_urls && post.media_urls.length > 0 && <>
+                      <img src={post.media_urls[0]} alt="Post" className="w-full h-full object-cover" loading="lazy" decoding="async" />
                       {/* User Avatar Overlay */}
                       <div className="absolute top-2 left-2">
                         <Avatar className="w-8 h-8 border-2 border-white shadow-lg">
@@ -547,53 +447,34 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
                           </AvatarFallback>
                         </Avatar>
                       </div>
-                    </>
-                  )}
-                  {post.media_urls && post.media_urls.length > 1 && (
-                    <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium">
+                    </>}
+                  {post.media_urls && post.media_urls.length > 1 && <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium">
                       +{post.media_urls.length - 1}
-                    </div>
-                  )}
-                </div>
-              ))}
+                    </div>}
+                </div>)}
             </div>
             
             {/* Load More Button */}
-            {hasMorePosts && (
-              <div className="mt-4 flex justify-center pb-4">
-                <Button
-                  onClick={loadMorePosts}
-                  disabled={loading}
-                  variant="outline"
-                  size="sm"
-                >
+            {hasMorePosts && <div className="mt-4 flex justify-center pb-4">
+                <Button onClick={loadMorePosts} disabled={loading} variant="outline" size="sm">
                   {loading ? 'Loading...' : 'Load More'}
                 </Button>
-              </div>
-            )}
-          </div>
-        )}
+              </div>}
+          </div>}
       </div>
 
         {/* Visited -> comments modal */}
-        <PlaceInteractionModal
-          isOpen={showComments}
-          onClose={() => setShowComments(false)}
-          mode="comments"
-          place={{ id: place.id, name: place.name, category: place.category, coordinates: place.coordinates }}
-        />
+        <PlaceInteractionModal isOpen={showComments} onClose={() => setShowComments(false)} mode="comments" place={{
+          id: place.id,
+          name: place.name,
+          category: place.category,
+          coordinates: place.coordinates
+        }} />
 
         {/* Share modal */}
-        <PinShareModal
-          isOpen={isShareModalOpen}
-          onClose={() => setIsShareModalOpen(false)}
-          place={place}
-        />
-      </div>
-      )}
+        <PinShareModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} place={place} />
+      </div>}
       </DrawerContent>
-    </Drawer>
-  );
+    </Drawer>;
 };
-
 export default LocationPostLibrary;
