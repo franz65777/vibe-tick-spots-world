@@ -12,10 +12,11 @@ interface CityEngagementCardProps {
 const CityEngagementCard = ({ cityName, onClick, baseCount = 0 }: CityEngagementCardProps) => {
   const { engagement, loading } = useCityEngagement(cityName);
 
-  const totalPins = engagement?.totalPins || baseCount;
+  // Always prefer live engagement data; do not cap or fallback to static counts
+  const totalPins = typeof engagement?.totalPins === 'number' ? engagement.totalPins : 0;
   const followedUsers = engagement?.followedUsers || [];
 
-  const displayCount = totalPins >= 100 ? '99+' : totalPins >= 10 ? `${totalPins}+` : `${totalPins}`;
+  const displayCount = `${totalPins}`;
 
   return (
     <button
