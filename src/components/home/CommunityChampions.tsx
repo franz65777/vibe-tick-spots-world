@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-
 interface Champion {
   id: string;
   username: string;
@@ -14,26 +13,23 @@ interface Champion {
   weekly_likes: number;
   rank: number;
 }
-
 interface CommunityChampionsProps {
   champions: Champion[];
   onUserClick: (userId: string) => void;
 }
-
-const CommunityChampions = ({ champions, onUserClick }: CommunityChampionsProps) => {
+const CommunityChampions = ({
+  champions,
+  onUserClick
+}: CommunityChampionsProps) => {
   const navigate = useNavigate();
-  
   const getRankBadge = (rank: number) => {
     const badges = ['🥇', '🥈', '🥉'];
     return badges[rank - 1] || `#${rank}`;
   };
-
   if (champions.length === 0) {
     return null;
   }
-
-  return (
-    <Card className="bg-card border-border shadow-sm overflow-hidden">
+  return <Card className="bg-card border-border shadow-sm overflow-hidden">
       <div className="bg-gradient-to-br from-primary/5 to-accent/5 px-4 py-3 border-b border-border">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -50,16 +46,9 @@ const CommunityChampions = ({ champions, onUserClick }: CommunityChampionsProps)
       </div>
 
       <div className="p-3 space-y-2">
-        {champions.map((champion) => (
-          <div
-            key={champion.id}
-            onClick={() => onUserClick(champion.id)}
-            className="group flex items-center gap-3 p-3 rounded-xl bg-background hover:bg-accent/5 cursor-pointer transition-all duration-200 border border-transparent hover:border-border"
-          >
+        {champions.map(champion => <div key={champion.id} onClick={() => onUserClick(champion.id)} className="group flex items-center gap-3 p-3 rounded-xl bg-background hover:bg-accent/5 cursor-pointer transition-all duration-200 border border-transparent hover:border-border">
             {/* Rank Badge */}
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-bold">
-              {getRankBadge(champion.rank)}
-            </div>
+            
 
             {/* Avatar */}
             <Avatar className="w-10 h-10 border-2 border-background shadow-sm">
@@ -89,22 +78,14 @@ const CommunityChampions = ({ champions, onUserClick }: CommunityChampionsProps)
               </div>
               <div className="text-xs text-muted-foreground">this week</div>
             </div>
-          </div>
-        ))}
+          </div>)}
       </div>
 
       <div className="px-3 pb-3">
-        <Button
-          onClick={() => navigate('/leaderboard')}
-          variant="outline"
-          size="sm"
-          className="w-full rounded-xl font-semibold hover:bg-primary/5 hover:text-primary hover:border-primary/20"
-        >
+        <Button onClick={() => navigate('/leaderboard')} variant="outline" size="sm" className="w-full rounded-xl font-semibold hover:bg-primary/5 hover:text-primary hover:border-primary/20">
           View Full Leaderboard
         </Button>
       </div>
-    </Card>
-  );
+    </Card>;
 };
-
 export default CommunityChampions;
