@@ -29,44 +29,39 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
   if (selectedFiles.length === 0) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6 relative overflow-hidden">
-        {/* Floating Category Icons - Bigger and 2 Rows */}
-        <div className="absolute top-12 left-0 right-0 z-0 pointer-events-none">
-          <div className="relative h-64 max-w-2xl mx-auto">
+        {/* Floating Category Icons - Arranged in Circle Around Photo */}
+        <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
+          <div className="relative w-80 h-80">
             {categories.map((category, index) => {
-              // Arrange in 2 rows: 4 on top, 3 on bottom
-              const positions = [
-                { top: '15%', left: '8%' },   // row 1
-                { top: '15%', left: '30%' },
-                { top: '15%', left: '52%' },
-                { top: '15%', left: '74%' },
-                { top: '55%', left: '18%' },  // row 2
-                { top: '55%', left: '44%' },
-                { top: '55%', left: '70%' }
-              ];
-              const pos = positions[index];
+              // Position icons in a circle around the center (radius: 160px)
+              const angle = (index * 360) / categories.length;
+              const radius = 160;
+              const radian = (angle * Math.PI) / 180;
+              const x = Math.cos(radian) * radius;
+              const y = Math.sin(radian) * radius;
               const delay = index * 0.15;
               
               return (
                 <div
                   key={category}
-                  className="absolute opacity-30 animate-bounce"
+                  className="absolute opacity-50 animate-bounce"
                   style={{
-                    top: pos.top,
-                    left: pos.left,
+                    top: `calc(50% + ${y}px - 2.5rem)`,
+                    left: `calc(50% + ${x}px - 2.5rem)`,
                     animationDelay: `${delay}s`,
                     animationDuration: '2.5s'
                   }}
                 >
-                  <CategoryIcon category={category} className="w-16 h-16" />
+                  <CategoryIcon category={category} className="w-20 h-20 drop-shadow-lg" />
                 </div>
               );
             })}
           </div>
         </div>
 
-        <div className="text-center space-y-6 max-w-sm relative z-10 mt-8">
-          <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-            <ImageIcon className="w-12 h-12 text-primary" />
+        <div className="text-center space-y-6 max-w-sm relative z-10">
+          <div className="w-32 h-32 rounded-full bg-primary/10 flex items-center justify-center mx-auto shadow-lg">
+            <ImageIcon className="w-16 h-16 text-primary" />
           </div>
           
           <div className="space-y-2">

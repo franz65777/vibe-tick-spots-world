@@ -146,7 +146,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
         modal={false}
         onOpenChange={(open) => { if (!open) onClose(); }}
       >
-        <DrawerContent className="transition-all duration-300 max-h-[40vh]">
+        <DrawerContent className="transition-all duration-300 h-auto max-h-[25vh] data-[state=open]:max-h-[90vh]">
           {/* Draggable Header - Compact and Draggable */}
           <div className="bg-background px-4 pt-3 pb-2 cursor-grab active:cursor-grabbing">
             <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-3" />
@@ -216,8 +216,8 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
             </div>
           </div>
 
-          {/* Community Posts - Vertical Grid */}
-          <div className="px-4 py-4 bg-muted/30 flex-1 overflow-y-auto">
+          {/* Community Posts - Vertical Grid with Scrolling */}
+          <div className="px-4 py-4 bg-muted/30 flex-1 overflow-y-auto max-h-[60vh]">
             <div className="flex items-center gap-2 mb-3">
               <MessageSquare className="w-4 h-4 text-muted-foreground" />
               <h4 className="font-semibold text-sm text-foreground">

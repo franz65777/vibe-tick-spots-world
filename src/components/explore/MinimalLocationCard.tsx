@@ -43,13 +43,13 @@ const MinimalLocationCard = ({ place, onCardClick, isSaved, onSaveToggle }: Mini
           }}
           variant="ghost"
           size="icon"
-          className={`shrink-0 rounded-full w-10 h-10 ${
+          className={`shrink-0 rounded-full w-8 h-8 ${
             isSaved 
               ? 'bg-blue-500 text-white hover:bg-blue-600' 
               : 'bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-600'
           }`}
         >
-          <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
+          <Bookmark className={`w-3.5 h-3.5 ${isSaved ? 'fill-current' : ''}`} />
         </Button>
       </div>
     </div>

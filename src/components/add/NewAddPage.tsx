@@ -46,8 +46,37 @@ export const NewAddPage = () => {
   const handleLocationSelect = (location: any) => {
     if (location === null) {
       setSelectedLocation(null);
+      setSelectedCategory('');
       return;
     }
+
+    // Auto-detect category from place types
+    const types = location.types || [];
+    let category = 'place';
+    
+    const categoryMapping: { [key: string]: string } = {
+      'restaurant': 'restaurant',
+      'cafe': 'cafe',
+      'bar': 'bar',
+      'night_club': 'bar',
+      'lodging': 'hotel',
+      'museum': 'museum',
+      'tourist_attraction': 'entertainment',
+      'amusement_park': 'entertainment',
+      'bakery': 'bakery',
+      'meal_takeaway': 'restaurant',
+      'meal_delivery': 'restaurant'
+    };
+
+    for (const type of types) {
+      if (categoryMapping[type]) {
+        category = categoryMapping[type];
+        break;
+      }
+    }
+
+    console.log('🏷️ Auto-detected category:', category, 'from types:', types);
+    setSelectedCategory(category);
 
     setSelectedLocation({
       place_id: location.place_id,

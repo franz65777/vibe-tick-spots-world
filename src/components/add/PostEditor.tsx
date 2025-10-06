@@ -47,9 +47,18 @@ export const PostEditor: React.FC<PostEditorProps> = ({
   
   const canSubmit = 
     selectedFiles.length > 0 && 
-    selectedLocation && 
-    selectedCategory && 
+    selectedLocation !== null && 
+    selectedCategory !== '' && 
     !isUploading;
+
+  console.log('PostEditor canSubmit:', {
+    filesCount: selectedFiles.length,
+    hasLocation: !!selectedLocation,
+    hasCategory: !!selectedCategory,
+    category: selectedCategory,
+    isUploading,
+    canSubmit
+  });
 
   if (selectedFiles.length === 0) {
     return (
