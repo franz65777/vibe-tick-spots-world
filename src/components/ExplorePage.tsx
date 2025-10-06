@@ -18,6 +18,7 @@ import { useUserSearchHistory } from '@/hooks/useUserSearchHistory';
 import { useFollowSuggestions } from '@/hooks/useFollowSuggestions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
+import StoriesViewer from './StoriesViewer';
 
 const ExplorePage = () => {
   const { user } = useAuth();
@@ -35,6 +36,8 @@ const ExplorePage = () => {
   const { champions } = useCommunityChampions(currentCity);
   const { searchHistory, deleteSearchHistoryItem } = useUserSearchHistory();
   const { suggestions, fetchSuggestions } = useFollowSuggestions();
+  const [viewingStories, setViewingStories] = useState<any[]>([]);
+  const [viewingStoriesIndex, setViewingStoriesIndex] = useState(0);
 
   // Check for shared place from DM and open LocationDetailModal
   useEffect(() => {
@@ -150,7 +153,8 @@ const ExplorePage = () => {
       await supabase.from('search_history').insert({
         user_id: user.id,
         search_query: clickedUser.username,
-        search_type: 'users'
+        search_type: 'users',
+        target_user_id: userId
       });
     }
     
@@ -186,6 +190,42 @@ const ExplorePage = () => {
   };
   const handleMessageUser = (userId: string) => {
     console.log('Message user:', userId);
+  };
+
+  const openStoriesForUser = async (userId: string, username?: string, avatar_url?: string) => {
+    const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { data: stories } = await supabase
+      .from('stories')
+      .select('id, user_id, media_url, media_type, caption, location_id, location_name, location_address, created_at')
+      .eq('user_id', userId)
+      .gt('created_at', dayAgo)
+      .order('created_at', { ascending: true });
+
+    if (stories && stories.length > 0) {
+      const formatted = stories.map((s: any) => ({
+        id: s.id,
+        userId: s.user_id,
+        userName: username || 'User',
+        userAvatar: avatar_url || '',
+        mediaUrl: s.media_url,
+        mediaType: s.media_type,
+        locationId: s.location_id,
+        locationName: s.location_name || '',
+        locationAddress: s.location_address || '',
+        timestamp: s.created_at,
+        isViewed: false
+      }));
+      setViewingStories(formatted);
+      setViewingStoriesIndex(0);
+    }
+  };
+
+  const handleHistoryAvatarClick = (item: any) => {
+    if (item.has_active_story && item.target_user_id) {
+      openStoriesForUser(item.target_user_id, item.username || item.search_query, item.avatar_url);
+    } else if (item.target_user_id) {
+      navigate(`/profile/${item.target_user_id}`);
+    }
   };
   const clearSearch = () => {
     setSearchQuery('');
@@ -271,18 +311,28 @@ const ExplorePage = () => {
                           {searchHistory.map((item) => (
                             <div
                               key={item.id}
-                              onClick={() => handleSearch(item.search_query)}
-                              className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                              className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
                             >
-                              <Avatar className="h-10 w-10 flex-shrink-0">
-                                <AvatarImage src={item.avatar_url || undefined} />
-                                <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white">
-                                  {item.search_query[0]?.toUpperCase() || 'U'}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1 min-w-0">
+                              <div
+                                className="relative flex-shrink-0 cursor-pointer"
+                                onClick={() => handleHistoryAvatarClick(item)}
+                              >
+                                <Avatar className="h-10 w-10">
+                                  <AvatarImage src={item.avatar_url || undefined} />
+                                  <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white">
+                                    {(item.username || item.search_query)[0]?.toUpperCase() || 'U'}
+                                  </AvatarFallback>
+                                </Avatar>
+                                {item.has_active_story && (
+                                  <div className="absolute inset-0 rounded-full ring-2 ring-primary" />
+                                )}
+                              </div>
+                              <div
+                                className="flex-1 min-w-0 cursor-pointer"
+                                onClick={() => item.target_user_id && navigate(`/profile/${item.target_user_id}`)}
+                              >
                                 <p className="text-sm font-medium text-foreground truncate">
-                                  {item.search_query}
+                                  {item.username || item.search_query}
                                 </p>
                               </div>
                               <button
@@ -402,6 +452,15 @@ const ExplorePage = () => {
           </>
         )}
       </div>
+
+      {viewingStories.length > 0 && (
+        <StoriesViewer
+          stories={viewingStories}
+          initialStoryIndex={viewingStoriesIndex}
+          onClose={() => setViewingStories([])}
+          onStoryViewed={() => {}}
+        />
+      )}
 
       {/* Location Detail Modal */}
       <LocationDetailModal
