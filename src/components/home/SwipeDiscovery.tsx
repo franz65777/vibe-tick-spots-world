@@ -312,7 +312,7 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
                 <img src={swipeSave} alt="Explore" className="w-20 h-20 opacity-80" />
               </div>
               <div className="text-lg font-semibold text-foreground">No new saves from people you follow</div>
-              <p className="text-muted-foreground text-sm">Discover more places by finding new people to follow.</p>
+              <p className="text-muted-foreground text-sm">Follow more users to see their saved locations.</p>
               <div className="flex items-center justify-center gap-3 pt-1">
                 <Button onClick={() => { onClose(); navigate('/explore'); }} className="rounded-full px-5">Search people</Button>
                 <Button onClick={fetchDailyLocations} variant="outline" className="rounded-full px-5">Refresh</Button>
@@ -320,13 +320,13 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
             </div>
           </div>
         ) : currentLocation ? (
-          <div className="flex-1 flex items-start justify-center p-4 pt-6">
+          <div className="flex-1 flex items-start justify-center p-4 pt-2">
             {/* Swipeable Card */}
             <div
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
-              className="w-full max-w-md h-[425px] transition-transform duration-300"
+              className="w-full max-w-md h-[360px] transition-transform duration-300"
               style={{
                 transform: swipeDirection 
                   ? swipeDirection === 'left' 
