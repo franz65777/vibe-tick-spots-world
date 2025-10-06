@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Users } from 'lucide-react';
+import { Search, MapPin, Users, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { searchService } from '@/services/searchService';
@@ -14,7 +14,10 @@ import CommunityChampions from './home/CommunityChampions';
 import { useCommunityChampions } from '@/hooks/useCommunityChampions';
 import SimpleCategoryFilter from './explore/SimpleCategoryFilter';
 import { AllowedCategory } from '@/utils/allowedCategories';
-import RecentUserSearches from './explore/RecentUserSearches';
+import { useUserSearchHistory } from '@/hooks/useUserSearchHistory';
+import { useFollowSuggestions } from '@/hooks/useFollowSuggestions';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { toast } from 'sonner';
 
 const ExplorePage = () => {
   const { user } = useAuth();
@@ -30,6 +33,8 @@ const ExplorePage = () => {
   const [currentCity, setCurrentCity] = useState<string>('Unknown City');
   const [selectedCategory, setSelectedCategory] = useState<AllowedCategory | null>(null);
   const { champions } = useCommunityChampions(currentCity);
+  const { searchHistory, deleteSearchHistoryItem } = useUserSearchHistory();
+  const { suggestions, fetchSuggestions } = useFollowSuggestions();
 
   // Check for shared place from DM and open LocationDetailModal
   useEffect(() => {
@@ -161,6 +166,8 @@ const ExplorePage = () => {
       } else {
         const users = await searchService.getUserRecommendations(user.id);
         setUserRecommendations(users);
+        // Also refresh suggestions
+        fetchSuggestions();
       }
     } catch (error) {
       console.error('Error toggling follow:', error);
@@ -239,10 +246,84 @@ const ExplorePage = () => {
               </>
             ) : (
               <>
-                {/* Recent Searches & Community Champions - Only in People mode */}
+                {/* Search History & Follow Suggestions - Only in People mode */}
                 {!isSearchActive && (
-                  <div className="px-4 py-4 space-y-4">
-                    <RecentUserSearches />
+                  <div className="px-4 py-4 space-y-6">
+                    {/* Search History */}
+                    {searchHistory.length > 0 && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                          <Search className="w-4 h-4" />
+                          Recent Searches
+                        </h3>
+                        <div className="space-y-2">
+                          {searchHistory.map((item) => (
+                            <div
+                              key={item.id}
+                              onClick={() => handleSearch(item.search_query)}
+                              className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                            >
+                              <span className="text-foreground">{item.search_query}</span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteSearchHistoryItem(item.id);
+                                }}
+                                className="text-muted-foreground hover:text-foreground"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Follow Suggestions */}
+                    {suggestions.length > 0 && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                          <Users className="w-4 h-4" />
+                          Suggested for You
+                        </h3>
+                        <div className="space-y-2">
+                          {suggestions.slice(0, 5).map((suggestedUser) => (
+                            <div
+                              key={suggestedUser.id}
+                              className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors"
+                            >
+                              <div 
+                                className="flex items-center gap-3 flex-1 cursor-pointer"
+                                onClick={() => handleUserClick(suggestedUser.id)}
+                              >
+                                <Avatar className="h-12 w-12">
+                                  <AvatarImage src={suggestedUser.avatar_url || undefined} />
+                                  <AvatarFallback>
+                                    {suggestedUser.username?.[0]?.toUpperCase() || 'U'}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-semibold text-foreground truncate">
+                                    {suggestedUser.username}
+                                  </div>
+                                  <div className="text-sm text-muted-foreground">
+                                    {suggestedUser.follower_count || 0} followers
+                                    {suggestedUser.mutual_followers ? ` • ${suggestedUser.mutual_followers} mutual` : ''}
+                                  </div>
+                                </div>
+                              </div>
+                              <Button
+                                variant={suggestedUser.is_following ? 'outline' : 'default'}
+                                size="sm"
+                                onClick={() => handleFollowUser(suggestedUser.id)}
+                              >
+                                {suggestedUser.is_following ? 'Following' : 'Follow'}
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     
                     {champions.length > 0 && (
                       <CommunityChampions 
@@ -250,6 +331,28 @@ const ExplorePage = () => {
                         onUserClick={handleUserClick}
                       />
                     )}
+                    
+                    {/* Invite Friends Button */}
+                    <div className="pt-4">
+                      <Button
+                        onClick={() => {
+                          const shareText = 'Join me on this amazing app!';
+                          const shareUrl = window.location.origin;
+                          if (navigator.share) {
+                            navigator.share({ title: 'Join me!', text: shareText, url: shareUrl })
+                              .catch(() => {});
+                          } else {
+                            navigator.clipboard.writeText(shareUrl);
+                            toast.success('Link copied to clipboard!');
+                          }
+                        }}
+                        variant="outline"
+                        className="w-full py-6 bg-gradient-to-r from-blue-500/10 to-purple-500/10 hover:from-blue-500/20 hover:to-purple-500/20 border-blue-200 hover:border-blue-300 transition-all"
+                      >
+                        <UserPlus className="w-5 h-5 mr-2" />
+                        <span className="font-semibold">Invite Friends</span>
+                      </Button>
+                    </div>
                   </div>
                 )}
 
@@ -268,22 +371,8 @@ const ExplorePage = () => {
                   </div>
                 ) : (
                   <div className="px-4 py-8">
-                    {isSearchActive ? (
+                    {isSearchActive && (
                       <NoResults searchMode="users" searchQuery={searchQuery} />
-                    ) : (
-                      <div className="mt-8">
-                        <Button 
-                          onClick={() => {/* TODO: Implement invite */}} 
-                          variant="outline" 
-                          size="sm"
-                          className="w-full"
-                        >
-                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                          </svg>
-                          Invite Friends
-                        </Button>
-                      </div>
                     )}
                   </div>
                 )}

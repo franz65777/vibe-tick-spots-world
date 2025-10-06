@@ -94,21 +94,31 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
         console.error('❌ Error fetching friends saves:', savesError);
       }
 
-      let candidates: SwipeLocation[] = (friendsSaves || []).map((s: any) => ({
-        id: s.place_id,
-        place_id: s.place_id,
-        name: s.place_name,
-        category: s.place_category || 'place',
-        city: s.city || 'Unknown',
-        address: undefined,
-        image_url: undefined,
-        coordinates: (s.coordinates as any) || { lat: 0, lng: 0 },
-        saved_by: {
-          id: s.user_id,
-          username: s.username || 'User',
-          avatar_url: s.avatar_url || '',
-        },
-      }));
+      console.log('📍 Friends saves data:', friendsSaves);
+      
+      let candidates: SwipeLocation[] = (friendsSaves || []).map((s: any) => {
+        const coords = typeof s.coordinates === 'string' 
+          ? JSON.parse(s.coordinates) 
+          : (s.coordinates || { lat: 0, lng: 0 });
+        
+        console.log(`📌 Processing place: ${s.place_name} from ${s.username}`, { coords, city: s.city });
+        
+        return {
+          id: s.place_id,
+          place_id: s.place_id,
+          name: s.place_name || 'Unknown Place',
+          category: s.place_category || 'place',
+          city: s.city || 'Unknown City',
+          address: undefined,
+          image_url: undefined, // Will be loaded from Google Places or locations table
+          coordinates: coords,
+          saved_by: {
+            id: s.user_id,
+            username: s.username || 'User',
+            avatar_url: s.avatar_url || '',
+          },
+        };
+      });
 
       // Fallback: if no follows or no candidates, show recent public locations (with google_place_id)
       if (candidates.length === 0) {
@@ -334,7 +344,7 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
               }}
             >
               <div className="relative w-full h-full rounded-3xl overflow-hidden shadow-2xl bg-white">
-                {/* Image */}
+                {/* Image or Gradient Background */}
                 <div className="absolute inset-0">
                   {currentLocation.image_url ? (
                     <img
@@ -343,44 +353,35 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                      <div className="w-24 h-24 rounded-full bg-white/60" />
+                    <div className="w-full h-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 flex items-center justify-center">
+                      <MapPin className="w-24 h-24 text-white/30" />
                     </div>
                   )}
                   
-                  {/* Gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                  {/* Gradient overlay - stronger for better text visibility */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                 </div>
 
                 {/* Bottom Info */}
-                <div className="absolute bottom-0 left-0 right-0 p-6 flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-2xl font-bold text-white drop-shadow mb-1">{currentLocation.name}</h3>
+                <div className="absolute bottom-0 left-0 right-0 p-6">
+                  <div className="flex-1 mb-4">
+                    <h3 className="text-3xl font-bold text-white drop-shadow-lg mb-2">
+                      {currentLocation.name || 'Unknown Place'}
+                    </h3>
                     {currentLocation.city && (
-                      <div className="flex items-center gap-2 text-white/90 text-sm">
-                        <MapPin className="w-4 h-4" />
-                        <span>{currentLocation.city}</span>
+                      <div className="flex items-center gap-2 text-white text-base">
+                        <MapPin className="w-5 h-5" />
+                        <span className="drop-shadow">{currentLocation.city}</span>
+                      </div>
+                    )}
+                    {currentLocation.category && (
+                      <div className="mt-2 inline-block px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full">
+                        <span className="text-white text-sm font-medium capitalize">
+                          {currentLocation.category}
+                        </span>
                       </div>
                     )}
                   </div>
-                  {currentLocation.saved_by && (
-                    <div className="flex items-center gap-2 bg-black/40 backdrop-blur-sm rounded-full px-3 py-2">
-                      {currentLocation.saved_by.avatar_url ? (
-                        <img 
-                          src={currentLocation.saved_by.avatar_url} 
-                          alt={currentLocation.saved_by.username}
-                          className="w-8 h-8 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
-                          <span className="text-white text-xs font-semibold">
-                            {currentLocation.saved_by.username[0]?.toUpperCase()}
-                          </span>
-                        </div>
-                      )}
-                      <span className="text-white text-sm font-medium">{currentLocation.saved_by.username}</span>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
