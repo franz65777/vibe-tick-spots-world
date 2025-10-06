@@ -35,7 +35,6 @@ class LocationInteractionService {
             const { data: newLocation, error: locationError } = await supabase
               .from('locations')
               .insert({
-                id: locationId,
                 google_place_id: locationData.google_place_id,
                 name: locationData.name,
                 address: locationData.address,

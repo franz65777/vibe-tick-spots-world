@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Heart, MessageCircle, Bookmark, Share2, X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -72,6 +72,10 @@ const PostDetailModal = ({ post, isOpen, onClose }: PostDetailModalProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden p-0 bg-white">
+        <DialogHeader className="sr-only">
+          <DialogTitle>Post detail</DialogTitle>
+          <DialogDescription>Post modal content</DialogDescription>
+        </DialogHeader>
         <div className="flex h-full max-h-[90vh]">
           {/* Media Section */}
           <div className="flex-1 bg-black flex items-center justify-center relative">
