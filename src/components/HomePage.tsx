@@ -65,7 +65,7 @@ const HomePage = () => {
   const [currentCity, setCurrentCity] = useState('');
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
 
-  // Get user's current location on component mount
+  // Get user's current location on component mount and when tab becomes visible
   useEffect(() => {
     const getCurrentLocation = () => {
       if (navigator.geolocation) {
@@ -79,8 +79,11 @@ const HomePage = () => {
           },
           (error) => {
             console.warn('Error getting user location:', error);
-            const defaultLocation = { lat: 37.7749, lng: -122.4194 };
-            setMapCenter(defaultLocation);
+            // Only set default if we don't have a location already
+            if (!userLocation) {
+              const defaultLocation = { lat: 37.7749, lng: -122.4194 };
+              setMapCenter(defaultLocation);
+            }
           },
           {
             enableHighAccuracy: true,
@@ -90,12 +93,27 @@ const HomePage = () => {
         );
       } else {
         console.warn('Geolocation is not supported by this browser');
-        const defaultLocation = { lat: 37.7749, lng: -122.4194 };
-        setMapCenter(defaultLocation);
+        if (!userLocation) {
+          const defaultLocation = { lat: 37.7749, lng: -122.4194 };
+          setMapCenter(defaultLocation);
+        }
       }
     };
 
     getCurrentLocation();
+
+    // Also get location when page becomes visible (tab switching)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        getCurrentLocation();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   // Derive city name from geolocation via Google Geocoder

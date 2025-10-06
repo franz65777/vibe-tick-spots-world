@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, MapPin, Calendar, Users, Heart, MessageCircle, Share2, Bookmark, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocationInteraction } from '@/hooks/useLocationInteraction';
@@ -51,6 +51,8 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
   const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
   const [showComments, setShowComments] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [postsPage, setPostsPage] = useState(1);
+  const [hasMorePosts, setHasMorePosts] = useState(true);
 
   const displayCity = place?.city || place?.address?.split(',')[1]?.trim() || 'Unknown City';
   const { trackSave, trackVisit } = useLocationInteraction();
@@ -70,10 +72,10 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
     return null;
   }
 
-  const fetchLocationPosts = async () => {
+  const fetchLocationPosts = async (page: number = 1) => {
     try {
       setLoading(true);
-      console.log('🔍 FETCHING POSTS FOR LOCATION:', place.name, 'ID:', place.id);
+      console.log('🔍 FETCHING POSTS FOR LOCATION:', place.name, 'ID:', place.id, 'Page:', page);
       
       let locationIds = [place.id];
 
@@ -111,6 +113,9 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
 
       console.log('🎯 FINAL LOCATION IDs TO SEARCH:', locationIds);
 
+      const limit = 10;
+      const offset = (page - 1) * limit;
+
       const { data: postsData, error: postsError } = await supabase
         .from('posts')
         .select(`
@@ -126,7 +131,8 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
           location_id
         `)
         .in('location_id', locationIds)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
 
       if (postsError) {
         console.error('❌ Error fetching posts:', postsError);
@@ -155,17 +161,34 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
         }));
 
         console.log(`✅ FINAL POSTS COUNT: ${postsWithProfiles.length} for location: ${place.name}`);
-        setPosts(postsWithProfiles);
+        
+        if (page === 1) {
+          setPosts(postsWithProfiles);
+        } else {
+          setPosts(prev => [...prev, ...postsWithProfiles]);
+        }
+        setHasMorePosts(postsData.length === limit);
       } else {
         console.log('❌ No posts found for this location');
-        setPosts([]);
+        if (page === 1) {
+          setPosts([]);
+        }
+        setHasMorePosts(false);
       }
     } catch (error) {
       console.error('❌ CRITICAL ERROR fetching location posts:', error);
-      setPosts([]);
+      if (page === 1) {
+        setPosts([]);
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadMorePosts = () => {
+    const nextPage = postsPage + 1;
+    setPostsPage(nextPage);
+    fetchLocationPosts(nextPage);
   };
 
   const fetchUserInteractions = async () => {
@@ -454,14 +477,8 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <MapPin className="w-4 h-4" />
             <span>{displayCity}</span>
-            {place.category && (
-              <>
-                <span>•</span>
-                <Badge variant="secondary" className="text-xs">
-                  {place.category}
-                </Badge>
-              </>
-            )}
+            <span>•</span>
+            <span className="text-xs">{posts.length} posts</span>
           </div>
         </div>
 
@@ -490,7 +507,7 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
         </div>
       </div>
 
-      {/* Posts Library - horizontal scroll */}
+      {/* Posts Library - vertical grid */}
       <div className="flex-1 overflow-y-auto bg-gray-50">
         {posts.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center px-8">
@@ -504,46 +521,55 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
             </Button>
           </div>
         ) : (
-          <div className="flex gap-3 overflow-x-auto p-3 pb-4 scrollbar-hide">
-            {posts.map((post) => (
-              <div
-                key={post.id}
-                className="relative w-44 h-56 bg-gray-200 rounded-xl overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-90 transition shadow-sm"
-                onClick={() => setSelectedPost(post)}
-              >
-                {post.media_urls && post.media_urls.length > 0 && (
-                  <>
-                    <img
-                      src={post.media_urls[0]}
-                      alt="Post"
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                    {/* User Avatar Overlay */}
-                    <div className="absolute top-2 left-2">
-                      <div className="w-8 h-8 rounded-full border-2 border-white shadow-lg overflow-hidden bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
-                        {post.profiles?.avatar_url ? (
-                          <img 
-                            src={post.profiles.avatar_url} 
-                            alt={post.profiles.username}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-white text-xs font-semibold">
+          <div className="p-3">
+            <div className="grid grid-cols-2 gap-3">
+              {posts.map((post) => (
+                <div
+                  key={post.id}
+                  className="relative h-48 bg-gray-200 rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition shadow-sm"
+                  onClick={() => setSelectedPost(post)}
+                >
+                  {post.media_urls && post.media_urls.length > 0 && (
+                    <>
+                      <img
+                        src={post.media_urls[0]}
+                        alt="Post"
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                      {/* User Avatar Overlay */}
+                      <div className="absolute top-2 left-2">
+                        <Avatar className="w-8 h-8 border-2 border-white shadow-lg">
+                          <AvatarImage src={post.profiles?.avatar_url} />
+                          <AvatarFallback className="text-xs bg-primary text-primary-foreground">
                             {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
-                          </span>
-                        )}
+                          </AvatarFallback>
+                        </Avatar>
                       </div>
+                    </>
+                  )}
+                  {post.media_urls && post.media_urls.length > 1 && (
+                    <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium">
+                      +{post.media_urls.length - 1}
                     </div>
-                  </>
-                )}
-                {post.media_urls && post.media_urls.length > 1 && (
-                  <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium">
-                    +{post.media_urls.length - 1}
-                  </div>
-                )}
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            {/* Load More Button */}
+            {hasMorePosts && (
+              <div className="mt-4 flex justify-center pb-4">
+                <Button
+                  onClick={loadMorePosts}
+                  disabled={loading}
+                  variant="outline"
+                  size="sm"
+                >
+                  {loading ? 'Loading...' : 'Load More'}
+                </Button>
               </div>
-            ))}
+            )}
           </div>
         )}
       </div>
