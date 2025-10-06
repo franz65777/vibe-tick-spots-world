@@ -504,23 +504,41 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
             </Button>
           </div>
         ) : (
-          <div className="flex gap-2 overflow-x-auto p-3 pb-4">
+          <div className="flex gap-3 overflow-x-auto p-3 pb-4 scrollbar-hide">
             {posts.map((post) => (
               <div
                 key={post.id}
-                className="relative w-40 h-40 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-90 transition"
+                className="relative w-44 h-56 bg-gray-200 rounded-xl overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-90 transition shadow-sm"
                 onClick={() => setSelectedPost(post)}
               >
                 {post.media_urls && post.media_urls.length > 0 && (
-                  <img
-                    src={post.media_urls[0]}
-                    alt="Post"
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
+                  <>
+                    <img
+                      src={post.media_urls[0]}
+                      alt="Post"
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                    {/* User Avatar Overlay */}
+                    <div className="absolute top-2 left-2">
+                      <div className="w-8 h-8 rounded-full border-2 border-white shadow-lg overflow-hidden bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+                        {post.profiles?.avatar_url ? (
+                          <img 
+                            src={post.profiles.avatar_url} 
+                            alt={post.profiles.username}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-white text-xs font-semibold">
+                            {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </>
                 )}
                 {post.media_urls && post.media_urls.length > 1 && (
-                  <div className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
+                  <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium">
                     +{post.media_urls.length - 1}
                   </div>
                 )}

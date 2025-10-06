@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Navigation, Heart, Bookmark, MessageSquare, X, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { locationInteractionService } from '@/services/locationInteractionService';
-import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { supabase } from '@/integrations/supabase/client';
 import VisitedModal from './VisitedModal';
 import PinShareModal from './PinShareModal';
@@ -106,103 +105,136 @@ const [showVisitedModal, setShowVisitedModal] = useState(false);
   };
 
   return (
-    <Drawer open={true} onOpenChange={(open) => { if (!open) onClose(); }} modal={false}>
-      <DrawerContent className="max-h-[90vh] rounded-t-3xl">
-        {/* Header */}
-        <div className="relative p-6 border-b border-gray-100">
-          <Button
-            onClick={onClose}
-            variant="ghost"
-            size="icon"
-            className="absolute top-4 right-4 rounded-full"
-          >
-            <X className="w-5 h-5" />
-          </Button>
-          <div className="flex items-start gap-3">
-            <CategoryIcon category={place.category} className="w-10 h-10" />
-            <div className="flex-1">
-              <h3 className="font-bold text-lg text-gray-900">{place.name}</h3>
-              <div className="flex items-center gap-1 text-gray-500 text-sm mt-1">
-                <MapPin className="w-4 h-4" />
-                <span>{place.city || place.address?.split(',')[1]?.trim() || 'Unknown location'}</span>
+    <>
+      <Drawer 
+        open={true} 
+        onOpenChange={(open) => { if (!open) onClose(); }} 
+        modal={false}
+      >
+        <DrawerContent className="h-auto max-h-[85vh]">
+          {/* Header with location info */}
+          <div className="bg-background px-4 pt-3 pb-2">
+            <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-4" />
+            <div className="flex items-start gap-3">
+              <div className="flex-1">
+                <h3 className="font-bold text-xl text-foreground">{place.name}</h3>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                  <MapPin className="w-4 h-4" />
+                  <span>{place.city || place.address?.split(',')[1]?.trim() || 'Unknown location'}</span>
+                  {place.category && (
+                    <>
+                      <span>•</span>
+                      <Badge variant="secondary" className="text-xs">
+                        {place.category}
+                      </Badge>
+                    </>
+                  )}
+                </div>
               </div>
+              <Button
+                onClick={onClose}
+                variant="ghost"
+                size="icon"
+                className="rounded-full -mt-1"
+              >
+                <X className="w-5 h-5" />
+              </Button>
             </div>
           </div>
-        </div>
 
-        <ScrollArea className="max-h-[70vh]">
           {/* Action Buttons */}
-          <div className="p-4 grid grid-cols-4 gap-2">
-          <Button
-            onClick={handleSaveToggle}
-            disabled={loading}
-            variant="outline"
-            className={`flex flex-col items-center gap-1 h-auto py-3 ${
-              isSaved ? 'bg-blue-50 border-blue-300 text-blue-600' : ''
-            }`}
-          >
-            <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
-            <span className="text-xs">{isSaved ? 'Saved' : 'Save'}</span>
-          </Button>
+          <div className="bg-background px-4 py-3 border-y border-border">
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={handleSaveToggle}
+                disabled={loading}
+                size="sm"
+                variant={isSaved ? "default" : "secondary"}
+                className="flex-1"
+              >
+                <Bookmark className={`w-4 h-4 mr-1 ${isSaved ? 'fill-current' : ''}`} />
+                {isSaved ? 'Saved' : 'Save'}
+              </Button>
 
-          <Button
-            onClick={() => setShowVisitedModal(true)}
-            variant="outline"
-            className="flex flex-col items-center gap-1 h-auto py-3"
-          >
-            <Heart className="w-5 h-5" />
-            <span className="text-xs">Visited</span>
-          </Button>
+              <Button
+                onClick={() => setShowVisitedModal(true)}
+                size="sm"
+                variant="secondary"
+                className="flex-1"
+              >
+                <Heart className="w-4 h-4 mr-1" />
+                Visited
+              </Button>
 
-          <Button
-            onClick={handleDirections}
-            variant="outline"
-            className="flex flex-col items-center gap-1 h-auto py-3"
-          >
-            <Navigation className="w-5 h-5" />
-            <span className="text-xs">Directions</span>
-          </Button>
+              <Button
+                onClick={handleDirections}
+                size="sm"
+                variant="secondary"
+                className="flex-1"
+              >
+                <Navigation className="w-4 h-4 mr-1" />
+                Directions
+              </Button>
 
-          <Button
-            onClick={() => setShareOpen(true)}
-            variant="outline"
-            className="flex flex-col items-center gap-1 h-auto py-3"
-          >
-            <Share2 className="w-5 h-5" />
-            <span className="text-xs">Share</span>
-          </Button>
+              <Button
+                onClick={() => setShareOpen(true)}
+                size="sm"
+                variant="secondary"
+                className="flex-1"
+              >
+                <Share2 className="w-4 h-4 mr-1" />
+                Share
+              </Button>
+            </div>
           </div>
 
-          {/* Community Posts */}
+          {/* Community Posts - Horizontal Scroll */}
           {posts.length > 0 && (
-            <div className="px-4 pb-4">
+            <div className="px-4 py-4 bg-muted/30">
               <div className="flex items-center gap-2 mb-3">
-                <MessageSquare className="w-4 h-4 text-gray-500" />
-                <h4 className="font-semibold text-sm text-gray-900">Community posts</h4>
+                <MessageSquare className="w-4 h-4 text-muted-foreground" />
+                <h4 className="font-semibold text-sm text-foreground">
+                  Community posts ({posts.length})
+                </h4>
               </div>
-              <div className="space-y-3">
+              <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
                 {posts.map((post) => (
-                  <div key={post.id} className="bg-gray-50 rounded-xl p-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Avatar className="w-6 h-6">
-                        <AvatarImage src={post.profiles?.avatar_url} />
-                        <AvatarFallback className="text-xs">
-                          {post.profiles?.username?.[0] || 'U'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm font-medium text-gray-900">
-                        {post.profiles?.username}
-                      </span>
-                    </div>
-                    {post.caption && (
-                      <p className="text-sm text-gray-700">{post.caption}</p>
-                    )}
+                  <div 
+                    key={post.id} 
+                    className="relative flex-shrink-0 w-44 rounded-xl overflow-hidden bg-card shadow-sm"
+                  >
+                    {/* Post Image */}
                     {post.media_urls?.[0] && (
-                      <img 
-                        src={post.media_urls[0]} 
-                        alt="" 
-                        className="w-full h-32 object-cover rounded-lg mt-2"
-                      />
+                      <div className="relative w-full h-56">
+                        <img 
+                          src={post.media_urls[0]} 
+                          alt="" 
+                          className="w-full h-full object-cover"
+                        />
+                        {/* User Avatar Overlay */}
+                        <div className="absolute top-2 left-2">
+                          <Avatar className="w-8 h-8 border-2 border-white shadow-lg">
+                            <AvatarImage src={post.profiles?.avatar_url} />
+                            <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                              {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                        </div>
+                        {/* Multiple images indicator */}
+                        {post.media_urls.length > 1 && (
+                          <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium">
+                            +{post.media_urls.length - 1}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {/* Post Caption */}
+                    {post.caption && (
+                      <div className="p-2.5">
+                        <p className="text-xs text-foreground line-clamp-2 leading-relaxed">
+                          {post.caption}
+                        </p>
+                      </div>
                     )}
                   </div>
                 ))}
@@ -211,20 +243,30 @@ const [showVisitedModal, setShowVisitedModal] = useState(false);
           )}
 
           {posts.length === 0 && (
-            <div className="px-4 pb-4 text-center text-gray-500 text-sm">
-              <MessageSquare className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-              <p>No community posts</p>
+            <div className="px-4 py-8 text-center">
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+                <MessageSquare className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <p className="text-sm text-muted-foreground">No community posts yet</p>
+              <p className="text-xs text-muted-foreground mt-1">Be the first to share!</p>
             </div>
           )}
-        </ScrollArea>
+        </DrawerContent>
+      </Drawer>
 
-        <PinShareModal
-          isOpen={shareOpen}
-          onClose={() => setShareOpen(false)}
+      {showVisitedModal && (
+        <VisitedModal
           place={place}
+          onClose={() => setShowVisitedModal(false)}
         />
-      </DrawerContent>
-    </Drawer>
+      )}
+
+      <PinShareModal
+        isOpen={shareOpen}
+        onClose={() => setShareOpen(false)}
+        place={place}
+      />
+    </>
   );
 };
 
