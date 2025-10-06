@@ -146,39 +146,27 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
         modal={false}
         onOpenChange={(open) => { if (!open) onClose(); }}
       >
-        <DrawerContent className="transition-all duration-300 max-h-[85vh]">
-          {/* Drag Handle - Now just visual, draggable by default */}
+        <DrawerContent className="transition-all duration-300 max-h-[40vh]">
+          {/* Draggable Header - Compact and Draggable */}
           <div className="bg-background px-4 pt-3 pb-2 cursor-grab active:cursor-grabbing">
             <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-3" />
-          </div>
-
-          {/* Header with cropped location row style */}
-          <div className="bg-background px-4 pb-3">
-            <div className="flex items-center gap-3">
-              <Button
-                onClick={onClose}
-                variant="ghost"
-                size="icon"
-                className="rounded-full -ml-2"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </Button>
+            <div className="flex items-center gap-3 pb-2">
               <div className="shrink-0">
-                <CategoryIcon category={place.category || 'place'} className="w-8 h-8" />
+                <CategoryIcon category={place.category || 'place'} className="w-10 h-10" />
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-base text-foreground truncate">{place.name}</h3>
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <MapPin className="w-3 h-3" />
                   <span className="truncate">{place.city || place.address?.split(',')[1]?.trim() || 'Unknown'}</span>
-                  {place.category && (
-                    <>
-                      <span>•</span>
-                      <span className="capitalize">{place.category}</span>
-                    </>
-                  )}
                 </div>
               </div>
+              <button
+                onClick={() => setShareOpen(true)}
+                className="p-2 hover:bg-muted rounded-full transition-colors flex-shrink-0"
+              >
+                <Share2 className="w-5 h-5" />
+              </button>
             </div>
           </div>
 

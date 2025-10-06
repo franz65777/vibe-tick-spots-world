@@ -10,7 +10,7 @@ const TaggedPostsGrid = () => {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPost, setSelectedPost] = useState<any>(null);
-  const { isLiked, isSaved, toggleLike, toggleSave } = usePostEngagement(selectedPost?.id);
+  const { isLiked: checkIsLiked, isSaved: checkIsSaved, toggleLike, toggleSave } = usePostEngagement();
 
   useEffect(() => {
     if (user) {
@@ -113,10 +113,10 @@ const TaggedPostsGrid = () => {
           post={selectedPost}
           isOpen={!!selectedPost}
           onClose={() => setSelectedPost(null)}
-          isLiked={isLiked}
-          isSaved={isSaved}
-          onLikeToggle={toggleLike}
-          onSaveToggle={toggleSave}
+          isLiked={checkIsLiked(selectedPost.id)}
+          isSaved={checkIsSaved(selectedPost.id)}
+          onLikeToggle={() => toggleLike(selectedPost.id)}
+          onSaveToggle={() => toggleSave(selectedPost.id)}
         />
       )}
     </>
