@@ -11,19 +11,91 @@ import {
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import BadgeDisplay from './BadgeDisplay';
 import EditProfileModal from './EditProfileModal';
 import ProfilePictureEditor from '../ProfilePictureEditor';
+import { useFollowStats } from '@/hooks/useFollowStats';
+import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 
-const ProfileHeader = () => {
-  const { profile } = useProfile();
+interface ProfileHeaderProps {
+  onFollowersClick: () => void;
+  onFollowingClick: () => void;
+  onPostsClick: () => void;
+  onLocationsClick: () => void;
+}
+
+const ProfileHeader = ({ 
+  onFollowersClick, 
+  onFollowingClick, 
+  onPostsClick, 
+  onLocationsClick 
+}: ProfileHeaderProps) => {
+  const { profile, refetch } = useProfile();
   const { user } = useAuth();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isProfilePictureEditorOpen, setIsProfilePictureEditorOpen] = useState(false);
+  const { stats } = useFollowStats();
+  const { getStats } = useSavedPlaces();
 
-  // Mock business account status - in a real app, this would come from the backend
-  const hasBusinessAccount = true; // This should be fetched from user's business status
+  // Real-time updates - refetch on interval
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refetch();
+    }, 5000); // Update every 5 seconds
+    
+    return () => clearInterval(interval);
+  }, [refetch]);
+
+  // Subscribe to realtime changes
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('profile-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${user.id}`
+        },
+        () => {
+          refetch();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'posts',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          refetch();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'follows'
+        },
+        () => {
+          refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, refetch]);
+
+  const hasBusinessAccount = (profile as any)?.is_business_user || false;
 
   const getInitials = () => {
     if (profile?.username) {
@@ -41,36 +113,23 @@ const ProfileHeader = () => {
   };
 
   const displayUsername = profile?.username || user?.user_metadata?.username || 'user';
-  const displayFullName = null; // SECURITY: Don't expose full names
+  const savedPlacesStats = getStats();
+
+  const displayStats = {
+    posts: profile?.posts_count || stats.postsCount || 0,
+    followers: profile?.follower_count || stats.followersCount || 0,
+    following: profile?.following_count || stats.followingCount || 0,
+    locations: savedPlacesStats.places || 0
+  };
 
   return (
-    <div className="px-4 py-4 bg-white border-b border-gray-100">
-      <div className="flex items-center justify-end mb-4">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="p-2">
-              <MoreHorizontal className="w-6 h-6 text-gray-600" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={() => setIsEditModalOpen(true)}>
-              <Edit className="w-4 h-4 mr-2" />
-              Edit Profile
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} className="text-red-600">
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      <div className="flex items-start gap-4 mb-4">
-        <div className="relative">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-purple-600 p-1">
-            <div className="w-full h-full rounded-full bg-white p-1">
-              <div className="w-full h-full rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+    <div className="px-4 py-4 bg-background">
+      <div className="flex gap-4">
+        {/* Profile Picture */}
+        <div className="relative shrink-0">
+          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-primary/60 p-0.5">
+            <div className="w-full h-full rounded-full bg-background p-0.5">
+              <div className="w-full h-full rounded-full bg-muted flex items-center justify-center overflow-hidden">
                 {profile?.avatar_url ? (
                   <img 
                     src={profile.avatar_url} 
@@ -78,39 +137,94 @@ const ProfileHeader = () => {
                     className="w-full h-full object-cover rounded-full"
                   />
                 ) : (
-                  <span className="text-sm font-semibold text-gray-600">{getInitials()}</span>
+                  <span className="text-base font-semibold text-muted-foreground">{getInitials()}</span>
                 )}
               </div>
             </div>
           </div>
           
-          {/* Camera icon for editing profile picture */}
           <button
             onClick={() => setIsProfilePictureEditorOpen(true)}
-            className="absolute bottom-0 right-0 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors"
+            className="absolute bottom-0 right-0 w-6 h-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors shadow-md"
           >
-            <Camera className="w-3 h-3 text-white" />
+            <Camera className="w-3 h-3 text-primary-foreground" />
           </button>
         </div>
-        
+
+        {/* Stats and Info */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2 min-w-0">
-              <h1 className="text-lg font-bold text-gray-900 truncate">{displayUsername}</h1>
+              <h1 className="text-base font-bold text-foreground truncate">{displayUsername}</h1>
               {hasBusinessAccount && (
-                <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center shrink-0">
-                  <Building2 className="w-3 h-3 text-white" />
+                <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center shrink-0">
+                  <Building2 className="w-3 h-3 text-primary-foreground" />
                 </div>
               )}
+              <BadgeDisplay userId={user?.id} />
             </div>
-            <BadgeDisplay userId={user?.id} />
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <MoreHorizontal className="w-5 h-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => setIsEditModalOpen(true)}>
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit Profile
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-          {displayFullName && (
-            <p className="text-gray-600 text-sm mb-2 truncate">{displayFullName}</p>
+
+          {/* Stats Row */}
+          <div className="flex gap-4 mb-2">
+            <button 
+              className="text-center"
+              onClick={onPostsClick}
+            >
+              <div className="text-sm font-bold text-foreground">{displayStats.posts}</div>
+              <div className="text-xs text-muted-foreground">Posts</div>
+            </button>
+            
+            <button 
+              className="text-center"
+              onClick={onFollowersClick}
+            >
+              <div className="text-sm font-bold text-foreground">{displayStats.followers}</div>
+              <div className="text-xs text-muted-foreground">Followers</div>
+            </button>
+            
+            <button 
+              className="text-center"
+              onClick={onFollowingClick}
+            >
+              <div className="text-sm font-bold text-foreground">{displayStats.following}</div>
+              <div className="text-xs text-muted-foreground">Following</div>
+            </button>
+            
+            <button 
+              className="text-center"
+              onClick={onLocationsClick}
+            >
+              <div className="text-sm font-bold text-foreground">{displayStats.locations}</div>
+              <div className="text-xs text-muted-foreground">Saved</div>
+            </button>
+          </div>
+
+          {/* Bio - only show if exists */}
+          {profile?.bio && (
+            <p className="text-sm text-foreground line-clamp-2">
+              {profile.bio}
+            </p>
           )}
-          <p className="text-gray-700 text-sm line-clamp-2">
-            {profile?.bio || 'Travel Enthusiast | Food Lover | Photographer'}
-          </p>
         </div>
       </div>
 

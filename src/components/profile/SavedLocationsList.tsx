@@ -1,10 +1,11 @@
 
 import { useState, useMemo } from 'react';
-import { ArrowLeft, Search, Filter, MapPin, Heart, Users, Calendar } from 'lucide-react';
+import { ArrowLeft, Search, MapPin, Calendar, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
-import { cn } from '@/lib/utils';
+import { CategoryIcon } from '@/components/common/CategoryIcon';
+import PinDetailCard from '@/components/explore/PinDetailCard';
 
 interface SavedLocationsListProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
+  const [selectedPlace, setSelectedPlace] = useState<any>(null);
 
   // Get all unique cities
   const cities = useMemo(() => {
@@ -35,7 +37,6 @@ const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
   const filteredAndSortedPlaces = useMemo(() => {
     let filtered = allPlaces;
 
-    // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(place => 
@@ -45,12 +46,10 @@ const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
       );
     }
 
-    // Filter by city
     if (selectedCity !== 'all') {
       filtered = filtered.filter(place => place.city === selectedCity);
     }
 
-    // Sort places
     switch (sortBy) {
       case 'recent':
         return filtered.sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime());
@@ -65,25 +64,6 @@ const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
     }
   }, [allPlaces, searchQuery, selectedCity, sortBy]);
 
-  const getCategoryIcon = (category: string) => {
-    switch (category.toLowerCase()) {
-      case 'restaurant':
-        return '🍽️';
-      case 'cafe':
-        return '☕';
-      case 'bar':
-        return '🍺';
-      case 'hotel':
-        return '🏨';
-      case 'attraction':
-        return '🎭';
-      case 'entertainment':
-        return '🎪';
-      default:
-        return '📍';
-    }
-  };
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
@@ -93,22 +73,36 @@ const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
     });
   };
 
+  const handlePlaceClick = (place: any) => {
+    setSelectedPlace({
+      ...place,
+      google_place_id: place.id,
+      name: place.name,
+      formatted_address: place.address,
+      types: [place.category]
+    });
+  };
+
   if (!isOpen) return null;
 
+  if (selectedPlace) {
+    return <PinDetailCard place={selectedPlace} onClose={() => setSelectedPlace(null)} />;
+  }
+
   return (
-    <div className="fixed inset-0 bg-white z-50 flex flex-col">
+    <div className="fixed inset-0 bg-background z-50 flex flex-col">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3">
+      <div className="bg-background border-b border-border px-4 py-3">
         <div className="flex items-center gap-3">
           <button
             onClick={onClose}
-            className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
             <h1 className="text-lg font-semibold">Saved Locations</h1>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted-foreground">
               {filteredAndSortedPlaces.length} of {allPlaces.length} locations
             </p>
           </div>
@@ -116,22 +110,20 @@ const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white border-b border-gray-100 px-4 py-3 space-y-3">
-        {/* Search */}
+      <div className="bg-background border-b border-border px-4 py-3 space-y-3">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <Input
             placeholder="Search locations, cities, or categories..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-gray-50 border-gray-200"
+            className="pl-10"
           />
         </div>
 
-        {/* Filters */}
         <div className="flex gap-2">
           <Select value={selectedCity} onValueChange={setSelectedCity}>
-            <SelectTrigger className="flex-1 bg-gray-50 border-gray-200">
+            <SelectTrigger className="flex-1">
               <SelectValue placeholder="All Cities" />
             </SelectTrigger>
             <SelectContent>
@@ -145,7 +137,7 @@ const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
           </Select>
 
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="flex-1 bg-gray-50 border-gray-200">
+            <SelectTrigger className="flex-1">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
@@ -162,8 +154,8 @@ const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
       {loading && (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-3"></div>
-            <p className="text-gray-500">Loading saved locations...</p>
+            <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-3"></div>
+            <p className="text-muted-foreground">Loading saved locations...</p>
           </div>
         </div>
       )}
@@ -172,11 +164,11 @@ const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
       {!loading && allPlaces.length === 0 && (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center max-w-xs mx-auto px-4">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <MapPin className="w-8 h-8 text-gray-400" />
+            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+              <MapPin className="w-8 h-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Saved Locations</h3>
-            <p className="text-gray-500 text-sm">
+            <h3 className="text-lg font-semibold mb-2">No Saved Locations</h3>
+            <p className="text-muted-foreground text-sm">
               Start exploring and save places you love to see them here.
             </p>
           </div>
@@ -187,11 +179,11 @@ const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
       {!loading && allPlaces.length > 0 && filteredAndSortedPlaces.length === 0 && (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center max-w-xs mx-auto px-4">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Search className="w-8 h-8 text-gray-400" />
+            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="w-8 h-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Results Found</h3>
-            <p className="text-gray-500 text-sm">
+            <h3 className="text-lg font-semibold mb-2">No Results Found</h3>
+            <p className="text-muted-foreground text-sm">
               Try adjusting your search or filters to find what you're looking for.
             </p>
           </div>
@@ -203,47 +195,35 @@ const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
         <div className="flex-1 overflow-y-auto">
           <div className="px-4 py-2">
             {filteredAndSortedPlaces.map((place) => (
-              <div
+              <button
                 key={`${place.city}-${place.id}`}
-                className="bg-white rounded-lg border border-gray-200 p-4 mb-3 hover:shadow-md transition-shadow"
+                onClick={() => handlePlaceClick(place)}
+                className="w-full bg-card rounded-xl border border-border p-4 mb-3 hover:shadow-md transition-all text-left"
               >
                 <div className="flex gap-3">
                   {/* Category Icon */}
-                  <div className="text-2xl">
-                    {getCategoryIcon(place.category)}
+                  <div className="shrink-0">
+                    <CategoryIcon category={place.category} className="w-12 h-12" />
                   </div>
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900 truncate">
-                          {place.name}
-                        </h3>
-                        <div className="flex items-center gap-1 text-sm text-gray-500 mt-1">
-                          <MapPin className="w-3 h-3" />
-                          <span className="truncate">{place.city}</span>
-                          <span>•</span>
-                          <span className="capitalize">{place.category}</span>
-                        </div>
-                      </div>
+                    <h3 className="font-semibold text-foreground truncate mb-1">
+                      {place.name}
+                    </h3>
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
+                      <MapPin className="w-3 h-3" />
+                      <span className="truncate">{place.city}</span>
+                      <span>•</span>
+                      <span className="capitalize">{place.category}</span>
                     </div>
-
-                    {/* Stats */}
-                    <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        <span>Saved {formatDate(place.savedAt)}</span>
-                      </div>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Calendar className="w-3 h-3" />
+                      <span>Saved {formatDate(place.savedAt)}</span>
                     </div>
                   </div>
-
-                  {/* Action Button */}
-                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                    <MapPin className="w-4 h-4 text-gray-400" />
-                  </button>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>

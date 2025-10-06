@@ -100,17 +100,19 @@ const ProfilePage = () => {
 
   return (
     <div className="flex flex-col h-full bg-background">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <h1 className="text-lg font-semibold text-foreground">Profilo</h1>
-      </div>
-      <ProfileHeader />
+      <ProfileHeader 
+        onFollowersClick={() => openModal('followers')}
+        onFollowingClick={() => openModal('following')}
+        onPostsClick={handlePostsClick}
+        onLocationsClick={handleLocationsClick}
+      />
       
       {/* Business Dashboard Links */}
       <div className="px-4 py-2 space-y-2">
         <Button
           onClick={() => navigate('/business')}
           variant="outline"
-          className="w-full border-blue-200 text-blue-700 hover:bg-blue-50"
+          className="w-full"
         >
           <Building2 className="w-4 h-4 mr-2" />
           Business Dashboard
@@ -118,19 +120,12 @@ const ProfilePage = () => {
         <Button
           onClick={() => navigate('/business-claim')}
           variant="outline"
-          className="w-full border-purple-200 text-purple-700 hover:bg-purple-50"
+          className="w-full"
         >
           <Building2 className="w-4 h-4 mr-2" />
           Richiedi Account Business
         </Button>
       </div>
-      
-      <ProfileStats 
-        onFollowersClick={() => openModal('followers')}
-        onFollowingClick={() => openModal('following')}
-        onPostsClick={handlePostsClick}
-        onLocationsClick={handleLocationsClick}
-      />
       
       <ProfileTabs 
         activeTab={activeTab} 
