@@ -113,7 +113,7 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
 
       console.log('🎯 FINAL LOCATION IDs TO SEARCH:', locationIds);
 
-      const limit = 10;
+      const limit = 8;
       const offset = (page - 1) * limit;
 
       const { data: postsData, error: postsError } = await supabase
@@ -536,6 +536,7 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
                         alt="Post"
                         className="w-full h-full object-cover"
                         loading="lazy"
+                        decoding="async"
                       />
                       {/* User Avatar Overlay */}
                       <div className="absolute top-2 left-2">

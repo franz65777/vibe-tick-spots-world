@@ -61,9 +61,7 @@ const ExploreMap = ({ pins, activeFilter, selectedCategory, onPinClick, mapCente
           },
           (error) => {
             console.error('Error getting location:', error);
-            // Fallback to San Francisco
-            const fallback = { lat: 37.7749, lng: -122.4194 };
-            setUserLocation(fallback);
+            // Keep existing center; do not override with a fallback
           },
           {
             enableHighAccuracy: true,
@@ -72,9 +70,7 @@ const ExploreMap = ({ pins, activeFilter, selectedCategory, onPinClick, mapCente
           }
         );
       } else {
-        // Fallback if geolocation is not supported
-        const fallback = { lat: 37.7749, lng: -122.4194 };
-        setUserLocation(fallback);
+        console.warn('Geolocation is not supported by this browser');
       }
     };
 
@@ -99,7 +95,7 @@ const ExploreMap = ({ pins, activeFilter, selectedCategory, onPinClick, mapCente
         if (!mounted || !mapRef.current) return;
 
         // Wait for user location or use provided center
-        const center = mapCenter || userLocation || { lat: 37.7749, lng: -122.4194 };
+        const center = mapCenter || userLocation!;
         
         if (isGoogleMapsLoaded() && !mapInstanceRef.current) {
           const mapOptions: google.maps.MapOptions = {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { MapPin, AlertCircle } from 'lucide-react';
 import GooglePlacesAutocomplete from '@/components/GooglePlacesAutocomplete';
-import { allowedCategories, categoryDisplayNames, isAllowedCategory } from '@/utils/allowedCategories';
+// Category selection removed per latest UX
 
 interface LocationSelectorProps {
   selectedLocation: any;

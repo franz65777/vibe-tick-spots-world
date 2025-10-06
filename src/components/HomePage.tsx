@@ -43,7 +43,13 @@ const HomePage = () => {
   const { user } = useAuth();
   const [selectedCity, setSelectedCity] = useState('');
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
-  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 37.7749, lng: -122.4194 });
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>(() => {
+    try {
+      const saved = localStorage.getItem('lastMapCenter');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return { lat: 37.7749, lng: -122.4194 };
+  });
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   // Modal states
   const [isCreateStoryModalOpen, setIsCreateStoryModalOpen] = useState(false);
@@ -79,11 +85,7 @@ const HomePage = () => {
           },
           (error) => {
             console.warn('Error getting user location:', error);
-            // Only set default if we don't have a location already
-            if (!userLocation) {
-              const defaultLocation = { lat: 37.7749, lng: -122.4194 };
-              setMapCenter(defaultLocation);
-            }
+            // Keep existing center; do not override with fallback
           },
           {
             enableHighAccuracy: true,
@@ -93,10 +95,6 @@ const HomePage = () => {
         );
       } else {
         console.warn('Geolocation is not supported by this browser');
-        if (!userLocation) {
-          const defaultLocation = { lat: 37.7749, lng: -122.4194 };
-          setMapCenter(defaultLocation);
-        }
       }
     };
 
@@ -115,6 +113,11 @@ const HomePage = () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
+
+  // Persist last map center
+  useEffect(() => {
+    try { localStorage.setItem('lastMapCenter', JSON.stringify(mapCenter)); } catch {}
+  }, [mapCenter]);
 
   // Derive city name from geolocation via Google Geocoder
   useEffect(() => {

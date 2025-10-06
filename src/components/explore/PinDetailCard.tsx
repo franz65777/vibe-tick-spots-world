@@ -21,6 +21,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
   const [showVisitedModal, setShowVisitedModal] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [drawerState, setDrawerState] = useState<'minimized' | 'expanded'>('minimized');
+  const [activeSnapPoint, setActiveSnapPoint] = useState<number>(0.2);
   const [postsLoading, setPostsLoading] = useState(false);
   const [postsPage, setPostsPage] = useState(1);
   const [hasMorePosts, setHasMorePosts] = useState(true);
@@ -42,23 +43,36 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
       }
       
       if (locationId) {
-        const limit = 10;
+        const limit = 6;
         const offset = (page - 1) * limit;
         
-        const { data, error } = await supabase
+        const { data: postRows, error } = await supabase
           .from('posts')
-          .select('*, profiles(*)')
+          .select('id, user_id, caption, media_urls, created_at, location_id')
           .eq('location_id', locationId)
           .order('created_at', { ascending: false })
           .range(offset, offset + limit - 1);
         
-        if (data) {
-          if (page === 1) {
-            setPosts(data);
-          } else {
-            setPosts(prev => [...prev, ...data]);
+        if (postRows) {
+          const userIds = Array.from(new Set(postRows.map(p => p.user_id).filter(Boolean)));
+          let profilesMap = new Map<string, { username: string | null; avatar_url: string | null }>();
+          if (userIds.length) {
+            const { data: profilesData } = await supabase
+              .from('profiles')
+              .select('id, username, avatar_url')
+              .in('id', userIds);
+            profilesMap = new Map((profilesData || []).map((p: any) => [p.id, { username: p.username, avatar_url: p.avatar_url }]));
           }
-          setHasMorePosts(data.length === limit);
+          const mapped = postRows.map((p: any) => ({
+            ...p,
+            profiles: profilesMap.get(p.user_id) || null,
+          }));
+          if (page === 1) {
+            setPosts(mapped);
+          } else {
+            setPosts(prev => [...prev, ...mapped]);
+          }
+          setHasMorePosts(postRows.length === limit);
         }
       }
     } catch (error) {
@@ -129,9 +143,17 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
   return (
     <>
       <Drawer 
-        open={true} 
-        onOpenChange={(open) => { if (!open) onClose(); }} 
+        open={true}
         modal={false}
+        snapPoints={[0, 0.2, 0.85]}
+        activeSnapPoint={activeSnapPoint}
+        onActiveSnapPointChange={(sp) => {
+          const v = typeof sp === 'number' ? sp : 0.2;
+          setActiveSnapPoint(v);
+          setDrawerState(v >= 0.5 ? 'expanded' : 'minimized');
+          if (v === 0) onClose();
+        }}
+        onOpenChange={(open) => { if (!open) onClose(); }}
       >
         <DrawerContent className={`h-auto transition-all duration-300 ${drawerState === 'minimized' ? 'max-h-[220px]' : 'max-h-[85vh]'}`}>
           {/* Header with location info */}
@@ -204,16 +226,6 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
             </div>
           </div>
 
-          {/* Expand/Collapse Button */}
-          {drawerState === 'minimized' && posts.length > 0 && (
-            <button
-              onClick={() => setDrawerState('expanded')}
-              className="w-full py-3 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors border-t border-border"
-            >
-              <ChevronUp className="w-4 h-4" />
-              <span>View {posts.length} posts</span>
-            </button>
-          )}
 
           {/* Community Posts - Vertical Grid (only shown when expanded) */}
           {drawerState === 'expanded' && (
@@ -246,8 +258,10 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                           <div className="relative w-full h-48">
                             <img 
                               src={post.media_urls[0]} 
-                              alt="" 
+                              alt="Post image" 
                               className="w-full h-full object-cover"
+                              loading="lazy"
+                              decoding="async"
                             />
                             {/* User Avatar Overlay */}
                             <div className="absolute top-2 left-2">
