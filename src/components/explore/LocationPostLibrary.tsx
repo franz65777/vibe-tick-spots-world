@@ -55,17 +55,20 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
   const displayCity = place?.city || place?.address?.split(',')[1]?.trim() || 'Unknown City';
   const { trackSave, trackVisit } = useLocationInteraction();
 
-  // Early return after hooks
-  if (!place) {
-    return null;
-  }
-
+  // All hooks MUST be called before any early returns
   useEffect(() => {
+    if (!place?.id) return;
+    
     fetchLocationPosts();
     if (user) {
       fetchUserInteractions();
     }
-  }, [place.id, user]);
+  }, [place?.id, user]);
+
+  // Early return after ALL hooks
+  if (!place) {
+    return null;
+  }
 
   const fetchLocationPosts = async () => {
     try {
