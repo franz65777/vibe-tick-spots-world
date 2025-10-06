@@ -165,6 +165,7 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
 
       if (filtered.length === 0) {
         console.log('⚠️ No new locations to show after filtering');
+        console.log('📊 Status: mySavedPlaceIds:', mySavedPlaceIds.size, 'swipedPlaceIds:', swipedPlaceIds.size);
         setLocations([]);
         setCurrentIndex(0);
         setLoading(false);
@@ -296,7 +297,8 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
   if (!isOpen) return null;
 
   const currentLocation = locations[currentIndex];
-  const hasMore = currentIndex < locations.length;
+  const hasMore = currentIndex < locations.length && locations.length > 0;
+  const showEmptyState = !loading && (locations.length === 0 || currentIndex >= locations.length);
 
   return (
     <div className="w-full h-full bg-gray-50 flex flex-col">
@@ -305,7 +307,7 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
           <div className="h-full flex items-center justify-center">
             <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
           </div>
-) : !hasMore ? (
+        ) : showEmptyState ? (
           <div className="h-full flex items-center justify-center p-8 text-center relative">
             {/* Exit button visible even when empty */}
             <button

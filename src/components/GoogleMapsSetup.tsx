@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { loadGoogleMapsAPI } from '@/lib/googleMaps';
 import { Place } from '@/types/place';
-import LocationDetailSheet from './LocationDetailSheet';
+import LocationPostLibrary from './explore/LocationPostLibrary';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { lightMapStyle, darkMapStyle } from '@/utils/mapStyles';
 import { createCustomMarker } from '@/utils/mapPinCreator';

@@ -4,7 +4,7 @@ import NotificationsModal from '@/components/NotificationsModal';
 import MessagesModal from '@/components/MessagesModal';
 import ShareModal from '@/components/home/ShareModal';
 import CommentModal from '@/components/home/CommentModal';
-import LocationDetailSheet from '@/components/LocationDetailSheet';
+import LocationPostLibrary from '@/components/explore/LocationPostLibrary';
 import StoriesViewer from '@/components/StoriesViewer';
 
 interface Place {
@@ -125,12 +125,10 @@ const ModalsManager = ({
       />
 
       {locationDetailPlace && (
-        <LocationDetailSheet
+        <LocationPostLibrary
           isOpen={isLocationDetailOpen}
           onClose={onLocationDetailClose}
-          locationId={locationDetailPlace.id}
-          locationName={locationDetailPlace.name}
-          locationAddress={locationDetailPlace.address || ''}
+          place={locationDetailPlace}
         />
       )}
 
