@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Users, UserPlus } from 'lucide-react';
+import { Search, MapPin, Users, UserPlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { searchService } from '@/services/searchService';
@@ -123,9 +123,7 @@ const ExplorePage = () => {
       setIsSearching(true);
       const results = await performSearch(query);
       setFilteredUsers(results.users);
-      if (user) {
-        await searchService.saveSearchHistory(user.id, query, searchMode);
-      }
+      // Don't save search history on every keystroke - only when user clicks a profile
       setTimeout(() => setIsSearching(false), 500);
     } else {
       setFilteredUsers([]);
@@ -142,7 +140,20 @@ const ExplorePage = () => {
   const handleComment = (place: any) => {
     console.log('Comment on place:', place.name);
   };
-  const handleUserClick = (userId: string) => {
+  const handleUserClick = async (userId: string) => {
+    // Find the clicked user's username and save to search history
+    const clickedUser = filteredUsers.find(u => u.id === userId) || 
+                       suggestions.find(u => u.id === userId);
+    
+    if (clickedUser?.username && user) {
+      // Save to search history when user actually clicks a profile
+      await supabase.from('search_history').insert({
+        user_id: user.id,
+        search_query: clickedUser.username,
+        search_type: 'users'
+      });
+    }
+    
     navigate(`/profile/${userId}`);
   };
   const handleFollowUser = async (userId: string) => {
@@ -254,27 +265,43 @@ const ExplorePage = () => {
                       <div>
                         <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
                           <Search className="w-4 h-4" />
-                          Recent Searches
+                          Recent
                         </h3>
                         <div className="space-y-2">
-                          {searchHistory.map((item) => (
-                            <div
-                              key={item.id}
-                              onClick={() => handleSearch(item.search_query)}
-                              className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                            >
-                              <span className="text-foreground">{item.search_query}</span>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  deleteSearchHistoryItem(item.id);
-                                }}
-                                className="text-muted-foreground hover:text-foreground"
+                          {searchHistory.map((item) => {
+                            // Find user data from search history
+                            const searchedUser = suggestions.find(u => u.username === item.search_query) || 
+                                                filteredUsers.find(u => u.username === item.search_query);
+                            
+                            return (
+                              <div
+                                key={item.id}
+                                onClick={() => handleSearch(item.search_query)}
+                                className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
                               >
-                                ×
-                              </button>
-                            </div>
-                          ))}
+                                <Avatar className="h-10 w-10 flex-shrink-0">
+                                  <AvatarImage src={searchedUser?.avatar_url || undefined} />
+                                  <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white">
+                                    {item.search_query[0]?.toUpperCase() || 'U'}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-foreground truncate">
+                                    {item.search_query}
+                                  </p>
+                                </div>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteSearchHistoryItem(item.id);
+                                  }}
+                                  className="p-1 hover:bg-muted rounded-full"
+                                >
+                                  <X className="w-4 h-4 text-muted-foreground" />
+                                </button>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     )}

@@ -144,6 +144,17 @@ const FeedPage = () => {
                         <span className="text-xl">{display.icon}</span>
                       </div>
 
+                      {/* Media preview if available */}
+                      {item.media_url && (
+                        <div className="mt-2 rounded-lg overflow-hidden">
+                          <img 
+                            src={item.media_url} 
+                            alt={item.location_name || 'Post image'}
+                            className="w-full h-48 object-cover"
+                          />
+                        </div>
+                      )}
+
                       {/* Post content if available */}
                       {item.content && (
                         <p className="text-sm text-gray-700 mt-2 line-clamp-2 bg-gray-50 rounded-lg p-2">

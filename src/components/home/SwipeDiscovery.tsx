@@ -283,57 +283,27 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
   const hasMore = currentIndex < locations.length;
 
   return (
-    <div className="w-full h-full bg-white flex flex-col">
-      <div className="relative w-full h-full flex flex-col bg-gray-50">
-        {/* Header - X button and saved-by avatar */}
-        <div className="flex-shrink-0 p-4 flex justify-between items-center bg-white/90 backdrop-blur-sm absolute top-0 left-0 right-0 z-10">
-          {/* Saved by user avatar (top-left) */}
-          {currentLocation?.saved_by && (
-            <div className="flex items-center gap-2 bg-black/40 backdrop-blur-sm rounded-full px-3 py-2">
-              {currentLocation.saved_by.avatar_url ? (
-                <img 
-                  src={currentLocation.saved_by.avatar_url} 
-                  alt={currentLocation.saved_by.username}
-                  className="w-8 h-8 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
-                  <span className="text-white text-xs font-semibold">
-                    {currentLocation.saved_by.username[0]?.toUpperCase()}
-                  </span>
-                </div>
-              )}
-              <span className="text-white text-sm font-medium">{currentLocation.saved_by.username}</span>
-            </div>
-          )}
-          {/* X button (top-right) */}
-          <button
-            onClick={onClose}
-            className="w-10 h-10 rounded-full bg-white shadow-lg ring-1 ring-black/5 hover:bg-gray-50 flex items-center justify-center transition-all"
-          >
-            <X className="w-6 h-6 text-gray-900" />
-          </button>
-        </div>
-
+    <div className="w-full h-full bg-gray-50 flex flex-col">
+      <div className="relative w-full h-full flex flex-col">
         {loading ? (
           <div className="h-full flex items-center justify-center">
             <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
           </div>
-          ) : !hasMore ? (
-            <div className="h-full flex items-center justify-center p-8 text-center">
-              <div className="space-y-3">
-                <div className="text-gray-700 font-medium">No locations right now</div>
-                <Button onClick={fetchDailyLocations} variant="outline" className="mx-auto">Refresh</Button>
-              </div>
+        ) : !hasMore ? (
+          <div className="h-full flex items-center justify-center p-8 text-center">
+            <div className="space-y-3">
+              <div className="text-gray-700 font-medium">No locations right now</div>
+              <Button onClick={fetchDailyLocations} variant="outline" className="mx-auto">Refresh</Button>
             </div>
+          </div>
         ) : currentLocation ? (
-          <div className="flex-1 flex items-center justify-center p-4 pt-20">
+          <div className="flex-1 flex items-center justify-center p-4 pt-16">
             {/* Swipeable Card */}
             <div
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
-              className="w-full max-w-md h-[400px] transition-transform duration-300"
+              className="w-full max-w-md h-[500px] transition-transform duration-300"
               style={{
                 transform: swipeDirection 
                   ? swipeDirection === 'left' 
@@ -358,24 +328,52 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
                     </div>
                   )}
                   
-                  {/* Gradient overlay - stronger for better text visibility */}
+                  {/* Gradient overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                 </div>
+
+                {/* Top Left - Saved by avatar */}
+                {currentLocation.saved_by && (
+                  <div className="absolute top-4 left-4 flex items-center gap-2 bg-black/60 backdrop-blur-sm rounded-full px-3 py-2">
+                    {currentLocation.saved_by.avatar_url ? (
+                      <img 
+                        src={currentLocation.saved_by.avatar_url} 
+                        alt={currentLocation.saved_by.username}
+                        className="w-7 h-7 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+                        <span className="text-white text-xs font-semibold">
+                          {currentLocation.saved_by.username[0]?.toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                    <span className="text-white text-sm font-medium">{currentLocation.saved_by.username}</span>
+                  </div>
+                )}
+
+                {/* Top Right - X button */}
+                <button
+                  onClick={onClose}
+                  className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white flex items-center justify-center transition-all z-10"
+                >
+                  <X className="w-6 h-6 text-gray-900" />
+                </button>
 
                 {/* Bottom Info */}
                 <div className="absolute bottom-0 left-0 right-0 p-6">
                   <div className="flex-1 mb-4">
                     <h3 className="text-3xl font-bold text-white drop-shadow-lg mb-2">
-                      {currentLocation.name || 'Unknown Place'}
+                      {currentLocation.name}
                     </h3>
                     {currentLocation.city && (
-                      <div className="flex items-center gap-2 text-white text-base">
+                      <div className="flex items-center gap-2 text-white text-base mb-2">
                         <MapPin className="w-5 h-5" />
                         <span className="drop-shadow">{currentLocation.city}</span>
                       </div>
                     )}
                     {currentLocation.category && (
-                      <div className="mt-2 inline-block px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full">
+                      <div className="inline-block px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full">
                         <span className="text-white text-sm font-medium capitalize">
                           {currentLocation.category}
                         </span>
@@ -386,8 +384,8 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
               </div>
             </div>
 
-            {/* Action buttons - Bigger transparent Lucide icons */}
-            <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex items-center justify-center gap-12">
+            {/* Action buttons at bottom */}
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center justify-center gap-12">
               <button
                 onClick={() => handleSwipe('left')}
                 className="w-20 h-20 rounded-full bg-white shadow-xl flex items-center justify-center transition-all hover:scale-110 active:scale-95"

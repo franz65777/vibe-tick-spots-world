@@ -2327,6 +2327,7 @@ export type Database = {
           id: string
           location_id: string
           location_name: string
+          media_url: string
           post_id: string
           user_id: string
           username: string

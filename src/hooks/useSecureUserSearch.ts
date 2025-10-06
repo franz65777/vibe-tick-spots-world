@@ -43,6 +43,21 @@ export const useSecureUserSearch = () => {
     }
   };
 
+  // Save search history when a user is selected (not on every keystroke)
+  const saveSearchHistory = async (username: string) => {
+    if (!currentUser || !username.trim()) return;
+
+    try {
+      await supabase.from('search_history').insert({
+        user_id: currentUser.id,
+        search_query: username,
+        search_type: 'users'
+      });
+    } catch (error) {
+      console.error('Error saving search history:', error);
+    }
+  };
+
   const getAllUsers = async () => {
     if (!currentUser) {
       setUsers([]);
@@ -80,6 +95,7 @@ export const useSecureUserSearch = () => {
     users,
     loading,
     searchUsers,
-    getAllUsers
+    getAllUsers,
+    saveSearchHistory
   };
 };

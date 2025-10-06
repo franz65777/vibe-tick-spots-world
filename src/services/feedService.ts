@@ -11,6 +11,7 @@ export interface FeedItem {
   location_name: string | null;
   post_id: string | null;
   content: string | null;
+  media_url: string | null;
   created_at: string;
 }
 
@@ -50,16 +51,20 @@ export function getFeedEventDisplay(eventType: string): {
   color: string;
 } {
   switch (eventType) {
+    case 'saved_place':
+      return { icon: '📍', action: 'saved', color: 'text-blue-500' };
+    case 'new_post':
+      return { icon: '📸', action: 'posted about', color: 'text-pink-500' };
+    case 'new_comment':
+      return { icon: '💬', action: 'commented on', color: 'text-green-500' };
     case 'like_location':
       return { icon: '❤️', action: 'liked', color: 'text-red-500' };
     case 'save_location':
       return { icon: '📌', action: 'saved', color: 'text-blue-500' };
     case 'visit_location':
-      return { icon: '📍', action: 'visited', color: 'text-green-500' };
+      return { icon: '🚶', action: 'visited', color: 'text-green-500' };
     case 'share_location':
       return { icon: '↗️', action: 'shared', color: 'text-purple-500' };
-    case 'new_post':
-      return { icon: '📸', action: 'posted about', color: 'text-pink-500' };
     default:
       return { icon: '✨', action: 'interacted with', color: 'text-gray-500' };
   }
