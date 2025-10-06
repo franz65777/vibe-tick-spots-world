@@ -21,7 +21,6 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
   const [posts, setPosts] = useState<any[]>([]);
   const [showVisitedModal, setShowVisitedModal] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
-  const [drawerState, setDrawerState] = useState<'minimized' | 'expanded'>('minimized');
   const [postsLoading, setPostsLoading] = useState(false);
   const [postsPage, setPostsPage] = useState(1);
   const [hasMorePosts, setHasMorePosts] = useState(true);
@@ -102,11 +101,8 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
     };
 
     checkInteractions();
-    // Only fetch posts when drawer is expanded
-    if (drawerState === 'expanded' && posts.length === 0) {
-      fetchPosts();
-    }
-  }, [place.id, drawerState]);
+    fetchPosts();
+  }, [place.id]);
 
   const handleSaveToggle = async () => {
     setLoading(true);
@@ -150,13 +146,10 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
         modal={false}
         onOpenChange={(open) => { if (!open) onClose(); }}
       >
-        <DrawerContent className={`transition-all duration-300 ${drawerState === 'minimized' ? 'h-[200px]' : 'h-[85vh]'}`}>
-          {/* Drag Handle */}
-          <div className="bg-background px-4 pt-3 pb-2">
-            <button 
-              onClick={() => setDrawerState(prev => prev === 'minimized' ? 'expanded' : 'minimized')}
-              className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-3 cursor-pointer hover:bg-muted-foreground/20 transition-colors"
-            />
+        <DrawerContent className="transition-all duration-300 max-h-[85vh]">
+          {/* Drag Handle - Now just visual, draggable by default */}
+          <div className="bg-background px-4 pt-3 pb-2 cursor-grab active:cursor-grabbing">
+            <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-3" />
           </div>
 
           {/* Header with cropped location row style */}
@@ -204,7 +197,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
               </Button>
 
               <Button
-                onClick={() => setShowVisitedModal(true)}
+                onClick={() => window.location.href = '/add'}
                 size="sm"
                 variant="secondary"
                 className="flex-col h-auto py-3 gap-1 rounded-2xl"
@@ -235,23 +228,14 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
             </div>
           </div>
 
-          {/* Community Posts - Vertical Grid (only shown when expanded) */}
-          {drawerState === 'expanded' && (
-            <div className="px-4 py-4 bg-muted/30 flex-1 overflow-y-auto">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4 text-muted-foreground" />
-                  <h4 className="font-semibold text-sm text-foreground">
-                    Community posts ({posts.length})
-                  </h4>
-                </div>
-                <button
-                  onClick={() => setDrawerState('minimized')}
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Minimize
-                </button>
-              </div>
+          {/* Community Posts - Vertical Grid */}
+          <div className="px-4 py-4 bg-muted/30 flex-1 overflow-y-auto">
+            <div className="flex items-center gap-2 mb-3">
+              <MessageSquare className="w-4 h-4 text-muted-foreground" />
+              <h4 className="font-semibold text-sm text-foreground">
+                Community posts ({posts.length})
+              </h4>
+            </div>
               
               {posts.length > 0 ? (
                 <>
@@ -323,8 +307,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                   <p className="text-xs text-muted-foreground mt-1">Be the first to share!</p>
                 </div>
               )}
-            </div>
-          )}
+          </div>
         </DrawerContent>
       </Drawer>
 

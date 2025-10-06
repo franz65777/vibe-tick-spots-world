@@ -207,56 +207,51 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
               </div>
             </div>
 
-            {/* Ultra Compact Action Buttons */}
-            <div className="grid grid-cols-4 gap-0.5 pt-0.5">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLike}
-                disabled={isLiking}
-                className={`h-6 rounded-md flex flex-col gap-0 transition-all text-xs py-0 ${
-                  isLiked(place.id)
-                    ? 'text-red-600 bg-red-50 hover:bg-red-100' 
-                    : 'text-gray-600 hover:text-red-600 hover:bg-red-50'
-                } ${isLiking ? 'animate-pulse' : ''}`}
-              >
-                <Heart className={`w-2.5 h-2.5 ${isLiked(place.id) ? 'fill-current' : ''}`} />
-                <span className="text-xs font-medium">Like</span>
-              </Button>
-              
+            {/* New Action Buttons Style */}
+            <div className="grid grid-cols-4 gap-1 pt-1">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleSave}
                 disabled={isSaving}
-                className={`h-6 rounded-md flex flex-col gap-0 transition-all text-xs py-0 ${
+                className={`h-auto py-2 px-2 rounded-2xl flex flex-col items-center gap-1 transition-all ${
                   isSaved(place.id)
-                    ? 'text-blue-600 bg-blue-50 hover:bg-blue-100' 
-                    : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
+                    ? 'bg-blue-50 text-blue-600 hover:bg-blue-100' 
+                    : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
                 } ${isSaving ? 'animate-pulse' : ''}`}
               >
-                <Bookmark className={`w-2.5 h-2.5 ${isSaved(place.id) ? 'fill-current' : ''}`} />
-                <span className="text-xs font-medium">Save</span>
+                <Bookmark className={`w-4 h-4 ${isSaved(place.id) ? 'fill-current' : ''}`} />
+                <span className="text-[10px] font-medium">Saved</span>
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => window.location.href = '/add'}
+                className="h-auto py-2 px-2 rounded-2xl flex flex-col items-center gap-1 bg-gray-50 text-gray-700 hover:bg-gray-100 transition-all"
+              >
+                <Heart className="w-4 h-4" />
+                <span className="text-[10px] font-medium">Visited</span>
               </Button>
               
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleComment}
-                className="h-6 rounded-md flex flex-col gap-0 text-gray-600 hover:text-green-600 hover:bg-green-50 transition-all text-xs py-0"
+                className="h-auto py-2 px-2 rounded-2xl flex flex-col items-center gap-1 bg-gray-50 text-gray-700 hover:bg-gray-100 transition-all"
               >
-                <MessageCircle className="w-2.5 h-2.5" />
-                <span className="text-xs font-medium">Comment</span>
+                <MessageCircle className="w-4 h-4" />
+                <span className="text-[10px] font-medium">Directions</span>
               </Button>
               
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleShare}
-                className="h-6 rounded-md flex flex-col gap-0 text-gray-600 hover:text-purple-600 hover:bg-purple-50 transition-all text-xs py-0"
+                className="h-auto py-2 px-2 rounded-2xl flex flex-col items-center gap-1 bg-gray-50 text-gray-700 hover:bg-gray-100 transition-all"
               >
-                <Share2 className="w-2.5 h-2.5" />
-                <span className="text-xs font-medium">Share</span>
+                <Share2 className="w-4 h-4" />
+                <span className="text-[10px] font-medium">Share</span>
               </Button>
             </div>
           </div>

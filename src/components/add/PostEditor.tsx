@@ -62,45 +62,9 @@ export const PostEditor: React.FC<PostEditorProps> = ({
       />
     );
   }
-
-  const categories = ['restaurant', 'cafe', 'bar', 'hotel', 'entertainment', 'bakery', 'museum'];
   
   return (
-    <div className="flex flex-col h-screen bg-background relative">
-      {/* Floating Category Icons */}
-      <div className="absolute top-16 left-0 right-0 z-0 pointer-events-none">
-        <div className="relative h-32 max-w-2xl mx-auto">
-          {categories.map((category, index) => {
-            const positions = [
-              { top: '10%', left: '5%' },
-              { top: '5%', left: '25%' },
-              { top: '15%', left: '45%' },
-              { top: '8%', left: '65%' },
-              { top: '18%', left: '85%' },
-              { top: '25%', left: '15%' },
-              { top: '22%', left: '75%' }
-            ];
-            const pos = positions[index];
-            const delay = index * 0.2;
-            
-            return (
-              <div
-                key={category}
-                className="absolute opacity-20 animate-bounce"
-                style={{
-                  top: pos.top,
-                  left: pos.left,
-                  animationDelay: `${delay}s`,
-                  animationDuration: '3s'
-                }}
-              >
-                <CategoryIcon category={category} className="w-10 h-10" />
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
+    <div className="flex flex-col h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-3 flex items-center justify-between">
         <button

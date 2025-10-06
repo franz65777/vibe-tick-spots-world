@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { Image as ImageIcon, Video, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { CategoryIcon } from '@/components/common/CategoryIcon';
 
 interface MediaSelectorProps {
   selectedFiles: File[];
@@ -23,10 +24,46 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
     fileInputRef.current?.click();
   };
 
+  const categories = ['restaurant', 'cafe', 'bar', 'hotel', 'entertainment', 'bakery', 'museum'];
+
   if (selectedFiles.length === 0) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6">
-        <div className="text-center space-y-6 max-w-sm">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6 relative">
+        {/* Floating Category Icons */}
+        <div className="absolute top-16 left-0 right-0 z-0 pointer-events-none">
+          <div className="relative h-32 max-w-2xl mx-auto">
+            {categories.map((category, index) => {
+              const positions = [
+                { top: '10%', left: '5%' },
+                { top: '5%', left: '25%' },
+                { top: '15%', left: '45%' },
+                { top: '8%', left: '65%' },
+                { top: '18%', left: '85%' },
+                { top: '25%', left: '15%' },
+                { top: '22%', left: '75%' }
+              ];
+              const pos = positions[index];
+              const delay = index * 0.2;
+              
+              return (
+                <div
+                  key={category}
+                  className="absolute opacity-20 animate-bounce"
+                  style={{
+                    top: pos.top,
+                    left: pos.left,
+                    animationDelay: `${delay}s`,
+                    animationDuration: '3s'
+                  }}
+                >
+                  <CategoryIcon category={category} className="w-10 h-10" />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="text-center space-y-6 max-w-sm relative z-10">
           <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
             <ImageIcon className="w-12 h-12 text-primary" />
           </div>

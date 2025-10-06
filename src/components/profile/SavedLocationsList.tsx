@@ -4,8 +4,8 @@ import { ArrowLeft, Search, MapPin } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
-
-import CompactLocationCard from '@/components/explore/CompactLocationCard';
+import MinimalLocationCard from '@/components/explore/MinimalLocationCard';
+import PinDetailCard from '@/components/explore/PinDetailCard';
 
 interface SavedLocationsListProps {
   isOpen: boolean;
@@ -17,6 +17,7 @@ const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
+  const [selectedPlace, setSelectedPlace] = useState<any>(null);
 
   // Get all unique cities
   const cities = useMemo(() => {
@@ -63,10 +64,22 @@ const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
     }
   }, [allPlaces, searchQuery, selectedCity, sortBy]);
 
-
+  const handlePlaceClick = (place: any) => {
+    setSelectedPlace({
+      ...place,
+      google_place_id: place.id,
+      name: place.name,
+      formatted_address: place.address,
+      types: [place.category],
+      coordinates: { lat: 0, lng: 0 }
+    });
+  };
 
   if (!isOpen) return null;
 
+  if (selectedPlace) {
+    return <PinDetailCard place={selectedPlace} onClose={() => setSelectedPlace(null)} />;
+  }
 
   return (
     <div className="fixed inset-0 bg-background z-50 flex flex-col">
@@ -169,30 +182,24 @@ const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
         </div>
       )}
 
-      {/* Locations List */}
+      {/* Locations List - Minimal Cards */}
       {!loading && filteredAndSortedPlaces.length > 0 && (
         <div className="flex-1 overflow-y-auto">
-          <div className="px-2 py-2 space-y-2">
-            {filteredAndSortedPlaces.map((p) => {
-              const place = {
-                id: p.id,
-                name: p.name,
-                category: p.category,
-                city: p.city,
-                likes: 0,
-                visitors: [],
-                isNew: false,
-                coordinates: { lat: 0, lng: 0 },
-                google_place_id: p.id,
-              } as any;
-              return (
-                <CompactLocationCard
-                  key={`${p.city}-${p.id}`}
-                  place={place}
-                  onCardClick={() => {}}
-                />
-              );
-            })}
+          <div className="px-4 py-2 grid grid-cols-2 gap-3">
+            {filteredAndSortedPlaces.map((p) => (
+              <MinimalLocationCard
+                key={`${p.city}-${p.id}`}
+                place={{
+                  id: p.id,
+                  name: p.name,
+                  category: p.category,
+                  city: p.city,
+                  savedCount: 0
+                }}
+                onCardClick={() => handlePlaceClick(p)}
+                isSaved={true}
+              />
+            ))}
           </div>
         </div>
       )}

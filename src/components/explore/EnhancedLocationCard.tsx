@@ -152,36 +152,42 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
           )}
         </div>
 
-        {/* Mobile Optimized Action buttons */}
-        <div className="flex items-center gap-1.5">
-          <Button
-            onClick={handleLikeToggle}
-            disabled={loading}
-            variant="ghost"
-            size="sm"
-            className={`flex-1 rounded-lg transition-all duration-200 h-8 text-xs ${
-              isLiked 
-                ? 'bg-red-50 text-red-600 hover:bg-red-100' 
-                : 'text-gray-600 hover:bg-red-50 hover:text-red-600'
-            }`}
-          >
-            <Heart className={`w-3 h-3 mr-1 ${isLiked ? 'fill-current' : ''}`} />
-            Like
-          </Button>
-
+        {/* New Action Buttons Style */}
+        <div className="grid grid-cols-4 gap-1.5">
           <Button
             onClick={handleSaveToggle}
             disabled={loading}
             variant="ghost"
             size="sm"
-            className={`flex-1 rounded-lg transition-all duration-200 h-8 text-xs ${
+            className={`h-auto py-2.5 rounded-2xl flex flex-col items-center gap-1 transition-all ${
               isSaved 
                 ? 'bg-blue-50 text-blue-600 hover:bg-blue-100' 
-                : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600'
+                : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
             }`}
           >
-            <Bookmark className={`w-3 h-3 mr-1 ${isSaved ? 'fill-current' : ''}`} />
-            Save
+            <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
+            <span className="text-[10px] font-medium">Saved</span>
+          </Button>
+
+          <Button
+            onClick={() => window.location.href = '/add'}
+            variant="ghost"
+            size="sm"
+            className="h-auto py-2.5 rounded-2xl flex flex-col items-center gap-1 bg-gray-50 text-gray-700 hover:bg-gray-100 transition-all"
+          >
+            <Heart className="w-4 h-4" />
+            <span className="text-[10px] font-medium">Visited</span>
+          </Button>
+
+          <Button
+            onClick={handleLikeToggle}
+            disabled={loading}
+            variant="ghost"
+            size="sm"
+            className="h-auto py-2.5 rounded-2xl flex flex-col items-center gap-1 bg-gray-50 text-gray-700 hover:bg-gray-100 transition-all"
+          >
+            <MapPin className="w-4 h-4" />
+            <span className="text-[10px] font-medium">Directions</span>
           </Button>
 
           <Button
@@ -191,10 +197,10 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
             }}
             variant="ghost"
             size="sm"
-            className="flex-1 rounded-lg text-gray-600 hover:bg-orange-50 hover:text-orange-600 transition-all duration-200 h-8 text-xs"
+            className="h-auto py-2.5 rounded-2xl flex flex-col items-center gap-1 bg-gray-50 text-gray-700 hover:bg-gray-100 transition-all"
           >
-            <Share2 className="w-3 h-3 mr-1" />
-            Share
+            <Share2 className="w-4 h-4" />
+            <span className="text-[10px] font-medium">Share</span>
           </Button>
         </div>
       </div>
