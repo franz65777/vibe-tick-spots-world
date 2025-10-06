@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { searchService } from '@/services/searchService';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import NoResults from './explore/NoResults';
 import UserCard from './explore/UserCard';
 import LocationPostLibrary from './explore/LocationPostLibrary';
@@ -23,6 +23,7 @@ import StoriesViewer from './StoriesViewer';
 const ExplorePage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState<'locations' | 'users'>('locations');
   const [isSearching, setIsSearching] = useState(false);
@@ -41,39 +42,34 @@ const ExplorePage = () => {
 
   // Check for shared place from DM and open LocationPostLibrary
   useEffect(() => {
-    const checkForSharedPlace = () => {
-      const state = window.history.state as { sharedPlace?: any } | null;
-      if (state?.sharedPlace) {
-        const place = state.sharedPlace;
-        console.log('📍 Opening shared place from DM:', place);
-        
-        // Normalize the place data structure for LocationPostLibrary
-        const normalizedPlace = {
-          id: place.id || place.place_id || place.google_place_id || '',
-          google_place_id: place.google_place_id || place.place_id || '',
-          name: place.name || '',
-          category: place.category || 'place',
-          address: place.address || '',
-          city: place.city || '',
-          coordinates: place.coordinates || { lat: 0, lng: 0 },
-          image: place.image || '',
-          likes: 0,
-          totalSaves: 0,
-          postCount: 0
-        };
-        
-        setSelectedLocation(normalizedPlace);
-        setIsLocationModalOpen(true);
-        
-        // Clear the state
-        window.history.replaceState({}, '', '/explore');
-      }
-    };
-
-    checkForSharedPlace();
-    window.addEventListener('popstate', checkForSharedPlace);
-    return () => window.removeEventListener('popstate', checkForSharedPlace);
-  }, []);
+    const state = location.state as { sharedPlace?: any } | null;
+    if (state?.sharedPlace) {
+      const place = state.sharedPlace;
+      console.log('📍 Opening shared place from DM:', place);
+      
+      // Normalize the place data structure for LocationPostLibrary
+      const normalizedPlace = {
+        id: place.id || place.place_id || place.google_place_id || '',
+        google_place_id: place.google_place_id || place.place_id || '',
+        name: place.name || '',
+        category: place.category || 'place',
+        address: place.address || '',
+        city: place.city || '',
+        coordinates: place.coordinates || { lat: 0, lng: 0 },
+        image: place.image || '',
+        likes: 0,
+        totalSaves: 0,
+        postCount: 0,
+        visitors: []
+      };
+      
+      setSelectedLocation(normalizedPlace);
+      setIsLocationModalOpen(true);
+      
+      // Clear the state
+      navigate('/explore', { replace: true, state: {} });
+    }
+  }, [location.state]);
 
   // Load user recommendations only
   useEffect(() => {

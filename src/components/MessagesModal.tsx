@@ -11,6 +11,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import PlaceMessageCard from './messages/PlaceMessageCard';
 import PostMessageCard from './messages/PostMessageCard';
+import { useNavigate } from 'react-router-dom';
 
 interface MessagesModalProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ interface MessagesModalProps {
 
 const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [threads, setThreads] = useState<MessageThread[]>([]);
   const [selectedThread, setSelectedThread] = useState<MessageThread | null>(null);
   const [messages, setMessages] = useState<DirectMessage[]>([]);
@@ -403,10 +405,20 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
                                   onViewPlace={(placeData) => {
                                     // Close the message modal
                                     onClose();
-                                    // Navigate to /explore with the place in state
-                                    const navPath = '/explore';
-                                    window.history.pushState({ sharedPlace: placeData }, '', navPath);
-                                    window.dispatchEvent(new PopStateEvent('popstate'));
+                                    // Navigate to /explore and open location
+                                    navigate('/explore', { 
+                                      state: { 
+                                        sharedPlace: {
+                                          id: placeData.place_id || placeData.google_place_id || '',
+                                          google_place_id: placeData.google_place_id || placeData.place_id || '',
+                                          name: placeData.name || '',
+                                          category: placeData.category || 'place',
+                                          address: placeData.address || '',
+                                          city: placeData.city || '',
+                                          coordinates: placeData.coordinates || { lat: 0, lng: 0 }
+                                        }
+                                      }
+                                    });
                                   }}
                                 />
                               )}

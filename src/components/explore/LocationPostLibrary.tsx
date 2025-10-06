@@ -52,13 +52,13 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
   const [showComments, setShowComments] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
-  // Early return if place is null
+  const displayCity = place?.city || place?.address?.split(',')[1]?.trim() || 'Unknown City';
+  const { trackSave, trackVisit } = useLocationInteraction();
+
+  // Early return after hooks
   if (!place) {
     return null;
   }
-
-  const displayCity = place.city || place.address?.split(',')[1]?.trim() || 'Unknown City';
-  const { trackSave, trackVisit } = useLocationInteraction();
 
   useEffect(() => {
     fetchLocationPosts();

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, MapPin } from 'lucide-react';
+import { X, MapPin, Search, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -309,7 +309,7 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
           </div>
         ) : showEmptyState ? (
           <div className="h-full flex items-center justify-center p-8 text-center relative">
-            {/* Exit button visible even when empty */}
+            {/* Exit button */}
             <button
               onClick={onClose}
               className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white flex items-center justify-center transition-all z-10"
@@ -317,15 +317,41 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
             >
               <X className="w-6 h-6 text-gray-900" />
             </button>
-            <div className="space-y-5 max-w-sm">
+            
+            {/* Empty state content */}
+            <div className="space-y-6 max-w-sm">
               <div className="flex items-center justify-center">
-                <img src={swipeSave} alt="Explore" className="w-20 h-20 opacity-80" />
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+                  <Users className="w-10 h-10 text-white" />
+                </div>
               </div>
-              <div className="text-lg font-semibold text-foreground">No new saves from people you follow</div>
-              <p className="text-muted-foreground text-sm">Follow more users to see their saved locations.</p>
-              <div className="flex items-center justify-center gap-3 pt-1">
-                <Button onClick={() => { onClose(); navigate('/explore'); }} className="rounded-full px-5">Search people</Button>
-                <Button onClick={fetchDailyLocations} variant="outline" className="rounded-full px-5">Refresh</Button>
+              
+              <div className="space-y-3">
+                <h3 className="text-xl font-bold text-foreground">No Places to Discover</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Follow more people to see their saved locations and discover new places to explore
+                </p>
+              </div>
+              
+              <div className="flex flex-col items-center gap-3 pt-2">
+                <Button 
+                  onClick={() => { 
+                    onClose(); 
+                    navigate('/explore'); 
+                  }} 
+                  className="rounded-full px-6 py-2 font-semibold"
+                  size="lg"
+                >
+                  <Search className="w-4 h-4 mr-2" />
+                  Find People to Follow
+                </Button>
+                <Button 
+                  onClick={fetchDailyLocations} 
+                  variant="ghost" 
+                  className="rounded-full px-6 text-sm"
+                >
+                  Try Again
+                </Button>
               </div>
             </div>
           </div>
