@@ -42,6 +42,7 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
     try {
       setLoading(true);
 
+      // Fetch from locations table
       let query = supabase
         .from('locations')
         .select(`
@@ -69,16 +70,59 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
 
       if (error) throw error;
 
+      // Also fetch from saved_places to include Google Places that might not be in locations yet
+      let savedPlacesQuery = supabase
+        .from('saved_places')
+        .select('place_id, place_name, place_category, city, coordinates');
+
+      if (searchQuery && searchQuery.trim()) {
+        savedPlacesQuery = savedPlacesQuery.or(`place_name.ilike.%${searchQuery}%,city.ilike.%${searchQuery}%`);
+      }
+
+      if (selectedCategory) {
+        savedPlacesQuery = savedPlacesQuery.eq('place_category', selectedCategory);
+      }
+
+      const { data: savedPlacesData } = await savedPlacesQuery.limit(100);
+
+      // Convert saved_places to location format
+      const savedPlacesAsLocations = (savedPlacesData || []).map(sp => ({
+        id: sp.place_id,
+        name: sp.place_name,
+        category: sp.place_category || 'place',
+        city: sp.city || 'Unknown',
+        address: undefined,
+        google_place_id: sp.place_id,
+        latitude: (sp.coordinates as any)?.lat,
+        longitude: (sp.coordinates as any)?.lng,
+      }));
+
+      // Merge both datasets
+      const allLocations = [...(locationsData || []), ...savedPlacesAsLocations];
+
       // Get ALL saves for these locations (from all users)
-      const locationIds = locationsData?.map(l => l.id) || [];
+      const locationIds = allLocations.map(l => l.id);
       const { data: savesData } = await supabase
         .from('user_saved_locations')
         .select('location_id, user_id')
         .in('location_id', locationIds);
 
+      // Also count saves from saved_places table
+      const placeIds = allLocations.map(l => l.google_place_id).filter(Boolean);
+      const { data: savedPlacesCountData } = await supabase
+        .from('saved_places')
+        .select('place_id, user_id')
+        .in('place_id', placeIds);
+
       const savesMap = new Map<string, number>();
       savesData?.forEach(save => {
         savesMap.set(save.location_id, (savesMap.get(save.location_id) || 0) + 1);
+      });
+
+      // Count saves from saved_places by place_id
+      const savedPlacesSavesMap = new Map<string, number>();
+      savedPlacesCountData?.forEach(save => {
+        savedPlacesSavesMap.set(save.place_id, (savedPlacesSavesMap.get(save.place_id) || 0) + 1);
       });
 
       // Group by canonical place using google_place_id when available,
@@ -96,7 +140,7 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
         return `${nameKey}_${cityKey}`;
       };
 
-      locationsData?.forEach((loc) => {
+      allLocations.forEach((loc) => {
         const nameCityKey = toNameCityKey(loc);
         const gpKey = loc.google_place_id ? `gp:${loc.google_place_id}` : undefined;
 
@@ -141,18 +185,23 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
         // Accumulate saves per location id (computed below once we have savesMap)
       });
 
-      // Aggregate saves across grouped location ids
+      // Aggregate saves across grouped location ids + place_id saves
       groups.forEach((g) => {
-        g.savesCount = g.allLocationIds.reduce((sum, id) => sum + (savesMap.get(id) || 0), 0);
+        const locationSaves = g.allLocationIds.reduce((sum, id) => sum + (savesMap.get(id) || 0), 0);
+        const placeSaves = g.google_place_id ? (savedPlacesSavesMap.get(g.google_place_id) || 0) : 0;
+        g.savesCount = locationSaves + placeSaves;
       });
 
-      // Check if user saved ANY of the location IDs for each unique place
+      // Check if user saved ANY of the location IDs or place_id for each unique place
       const finalUserSavedIds = new Set<string>();
       groups.forEach((g) => {
-        const userSavedAny = g.allLocationIds.some((id) =>
+        const userSavedLocation = g.allLocationIds.some((id) =>
           savesData?.some((s) => s.location_id === id && s.user_id === user?.id)
         );
-        if (userSavedAny) finalUserSavedIds.add(g.id);
+        const userSavedPlace = g.google_place_id && savedPlacesCountData?.some(
+          (s) => s.place_id === g.google_place_id && s.user_id === user?.id
+        );
+        if (userSavedLocation || userSavedPlace) finalUserSavedIds.add(g.id);
       });
       setUserSavedIds(finalUserSavedIds);
 

@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Heart, MapPin } from 'lucide-react';
+import { X, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import xIcon from '@/assets/icon-x-red.png';
-import hourglassIcon from '@/assets/swipe-pin.png';
 
 interface SwipeLocation {
   id: string;
@@ -65,7 +63,7 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
       // Exclude all previously swiped locations to avoid repeats
       const { data: swipedData } = await supabase
         .from('location_swipes')
-        .select('location_id, created_at')
+        .select('location_id')
         .eq('user_id', user.id);
 
       const swipedLocationIds = (swipedData || []).map((s) => s.location_id);
@@ -88,55 +86,48 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
       const mySavedPlaceIds = new Set((mySavedPlaces || []).map((s) => s.place_id) as string[]);
       console.log(`🔖 I have ${mySavedPlaceIds.size} saved places`);
 
-      // Get users I follow
-      const { data: followingData } = await supabase
-        .from('follows')
-        .select('following_id')
-        .eq('follower_id', user.id);
+      // Use new RPC to get followed users' saves with profile info
+      const { data: friendsSaves, error: savesError } = await supabase
+        .rpc('get_following_saved_places', { limit_count: 100 });
 
-      const followingIds = followingData?.map((f) => f.following_id) || [];
-      console.log(`👥 Following ${followingIds.length} users`);
-
-      let candidates: {
-        place_id: string;
-        place_name: string;
-        place_category: string | null;
-        city: string | null;
-        coordinates: { lat: number; lng: number } | null;
-        user_id?: string;
-      }[] = [];
-
-      if (followingIds.length > 0) {
-        // Saved places from followed users
-        const { data: friendsSaves, error: savesError } = await supabase
-          .from('saved_places')
-          .select('place_id, place_name, place_category, city, coordinates, created_at, user_id')
-          .in('user_id', followingIds);
-        if (savesError) console.error('❌ Error fetching friends saves:', savesError);
-        candidates = (friendsSaves || []).map((s) => ({
-          place_id: s.place_id,
-          place_name: s.place_name,
-          place_category: s.place_category || 'Unknown',
-          city: s.city || 'Unknown',
-          coordinates: (s.coordinates as any) || null,
-          user_id: s.user_id,
-        }));
+      if (savesError) {
+        console.error('❌ Error fetching friends saves:', savesError);
       }
+
+      let candidates: SwipeLocation[] = (friendsSaves || []).map((s: any) => ({
+        id: s.place_id,
+        place_id: s.place_id,
+        name: s.place_name,
+        category: s.place_category || 'place',
+        city: s.city || 'Unknown',
+        address: undefined,
+        image_url: undefined,
+        coordinates: (s.coordinates as any) || { lat: 0, lng: 0 },
+        saved_by: {
+          id: s.user_id,
+          username: s.username || 'User',
+          avatar_url: s.avatar_url || '',
+        },
+      }));
 
       // Fallback: if no follows or no candidates, show recent public locations (with google_place_id)
       if (candidates.length === 0) {
         const { data: recentLocations } = await supabase
           .from('locations')
-          .select('google_place_id, name, category, city, address, image_url, latitude, longitude, created_at')
+          .select('google_place_id, name, category, city, latitude, longitude')
           .not('google_place_id', 'is', null)
           .order('created_at', { ascending: false })
           .limit(60);
         candidates = (recentLocations || []).map((l: any) => ({
+          id: l.google_place_id,
           place_id: l.google_place_id,
-          place_name: l.name,
-          place_category: l.category || 'Unknown',
+          name: l.name,
+          category: l.category || 'place',
           city: l.city || 'Unknown',
+          address: undefined,
+          image_url: undefined,
           coordinates: { lat: Number(l.latitude) || 0, lng: Number(l.longitude) || 0 },
+          saved_by: undefined,
         }));
       }
 
@@ -158,37 +149,7 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
       // Shuffle and take a chunk
       const shuffled = filtered.sort(() => Math.random() - 0.5).slice(0, 20);
 
-      // Fetch user profiles for avatars
-      const userIds = shuffled.map(s => s.user_id).filter(Boolean) as string[];
-      let profilesMap = new Map<string, { username: string; avatar_url: string }>();
-      if (userIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, username, avatar_url')
-          .in('id', userIds);
-        profiles?.forEach(p => profilesMap.set(p.id, { username: p.username || 'User', avatar_url: p.avatar_url || '' }));
-      }
-
-      const locationsToShow: SwipeLocation[] = shuffled.map((save) => ({
-        id: save.place_id,
-        place_id: save.place_id,
-        name: save.place_name,
-        category: save.place_category || 'Unknown',
-        city: save.city || 'Unknown',
-        address: undefined,
-        image_url: undefined,
-        coordinates: {
-          lat: save.coordinates?.lat || 0,
-          lng: save.coordinates?.lng || 0,
-        },
-        saved_by: save.user_id ? {
-          id: save.user_id,
-          username: profilesMap.get(save.user_id)?.username || 'User',
-          avatar_url: profilesMap.get(save.user_id)?.avatar_url || '',
-        } : undefined,
-      }));
-
-      setLocations(locationsToShow);
+      setLocations(shuffled);
       setCurrentIndex(0);
     } catch (error) {
       console.error('❌ Error fetching swipe locations:', error);
@@ -314,8 +275,28 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
   return (
     <div className="w-full h-full bg-white flex flex-col">
       <div className="relative w-full h-full flex flex-col bg-gray-50">
-        {/* Header - only X button */}
-        <div className="flex-shrink-0 p-4 flex justify-end items-center bg-white/90 backdrop-blur-sm absolute top-0 left-0 right-0 z-10">
+        {/* Header - X button and saved-by avatar */}
+        <div className="flex-shrink-0 p-4 flex justify-between items-center bg-white/90 backdrop-blur-sm absolute top-0 left-0 right-0 z-10">
+          {/* Saved by user avatar (top-left) */}
+          {currentLocation?.saved_by && (
+            <div className="flex items-center gap-2 bg-black/40 backdrop-blur-sm rounded-full px-3 py-2">
+              {currentLocation.saved_by.avatar_url ? (
+                <img 
+                  src={currentLocation.saved_by.avatar_url} 
+                  alt={currentLocation.saved_by.username}
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+                  <span className="text-white text-xs font-semibold">
+                    {currentLocation.saved_by.username[0]?.toUpperCase()}
+                  </span>
+                </div>
+              )}
+              <span className="text-white text-sm font-medium">{currentLocation.saved_by.username}</span>
+            </div>
+          )}
+          {/* X button (top-right) */}
           <button
             onClick={onClose}
             className="w-10 h-10 rounded-full bg-white shadow-lg ring-1 ring-black/5 hover:bg-gray-50 flex items-center justify-center transition-all"
@@ -404,21 +385,21 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
               </div>
             </div>
 
-            {/* Action buttons - Positioned higher, bigger icons, no backgrounds */}
-            <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex items-center justify-center gap-10">
+            {/* Action buttons - Bigger transparent Lucide icons */}
+            <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex items-center justify-center gap-12">
               <button
                 onClick={() => handleSwipe('left')}
-                className="transition-all hover:scale-110 active:scale-95"
-                aria-label="Skip"
+                className="w-20 h-20 rounded-full bg-white shadow-xl flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                aria-label="Pass"
               >
-                <img src={xIcon} alt="Skip" className="w-20 h-20 drop-shadow-lg" style={{ filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3))' }} />
+                <X className="w-12 h-12 text-red-500" strokeWidth={3} />
               </button>
               <button
                 onClick={() => handleSwipe('right')}
-                className="transition-all hover:scale-110 active:scale-95"
+                className="w-20 h-20 rounded-full bg-white shadow-xl flex items-center justify-center transition-all hover:scale-110 active:scale-95"
                 aria-label="Save for later"
               >
-                <img src={hourglassIcon} alt="Save for later" className="w-20 h-20 drop-shadow-lg" style={{ filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3))' }} />
+                <MapPin className="w-12 h-12 text-blue-500" strokeWidth={3} fill="currentColor" />
               </button>
             </div>
           </div>

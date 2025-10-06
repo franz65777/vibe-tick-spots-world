@@ -2211,6 +2211,20 @@ export type Database = {
           name: string
         }[]
       }
+      get_following_saved_places: {
+        Args: { limit_count?: number }
+        Returns: {
+          avatar_url: string
+          city: string
+          coordinates: Json
+          created_at: string
+          place_category: string
+          place_id: string
+          place_name: string
+          user_id: string
+          username: string
+        }[]
+      }
       get_mau: {
         Args: { target_month: string }
         Returns: number
