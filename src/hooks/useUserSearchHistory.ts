@@ -77,27 +77,22 @@ export const useUserSearchHistory = () => {
       const usersWithStories = new Set((recentStories || []).map((s) => s.user_id));
 
       // Map history in order, enriched with profile data and story flag
-      const enrichedHistory = (historyData || []).map((h) => {
-        const profile = h.target_user_id ? byId.get(h.target_user_id) : byName.get(h.search_query);
-        if (!profile) {
+      const enrichedHistory = (historyData || [])
+        .map((h) => {
+          const profile = h.target_user_id ? byId.get(h.target_user_id) : byName.get(h.search_query);
+          if (!profile) return null; // Drop raw word searches with no matching profile
           return {
             id: h.id,
-            search_query: h.search_query,
+            search_query: profile.username || h.search_query,
             search_type: h.search_type,
             searched_at: h.searched_at,
+            avatar_url: profile.avatar_url || undefined,
+            username: profile.username || undefined,
+            target_user_id: profile.id,
+            has_active_story: usersWithStories.has(profile.id)
           } as SearchHistoryItem;
-        }
-        return {
-          id: h.id,
-          search_query: profile.username || h.search_query,
-          search_type: h.search_type,
-          searched_at: h.searched_at,
-          avatar_url: profile.avatar_url || undefined,
-          username: profile.username || undefined,
-          target_user_id: profile.id,
-          has_active_story: usersWithStories.has(profile.id)
-        } as SearchHistoryItem;
-      });
+        })
+        .filter((item): item is SearchHistoryItem => item !== null);
 
       setSearchHistory(enrichedHistory);
     } catch (error) {

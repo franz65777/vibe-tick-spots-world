@@ -320,7 +320,7 @@ const ExplorePage = () => {
                                 <Avatar className="h-10 w-10">
                                   <AvatarImage src={item.avatar_url || undefined} />
                                   <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white">
-                                    {(item.username || item.search_query)[0]?.toUpperCase() || 'U'}
+                                    {item.username?.[0]?.toUpperCase() || 'U'}
                                   </AvatarFallback>
                                 </Avatar>
                                 {item.has_active_story && (
@@ -332,7 +332,7 @@ const ExplorePage = () => {
                                 onClick={() => item.target_user_id && navigate(`/profile/${item.target_user_id}`)}
                               >
                                 <p className="text-sm font-medium text-foreground truncate">
-                                  {item.username || item.search_query}
+                                  {item.username || 'User'}
                                 </p>
                               </div>
                               <button
