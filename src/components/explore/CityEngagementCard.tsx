@@ -16,6 +16,8 @@ const CityEngagementCard = ({ cityName, onClick, baseCount = 0 }: CityEngagement
   const totalPins = typeof engagement?.totalPins === 'number' ? engagement.totalPins : 0;
   const followedUsers = engagement?.followedUsers || [];
 
+  console.log(`🏙️ ${cityName} - Pins: ${totalPins}, Followed users:`, followedUsers.length);
+
   const displayCount = `${totalPins}`;
 
   return (
