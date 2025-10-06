@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { loadGoogleMapsAPI } from '@/lib/googleMaps';
 import { Place } from '@/types/place';
-import LocationPostLibrary from './explore/LocationPostLibrary';
+import PinDetailCard from './explore/PinDetailCard';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { lightMapStyle, darkMapStyle } from '@/utils/mapStyles';
 import { createCustomMarker } from '@/utils/mapPinCreator';
@@ -491,21 +491,20 @@ const GoogleMapsSetup = ({
       </div>
       
       {/* Location Post Library */}
-      {selectedPlace && (
-        <LocationPostLibrary
-          place={{
-            id: selectedPlace.id,
-            name: selectedPlace.name,
-            category: selectedPlace.category,
-            address: selectedPlace.address,
-            city: selectedPlace.city,
-            google_place_id: selectedPlace.google_place_id,
-            coordinates: selectedPlace.coordinates
-          }}
-          isOpen={!!selectedPlace}
-          onClose={() => onCloseSelectedPlace?.()}
-        />
-      )}
+        {selectedPlace && (
+          <PinDetailCard
+            place={{
+              id: selectedPlace.id,
+              name: selectedPlace.name,
+              category: selectedPlace.category,
+              address: selectedPlace.address,
+              city: selectedPlace.city,
+              google_place_id: selectedPlace.google_place_id,
+              coordinates: selectedPlace.coordinates
+            }}
+            onClose={() => onCloseSelectedPlace?.()}
+          />
+        )}
     </>
   );
 };

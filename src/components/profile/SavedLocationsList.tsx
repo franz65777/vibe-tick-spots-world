@@ -4,7 +4,7 @@ import { ArrowLeft, Search, MapPin } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
-import { CategoryIcon } from '@/components/common/CategoryIcon';
+
 import CompactLocationCard from '@/components/explore/CompactLocationCard';
 
 interface SavedLocationsListProps {
@@ -17,7 +17,6 @@ const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
-  const [selectedPlace, setSelectedPlace] = useState<any>(null);
 
   // Get all unique cities
   const cities = useMemo(() => {
@@ -64,30 +63,10 @@ const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
     }
   }, [allPlaces, searchQuery, selectedCity, sortBy]);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
-    });
-  };
 
-  const handlePlaceClick = (place: any) => {
-    setSelectedPlace({
-      ...place,
-      google_place_id: place.id,
-      name: place.name,
-      formatted_address: place.address,
-      types: [place.category]
-    });
-  };
 
   if (!isOpen) return null;
 
-  if (selectedPlace) {
-    return <PinDetailCard place={selectedPlace} onClose={() => setSelectedPlace(null)} />;
-  }
 
   return (
     <div className="fixed inset-0 bg-background z-50 flex flex-col">
