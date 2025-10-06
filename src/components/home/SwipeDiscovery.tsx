@@ -347,7 +347,7 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 flex items-center justify-center">
-                      <MapPin className="w-24 h-24 text-white/30" />
+                      <CategoryIcon category={currentLocation.category} className="w-28 h-28 opacity-70" />
                     </div>
                   )}
                   
@@ -383,21 +383,21 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
                   <X className="w-6 h-6 text-gray-900" />
                 </button>
 
-                {/* Bottom Info */}
-                <div className="absolute bottom-0 left-0 right-0 p-6">
-                  <div className="flex-1 mb-4">
-                    <h3 className="text-3xl font-bold text-white drop-shadow-lg mb-2">
+                {/* Bottom Info - Shifted up */}
+                <div className="absolute bottom-16 left-0 right-0 p-6">
+                  <div className="flex-1 mb-3">
+                    <h3 className="text-2xl font-bold text-white drop-shadow-lg mb-1.5">
                       {currentLocation.name}
                     </h3>
                     {currentLocation.city && (
-                      <div className="flex items-center gap-2 text-white text-base mb-2">
-                        <MapPin className="w-5 h-5" />
+                      <div className="flex items-center gap-1.5 text-white text-sm mb-1.5">
+                        <MapPin className="w-4 h-4" />
                         <span className="drop-shadow">{currentLocation.city}</span>
                       </div>
                     )}
                     {currentLocation.category && (
-                      <div className="inline-block px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full">
-                        <span className="text-white text-sm font-medium capitalize">
+                      <div className="inline-block px-2.5 py-1 bg-white/20 backdrop-blur-sm rounded-full">
+                        <span className="text-white text-xs font-medium capitalize">
                           {currentLocation.category}
                         </span>
                       </div>
@@ -407,21 +407,21 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
               </div>
             </div>
 
-            {/* Action buttons at bottom */}
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center justify-center gap-12">
+            {/* Action buttons - Shifted up */}
+            <div className="absolute bottom-24 left-1/2 -translate-x-1/2 flex items-center justify-center gap-8">
               <button
                 onClick={() => handleSwipe('left')}
-                className="w-20 h-20 rounded-full bg-white shadow-xl flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                className="w-16 h-16 rounded-full bg-white shadow-xl flex items-center justify-center transition-all hover:scale-110 active:scale-95"
                 aria-label="Pass"
               >
-                <X className="w-12 h-12 text-red-500" strokeWidth={3} />
+                <img src={swipeNo} alt="Pass" className="w-10 h-10" />
               </button>
               <button
                 onClick={() => handleSwipe('right')}
-                className="w-20 h-20 rounded-full bg-white shadow-xl flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                className="w-16 h-16 rounded-full bg-white shadow-xl flex items-center justify-center transition-all hover:scale-110 active:scale-95"
                 aria-label="Save for later"
               >
-                <MapPin className="w-12 h-12 text-blue-500" strokeWidth={3} fill="currentColor" />
+                <img src={swipeSave} alt="Save" className="w-10 h-10" />
               </button>
             </div>
           </div>

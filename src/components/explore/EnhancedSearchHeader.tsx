@@ -51,22 +51,8 @@ const EnhancedSearchHeader = ({
   };
 
   const handleAutocompleteSelect = async (result: any) => {
-    // Record search history
-    if (result.type === 'place' || result.type === 'user') {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await supabase.from('search_history').insert({
-            user_id: user.id,
-            search_query: result.title,
-            search_type: searchMode
-          });
-        }
-      } catch (error) {
-        console.error('Error recording search history:', error);
-      }
-    }
-
+    // Don't save search history on autocomplete - only when user clicks profile
+    
     // Navigate to detail or profile
     if (result.type === 'place') {
       // For places, we need to trigger the location detail modal
