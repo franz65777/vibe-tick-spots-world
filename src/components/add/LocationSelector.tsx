@@ -40,60 +40,21 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
         </div>
       ) : (
         <div className="space-y-3">
-          {!selectedCategory ? (
-            <div className="p-4 bg-primary/10 rounded-xl space-y-3">
-              <div>
-                <p className="font-semibold text-foreground">{selectedLocation.name}</p>
-                <p className="text-sm text-muted-foreground">{selectedLocation.formatted_address}</p>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-foreground">
-                  Place Category <span className="text-destructive">*</span>
-                </label>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => onCategoryChange(e.target.value)}
-                  className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                  required
-                >
-                  <option value="">Select category...</option>
-                  {allowedCategories.map(category => (
-                    <option key={category} value={category}>
-                      {categoryDisplayNames[category]}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              <button
-                onClick={() => {
-                  onLocationSelect(null);
-                  onCategoryChange('');
-                }}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Change location
-              </button>
+          <div className="p-4 bg-primary/10 rounded-xl space-y-2">
+            <div>
+              <p className="font-semibold text-foreground">{selectedLocation.name}</p>
+              <p className="text-sm text-muted-foreground">{selectedLocation.formatted_address}</p>
             </div>
-          ) : (
-            <div className="p-4 bg-primary/10 rounded-xl space-y-2">
-              <div>
-                <p className="font-semibold text-foreground">{selectedLocation.name}</p>
-                <p className="text-sm text-muted-foreground">{selectedLocation.formatted_address}</p>
-              </div>
-              
-              <button
-                onClick={() => {
-                  onLocationSelect(null);
-                  onCategoryChange('');
-                }}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Change location
-              </button>
-            </div>
-          )}
+            <button
+              onClick={() => {
+                onLocationSelect(null);
+                onCategoryChange('');
+              }}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Change location
+            </button>
+          </div>
         </div>
       )}
     </div>

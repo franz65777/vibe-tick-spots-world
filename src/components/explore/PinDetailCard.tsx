@@ -21,7 +21,6 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
   const [showVisitedModal, setShowVisitedModal] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [drawerState, setDrawerState] = useState<'minimized' | 'expanded'>('minimized');
-  const [activeSnapPoint, setActiveSnapPoint] = useState<number>(0.2);
   const [postsLoading, setPostsLoading] = useState(false);
   const [postsPage, setPostsPage] = useState(1);
   const [hasMorePosts, setHasMorePosts] = useState(true);
@@ -145,20 +144,15 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
       <Drawer 
         open={true}
         modal={false}
-        snapPoints={[0, 0.2, 0.85]}
-        activeSnapPoint={activeSnapPoint}
-        onActiveSnapPointChange={(sp) => {
-          const v = typeof sp === 'number' ? sp : 0.2;
-          setActiveSnapPoint(v);
-          setDrawerState(v >= 0.5 ? 'expanded' : 'minimized');
-          if (v === 0) onClose();
-        }}
         onOpenChange={(open) => { if (!open) onClose(); }}
       >
-        <DrawerContent className={`h-auto transition-all duration-300 ${drawerState === 'minimized' ? 'max-h-[220px]' : 'max-h-[85vh]'}`}>
+        <DrawerContent className={`transition-all duration-300 ${drawerState === 'minimized' ? 'h-[220px]' : 'h-[85vh]'}`}>
           {/* Header with location info */}
           <div className="bg-background px-4 pt-3 pb-2">
-            <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-4" />
+            <button 
+              onClick={() => setDrawerState(prev => prev === 'minimized' ? 'expanded' : 'minimized')}
+              className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-4 cursor-pointer hover:bg-muted-foreground/20 transition-colors"
+            />
             <div className="flex items-start gap-3">
               <div className="flex-1">
                 <h3 className="font-bold text-xl text-foreground">{place.name}</h3>
@@ -227,9 +221,22 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
           </div>
 
 
+          {/* Expand hint when minimized */}
+          {drawerState === 'minimized' && posts.length > 0 && (
+            <div className="px-4 py-2 bg-background border-t border-border">
+              <button
+                onClick={() => setDrawerState('expanded')}
+                className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-2"
+              >
+                <ChevronUp className="w-4 h-4" />
+                <span>Swipe up to view {posts.length} posts</span>
+              </button>
+            </div>
+          )}
+
           {/* Community Posts - Vertical Grid (only shown when expanded) */}
           {drawerState === 'expanded' && (
-            <div className="px-4 py-4 bg-muted/30 max-h-[calc(85vh-220px)] overflow-y-auto">
+            <div className="px-4 py-4 bg-muted/30 flex-1 overflow-y-auto">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <MessageSquare className="w-4 h-4 text-muted-foreground" />
