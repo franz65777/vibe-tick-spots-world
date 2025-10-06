@@ -4,6 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
+import { CategoryIcon } from '@/components/common/CategoryIcon';
+import swipeNo from '@/assets/swipe-no.png';
+import swipeSave from '@/assets/swipe-save.png';
 
 interface SwipeLocation {
   id: string;
@@ -32,6 +36,7 @@ interface SwipeDiscoveryProps {
 
 const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [locations, setLocations] = useState<SwipeLocation[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -300,21 +305,28 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
           <div className="h-full flex items-center justify-center">
             <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
           </div>
-        ) : !hasMore ? (
+) : !hasMore ? (
           <div className="h-full flex items-center justify-center p-8 text-center">
-            <div className="space-y-3">
-              <div className="text-gray-700 font-medium">No locations right now</div>
-              <Button onClick={fetchDailyLocations} variant="outline" className="mx-auto">Refresh</Button>
+            <div className="space-y-5 max-w-sm">
+              <div className="flex items-center justify-center">
+                <img src={swipeSave} alt="Explore" className="w-20 h-20 opacity-80" />
+              </div>
+              <div className="text-lg font-semibold text-foreground">No new saves from people you follow</div>
+              <p className="text-muted-foreground text-sm">Discover more places by finding new people to follow.</p>
+              <div className="flex items-center justify-center gap-3 pt-1">
+                <Button onClick={() => { onClose(); navigate('/explore'); }} className="rounded-full px-5">Search people</Button>
+                <Button onClick={fetchDailyLocations} variant="outline" className="rounded-full px-5">Refresh</Button>
+              </div>
             </div>
           </div>
         ) : currentLocation ? (
-          <div className="flex-1 flex items-center justify-center p-4 pt-16">
+          <div className="flex-1 flex items-start justify-center p-4 pt-6">
             {/* Swipeable Card */}
             <div
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
-              className="w-full max-w-md h-[500px] transition-transform duration-300"
+              className="w-full max-w-md h-[425px] transition-transform duration-300"
               style={{
                 transform: swipeDirection 
                   ? swipeDirection === 'left' 
