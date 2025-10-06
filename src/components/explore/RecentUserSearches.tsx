@@ -26,12 +26,13 @@ const RecentUserSearches = () => {
     if (!user) return;
 
     try {
-      // Get recent user searches from history
+      // Get recent user searches by target_user_id
       const { data: searchHistory } = await supabase
         .from('search_history')
-        .select('search_query, searched_at')
+        .select('target_user_id, searched_at')
         .eq('user_id', user.id)
         .eq('search_type', 'users')
+        .not('target_user_id', 'is', null)
         .order('searched_at', { ascending: false })
         .limit(10);
 
@@ -40,14 +41,19 @@ const RecentUserSearches = () => {
         return;
       }
 
-      // Get unique usernames
-      const usernames = [...new Set(searchHistory.map(s => s.search_query))];
+      // Get unique user IDs
+      const userIds = [...new Set(searchHistory.map(s => s.target_user_id).filter(Boolean))];
 
-      // Fetch user profiles
+      if (userIds.length === 0) {
+        setRecentUsers([]);
+        return;
+      }
+
+      // Fetch user profiles by ID
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, username, avatar_url')
-        .in('username', usernames)
+        .in('id', userIds)
         .limit(10);
 
       if (!profiles) {
@@ -67,7 +73,7 @@ const RecentUserSearches = () => {
 
       // Map with search dates and story status
       const usersWithData = profiles.map(profile => {
-        const searchRecord = searchHistory.find(s => s.search_query === profile.username);
+        const searchRecord = searchHistory.find(s => s.target_user_id === profile.id);
         return {
           ...profile,
           searched_at: searchRecord?.searched_at || new Date().toISOString(),
@@ -86,21 +92,21 @@ const RecentUserSearches = () => {
     }
   };
 
-  const handleRemoveSearch = async (username: string, e: React.MouseEvent) => {
+  const handleRemoveSearch = async (userId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!user) return;
 
     try {
-      // Remove from search history
+      // Remove from search history by target_user_id
       await supabase
         .from('search_history')
         .delete()
         .eq('user_id', user.id)
-        .eq('search_query', username)
+        .eq('target_user_id', userId)
         .eq('search_type', 'users');
 
       // Update local state
-      setRecentUsers(prev => prev.filter(u => u.username !== username));
+      setRecentUsers(prev => prev.filter(u => u.id !== userId));
     } catch (error) {
       console.error('Error removing search:', error);
     }
@@ -144,7 +150,7 @@ const RecentUserSearches = () => {
             </div>
 
             <button
-              onClick={(e) => handleRemoveSearch(user.username, e)}
+              onClick={(e) => handleRemoveSearch(user.id, e)}
               className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-gray-200 rounded-full transition-all"
             >
               <X className="w-4 h-4 text-gray-600" />

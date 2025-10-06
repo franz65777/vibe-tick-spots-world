@@ -4,6 +4,7 @@ import { Search, MapPin, Users, X, Settings } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import SmartAutocomplete from './SmartAutocomplete';
 import SearchFilters from './SearchFilters';
 
@@ -33,6 +34,7 @@ const EnhancedSearchHeader = ({
   filters,
   onFiltersChange
 }: EnhancedSearchHeaderProps) => {
+  const { user } = useAuth();
   const [showFilters, setShowFilters] = useState(false);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -51,7 +53,15 @@ const EnhancedSearchHeader = ({
   };
 
   const handleAutocompleteSelect = async (result: any) => {
-    // Don't save search history on autocomplete - only when user clicks profile
+    // Track search in history (only for users mode with result select)
+    if (user && searchQuery.trim() && searchMode === 'users' && result.type === 'user') {
+      supabase.from('search_history').insert({
+        user_id: user.id,
+        search_query: result.title, // Save username, not keystrokes
+        search_type: searchMode,
+        target_user_id: result.id
+      });
+    }
     
     // Navigate to detail or profile
     if (result.type === 'place') {

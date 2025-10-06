@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { getUserFeed, getFeedEventDisplay, FeedItem as FeedItemType } from '@/services/feedService';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,23 +16,71 @@ const FeedPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!user?.id) return;
+
     let interval: any;
+    let channels: any[] = [];
 
     const loadFeed = async () => {
-      if (!user?.id) return;
       setLoading(true);
       const items = await getUserFeed(user.id);
       setFeedItems(items);
       setLoading(false);
     };
 
-    if (user?.id) {
-      loadFeed();
-      interval = setInterval(loadFeed, 30000);
-    }
+    loadFeed();
+    interval = setInterval(loadFeed, 30000);
+
+    // Realtime subscriptions for instant feed updates
+    const setupRealtime = async () => {
+      // Listen to posts from followed users
+      const postsChannel = supabase
+        .channel('feed-posts')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, () => {
+          loadFeed();
+        })
+        .subscribe();
+
+      // Listen to comments from followed users
+      const commentsChannel = supabase
+        .channel('feed-comments')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'post_comments' }, () => {
+          loadFeed();
+        })
+        .subscribe();
+
+      // Listen to saved places from followed users
+      const savedPlacesChannel = supabase
+        .channel('feed-saved-places')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'saved_places' }, () => {
+          loadFeed();
+        })
+        .subscribe();
+
+      // Listen to user saved locations from followed users
+      const savedLocationsChannel = supabase
+        .channel('feed-saved-locations')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'user_saved_locations' }, () => {
+          loadFeed();
+        })
+        .subscribe();
+
+      // Listen to interactions from followed users
+      const interactionsChannel = supabase
+        .channel('feed-interactions')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'interactions' }, () => {
+          loadFeed();
+        })
+        .subscribe();
+
+      channels = [postsChannel, commentsChannel, savedPlacesChannel, savedLocationsChannel, interactionsChannel];
+    };
+
+    setupRealtime();
 
     return () => {
       if (interval) clearInterval(interval);
+      channels.forEach(channel => supabase.removeChannel(channel));
     };
   }, [user?.id]);
 

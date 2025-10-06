@@ -20,41 +20,51 @@ export const useUserSearchHistory = () => {
     
     setLoading(true);
     try {
-      // Get unique user search history
+      // Get user search history with target_user_id
       const { data: historyData, error } = await supabase
         .from('search_history')
-        .select('id, search_query, search_type, searched_at')
+        .select('id, search_query, search_type, searched_at, target_user_id')
         .eq('user_id', user.id)
         .eq('search_type', 'users')
+        .not('target_user_id', 'is', null)
         .order('searched_at', { ascending: false })
         .limit(10);
 
       if (error) throw error;
 
-      // Get unique usernames only
-      const uniqueUsernames = Array.from(
-        new Set((historyData || []).map(h => h.search_query))
+      // Get unique target_user_ids
+      const uniqueUserIds = Array.from(
+        new Set((historyData || []).map(h => h.target_user_id).filter(Boolean))
       );
 
-      // Fetch profile data for each unique username
-      const enrichedHistory = await Promise.all(
-        uniqueUsernames.slice(0, 5).map(async (username) => {
-          const historyItem = historyData?.find(h => h.search_query === username);
-          if (!historyItem) return null;
+      if (uniqueUserIds.length === 0) {
+        setSearchHistory([]);
+        return;
+      }
 
-          // Get profile data
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('avatar_url')
-            .eq('username', username)
-            .single();
+      // Fetch profiles by ID
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .in('id', uniqueUserIds);
 
-          return {
-            ...historyItem,
-            avatar_url: profileData?.avatar_url || undefined
-          };
-        })
-      );
+      if (!profiles) {
+        setSearchHistory([]);
+        return;
+      }
+
+      // Map history with profile data
+      const enrichedHistory = profiles.slice(0, 5).map(profile => {
+        const historyItem = historyData?.find(h => h.target_user_id === profile.id);
+        if (!historyItem) return null;
+        return {
+          id: historyItem.id,
+          search_query: profile.username || historyItem.search_query,
+          search_type: historyItem.search_type,
+          searched_at: historyItem.searched_at,
+          avatar_url: profile.avatar_url || undefined
+        };
+      });
 
       setSearchHistory(enrichedHistory.filter(Boolean) as SearchHistoryItem[]);
     } catch (error) {

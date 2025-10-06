@@ -1589,6 +1589,7 @@ export type Database = {
           search_query: string
           search_type: string
           searched_at: string | null
+          target_user_id: string | null
           user_id: string | null
         }
         Insert: {
@@ -1596,6 +1597,7 @@ export type Database = {
           search_query: string
           search_type: string
           searched_at?: string | null
+          target_user_id?: string | null
           user_id?: string | null
         }
         Update: {
@@ -1603,6 +1605,7 @@ export type Database = {
           search_query?: string
           search_type?: string
           searched_at?: string | null
+          target_user_id?: string | null
           user_id?: string | null
         }
         Relationships: [
