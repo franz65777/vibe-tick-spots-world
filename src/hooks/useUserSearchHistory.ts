@@ -13,6 +13,12 @@ interface SearchHistoryItem {
   has_active_story?: boolean;
 }
 
+interface ProfileBrief {
+  id: string;
+  username: string | null;
+  avatar_url: string | null;
+}
+
 export const useUserSearchHistory = () => {
   const { user } = useAuth();
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
@@ -46,26 +52,29 @@ export const useUserSearchHistory = () => {
       const { data: profilesById } = uniqueUserIds.length > 0 ? await supabase
         .from('profiles')
         .select('id, username, avatar_url')
-        .in('id', uniqueUserIds) : { data: [] as any[] } as any;
+        .in('id', uniqueUserIds) : { data: [] as ProfileBrief[] } as any;
 
       // Fetch profiles by username (fallback)
       const { data: profilesByName } = fallbackUsernames.length > 0 ? await supabase
         .from('profiles')
         .select('id, username, avatar_url')
-        .in('username', fallbackUsernames) : { data: [] as any[] } as any;
+        .in('username', fallbackUsernames) : { data: [] as ProfileBrief[] } as any;
 
-      const byId = new Map((profilesById || []).map((p: any) => [p.id, p]));
-      const byName = new Map((profilesByName || []).map((p: any) => [p.username, p]));
+      const profilesByIdArray = (profilesById || []) as ProfileBrief[];
+      const profilesByNameArray = (profilesByName || []) as ProfileBrief[];
+
+      const byId = new Map<string, ProfileBrief>(profilesByIdArray.map((p) => [p.id, p]));
+      const byName = new Map<string, ProfileBrief>(profilesByNameArray.filter(p => p.username).map((p) => [p.username as string, p]));
 
       // Determine which users have active stories in last 24h
-      const storyIds = Array.from(new Set([...(profilesById || []).map((p: any) => p.id), ...(profilesByName || []).map((p: any) => p.id)]));
+      const storyIds = Array.from(new Set([...profilesByIdArray.map(p => p.id), ...profilesByNameArray.map(p => p.id)]));
       const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
       const { data: recentStories } = storyIds.length > 0 ? await supabase
         .from('stories')
         .select('user_id')
         .in('user_id', storyIds)
-        .gt('created_at', dayAgo) : { data: [] as any[] } as any;
-      const usersWithStories = new Set((recentStories || []).map((s: any) => s.user_id));
+        .gt('created_at', dayAgo) : { data: [] as { user_id: string }[] } as any;
+      const usersWithStories = new Set((recentStories || []).map((s) => s.user_id));
 
       // Map history in order, enriched with profile data and story flag
       const enrichedHistory = (historyData || []).map((h) => {
