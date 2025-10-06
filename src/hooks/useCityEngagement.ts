@@ -73,7 +73,7 @@ export const useCityEngagement = (cityName: string | null) => {
     }
 
     // Poll every 30s as a fallback and for aggregation freshness
-    intervalId = setInterval(fetchEngagement, 30000);
+    intervalId = setInterval(fetchEngagement, 10000);
 
     return () => {
       if (channel) supabase.removeChannel(channel);

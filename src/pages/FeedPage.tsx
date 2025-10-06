@@ -15,16 +15,24 @@ const FeedPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let interval: any;
+
     const loadFeed = async () => {
       if (!user?.id) return;
-
       setLoading(true);
       const items = await getUserFeed(user.id);
       setFeedItems(items);
       setLoading(false);
     };
 
-    loadFeed();
+    if (user?.id) {
+      loadFeed();
+      interval = setInterval(loadFeed, 30000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [user?.id]);
 
   const handleItemClick = (item: FeedItemType) => {

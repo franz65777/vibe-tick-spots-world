@@ -314,7 +314,13 @@ const SmartAutocomplete = ({
       )}
 
       {/* Recent Searches */}
-      {!query.trim() && recentSearches.length > 0 && (
+      {!query.trim() && searchMode === 'users' && (
+        <div className="p-0">
+          <RecentUserSearches />
+        </div>
+      )}
+
+      {!query.trim() && searchMode === 'locations' && recentSearches.length > 0 && (
         <div className="p-3 border-b border-gray-100 dark:border-gray-800">
           <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-3 px-2 flex items-center gap-2 uppercase tracking-wide">
             <Clock className="w-4 h-4 text-blue-600 dark:text-blue-400" />
