@@ -172,5 +172,23 @@ export const useFollowData = (type: 'followers' | 'following') => {
     }
   };
 
-  return { users, loading, unfollowUser };
+  const removeFollower = async (followerUserId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('follows')
+        .delete()
+        .eq('follower_id', followerUserId)
+        .eq('following_id', user.id);
+
+      if (!error) {
+        setUsers(prev => prev.filter(u => u.id !== followerUserId));
+      }
+    } catch (error) {
+      console.error('Error removing follower:', error);
+    }
+  };
+
+  return { users, loading, unfollowUser, removeFollower };
 };

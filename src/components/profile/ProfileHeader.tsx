@@ -127,7 +127,7 @@ const ProfileHeader = ({
       <div className="flex gap-4">
         {/* Profile Picture */}
         <div className="relative shrink-0">
-          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-primary/60 p-0.5">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/60 p-0.5">
             <div className="w-full h-full rounded-full bg-background p-0.5">
               <div className="w-full h-full rounded-full bg-muted flex items-center justify-center overflow-hidden">
                 {profile?.avatar_url ? (
@@ -137,7 +137,7 @@ const ProfileHeader = ({
                     className="w-full h-full object-cover rounded-full"
                   />
                 ) : (
-                  <span className="text-base font-semibold text-muted-foreground">{getInitials()}</span>
+                  <span className="text-sm font-semibold text-muted-foreground">{getInitials()}</span>
                 )}
               </div>
             </div>
@@ -145,9 +145,9 @@ const ProfileHeader = ({
           
           <button
             onClick={() => setIsProfilePictureEditorOpen(true)}
-            className="absolute bottom-0 right-0 w-6 h-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors shadow-md"
+            className="absolute bottom-0 right-0 w-5 h-5 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors shadow-md"
           >
-            <Camera className="w-3 h-3 text-primary-foreground" />
+            <Camera className="w-2.5 h-2.5 text-primary-foreground" />
           </button>
         </div>
 

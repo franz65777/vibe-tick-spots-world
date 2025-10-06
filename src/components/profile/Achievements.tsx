@@ -29,11 +29,11 @@ const Achievements = ({ userId }: AchievementsProps) => {
           <div className="w-16 h-4 bg-gray-200 rounded animate-pulse"></div>
         </div>
         
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-4">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="flex flex-col items-center p-3 rounded-xl border-2 border-gray-200 bg-gray-50">
-              <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse mb-1"></div>
-              <div className="w-16 h-3 bg-gray-200 rounded animate-pulse"></div>
+            <div key={i} className="flex flex-col items-center p-4 rounded-xl border-2 border-gray-200 bg-gray-50">
+              <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse mb-2"></div>
+              <div className="w-20 h-3 bg-gray-200 rounded animate-pulse"></div>
             </div>
           ))}
         </div>
@@ -49,24 +49,24 @@ const Achievements = ({ userId }: AchievementsProps) => {
           <span className="text-sm text-blue-600 font-medium">{earned}/{total} Earned</span>
         </div>
         
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-4">
           {displayBadges.map((badge) => (
             <div 
               key={badge.id} 
               onClick={() => handleBadgeClick(badge)}
-              className={`flex flex-col items-center p-3 rounded-xl border-2 transition-all duration-200 hover:scale-105 cursor-pointer ${
+              className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 hover:scale-105 cursor-pointer ${
                 badge.earned 
                   ? `bg-gradient-to-br ${badge.gradient} border-transparent shadow-md`
                   : 'bg-gray-50 border-gray-200 hover:border-gray-300'
               }`}
               title={badge.description}
             >
-              <div className="text-2xl mb-1 relative">
+              <div className="text-3xl mb-2 relative">
                 <span className={badge.earned ? 'filter-none' : 'filter grayscale opacity-60'}>
                   {badge.icon}
                 </span>
                 {badge.earned && (
-                  <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center shadow-sm ${
+                  <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center shadow-sm ${
                     badge.level === 'bronze' ? 'bg-orange-500' :
                     badge.level === 'silver' ? 'bg-gray-400' :
                     badge.level === 'gold' ? 'bg-yellow-500' : 
@@ -80,7 +80,7 @@ const Achievements = ({ userId }: AchievementsProps) => {
                   </div>
                 )}
               </div>
-              <span className={`text-xs font-medium text-center leading-tight ${
+              <span className={`text-sm font-medium text-center leading-tight ${
                 badge.earned ? 'text-white' : 'text-gray-700'
               }`}>
                 {badge.name}
@@ -89,9 +89,9 @@ const Achievements = ({ userId }: AchievementsProps) => {
               {/* Progress indicator for unearned badges */}
               {!badge.earned && badge.progress !== undefined && badge.maxProgress && (
                 <div className="w-full mt-2">
-                  <div className="w-full bg-gray-200 rounded-full h-1">
+                  <div className="w-full bg-gray-200 rounded-full h-1.5">
                     <div 
-                      className="bg-blue-500 h-1 rounded-full transition-all duration-300"
+                      className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
                       style={{ width: `${(badge.progress / badge.maxProgress) * 100}%` }}
                     ></div>
                   </div>

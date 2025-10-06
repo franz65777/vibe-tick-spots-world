@@ -32,17 +32,40 @@ export const useSavedPlaces = () => {
       }
 
       try {
-        // Fetch saved places from saved_places table
-        const { data: savedPlacesData, error } = await supabase
+        // Fetch from saved_places table (Google places)
+        const { data: savedPlacesData, error: savedPlacesError } = await supabase
           .from('saved_places')
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (savedPlacesError) console.error('Error fetching saved_places:', savedPlacesError);
 
-        // Group by city
+        // Fetch from user_saved_locations table (internal locations)
+        const { data: userSavedLocations, error: userSavedError } = await supabase
+          .from('user_saved_locations')
+          .select(`
+            id,
+            created_at,
+            locations (
+              id,
+              name,
+              category,
+              city,
+              latitude,
+              longitude,
+              google_place_id
+            )
+          `)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (userSavedError) console.error('Error fetching user_saved_locations:', userSavedError);
+
+        // Combine and group by city
         const groupedByCity: SavedPlacesData = {};
+        
+        // Add saved_places data
         (savedPlacesData || []).forEach(place => {
           const city = place.city || 'Unknown';
           if (!groupedByCity[city]) {
@@ -57,6 +80,36 @@ export const useSavedPlaces = () => {
             coordinates: (place.coordinates as any) || { lat: 0, lng: 0 },
             savedAt: place.created_at || new Date().toISOString()
           });
+        });
+
+        // Add user_saved_locations data
+        (userSavedLocations || []).forEach((item: any) => {
+          const location = item.locations;
+          if (!location) return;
+          
+          const city = location.city || 'Unknown';
+          if (!groupedByCity[city]) {
+            groupedByCity[city] = [];
+          }
+          
+          // Use google_place_id if available, otherwise use internal id
+          const placeId = location.google_place_id || location.id;
+          
+          // Check if not already added (avoid duplicates)
+          const alreadyExists = groupedByCity[city].some(p => p.id === placeId);
+          if (!alreadyExists) {
+            groupedByCity[city].push({
+              id: placeId,
+              name: location.name,
+              category: location.category || 'place',
+              city: city,
+              coordinates: { 
+                lat: location.latitude || 0, 
+                lng: location.longitude || 0 
+              },
+              savedAt: item.created_at || new Date().toISOString()
+            });
+          }
         });
 
         setSavedPlaces(groupedByCity);

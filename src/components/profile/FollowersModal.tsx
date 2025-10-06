@@ -1,5 +1,5 @@
 
-import { UserCheck, X } from 'lucide-react';
+import { UserCheck, UserMinus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useFollowData } from '@/hooks/useFollowStats';
@@ -11,7 +11,7 @@ interface FollowersModalProps {
 }
 
 const FollowersModal = ({ isOpen, onClose, type }: FollowersModalProps) => {
-  const { users, loading, unfollowUser } = useFollowData(type);
+  const { users, loading, unfollowUser, removeFollower } = useFollowData(type);
 
   const getInitials = (username: string) => {
     return username ? username.substring(0, 2).toUpperCase() : 'U';
@@ -74,7 +74,17 @@ const FollowersModal = ({ isOpen, onClose, type }: FollowersModalProps) => {
                       <UserCheck className="w-4 h-4" />
                       Following
                     </Button>
-                  ) : null}
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => removeFollower(user.id)}
+                      className="flex items-center gap-2 text-destructive hover:bg-destructive/10"
+                    >
+                      <UserMinus className="w-4 h-4" />
+                      Remove
+                    </Button>
+                  )}
                 </div>
               ))
             )}
