@@ -21,9 +21,7 @@ interface GoogleMapsSetupProps {
   fullScreen?: boolean;
 }
 
-import PinDetailCard from './explore/PinDetailCard';
-
-const GoogleMapsSetup = ({ 
+const GoogleMapsSetup = ({
   places, 
   onPinClick,
   onPinShare,
@@ -492,11 +490,20 @@ const GoogleMapsSetup = ({
         )}
       </div>
       
-      {/* Pin Detail Card */}
+      {/* Location Post Library */}
       {selectedPlace && (
-        <PinDetailCard
-          place={selectedPlace}
-          onClose={onCloseSelectedPlace}
+        <LocationPostLibrary
+          place={{
+            id: selectedPlace.id,
+            name: selectedPlace.name,
+            category: selectedPlace.category,
+            address: selectedPlace.address,
+            city: selectedPlace.city,
+            google_place_id: selectedPlace.google_place_id,
+            coordinates: selectedPlace.coordinates
+          }}
+          isOpen={!!selectedPlace}
+          onClose={() => onCloseSelectedPlace?.()}
         />
       )}
     </>
