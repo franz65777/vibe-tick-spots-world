@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Award, MapPin, Grid3X3, Calendar } from 'lucide-react';
+import { Award, MapPin, Grid3X3, Tag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
@@ -54,16 +54,16 @@ const ProfileTabs = ({ activeTab, onTabChange, hasNewBadges = false }: ProfileTa
           )}
         </button>
         <button
-          onClick={() => onTabChange('reservations')}
+          onClick={() => onTabChange('tagged')}
           className={cn(
             "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5",
-            activeTab === 'reservations'
+            activeTab === 'tagged'
               ? "bg-blue-600 text-white shadow-sm"
               : "text-gray-600"
           )}
         >
-          <Calendar className="w-4 h-4" />
-          <span className="hidden sm:inline">Bookings</span>
+          <Tag className="w-4 h-4" />
+          <span className="hidden sm:inline">Tagged</span>
         </button>
       </div>
     </div>
