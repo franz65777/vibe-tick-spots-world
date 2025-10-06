@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import NoResults from './explore/NoResults';
 import UserCard from './explore/UserCard';
-import LocationDetailModal from './explore/LocationDetailModal';
+import LocationPostLibrary from './explore/LocationPostLibrary';
 import LocationGrid from './explore/LocationGrid';
 import CommunityChampions from './home/CommunityChampions';
 import { useCommunityChampions } from '@/hooks/useCommunityChampions';
@@ -39,7 +39,7 @@ const ExplorePage = () => {
   const [viewingStories, setViewingStories] = useState<any[]>([]);
   const [viewingStoriesIndex, setViewingStoriesIndex] = useState(0);
 
-  // Check for shared place from DM and open LocationDetailModal
+  // Check for shared place from DM and open LocationPostLibrary
   useEffect(() => {
     const checkForSharedPlace = () => {
       const state = window.history.state as { sharedPlace?: any } | null;
@@ -47,7 +47,7 @@ const ExplorePage = () => {
         const place = state.sharedPlace;
         console.log('📍 Opening shared place from DM:', place);
         
-        // Normalize the place data structure for LocationDetailModal
+        // Normalize the place data structure for LocationPostLibrary
         const normalizedPlace = {
           id: place.id || place.place_id || place.google_place_id || '',
           google_place_id: place.google_place_id || place.place_id || '',
@@ -462,11 +462,11 @@ const ExplorePage = () => {
         />
       )}
 
-      {/* Location Detail Modal */}
-      <LocationDetailModal
+      {/* Location Post Library */}
+      <LocationPostLibrary
         isOpen={isLocationModalOpen}
         onClose={() => setIsLocationModalOpen(false)}
-        location={selectedLocation}
+        place={selectedLocation}
       />
     </div>;
 };
