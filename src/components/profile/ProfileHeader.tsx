@@ -161,6 +161,8 @@ const ProfileHeader = ({
                   <Building2 className="w-3 h-3 text-primary-foreground" />
                 </div>
               )}
+            </div>
+            <div className="flex flex-wrap gap-1 mt-1">
               <BadgeDisplay userId={user?.id} />
             </div>
             
@@ -184,16 +186,8 @@ const ProfileHeader = ({
             </DropdownMenu>
           </div>
 
-          {/* Stats Row */}
+          {/* Stats Row (without Posts) */}
           <div className="flex gap-4 mb-2">
-            <button 
-              className="text-center"
-              onClick={onPostsClick}
-            >
-              <div className="text-sm font-bold text-foreground">{displayStats.posts}</div>
-              <div className="text-xs text-muted-foreground">Posts</div>
-            </button>
-            
             <button 
               className="text-center"
               onClick={onFollowersClick}

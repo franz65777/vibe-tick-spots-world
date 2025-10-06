@@ -1,11 +1,11 @@
 
 import { useState, useMemo } from 'react';
-import { ArrowLeft, Search, MapPin, Calendar, X } from 'lucide-react';
+import { ArrowLeft, Search, MapPin } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
-import PinDetailCard from '@/components/explore/PinDetailCard';
+import CompactLocationCard from '@/components/explore/CompactLocationCard';
 
 interface SavedLocationsListProps {
   isOpen: boolean;
@@ -193,38 +193,27 @@ const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
       {/* Locations List */}
       {!loading && filteredAndSortedPlaces.length > 0 && (
         <div className="flex-1 overflow-y-auto">
-          <div className="px-4 py-2">
-            {filteredAndSortedPlaces.map((place) => (
-              <button
-                key={`${place.city}-${place.id}`}
-                onClick={() => handlePlaceClick(place)}
-                className="w-full bg-card rounded-xl border border-border p-4 mb-3 hover:shadow-md transition-all text-left"
-              >
-                <div className="flex gap-3">
-                  {/* Category Icon */}
-                  <div className="shrink-0">
-                    <CategoryIcon category={place.category} className="w-12 h-12" />
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground truncate mb-1">
-                      {place.name}
-                    </h3>
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
-                      <MapPin className="w-3 h-3" />
-                      <span className="truncate">{place.city}</span>
-                      <span>•</span>
-                      <span className="capitalize">{place.category}</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Calendar className="w-3 h-3" />
-                      <span>Saved {formatDate(place.savedAt)}</span>
-                    </div>
-                  </div>
-                </div>
-              </button>
-            ))}
+          <div className="px-2 py-2 space-y-2">
+            {filteredAndSortedPlaces.map((p) => {
+              const place = {
+                id: p.id,
+                name: p.name,
+                category: p.category,
+                city: p.city,
+                likes: 0,
+                visitors: [],
+                isNew: false,
+                coordinates: { lat: 0, lng: 0 },
+                google_place_id: p.id,
+              } as any;
+              return (
+                <CompactLocationCard
+                  key={`${p.city}-${p.id}`}
+                  place={place}
+                  onCardClick={() => {}}
+                />
+              );
+            })}
           </div>
         </div>
       )}
