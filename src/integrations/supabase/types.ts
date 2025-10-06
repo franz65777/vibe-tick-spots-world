@@ -1154,6 +1154,48 @@ export type Database = {
         }
         Relationships: []
       }
+      places_cache: {
+        Row: {
+          cache_key: string
+          city: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          latitude: number | null
+          longitude: number | null
+          query_text: string
+          query_type: string
+          radius_km: number | null
+          results: Json
+        }
+        Insert: {
+          cache_key: string
+          city?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          query_text: string
+          query_type: string
+          radius_km?: number | null
+          results: Json
+        }
+        Update: {
+          cache_key?: string
+          city?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          query_text?: string
+          query_type?: string
+          radius_km?: number | null
+          results?: Json
+        }
+        Relationships: []
+      }
       post_comments: {
         Row: {
           content: string
@@ -2092,6 +2134,10 @@ export type Database = {
           action_type: string
           target_user_id: string
         }
+        Returns: undefined
+      }
+      cleanup_expired_cache: {
+        Args: Record<PropertyKey, never>
         Returns: undefined
       }
       cleanup_expired_stories: {

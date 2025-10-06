@@ -41,6 +41,23 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity }: 
     }
     
     fetchLocations();
+    
+    // Set up realtime subscription for map updates
+    const channel = supabase
+      .channel('map-locations-refresh')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'saved_places' }, () => {
+        console.log('🔄 Saved places changed, refreshing map...');
+        fetchLocations();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_saved_locations' }, () => {
+        console.log('🔄 User saved locations changed, refreshing map...');
+        fetchLocations();
+      })
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [mapFilter, selectedCategories.join(','), currentCity, user?.id]);
 
   const fetchLocations = async () => {
@@ -162,7 +179,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity }: 
         }
 
         case 'saved': {
-          // Get user's saved locations
+          // Get user's saved locations from user_saved_locations
           const { data: savedData } = await supabase
             .from('user_saved_locations')
             .select(`
@@ -176,36 +193,79 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity }: 
                 city,
                 latitude,
                 longitude,
-                created_by
+                created_by,
+                google_place_id
               )
             `)
             .eq('user_id', user.id);
 
+          // Get user's saved places from saved_places (Google Places)
+          const { data: savedPlaces } = await supabase
+            .from('saved_places')
+            .select('place_id, place_name, place_category, city, coordinates, created_at')
+            .eq('user_id', user.id);
+
+          // Combine both sources
+          const locationMap = new Map<string, MapLocation>();
+
+          // Add locations from user_saved_locations
           if (savedData) {
-            finalLocations = savedData
+            savedData
               .filter(item => item.locations)
-              .map(item => ({
-                id: item.locations.id,
-                name: item.locations.name,
-                category: item.locations.category,
-                address: item.locations.address,
-                city: item.locations.city,
-                coordinates: {
-                  lat: Number(item.locations.latitude) || 0,
-                  lng: Number(item.locations.longitude) || 0
-                },
-                isSaved: true,
-                user_id: item.locations.created_by,
-                created_at: item.created_at
-              }))
-              .filter(location => {
-                // Apply category filter
-                if (selectedCategories.length > 0 && !selectedCategories.includes(location.category)) {
-                  return false;
+              .forEach(item => {
+                const key = item.locations.google_place_id || item.locations.id;
+                if (!locationMap.has(key)) {
+                  locationMap.set(key, {
+                    id: item.locations.id,
+                    name: item.locations.name,
+                    category: item.locations.category,
+                    address: item.locations.address,
+                    city: item.locations.city,
+                    coordinates: {
+                      lat: Number(item.locations.latitude) || 0,
+                      lng: Number(item.locations.longitude) || 0
+                    },
+                    isSaved: true,
+                    user_id: item.locations.created_by,
+                    created_at: item.created_at
+                  });
                 }
-                return true;
               });
           }
+
+          // Add places from saved_places
+          if (savedPlaces) {
+            savedPlaces.forEach(sp => {
+              const coords = (sp.coordinates as any) || {};
+              const key = sp.place_id;
+              if (!locationMap.has(key)) {
+                // Create a pseudo location for Google Place
+                locationMap.set(key, {
+                  id: sp.place_id,
+                  name: sp.place_name,
+                  category: sp.place_category || 'Unknown',
+                  address: '',
+                  city: sp.city || 'Unknown',
+                  coordinates: {
+                    lat: Number(coords.lat) || 0,
+                    lng: Number(coords.lng) || 0
+                  },
+                  isSaved: true,
+                  user_id: user.id,
+                  created_at: sp.created_at
+                });
+              }
+            });
+          }
+
+          finalLocations = Array.from(locationMap.values())
+            .filter(location => {
+              // Apply category filter
+              if (selectedCategories.length > 0 && !selectedCategories.includes(location.category)) {
+                return false;
+              }
+              return true;
+            });
           break;
         }
       }

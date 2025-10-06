@@ -19,6 +19,11 @@ interface SwipeLocation {
     lat: number;
     lng: number;
   };
+  saved_by?: {
+    id: string;
+    username: string;
+    avatar_url: string;
+  };
 }
 
 interface SwipeDiscoveryProps {
@@ -98,6 +103,7 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
         place_category: string | null;
         city: string | null;
         coordinates: { lat: number; lng: number } | null;
+        user_id?: string;
       }[] = [];
 
       if (followingIds.length > 0) {
@@ -113,6 +119,7 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
           place_category: s.place_category || 'Unknown',
           city: s.city || 'Unknown',
           coordinates: (s.coordinates as any) || null,
+          user_id: s.user_id,
         }));
       }
 
@@ -151,6 +158,17 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
       // Shuffle and take a chunk
       const shuffled = filtered.sort(() => Math.random() - 0.5).slice(0, 20);
 
+      // Fetch user profiles for avatars
+      const userIds = shuffled.map(s => s.user_id).filter(Boolean) as string[];
+      let profilesMap = new Map<string, { username: string; avatar_url: string }>();
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, username, avatar_url')
+          .in('id', userIds);
+        profiles?.forEach(p => profilesMap.set(p.id, { username: p.username || 'User', avatar_url: p.avatar_url || '' }));
+      }
+
       const locationsToShow: SwipeLocation[] = shuffled.map((save) => ({
         id: save.place_id,
         place_id: save.place_id,
@@ -163,6 +181,11 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
           lat: save.coordinates?.lat || 0,
           lng: save.coordinates?.lng || 0,
         },
+        saved_by: save.user_id ? {
+          id: save.user_id,
+          username: profilesMap.get(save.user_id)?.username || 'User',
+          avatar_url: profilesMap.get(save.user_id)?.avatar_url || '',
+        } : undefined,
       }));
 
       setLocations(locationsToShow);
@@ -348,8 +371,8 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                 </div>
 
-                {/* Bottom Info - name only */}
-                <div className="absolute bottom-0 left-0 right-0 p-6 flex items-start justify-between pointer-events-none">
+                {/* Bottom Info */}
+                <div className="absolute bottom-0 left-0 right-0 p-6 flex items-start justify-between">
                   <div className="flex-1">
                     <h3 className="text-2xl font-bold text-white drop-shadow mb-1">{currentLocation.name}</h3>
                     {currentLocation.city && (
@@ -359,6 +382,24 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
                       </div>
                     )}
                   </div>
+                  {currentLocation.saved_by && (
+                    <div className="flex items-center gap-2 bg-black/40 backdrop-blur-sm rounded-full px-3 py-2">
+                      {currentLocation.saved_by.avatar_url ? (
+                        <img 
+                          src={currentLocation.saved_by.avatar_url} 
+                          alt={currentLocation.saved_by.username}
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+                          <span className="text-white text-xs font-semibold">
+                            {currentLocation.saved_by.username[0]?.toUpperCase()}
+                          </span>
+                        </div>
+                      )}
+                      <span className="text-white text-sm font-medium">{currentLocation.saved_by.username}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

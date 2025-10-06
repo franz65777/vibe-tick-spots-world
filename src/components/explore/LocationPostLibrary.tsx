@@ -487,6 +487,13 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
           mode="comments"
           place={{ id: place.id, name: place.name, category: place.category, coordinates: place.coordinates }}
         />
+
+        {/* Share modal */}
+        <PinShareModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          place={place}
+        />
       </div>
       )}
       </DrawerContent>
