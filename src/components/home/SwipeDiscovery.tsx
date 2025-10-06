@@ -97,23 +97,28 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
       console.log('📍 Friends saves data:', friendsSaves);
       
       let candidates: SwipeLocation[] = (friendsSaves || []).map((s: any) => {
-        const coords = typeof s.coordinates === 'string' 
-          ? JSON.parse(s.coordinates) 
-          : (s.coordinates || { lat: 0, lng: 0 });
+        let coords = { lat: 0, lng: 0 };
+        try {
+          coords = typeof s.coordinates === 'string' 
+            ? JSON.parse(s.coordinates) 
+            : (s.coordinates || { lat: 0, lng: 0 });
+        } catch (e) {
+          console.error('Error parsing coordinates for', s.place_name, e);
+        }
         
         console.log(`📌 Processing place: ${s.place_name} from ${s.username}`, { coords, city: s.city });
         
         return {
-          id: s.place_id,
-          place_id: s.place_id,
+          id: s.place_id || `temp-${Math.random()}`,
+          place_id: s.place_id || '',
           name: s.place_name || 'Unknown Place',
           category: s.place_category || 'place',
           city: s.city || 'Unknown City',
           address: undefined,
-          image_url: undefined, // Will be loaded from Google Places or locations table
+          image_url: undefined,
           coordinates: coords,
           saved_by: {
-            id: s.user_id,
+            id: s.user_id || '',
             username: s.username || 'User',
             avatar_url: s.avatar_url || '',
           },
@@ -122,34 +127,39 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
 
       // Fallback: if no follows or no candidates, show recent public locations (with google_place_id)
       if (candidates.length === 0) {
+        console.log('⚠️ No friends saves, loading fallback locations');
         const { data: recentLocations } = await supabase
           .from('locations')
-          .select('google_place_id, name, category, city, latitude, longitude')
+          .select('google_place_id, name, category, city, latitude, longitude, image_url')
           .not('google_place_id', 'is', null)
           .order('created_at', { ascending: false })
           .limit(60);
         candidates = (recentLocations || []).map((l: any) => ({
           id: l.google_place_id,
           place_id: l.google_place_id,
-          name: l.name,
+          name: l.name || 'Unknown Place',
           category: l.category || 'place',
           city: l.city || 'Unknown',
           address: undefined,
-          image_url: undefined,
+          image_url: l.image_url || undefined,
           coordinates: { lat: Number(l.latitude) || 0, lng: Number(l.longitude) || 0 },
           saved_by: undefined,
         }));
+        console.log('📍 Loaded', candidates.length, 'fallback locations');
       }
 
       // Filter out already saved/swiped and invalid
       const filtered = candidates.filter((c) =>
         c.place_id &&
         !mySavedPlaceIds.has(c.place_id) &&
-        !swipedPlaceIds.has(c.place_id)
+        !swipedPlaceIds.has(c.place_id) &&
+        c.name !== 'Unknown Place'
       );
 
+      console.log('✅ Filtered to', filtered.length, 'valid locations');
+
       if (filtered.length === 0) {
-        console.log('⚠️ No new locations to show');
+        console.log('⚠️ No new locations to show after filtering');
         setLocations([]);
         setCurrentIndex(0);
         setLoading(false);
@@ -158,6 +168,7 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
 
       // Shuffle and take a chunk
       const shuffled = filtered.sort(() => Math.random() - 0.5).slice(0, 20);
+      console.log('🎲 Showing', shuffled.length, 'shuffled locations');
 
       setLocations(shuffled);
       setCurrentIndex(0);

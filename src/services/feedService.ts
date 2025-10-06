@@ -53,6 +53,8 @@ export function getFeedEventDisplay(eventType: string): {
   switch (eventType) {
     case 'saved_place':
       return { icon: '📍', action: 'saved', color: 'text-blue-500' };
+    case 'saved_location':
+      return { icon: '📌', action: 'saved', color: 'text-blue-500' };
     case 'new_post':
       return { icon: '📸', action: 'posted about', color: 'text-pink-500' };
     case 'new_comment':

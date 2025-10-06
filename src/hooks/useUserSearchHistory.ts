@@ -7,6 +7,7 @@ interface SearchHistoryItem {
   search_query: string;
   search_type: string;
   searched_at: string;
+  avatar_url?: string;
 }
 
 export const useUserSearchHistory = () => {
@@ -19,16 +20,43 @@ export const useUserSearchHistory = () => {
     
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Get unique user search history
+      const { data: historyData, error } = await supabase
         .from('search_history')
-        .select('*')
+        .select('id, search_query, search_type, searched_at')
         .eq('user_id', user.id)
         .eq('search_type', 'users')
         .order('searched_at', { ascending: false })
-        .limit(5);
+        .limit(10);
 
       if (error) throw error;
-      setSearchHistory(data || []);
+
+      // Get unique usernames only
+      const uniqueUsernames = Array.from(
+        new Set((historyData || []).map(h => h.search_query))
+      );
+
+      // Fetch profile data for each unique username
+      const enrichedHistory = await Promise.all(
+        uniqueUsernames.slice(0, 5).map(async (username) => {
+          const historyItem = historyData?.find(h => h.search_query === username);
+          if (!historyItem) return null;
+
+          // Get profile data
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('avatar_url')
+            .eq('username', username)
+            .single();
+
+          return {
+            ...historyItem,
+            avatar_url: profileData?.avatar_url || undefined
+          };
+        })
+      );
+
+      setSearchHistory(enrichedHistory.filter(Boolean) as SearchHistoryItem[]);
     } catch (error) {
       console.error('Error fetching search history:', error);
       setSearchHistory([]);

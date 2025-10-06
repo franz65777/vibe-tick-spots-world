@@ -268,40 +268,34 @@ const ExplorePage = () => {
                           Recent
                         </h3>
                         <div className="space-y-2">
-                          {searchHistory.map((item) => {
-                            // Find user data from search history
-                            const searchedUser = suggestions.find(u => u.username === item.search_query) || 
-                                                filteredUsers.find(u => u.username === item.search_query);
-                            
-                            return (
-                              <div
-                                key={item.id}
-                                onClick={() => handleSearch(item.search_query)}
-                                className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                              >
-                                <Avatar className="h-10 w-10 flex-shrink-0">
-                                  <AvatarImage src={searchedUser?.avatar_url || undefined} />
-                                  <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white">
-                                    {item.search_query[0]?.toUpperCase() || 'U'}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-foreground truncate">
-                                    {item.search_query}
-                                  </p>
-                                </div>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    deleteSearchHistoryItem(item.id);
-                                  }}
-                                  className="p-1 hover:bg-muted rounded-full"
-                                >
-                                  <X className="w-4 h-4 text-muted-foreground" />
-                                </button>
+                          {searchHistory.map((item) => (
+                            <div
+                              key={item.id}
+                              onClick={() => handleSearch(item.search_query)}
+                              className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                            >
+                              <Avatar className="h-10 w-10 flex-shrink-0">
+                                <AvatarImage src={item.avatar_url || undefined} />
+                                <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white">
+                                  {item.search_query[0]?.toUpperCase() || 'U'}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-foreground truncate">
+                                  {item.search_query}
+                                </p>
                               </div>
-                            );
-                          })}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteSearchHistoryItem(item.id);
+                                }}
+                                className="p-1 hover:bg-muted rounded-full"
+                              >
+                                <X className="w-4 h-4 text-muted-foreground" />
+                              </button>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )}
