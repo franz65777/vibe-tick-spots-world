@@ -24,15 +24,32 @@ const [showVisitedModal, setShowVisitedModal] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
 
   const fetchPosts = async () => {
-    if (place.id) {
-      const { data } = await supabase
-        .from('posts')
-        .select('*, profiles(*)')
-        .eq('location_id', place.id)
-        .order('created_at', { ascending: false })
-        .limit(3);
+    try {
+      // First, try to find location by google_place_id
+      let locationId = place.id;
       
-      if (data) setPosts(data);
+      if (!locationId && place.google_place_id) {
+        const { data: locationData } = await supabase
+          .from('locations')
+          .select('id')
+          .eq('google_place_id', place.google_place_id)
+          .maybeSingle();
+        
+        locationId = locationData?.id;
+      }
+      
+      if (locationId) {
+        const { data } = await supabase
+          .from('posts')
+          .select('*, profiles(*)')
+          .eq('location_id', locationId)
+          .order('created_at', { ascending: false })
+          .limit(10);
+        
+        if (data) setPosts(data);
+      }
+    } catch (error) {
+      console.error('Error fetching posts:', error);
     }
   };
 

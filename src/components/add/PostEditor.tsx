@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { MediaSelector } from './MediaSelector';
 import { LocationSelector } from './LocationSelector';
+import { UserTagSelector } from './UserTagSelector';
 import { useNavigate } from 'react-router-dom';
 
 interface PostEditorProps {
@@ -12,12 +13,15 @@ interface PostEditorProps {
   caption: string;
   selectedLocation: any;
   selectedCategory: string;
+  taggedUsers: any[];
   isUploading: boolean;
   onFilesSelect: (files: FileList) => void;
   onRemoveFile: (index: number) => void;
   onCaptionChange: (caption: string) => void;
   onLocationSelect: (location: any) => void;
   onCategoryChange: (category: string) => void;
+  onUserTagged: (user: any) => void;
+  onUserRemoved: (userId: string) => void;
   onSubmit: () => void;
 }
 
@@ -27,12 +31,15 @@ export const PostEditor: React.FC<PostEditorProps> = ({
   caption,
   selectedLocation,
   selectedCategory,
+  taggedUsers,
   isUploading,
   onFilesSelect,
   onRemoveFile,
   onCaptionChange,
   onLocationSelect,
   onCategoryChange,
+  onUserTagged,
+  onUserRemoved,
   onSubmit
 }) => {
   const navigate = useNavigate();
@@ -87,9 +94,17 @@ export const PostEditor: React.FC<PostEditorProps> = ({
               value={caption}
               onChange={(e) => onCaptionChange(e.target.value)}
               placeholder="Write a caption..."
-              className="min-h-[100px] resize-none border-border"
+              className="min-h-[60px] resize-none border-border text-sm"
+              rows={2}
             />
           </div>
+
+          {/* User Tag Selector */}
+          <UserTagSelector
+            taggedUsers={taggedUsers}
+            onUserTagged={onUserTagged}
+            onUserRemoved={onUserRemoved}
+          />
 
           {/* Location Selector - MANDATORY */}
           <LocationSelector
@@ -106,7 +121,8 @@ export const PostEditor: React.FC<PostEditorProps> = ({
         <Button
           onClick={onSubmit}
           disabled={!canSubmit}
-          className="w-full h-12"
+          variant="default"
+          className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl shadow-sm"
           size="lg"
         >
           {isUploading ? (
@@ -117,7 +133,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({
           ) : (
             <>
               <Send className="w-5 h-5 mr-2" />
-              Share Post
+              Share
             </>
           )}
         </Button>

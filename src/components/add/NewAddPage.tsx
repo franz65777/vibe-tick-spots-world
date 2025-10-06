@@ -14,6 +14,7 @@ export const NewAddPage = () => {
   const [caption, setCaption] = useState('');
   const [selectedLocation, setSelectedLocation] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [taggedUsers, setTaggedUsers] = useState<any[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
   const handleFilesSelect = (files: FileList) => {
@@ -181,6 +182,14 @@ export const NewAddPage = () => {
     }
   };
 
+  const handleUserTagged = (user: any) => {
+    setTaggedUsers(prev => [...prev, user]);
+  };
+
+  const handleUserRemoved = (userId: string) => {
+    setTaggedUsers(prev => prev.filter(u => u.id !== userId));
+  };
+
   return (
     <PostEditor
       selectedFiles={selectedFiles}
@@ -188,12 +197,15 @@ export const NewAddPage = () => {
       caption={caption}
       selectedLocation={selectedLocation}
       selectedCategory={selectedCategory}
+      taggedUsers={taggedUsers}
       isUploading={isUploading}
       onFilesSelect={handleFilesSelect}
       onRemoveFile={handleRemoveFile}
       onCaptionChange={setCaption}
       onLocationSelect={handleLocationSelect}
       onCategoryChange={setSelectedCategory}
+      onUserTagged={handleUserTagged}
+      onUserRemoved={handleUserRemoved}
       onSubmit={handleSubmit}
     />
   );
