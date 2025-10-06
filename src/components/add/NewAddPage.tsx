@@ -155,6 +155,7 @@ export const NewAddPage = () => {
           location_id: locationId,
           caption: caption.trim() || null,
           media_urls: mediaUrls,
+          tagged_users: taggedUsers.map(u => u.id),
         })
         .select()
         .single();

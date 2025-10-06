@@ -14,6 +14,7 @@ interface CreatePostData {
     longitude: number;
     types: string[];
   };
+  taggedUsers?: string[]; // Array of user IDs
 }
 
 export const usePostCreation = () => {
@@ -21,7 +22,7 @@ export const usePostCreation = () => {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  const createPost = async ({ caption, files, location }: CreatePostData) => {
+  const createPost = async ({ caption, files, location, taggedUsers }: CreatePostData) => {
     if (!user) throw new Error('User not authenticated');
     
     setUploading(true);
@@ -149,6 +150,7 @@ export const usePostCreation = () => {
           location_id: locationId, // CRITICAL: This must match the location ID
           caption: caption || null,
           media_urls: mediaUrls,
+          tagged_users: taggedUsers || [],
         })
         .select('id, location_id')
         .single();
