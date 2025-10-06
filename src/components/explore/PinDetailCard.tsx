@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Navigation, Heart, Bookmark, MessageSquare, X, Share2, ChevronUp } from 'lucide-react';
+import { MapPin, Navigation, Heart, Bookmark, MessageSquare, ChevronLeft, Share2, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -42,7 +42,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
       }
       
       if (locationId) {
-        const limit = 6;
+        const limit = 10;
         const offset = (page - 1) * limit;
         
         const { data: postRows, error } = await supabase
@@ -101,8 +101,11 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
     };
 
     checkInteractions();
-    fetchPosts();
-  }, [place.id]);
+    // Only fetch posts when drawer is expanded
+    if (drawerState === 'expanded' && posts.length === 0) {
+      fetchPosts();
+    }
+  }, [place.id, drawerState]);
 
   const handleSaveToggle = async () => {
     setLoading(true);
@@ -146,93 +149,87 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
         modal={false}
         onOpenChange={(open) => { if (!open) onClose(); }}
       >
-        <DrawerContent className={`transition-all duration-300 ${drawerState === 'minimized' ? 'h-[220px]' : 'h-[85vh]'}`}>
-          {/* Header with location info */}
+        <DrawerContent className={`transition-all duration-300 ${drawerState === 'minimized' ? 'h-[200px]' : 'h-[85vh]'}`}>
+          {/* Drag Handle */}
           <div className="bg-background px-4 pt-3 pb-2">
             <button 
               onClick={() => setDrawerState(prev => prev === 'minimized' ? 'expanded' : 'minimized')}
-              className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-4 cursor-pointer hover:bg-muted-foreground/20 transition-colors"
+              className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-3 cursor-pointer hover:bg-muted-foreground/20 transition-colors"
             />
-            <div className="flex items-start gap-3">
-              <div className="flex-1">
-                <h3 className="font-bold text-xl text-foreground">{place.name}</h3>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                  <MapPin className="w-4 h-4" />
-                  <span>{place.city || place.address?.split(',')[1]?.trim() || 'Unknown location'}</span>
-                  <span>•</span>
-                  <span className="text-xs">{posts.length} posts</span>
-                </div>
-              </div>
+          </div>
+
+          {/* Header with location info */}
+          <div className="bg-background px-4 pb-3">
+            <div className="flex items-start justify-between gap-3">
               <Button
                 onClick={onClose}
                 variant="ghost"
                 size="icon"
-                className="rounded-full -mt-1"
+                className="rounded-full -ml-2 mt-1"
               >
-                <X className="w-5 h-5" />
+                <ChevronLeft className="w-5 h-5" />
               </Button>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-xl text-foreground truncate">{place.name}</h3>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                  <MapPin className="w-4 h-4 flex-shrink-0" />
+                  <span className="truncate">{place.city || place.address?.split(',')[1]?.trim() || 'Unknown location'}</span>
+                  <span>•</span>
+                  <span className="text-xs whitespace-nowrap">{posts.length} posts</span>
+                </div>
+              </div>
+              <div className="text-right flex-shrink-0 mt-1">
+                <div className="text-2xl font-bold text-foreground">{posts.length}</div>
+                <div className="text-xs text-muted-foreground">posts</div>
+              </div>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="bg-background px-4 py-3 border-y border-border">
-            <div className="flex items-center gap-2">
+          <div className="bg-background px-4 pb-4">
+            <div className="grid grid-cols-4 gap-2">
               <Button
                 onClick={handleSaveToggle}
                 disabled={loading}
                 size="sm"
-                variant={isSaved ? "default" : "secondary"}
-                className="flex-1"
+                variant="secondary"
+                className="flex-col h-auto py-3 gap-1 rounded-2xl"
               >
-                <Bookmark className={`w-4 h-4 mr-1 ${isSaved ? 'fill-current' : ''}`} />
-                {isSaved ? 'Saved' : 'Save'}
+                <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
+                <span className="text-xs">{isSaved ? 'Saved' : 'Save'}</span>
               </Button>
 
               <Button
                 onClick={() => setShowVisitedModal(true)}
                 size="sm"
                 variant="secondary"
-                className="flex-1"
+                className="flex-col h-auto py-3 gap-1 rounded-2xl"
               >
-                <Heart className="w-4 h-4 mr-1" />
-                Visited
+                <Heart className="w-5 h-5" />
+                <span className="text-xs">Visited</span>
               </Button>
 
               <Button
                 onClick={handleDirections}
                 size="sm"
                 variant="secondary"
-                className="flex-1"
+                className="flex-col h-auto py-3 gap-1 rounded-2xl"
               >
-                <Navigation className="w-4 h-4 mr-1" />
-                Directions
+                <Navigation className="w-5 h-5" />
+                <span className="text-xs">Directions</span>
               </Button>
 
               <Button
                 onClick={() => setShareOpen(true)}
                 size="sm"
                 variant="secondary"
-                className="flex-1"
+                className="flex-col h-auto py-3 gap-1 rounded-2xl"
               >
-                <Share2 className="w-4 h-4 mr-1" />
-                Share
+                <Share2 className="w-5 h-5" />
+                <span className="text-xs">Share</span>
               </Button>
             </div>
           </div>
-
-
-          {/* Expand hint when minimized */}
-          {drawerState === 'minimized' && posts.length > 0 && (
-            <div className="px-4 py-2 bg-background border-t border-border">
-              <button
-                onClick={() => setDrawerState('expanded')}
-                className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-2"
-              >
-                <ChevronUp className="w-4 h-4" />
-                <span>Swipe up to view {posts.length} posts</span>
-              </button>
-            </div>
-          )}
 
           {/* Community Posts - Vertical Grid (only shown when expanded) */}
           {drawerState === 'expanded' && (

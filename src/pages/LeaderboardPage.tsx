@@ -15,25 +15,17 @@ const LeaderboardPage = () => {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const { champions, loading } = useCommunityChampions(filterCity === 'all' ? undefined : filterCity);
 
-  const getRankIcon = (rank: number) => {
-    switch (rank) {
-      case 1: return <Trophy className="w-6 h-6 text-yellow-500" />;
-      case 2: return <Medal className="w-6 h-6 text-gray-400" />;
-      case 3: return <Award className="w-6 h-6 text-amber-600" />;
-      default: return (
-        <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-sm font-bold text-muted-foreground">
-          {rank}
-        </div>
-      );
-    }
+  const getRankBadge = (rank: number) => {
+    const badges = ['🥇', '🥈', '🥉'];
+    return badges[rank - 1] || `#${rank}`;
   };
 
-  const getRankGradient = (rank: number) => {
+  const getRankStyle = (rank: number) => {
     switch (rank) {
-      case 1: return 'from-yellow-100 to-amber-100 border-yellow-300';
-      case 2: return 'from-gray-100 to-slate-100 border-gray-300';
-      case 3: return 'from-amber-100 to-orange-100 border-amber-300';
-      default: return 'from-background to-muted border-border';
+      case 1: return 'bg-gradient-to-br from-yellow-50 to-amber-50 border-yellow-200 shadow-sm';
+      case 2: return 'bg-gradient-to-br from-gray-50 to-slate-50 border-gray-200 shadow-sm';
+      case 3: return 'bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200 shadow-sm';
+      default: return 'bg-card border-border';
     }
   };
 
@@ -41,13 +33,17 @@ const LeaderboardPage = () => {
     <AuthenticatedLayout>
       <div className="min-h-screen bg-background pb-20">
         {/* Header */}
-        <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground p-6">
+        <div className="bg-gradient-to-br from-primary via-primary to-accent text-primary-foreground p-6">
           <div className="max-w-4xl mx-auto">
             <div className="flex items-center gap-3 mb-2">
-              <Trophy className="w-8 h-8" />
-              <h1 className="text-3xl font-bold">Top Explorers</h1>
+              <div className="w-12 h-12 rounded-2xl bg-primary-foreground/10 backdrop-blur-sm flex items-center justify-center">
+                <Trophy className="w-7 h-7" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold">Leaderboard</h1>
+                <p className="text-primary-foreground/80 text-sm mt-0.5">Top explorers this week</p>
+              </div>
             </div>
-            <p className="text-primary-foreground/90">See who's leading the way in exploration!</p>
           </div>
         </div>
 
@@ -116,32 +112,31 @@ const LeaderboardPage = () => {
               <Card
                 key={champion.id}
                 onClick={() => navigate(`/profile/${champion.id}`)}
-                className={`cursor-pointer transition-all hover:scale-[1.02] hover:shadow-lg bg-gradient-to-r ${getRankGradient(champion.rank)}`}
+                className={`cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md ${getRankStyle(champion.rank)}`}
               >
                 <div className="p-4">
                   <div className="flex items-center gap-4">
-                    {/* Rank */}
-                    <div className="flex-shrink-0">
-                      {getRankIcon(champion.rank)}
+                    {/* Rank Badge */}
+                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-background border border-border flex items-center justify-center text-base font-bold shadow-sm">
+                      {getRankBadge(champion.rank)}
                     </div>
 
                     {/* Avatar */}
-                    <Avatar className="w-14 h-14 border-2 border-background shadow">
+                    <Avatar className="w-14 h-14 border-2 border-background shadow-sm">
                       <AvatarImage src={champion.avatar_url} />
-                      <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground font-bold">
+                      <AvatarFallback className="bg-gradient-to-br from-primary/80 to-accent/80 text-primary-foreground font-bold text-lg">
                         {champion.username?.charAt(0).toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
 
                     {/* User Info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-bold text-lg truncate">@{champion.username}</h3>
-                        {champion.rank <= 3 && <span className="text-lg">🏆</span>}
-                      </div>
+                      <h3 className="font-bold text-lg text-foreground truncate mb-1">
+                        @{champion.username}
+                      </h3>
                       <div className="flex items-center gap-3 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1">
-                          <MapPin className="w-3 h-3" />
+                          <MapPin className="w-3.5 h-3.5" />
                           {champion.posts_count} places
                         </span>
                         <span>•</span>
@@ -149,11 +144,18 @@ const LeaderboardPage = () => {
                       </div>
                     </div>
 
-                    {/* Stats */}
+                    {/* Weekly Stats */}
                     <div className="text-right flex-shrink-0">
-                      <div className="text-2xl font-bold text-primary">{champion.weekly_likes}</div>
-                      <div className="text-xs text-muted-foreground">likes this week</div>
-                      <Badge variant="secondary" className="mt-1">Level {Math.floor(champion.posts_count / 10) + 1}</Badge>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="text-2xl font-bold text-primary">{champion.weekly_likes}</span>
+                        <span className="text-xl">❤️</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground font-medium">this week</div>
+                      {champion.rank <= 3 && (
+                        <Badge variant="secondary" className="mt-2 text-xs">
+                          Level {Math.floor(champion.posts_count / 10) + 1}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -164,12 +166,19 @@ const LeaderboardPage = () => {
 
         {/* Bottom CTA */}
         <div className="max-w-4xl mx-auto px-4 mt-8">
-          <Card className="p-6 text-center bg-gradient-to-r from-primary/10 to-primary/5">
-            <h3 className="text-lg font-semibold mb-2">Want to join the leaderboard?</h3>
-            <p className="text-sm text-muted-foreground mb-4">
+          <Card className="p-6 text-center bg-gradient-to-br from-primary/5 via-accent/5 to-primary/5 border-border">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent mx-auto mb-4 flex items-center justify-center">
+              <Trophy className="w-8 h-8 text-primary-foreground" />
+            </div>
+            <h3 className="text-xl font-bold mb-2 text-foreground">Want to join the leaderboard?</h3>
+            <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
               Explore amazing places, share your discoveries, and climb the ranks!
             </p>
-            <Button onClick={() => navigate('/explore')} size="lg">
+            <Button 
+              onClick={() => navigate('/explore')} 
+              size="lg"
+              className="rounded-xl font-semibold"
+            >
               Start Exploring
             </Button>
           </Card>
