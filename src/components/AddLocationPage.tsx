@@ -1,9 +1,8 @@
-
 import React from 'react';
-import InstagramStyleAddPage from './InstagramStyleAddPage';
+import { NewAddPage } from './add/NewAddPage';
 
 const AddLocationPage = () => {
-  return <InstagramStyleAddPage />;
+  return <NewAddPage />;
 };
 
 export default AddLocationPage;
