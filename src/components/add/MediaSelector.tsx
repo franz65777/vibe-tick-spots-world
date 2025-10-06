@@ -29,13 +29,13 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
   if (selectedFiles.length === 0) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6 relative overflow-hidden">
-        {/* Floating Category Icons - Arranged in Circle Around Photo */}
-        <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
-          <div className="relative w-80 h-80">
+        <div className="text-center space-y-6 max-w-sm relative z-10">
+          {/* Floating Category Icons - Arranged in Circle */}
+          <div className="relative w-full h-64 flex items-center justify-center mb-4">
             {categories.map((category, index) => {
-              // Position icons in a circle around the center (radius: 160px)
+              // Position icons in a circle around the center (radius: 120px)
               const angle = (index * 360) / categories.length;
-              const radius = 160;
+              const radius = 120;
               const radian = (angle * Math.PI) / 180;
               const x = Math.cos(radian) * radius;
               const y = Math.sin(radian) * radius;
@@ -44,24 +44,23 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
               return (
                 <div
                   key={category}
-                  className="absolute opacity-50 animate-bounce"
+                  className="absolute opacity-60 animate-bounce"
                   style={{
-                    top: `calc(50% + ${y}px - 2.5rem)`,
-                    left: `calc(50% + ${x}px - 2.5rem)`,
+                    top: `calc(50% + ${y}px - 1.75rem)`,
+                    left: `calc(50% + ${x}px - 1.75rem)`,
                     animationDelay: `${delay}s`,
                     animationDuration: '2.5s'
                   }}
                 >
-                  <CategoryIcon category={category} className="w-20 h-20 drop-shadow-lg" />
+                  <CategoryIcon category={category} className="w-14 h-14 drop-shadow-lg" />
                 </div>
               );
             })}
-          </div>
-        </div>
-
-        <div className="text-center space-y-6 max-w-sm relative z-10">
-          <div className="w-32 h-32 rounded-full bg-primary/10 flex items-center justify-center mx-auto shadow-lg">
-            <ImageIcon className="w-16 h-16 text-primary" />
+            
+            {/* Center Photo Icon */}
+            <div className="w-28 h-28 rounded-full bg-primary/10 flex items-center justify-center shadow-lg relative z-10">
+              <ImageIcon className="w-14 h-14 text-primary" />
+            </div>
           </div>
           
           <div className="space-y-2">

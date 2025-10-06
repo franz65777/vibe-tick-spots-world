@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import VisitedModal from './VisitedModal';
 import PinShareModal from './PinShareModal';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
+import PostDetailModal from './PostDetailModal';
 
 interface PinDetailCardProps {
   place: any;
@@ -24,6 +25,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
   const [postsLoading, setPostsLoading] = useState(false);
   const [postsPage, setPostsPage] = useState(1);
   const [hasMorePosts, setHasMorePosts] = useState(true);
+  const [selectedPost, setSelectedPost] = useState<any>(null);
 
   const fetchPosts = async (page: number = 1) => {
     setPostsLoading(true);
@@ -146,7 +148,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
         modal={false}
         onOpenChange={(open) => { if (!open) onClose(); }}
       >
-        <DrawerContent className="transition-all duration-300 h-auto max-h-[25vh] data-[state=open]:max-h-[90vh]">
+        <DrawerContent className="transition-all duration-300 h-auto max-h-[30vh]">
           {/* Draggable Header - Compact and Draggable */}
           <div className="bg-background px-4 pt-3 pb-2 cursor-grab active:cursor-grabbing">
             <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-3" />
@@ -217,7 +219,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
           </div>
 
           {/* Community Posts - Vertical Grid with Scrolling */}
-          <div className="px-4 py-4 bg-muted/30 flex-1 overflow-y-auto max-h-[60vh]">
+          <div className="px-4 py-4 bg-muted/30 flex-1 overflow-y-auto max-h-[calc(90vh-240px)]">
             <div className="flex items-center gap-2 mb-3">
               <MessageSquare className="w-4 h-4 text-muted-foreground" />
               <h4 className="font-semibold text-sm text-foreground">
@@ -229,9 +231,13 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                 <>
                   <div className="grid grid-cols-2 gap-3">
                     {posts.map((post) => (
-                      <div 
+                      <button
                         key={post.id} 
-                        className="relative rounded-xl overflow-hidden bg-card shadow-sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedPost(post);
+                        }}
+                        className="relative rounded-xl overflow-hidden bg-card shadow-sm hover:shadow-md transition-shadow"
                       >
                         {/* Post Image */}
                         {post.media_urls?.[0] && (
@@ -268,7 +274,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                             </p>
                           </div>
                         )}
-                      </div>
+                      </button>
                     ))}
                   </div>
                   
@@ -311,6 +317,14 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
         onClose={() => setShareOpen(false)}
         place={place}
       />
+
+      {selectedPost && (
+        <PostDetailModal
+          post={selectedPost}
+          isOpen={true}
+          onClose={() => setSelectedPost(null)}
+        />
+      )}
     </>
   );
 };

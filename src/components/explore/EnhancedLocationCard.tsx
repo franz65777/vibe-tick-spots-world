@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { MapPin, Heart, Bookmark, Users, MessageSquare, Share2 } from 'lucide-react';
+import { MapPin, Heart, Bookmark, Users, MessageSquare, Share2, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { locationInteractionService } from '@/services/locationInteractionService';
 import PinShareModal from './PinShareModal';
@@ -153,41 +153,47 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
         </div>
 
         {/* New Action Buttons Style */}
-        <div className="grid grid-cols-4 gap-1.5">
+        <div className="grid grid-cols-4 gap-2">
           <Button
             onClick={handleSaveToggle}
             disabled={loading}
-            variant="ghost"
             size="sm"
-            className={`h-auto py-2.5 rounded-2xl flex flex-col items-center gap-1 transition-all ${
-              isSaved 
-                ? 'bg-blue-50 text-blue-600 hover:bg-blue-100' 
-                : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-            }`}
+            variant="secondary"
+            className="flex-col h-auto py-3 gap-1 rounded-2xl"
           >
-            <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
-            <span className="text-[10px] font-medium">Saved</span>
+            <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
+            <span className="text-xs">{isSaved ? 'Saved' : 'Save'}</span>
           </Button>
 
           <Button
-            onClick={() => window.location.href = '/add'}
-            variant="ghost"
+            onClick={(e) => {
+              e.stopPropagation();
+              window.location.href = '/add';
+            }}
             size="sm"
-            className="h-auto py-2.5 rounded-2xl flex flex-col items-center gap-1 bg-gray-50 text-gray-700 hover:bg-gray-100 transition-all"
+            variant="secondary"
+            className="flex-col h-auto py-3 gap-1 rounded-2xl"
           >
-            <Heart className="w-4 h-4" />
-            <span className="text-[10px] font-medium">Visited</span>
+            <Heart className="w-5 h-5" />
+            <span className="text-xs">Visited</span>
           </Button>
 
           <Button
-            onClick={handleLikeToggle}
-            disabled={loading}
-            variant="ghost"
+            onClick={(e) => {
+              e.stopPropagation();
+              const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+              const coords = `${place.coordinates.lat},${place.coordinates.lng}`;
+              const url = isIOS 
+                ? `maps://maps.apple.com/?daddr=${coords}`
+                : `https://www.google.com/maps/dir/?api=1&destination=${coords}`;
+              window.open(url, '_blank');
+            }}
             size="sm"
-            className="h-auto py-2.5 rounded-2xl flex flex-col items-center gap-1 bg-gray-50 text-gray-700 hover:bg-gray-100 transition-all"
+            variant="secondary"
+            className="flex-col h-auto py-3 gap-1 rounded-2xl"
           >
-            <MapPin className="w-4 h-4" />
-            <span className="text-[10px] font-medium">Directions</span>
+            <Navigation className="w-5 h-5" />
+            <span className="text-xs">Directions</span>
           </Button>
 
           <Button
@@ -195,12 +201,12 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
               e.stopPropagation();
               setIsShareModalOpen(true);
             }}
-            variant="ghost"
             size="sm"
-            className="h-auto py-2.5 rounded-2xl flex flex-col items-center gap-1 bg-gray-50 text-gray-700 hover:bg-gray-100 transition-all"
+            variant="secondary"
+            className="flex-col h-auto py-3 gap-1 rounded-2xl"
           >
-            <Share2 className="w-4 h-4" />
-            <span className="text-[10px] font-medium">Share</span>
+            <Share2 className="w-5 h-5" />
+            <span className="text-xs">Share</span>
           </Button>
         </div>
       </div>
