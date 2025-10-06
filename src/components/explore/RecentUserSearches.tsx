@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import StoriesViewer from '@/components/StoriesViewer';
 
 interface RecentUser {
   id: string;
@@ -17,6 +18,8 @@ const RecentUserSearches = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [recentUsers, setRecentUsers] = useState<RecentUser[]>([]);
+  const [viewingStories, setViewingStories] = useState<any[]>([]);
+  const [viewingStoriesIndex, setViewingStoriesIndex] = useState(0);
 
   useEffect(() => {
     loadRecentSearches();
@@ -133,6 +136,52 @@ const RecentUserSearches = () => {
     navigate(`/profile/${userId}`);
   };
 
+  const handleAvatarClick = async (userId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    // Fetch user's stories
+    const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { data: stories } = await supabase
+      .from('stories')
+      .select(`
+        id,
+        user_id,
+        media_url,
+        media_type,
+        caption,
+        location_id,
+        location_name,
+        location_address,
+        created_at,
+        locations (
+          category
+        )
+      `)
+      .eq('user_id', userId)
+      .gt('created_at', dayAgo)
+      .order('created_at', { ascending: true });
+
+    if (stories && stories.length > 0) {
+      const formattedStories = stories.map((story: any) => ({
+        id: story.id,
+        userId: story.user_id,
+        userName: recentUsers.find(u => u.id === userId)?.username || 'User',
+        userAvatar: recentUsers.find(u => u.id === userId)?.avatar_url || '',
+        mediaUrl: story.media_url,
+        mediaType: story.media_type,
+        locationId: story.location_id,
+        locationName: story.location_name || '',
+        locationAddress: story.location_address || '',
+        locationCategory: story.locations?.category,
+        timestamp: story.created_at,
+        isViewed: false
+      }));
+      
+      setViewingStories(formattedStories);
+      setViewingStoriesIndex(0);
+    }
+  };
+
   if (recentUsers.length === 0) return null;
 
   return (
@@ -145,10 +194,12 @@ const RecentUserSearches = () => {
         {recentUsers.map((user) => (
           <div
             key={user.id}
-            onClick={() => handleUserClick(user.id)}
-            className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-xl cursor-pointer transition-colors group"
+            className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-xl transition-colors group"
           >
-            <div className="relative flex-shrink-0">
+            <div 
+              className="relative flex-shrink-0 cursor-pointer"
+              onClick={(e) => user.has_active_story ? handleAvatarClick(user.id, e) : handleUserClick(user.id)}
+            >
               <Avatar className="w-12 h-12">
                 <AvatarImage src={user.avatar_url || ''} />
                 <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-400 text-white">
@@ -160,7 +211,10 @@ const RecentUserSearches = () => {
               )}
             </div>
             
-            <div className="flex-1 min-w-0">
+            <div 
+              className="flex-1 min-w-0 cursor-pointer"
+              onClick={() => handleUserClick(user.id)}
+            >
               <p className="text-sm font-semibold text-gray-900 truncate">
                 {user.username}
               </p>
@@ -175,6 +229,16 @@ const RecentUserSearches = () => {
           </div>
         ))}
       </div>
+      
+      {/* Stories Viewer */}
+      {viewingStories.length > 0 && (
+        <StoriesViewer
+          stories={viewingStories}
+          initialStoryIndex={viewingStoriesIndex}
+          onClose={() => setViewingStories([])}
+          onStoryViewed={() => {}}
+        />
+      )}
     </div>
   );
 };
