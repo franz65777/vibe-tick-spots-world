@@ -45,6 +45,7 @@ export const useSavedPlaces = () => {
           .order('created_at', { ascending: false });
 
         if (savedPlacesError) console.error('Error fetching saved_places:', savedPlacesError);
+        console.log('useSavedPlaces: Found', savedPlacesData?.length || 0, 'saved_places entries');
 
         // Fetch from user_saved_locations table (internal locations)
         const { data: userSavedLocations, error: userSavedError } = await supabase
@@ -66,19 +67,19 @@ export const useSavedPlaces = () => {
           .order('created_at', { ascending: false });
 
         if (userSavedError) console.error('Error fetching user_saved_locations:', userSavedError);
+        console.log('useSavedPlaces: Found', userSavedLocations?.length || 0, 'user_saved_locations entries');
 
         // Combine and group by city
         const groupedByCity: SavedPlacesData = {};
         
-        // Add saved_places data (filter out low-quality entries)
+        // Add saved_places data (filter out only completely invalid entries)
         (savedPlacesData || []).forEach(place => {
-          // Skip entries with Unknown or missing data
-          if (!place.place_name || place.place_name === 'Unknown' || 
-              !place.city || place.city === 'Unknown') {
+          // Only skip if place_name is missing
+          if (!place.place_name) {
             return;
           }
           
-          const city = place.city;
+          const city = place.city || 'Unknown';
           if (!groupedByCity[city]) {
             groupedByCity[city] = [];
           }
@@ -99,13 +100,12 @@ export const useSavedPlaces = () => {
           const location = item.locations;
           if (!location) return;
           
-          // Skip entries with Unknown or missing data
-          if (!location.name || location.name === 'Unknown' || 
-              !location.city || location.city === 'Unknown') {
+          // Only skip if name is missing
+          if (!location.name) {
             return;
           }
           
-          const city = location.city;
+          const city = location.city || 'Unknown';
           if (!groupedByCity[city]) {
             groupedByCity[city] = [];
           }
@@ -134,23 +134,44 @@ export const useSavedPlaces = () => {
         });
 
         // Fetch posts count for all locations
-        const allLocationIds: string[] = [];
-        Object.values(groupedByCity).forEach(places => {
-          places.forEach(place => {
-            allLocationIds.push(place.id);
-          });
-        });
+        // We need to query by internal location UUIDs, not Google Place IDs
+        const internalLocationIds: string[] = [];
+        const googlePlaceIdMap = new Map<string, string>(); // Map google_place_id to display id
+        
+        for (const places of Object.values(groupedByCity)) {
+          for (const place of places) {
+            // Try to find the internal location ID
+            if (place.google_place_id) {
+              // Query to get internal location ID from google_place_id
+              const { data: locationData } = await supabase
+                .from('locations')
+                .select('id')
+                .eq('google_place_id', place.google_place_id)
+                .maybeSingle();
+              
+              if (locationData?.id) {
+                internalLocationIds.push(locationData.id);
+                googlePlaceIdMap.set(locationData.id, place.id);
+              }
+            } else if (place.id && place.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+              // It's already a UUID
+              internalLocationIds.push(place.id);
+              googlePlaceIdMap.set(place.id, place.id);
+            }
+          }
+        }
 
-        if (allLocationIds.length > 0) {
+        if (internalLocationIds.length > 0) {
           const { data: postsData } = await supabase
             .from('posts')
             .select('location_id, id')
-            .in('location_id', allLocationIds);
+            .in('location_id', internalLocationIds);
 
           // Count posts per location
           const postsMap = new Map<string, number>();
           postsData?.forEach(post => {
-            postsMap.set(post.location_id, (postsMap.get(post.location_id) || 0) + 1);
+            const displayId = googlePlaceIdMap.get(post.location_id) || post.location_id;
+            postsMap.set(displayId, (postsMap.get(displayId) || 0) + 1);
           });
 
           // Add posts count to each place
@@ -162,6 +183,8 @@ export const useSavedPlaces = () => {
         }
 
         setSavedPlaces(groupedByCity);
+        console.log('useSavedPlaces: Grouped into', Object.keys(groupedByCity).length, 'cities with total', 
+          Object.values(groupedByCity).reduce((sum, places) => sum + places.length, 0), 'places');
       } catch (error) {
         console.error('Error loading saved places:', error);
         setSavedPlaces({});
