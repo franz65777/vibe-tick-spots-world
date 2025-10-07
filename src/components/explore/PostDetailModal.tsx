@@ -150,23 +150,32 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
     try {
       const { data: likes, error } = await supabase
         .from('post_likes')
-        .select(`
-          user_id,
-          profiles:user_id (
-            username,
-            avatar_url
-          )
-        `)
+        .select('user_id')
         .eq('post_id', postId)
         .limit(10);
 
       if (error) throw error;
 
-      const likers = likes?.map((like: any) => ({
-        id: like.user_id,
-        username: like.profiles?.username || 'User',
-        avatar_url: like.profiles?.avatar_url || null,
-      })) || [];
+      if (!likes || likes.length === 0) {
+        setPostLikers([]);
+        return;
+      }
+
+      // Fetch profiles separately
+      const userIds = likes.map(like => like.user_id);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .in('id', userIds);
+
+      const likers = likes.map(like => {
+        const profile = profiles?.find(p => p.id === like.user_id);
+        return {
+          id: like.user_id,
+          username: profile?.username || 'User',
+          avatar_url: profile?.avatar_url || null,
+        };
+      });
 
       setPostLikers(likers);
     } catch (error) {

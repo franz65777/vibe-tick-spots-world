@@ -167,6 +167,7 @@ const PostsGrid = ({ userId }: PostsGridProps) => {
             setSelectedPostId(null);
             refetch(); // Refresh posts to show updated counts
           }}
+          source="profile"
         />
       )}
     </div>

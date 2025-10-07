@@ -15,30 +15,37 @@ export interface PostComment {
  */
 export async function getPostComments(postId: string): Promise<PostComment[]> {
   try {
-    const { data, error } = await supabase
+    const { data: comments, error } = await supabase
       .from('post_comments')
-      .select(`
-        id,
-        post_id,
-        user_id,
-        content,
-        created_at,
-        profiles!inner(username, avatar_url)
-      `)
+      .select('id, post_id, user_id, content, created_at')
       .eq('post_id', postId)
       .order('created_at', { ascending: true });
 
     if (error) throw error;
 
-    return (data || []).map((comment: any) => ({
-      id: comment.id,
-      post_id: comment.post_id,
-      user_id: comment.user_id,
-      content: comment.content,
-      created_at: comment.created_at,
-      username: comment.profiles?.username || 'User',
-      avatar_url: comment.profiles?.avatar_url || null,
-    }));
+    if (!comments || comments.length === 0) {
+      return [];
+    }
+
+    // Fetch profiles separately
+    const userIds = [...new Set(comments.map(c => c.user_id))];
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, username, avatar_url')
+      .in('id', userIds);
+
+    return comments.map(comment => {
+      const profile = profiles?.find(p => p.id === comment.user_id);
+      return {
+        id: comment.id,
+        post_id: comment.post_id,
+        user_id: comment.user_id,
+        content: comment.content,
+        created_at: comment.created_at,
+        username: profile?.username || 'User',
+        avatar_url: profile?.avatar_url || null,
+      };
+    });
   } catch (error) {
     console.error('Error fetching comments:', error);
     return [];

@@ -531,6 +531,7 @@ const LocationPostLibrary = ({
               postId={selectedPostId}
               isOpen={true}
               onClose={() => setSelectedPostId(null)}
+              source="pin"
             />
           )}
         </div>

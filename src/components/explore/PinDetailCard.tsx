@@ -389,6 +389,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
           postId={selectedPostId}
           isOpen={true}
           onClose={() => setSelectedPostId(null)}
+          source="pin"
         />
       )}
     </>
