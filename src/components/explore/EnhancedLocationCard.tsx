@@ -152,7 +152,7 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
           )}
         </div>
 
-        {/* New Action Buttons Style */}
+        {/* Action Buttons */}
         <div className="grid grid-cols-4 gap-2">
           <Button
             onClick={handleSaveToggle}
