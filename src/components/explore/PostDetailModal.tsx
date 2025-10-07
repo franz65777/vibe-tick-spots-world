@@ -52,7 +52,7 @@ interface PostData {
 export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { likedPosts, toggleLike, refetch: refetchEngagement } = usePostEngagement();
+  const { likedPosts, toggleLike } = usePostEngagement();
   const { savePlace, isPlaceSaved } = useSavedPlaces();
   const [post, setPost] = useState<PostData | null>(null);
   const [comments, setComments] = useState<PostComment[]>([]);
@@ -167,9 +167,12 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
 
     const success = await toggleLike(postId);
     if (success) {
+      // Update post data without full reload
+      setPost(prev => prev ? { ...prev, likes_count: newLikeCount } : null);
+      
       // Create notification for post owner
       if (post.user_id !== user.id && !isCurrentlyLiked) {
-        await supabase.from('notifications').insert({
+        supabase.from('notifications').insert({
           user_id: post.user_id,
           type: 'like',
           title: 'New like on your post',
@@ -182,9 +185,9 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
           },
         });
       }
-      await loadPostData();
-      await refetchEngagement();
-      await loadPostLikers();
+      
+      // Reload likers only
+      loadPostLikers();
       setOptimisticLikeCount(null);
     } else {
       setOptimisticLikeCount(null);
@@ -195,34 +198,37 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
     e.preventDefault();
     if (!user || !newComment.trim() || !post) return;
 
+    const commentContent = newComment;
+    const newCount = (post.comments_count || 0) + 1;
+    
     // Optimistic update
-    setOptimisticCommentCount((post.comments_count || 0) + 1);
+    setOptimisticCommentCount(newCount);
+    setNewComment('');
     
     setSubmittingComment(true);
     try {
-      const comment = await addPostComment(postId, user.id, newComment);
+      const comment = await addPostComment(postId, user.id, commentContent);
       if (comment) {
         setComments([...comments, comment]);
-        setNewComment('');
+        setPost(prev => prev ? { ...prev, comments_count: newCount } : null);
         
         // Create notification for post owner
         if (post.user_id !== user.id) {
-          await supabase.from('notifications').insert({
+          supabase.from('notifications').insert({
             user_id: post.user_id,
             type: 'comment',
             title: 'New comment on your post',
-            message: `${user.user_metadata?.username || 'Someone'} commented: "${newComment.slice(0, 50)}${newComment.length > 50 ? '...' : ''}"`,
+            message: `${user.user_metadata?.username || 'Someone'} commented: "${commentContent.slice(0, 50)}${commentContent.length > 50 ? '...' : ''}"`,
             data: {
               post_id: postId,
               user_id: user.id,
               user_name: user.user_metadata?.username,
               user_avatar: user.user_metadata?.avatar_url,
-              comment: newComment,
+              comment: commentContent,
             },
           });
         }
         
-        await loadPostData();
         setOptimisticCommentCount(null);
         toast.success('Comment added');
       }
@@ -230,6 +236,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
       console.error('Error adding comment:', error);
       toast.error('Failed to add comment');
       setOptimisticCommentCount(null);
+      setNewComment(commentContent);
     } finally {
       setSubmittingComment(false);
     }
@@ -300,16 +307,14 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
   const handleLocationClick = () => {
     if (post?.locations) {
       onClose();
-      navigate('/explore', { 
+      // Navigate to home page with map centered on this location
+      navigate('/', { 
         state: { 
-          selectedLocation: {
-            id: post.locations.id,
-            google_place_id: post.locations.google_place_id,
-            name: post.locations.name,
-            category: post.locations.category,
-            city: post.locations.city,
-            latitude: post.locations.latitude,
-            longitude: post.locations.longitude
+          centerMap: {
+            lat: post.locations.latitude,
+            lng: post.locations.longitude,
+            placeId: post.locations.google_place_id,
+            name: post.locations.name
           }
         } 
       });
@@ -318,13 +323,13 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
 
   return (
     <div className="fixed inset-0 bg-black/95 z-[60] flex items-center justify-center p-0">
-      <div className="relative bg-background w-full h-full max-w-5xl max-h-[100vh] md:max-h-[95vh] flex flex-col md:flex-row overflow-hidden md:rounded-lg">
+      <div className="relative bg-background w-full h-full max-w-2xl md:max-w-4xl max-h-[100vh] md:max-h-[95vh] flex flex-col overflow-hidden md:rounded-lg">
         {/* Close button */}
         <Button
           variant="ghost"
           size="icon"
           onClick={onClose}
-          className="absolute top-2 right-2 z-10 text-white hover:bg-white/10 rounded-full"
+          className="absolute top-2 right-2 z-10 hover:bg-muted rounded-full"
         >
           <X className="w-6 h-6" />
         </Button>
@@ -335,8 +340,29 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
           </div>
         ) : post ? (
           <>
-            {/* Media Section - Left Side */}
-            <div className="relative w-full md:w-[60%] bg-black flex items-center justify-center">
+            {/* Header - Avatar, Username, Location */}
+            <div className="px-4 py-3 border-b border-border flex items-center gap-3 bg-background flex-shrink-0">
+              <Avatar className="w-9 h-9 flex-shrink-0">
+                <AvatarImage src={post.profiles.avatar_url || undefined} />
+                <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
+                  {post.profiles.username[0].toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm truncate">{post.profiles.username}</p>
+                {post.locations && (
+                  <button
+                    onClick={handleLocationClick}
+                    className="text-xs text-muted-foreground hover:underline truncate block w-full text-left"
+                  >
+                    {post.locations.name}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Media Section */}
+            <div className="relative bg-black flex items-center justify-center flex-shrink-0" style={{ maxHeight: '50vh' }}>
               {post.media_urls[currentMediaIndex]?.endsWith('.mp4') || 
                post.media_urls[currentMediaIndex]?.endsWith('.mov') ? (
                 <video
@@ -384,7 +410,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
                         onClick={() => setCurrentMediaIndex(index)}
                         className={`rounded-full transition-all ${
                           index === currentMediaIndex 
-                            ? 'w-2 h-2 bg-blue-500' 
+                            ? 'w-2 h-2 bg-primary' 
                             : 'w-1.5 h-1.5 bg-white/60'
                         }`}
                       />
@@ -394,185 +420,159 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
               )}
             </div>
 
-            {/* Details Section - Right Side */}
-            <div className="w-full md:w-[40%] flex flex-col bg-background">
-              {/* User header at the top with location */}
-              <div className="px-4 py-3 border-b border-border flex items-center gap-3">
-                <Avatar className="w-8 h-8 flex-shrink-0">
-                  <AvatarImage src={post.profiles.avatar_url || undefined} />
-                  <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
-                    {post.profiles.username[0].toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm truncate">{post.profiles.username}</p>
-                  {post.locations && (
-                    <button
-                      onClick={handleLocationClick}
-                      className="text-xs text-muted-foreground hover:underline truncate block w-full text-left"
-                    >
-                      {post.locations.name}
-                    </button>
-                  )}
+            {/* Action buttons - RIGHT below media */}
+            <div className="px-4 py-3 border-b border-border bg-background flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  {/* Like button */}
+                  <button
+                    onClick={handleLike}
+                    disabled={!user}
+                    className="flex items-center gap-1.5 hover:opacity-60 transition-opacity disabled:opacity-50"
+                  >
+                    <Heart 
+                      className={`w-6 h-6 transition-colors ${likedPosts.has(postId) ? 'fill-red-500 text-red-500' : ''}`} 
+                    />
+                  </button>
+                  
+                  {/* Comment button */}
+                  <button
+                    onClick={() => document.getElementById('comment-input')?.focus()}
+                    className="flex items-center gap-1.5 hover:opacity-60 transition-opacity"
+                  >
+                    <MessageCircle className="w-6 h-6" />
+                  </button>
+                  
+                  {/* Share button */}
+                  <button
+                    onClick={handleShare}
+                    className="flex items-center gap-1.5 hover:opacity-60 transition-opacity"
+                  >
+                    <Send className="w-6 h-6" />
+                  </button>
                 </div>
+                
+                {/* Pin button - right aligned */}
+                {post.locations && (
+                  <button
+                    onClick={handlePinLocation}
+                    disabled={isLocationSaved || savingLocation}
+                    className={`hover:opacity-60 transition-opacity ${
+                      isLocationSaved ? 'cursor-default opacity-100' : 'cursor-pointer'
+                    }`}
+                  >
+                    <MapPin 
+                      className={`w-6 h-6 ${isLocationSaved ? 'fill-current' : ''}`}
+                    />
+                  </button>
+                )}
               </div>
+            </div>
 
-              {/* Scrollable Caption & Comments */}
-              <ScrollArea className="flex-1 px-4 py-3">
-                <div className="space-y-4">
-                  {/* Caption */}
-                  {post.caption && (
-                    <div className="flex gap-3">
-                      <Avatar className="w-8 h-8 flex-shrink-0">
-                        <AvatarImage src={post.profiles.avatar_url || undefined} />
-                        <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                          {post.profiles.username[0].toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <p className="text-sm">
-                          <span className="font-semibold mr-2">{post.profiles.username}</span>
-                          {post.caption}
-                        </p>
-                      </div>
+            {/* Like count and timestamp */}
+            <div className="px-4 py-2 bg-background flex-shrink-0">
+              {displayLikeCount > 0 && (
+                <div className="flex items-center gap-2 mb-1">
+                  {postLikers.length > 0 && (
+                    <div className="flex -space-x-2">
+                      {postLikers.slice(0, 3).map((liker) => (
+                        <Avatar key={liker.id} className="w-5 h-5 border-2 border-background">
+                          <AvatarImage src={liker.avatar_url || undefined} />
+                          <AvatarFallback className="bg-muted text-[10px]">
+                            {liker.username[0].toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      ))}
                     </div>
                   )}
-                  
-                  {/* Comments */}
-                  {comments.length === 0 && !post.caption && (
-                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                      <MessageCircle className="w-12 h-12 text-muted-foreground/20 mb-2" />
-                      <p className="text-sm text-muted-foreground">No comments yet</p>
-                      <p className="text-xs text-muted-foreground mt-1">Be the first to comment</p>
-                    </div>
-                  )}
-                  
-                  {comments.map((comment) => (
-                    <div key={comment.id} className="flex gap-3">
-                      <Avatar className="w-8 h-8 flex-shrink-0">
-                        <AvatarImage src={comment.avatar_url || undefined} />
-                        <AvatarFallback className="bg-muted text-xs">
-                          {comment.username?.[0]?.toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm">
-                          <span className="font-semibold mr-2">{comment.username}</span>
-                          {comment.content}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                  <p className="text-sm">
+                    <span className="font-semibold">{displayLikeCount.toLocaleString()}</span>
+                    {displayLikeCount === 1 ? ' like' : ' likes'}
+                  </p>
                 </div>
-              </ScrollArea>
+              )}
 
-              {/* Bottom section with actions */}
-              <div className="border-t border-border">
-                {/* Action buttons row */}
-                <div className="px-4 py-3 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <button
-                      onClick={handleLike}
-                      className="flex items-center gap-1.5 hover:opacity-60 transition-opacity"
-                    >
-                      <Heart 
-                        className={`w-6 h-6 ${likedPosts.has(postId) ? 'fill-red-500 text-red-500' : ''}`} 
-                      />
-                      {displayLikeCount > 0 && (
-                        <span className="text-sm font-medium">{displayLikeCount}</span>
-                      )}
-                    </button>
-                    <button className="flex items-center gap-1.5 hover:opacity-60 transition-opacity">
-                      <MessageCircle className="w-6 h-6" />
-                      {displayCommentCount > 0 && (
-                        <span className="text-sm font-medium">{displayCommentCount}</span>
-                      )}
-                    </button>
-                    <button 
-                      onClick={handleShare}
-                      className="hover:opacity-60 transition-opacity"
-                    >
-                      <Send className="w-6 h-6" />
-                    </button>
-                  </div>
-                  {post.locations && (
-                    <button
-                      onClick={isLocationSaved ? undefined : handlePinLocation}
-                      disabled={savingLocation || isLocationSaved}
-                      className={`transition-opacity ${
-                        isLocationSaved ? 'cursor-default opacity-100' : 'hover:opacity-60'
-                      }`}
-                    >
-                      <MapPin 
-                        className={`w-6 h-6 ${
-                          isLocationSaved 
-                            ? 'fill-current' 
-                            : ''
-                        }`} 
-                      />
-                    </button>
-                  )}
-                </div>
+              <p className="text-xs text-muted-foreground uppercase">
+                {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+              </p>
+            </div>
 
-                {/* Like count with avatars */}
-                {displayLikeCount > 0 && postLikers.length > 0 && (
-                  <div className="px-4 pb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="flex -space-x-2">
-                        {postLikers.slice(0, 3).map((liker) => (
-                          <Avatar key={liker.id} className="w-5 h-5 border-2 border-background">
-                            <AvatarImage src={liker.avatar_url || undefined} />
-                            <AvatarFallback className="bg-muted text-[10px]">
-                              {liker.username[0].toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                        ))}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Liked by <span className="font-semibold text-foreground">{postLikers[0].username}</span>
-                        {postLikers.length > 1 && ` and ${displayLikeCount - 1} ${displayLikeCount - 1 === 1 ? 'other' : 'others'}`}
+            {/* Scrollable Caption & Comments */}
+            <ScrollArea className="flex-1 px-4 py-3 bg-background">
+              <div className="space-y-4">
+                {/* Caption */}
+                {post.caption && (
+                  <div className="flex gap-3">
+                    <Avatar className="w-8 h-8 flex-shrink-0">
+                      <AvatarImage src={post.profiles.avatar_url || undefined} />
+                      <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                        {post.profiles.username[0].toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <p className="text-sm">
+                        <span className="font-semibold mr-2">{post.profiles.username}</span>
+                        {post.caption}
                       </p>
                     </div>
                   </div>
                 )}
-
-                {/* Timestamp */}
-                <div className="px-4 pb-3">
-                  <p className="text-xs text-muted-foreground uppercase">
-                    {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-                  </p>
-                </div>
-
-                {/* Comment input */}
-                <div className="border-t border-border px-4 py-3">
-                  <form onSubmit={handleCommentSubmit} className="flex gap-2">
-                    <Textarea
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      placeholder="Add a comment..."
-                      className="min-h-[40px] max-h-[80px] resize-none border-0 focus-visible:ring-0 p-0 text-sm"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleCommentSubmit(e);
-                        }
-                      }}
-                    />
-                    <Button 
-                      type="submit" 
-                      disabled={!newComment.trim() || submittingComment}
-                      variant="ghost"
-                      className="text-primary font-semibold hover:text-primary/80 disabled:opacity-40"
-                    >
-                      Post
-                    </Button>
-                  </form>
-                </div>
+                
+                {/* Comments */}
+                {comments.length === 0 && !post.caption && (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <MessageCircle className="w-12 h-12 text-muted-foreground/20 mb-2" />
+                    <p className="text-sm text-muted-foreground">No comments yet</p>
+                    <p className="text-xs text-muted-foreground mt-1">Be the first to comment</p>
+                  </div>
+                )}
+                
+                {comments.map((comment) => (
+                  <div key={comment.id} className="flex gap-3">
+                    <Avatar className="w-8 h-8 flex-shrink-0">
+                      <AvatarImage src={comment.avatar_url || undefined} />
+                      <AvatarFallback className="bg-muted text-xs">
+                        {comment.username?.[0]?.toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm">
+                        <span className="font-semibold mr-2">{comment.username}</span>
+                        {comment.content}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
+            </ScrollArea>
+
+            {/* Comment input form - at the bottom */}
+            <form onSubmit={handleCommentSubmit} className="px-4 py-3 border-t border-border bg-background flex-shrink-0">
+              <div className="flex gap-3 items-center">
+                <Textarea
+                  id="comment-input"
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="Add a comment..."
+                  disabled={!user || submittingComment}
+                  className="flex-1 min-h-0 resize-none border-none focus-visible:ring-0 px-0"
+                  rows={1}
+                />
+                {newComment.trim() && (
+                  <Button 
+                    type="submit" 
+                    size="sm"
+                    disabled={submittingComment || !user}
+                    className="font-semibold"
+                  >
+                    {submittingComment ? 'Posting...' : 'Post'}
+                  </Button>
+                )}
+              </div>
+            </form>
           </>
         ) : (
           <div className="flex flex-col items-center justify-center w-full h-full gap-2">
