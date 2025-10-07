@@ -52,12 +52,12 @@ export const useNotifications = () => {
       
       // Get muted users
       const { data: mutedSettings } = await supabase
-        .from('user_notification_settings')
-        .select('business_id')
-        .eq('user_id', user.id)
+        .from('user_mutes')
+        .select('muted_user_id')
+        .eq('muter_id', user.id)
         .eq('is_muted', true);
       
-      const mutedUserIds = mutedSettings?.map(s => s.business_id).filter(Boolean) || [];
+      const mutedUserIds = mutedSettings?.map(s => s.muted_user_id).filter(Boolean) || [];
       
       const { data, error } = await supabase
         .from('notifications')
@@ -114,11 +114,11 @@ export const useNotifications = () => {
             const notifUserId = payload.new.data?.user_id;
             if (notifUserId) {
               const { data: mutedSetting } = await supabase
-                .from('user_notification_settings')
+                .from('user_mutes')
                 .select('is_muted')
-                .eq('user_id', user.id)
-                .eq('business_id', notifUserId)
-                .single();
+                .eq('muter_id', user.id)
+                .eq('muted_user_id', notifUserId)
+                .maybeSingle();
               
               if (mutedSetting?.is_muted) {
                 console.log('Notification from muted user, ignoring');

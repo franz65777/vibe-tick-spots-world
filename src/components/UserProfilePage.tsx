@@ -115,11 +115,13 @@ const UserProfilePage = () => {
           </button>
           <h1 className="text-lg font-semibold">{displayUsername}</h1>
         </div>
-        {!isOwnProfile && (
+{!isOwnProfile && (
           <div className="flex items-center gap-3">
-            <button 
+            <Button
               onClick={toggleMute}
-              className="p-0 hover:opacity-70 transition-opacity"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full"
               title={isMuted ? 'Unmute notifications' : 'Mute notifications'}
             >
               {isMuted ? (
@@ -127,14 +129,20 @@ const UserProfilePage = () => {
               ) : (
                 <Bell className="w-5 h-5" />
               )}
-            </button>
-            <button 
+            </Button>
+            <Button
               onClick={() => setIsShareModalOpen(true)}
-              className="p-0 hover:opacity-70 transition-opacity"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full"
               title="Share profile"
             >
               <MoreHorizontal className="w-5 h-5" />
-            </button>
+            </Button>
+            {/* Badge positioned in header */}
+            <div className="scale-90">
+              <BadgeDisplay userId={userId} />
+            </div>
           </div>
         )}
       </div>
@@ -157,27 +165,21 @@ const UserProfilePage = () => {
             </div>
           </div>
 
-          {/* Username, Badge and Stats Column */}
+          {/* Username and Stats Column */}
           <div className="flex-1 flex flex-col gap-3">
-            {/* Username with Badge */}
+            {/* Username */}
             <div className="flex items-center gap-2">
               <h2 className="text-base font-semibold">{displayUsername}</h2>
-              {/* Visible Badge */}
-              {!isOwnProfile && (
-                <div className="scale-75 origin-left">
-                  <BadgeDisplay userId={userId} />
-                </div>
-              )}
             </div>
 
-            {/* Stats Row - Followers, Following, Saved Places */}
+            {/* Stats Row - Followers, Following, Saved */}
             <div className="flex gap-4 text-sm">
               <button 
                 onClick={() => openModal('followers')}
                 className="hover:opacity-70 transition-opacity"
               >
                 <span className="font-bold">{profile.followers_count || 0}</span>{' '}
-                <span className="text-muted-foreground">followers</span>
+                <span className="text-muted-foreground">Followers</span>
               </button>
               
               <button 
@@ -185,7 +187,7 @@ const UserProfilePage = () => {
                 className="hover:opacity-70 transition-opacity"
               >
                 <span className="font-bold">{profile.following_count || 0}</span>{' '}
-                <span className="text-muted-foreground">following</span>
+                <span className="text-muted-foreground">Following</span>
               </button>
               
               <button 
@@ -193,18 +195,20 @@ const UserProfilePage = () => {
                 className="hover:opacity-70 transition-opacity"
               >
                 <span className="font-bold">{profile.places_visited || 0}</span>{' '}
-                <span className="text-muted-foreground">saved places</span>
+                <span className="text-muted-foreground">Saved</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Full Name */}
-        <div className="mb-1">
-          <h2 className="text-sm font-semibold text-foreground">
-            {profile.full_name || displayUsername}
-          </h2>
-        </div>
+        {/* Full Name (only if different from username) */}
+        {profile.full_name && profile.full_name !== displayUsername && (
+          <div className="mb-1">
+            <h2 className="text-sm font-semibold text-foreground">
+              {profile.full_name}
+            </h2>
+          </div>
+        )}
 
         {/* Bio */}
         {profile.bio && (

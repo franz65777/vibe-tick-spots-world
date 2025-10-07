@@ -22,11 +22,11 @@ export const useNotificationMuting = (targetUserId?: string) => {
 
     try {
       const { data, error } = await supabase
-        .from('user_notification_settings')
+        .from('user_mutes')
         .select('is_muted')
-        .eq('user_id', user.id)
-        .eq('business_id', targetUserId)
-        .single();
+        .eq('muter_id', user.id)
+        .eq('muted_user_id', targetUserId)
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching mute status:', error);
@@ -47,14 +47,14 @@ export const useNotificationMuting = (targetUserId?: string) => {
       const newMuteState = !isMuted;
 
       const { error } = await supabase
-        .from('user_notification_settings')
+        .from('user_mutes')
         .upsert({
-          user_id: user.id,
-          business_id: targetUserId,
+          muter_id: user.id,
+          muted_user_id: targetUserId,
           is_muted: newMuteState,
           updated_at: new Date().toISOString()
         }, {
-          onConflict: 'user_id,business_id'
+          onConflict: 'muter_id,muted_user_id'
         });
 
       if (error) throw error;

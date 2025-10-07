@@ -1966,6 +1966,33 @@ export type Database = {
           },
         ]
       }
+      user_mutes: {
+        Row: {
+          created_at: string
+          id: string
+          is_muted: boolean
+          muted_user_id: string
+          muter_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_muted?: boolean
+          muted_user_id: string
+          muter_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_muted?: boolean
+          muted_user_id?: string
+          muter_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_notification_settings: {
         Row: {
           allowed_types: Json | null
