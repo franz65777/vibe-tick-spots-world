@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import EnhancedLocationCard from '@/components/explore/EnhancedLocationCard';
+import LocationPostLibrary from '@/components/explore/LocationPostLibrary';
 
 interface SavedLocationsListProps {
   isOpen: boolean;
@@ -67,13 +68,16 @@ const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
     setSelectedPlace({
       ...place,
       id: place.id,
-      google_place_id: place.id,
+      google_place_id: place.google_place_id || place.id,
       name: place.name,
       address: place.address,
       category: place.category,
       city: place.city,
-      types: [place.category],
-      coordinates: { lat: 0, lng: 0 }
+      types: place.types || [place.category],
+      coordinates: { 
+        lat: place.latitude || 0, 
+        lng: place.longitude || 0 
+      }
     });
   };
 
@@ -81,22 +85,11 @@ const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
 
   if (selectedPlace) {
     return (
-      <div className="fixed inset-0 bg-background z-50 overflow-y-auto">
-        <div className="min-h-screen pb-20">
-          <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-3">
-            <button
-              onClick={() => setSelectedPlace(null)}
-              className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-          </div>
-          <EnhancedLocationCard 
-            place={selectedPlace} 
-            onCardClick={() => {}} 
-          />
-        </div>
-      </div>
+      <LocationPostLibrary
+        place={selectedPlace}
+        isOpen={true}
+        onClose={() => setSelectedPlace(null)}
+      />
     );
   }
 
