@@ -29,13 +29,13 @@ export const useCityEngagement = (cityName: string | null) => {
     const fetchEngagement = async () => {
       setLoading(true);
       try {
-        console.log('🔍 Fetching city engagement for:', cityName);
+        console.log('🔍 Fetching city engagement for:', cityName, 'user:', user.id);
         const { data, error } = await supabase.rpc('get_city_engagement', { p_city: cityName, p_user: user.id } as any);
         if (error) {
-          console.error('❌ RPC error:', error);
+          console.error('❌ RPC error for city:', cityName, error);
           throw error;
         }
-        console.log('📊 City engagement raw data:', data);
+        console.log('📊 City engagement raw data for', cityName, ':', data, 'Total pins:', data?.[0]?.total_pins, 'Followed users:', data?.[0]?.followed_users);
 
         const totalPins = Number(data?.[0]?.total_pins) || 0;
         const followedUsers = ((data?.[0]?.followed_users as any) || []) as Array<{
