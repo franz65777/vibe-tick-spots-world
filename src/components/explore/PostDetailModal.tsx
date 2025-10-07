@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { X, Heart, MessageCircle, Send, ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
+import { Heart, MessageCircle, Send, ChevronLeft, ChevronRight, MapPin, MoreVertical, Trash2, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePostEngagement } from '@/hooks/usePostEngagement';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
+import { usePostDeletion } from '@/hooks/usePostDeletion';
 import { getPostComments, type PostComment } from '@/services/postCommentService';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -16,6 +19,7 @@ interface PostDetailModalProps {
   postId: string;
   isOpen: boolean;
   onClose: () => void;
+  source?: 'pin' | 'search' | 'profile';
 }
 
 interface PostLiker {
@@ -48,11 +52,12 @@ interface PostData {
   } | null;
 }
 
-export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProps) => {
+export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: PostDetailModalProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { likedPosts, toggleLike } = usePostEngagement();
+  const { likedPosts, toggleLike, refetch: refetchEngagement } = usePostEngagement();
   const { savePlace, isPlaceSaved } = useSavedPlaces();
+  const { deletePost, deleting } = usePostDeletion();
   const [post, setPost] = useState<PostData | null>(null);
   const [comments, setComments] = useState<PostComment[]>([]);
   const [postLikers, setPostLikers] = useState<PostLiker[]>([]);
@@ -61,14 +66,29 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
   const [savingLocation, setSavingLocation] = useState(false);
   const [likingPost, setLikingPost] = useState(false);
   const [commentsDrawerOpen, setCommentsDrawerOpen] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [mediaAspectRatio, setMediaAspectRatio] = useState<'vertical' | 'horizontal'>('vertical');
 
   useEffect(() => {
     if (isOpen && postId) {
       loadPostData();
       loadComments();
       loadPostLikers();
+      setCurrentMediaIndex(0);
     }
   }, [isOpen, postId]);
+
+  // Detect aspect ratio when media loads
+  useEffect(() => {
+    if (post && post.media_urls[currentMediaIndex]) {
+      const img = new Image();
+      img.onload = () => {
+        const ratio = img.width / img.height;
+        setMediaAspectRatio(ratio > 1.2 ? 'horizontal' : 'vertical');
+      };
+      img.src = post.media_urls[currentMediaIndex];
+    }
+  }, [post, currentMediaIndex]);
 
   const loadPostData = async () => {
     try {
@@ -166,6 +186,9 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
 
     const success = await toggleLike(postId);
     if (success) {
+      // Reload engagement data to ensure sync
+      await refetchEngagement();
+      
       // Create notification for post owner
       if (post.user_id !== user.id && !isCurrentlyLiked) {
         supabase.from('notifications').insert({
@@ -182,8 +205,9 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
         });
       }
       
-      // Reload likers only
-      loadPostLikers();
+      // Reload post data to get accurate count
+      await loadPostData();
+      await loadPostLikers();
     } else {
       // Revert on failure
       setPost(prev => prev ? { ...prev, likes_count: post.likes_count } : null);
@@ -198,21 +222,62 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
   };
 
   const handleShare = async () => {
-    if (!post) return;
+    if (!post || !user) return;
     
     try {
+      const shareUrl = `${window.location.origin}/post/${postId}`;
+      
+      // Track share in database
+      await supabase.from('post_shares').insert({
+        post_id: postId,
+        user_id: user.id,
+        shared_at: new Date().toISOString()
+      });
+      
       if (navigator.share) {
         await navigator.share({
           title: `Check out this post by ${post.profiles.username}`,
           text: post.caption || 'Check out this post!',
-          url: window.location.href,
+          url: shareUrl,
         });
+        toast.success('Post shared successfully!');
       } else {
-        await navigator.clipboard.writeText(window.location.href);
+        await navigator.clipboard.writeText(shareUrl);
         toast.success('Link copied to clipboard');
       }
     } catch (error) {
       console.error('Error sharing:', error);
+      if ((error as Error).name !== 'AbortError') {
+        toast.error('Failed to share post');
+      }
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!post) return;
+    
+    const result = await deletePost(postId);
+    if (result.success) {
+      toast.success('Post deleted successfully');
+      onClose();
+    } else {
+      toast.error('Failed to delete post');
+    }
+  };
+
+  const handleHide = async () => {
+    if (!user || !post) return;
+    
+    try {
+      await supabase.from('hidden_posts').insert({
+        user_id: user.id,
+        post_id: postId,
+      });
+      toast.success('Post hidden');
+      onClose();
+    } catch (error) {
+      console.error('Error hiding post:', error);
+      toast.error('Failed to hide post');
     }
   };
 
@@ -256,6 +321,14 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
   if (!isOpen) return null;
 
   const isLocationSaved = post?.locations ? isPlaceSaved(post.locations.google_place_id || post.locations.id) : false;
+  
+  const getHeaderText = () => {
+    switch (source) {
+      case 'pin': return 'Pin';
+      case 'profile': return 'Profile';
+      default: return 'Post';
+    }
+  };
 
   const handleLocationClick = () => {
     if (post?.locations) {
@@ -286,15 +359,57 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
     <>
       <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-0">
         <div className="relative bg-background w-full h-full max-w-2xl md:max-w-4xl max-h-[calc(100vh-80px)] md:max-h-[95vh] flex flex-col overflow-hidden md:rounded-lg mb-16 md:mb-0">
-        {/* Close button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onClose}
-          className="absolute top-2 right-2 z-10 hover:bg-muted rounded-full"
-        >
-          <X className="w-6 h-6" />
-        </Button>
+        
+        {/* Top bar with back button, title, and menu */}
+        <div className="absolute top-0 left-0 right-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
+          <div className="flex items-center justify-between px-4 py-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="hover:bg-muted rounded-full"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </Button>
+            
+            <div className="absolute left-1/2 -translate-x-1/2">
+              <p className="font-semibold">{getHeaderText()}</p>
+              {post && (
+                <p className="text-xs text-muted-foreground">{post.profiles.username}</p>
+              )}
+            </div>
+            
+            {post && user && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="hover:bg-muted rounded-full"
+                  >
+                    <MoreVertical className="w-6 h-6" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {post.user_id === user.id ? (
+                    <DropdownMenuItem
+                      onClick={() => setShowDeleteDialog(true)}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete Post
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem onClick={handleHide}>
+                      <EyeOff className="w-4 h-4 mr-2" />
+                      Hide Post
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+        </div>
 
         {loading ? (
           <div className="flex items-center justify-center w-full h-full">
@@ -303,7 +418,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
         ) : post ? (
           <>
             {/* Header - Avatar, Username, Location */}
-            <div className="px-4 py-3 border-b border-border flex items-center gap-3 bg-background flex-shrink-0">
+            <div className="px-4 py-3 border-b border-border flex items-center gap-3 bg-background flex-shrink-0 mt-[57px]">
               <Avatar className="w-9 h-9 flex-shrink-0">
                 <AvatarImage src={post.profiles.avatar_url || undefined} />
                 <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
@@ -329,7 +444,13 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
             </div>
 
             {/* Media Section */}
-            <div className="relative bg-white flex items-center justify-center flex-shrink-0" style={{ maxHeight: '50vh' }}>
+            <div 
+              className="relative bg-white flex items-center justify-center flex-shrink-0" 
+              style={{ 
+                aspectRatio: mediaAspectRatio === 'vertical' ? '4/5' : '1.91/1',
+                maxHeight: '65vh'
+              }}
+            >
               {post.media_urls[currentMediaIndex]?.endsWith('.mp4') || 
                post.media_urls[currentMediaIndex]?.endsWith('.mov') ? (
                 <video
@@ -472,6 +593,28 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
         )}
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Post</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this post? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Comments Drawer */}
       <PostCommentsDrawer
