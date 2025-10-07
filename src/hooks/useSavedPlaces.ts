@@ -16,6 +16,7 @@ interface SavedPlace {
   latitude?: number;
   longitude?: number;
   address?: string;
+  savedCount?: number;
 }
 
 interface SavedPlacesData {
@@ -83,7 +84,8 @@ export const useSavedPlaces = () => {
               city,
               latitude,
               longitude,
-              google_place_id
+              google_place_id,
+              address
             )
           `)
           .eq('user_id', user.id)
@@ -124,7 +126,9 @@ export const useSavedPlaces = () => {
             city: city,
             coordinates: coords || { lat: 0, lng: 0 },
             savedAt: place.created_at || new Date().toISOString(),
-            google_place_id: place.place_id
+            google_place_id: place.place_id,
+            latitude: coords?.lat,
+            longitude: coords?.lng
           });
         }
 
@@ -168,7 +172,8 @@ export const useSavedPlaces = () => {
               savedAt: item.created_at || new Date().toISOString(),
               google_place_id: location.google_place_id,
               latitude: location.latitude,
-              longitude: location.longitude
+              longitude: location.longitude,
+              address: location.address || undefined
             });
           }
         }
