@@ -11,6 +11,7 @@ import CommentModal from './CommentModal';
 import PinShareModal from './PinShareModal';
 import LocationPostLibrary from './LocationPostLibrary';
 import { getCategoryColor } from '@/utils/categoryIcons';
+import { useNormalizedCity } from '@/hooks/useNormalizedCity';
 
 interface LocationCardProps {
   place: Place;
@@ -25,6 +26,13 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
   const [commentModalOpen, setCommentModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [libraryModalOpen, setLibraryModalOpen] = useState(false);
+
+  const { cityLabel } = useNormalizedCity({
+    id: place.google_place_id || place.id,
+    city: place.city,
+    coordinates: place.coordinates,
+    address: place.address
+  });
 
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -75,7 +83,7 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
   };
 
   const getCityName = () => {
-    return place.city || 'Nearby';
+    return cityLabel || 'Nearby';
   };
 
   const getPlaceholderImage = () => {
