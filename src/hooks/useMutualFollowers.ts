@@ -24,18 +24,15 @@ export const useMutualFollowers = (viewedUserId?: string) => {
       }
 
       try {
-        // Get followers of the viewed user who the current user also follows
-        const { data, error } = await supabase
+        // Get people who follow the viewed user
+        const { data: viewedUserFollowers, error: followersError } = await supabase
           .from('follows')
-          .select(`
-            follower_id,
-            profiles!follows_follower_id_fkey(id, username, avatar_url)
-          `)
+          .select('follower_id')
           .eq('following_id', viewedUserId);
 
-        if (error) throw error;
+        if (followersError) throw followersError;
 
-        // Filter for mutual follows (people current user follows who also follow viewed user)
+        // Get people the current user follows
         const { data: currentUserFollows, error: followsError } = await supabase
           .from('follows')
           .select('following_id')
@@ -43,19 +40,29 @@ export const useMutualFollowers = (viewedUserId?: string) => {
 
         if (followsError) throw followsError;
 
+        // Find intersection: people current user follows who also follow the viewed user
+        const followerIds = new Set(viewedUserFollowers?.map(f => f.follower_id) || []);
         const followingIds = new Set(currentUserFollows?.map(f => f.following_id) || []);
         
-        const mutual = data
-          ?.filter(item => followingIds.has(item.follower_id))
-          .map(item => item.profiles)
-          .filter((profile): profile is MutualFollower => 
-            profile !== null && 
-            typeof profile === 'object' && 
-            'id' in profile
-          ) || [];
+        const mutualIds = Array.from(followingIds).filter(id => followerIds.has(id));
 
-        setTotalCount(mutual.length);
-        setMutualFollowers(mutual.slice(0, 3)); // Show max 3 avatars
+        if (mutualIds.length === 0) {
+          setMutualFollowers([]);
+          setTotalCount(0);
+          setLoading(false);
+          return;
+        }
+
+        // Fetch profiles for mutual followers
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, username, avatar_url')
+          .in('id', mutualIds.slice(0, 3));
+
+        if (profilesError) throw profilesError;
+
+        setTotalCount(mutualIds.length);
+        setMutualFollowers(profiles || []);
       } catch (err) {
         console.error('Error fetching mutual followers:', err);
       } finally {

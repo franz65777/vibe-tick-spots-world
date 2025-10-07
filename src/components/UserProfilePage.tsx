@@ -1,9 +1,10 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MessageCircle, Bell, MoreHorizontal, ChevronDown } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Bell, BellOff, MoreHorizontal, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useMutualFollowers } from '@/hooks/useMutualFollowers';
+import { useNotificationMuting } from '@/hooks/useNotificationMuting';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
 import ProfileTabs from './profile/ProfileTabs';
@@ -14,6 +15,8 @@ import BadgeDisplay from './profile/BadgeDisplay';
 import Achievements from './profile/Achievements';
 import FollowersModal from './profile/FollowersModal';
 import SavedLocationsList from './profile/SavedLocationsList';
+import ShareProfileModal from './profile/ShareProfileModal';
+import MessagesModal from './MessagesModal';
 
 const UserProfilePage = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -21,12 +24,15 @@ const UserProfilePage = () => {
   const { user: currentUser } = useAuth();
   const { profile, loading, error, followUser, unfollowUser } = useUserProfile(userId);
   const { mutualFollowers, totalCount } = useMutualFollowers(userId);
+  const { isMuted, toggleMute } = useNotificationMuting(userId);
   const [activeTab, setActiveTab] = useState('posts');
   const [modalState, setModalState] = useState<{ isOpen: boolean; type: 'followers' | 'following' | null }>({
     isOpen: false,
     type: null
   });
   const [isLocationsListOpen, setIsLocationsListOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isMessagesOpen, setIsMessagesOpen] = useState(false);
 
   const isOwnProfile = currentUser?.id === userId;
 
@@ -109,21 +115,35 @@ const UserProfilePage = () => {
           </button>
           <h1 className="text-lg font-semibold">{displayUsername}</h1>
         </div>
-        <div className="flex items-center gap-3">
-          <button className="p-0 hover:opacity-70 transition-opacity">
-            <Bell className="w-5 h-5" />
-          </button>
-          <button className="p-0 hover:opacity-70 transition-opacity">
-            <MoreHorizontal className="w-5 h-5" />
-          </button>
-        </div>
+        {!isOwnProfile && (
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={toggleMute}
+              className="p-0 hover:opacity-70 transition-opacity"
+              title={isMuted ? 'Unmute notifications' : 'Mute notifications'}
+            >
+              {isMuted ? (
+                <BellOff className="w-5 h-5" />
+              ) : (
+                <Bell className="w-5 h-5" />
+              )}
+            </button>
+            <button 
+              onClick={() => setIsShareModalOpen(true)}
+              className="p-0 hover:opacity-70 transition-opacity"
+              title="Share profile"
+            >
+              <MoreHorizontal className="w-5 h-5" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Profile Header - Instagram Style */}
       <div className="px-4 py-6">
-        {/* Avatar and Stats Row */}
+        {/* Avatar and Username/Stats Row */}
         <div className="flex items-start gap-4 mb-4">
-          {/* Large Avatar */}
+          {/* Smaller Avatar */}
           <div className="relative shrink-0">
             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-primary/60 p-0.5">
               <div className="w-full h-full rounded-full bg-background p-0.5">
@@ -137,36 +157,45 @@ const UserProfilePage = () => {
             </div>
           </div>
 
-          {/* Stats - Instagram Style */}
-          <div className="flex-1 flex justify-around items-center">
-            <button 
-              className="text-center"
-              onClick={() => openModal('followers')}
-            >
-              <div className="text-lg font-bold text-foreground">{profile.posts_count || 0}</div>
-              <div className="text-xs text-muted-foreground">post</div>
-            </button>
-            
-            <button 
-              className="text-center"
-              onClick={() => openModal('followers')}
-            >
-              <div className="text-lg font-bold text-foreground">{profile.followers_count || 0}</div>
-              <div className="text-xs text-muted-foreground">follower</div>
-            </button>
-            
-            <button 
-              className="text-center"
-              onClick={() => openModal('following')}
-            >
-              <div className="text-lg font-bold text-foreground">{profile.following_count || 0}</div>
-              <div className="text-xs text-muted-foreground">seguiti</div>
-            </button>
-          </div>
+          {/* Username and Stats Column */}
+          <div className="flex-1 flex flex-col gap-3">
+            {/* Username */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-semibold">{displayUsername}</h2>
+              {/* Small Badge */}
+              {!isOwnProfile && (
+                <div className="scale-[0.35] origin-top-right -mr-4 -mt-2">
+                  <BadgeDisplay userId={userId} />
+                </div>
+              )}
+            </div>
 
-          {/* Small Badge - Top Right */}
-          <div className="shrink-0 scale-50 origin-top-right -mt-2 -mr-2">
-            <BadgeDisplay userId={userId} />
+            {/* Stats Row */}
+            <div className="flex gap-6">
+              <button 
+                className="text-center"
+                onClick={() => openModal('followers')}
+              >
+                <div className="text-base font-bold">{profile.posts_count || 0}</div>
+                <div className="text-xs text-muted-foreground">posts</div>
+              </button>
+              
+              <button 
+                className="text-center"
+                onClick={() => openModal('followers')}
+              >
+                <div className="text-base font-bold">{profile.followers_count || 0}</div>
+                <div className="text-xs text-muted-foreground">followers</div>
+              </button>
+              
+              <button 
+                className="text-center"
+                onClick={() => openModal('following')}
+              >
+                <div className="text-base font-bold">{profile.following_count || 0}</div>
+                <div className="text-xs text-muted-foreground">following</div>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -196,7 +225,7 @@ const UserProfilePage = () => {
         {!isOwnProfile && mutualFollowers.length > 0 && (
           <div className="flex items-center gap-2 mb-4">
             <div className="flex -space-x-2">
-              {mutualFollowers.map((follower, idx) => (
+              {mutualFollowers.map((follower) => (
                 <Avatar key={follower.id} className="w-6 h-6 border-2 border-background">
                   <AvatarImage src={follower.avatar_url || undefined} />
                   <AvatarFallback className="text-[8px]">
@@ -206,12 +235,12 @@ const UserProfilePage = () => {
               ))}
             </div>
             <p className="text-xs text-muted-foreground">
-              Seguito da{' '}
+              Followed by{' '}
               <span className="font-semibold text-foreground">
                 {mutualFollowers[0]?.username}
               </span>
               {totalCount > 1 && (
-                <span> e altri {totalCount - 1}</span>
+                <span> and {totalCount - 1} other{totalCount > 2 ? 's' : ''}</span>
               )}
             </p>
           </div>
@@ -227,23 +256,19 @@ const UserProfilePage = () => {
             >
               {profile.is_following ? (
                 <>
-                  Segui già
+                  Following
                   <ChevronDown className="w-4 h-4 ml-1" />
                 </>
               ) : (
-                'Segui'
+                'Follow'
               )}
-            </Button>
-            <Button 
-              variant="secondary"
-              className="flex-1 rounded-lg font-semibold h-9"
-            >
-              Messaggio
             </Button>
             <Button 
               variant="secondary"
               size="icon"
               className="rounded-lg h-9 w-9"
+              onClick={() => setIsMessagesOpen(true)}
+              title="Send message"
             >
               <MessageCircle className="w-4 h-4" />
             </Button>
@@ -269,6 +294,19 @@ const UserProfilePage = () => {
         isOpen={isLocationsListOpen}
         onClose={() => setIsLocationsListOpen(false)}
         userId={userId}
+      />
+
+      <ShareProfileModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        profileId={userId || ''}
+        profileUsername={displayUsername}
+      />
+
+      <MessagesModal
+        isOpen={isMessagesOpen}
+        onClose={() => setIsMessagesOpen(false)}
+        initialUserId={userId}
       />
     </div>
   );
