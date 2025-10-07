@@ -276,17 +276,19 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
 
   if (!isOpen) return null;
 
+  const isLocationSaved = post?.locations ? isPlaceSaved(post.locations.google_place_id || post.locations.id) : false;
+
   return (
-    <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-[60] flex items-center justify-center p-0 md:p-4">
-      <div className="relative bg-card w-full h-full md:max-w-5xl md:max-h-[90vh] md:rounded-xl overflow-hidden shadow-2xl flex flex-col md:flex-row">
+    <div className="fixed inset-0 bg-black/95 z-[60] flex items-center justify-center p-0">
+      <div className="relative bg-background w-full h-full max-w-5xl max-h-[100vh] md:max-h-[95vh] flex flex-col md:flex-row overflow-hidden md:rounded-lg">
         {/* Close button */}
         <Button
           variant="ghost"
           size="icon"
           onClick={onClose}
-          className="absolute top-2 right-2 z-10 bg-background/80 backdrop-blur-sm hover:bg-background/90 rounded-full"
+          className="absolute top-2 right-2 z-10 text-white hover:bg-white/10 rounded-full"
         >
-          <X className="w-5 h-5" />
+          <X className="w-6 h-6" />
         </Button>
 
         {loading ? (
@@ -295,7 +297,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
           </div>
         ) : post ? (
           <>
-            {/* Media Section */}
+            {/* Media Section - Left Side */}
             <div className="relative w-full md:w-[60%] bg-black flex items-center justify-center">
               {post.media_urls[currentMediaIndex]?.endsWith('.mp4') || 
                post.media_urls[currentMediaIndex]?.endsWith('.mov') ? (
@@ -312,7 +314,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
                 />
               )}
 
-              {/* Navigation arrows for multiple media */}
+              {/* Navigation arrows */}
               {post.media_urls.length > 1 && (
                 <>
                   {currentMediaIndex > 0 && (
@@ -320,7 +322,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
                       variant="ghost"
                       size="icon"
                       onClick={prevMedia}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/60 hover:bg-background/80 backdrop-blur-sm rounded-full"
+                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full"
                     >
                       <ChevronLeft className="w-6 h-6" />
                     </Button>
@@ -330,20 +332,22 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
                       variant="ghost"
                       size="icon"
                       onClick={nextMedia}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/60 hover:bg-background/80 backdrop-blur-sm rounded-full"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full"
                     >
                       <ChevronRight className="w-6 h-6" />
                     </Button>
                   )}
                   
                   {/* Media indicator dots */}
-                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
                     {post.media_urls.map((_, index) => (
                       <button
                         key={index}
                         onClick={() => setCurrentMediaIndex(index)}
-                        className={`w-1.5 h-1.5 rounded-full transition-all ${
-                          index === currentMediaIndex ? 'bg-white w-2 h-2' : 'bg-white/50'
+                        className={`rounded-full transition-all ${
+                          index === currentMediaIndex 
+                            ? 'w-2 h-2 bg-blue-500' 
+                            : 'w-1.5 h-1.5 bg-white/60'
                         }`}
                       />
                     ))}
@@ -352,25 +356,23 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
               )}
             </div>
 
-            {/* Details Section */}
-            <div className="w-full md:w-[40%] flex flex-col bg-card">
-              {/* User header */}
+            {/* Details Section - Right Side */}
+            <div className="w-full md:w-[40%] flex flex-col bg-background">
+              {/* User header at the top */}
               <div className="px-4 py-3 border-b border-border flex items-center gap-3">
-                <Avatar className="w-9 h-9">
+                <Avatar className="w-8 h-8">
                   <AvatarImage src={post.profiles.avatar_url || undefined} />
                   <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
                     {post.profiles.username[0].toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm">{post.profiles.username}</p>
-                </div>
+                <p className="font-semibold text-sm">{post.profiles.username}</p>
               </div>
 
-              {/* Caption & Comments section */}
-              <ScrollArea className="flex-1">
-                <div className="p-4 space-y-4">
-                  {/* Caption with username */}
+              {/* Scrollable Caption & Comments */}
+              <ScrollArea className="flex-1 px-4 py-3">
+                <div className="space-y-4">
+                  {/* Caption */}
                   {post.caption && (
                     <div className="flex gap-3">
                       <Avatar className="w-8 h-8 flex-shrink-0">
@@ -390,9 +392,10 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
                   
                   {/* Comments */}
                   {comments.length === 0 && !post.caption && (
-                    <div className="flex flex-col items-center justify-center py-8 text-center">
-                      <MessageCircle className="w-10 h-10 text-muted-foreground/30 mb-2" />
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <MessageCircle className="w-12 h-12 text-muted-foreground/20 mb-2" />
                       <p className="text-sm text-muted-foreground">No comments yet</p>
+                      <p className="text-xs text-muted-foreground mt-1">Be the first to comment</p>
                     </div>
                   )}
                   
@@ -418,113 +421,98 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
                 </div>
               </ScrollArea>
 
-              {/* Actions */}
+              {/* Bottom section with actions */}
               <div className="border-t border-border">
-                {/* Action buttons */}
-                <div className="px-4 py-2 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Button
-                      variant="ghost"
-                      size="icon"
+                {/* Action buttons row */}
+                <div className="px-4 py-2.5 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <button
                       onClick={handleLike}
-                      className="h-9 w-9 hover:scale-110 transition-transform"
+                      className="hover:opacity-60 transition-opacity"
                     >
                       <Heart 
-                        className={`w-6 h-6 ${likedPosts.has(postId) ? 'fill-red-500 text-red-500' : 'text-foreground'}`} 
+                        className={`w-7 h-7 ${likedPosts.has(postId) ? 'fill-red-500 text-red-500' : ''}`} 
                       />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      className="h-9 w-9 hover:scale-110 transition-transform"
-                    >
-                      <MessageCircle className="w-6 h-6" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
+                    </button>
+                    <button className="hover:opacity-60 transition-opacity">
+                      <MessageCircle className="w-7 h-7" />
+                    </button>
+                    <button 
                       onClick={handleShare}
-                      className="h-9 w-9 hover:scale-110 transition-transform"
+                      className="hover:opacity-60 transition-opacity"
                     >
-                      <Send className="w-6 h-6" />
-                    </Button>
+                      <Send className="w-7 h-7" />
+                    </button>
                   </div>
                   {post.locations && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={handlePinLocation}
-                      disabled={savingLocation || isPlaceSaved(post.locations.google_place_id || post.locations.id)}
-                      className="h-9 w-9 hover:scale-110 transition-transform"
+                    <button
+                      onClick={isLocationSaved ? undefined : handlePinLocation}
+                      disabled={savingLocation || isLocationSaved}
+                      className={`hover:opacity-60 transition-opacity ${
+                        isLocationSaved ? 'cursor-default opacity-100' : ''
+                      }`}
                     >
                       <MapPin 
-                        className={`w-6 h-6 ${
-                          isPlaceSaved(post.locations.google_place_id || post.locations.id) 
-                            ? 'fill-current text-primary' 
-                            : 'text-foreground'
+                        className={`w-7 h-7 ${
+                          isLocationSaved 
+                            ? 'fill-current' 
+                            : ''
                         }`} 
                       />
-                    </Button>
+                    </button>
                   )}
                 </div>
 
-                {/* Like count */}
+                {/* Like count with avatars */}
                 <div className="px-4 pb-2">
-                  {postLikers.length > 0 ? (
-                    <div className="flex items-center gap-2">
-                      <div className="flex -space-x-2">
-                        {postLikers.slice(0, 3).map((liker) => (
-                          <Avatar key={liker.id} className="w-5 h-5 border-2 border-card">
-                            <AvatarImage src={liker.avatar_url || undefined} />
-                            <AvatarFallback className="bg-muted text-[9px]">
-                              {liker.username[0].toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                        ))}
-                      </div>
-                      <p className="text-xs text-foreground">
-                        Liked by{' '}
-                        <span className="font-semibold">{postLikers[0].username}</span>
-                        {postLikers.length > 1 && (
-                          <span> and <span className="font-semibold">{postLikers.length - 1} other{postLikers.length > 2 ? 's' : ''}</span></span>
-                        )}
+                  {post.likes_count > 0 && (
+                    <div className="flex items-center gap-2 mb-1">
+                      {postLikers.length > 0 && (
+                        <div className="flex -space-x-2">
+                          {postLikers.slice(0, 3).map((liker) => (
+                            <Avatar key={liker.id} className="w-5 h-5 border-2 border-background">
+                              <AvatarImage src={liker.avatar_url || undefined} />
+                              <AvatarFallback className="bg-muted text-[10px]">
+                                {liker.username[0].toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-sm font-semibold">
+                        {post.likes_count === 1 ? '1 like' : `${post.likes_count} likes`}
                       </p>
                     </div>
-                  ) : post.likes_count > 0 ? (
-                    <p className="text-sm font-semibold">{post.likes_count} {post.likes_count === 1 ? 'like' : 'likes'}</p>
-                  ) : null}
+                  )}
                 </div>
 
                 {/* Timestamp */}
-                <div className="px-4 pb-2">
+                <div className="px-4 pb-3">
                   <p className="text-xs text-muted-foreground uppercase">
                     {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
                   </p>
                 </div>
 
-                {/* Add comment form */}
-                <div className="px-4 py-3 border-t border-border">
-                  <form onSubmit={handleCommentSubmit} className="flex items-center gap-2">
+                {/* Comment input */}
+                <div className="border-t border-border px-4 py-3">
+                  <form onSubmit={handleCommentSubmit} className="flex gap-2">
                     <Textarea
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
                       placeholder="Add a comment..."
-                      className="flex-1 min-h-[36px] max-h-[100px] resize-none border-0 focus-visible:ring-0 px-0 text-sm"
-                      disabled={submittingComment}
+                      className="min-h-[40px] max-h-[80px] resize-none border-0 focus-visible:ring-0 p-0 text-sm"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                           e.preventDefault();
-                          if (newComment.trim()) {
-                            handleCommentSubmit(e);
-                          }
+                          handleCommentSubmit(e);
                         }
                       }}
                     />
-                    <Button
-                      type="submit"
-                      variant="ghost"
+                    <Button 
+                      type="submit" 
                       disabled={!newComment.trim() || submittingComment}
-                      className="text-primary font-semibold hover:text-primary/80 px-0"
+                      variant="ghost"
+                      className="text-primary font-semibold hover:text-primary/80 disabled:opacity-40"
                     >
                       Post
                     </Button>
@@ -534,9 +522,9 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
             </div>
           </>
         ) : (
-          <div className="flex flex-col items-center justify-center w-full h-full gap-3">
-            <X className="w-12 h-12 text-muted-foreground/40" />
-            <p className="text-muted-foreground font-medium">Failed to load post</p>
+          <div className="flex flex-col items-center justify-center w-full h-full gap-2">
+            <X className="w-12 h-12 text-destructive" />
+            <p className="text-muted-foreground">Failed to load post</p>
           </div>
         )}
       </div>
