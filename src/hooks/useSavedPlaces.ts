@@ -26,6 +26,28 @@ export const useSavedPlaces = () => {
   const [savedPlaces, setSavedPlaces] = useState<SavedPlacesData>({});
   const [loading, setLoading] = useState(true);
 
+  // Helper function to reverse geocode coordinates to get city/address
+  const reverseGeocode = async (lat: number, lng: number): Promise<{ city: string; address: string } | null> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('reverse-geocode', {
+        body: { latitude: lat, longitude: lng }
+      });
+      
+      if (error) {
+        console.error('Reverse geocode error:', error);
+        return null;
+      }
+      
+      return {
+        city: data.city || 'Unknown',
+        address: data.formatted_address || ''
+      };
+    } catch (error) {
+      console.error('Failed to reverse geocode:', error);
+      return null;
+    }
+  };
+
   useEffect(() => {
     const loadSavedPlaces = async () => {
       console.log('useSavedPlaces: Loading saved places for user:', user?.id);
@@ -71,15 +93,28 @@ export const useSavedPlaces = () => {
 
         // Combine and group by city
         const groupedByCity: SavedPlacesData = {};
+        const placesNeedingGeocode: Array<{ place: any; index: number; source: 'saved_places' | 'user_saved_locations' }> = [];
         
-        // Add saved_places data (filter out only completely invalid entries)
-        (savedPlacesData || []).forEach(place => {
+        // Add saved_places data
+        for (let i = 0; i < (savedPlacesData || []).length; i++) {
+          const place = savedPlacesData[i];
+          
           // Only skip if place_name is missing
           if (!place.place_name) {
-            return;
+            continue;
           }
           
-          const city = place.city || 'Unknown';
+          let city = place.city;
+          const coords = place.coordinates as any;
+          
+          // Check if we need to reverse geocode
+          if ((!city || city === 'Unknown') && coords?.lat && coords?.lng) {
+            placesNeedingGeocode.push({ place, index: i, source: 'saved_places' });
+            city = 'Unknown';
+          } else if (!city) {
+            city = 'Unknown';
+          }
+          
           if (!groupedByCity[city]) {
             groupedByCity[city] = [];
           }
@@ -89,23 +124,33 @@ export const useSavedPlaces = () => {
             name: place.place_name,
             category: place.place_category || 'place',
             city: city,
-            coordinates: (place.coordinates as any) || { lat: 0, lng: 0 },
+            coordinates: coords || { lat: 0, lng: 0 },
             savedAt: place.created_at || new Date().toISOString(),
             google_place_id: place.place_id
           });
-        });
+        }
 
         // Add user_saved_locations data
-        (userSavedLocations || []).forEach((item: any) => {
+        for (let i = 0; i < (userSavedLocations || []).length; i++) {
+          const item = userSavedLocations[i] as any;
           const location = item.locations;
-          if (!location) return;
+          if (!location) continue;
           
           // Only skip if name is missing
           if (!location.name) {
-            return;
+            continue;
           }
           
-          const city = location.city || 'Unknown';
+          let city = location.city;
+          
+          // Check if we need to reverse geocode
+          if ((!city || city === 'Unknown') && location.latitude && location.longitude) {
+            placesNeedingGeocode.push({ place: { ...location, saved_id: item.id }, index: i, source: 'user_saved_locations' });
+            city = 'Unknown';
+          } else if (!city) {
+            city = 'Unknown';
+          }
+          
           if (!groupedByCity[city]) {
             groupedByCity[city] = [];
           }
@@ -131,7 +176,80 @@ export const useSavedPlaces = () => {
               longitude: location.longitude
             });
           }
-        });
+        }
+
+        // Reverse geocode places with missing city data
+        console.log(`useSavedPlaces: ${placesNeedingGeocode.length} places need reverse geocoding`);
+        
+        for (const { place, source } of placesNeedingGeocode) {
+          try {
+            let lat, lng, placeId, locationId;
+            
+            if (source === 'saved_places') {
+              const coords = place.coordinates as any;
+              lat = coords?.lat;
+              lng = coords?.lng;
+              placeId = place.place_id;
+            } else {
+              lat = place.latitude;
+              lng = place.longitude;
+              locationId = place.id;
+            }
+            
+            if (!lat || !lng) continue;
+            
+            const geocodeResult = await reverseGeocode(lat, lng);
+            
+            if (geocodeResult && geocodeResult.city && geocodeResult.city !== 'Unknown') {
+              const newCity = geocodeResult.city;
+              
+              // Update database
+              if (source === 'saved_places') {
+                await supabase
+                  .from('saved_places')
+                  .update({ city: newCity })
+                  .eq('place_id', placeId)
+                  .eq('user_id', user.id);
+              } else if (locationId) {
+                await supabase
+                  .from('locations')
+                  .update({ city: newCity })
+                  .eq('id', locationId);
+              }
+              
+              // Update local state
+              const oldCity = 'Unknown';
+              if (groupedByCity[oldCity]) {
+                const placeIndex = groupedByCity[oldCity].findIndex(p => 
+                  p.id === (placeId || locationId)
+                );
+                
+                if (placeIndex !== -1) {
+                  const updatedPlace = { ...groupedByCity[oldCity][placeIndex], city: newCity };
+                  groupedByCity[oldCity].splice(placeIndex, 1);
+                  
+                  if (!groupedByCity[newCity]) {
+                    groupedByCity[newCity] = [];
+                  }
+                  groupedByCity[newCity].push(updatedPlace);
+                  
+                  // Remove empty "Unknown" city
+                  if (groupedByCity[oldCity].length === 0) {
+                    delete groupedByCity[oldCity];
+                  }
+                }
+              }
+              
+              console.log(`✅ Updated ${place.place_name || place.name} with city: ${newCity}`);
+            }
+            
+            // Rate limiting - wait 200ms between requests
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
+          } catch (error) {
+            console.error('Error reverse geocoding place:', error);
+          }
+        }
 
         // Fetch posts count for all locations
         // We need to query by internal location UUIDs, not Google Place IDs
