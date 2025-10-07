@@ -240,15 +240,41 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
       });
 
       if (direction === 'right') {
-        // Save to saved_places
-        await supabase.from('saved_places').insert({
-          user_id: user.id,
-          place_id: location.place_id,
-          place_name: location.name,
-          place_category: location.category,
-          city: location.city,
-          coordinates: location.coordinates
-        });
+        // Save to saved_places and backfill city if missing
+        const { data: inserted, error: spInsertError } = await supabase
+          .from('saved_places')
+          .insert({
+            user_id: user.id,
+            place_id: location.place_id,
+            place_name: location.name,
+            place_category: location.category,
+            city: location.city || null,
+            coordinates: location.coordinates
+          })
+          .select('id, city')
+          .single();
+        if (spInsertError) {
+          console.error('Error saving to saved_places:', spInsertError);
+          toast.error('Failed to save location');
+          setSwipeDirection(null);
+          return;
+        }
+        // If city is missing/Unknown but we have coords, reverse geocode and update
+        const needCity = !inserted?.city || inserted.city === 'Unknown' || inserted.city.trim() === '';
+        if (needCity && location.coordinates?.lat && location.coordinates?.lng) {
+          try {
+            const { data: geo } = await supabase.functions.invoke('reverse-geocode', {
+              body: { lat: location.coordinates.lat, lng: location.coordinates.lng }
+            });
+            const city = geo?.city || null;
+            if (city) {
+              await supabase.from('saved_places').update({ city }).eq('id', inserted.id);
+              console.log(`✅ Backfilled city for saved_place ${inserted.id}: ${city}`);
+            }
+          } catch (e) {
+            console.warn('Reverse geocode failed for saved_place:', e);
+          }
+        }
         toast.success(`${location.name} saved!`);
       }
 

@@ -96,32 +96,59 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity }: 
 
       switch (mapFilter) {
         case 'following': {
-          // Use secure function to get locations saved by people the user follows
-          const { data: followingLocations, error: followingError } = await supabase
-            .rpc('get_following_saved_locations');
+          // Fetch locations saved by people the user follows from both internal locations and Google saved places
+          const [locRes, placesRes] = await Promise.all([
+            supabase.rpc('get_following_saved_locations'),
+            supabase.rpc('get_following_saved_places', { limit_count: 200 })
+          ]);
 
-          if (followingError) {
-            console.error('Error fetching following locations:', followingError);
-            finalLocations = [];
-          } else if (followingLocations) {
-            // followingLocations rows come from saved_places and user_saved_locations union
-            finalLocations = (followingLocations as any[]).map((row: any) => {
-              const coords = (row.coordinates as any) || {};
-              const lat = Number(coords.lat ?? row.latitude ?? 0) || 0;
-              const lng = Number(coords.lng ?? row.longitude ?? 0) || 0;
-              return {
-                id: row.place_id || row.id, // prefer google place id for uniqueness
-                name: row.place_name || row.name,
-                category: row.place_category || row.category,
-                address: row.address,
-                city: row.city,
-                coordinates: { lat, lng },
-                isFollowing: true,
-                user_id: row.user_id || row.created_by,
-                created_at: row.created_at
-              } as MapLocation;
-            });
+          if (locRes.error) {
+            console.error('Error fetching following internal locations:', locRes.error);
           }
+          if (placesRes.error) {
+            console.error('Error fetching following saved places:', placesRes.error);
+          }
+
+          const fromLocations: MapLocation[] = (locRes.data as any[] | null)?.map((row: any) => ({
+            id: row.id,
+            name: row.name,
+            category: row.category,
+            address: row.address,
+            city: row.city,
+            coordinates: {
+              lat: Number(row.latitude) || 0,
+              lng: Number(row.longitude) || 0,
+            },
+            isFollowing: true,
+            user_id: row.created_by,
+            created_at: row.created_at,
+          })) ?? [];
+
+          const fromSavedPlaces: MapLocation[] = (placesRes.data as any[] | null)?.map((row: any) => {
+            const coords = (row.coordinates as any) || {};
+            return {
+              id: row.place_id,
+              name: row.place_name,
+              category: row.place_category || 'Unknown',
+              address: undefined,
+              city: row.city || undefined,
+              coordinates: {
+                lat: Number(coords.lat) || 0,
+                lng: Number(coords.lng) || 0,
+              },
+              isFollowing: true,
+              user_id: row.user_id,
+              created_at: row.created_at,
+            } as MapLocation;
+          }) ?? [];
+
+          // Merge and apply category filter if provided
+          const merged = [...fromLocations, ...fromSavedPlaces].filter((loc) => {
+            if (selectedCategories.length > 0 && !selectedCategories.includes(loc.category)) return false;
+            return true;
+          });
+
+          finalLocations = merged;
           break;
         }
 

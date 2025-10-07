@@ -74,7 +74,7 @@ export const useMapPins = (filter: 'following' | 'popular' | 'saved' = 'popular'
         const followedUserIds = followedUsers.map(f => f.following_id);
         console.log('✅ Following user IDs:', followedUserIds);
 
-        // Get saved locations from followed users
+        // Get saved locations from followed users (internal locations)
         const { data: savedLocations, error: savedError } = await supabase
           .from('user_saved_locations')
           .select(`
@@ -100,9 +100,18 @@ export const useMapPins = (filter: 'following' | 'popular' | 'saved' = 'popular'
           return;
         }
 
-        console.log('✅ Saved locations from followed users:', savedLocations?.length || 0);
+        // Get Google saved places from followed users
+        const { data: savedPlaces, error: spError } = await supabase
+          .from('saved_places')
+          .select('place_id, place_name, place_category, city, coordinates, user_id, created_at')
+          .in('user_id', followedUserIds);
+        if (spError) {
+          console.error('❌ Following saved Google places error:', spError);
+        }
 
-        if (!savedLocations || savedLocations.length === 0) {
+        console.log('✅ Saved locations from followed users:', savedLocations?.length || 0, ' • Google places:', savedPlaces?.length || 0);
+
+        if ((!savedLocations || savedLocations.length === 0) && (!savedPlaces || savedPlaces.length === 0)) {
           setHasFollowedUsers(true);
           setPins([]);
           setLoading(false);
@@ -123,7 +132,7 @@ export const useMapPins = (filter: 'following' | 'popular' | 'saved' = 'popular'
         // Transform saved locations into MapPin format, deduplicate by google_place_id or id
         const locationMap = new Map();
         
-        savedLocations.forEach(saved => {
+        (savedLocations || []).forEach(saved => {
           const location = saved.locations as any;
           const locationKey = location.google_place_id || location.id;
           const userProfile = profileMap.get(saved.user_id);
@@ -151,6 +160,38 @@ export const useMapPins = (filter: 'following' | 'popular' | 'saved' = 'popular'
               totalSaves: 0,
               address: location.address || '',
               google_place_id: location.google_place_id
+            });
+          }
+        });
+
+        // Add saved Google places from followed users
+        (savedPlaces || []).forEach(sp => {
+          const coords = (sp.coordinates as any) || {};
+          const key = sp.place_id;
+          const userProfile = profileMap.get(sp.user_id);
+          if (!locationMap.has(key)) {
+            locationMap.set(key, {
+              id: sp.place_id,
+              name: sp.place_name,
+              category: sp.place_category || 'Unknown',
+              coordinates: { 
+                lat: parseFloat((coords.lat ?? 0).toString()), 
+                lng: parseFloat((coords.lng ?? 0).toString()) 
+              },
+              likes: 0,
+              isFollowing: true,
+              addedBy: userProfile?.full_name || userProfile?.username || 'Someone',
+              addedDate: new Date(sp.created_at).toLocaleDateString(),
+              popularity: 75,
+              city: sp.city || 'Unknown',
+              isNew: false,
+              image: undefined,
+              friendsWhoSaved: [],
+              visitors: [],
+              distance: Math.random() * 10,
+              totalSaves: 0,
+              address: '',
+              google_place_id: sp.place_id
             });
           }
         });
