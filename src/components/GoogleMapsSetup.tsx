@@ -108,42 +108,27 @@ const GoogleMapsSetup = ({
     return () => observer.disconnect();
   }, []);
 
-  // Initialize map with better timing
+  // Initialize map only once and persist across navigation
   useEffect(() => {
     let mounted = true;
-    // Reset unmount flag on mount (React StrictMode mounts twice)
     isUnmountingRef.current = false;
     let retryCount = 0;
     const maxRetries = 3;
     
     const initMap = async () => {
       try {
-        console.log('🗺️ Starting Google Maps initialization, attempt:', retryCount + 1);
-        // If map already exists (e.g., StrictMode re-run), don't reset loading state
+        // If map already exists, just update its style and return
         if (mapInstanceRef.current) {
-          console.log('ℹ️ Map instance already exists, skipping init');
           setIsLoaded(true);
           return;
         }
-        setIsLoaded(false);
         
-        if (!mounted || isUnmountingRef.current) {
-          console.log('❌ Component unmounting, abort init');
-          return;
-        }
-
+        if (!mounted || isUnmountingRef.current) return;
         if (!mapRef.current) {
-          console.log('❌ Map container not available, retrying...');
           if (retryCount < maxRetries) {
             retryCount++;
             setTimeout(initMap, 500);
           }
-          return;
-        }
-        // Avoid double-initializing the map (StrictMode)
-        if (mapInstanceRef.current) {
-          console.log('ℹ️ Map instance already exists, skipping init');
-          setIsLoaded(true);
           return;
         }
         

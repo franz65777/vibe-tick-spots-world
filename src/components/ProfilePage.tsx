@@ -16,11 +16,14 @@ import FollowersModal from './profile/FollowersModal';
 import SavedLocationsList from './profile/SavedLocationsList';
 import { useUserBadges } from '@/hooks/useUserBadges';
 import { ThemeToggle } from './ThemeToggle';
+import { useBusinessProfile } from '@/hooks/useBusinessProfile';
+import { toast } from 'sonner';
 
 const ProfilePage = () => {
   const { profile, loading, error } = useProfile();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { businessProfile, hasValidBusinessAccount, loading: businessLoading } = useBusinessProfile();
   const [activeTab, setActiveTab] = useState('posts');
   const [modalState, setModalState] = useState<{ isOpen: boolean; type: 'followers' | 'following' | null }>({
     isOpen: false,
@@ -30,6 +33,18 @@ const ProfilePage = () => {
   const { badges } = useUserBadges();
   const [lastBadgeCount, setLastBadgeCount] = useState(0);
   const [hasNewBadges, setHasNewBadges] = useState(false);
+
+  const handleSwitchToBusinessView = () => {
+    if (!hasValidBusinessAccount) {
+      toast.error('No verified business account', {
+        description: 'You need to claim and verify a business before accessing business features'
+      });
+      return;
+    }
+    // Store business mode in localStorage
+    localStorage.setItem('accountMode', 'business');
+    navigate('/business');
+  };
 
   // Track new badges
   useEffect(() => {
@@ -107,27 +122,21 @@ const ProfilePage = () => {
         onLocationsClick={handleLocationsClick}
       />
       
-      {/* Business Dashboard Links */}
-      <div className="px-4 py-2 space-y-2">
-        <Button
-          onClick={() => navigate('/business')}
-          variant="outline"
-          className="w-full"
-        >
-          <Building2 className="w-4 h-4 mr-2" />
-          Business Dashboard
-        </Button>
-        <Button
-          onClick={() => navigate('/business-claim')}
-          variant="outline"
-          className="w-full"
-        >
-          <Building2 className="w-4 h-4 mr-2" />
-          Richiedi Account Business
-        </Button>
-      </div>
+      {/* Business Dashboard Link - Only show if user has verified business */}
+      {!businessLoading && hasValidBusinessAccount && (
+        <div className="px-4 py-2">
+          <Button
+            onClick={handleSwitchToBusinessView}
+            variant="outline"
+            className="w-full"
+          >
+            <Building2 className="w-4 h-4 mr-2" />
+            Switch to Business Account
+          </Button>
+        </div>
+      )}
       
-      <ProfileTabs 
+      <ProfileTabs
         activeTab={activeTab} 
         onTabChange={setActiveTab}
         hasNewBadges={hasNewBadges}
