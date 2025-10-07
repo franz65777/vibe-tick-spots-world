@@ -17,9 +17,31 @@ export function useNormalizedCity(params: {
   address?: string | null;
 }) {
   const { id, city, coordinates, address } = params;
+
+  // Heuristics to detect street-like strings (contain numbers or common street terms)
+  const isStreetLike = (value?: string | null) => {
+    if (!value) return false;
+    const v = value.toLowerCase();
+    if (/\d/.test(v)) return true;
+    return /(street|st\.?|avenue|ave\.?|road|rd\.?|square|sq\.?|piazza|platz|plaza|place|lane|ln\.?|drive|dr\.?|court|ct\.?|alley|way|quay|boulevard|blvd\.?|rue|via|calle|estrada|rua)/i.test(v);
+  };
+
+  // Extract best city-like segment from a freeform address
+  const extractCityFromAddress = (addr?: string | null) => {
+    if (!addr) return '';
+    const parts = addr.split(',').map(p => p.trim()).filter(Boolean);
+    // Prefer from right to left the first non-street-like segment longer than 2 chars
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const p = parts[i];
+      if (p.length > 2 && !/^\d+$/.test(p) && !isStreetLike(p)) {
+        return p;
+      }
+    }
+    return '';
+  };
+
   const [label, setLabel] = useState<string>(() => {
-    // Prefer city field; otherwise try "City" part from address
-    const base = (city && city.trim()) || (address?.split(',')[1]?.trim() ?? '') || '';
+    const base = (city && city.trim()) || extractCityFromAddress(address) || '';
     const normalized = normalizeCity(base || null);
     return normalized;
   });
