@@ -479,13 +479,13 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
                 <video
                   src={post.media_urls[currentMediaIndex]}
                   controls
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-cover"
                 />
               ) : (
                 <img
                   src={post.media_urls[currentMediaIndex]}
                   alt="Post"
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-cover"
                 />
               )}
 
