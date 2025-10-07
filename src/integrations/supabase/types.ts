@@ -2191,6 +2191,18 @@ export type Database = {
           total_pins: number
         }[]
       }
+      get_city_engagement_geo: {
+        Args: {
+          p_lat: number
+          p_lng: number
+          p_radius_km: number
+          p_user: string
+        }
+        Returns: {
+          followed_users: Json
+          total_pins: number
+        }[]
+      }
       get_dau: {
         Args: { target_date: string }
         Returns: number

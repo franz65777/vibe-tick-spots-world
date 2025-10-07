@@ -34,7 +34,7 @@ export const useCityEngagement = (cityName: string | null, coords?: { lat: numbe
         
         if (coords?.lat && coords?.lng) {
           // Use geo-based query
-          const result = await supabase.rpc('get_city_engagement_geo', { 
+          const result = await supabase.rpc('get_city_engagement_geo' as any, { 
             p_lat: coords.lat, 
             p_lng: coords.lng, 
             p_radius_km: 25, 
