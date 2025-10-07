@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { locationInteractionService } from '@/services/locationInteractionService';
 import PlaceActionButtons from './PlaceActionButtons';
+import { useNormalizedCity } from '@/hooks/useNormalizedCity';
 
 interface EnhancedLocationCardV2Props {
   place: any;

@@ -13,6 +13,7 @@ import PinShareModal from './PinShareModal';
 import LocationPostLibrary from './LocationPostLibrary';
 import { getCategoryColor } from '@/utils/categoryIcons';
 import { normalizeCity } from '@/utils/cityNormalization';
+import { useNormalizedCity } from '@/hooks/useNormalizedCity';
 
 interface CompactLocationCardProps {
   place: Place;
@@ -29,6 +30,12 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
   const [libraryModalOpen, setLibraryModalOpen] = useState(false);
   const [smartImage, setSmartImage] = useState<string>('');
   const [imageLoading, setImageLoading] = useState(true);
+  const { cityLabel } = useNormalizedCity({
+    id: place.google_place_id || place.id,
+    city: place.city,
+    coordinates: place.coordinates,
+    address: place.address || null
+  });
 
   useEffect(() => {
     loadSmartImage();
@@ -42,7 +49,7 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
       } else {
         const image = await imageService.getPlaceImage(
           place.name,
-          place.city || 'Unknown',
+          cityLabel || 'Unknown',
           place.category
         );
         setSmartImage(image);
@@ -104,7 +111,7 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
   };
 
   const getCityName = () => {
-    return normalizeCity(place.city);
+    return cityLabel;
   };
 
   const getPlaceholderGradient = () => {

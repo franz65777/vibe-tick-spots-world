@@ -4,6 +4,7 @@ import { MapPin, Heart, Bookmark, Users, MessageSquare, Share2, Navigation } fro
 import { Button } from '@/components/ui/button';
 import { locationInteractionService } from '@/services/locationInteractionService';
 import PinShareModal from './PinShareModal';
+import { useNormalizedCity } from '@/hooks/useNormalizedCity';
 
 interface EnhancedLocationCardProps {
   place: any;
@@ -16,6 +17,13 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
   const [likeCount, setLikeCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+
+  const { cityLabel } = useNormalizedCity({
+    id: place.google_place_id || place.id,
+    city: place.city,
+    coordinates: place.coordinates,
+    address: place.address
+  });
 
   useEffect(() => {
     const checkInteractions = async () => {
@@ -129,7 +137,7 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
             <h3 className="font-bold text-gray-900 text-base leading-tight mb-1">{place.name}</h3>
             <div className="flex items-center gap-1 text-gray-500">
               <MapPin className="w-3 h-3" />
-              <span className="text-xs">{place.city || place.address?.split(',')[1]?.trim() || 'Unknown location'}</span>
+              <span className="text-xs">{cityLabel || 'Unknown location'}</span>
             </div>
           </div>
         </div>
