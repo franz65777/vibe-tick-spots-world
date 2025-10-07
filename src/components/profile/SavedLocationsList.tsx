@@ -4,7 +4,7 @@ import { ArrowLeft, Search, MapPin } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
-import EnhancedLocationCard from '@/components/explore/EnhancedLocationCard';
+import MinimalLocationCard from '@/components/explore/MinimalLocationCard';
 import LocationPostLibrary from '@/components/explore/LocationPostLibrary';
 
 interface SavedLocationsListProps {
@@ -194,27 +194,23 @@ const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
         </div>
       )}
 
-      {/* Locations List - Enhanced Cards - Single Column */}
+      {/* Locations List - Minimal Cards - Grid */}
       {!loading && filteredAndSortedPlaces.length > 0 && (
-        <div className="flex-1 overflow-y-auto">
-          <div className="px-4 py-2 space-y-3">
+        <div className="flex-1 overflow-y-auto bg-background">
+          <div className="grid grid-cols-2 gap-3 px-4 py-4">
             {filteredAndSortedPlaces.map((p) => (
-              <EnhancedLocationCard
+              <MinimalLocationCard
                 key={`${p.city}-${p.id}`}
                 place={{
                   id: p.id,
-                  google_place_id: p.google_place_id || '',
                   name: p.name,
-                  address: p.address || '',
-                  coordinates: {
-                    lat: p.latitude || 0,
-                    lng: p.longitude || 0
-                  },
                   category: p.category,
                   city: p.city,
-                  types: p.types || []
+                  savedCount: p.savedCount || 0
                 }}
                 onCardClick={() => handlePlaceClick(p)}
+                isSaved={true}
+                onSaveToggle={(e) => e.stopPropagation()}
               />
             ))}
           </div>
