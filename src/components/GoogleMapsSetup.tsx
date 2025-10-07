@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { loadGoogleMapsAPI } from '@/lib/googleMaps';
 import { Place } from '@/types/place';
-import PinDetailCard from './explore/PinDetailCard';
+import { PinDetailCard } from './explore/PinDetailCard';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { lightMapStyle, darkMapStyle } from '@/utils/mapStyles';
 import { createCustomMarker } from '@/utils/mapPinCreator';
@@ -490,14 +490,12 @@ const GoogleMapsSetup = ({
         )}
       </div>
       
-      {/* Location Post Library */}
+      {/* Pin Detail Card */}
         {selectedPlace && (
           <PinDetailCard
-            place={{
+            pin={{
               id: selectedPlace.id,
               name: selectedPlace.name,
-              category: selectedPlace.category,
-              address: selectedPlace.address,
               city: selectedPlace.city,
               google_place_id: selectedPlace.google_place_id,
               coordinates: selectedPlace.coordinates

@@ -289,7 +289,7 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
       } else {
         // Save - prioritize saved_places if it has google_place_id
         if (location.google_place_id) {
-          await supabase
+          const { data: inserted } = await supabase
             .from('saved_places')
             .insert({
               user_id: user.id,
@@ -301,7 +301,24 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
                 lat: location.coordinates.lat,
                 lng: location.coordinates.lng
               }
-            });
+            })
+            .select()
+            .single();
+
+          // Backfill city if missing
+          if (inserted && (!location.city || location.city === 'Unknown') && location.coordinates.lat && location.coordinates.lng) {
+            try {
+              await supabase.functions.invoke('reverse-geocode', {
+                body: {
+                  lat: location.coordinates.lat,
+                  lng: location.coordinates.lng,
+                  savedPlaceId: inserted.id
+                }
+              });
+            } catch (e) {
+              console.warn('City backfill failed:', e);
+            }
+          }
         } else {
           // Save to user_saved_locations if no google_place_id
           await supabase

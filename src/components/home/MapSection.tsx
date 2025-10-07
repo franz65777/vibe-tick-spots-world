@@ -6,6 +6,7 @@ import QuickAddPinModal from './QuickAddPinModal';
 import MapCategoryFilters from './MapCategoryFilters';
 import { cn } from '@/lib/utils';
 import PinShareModal from '../explore/PinShareModal';
+import { PinDetailCard } from '../explore/PinDetailCard';
 import { useMapLocations } from '@/hooks/useMapLocations';
 import { useMapFilter } from '@/contexts/MapFilterContext';
 import { Place } from '@/types/place';
@@ -32,6 +33,7 @@ const MapSection = ({ mapCenter, currentCity, isExpanded = false, onToggleExpand
   const [newLocationCoords, setNewLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [pinToShare, setPinToShare] = useState<PinShareData | null>(null);
+  const [selectedPin, setSelectedPin] = useState<{ id: string; name: string; city?: string; coordinates: { lat: number; lng: number }; google_place_id?: string } | null>(null);
   
   // Use global filter context - single source of truth
   const { activeFilter, selectedCategories, setActiveFilter, toggleCategory } = useMapFilter();
@@ -98,7 +100,14 @@ const MapSection = ({ mapCenter, currentCity, isExpanded = false, onToggleExpand
 
   const handlePinClick = (place: Place) => {
     console.log('Pin clicked:', place);
-    setSelectedPlace(place);
+    console.log('Pin clicked:', place);
+    setSelectedPin({
+      id: place.id,
+      name: place.name,
+      city: place.city,
+      coordinates: place.coordinates,
+      google_place_id: place.google_place_id
+    });
   };
 
   const handlePinShare = (place: Place) => {
@@ -140,7 +149,7 @@ const MapSection = ({ mapCenter, currentCity, isExpanded = false, onToggleExpand
         />
 
         {/* Map Category Filters - Hidden when pin detail is open */}
-        {!selectedPlace && <MapCategoryFilters />}
+        {!selectedPin && <MapCategoryFilters />}
 
         {/* Map Controls - List View and Expand Toggle */}
         <div className="absolute bottom-6 right-3 z-40 flex flex-col gap-2">
@@ -279,6 +288,13 @@ const MapSection = ({ mapCenter, currentCity, isExpanded = false, onToggleExpand
         }}
         place={pinToShare || selectedPlace}
       />
+
+      {selectedPin && (
+        <PinDetailCard
+          pin={selectedPin}
+          onClose={() => setSelectedPin(null)}
+        />
+      )}
     </>
   );
 };
