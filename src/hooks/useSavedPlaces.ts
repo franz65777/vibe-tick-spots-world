@@ -10,6 +10,11 @@ interface SavedPlace {
   city: string;
   coordinates: { lat: number; lng: number };
   savedAt: string;
+  postsCount?: number;
+  google_place_id?: string;
+  latitude?: number;
+  longitude?: number;
+  address?: string;
 }
 
 interface SavedPlacesData {
@@ -65,9 +70,15 @@ export const useSavedPlaces = () => {
         // Combine and group by city
         const groupedByCity: SavedPlacesData = {};
         
-        // Add saved_places data
+        // Add saved_places data (filter out low-quality entries)
         (savedPlacesData || []).forEach(place => {
-          const city = place.city || 'Unknown';
+          // Skip entries with Unknown or missing data
+          if (!place.place_name || place.place_name === 'Unknown' || 
+              !place.city || place.city === 'Unknown') {
+            return;
+          }
+          
+          const city = place.city;
           if (!groupedByCity[city]) {
             groupedByCity[city] = [];
           }
@@ -78,7 +89,8 @@ export const useSavedPlaces = () => {
             category: place.place_category || 'place',
             city: city,
             coordinates: (place.coordinates as any) || { lat: 0, lng: 0 },
-            savedAt: place.created_at || new Date().toISOString()
+            savedAt: place.created_at || new Date().toISOString(),
+            google_place_id: place.place_id
           });
         });
 
@@ -87,7 +99,13 @@ export const useSavedPlaces = () => {
           const location = item.locations;
           if (!location) return;
           
-          const city = location.city || 'Unknown';
+          // Skip entries with Unknown or missing data
+          if (!location.name || location.name === 'Unknown' || 
+              !location.city || location.city === 'Unknown') {
+            return;
+          }
+          
+          const city = location.city;
           if (!groupedByCity[city]) {
             groupedByCity[city] = [];
           }
@@ -107,10 +125,41 @@ export const useSavedPlaces = () => {
                 lat: location.latitude || 0, 
                 lng: location.longitude || 0 
               },
-              savedAt: item.created_at || new Date().toISOString()
+              savedAt: item.created_at || new Date().toISOString(),
+              google_place_id: location.google_place_id,
+              latitude: location.latitude,
+              longitude: location.longitude
             });
           }
         });
+
+        // Fetch posts count for all locations
+        const allLocationIds: string[] = [];
+        Object.values(groupedByCity).forEach(places => {
+          places.forEach(place => {
+            allLocationIds.push(place.id);
+          });
+        });
+
+        if (allLocationIds.length > 0) {
+          const { data: postsData } = await supabase
+            .from('posts')
+            .select('location_id, id')
+            .in('location_id', allLocationIds);
+
+          // Count posts per location
+          const postsMap = new Map<string, number>();
+          postsData?.forEach(post => {
+            postsMap.set(post.location_id, (postsMap.get(post.location_id) || 0) + 1);
+          });
+
+          // Add posts count to each place
+          Object.values(groupedByCity).forEach(places => {
+            places.forEach(place => {
+              place.postsCount = postsMap.get(place.id) || 0;
+            });
+          });
+        }
 
         setSavedPlaces(groupedByCity);
       } catch (error) {

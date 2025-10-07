@@ -85,17 +85,19 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
 
       const { data: savedPlacesData } = await savedPlacesQuery.limit(100);
 
-      // Convert saved_places to location format
-      const savedPlacesAsLocations = (savedPlacesData || []).map(sp => ({
-        id: sp.place_id,
-        name: sp.place_name,
-        category: sp.place_category || 'place',
-        city: sp.city || 'Unknown',
-        address: undefined,
-        google_place_id: sp.place_id,
-        latitude: (sp.coordinates as any)?.lat,
-        longitude: (sp.coordinates as any)?.lng,
-      }));
+      // Convert saved_places to location format, filtering out low-quality entries
+      const savedPlacesAsLocations = (savedPlacesData || [])
+        .filter(sp => sp.place_name && sp.place_name !== 'Unknown' && sp.city && sp.city !== 'Unknown')
+        .map(sp => ({
+          id: sp.place_id,
+          name: sp.place_name,
+          category: sp.place_category || 'place',
+          city: sp.city || 'Unknown',
+          address: undefined,
+          google_place_id: sp.place_id,
+          latitude: (sp.coordinates as any)?.lat,
+          longitude: (sp.coordinates as any)?.lng,
+        }));
 
       // Merge both datasets
       const allLocations = [...(locationsData || []), ...savedPlacesAsLocations];
@@ -114,6 +116,12 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
         .select('place_id, user_id')
         .in('place_id', placeIds);
 
+      // Fetch posts count for all locations
+      const { data: postsData } = await supabase
+        .from('posts')
+        .select('location_id, id')
+        .in('location_id', locationIds);
+
       const savesMap = new Map<string, number>();
       savesData?.forEach(save => {
         savesMap.set(save.location_id, (savesMap.get(save.location_id) || 0) + 1);
@@ -123,6 +131,12 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
       const savedPlacesSavesMap = new Map<string, number>();
       savedPlacesCountData?.forEach(save => {
         savedPlacesSavesMap.set(save.place_id, (savedPlacesSavesMap.get(save.place_id) || 0) + 1);
+      });
+
+      // Count posts by location_id
+      const postsMap = new Map<string, number>();
+      postsData?.forEach(post => {
+        postsMap.set(post.location_id, (postsMap.get(post.location_id) || 0) + 1);
       });
 
       // Group by canonical place using google_place_id when available,
@@ -176,20 +190,25 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
           // Merge into existing group
           const g = groups.get(canonicalKey)!;
           g.allLocationIds.push(loc.id);
-          // Prefer filling missing metadata
+          // Prefer complete data - update if current has better data
           if (!g.google_place_id && loc.google_place_id) g.google_place_id = loc.google_place_id;
           if (!g.address && loc.address) g.address = loc.address;
-          // Keep coordinates from the first seen; do not override
+          if (g.city === 'Unknown' && loc.city && loc.city !== 'Unknown') g.city = loc.city;
+          if (!g.name || g.name === 'Unknown') g.name = loc.name;
         }
 
         // Accumulate saves per location id (computed below once we have savesMap)
       });
 
-      // Aggregate saves across grouped location ids + place_id saves
+      // Aggregate saves and posts across grouped location ids
       groups.forEach((g) => {
         const locationSaves = g.allLocationIds.reduce((sum, id) => sum + (savesMap.get(id) || 0), 0);
         const placeSaves = g.google_place_id ? (savedPlacesSavesMap.get(g.google_place_id) || 0) : 0;
         g.savesCount = locationSaves + placeSaves;
+        
+        // Count posts across all location IDs in this group
+        const locationPosts = g.allLocationIds.reduce((sum, id) => sum + (postsMap.get(id) || 0), 0);
+        g.postsCount = locationPosts;
       });
 
       // Check if user saved ANY of the location IDs or place_id for each unique place
@@ -360,7 +379,9 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
                 <h4 className="font-semibold text-base text-gray-900 line-clamp-2 mb-1">
                   {location.name}
                 </h4>
-                <p className="text-xs text-gray-500 line-clamp-1">{location.city}</p>
+                <p className="text-xs text-gray-500 line-clamp-1">
+                  {location.city} • {location.postsCount || 0} {location.postsCount === 1 ? 'post' : 'posts'}
+                </p>
               </div>
             </div>
           );

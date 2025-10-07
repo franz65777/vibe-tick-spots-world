@@ -206,7 +206,8 @@ const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
                   name: p.name,
                   category: p.category,
                   city: p.city,
-                  savedCount: p.savedCount || 0
+                  savedCount: p.savedCount || 0,
+                  postsCount: p.postsCount || 0
                 }}
                 onCardClick={() => handlePlaceClick(p)}
                 isSaved={true}
