@@ -257,41 +257,51 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
   const handleShare = async () => {
     if (!post || !user) return;
     
+    const shareUrl = `${window.location.origin}/post/${postId}`;
+
     try {
-      const shareUrl = `${window.location.origin}/post/${postId}`;
-      
-      // Track share in database and get updated count
+      // Record share first (count is updated via DB trigger)
       const { error } = await supabase.from('post_shares').insert({
         post_id: postId,
-        user_id: user.id
+        user_id: user.id,
       });
-
       if (error) throw error;
 
-      // Get updated shares count
-      const { count } = await supabase
-        .from('post_shares')
-        .select('*', { count: 'exact', head: true })
-        .eq('post_id', postId);
+      // Optimistically bump local count to feel responsive
+      setSharesCount((c) => (c || 0) + 1);
 
-      setSharesCount(count || 0);
-      
+      // Try native share, gracefully fall back to clipboard on denial/unsupported
       if (navigator.share) {
-        await navigator.share({
-          title: `Check out this post by ${post.profiles.username}`,
-          text: post.caption || 'Check out this post!',
-          url: shareUrl,
-        });
-        toast.success('Post shared successfully!');
+        try {
+          await navigator.share({
+            title: `Check out this post by ${post.profiles.username}`,
+            text: post.caption || 'Check out this post!',
+            url: shareUrl,
+          });
+          toast.success('Post shared successfully!');
+        } catch (err: any) {
+          // Permission denied or user canceled -> fallback to clipboard
+          try {
+            await navigator.clipboard.writeText(shareUrl);
+            toast.success('Link copied to clipboard');
+          } catch {
+            toast.error('Unable to share');
+          }
+        }
       } else {
         await navigator.clipboard.writeText(shareUrl);
         toast.success('Link copied to clipboard');
       }
+
+      // Sync count from DB (in case of race conditions)
+      const { count } = await supabase
+        .from('post_shares')
+        .select('*', { count: 'exact', head: true })
+        .eq('post_id', postId);
+      setSharesCount(count || 0);
     } catch (error) {
       console.error('Error sharing:', error);
-      if ((error as Error).name !== 'AbortError') {
-        toast.error('Failed to share post');
-      }
+      toast.error('Unable to share');
     }
   };
 
