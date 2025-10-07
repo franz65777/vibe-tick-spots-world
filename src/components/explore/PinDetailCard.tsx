@@ -11,7 +11,7 @@ import PinShareModal from './PinShareModal';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import PostDetailModal from './PostDetailModal';
 import { usePinEngagement } from '@/hooks/usePinEngagement';
-import { formatDetailedAddress } from '@/utils/addressFormatter';
+import { useDetailedAddress } from '@/hooks/useDetailedAddress';
 
 interface PinDetailCardProps {
   place: any;
@@ -31,6 +31,12 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
   const [selectedPost, setSelectedPost] = useState<any>(null);
   const [locationDetails, setLocationDetails] = useState<any>(null);
   const { cityLabel } = useNormalizedCity({
+    id: place.google_place_id || place.id,
+    city: locationDetails?.city || place.city,
+    coordinates: place.coordinates,
+    address: locationDetails?.address || place.address
+  });
+  const { detailedAddress } = useDetailedAddress({
     id: place.google_place_id || place.id,
     city: locationDetails?.city || place.city,
     coordinates: place.coordinates,
@@ -198,13 +204,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                 <h3 className="font-semibold text-base text-foreground truncate">{locationDetails?.name || place.name}</h3>
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <MapPin className="w-3 h-3" />
-                  <span className="truncate">
-                    {formatDetailedAddress({
-                      city: locationDetails?.city || place.city,
-                      address: locationDetails?.address || place.address,
-                      coordinates: place.coordinates
-                    })}
-                  </span>
+                  <span className="truncate">{detailedAddress}</span>
                 </div>
               </div>
               {/* Total Saves & Followed Users */}

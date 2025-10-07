@@ -12,7 +12,7 @@ import PinShareModal from './PinShareModal';
 import { toast } from 'sonner';
 import { useNormalizedCity } from '@/hooks/useNormalizedCity';
 import { useUserPosts } from '@/hooks/useUserPosts';
-import { formatDetailedAddress } from '@/utils/addressFormatter';
+import { useDetailedAddress } from '@/hooks/useDetailedAddress';
 interface LocationPost {
   id: string;
   user_id: string;
@@ -65,6 +65,12 @@ const LocationPostLibrary = ({
   const [isSaved, setIsSaved] = useState(false);
   const { posts: userPosts } = useUserPosts(user?.id);
   const { cityLabel: displayCity } = useNormalizedCity({
+    id: place?.google_place_id || place?.id,
+    city: place?.city,
+    coordinates: place?.coordinates,
+    address: place?.address
+  });
+  const { detailedAddress } = useDetailedAddress({
     id: place?.google_place_id || place?.id,
     city: place?.city,
     coordinates: place?.coordinates,
@@ -418,11 +424,7 @@ const LocationPostLibrary = ({
           <h1 className="font-bold text-lg text-gray-900">{place.name}</h1>
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <MapPin className="w-4 h-4" />
-            <span>{formatDetailedAddress({
-              city: place.city,
-              address: place.address,
-              coordinates: place.coordinates
-            })}</span>
+            <span>{detailedAddress}</span>
           </div>
         </div>
 
