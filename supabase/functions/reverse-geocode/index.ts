@@ -60,21 +60,32 @@ serve(async (req) => {
         const result = data.results[0];
         let city = '';
         let locality = '';
+        let sublocality = '';
         let adminLevel2 = '';
+        let adminLevel3 = '';
 
         for (const component of result.address_components) {
-          // Prioritize locality (main city)
+          // Prioritize locality (main city) - this is what we want
           if (component.types.includes('locality')) {
             locality = component.long_name;
           } 
+          // sublocality is usually a neighborhood - we'll use this only if no locality
+          else if (component.types.includes('sublocality_level_1') || component.types.includes('sublocality')) {
+            sublocality = component.long_name;
+          }
+          // administrative_area_level_3 is often a suburb/district
+          else if (component.types.includes('administrative_area_level_3')) {
+            adminLevel3 = component.long_name;
+          }
           // Fallback to administrative_area_level_2 (county/region)
           else if (component.types.includes('administrative_area_level_2')) {
             adminLevel2 = component.long_name;
           }
         }
 
-        // Choose locality first, then admin level 2
-        city = locality || adminLevel2;
+        // Prioritize in this order: locality > adminLevel3 > adminLevel2
+        // Skip sublocality entirely as it's usually a neighborhood
+        city = locality || adminLevel3 || adminLevel2;
 
       // Normalize city name - remove postal districts, "County" prefix, and map neighborhoods
       if (city) {
@@ -165,22 +176,33 @@ serve(async (req) => {
       const result = data.results[0];
       let city = '';
       let locality = '';
+      let sublocality = '';
       let adminLevel2 = '';
+      let adminLevel3 = '';
 
       // Extract city from address components
       for (const component of result.address_components) {
-        // Prioritize locality (main city)
+        // Prioritize locality (main city) - this is what we want
         if (component.types.includes('locality')) {
           locality = component.long_name;
         } 
+        // sublocality is usually a neighborhood - we'll use this only if no locality
+        else if (component.types.includes('sublocality_level_1') || component.types.includes('sublocality')) {
+          sublocality = component.long_name;
+        }
+        // administrative_area_level_3 is often a suburb/district
+        else if (component.types.includes('administrative_area_level_3')) {
+          adminLevel3 = component.long_name;
+        }
         // Fallback to administrative_area_level_2 (county/region)
         else if (component.types.includes('administrative_area_level_2')) {
           adminLevel2 = component.long_name;
         }
       }
 
-      // Choose locality first, then admin level 2
-      city = locality || adminLevel2;
+      // Prioritize in this order: locality > adminLevel3 > adminLevel2
+      // Skip sublocality entirely as it's usually a neighborhood
+      city = locality || adminLevel3 || adminLevel2;
 
       // Normalize city name - remove postal districts, "County" prefix, and map neighborhoods
       if (city) {
