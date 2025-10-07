@@ -1,36 +1,155 @@
-
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ArrowLeft, Search, MapPin, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import MinimalLocationCard from '@/components/explore/MinimalLocationCard';
 import LocationPostLibrary from '@/components/explore/LocationPostLibrary';
-import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SavedLocationsListProps {
   isOpen: boolean;
   onClose: () => void;
+  userId?: string;
 }
 
-const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
-  const { savedPlaces, loading, unsavePlace } = useSavedPlaces();
+const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps) => {
+  const { user: currentUser } = useAuth();
+  const targetUserId = userId || currentUser?.id;
+  const [savedPlaces, setSavedPlaces] = useState<any>({});
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
   const [selectedPlace, setSelectedPlace] = useState<any>(null);
+
+  useEffect(() => {
+    const loadSavedPlaces = async () => {
+      if (!targetUserId) {
+        setSavedPlaces({});
+        setLoading(false);
+        return;
+      }
+
+      try {
+        // Fetch from saved_places table
+        const { data: savedPlacesData, error: savedPlacesError } = await supabase
+          .from('saved_places')
+          .select('*')
+          .eq('user_id', targetUserId)
+          .order('created_at', { ascending: false });
+
+        if (savedPlacesError) console.error('Error fetching saved_places:', savedPlacesError);
+
+        // Fetch from user_saved_locations table
+        const { data: userSavedLocations, error: userSavedError } = await supabase
+          .from('user_saved_locations')
+          .select(`
+            id,
+            created_at,
+            locations (
+              id,
+              name,
+              category,
+              city,
+              latitude,
+              longitude,
+              google_place_id,
+              address
+            )
+          `)
+          .eq('user_id', targetUserId)
+          .order('created_at', { ascending: false });
+
+        if (userSavedError) console.error('Error fetching user_saved_locations:', userSavedError);
+
+        // Group by city
+        const groupedByCity: any = {};
+        
+        savedPlacesData?.forEach((place: any) => {
+          const city = place.city || 'Unknown';
+          if (!groupedByCity[city]) groupedByCity[city] = [];
+          const coords = place.coordinates as any;
+          groupedByCity[city].push({
+            id: place.place_id,
+            name: place.place_name,
+            category: place.place_category || 'place',
+            city,
+            coordinates: coords || { lat: 0, lng: 0 },
+            savedAt: place.created_at
+          });
+        });
+
+        userSavedLocations?.forEach((item: any) => {
+          const location = item.locations;
+          if (!location) return;
+          const city = location.city || 'Unknown';
+          if (!groupedByCity[city]) groupedByCity[city] = [];
+          groupedByCity[city].push({
+            id: location.google_place_id || location.id,
+            name: location.name,
+            category: location.category || 'place',
+            city,
+            coordinates: { lat: location.latitude || 0, lng: location.longitude || 0 },
+            savedAt: item.created_at
+          });
+        });
+
+        setSavedPlaces(groupedByCity);
+      } catch (error) {
+        console.error('Error loading saved places:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (isOpen) {
+      loadSavedPlaces();
+    }
+  }, [targetUserId, isOpen]);
+
+  const unsavePlace = async (placeId: string, city: string) => {
+    if (!currentUser || currentUser.id !== targetUserId) return;
+
+    try {
+      await supabase.from('saved_places').delete().eq('user_id', currentUser.id).eq('place_id', placeId);
+      
+      const { data: locationData } = await supabase
+        .from('locations')
+        .select('id')
+        .or(`google_place_id.eq.${placeId},id.eq.${placeId}`)
+        .maybeSingle();
+
+      if (locationData?.id) {
+        await supabase.from('user_saved_locations').delete().eq('user_id', currentUser.id).eq('location_id', locationData.id);
+      }
+
+      setSavedPlaces((prev: any) => {
+        const updated = { ...prev };
+        if (updated[city]) {
+          updated[city] = updated[city].filter((p: any) => p.id !== placeId);
+          if (updated[city].length === 0) delete updated[city];
+        }
+        return updated;
+      });
+    } catch (error) {
+      console.error('Error unsaving place:', error);
+    }
+  };
+
+  const isOwnProfile = currentUser?.id === targetUserId;
 
   // Get all unique cities
   const cities = useMemo(() => {
     return Object.keys(savedPlaces).sort();
   }, [savedPlaces]);
 
-  // Flatten all places with city information
+  // Flatten all places
   const allPlaces = useMemo(() => {
     const places = [];
     for (const [city, cityPlaces] of Object.entries(savedPlaces)) {
-      places.push(...cityPlaces.map(place => ({ ...place, city })));
+      places.push(...(cityPlaces as any[]).map(place => ({ ...place, city })));
     }
     return places;
   }, [savedPlaces]);
@@ -86,9 +205,8 @@ const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
     e.stopPropagation();
     try {
       await unsavePlace(place.id, place.city);
-      toast.success(`Removed ${place.name} from saved locations`);
     } catch (error) {
-      toast.error('Failed to remove location');
+      console.error('Failed to remove location:', error);
     }
   };
 

@@ -183,20 +183,18 @@ const UserProfilePage = () => {
         {renderTabContent()}
       </div>
 
-      {!isOwnProfile && (
-        <>
-          <FollowersModal 
-            isOpen={modalState.isOpen}
-            onClose={closeModal}
-            type={modalState.type || 'followers'}
-          />
+      <FollowersModal 
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        type={modalState.type || 'followers'}
+        userId={userId}
+      />
 
-          <SavedLocationsList
-            isOpen={isLocationsListOpen}
-            onClose={() => setIsLocationsListOpen(false)}
-          />
-        </>
-      )}
+      <SavedLocationsList
+        isOpen={isLocationsListOpen}
+        onClose={() => setIsLocationsListOpen(false)}
+        userId={userId}
+      />
     </div>
   );
 };
