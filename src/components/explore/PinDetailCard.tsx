@@ -28,7 +28,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
   const [postsLoading, setPostsLoading] = useState(false);
   const [postsPage, setPostsPage] = useState(1);
   const [hasMorePosts, setHasMorePosts] = useState(true);
-  const [selectedPost, setSelectedPost] = useState<any>(null);
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [locationDetails, setLocationDetails] = useState<any>(null);
   const { cityLabel } = useNormalizedCity({
     id: place.google_place_id || place.id,
@@ -301,7 +301,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                         key={post.id} 
                         onClick={(e) => {
                           e.stopPropagation();
-                          setSelectedPost(post);
+                          setSelectedPostId(post.id);
                         }}
                         className="relative rounded-xl overflow-hidden bg-card shadow-sm hover:shadow-md transition-shadow"
                       >
@@ -384,11 +384,11 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
         place={place}
       />
 
-      {selectedPost && (
+      {selectedPostId && (
         <PostDetailModal
-          post={selectedPost}
+          postId={selectedPostId}
           isOpen={true}
-          onClose={() => setSelectedPost(null)}
+          onClose={() => setSelectedPostId(null)}
         />
       )}
     </>

@@ -9,6 +9,7 @@ import { useLocationInteraction } from '@/hooks/useLocationInteraction';
 import { locationInteractionService } from '@/services/locationInteractionService';
 import PlaceInteractionModal from '@/components/home/PlaceInteractionModal';
 import PinShareModal from './PinShareModal';
+import PostDetailModal from './PostDetailModal';
 import { toast } from 'sonner';
 import { useNormalizedCity } from '@/hooks/useNormalizedCity';
 import { useUserPosts } from '@/hooks/useUserPosts';
@@ -55,7 +56,7 @@ const LocationPostLibrary = ({
   } = useAuth();
   const [posts, setPosts] = useState<LocationPost[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPost, setSelectedPost] = useState<LocationPost | null>(null);
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
   const [showComments, setShowComments] = useState(false);
@@ -337,73 +338,7 @@ const LocationPostLibrary = ({
   const handleVisited = () => {
     window.location.href = '/add';
   };
-  if (selectedPost) {
-    return (
-      <div className="fixed inset-0 bg-black z-50 flex flex-col h-full">
-        {/* Individual Post View */}
-        <div className="flex items-center justify-between p-4 bg-black text-white">
-          <Button variant="ghost" size="sm" onClick={() => setSelectedPost(null)} className="text-white hover:bg-white/20">
-            <ChevronLeft className="w-5 h-5" />
-          </Button>
-          <h2 className="font-semibold text-white">{place.name}</h2>
-          <div className="w-10"></div>
-        </div>
-
-        <div className="flex-1 flex items-center justify-center bg-black">
-          {selectedPost.media_urls && selectedPost.media_urls.length > 0 && <img src={selectedPost.media_urls[0]} alt="Post" className="max-w-full max-h-full object-contain" />}
-        </div>
-
-        {/* Post Info */}
-        <div className="bg-white p-4">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-semibold">
-                {selectedPost.profiles?.username?.[0] || 'U'}
-              </span>
-            </div>
-            <div className="flex-1">
-              <div className="font-semibold text-gray-900">
-                {selectedPost.profiles?.username || 'User'}
-              </div>
-              <div className="text-xs text-gray-500">
-                {formatDate(selectedPost.created_at)}
-              </div>
-            </div>
-          </div>
-
-          {selectedPost.caption && <p className="text-gray-700 mb-4 leading-relaxed">
-              {selectedPost.caption}
-            </p>}
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6 text-sm text-gray-500">
-              <span className="flex items-center gap-1">
-                <Heart className="w-4 h-4" />
-                {selectedPost.likes_count}
-              </span>
-              <span className="flex items-center gap-1">
-                <MessageCircle className="w-4 h-4" />
-                {selectedPost.comments_count}
-              </span>
-              <span className="flex items-center gap-1">
-                <Bookmark className="w-4 h-4" />
-                {selectedPost.saves_count}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={() => handleLike(selectedPost.id)} className={`${likedPosts.has(selectedPost.id) ? 'text-red-600' : 'text-gray-600'}`}>
-                <Heart className={`w-4 h-4 ${likedPosts.has(selectedPost.id) ? 'fill-current' : ''}`} />
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => handleSave(selectedPost.id)} className={`${savedPosts.has(selectedPost.id) ? 'text-blue-600' : 'text-gray-600'}`}>
-                <Bookmark className={`w-4 h-4 ${savedPosts.has(selectedPost.id) ? 'fill-current' : ''}`} />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  
   if (!isOpen) return null;
 
   return (
@@ -515,22 +450,8 @@ const LocationPostLibrary = ({
                           <div 
                             key={post.id} 
                             className="relative h-32 bg-gray-200 rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition shadow-sm"
-                            onClick={() => {
-                              const mappedPost: LocationPost = {
-                                id: post.id,
-                                user_id: post.user_id,
-                                caption: post.caption || null,
-                                media_urls: post.media_urls || [],
-                                likes_count: post.likes_count || 0,
-                                comments_count: post.comments_count || 0,
-                                saves_count: post.saves_count || 0,
-                                created_at: post.created_at,
-                                metadata: {},
-                                profiles: null
-                              };
-                              setSelectedPost(mappedPost);
-                            }}
-                          >
+                              onClick={() => setSelectedPostId(post.id)}
+                            >
                             {post.media_urls && post.media_urls.length > 0 && (
                               <img 
                                 src={post.media_urls[0]} 
@@ -556,7 +477,7 @@ const LocationPostLibrary = ({
                     <div 
                       key={post.id} 
                       className="relative h-48 bg-gray-200 rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition shadow-sm" 
-                      onClick={() => setSelectedPost(post)}
+                      onClick={() => setSelectedPostId(post.id)}
                     >
                       {post.media_urls && post.media_urls.length > 0 && (
                         <>
@@ -603,6 +524,15 @@ const LocationPostLibrary = ({
 
           {/* Share modal */}
           <PinShareModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} place={place} />
+          
+          {/* Post Detail Modal */}
+          {selectedPostId && (
+            <PostDetailModal
+              postId={selectedPostId}
+              isOpen={true}
+              onClose={() => setSelectedPostId(null)}
+            />
+          )}
         </div>
       )}
     </div>

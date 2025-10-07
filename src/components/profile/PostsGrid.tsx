@@ -1,7 +1,7 @@
 
 import { Heart, MessageCircle, Grid3X3, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import PostDetailModal from './PostDetailModal';
+import PostDetailModal from '../explore/PostDetailModal';
 import { usePosts } from '@/hooks/usePosts';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,18 +32,16 @@ const PostsGrid = ({ userId }: PostsGridProps) => {
   const targetUserId = userId || profile?.id;
   const { posts, loading, refetch } = usePosts(targetUserId);
   const { deletePost, deleting } = usePostDeletion();
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
-  const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
-  const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
 
   const isOwnProfile = user?.id === targetUserId;
 
   console.log('PostsGrid - Current user:', user?.id, 'Target user:', targetUserId, 'Is own profile:', isOwnProfile);
   console.log('PostsGrid - Posts loaded:', posts.length);
 
-  const handlePostClick = (post: Post) => {
-    console.log('Post clicked:', post.id);
-    setSelectedPost(post);
+  const handlePostClick = (postId: string) => {
+    console.log('Post clicked:', postId);
+    setSelectedPostId(postId);
   };
 
   const handleDeletePost = async (postId: string, event: React.MouseEvent) => {
@@ -73,29 +71,6 @@ const PostsGrid = ({ userId }: PostsGridProps) => {
     }
   };
 
-  const handleLikeToggle = (postId: string) => {
-    setLikedPosts(prev => {
-      const newLiked = new Set(prev);
-      if (newLiked.has(postId)) {
-        newLiked.delete(postId);
-      } else {
-        newLiked.add(postId);
-      }
-      return newLiked;
-    });
-  };
-
-  const handleSaveToggle = (postId: string) => {
-    setSavedPosts(prev => {
-      const newSaved = new Set(prev);
-      if (newSaved.has(postId)) {
-        newSaved.delete(postId);
-      } else {
-        newSaved.add(postId);
-      }
-      return newSaved;
-    });
-  };
 
   if (loading) {
     return (
@@ -126,7 +101,7 @@ const PostsGrid = ({ userId }: PostsGridProps) => {
           <div
             key={post.id}
             className="relative aspect-square bg-gray-100 rounded-xl overflow-hidden cursor-pointer group hover:scale-[1.02] transition-transform duration-200"
-            onClick={() => handlePostClick(post)}
+            onClick={() => handlePostClick(post.id)}
           >
             <img
               src={post.media_urls[0]}
@@ -184,25 +159,16 @@ const PostsGrid = ({ userId }: PostsGridProps) => {
         ))}
       </div>
 
-      <PostDetailModal 
-        post={selectedPost ? {
-          id: selectedPost.id,
-          image: selectedPost.media_urls[0],
-          likes: selectedPost.likes_count,
-          comments: selectedPost.comments_count,
-          location: 'Location',
-          caption: selectedPost.caption || '',
-          createdAt: selectedPost.created_at,
-          totalSaves: selectedPost.saves_count,
-          category: 'general'
-        } : null}
-        isOpen={!!selectedPost}
-        onClose={() => setSelectedPost(null)}
-        isLiked={selectedPost ? likedPosts.has(selectedPost.id) : false}
-        isSaved={selectedPost ? savedPosts.has(selectedPost.id) : false}
-        onLikeToggle={() => selectedPost && handleLikeToggle(selectedPost.id)}
-        onSaveToggle={() => selectedPost && handleSaveToggle(selectedPost.id)}
-      />
+      {selectedPostId && (
+        <PostDetailModal 
+          postId={selectedPostId}
+          isOpen={true}
+          onClose={() => {
+            setSelectedPostId(null);
+            refetch(); // Refresh posts to show updated counts
+          }}
+        />
+      )}
     </div>
   );
 };
