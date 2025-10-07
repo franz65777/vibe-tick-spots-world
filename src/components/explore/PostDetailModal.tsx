@@ -357,10 +357,10 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
 
   return (
     <>
-      <div className="fixed inset-0 bg-background z-50 flex flex-col overflow-hidden pb-20">
+      <div className="fixed inset-0 bg-background z-[100] flex flex-col overflow-hidden pb-20">
         {/* Top bar with back button and title */}
         <div className="flex-shrink-0 bg-background border-b border-border">
-          <div className="flex items-center px-4 py-3">
+          <div className="flex items-center px-4 py-2">
             <Button
               variant="ghost"
               size="icon"
@@ -385,7 +385,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
         ) : post ? (
           <div className="flex flex-col flex-1 overflow-y-auto">
             {/* Header - Avatar, Username, Location */}
-            <div className="px-4 py-3 border-b border-border flex items-center gap-3 bg-background flex-shrink-0">
+            <div className="px-4 py-2 flex items-center gap-3 bg-background flex-shrink-0">
               <Avatar className="w-9 h-9 flex-shrink-0">
                 <AvatarImage src={post.profiles.avatar_url || undefined} />
                 <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
@@ -507,7 +507,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
             </div>
 
             {/* Action buttons - RIGHT below media */}
-            <div className="px-4 py-3 border-b border-border bg-background flex-shrink-0">
+            <div className="px-4 py-2 bg-background flex-shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   {/* Like button */}
@@ -556,7 +556,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
             </div>
 
             {/* Like count and caption */}
-            <div className="px-4 py-3 bg-background flex-shrink-0 border-b border-border">
+            <div className="px-4 py-3 bg-background flex-shrink-0">
               {post.likes_count > 0 && (
                 <div className="flex items-center gap-2 mb-2">
                   {postLikers.length > 0 && (
@@ -595,13 +595,14 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
               {post.comments_count > 0 && (
                 <button
                   onClick={() => setCommentsDrawerOpen(true)}
-                  className="text-sm text-muted-foreground hover:text-foreground mb-2"
+                  className="text-sm text-muted-foreground hover:text-foreground mb-3"
                 >
                   View all {post.comments_count} {post.comments_count === 1 ? 'comment' : 'comments'}
                 </button>
               )}
 
-              <p className="text-xs text-muted-foreground uppercase">
+              {/* Timestamp - subtle and small */}
+              <p className="text-[10px] text-muted-foreground/60">
                 {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
               </p>
             </div>
