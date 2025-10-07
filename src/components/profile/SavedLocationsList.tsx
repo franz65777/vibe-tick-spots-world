@@ -76,10 +76,9 @@ const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
       category: place.category,
       city: place.city,
       types: place.types || [place.category],
-      coordinates: { 
-        lat: place.latitude || 0, 
-        lng: place.longitude || 0 
-      }
+      coordinates: (place.latitude != null && place.longitude != null)
+        ? { lat: place.latitude, lng: place.longitude }
+        : undefined
     });
   };
 
