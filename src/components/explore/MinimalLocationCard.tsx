@@ -34,7 +34,16 @@ const MinimalLocationCard = ({
           
         </div>
         
-        {onSaveToggle}
+        {onSaveToggle && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onSaveToggle}
+            className="shrink-0 p-2"
+          >
+            <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
+          </Button>
+        )}
       </div>
     </div>;
 };

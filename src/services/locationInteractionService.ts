@@ -87,22 +87,25 @@ class LocationInteractionService {
     }
   }
 
-  // Unsave a location for the user
+  // Unsave a location for the user (removes from both tables)
   async unsaveLocation(locationId: string): Promise<boolean> {
     try {
       const { data: user } = await supabase.auth.getUser();
       if (!user?.user) return false;
 
-      const { error } = await supabase
+      // Remove from user_saved_locations
+      await supabase
         .from('user_saved_locations')
         .delete()
         .eq('user_id', user.user.id)
         .eq('location_id', locationId);
 
-      if (error) {
-        console.error('Unsave location error:', error);
-        return false;
-      }
+      // Remove from saved_places (for Google Places)
+      await supabase
+        .from('saved_places')
+        .delete()
+        .eq('user_id', user.user.id)
+        .eq('place_id', locationId);
 
       return true;
     } catch (error) {
@@ -278,20 +281,31 @@ class LocationInteractionService {
     }
   }
 
-  // Check if user has saved a location
+  // Check if user has saved a location (checks both tables)
   async isLocationSaved(locationId: string): Promise<boolean> {
     try {
       const { data: user } = await supabase.auth.getUser();
       if (!user?.user) return false;
 
-      const { data } = await supabase
+      // Check user_saved_locations table
+      const { data: internalSave } = await supabase
         .from('user_saved_locations')
         .select('id')
         .eq('user_id', user.user.id)
         .eq('location_id', locationId)
         .maybeSingle();
 
-      return !!data;
+      if (internalSave) return true;
+
+      // Check saved_places table (for Google Places)
+      const { data: googleSave } = await supabase
+        .from('saved_places')
+        .select('id')
+        .eq('user_id', user.user.id)
+        .eq('place_id', locationId)
+        .maybeSingle();
+
+      return !!googleSave;
     } catch (error) {
       console.error('Check saved location error:', error);
       return false;
