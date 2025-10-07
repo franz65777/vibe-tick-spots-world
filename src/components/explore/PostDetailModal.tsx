@@ -115,16 +115,21 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
           )
         `)
         .eq('id', postId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      if (!postData) {
+        toast.error('Post not found');
+        setPost(null);
+        return;
+      }
 
       // Fetch profile separately
       const { data: profileData } = await supabase
         .from('profiles')
         .select('username, avatar_url')
         .eq('id', postData.user_id)
-        .single();
+        .maybeSingle();
 
       setPost({
         ...postData,
