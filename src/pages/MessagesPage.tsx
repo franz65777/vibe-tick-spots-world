@@ -145,15 +145,8 @@ const MessagesPage = () => {
   };
 
   const handleBack = () => {
-    if (view === 'chat' || view === 'search') {
-      setView('threads');
-      setSelectedThread(null);
-      setMessages([]);
-      setSearchQuery('');
-      setSearchResults([]);
-    } else {
-      navigate(-1);
-    }
+    // Always return to previous page as requested
+    navigate(-1);
   };
 
   const handleSearch = async (query: string) => {
