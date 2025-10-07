@@ -12,6 +12,7 @@ import CommentModal from './CommentModal';
 import PinShareModal from './PinShareModal';
 import LocationPostLibrary from './LocationPostLibrary';
 import { getCategoryColor } from '@/utils/categoryIcons';
+import { normalizeCity } from '@/utils/cityNormalization';
 
 interface CompactLocationCardProps {
   place: Place;
@@ -103,7 +104,7 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
   };
 
   const getCityName = () => {
-    return place.city || 'Nearby';
+    return normalizeCity(place.city);
   };
 
   const getPlaceholderGradient = () => {
