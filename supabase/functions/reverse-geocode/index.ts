@@ -76,17 +76,46 @@ serve(async (req) => {
         // Choose locality first, then admin level 2
         city = locality || adminLevel2;
 
-        // Normalize city name - remove postal districts and "County" prefix
-        if (city) {
-          // Remove postal district numbers (e.g., "Dublin 2" -> "Dublin")
-          city = city.replace(/\s+\d+$/, '');
-          
-          // Remove "County" prefix (e.g., "County Dublin" -> "Dublin")
-          city = city.replace(/^County\s+/i, '');
-          
-          // Trim whitespace
-          city = city.trim();
+      // Normalize city name - remove postal districts, "County" prefix, and map neighborhoods
+      if (city) {
+        // Remove postal district numbers (e.g., "Dublin 2" -> "Dublin")
+        city = city.replace(/\s+\d+$/, '');
+        
+        // Remove "County" prefix (e.g., "County Dublin" -> "Dublin")
+        city = city.replace(/^County\s+/i, '');
+        
+        // Trim whitespace
+        city = city.trim();
+        
+        // Map Dublin neighborhoods/suburbs to "Dublin"
+        const dublinNeighborhoods = [
+          'Rathmines', 'Ranelagh', 'Ballsbridge', 'Donnybrook', 'Sandymount',
+          'Ringsend', 'Irishtown', 'Ballybough', 'Drumcondra', 'Glasnevin',
+          'Cabra', 'Phibsborough', 'Stoneybatter', 'Smithfield', 'Arbour Hill',
+          'Inchicore', 'Kilmainham', 'Islandbridge', 'Crumlin', 'Kimmage',
+          'Terenure', 'Rathgar', 'Milltown', 'Clonskeagh', 'Dundrum',
+          'Stillorgan', 'Blackrock', 'Dun Laoghaire', 'Dalkey', 'Killiney',
+          'Shankill', 'Bray', 'Greystones', 'Howth', 'Malahide', 'Swords',
+          'Portmarnock', 'Clontarf', 'Raheny', 'Coolock', 'Artane',
+          'Whitehall', 'Santry', 'Ballymun', 'Finglas', 'Blanchardstown',
+          'Castleknock', 'Lucan', 'Clondalkin', 'Tallaght', 'Rathfarnham',
+          'Templeogue', 'Firhouse', 'Ballinteer', 'Churchtown', 'Windy Arbour',
+          'Leopardstown', 'Sandyford', 'Stepaside', 'Foxrock', 'Cabinteely',
+          'Loughlinstown', 'Cherrywood', 'Carrickmines', 'Cornelscourt',
+          'Donabate', 'Rush', 'Skerries', 'Balbriggan', 'Baldoyle',
+          'Saint James', 'St James', 'The Coombe', 'Liberties', 'Thomas Street',
+          'Christchurch', 'Temple Bar', 'Ballyboden', 'Knocklyon', 'Brittas'
+        ];
+        
+        // Check if city matches any Dublin neighborhood (case insensitive)
+        const isDublinNeighborhood = dublinNeighborhoods.some(
+          neighborhood => city.toLowerCase() === neighborhood.toLowerCase()
+        );
+        
+        if (isDublinNeighborhood) {
+          city = 'Dublin';
         }
+      }
 
         if (city) {
           const { error: updateError } = await supabase
@@ -153,7 +182,7 @@ serve(async (req) => {
       // Choose locality first, then admin level 2
       city = locality || adminLevel2;
 
-      // Normalize city name - remove postal districts and "County" prefix
+      // Normalize city name - remove postal districts, "County" prefix, and map neighborhoods
       if (city) {
         // Remove postal district numbers (e.g., "Dublin 2" -> "Dublin")
         city = city.replace(/\s+\d+$/, '');
@@ -163,6 +192,35 @@ serve(async (req) => {
         
         // Trim whitespace
         city = city.trim();
+        
+        // Map Dublin neighborhoods/suburbs to "Dublin"
+        const dublinNeighborhoods = [
+          'Rathmines', 'Ranelagh', 'Ballsbridge', 'Donnybrook', 'Sandymount',
+          'Ringsend', 'Irishtown', 'Ballybough', 'Drumcondra', 'Glasnevin',
+          'Cabra', 'Phibsborough', 'Stoneybatter', 'Smithfield', 'Arbour Hill',
+          'Inchicore', 'Kilmainham', 'Islandbridge', 'Crumlin', 'Kimmage',
+          'Terenure', 'Rathgar', 'Milltown', 'Clonskeagh', 'Dundrum',
+          'Stillorgan', 'Blackrock', 'Dun Laoghaire', 'Dalkey', 'Killiney',
+          'Shankill', 'Bray', 'Greystones', 'Howth', 'Malahide', 'Swords',
+          'Portmarnock', 'Clontarf', 'Raheny', 'Coolock', 'Artane',
+          'Whitehall', 'Santry', 'Ballymun', 'Finglas', 'Blanchardstown',
+          'Castleknock', 'Lucan', 'Clondalkin', 'Tallaght', 'Rathfarnham',
+          'Templeogue', 'Firhouse', 'Ballinteer', 'Churchtown', 'Windy Arbour',
+          'Leopardstown', 'Sandyford', 'Stepaside', 'Foxrock', 'Cabinteely',
+          'Loughlinstown', 'Cherrywood', 'Carrickmines', 'Cornelscourt',
+          'Donabate', 'Rush', 'Skerries', 'Balbriggan', 'Baldoyle',
+          'Saint James', 'St James', 'The Coombe', 'Liberties', 'Thomas Street',
+          'Christchurch', 'Temple Bar', 'Ballyboden', 'Knocklyon', 'Brittas'
+        ];
+        
+        // Check if city matches any Dublin neighborhood (case insensitive)
+        const isDublinNeighborhood = dublinNeighborhoods.some(
+          neighborhood => city.toLowerCase() === neighborhood.toLowerCase()
+        );
+        
+        if (isDublinNeighborhood) {
+          city = 'Dublin';
+        }
       }
 
       // Update location if locationId provided
