@@ -218,6 +218,9 @@ const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
                     name: p.name,
                     category: p.category,
                     city: p.city,
+                    address: p.address,
+                    google_place_id: p.google_place_id,
+                    coordinates: { lat: p.latitude || 0, lng: p.longitude || 0 },
                     savedCount: p.savedCount || 0,
                     postsCount: p.postsCount || 0
                   }}

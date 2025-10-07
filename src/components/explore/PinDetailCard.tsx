@@ -11,6 +11,7 @@ import PinShareModal from './PinShareModal';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import PostDetailModal from './PostDetailModal';
 import { usePinEngagement } from '@/hooks/usePinEngagement';
+import { formatDetailedAddress } from '@/utils/addressFormatter';
 
 interface PinDetailCardProps {
   place: any;
@@ -198,7 +199,11 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <MapPin className="w-3 h-3" />
                   <span className="truncate">
-                    {cityLabel || 'Unknown'}
+                    {formatDetailedAddress({
+                      city: locationDetails?.city || place.city,
+                      address: locationDetails?.address || place.address,
+                      coordinates: place.coordinates
+                    })}
                   </span>
                 </div>
               </div>
