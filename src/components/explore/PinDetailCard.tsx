@@ -1,116 +1,338 @@
-import React from 'react';
-import { X, MapPin, Users, Bookmark } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { MapPin, Navigation, Heart, Bookmark, MessageSquare, ChevronLeft, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { usePinEngagement } from '@/hooks/usePinEngagement';
+import { Drawer, DrawerContent } from '@/components/ui/drawer';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { locationInteractionService } from '@/services/locationInteractionService';
+import { supabase } from '@/integrations/supabase/client';
+import VisitedModal from './VisitedModal';
+import PinShareModal from './PinShareModal';
+import { CategoryIcon } from '@/components/common/CategoryIcon';
+import PostDetailModal from './PostDetailModal';
 
 interface PinDetailCardProps {
-  pin: {
-    id: string;
-    name: string;
-    city?: string;
-    coordinates: { lat: number; lng: number };
-    google_place_id?: string;
-  };
+  place: any;
   onClose: () => void;
 }
 
-export const PinDetailCard = ({ pin, onClose }: PinDetailCardProps) => {
-  const { engagement, loading } = usePinEngagement(
-    pin.google_place_id ? null : pin.id,
-    pin.google_place_id || null
-  );
+const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
+  const [isLiked, setIsLiked] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [posts, setPosts] = useState<any[]>([]);
+  const [showVisitedModal, setShowVisitedModal] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [postsLoading, setPostsLoading] = useState(false);
+  const [postsPage, setPostsPage] = useState(1);
+  const [hasMorePosts, setHasMorePosts] = useState(true);
+  const [selectedPost, setSelectedPost] = useState<any>(null);
+  const [locationDetails, setLocationDetails] = useState<any>(null);
+
+  const fetchPosts = async (page: number = 1) => {
+    setPostsLoading(true);
+    try {
+      // First, try to find location by google_place_id
+      let locationId = place.id;
+      
+      if (!locationId && place.google_place_id) {
+        const { data: locationData } = await supabase
+          .from('locations')
+          .select('id, city, address, name')
+          .eq('google_place_id', place.google_place_id)
+          .maybeSingle();
+        
+        if (locationData) {
+          locationId = locationData.id;
+          setLocationDetails(locationData);
+        }
+      }
+      
+      if (locationId) {
+        const limit = 10;
+        const offset = (page - 1) * limit;
+        
+        const { data: postRows, error } = await supabase
+          .from('posts')
+          .select('id, user_id, caption, media_urls, created_at, location_id')
+          .eq('location_id', locationId)
+          .order('created_at', { ascending: false })
+          .range(offset, offset + limit - 1);
+        
+        if (postRows) {
+          const userIds = Array.from(new Set(postRows.map(p => p.user_id).filter(Boolean)));
+          let profilesMap = new Map<string, { username: string | null; avatar_url: string | null }>();
+          if (userIds.length) {
+            const { data: profilesData } = await supabase
+              .from('profiles')
+              .select('id, username, avatar_url')
+              .in('id', userIds);
+            profilesMap = new Map((profilesData || []).map((p: any) => [p.id, { username: p.username, avatar_url: p.avatar_url }]));
+          }
+          const mapped = postRows.map((p: any) => ({
+            ...p,
+            profiles: profilesMap.get(p.user_id) || null,
+          }));
+          if (page === 1) {
+            setPosts(mapped);
+          } else {
+            setPosts(prev => [...prev, ...mapped]);
+          }
+          setHasMorePosts(postRows.length === limit);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+    } finally {
+      setPostsLoading(false);
+    }
+  };
+
+  const loadMorePosts = () => {
+    const nextPage = postsPage + 1;
+    setPostsPage(nextPage);
+    fetchPosts(nextPage);
+  };
+
+  useEffect(() => {
+    const checkInteractions = async () => {
+      if (place.id) {
+        const [liked, saved] = await Promise.all([
+          locationInteractionService.isLocationLiked(place.id),
+          locationInteractionService.isLocationSaved(place.id)
+        ]);
+        
+        setIsLiked(liked);
+        setIsSaved(saved);
+      }
+    };
+
+    checkInteractions();
+    fetchPosts();
+  }, [place.id]);
+
+  const handleSaveToggle = async () => {
+    setLoading(true);
+    try {
+      if (isSaved) {
+        await locationInteractionService.unsaveLocation(place.id);
+        setIsSaved(false);
+      } else {
+        await locationInteractionService.saveLocation(place.id, {
+          google_place_id: place.google_place_id,
+          name: place.name,
+          address: place.address,
+          latitude: place.coordinates?.lat || 0,
+          longitude: place.coordinates?.lng || 0,
+          category: place.category,
+          types: place.types || []
+        });
+        setIsSaved(true);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDirections = () => {
+    // Detect device and use appropriate maps app
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const coords = `${place.coordinates.lat},${place.coordinates.lng}`;
+    
+    const url = isIOS 
+      ? `maps://maps.apple.com/?daddr=${coords}`
+      : `https://www.google.com/maps/dir/?api=1&destination=${coords}`;
+    
+    window.open(url, '_blank');
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md max-h-[85vh] overflow-y-auto shadow-2xl animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 duration-300">
-        {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900 truncate flex-1 mr-4">
-            {pin.name}
-          </h2>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="rounded-full h-8 w-8 p-0 hover:bg-gray-100"
-          >
-            <X className="w-5 h-5" />
-          </Button>
-        </div>
-
-        {/* Content */}
-        <div className="p-6 space-y-6">
-          {/* Location Info */}
-          <div className="flex items-start gap-3">
-            <div className="bg-blue-50 rounded-full p-2">
-              <MapPin className="w-5 h-5 text-blue-600" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-700">Location</p>
-              <p className="text-base text-gray-900">{pin.city || 'Unknown'}</p>
-            </div>
-          </div>
-
-          {/* Total Saves */}
-          <div className="flex items-start gap-3">
-            <div className="bg-purple-50 rounded-full p-2">
-              <Bookmark className="w-5 h-5 text-purple-600" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-700">Total Saves</p>
-              {loading ? (
-                <div className="h-6 w-16 bg-gray-100 rounded animate-pulse mt-1" />
-              ) : (
-                <p className="text-2xl font-bold text-gray-900">
-                  {engagement?.totalSaves || 0}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Followed Users Who Saved */}
-          {!loading && engagement && engagement.followedUsers.length > 0 && (
-            <div className="flex items-start gap-3">
-              <div className="bg-green-50 rounded-full p-2">
-                <Users className="w-5 h-5 text-green-600" />
+    <>
+      <Drawer 
+        open={true}
+        modal={false}
+        onOpenChange={(open) => { if (!open) onClose(); }}
+      >
+        <DrawerContent className="transition-all duration-300 h-auto max-h-[30vh] data-[state=open]:max-h-[90vh]">
+          {/* Draggable Header - Compact and Draggable */}
+          <div className="bg-background px-4 pt-3 pb-2 cursor-grab active:cursor-grabbing">
+            <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-3" />
+            <div className="flex items-center gap-3 pb-2">
+              <div className="shrink-0">
+                <CategoryIcon category={place.category || 'place'} className="w-10 h-10" />
               </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-700 mb-3">
-                  Friends who saved this
-                </p>
-                <div className="flex flex-wrap gap-3">
-                  {engagement.followedUsers.map((user) => (
-                    <div
-                      key={user.id}
-                      className="flex items-center gap-2 bg-gray-50 rounded-full px-3 py-2 hover:bg-gray-100 transition-colors"
-                    >
-                      <Avatar className="w-6 h-6">
-                        <AvatarImage src={user.avatar_url || undefined} />
-                        <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-500 text-white text-xs">
-                          {user.username?.charAt(0).toUpperCase() || '?'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm font-medium text-gray-700">
-                        {user.username}
-                      </span>
-                    </div>
-                  ))}
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-base text-foreground truncate">{locationDetails?.name || place.name}</h3>
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <MapPin className="w-3 h-3" />
+                  <span className="truncate">
+                    {locationDetails?.city || place.city || locationDetails?.address?.split(',')[1]?.trim() || place.address?.split(',')[1]?.trim() || 'Unknown'}
+                  </span>
                 </div>
               </div>
+              <button
+                onClick={() => setShareOpen(true)}
+                className="p-2 hover:bg-muted rounded-full transition-colors flex-shrink-0"
+              >
+                <Share2 className="w-5 h-5" />
+              </button>
             </div>
-          )}
+          </div>
 
-          {/* No Friends Saved Message */}
-          {!loading && engagement && engagement.followedUsers.length === 0 && (
-            <div className="text-center py-4">
-              <p className="text-sm text-gray-500">
-                None of your friends have saved this yet
-              </p>
+          {/* Action Buttons */}
+          <div className="bg-background px-4 pb-4">
+            <div className="grid grid-cols-4 gap-2">
+              <Button
+                onClick={handleSaveToggle}
+                disabled={loading}
+                size="sm"
+                variant="secondary"
+                className="flex-col h-auto py-3 gap-1 rounded-2xl"
+              >
+                <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
+                <span className="text-xs">{isSaved ? 'Saved' : 'Save'}</span>
+              </Button>
+
+              <Button
+                onClick={() => window.location.href = '/add'}
+                size="sm"
+                variant="secondary"
+                className="flex-col h-auto py-3 gap-1 rounded-2xl"
+              >
+                <Heart className="w-5 h-5" />
+                <span className="text-xs">Visited</span>
+              </Button>
+
+              <Button
+                onClick={handleDirections}
+                size="sm"
+                variant="secondary"
+                className="flex-col h-auto py-3 gap-1 rounded-2xl"
+              >
+                <Navigation className="w-5 h-5" />
+                <span className="text-xs">Directions</span>
+              </Button>
+
+              <Button
+                onClick={() => setShareOpen(true)}
+                size="sm"
+                variant="secondary"
+                className="flex-col h-auto py-3 gap-1 rounded-2xl"
+              >
+                <Share2 className="w-5 h-5" />
+                <span className="text-xs">Share</span>
+              </Button>
             </div>
-          )}
-        </div>
-      </div>
-    </div>
+          </div>
+
+          {/* Community Posts - Vertical Grid with Scrolling */}
+          <div className="px-4 py-4 bg-muted/30 flex-1 overflow-y-auto max-h-[calc(90vh-240px)]">
+            <div className="flex items-center gap-2 mb-3">
+              <MessageSquare className="w-4 h-4 text-muted-foreground" />
+              <h4 className="font-semibold text-sm text-foreground">
+                Community posts ({posts.length})
+              </h4>
+            </div>
+              
+              {posts.length > 0 ? (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    {posts.map((post) => (
+                      <button
+                        key={post.id} 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedPost(post);
+                        }}
+                        className="relative rounded-xl overflow-hidden bg-card shadow-sm hover:shadow-md transition-shadow"
+                      >
+                        {/* Post Image */}
+                        {post.media_urls?.[0] && (
+                          <div className="relative w-full h-48">
+                            <img 
+                              src={post.media_urls[0]} 
+                              alt="Post image" 
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                              decoding="async"
+                            />
+                            {/* User Avatar Overlay */}
+                            <div className="absolute top-2 left-2">
+                              <Avatar className="w-8 h-8 border-2 border-white shadow-lg">
+                                <AvatarImage src={post.profiles?.avatar_url} />
+                                <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                                  {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
+                                </AvatarFallback>
+                              </Avatar>
+                            </div>
+                            {/* Multiple images indicator */}
+                            {post.media_urls.length > 1 && (
+                              <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium">
+                                +{post.media_urls.length - 1}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {/* Post Caption */}
+                        {post.caption && (
+                          <div className="p-2.5">
+                            <p className="text-xs text-foreground line-clamp-2 leading-relaxed">
+                              {post.caption}
+                            </p>
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  
+                  {/* Load More Button */}
+                  {hasMorePosts && (
+                    <div className="mt-4 flex justify-center">
+                      <Button
+                        onClick={loadMorePosts}
+                        disabled={postsLoading}
+                        variant="outline"
+                        size="sm"
+                      >
+                        {postsLoading ? 'Loading...' : 'Load More'}
+                      </Button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="py-8 text-center">
+                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+                    <MessageSquare className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">No community posts yet</p>
+                  <p className="text-xs text-muted-foreground mt-1">Be the first to share!</p>
+                </div>
+              )}
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      {showVisitedModal && (
+        <VisitedModal
+          place={place}
+          onClose={() => setShowVisitedModal(false)}
+        />
+      )}
+
+      <PinShareModal
+        isOpen={shareOpen}
+        onClose={() => setShareOpen(false)}
+        place={place}
+      />
+
+      {selectedPost && (
+        <PostDetailModal
+          post={selectedPost}
+          isOpen={true}
+          onClose={() => setSelectedPost(null)}
+        />
+      )}
+    </>
   );
 };
+
+export default PinDetailCard;
