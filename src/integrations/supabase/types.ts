@@ -2374,6 +2374,14 @@ export type Database = {
           username: string
         }[]
       }
+      unaccent: {
+        Args: { "": string }
+        Returns: string
+      }
+      unaccent_init: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
       update_user_streak: {
         Args: { target_user_id: string }
         Returns: undefined
