@@ -210,8 +210,6 @@ const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
                   postsCount: p.postsCount || 0
                 }}
                 onCardClick={() => handlePlaceClick(p)}
-                isSaved={true}
-                onSaveToggle={(e) => e.stopPropagation()}
               />
             ))}
           </div>

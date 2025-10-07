@@ -1,6 +1,4 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Bookmark } from 'lucide-react';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 interface MinimalLocationCardProps {
   place: {
@@ -12,14 +10,10 @@ interface MinimalLocationCardProps {
     postsCount?: number;
   };
   onCardClick: () => void;
-  isSaved?: boolean;
-  onSaveToggle?: (e: React.MouseEvent) => void;
 }
 const MinimalLocationCard = ({
   place,
-  onCardClick,
-  isSaved,
-  onSaveToggle
+  onCardClick
 }: MinimalLocationCardProps) => {
   return <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-all duration-200" onClick={onCardClick}>
       <div className="flex items-center gap-3">
@@ -33,20 +27,6 @@ const MinimalLocationCard = ({
           </h3>
           
         </div>
-        
-        {onSaveToggle && (
-          <Button
-            onClick={(e) => {
-              e.stopPropagation();
-              onSaveToggle(e);
-            }}
-            variant="ghost"
-            size="sm"
-            className="flex-shrink-0"
-          >
-            <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
-          </Button>
-        )}
       </div>
     </div>;
 };
