@@ -81,12 +81,24 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
   // Detect aspect ratio when media loads
   useEffect(() => {
     if (post && post.media_urls[currentMediaIndex]) {
-      const img = new Image();
-      img.onload = () => {
-        const ratio = img.width / img.height;
-        setMediaAspectRatio(ratio > 1.2 ? 'horizontal' : 'vertical');
-      };
-      img.src = post.media_urls[currentMediaIndex];
+      const mediaUrl = post.media_urls[currentMediaIndex];
+      
+      // Check if it's a video
+      if (mediaUrl.endsWith('.mp4') || mediaUrl.endsWith('.mov')) {
+        const video = document.createElement('video');
+        video.onloadedmetadata = () => {
+          const ratio = video.videoWidth / video.videoHeight;
+          setMediaAspectRatio(ratio > 1.1 ? 'horizontal' : 'vertical');
+        };
+        video.src = mediaUrl;
+      } else {
+        const img = new Image();
+        img.onload = () => {
+          const ratio = img.width / img.height;
+          setMediaAspectRatio(ratio > 1.1 ? 'horizontal' : 'vertical');
+        };
+        img.src = mediaUrl;
+      }
     }
   }, [post, currentMediaIndex]);
 
@@ -193,46 +205,45 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
 
     setLikingPost(true);
     const isCurrentlyLiked = likedPosts.has(postId);
-    const newLikeCount = isCurrentlyLiked ? post.likes_count - 1 : post.likes_count + 1;
-
-    // Optimistic update
-    setPost(prev => prev ? { ...prev, likes_count: newLikeCount } : null);
 
     const success = await toggleLike(postId);
+    
     if (success) {
-      // Reload engagement data to ensure sync
+      // Refetch engagement state
       await refetchEngagement();
       
-      // Create notification for post owner
+      // Create notification for post owner (only on new like)
       if (post.user_id !== user.id && !isCurrentlyLiked) {
-        supabase.from('notifications').insert({
-          user_id: post.user_id,
-          type: 'like',
-          title: 'New like on your post',
-          message: `${user.user_metadata?.username || 'Someone'} liked your post`,
-          data: {
-            post_id: postId,
-            user_id: user.id,
-            user_name: user.user_metadata?.username,
-            user_avatar: user.user_metadata?.avatar_url,
-          },
-        });
+        try {
+          await supabase.from('notifications').insert({
+            user_id: post.user_id,
+            type: 'like',
+            title: 'New like on your post',
+            message: `${user.user_metadata?.username || 'Someone'} liked your post`,
+            data: {
+              post_id: postId,
+              user_id: user.id,
+              user_name: user.user_metadata?.username,
+              user_avatar: user.user_metadata?.avatar_url,
+            },
+          });
+        } catch (err) {
+          console.error('Error creating notification:', err);
+        }
       }
       
-      // Reload post data to get accurate count
+      // Reload post data (counts updated by DB trigger)
       await loadPostData();
       await loadPostLikers();
-    } else {
-      // Revert on failure
-      setPost(prev => prev ? { ...prev, likes_count: post.likes_count } : null);
     }
     
     setLikingPost(false);
   };
 
-  const handleCommentAdded = (comment: PostComment) => {
+  const handleCommentAdded = async (comment: PostComment) => {
     setComments([...comments, comment]);
-    setPost(prev => prev ? { ...prev, comments_count: (prev.comments_count || 0) + 1 } : null);
+    // Reload post to get updated count from database
+    await loadPostData();
   };
 
   const handleShare = async () => {
@@ -457,10 +468,10 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
 
             {/* Media Section */}
             <div 
-              className="relative bg-white flex items-center justify-center flex-shrink-0" 
+              className="relative bg-black flex items-center justify-center flex-shrink-0" 
               style={{ 
-                aspectRatio: mediaAspectRatio === 'vertical' ? '4/5' : '1.91/1',
-                maxHeight: '65vh'
+                aspectRatio: mediaAspectRatio === 'vertical' ? '4/5' : '16/9',
+                maxHeight: '60vh'
               }}
             >
               {post.media_urls[currentMediaIndex]?.endsWith('.mp4') || 
