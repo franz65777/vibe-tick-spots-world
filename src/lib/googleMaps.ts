@@ -108,3 +108,38 @@ export const waitForGoogleMaps = (timeout = 15000): Promise<void> => {
     checkReady();
   });
 };
+
+// Fetch Google Place Details (types, name, address, geometry)
+export const getPlaceDetails = async (
+  placeId: string
+): Promise<{ types: string[]; name?: string; formatted_address?: string; location?: { lat: number; lng: number } }> => {
+  await loadGoogleMapsAPI();
+  await waitForGoogleMaps();
+
+  return new Promise((resolve, reject) => {
+    try {
+      const service = new window.google.maps.places.PlacesService(document.createElement('div'));
+      service.getDetails(
+        { placeId, fields: ['place_id', 'types', 'name', 'formatted_address', 'geometry'] },
+        (result: any, status: any) => {
+          const ok = window.google.maps.places.PlacesServiceStatus.OK;
+          if (status === ok && result) {
+            const location = result.geometry?.location
+              ? { lat: result.geometry.location.lat(), lng: result.geometry.location.lng() }
+              : undefined;
+            resolve({
+              types: result.types || [],
+              name: result.name,
+              formatted_address: result.formatted_address,
+              location,
+            });
+          } else {
+            reject(new Error(`Place details failed: ${status}`));
+          }
+        }
+      );
+    } catch (e) {
+      reject(e);
+    }
+  });
+};

@@ -28,10 +28,12 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [selectedPost, setSelectedPost] = useState<any>(null);
   const [locationDetails, setLocationDetails] = useState<any>(null);
-  
+
+  const locationIdForEngagement = place.id || locationDetails?.id || null;
+  const googlePlaceIdForEngagement = place.google_place_id || locationDetails?.google_place_id || null;
   const { engagement, loading: engagementLoading } = usePinEngagement(
-    place.id,
-    place.google_place_id
+    locationIdForEngagement,
+    googlePlaceIdForEngagement
   );
 
   const fetchPosts = async (page: number = 1) => {
@@ -114,6 +116,24 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
 
     checkInteractions();
     fetchPosts();
+  }, [place.id]);
+
+  useEffect(() => {
+    const fetchLocationById = async () => {
+      try {
+        if (place.id && !locationDetails?.google_place_id) {
+          const { data } = await supabase
+            .from('locations')
+            .select('id, city, address, name, google_place_id')
+            .eq('id', place.id)
+            .maybeSingle();
+          if (data) setLocationDetails((prev: any) => ({ ...(prev || {}), ...data }));
+        }
+      } catch (e) {
+        console.warn('Failed to fetch location details by id', e);
+      }
+    };
+    fetchLocationById();
   }, [place.id]);
 
   const handleSaveToggle = async () => {
