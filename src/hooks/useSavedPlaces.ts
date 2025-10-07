@@ -265,14 +265,32 @@ export const useSavedPlaces = () => {
     }
 
     try {
-      // Remove from database
-      const { error } = await supabase
+      // Delete from saved_places table (Google places)
+      const { error: savedPlacesError } = await supabase
         .from('saved_places')
         .delete()
         .eq('user_id', user.id)
         .eq('place_id', placeId);
       
-      if (error) throw error;
+      if (savedPlacesError) console.error('Error deleting from saved_places:', savedPlacesError);
+
+      // Also try to delete from user_saved_locations (internal locations)
+      // First find the internal location by google_place_id or by id
+      const { data: locationData } = await supabase
+        .from('locations')
+        .select('id')
+        .or(`google_place_id.eq.${placeId},id.eq.${placeId}`)
+        .maybeSingle();
+
+      if (locationData?.id) {
+        const { error: userSavedError } = await supabase
+          .from('user_saved_locations')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('location_id', locationData.id);
+        
+        if (userSavedError) console.error('Error deleting from user_saved_locations:', userSavedError);
+      }
 
       // Update local state
       setSavedPlaces(prev => {

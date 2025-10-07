@@ -1,11 +1,13 @@
 
 import { useState, useMemo } from 'react';
-import { ArrowLeft, Search, MapPin } from 'lucide-react';
+import { ArrowLeft, Search, MapPin, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import MinimalLocationCard from '@/components/explore/MinimalLocationCard';
 import LocationPostLibrary from '@/components/explore/LocationPostLibrary';
+import { toast } from 'sonner';
 
 interface SavedLocationsListProps {
   isOpen: boolean;
@@ -13,7 +15,7 @@ interface SavedLocationsListProps {
 }
 
 const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
-  const { savedPlaces, loading } = useSavedPlaces();
+  const { savedPlaces, loading, unsavePlace } = useSavedPlaces();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
@@ -79,6 +81,16 @@ const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
         lng: place.longitude || 0 
       }
     });
+  };
+
+  const handleUnsave = async (e: React.MouseEvent, place: any) => {
+    e.stopPropagation();
+    try {
+      await unsavePlace(place.id, place.city);
+      toast.success(`Removed ${place.name} from saved locations`);
+    } catch (error) {
+      toast.error('Failed to remove location');
+    }
   };
 
   if (!isOpen) return null;
@@ -199,18 +211,27 @@ const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
         <div className="flex-1 overflow-y-auto bg-background">
           <div className="grid grid-cols-2 gap-3 px-4 py-4">
             {filteredAndSortedPlaces.map((p) => (
-              <MinimalLocationCard
-                key={`${p.city}-${p.id}`}
-                place={{
-                  id: p.id,
-                  name: p.name,
-                  category: p.category,
-                  city: p.city,
-                  savedCount: p.savedCount || 0,
-                  postsCount: p.postsCount || 0
-                }}
-                onCardClick={() => handlePlaceClick(p)}
-              />
+              <div key={`${p.city}-${p.id}`} className="relative group">
+                <MinimalLocationCard
+                  place={{
+                    id: p.id,
+                    name: p.name,
+                    category: p.category,
+                    city: p.city,
+                    savedCount: p.savedCount || 0,
+                    postsCount: p.postsCount || 0
+                  }}
+                  onCardClick={() => handlePlaceClick(p)}
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-2 right-2 h-6 w-6 bg-background/80 hover:bg-background opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={(e) => handleUnsave(e, p)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
             ))}
           </div>
         </div>
