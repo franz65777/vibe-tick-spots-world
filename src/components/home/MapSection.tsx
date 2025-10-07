@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import GoogleMapsSetup from '@/components/GoogleMapsSetup';
 import AddLocationModal from './AddLocationModal';
 import QuickAddPinModal from './QuickAddPinModal';
@@ -22,9 +22,18 @@ interface MapSectionProps {
   currentCity: string;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
+  initialSelectedPlace?: Place | null;
+  onClearInitialPlace?: () => void;
 }
 
-const MapSection = ({ mapCenter, currentCity, isExpanded = false, onToggleExpand }: MapSectionProps) => {
+const MapSection = ({ 
+  mapCenter, 
+  currentCity, 
+  isExpanded = false, 
+  onToggleExpand,
+  initialSelectedPlace,
+  onClearInitialPlace
+}: MapSectionProps) => {
   const [isAddLocationModalOpen, setIsAddLocationModalOpen] = useState(false);
   const [isQuickAddModalOpen, setIsQuickAddModalOpen] = useState(false);
   const [isPinShareModalOpen, setIsPinShareModalOpen] = useState(false);
@@ -42,6 +51,14 @@ const MapSection = ({ mapCenter, currentCity, isExpanded = false, onToggleExpand
     selectedCategories,
     currentCity
   });
+
+  // Handle initial selected place from navigation
+  useEffect(() => {
+    if (initialSelectedPlace) {
+      setSelectedPlace(initialSelectedPlace);
+      onClearInitialPlace?.();
+    }
+  }, [initialSelectedPlace, onClearInitialPlace]);
 
   // Convert locations to Place format for GoogleMapsSetup with creator info
   const places: Place[] = locations.map(location => ({

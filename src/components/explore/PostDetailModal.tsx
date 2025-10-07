@@ -307,7 +307,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
   const handleLocationClick = () => {
     if (post?.locations) {
       onClose();
-      // Navigate to home page with map centered on this location
+      // Navigate to home page with map centered on this location and pin detail card open
       navigate('/', { 
         state: { 
           centerMap: {
@@ -315,6 +315,14 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
             lng: post.locations.longitude,
             placeId: post.locations.google_place_id,
             name: post.locations.name
+          },
+          openPinDetail: {
+            id: post.locations.google_place_id || post.locations.id,
+            name: post.locations.name,
+            category: post.locations.category,
+            city: post.locations.city,
+            lat: post.locations.latitude,
+            lng: post.locations.longitude
           }
         } 
       });
@@ -322,8 +330,8 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
   };
 
   return (
-    <div className="fixed inset-0 bg-black/95 z-[60] flex items-center justify-center p-0">
-      <div className="relative bg-background w-full h-full max-w-2xl md:max-w-4xl max-h-[100vh] md:max-h-[95vh] flex flex-col overflow-hidden md:rounded-lg">
+    <div className="fixed inset-0 bg-black/95 z-[60] flex items-center justify-center p-0 pb-16 md:pb-0">
+      <div className="relative bg-background w-full h-full max-w-2xl md:max-w-4xl max-h-[calc(100vh-64px)] md:max-h-[95vh] flex flex-col overflow-hidden md:rounded-lg">
         {/* Close button */}
         <Button
           variant="ghost"
@@ -348,12 +356,17 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
                   {post.profiles.username[0].toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm truncate">{post.profiles.username}</p>
+              <div className="flex flex-col flex-1 min-w-0">
+                <button
+                  onClick={() => navigate(`/profile/${post.user_id}`)}
+                  className="font-semibold text-sm truncate hover:opacity-70 text-left transition-opacity"
+                >
+                  {post.profiles.username}
+                </button>
                 {post.locations && (
                   <button
                     onClick={handleLocationClick}
-                    className="text-xs text-muted-foreground hover:underline truncate block w-full text-left"
+                    className="text-xs text-muted-foreground hover:underline truncate text-left"
                   >
                     {post.locations.name}
                   </button>
@@ -362,7 +375,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
             </div>
 
             {/* Media Section */}
-            <div className="relative bg-black flex items-center justify-center flex-shrink-0" style={{ maxHeight: '50vh' }}>
+            <div className="relative bg-white flex items-center justify-center flex-shrink-0" style={{ maxHeight: '50vh' }}>
               {post.media_urls[currentMediaIndex]?.endsWith('.mp4') || 
                post.media_urls[currentMediaIndex]?.endsWith('.mov') ? (
                 <video
@@ -498,8 +511,8 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
             </div>
 
             {/* Scrollable Caption & Comments */}
-            <ScrollArea className="flex-1 px-4 py-3 bg-background">
-              <div className="space-y-4">
+            <ScrollArea className="flex-1 px-4 py-3 bg-background overflow-y-auto">
+              <div className="space-y-4 pb-4">
                 {/* Caption */}
                 {post.caption && (
                   <div className="flex gap-3">

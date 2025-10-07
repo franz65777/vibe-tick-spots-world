@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { MapFilterProvider } from '@/contexts/MapFilterContext';
 import { Place } from '@/types/place';
@@ -40,6 +40,7 @@ interface LocalPlace {
 
 const HomePage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [selectedCity, setSelectedCity] = useState('');
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
@@ -65,11 +66,37 @@ const HomePage = () => {
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const [isSwipeDiscoveryOpen, setIsSwipeDiscoveryOpen] = useState(false);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
+  const [initialPinToShow, setInitialPinToShow] = useState<Place | null>(null);
   
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [currentCity, setCurrentCity] = useState('');
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
+
+  // Handle navigation state for opening pin detail from posts
+  useEffect(() => {
+    const state = location.state as any;
+    if (state?.centerMap) {
+      setMapCenter({ lat: state.centerMap.lat, lng: state.centerMap.lng });
+    }
+    if (state?.openPinDetail) {
+      const pin = state.openPinDetail;
+      const placeToShow: Place = {
+        id: pin.id,
+        name: pin.name,
+        category: pin.category,
+        coordinates: { lat: pin.lat, lng: pin.lng },
+        address: '',
+        isFollowing: false,
+        isNew: false,
+        likes: 0,
+        visitors: []
+      };
+      setInitialPinToShow(placeToShow);
+    }
+    // Clear navigation state
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [location.state]);
 
   // Get user's current location on component mount and when tab becomes visible
   useEffect(() => {
@@ -378,6 +405,8 @@ const HomePage = () => {
               currentCity={currentCity}
               isExpanded={isMapExpanded}
               onToggleExpand={() => setIsMapExpanded(!isMapExpanded)}
+              initialSelectedPlace={initialPinToShow}
+              onClearInitialPlace={() => setInitialPinToShow(null)}
             />
           </div>
         )}
