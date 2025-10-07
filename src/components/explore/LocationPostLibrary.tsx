@@ -10,6 +10,7 @@ import { locationInteractionService } from '@/services/locationInteractionServic
 import PlaceInteractionModal from '@/components/home/PlaceInteractionModal';
 import PinShareModal from './PinShareModal';
 import { toast } from 'sonner';
+import { useUserPosts } from '@/hooks/useUserPosts';
 interface LocationPost {
   id: string;
   user_id: string;
@@ -60,6 +61,7 @@ const LocationPostLibrary = ({
   const [postsPage, setPostsPage] = useState(1);
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
+  const { posts: userPosts } = useUserPosts(user?.id);
   const displayCity = place?.city || place?.address?.split(',')[1]?.trim() || 'Unknown City';
   const {
     trackSave,
@@ -464,7 +466,47 @@ const LocationPostLibrary = ({
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">No posts yet</h3>
             <p className="text-gray-600 mb-6">Be the first to share your experience at {place.name}!</p>
-            <Button className="bg-blue-600 hover:bg-blue-700">
+            
+            {/* Show user's posts from their profile */}
+            {userPosts && userPosts.length > 0 && (
+              <div className="w-full mt-6">
+                <h4 className="text-sm font-medium text-gray-700 mb-3">Your Recent Posts</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  {userPosts.slice(0, 4).map((post) => (
+                    <div 
+                      key={post.id} 
+                      className="relative h-32 bg-gray-200 rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition shadow-sm"
+                      onClick={() => {
+                        const mappedPost: LocationPost = {
+                          id: post.id,
+                          user_id: post.user_id,
+                          caption: post.caption || null,
+                          media_urls: post.media_urls || [],
+                          likes_count: post.likes_count || 0,
+                          comments_count: post.comments_count || 0,
+                          saves_count: post.saves_count || 0,
+                          created_at: post.created_at,
+                          metadata: {},
+                          profiles: null
+                        };
+                        setSelectedPost(mappedPost);
+                      }}
+                    >
+                      {post.media_urls && post.media_urls.length > 0 && (
+                        <img 
+                          src={post.media_urls[0]} 
+                          alt="Post" 
+                          className="w-full h-full object-cover" 
+                          loading="lazy" 
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <Button className="bg-blue-600 hover:bg-blue-700 mt-6" onClick={() => window.location.href = '/add'}>
               Share Your Experience
             </Button>
           </div> : <div className="p-3">
