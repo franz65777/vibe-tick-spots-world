@@ -51,8 +51,11 @@ const MessagesPage = () => {
 
   useEffect(() => {
     if (selectedThread && view === 'chat') {
-      loadMessages(selectedThread.id);
-      setupRealtimeSubscription();
+      const otherParticipant = getOtherParticipant(selectedThread);
+      if (otherParticipant) {
+        loadMessages(otherParticipant.id);
+        setupRealtimeSubscription();
+      }
     }
   }, [selectedThread, view]);
 
@@ -77,10 +80,10 @@ const MessagesPage = () => {
     }
   };
 
-  const loadMessages = async (threadId: string) => {
+  const loadMessages = async (otherUserId: string) => {
     try {
       setLoading(true);
-      const data = await messageService.getMessagesInThread(threadId);
+      const data = await messageService.getMessagesInThread(otherUserId);
       setMessages(data || []);
     } catch (error) {
       console.error('Error loading messages:', error);
@@ -133,7 +136,7 @@ const MessagesPage = () => {
       setSending(true);
       await messageService.sendTextMessage(otherParticipant.id, newMessage.trim());
       setNewMessage('');
-      await loadMessages(selectedThread.id);
+      await loadMessages(otherParticipant.id);
     } catch (error) {
       console.error('Error sending message:', error);
     } finally {
@@ -190,7 +193,7 @@ const MessagesPage = () => {
     if (existingThread) {
       setSelectedThread(existingThread);
       setView('chat');
-      await loadMessages(existingThread.id);
+      await loadMessages(selectedUser.id);
     } else {
       const newThread: MessageThread = {
         id: '',
