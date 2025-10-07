@@ -96,35 +96,56 @@ const LocationPostLibrary = ({
     try {
       setLoading(true);
       console.log('🔍 FETCHING POSTS FOR LOCATION:', place.name, 'ID:', place.id, 'Page:', page);
-      let locationIds = [place.id];
+      
+      // Find all internal location UUIDs that match this place
+      let locationIds: string[] = [];
+      
       if (place.google_place_id) {
-        console.log('📍 Finding all locations with Google Place ID:', place.google_place_id);
-        const {
-          data: relatedLocations,
-          error: locationError
-        } = await supabase.from('locations').select('id, name, google_place_id').or(`google_place_id.eq.${place.google_place_id},name.ilike.${place.name}`);
+        console.log('📍 Finding locations with Google Place ID:', place.google_place_id);
+        // Find all locations with this google_place_id
+        const { data: relatedLocations, error: locationError } = await supabase
+          .from('locations')
+          .select('id, name, google_place_id')
+          .eq('google_place_id', place.google_place_id);
+        
         if (locationError) {
           console.error('❌ Error finding related locations:', locationError);
-        } else if (relatedLocations) {
+        } else if (relatedLocations && relatedLocations.length > 0) {
           locationIds = relatedLocations.map(loc => loc.id);
-          console.log('✅ Found related location IDs:', locationIds);
-        }
-      } else {
-        const {
-          data: nameMatchLocations,
-          error: nameError
-        } = await supabase.from('locations').select('id, name').ilike('name', place.name);
-        if (nameError) {
-          console.error('❌ Error finding locations by name:', nameError);
-        } else if (nameMatchLocations) {
-          locationIds = nameMatchLocations.map(loc => loc.id);
-          console.log('✅ Found name-matched location IDs:', locationIds);
+          console.log('✅ Found location IDs by Google Place ID:', locationIds);
         }
       }
-      if (!locationIds.includes(place.id)) {
+      
+      // If place.id looks like a UUID, add it
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(place.id) && !locationIds.includes(place.id)) {
         locationIds.push(place.id);
       }
-      console.log('🎯 FINAL LOCATION IDs TO SEARCH:', locationIds);
+      
+      // If no location IDs found yet, try by name
+      if (locationIds.length === 0) {
+        const { data: nameMatchLocations, error: nameError } = await supabase
+          .from('locations')
+          .select('id, name')
+          .ilike('name', place.name);
+        
+        if (nameError) {
+          console.error('❌ Error finding locations by name:', nameError);
+        } else if (nameMatchLocations && nameMatchLocations.length > 0) {
+          locationIds = nameMatchLocations.map(loc => loc.id);
+          console.log('✅ Found location IDs by name:', locationIds);
+        }
+      }
+      
+      console.log('🎯 FINAL LOCATION IDs TO SEARCH (UUIDs only):', locationIds);
+      
+      // If no valid location IDs found, return empty
+      if (locationIds.length === 0) {
+        console.log('❌ No valid location IDs found');
+        setPosts([]);
+        setLoading(false);
+        return;
+      }
       const limit = 8;
       const offset = (page - 1) * limit;
       const {
