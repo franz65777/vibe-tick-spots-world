@@ -396,7 +396,9 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
             id: selectedLocation.id,
             name: selectedLocation.name,
             city: selectedLocation.city,
-            google_place_id: selectedLocation.google_place_id
+            address: selectedLocation.address,
+            google_place_id: selectedLocation.google_place_id,
+            coordinates: selectedLocation.coordinates
           }}
           isOpen={isLibraryOpen}
           onClose={() => {
