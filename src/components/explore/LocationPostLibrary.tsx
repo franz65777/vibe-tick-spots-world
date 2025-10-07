@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, MapPin, Calendar, Users, Heart, MessageCircle, Share2, Bookmark, X } from 'lucide-react';
+import { ChevronLeft, MapPin, Calendar, Users, Heart, MessageCircle, Share2, Bookmark, X, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -411,14 +411,53 @@ const LocationPostLibrary = ({
 
       {/* Actions */}
       <div className="bg-white px-4 py-3 border-b">
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="secondary" onClick={handleSaveLocation}>Save</Button>
-          <Button size="sm" variant="secondary" onClick={handleVisited}>Visited</Button>
-          <Button size="sm" variant="secondary" onClick={() => {
-              const url = place.google_place_id ? `https://www.google.com/maps/search/?api=1&query=place_id:${place.google_place_id}` : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(place.name + ' ' + (displayCity || ''))}`;
+        <div className="grid grid-cols-4 gap-2">
+          <Button
+            onClick={handleSaveLocation}
+            size="sm"
+            variant="secondary"
+            className="flex-col h-auto py-3 gap-1 rounded-2xl"
+          >
+            <Bookmark className="w-5 h-5" />
+            <span className="text-xs">Save</span>
+          </Button>
+
+          <Button
+            onClick={handleVisited}
+            size="sm"
+            variant="secondary"
+            className="flex-col h-auto py-3 gap-1 rounded-2xl"
+          >
+            <Heart className="w-5 h-5" />
+            <span className="text-xs">Visited</span>
+          </Button>
+
+          <Button
+            onClick={() => {
+              const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+              const coords = place.coordinates ? `${place.coordinates.lat},${place.coordinates.lng}` : '';
+              const url = isIOS 
+                ? `maps://maps.apple.com/?daddr=${coords}`
+                : `https://www.google.com/maps/dir/?api=1&destination=${coords}`;
               window.open(url, '_blank');
-            }}>Get Directions</Button>
-          <Button size="sm" variant="secondary" onClick={() => setIsShareModalOpen(true)}>Share</Button>
+            }}
+            size="sm"
+            variant="secondary"
+            className="flex-col h-auto py-3 gap-1 rounded-2xl"
+          >
+            <Navigation className="w-5 h-5" />
+            <span className="text-xs">Directions</span>
+          </Button>
+
+          <Button
+            onClick={() => setIsShareModalOpen(true)}
+            size="sm"
+            variant="secondary"
+            className="flex-col h-auto py-3 gap-1 rounded-2xl"
+          >
+            <Share2 className="w-5 h-5" />
+            <span className="text-xs">Share</span>
+          </Button>
         </div>
       </div>
 
