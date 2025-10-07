@@ -59,6 +59,7 @@ const LocationPostLibrary = ({
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [postsPage, setPostsPage] = useState(1);
   const [hasMorePosts, setHasMorePosts] = useState(true);
+  const [isSaved, setIsSaved] = useState(false);
   const displayCity = place?.city || place?.address?.split(',')[1]?.trim() || 'Unknown City';
   const {
     trackSave,
@@ -71,8 +72,19 @@ const LocationPostLibrary = ({
     fetchLocationPosts();
     if (user) {
       fetchUserInteractions();
+      checkIfLocationSaved();
     }
   }, [place?.id, user]);
+
+  const checkIfLocationSaved = async () => {
+    if (!user || !place?.id) return;
+    try {
+      const saved = await locationInteractionService.isLocationSaved(place.id);
+      setIsSaved(saved);
+    } catch (error) {
+      console.error('Error checking if location is saved:', error);
+    }
+  };
 
   // Early return after ALL hooks
   if (!place) {
@@ -259,52 +271,35 @@ const LocationPostLibrary = ({
       return;
     }
     try {
-      // Prepare location data for saving
-      const locationData = {
-        google_place_id: place.google_place_id || place.id,
-        name: place.name,
-        address: place.address,
-        latitude: place.coordinates?.lat || 0,
-        longitude: place.coordinates?.lng || 0,
-        category: place.category || 'place',
-        types: []
-      };
-
-      // Save using locationInteractionService which handles location creation
-      const ok = await locationInteractionService.saveLocation(place.id, locationData);
-      if (ok) {
-        // Also save to saved_places for Google Places (ignore duplicates)
-        if (place.google_place_id || place.coordinates) {
-          const {
-            error
-          } = await supabase.from('saved_places').insert({
-            user_id: user.id,
-            place_id: place.google_place_id || place.id,
-            place_name: place.name,
-            place_category: place.category,
-            city: displayCity,
-            coordinates: place.coordinates
-          });
-
-          // Ignore duplicate errors
-          if (error && !error.message.includes('duplicate')) {
-            console.error('Error saving to saved_places:', error);
-          }
-        }
-        toast.success('Location saved successfully!');
+      if (isSaved) {
+        // Unsave the location
+        await locationInteractionService.unsaveLocation(place.id);
+        setIsSaved(false);
+        toast.success('Location removed from saved');
       } else {
-        toast.error('Failed to save location');
+        // Save the location
+        const locationData = {
+          google_place_id: place.google_place_id || place.id,
+          name: place.name,
+          address: place.address,
+          latitude: place.coordinates?.lat || 0,
+          longitude: place.coordinates?.lng || 0,
+          category: place.category || 'place',
+          types: place.category ? [place.category] : []
+        };
+
+        await locationInteractionService.saveLocation(place.id, locationData);
+        setIsSaved(true);
+        toast.success('Location saved successfully!');
       }
     } catch (error) {
-      console.error('Error saving location:', error);
-      toast.error('Failed to save location');
+      console.error('Error toggling save:', error);
+      toast.error('Failed to update location');
     }
   };
-  const handleVisited = async () => {
-    try {
-      await trackVisit(place.id);
-    } catch {}
-    setShowComments(true);
+  
+  const handleVisited = () => {
+    window.location.href = '/add';
   };
   if (selectedPost) {
     return <Drawer open={!!selectedPost} onOpenChange={open => !open && setSelectedPost(null)}>
@@ -418,8 +413,8 @@ const LocationPostLibrary = ({
             variant="secondary"
             className="flex-col h-auto py-3 gap-1 rounded-2xl"
           >
-            <Bookmark className="w-5 h-5" />
-            <span className="text-xs">Save</span>
+            <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
+            <span className="text-xs">{isSaved ? 'Saved' : 'Save'}</span>
           </Button>
 
           <Button
