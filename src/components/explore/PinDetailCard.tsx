@@ -9,6 +9,7 @@ import VisitedModal from './VisitedModal';
 import PinShareModal from './PinShareModal';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import PostDetailModal from './PostDetailModal';
+import { usePinEngagement } from '@/hooks/usePinEngagement';
 
 interface PinDetailCardProps {
   place: any;
@@ -27,6 +28,11 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [selectedPost, setSelectedPost] = useState<any>(null);
   const [locationDetails, setLocationDetails] = useState<any>(null);
+  
+  const { engagement, loading: engagementLoading } = usePinEngagement(
+    place.id,
+    place.google_place_id
+  );
 
   const fetchPosts = async (page: number = 1) => {
     setPostsLoading(true);
@@ -169,12 +175,32 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                   </span>
                 </div>
               </div>
-              <button
-                onClick={() => setShareOpen(true)}
-                className="p-2 hover:bg-muted rounded-full transition-colors flex-shrink-0"
-              >
-                <Share2 className="w-5 h-5" />
-              </button>
+              {/* Total Saves & Followed Users */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {engagement.totalSaves > 0 && (
+                  <div className="flex items-center gap-1.5 bg-muted px-3 py-1.5 rounded-full">
+                    <Bookmark className="w-4 h-4 fill-current" />
+                    <span className="text-sm font-medium">{engagement.totalSaves}</span>
+                  </div>
+                )}
+                {engagement.followedUsers.length > 0 && (
+                  <div className="flex items-center -space-x-2">
+                    {engagement.followedUsers.slice(0, 2).map((user) => (
+                      <Avatar key={user.id} className="w-8 h-8 border-2 border-background">
+                        <AvatarImage src={user.avatar_url} />
+                        <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                          {user.username?.[0]?.toUpperCase() || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                    ))}
+                    {engagement.followedUsers.length > 2 && (
+                      <div className="w-8 h-8 rounded-full bg-muted border-2 border-background flex items-center justify-center">
+                        <span className="text-xs font-medium">+{engagement.followedUsers.length - 2}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
