@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Building2, Camera } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -11,6 +11,8 @@ import TripsGrid from './profile/TripsGrid';
 import TaggedPostsGrid from './profile/TaggedPostsGrid';
 import BadgeDisplay from './profile/BadgeDisplay';
 import Achievements from './profile/Achievements';
+import FollowersModal from './profile/FollowersModal';
+import SavedLocationsList from './profile/SavedLocationsList';
 
 const UserProfilePage = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -18,8 +20,21 @@ const UserProfilePage = () => {
   const { user: currentUser } = useAuth();
   const { profile, loading, error, followUser, unfollowUser } = useUserProfile(userId);
   const [activeTab, setActiveTab] = useState('posts');
+  const [modalState, setModalState] = useState<{ isOpen: boolean; type: 'followers' | 'following' | null }>({
+    isOpen: false,
+    type: null
+  });
+  const [isLocationsListOpen, setIsLocationsListOpen] = useState(false);
 
   const isOwnProfile = currentUser?.id === userId;
+
+  const openModal = (type: 'followers' | 'following') => {
+    setModalState({ isOpen: true, type });
+  };
+
+  const closeModal = () => {
+    setModalState({ isOpen: false, type: null });
+  };
 
   const getInitials = () => {
     if (profile?.username) {
@@ -73,7 +88,7 @@ const UserProfilePage = () => {
       case 'badges':
         return <Achievements userId={userId} />;
       case 'tagged':
-        return <TaggedPostsGrid />;
+        return <TaggedPostsGrid userId={userId} />;
       default:
         return <PostsGrid userId={userId} />;
     }
@@ -116,18 +131,29 @@ const UserProfilePage = () => {
 
             {/* Stats Row */}
             <div className="flex gap-4 mb-2">
-              <div className="text-center">
+              <button 
+                className="text-center"
+                onClick={() => openModal('followers')}
+              >
                 <div className="text-sm font-bold text-foreground">{profile.followers_count || 0}</div>
                 <div className="text-xs text-muted-foreground">Followers</div>
-              </div>
-              <div className="text-center">
+              </button>
+              
+              <button 
+                className="text-center"
+                onClick={() => openModal('following')}
+              >
                 <div className="text-sm font-bold text-foreground">{profile.following_count || 0}</div>
                 <div className="text-xs text-muted-foreground">Following</div>
-              </div>
-              <div className="text-center">
+              </button>
+              
+              <button 
+                className="text-center"
+                onClick={() => setIsLocationsListOpen(true)}
+              >
                 <div className="text-sm font-bold text-foreground">{profile.places_visited || 0}</div>
                 <div className="text-xs text-muted-foreground">Saved</div>
-              </div>
+              </button>
             </div>
 
             {profile.bio && (
@@ -156,6 +182,21 @@ const UserProfilePage = () => {
       <div className="flex-1 pb-4 overflow-y-auto">
         {renderTabContent()}
       </div>
+
+      {!isOwnProfile && (
+        <>
+          <FollowersModal 
+            isOpen={modalState.isOpen}
+            onClose={closeModal}
+            type={modalState.type || 'followers'}
+          />
+
+          <SavedLocationsList
+            isOpen={isLocationsListOpen}
+            onClose={() => setIsLocationsListOpen(false)}
+          />
+        </>
+      )}
     </div>
   );
 };

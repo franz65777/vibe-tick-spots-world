@@ -4,20 +4,25 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 import PostDetailModal from '../explore/PostDetailModal';
 
-const TaggedPostsGrid = () => {
+interface TaggedPostsGridProps {
+  userId?: string;
+}
+
+const TaggedPostsGrid = ({ userId }: TaggedPostsGridProps) => {
   const { user } = useAuth();
+  const targetUserId = userId || user?.id;
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user) {
+    if (targetUserId) {
       fetchTaggedPosts();
     }
-  }, [user]);
+  }, [targetUserId]);
 
   const fetchTaggedPosts = async () => {
-    if (!user) return;
+    if (!targetUserId) return;
 
     try {
       setLoading(true);
@@ -32,22 +37,13 @@ const TaggedPostsGrid = () => {
           media_urls,
           likes_count,
           comments_count,
+          saves_count,
+          shares_count,
           created_at,
           tagged_users,
-          location_id,
-          locations (
-            id,
-            name,
-            address,
-            city
-          ),
-          profiles (
-            id,
-            username,
-            avatar_url
-          )
+          location_id
         `)
-        .contains('tagged_users', [user.id])
+        .contains('tagged_users', [targetUserId])
         .order('created_at', { ascending: false });
 
       if (error) throw error;
