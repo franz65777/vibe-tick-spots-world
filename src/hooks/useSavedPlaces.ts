@@ -26,6 +26,27 @@ export const useSavedPlaces = () => {
   const [savedPlaces, setSavedPlaces] = useState<SavedPlacesData>({});
   const [loading, setLoading] = useState(true);
 
+  // Helper function to normalize city names
+  const normalizeCity = (city: string | null | undefined): string => {
+    if (!city) return 'Unknown';
+    
+    let normalized = city;
+    
+    // Remove postal district numbers (e.g., "Dublin 2" -> "Dublin")
+    normalized = normalized.replace(/\s+\d+$/, '');
+    
+    // Remove "County" prefix (e.g., "County Dublin" -> "Dublin")
+    normalized = normalized.replace(/^County\s+/i, '');
+    
+    // Check if it's a numeric postal code or too short
+    if (/^\d+$/.test(normalized.trim()) || normalized.trim().length <= 2) {
+      return 'Unknown';
+    }
+    
+    // Trim whitespace
+    return normalized.trim();
+  };
+
   // Helper function to reverse geocode coordinates to get city/address
   const reverseGeocode = async (lat: number, lng: number): Promise<{ city: string; address: string } | null> => {
     try {
@@ -104,15 +125,12 @@ export const useSavedPlaces = () => {
             continue;
           }
           
-          let city = place.city;
+          let city = normalizeCity(place.city);
           const coords = place.coordinates as any;
           
           // Check if we need to reverse geocode
-          if ((!city || city === 'Unknown') && coords?.lat && coords?.lng) {
+          if (city === 'Unknown' && coords?.lat && coords?.lng) {
             placesNeedingGeocode.push({ place, index: i, source: 'saved_places' });
-            city = 'Unknown';
-          } else if (!city) {
-            city = 'Unknown';
           }
           
           if (!groupedByCity[city]) {
@@ -141,14 +159,11 @@ export const useSavedPlaces = () => {
             continue;
           }
           
-          let city = location.city;
+          let city = normalizeCity(location.city);
           
           // Check if we need to reverse geocode
-          if ((!city || city === 'Unknown') && location.latitude && location.longitude) {
+          if (city === 'Unknown' && location.latitude && location.longitude) {
             placesNeedingGeocode.push({ place: { ...location, saved_id: item.id }, index: i, source: 'user_saved_locations' });
-            city = 'Unknown';
-          } else if (!city) {
-            city = 'Unknown';
           }
           
           if (!groupedByCity[city]) {

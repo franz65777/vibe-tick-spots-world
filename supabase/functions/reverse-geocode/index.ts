@@ -55,37 +55,54 @@ serve(async (req) => {
           const response = await fetch(geocodeUrl);
           const data = await response.json();
 
-          if (data.status === 'OK' && data.results.length > 0) {
-            // Extract city from address components
-            const result = data.results[0];
-            let city = '';
+      if (data.status === 'OK' && data.results.length > 0) {
+        // Extract city from address components
+        const result = data.results[0];
+        let city = '';
+        let locality = '';
+        let adminLevel2 = '';
 
-            for (const component of result.address_components) {
-              if (component.types.includes('locality')) {
-                city = component.long_name;
-                break;
-              } else if (component.types.includes('administrative_area_level_2')) {
-                city = component.long_name;
-              } else if (component.types.includes('administrative_area_level_1') && !city) {
-                city = component.long_name;
-              }
-            }
-
-            if (city) {
-              const { error: updateError } = await supabase
-                .from('locations')
-                .update({ city })
-                .eq('id', location.id);
-
-              if (updateError) {
-                console.error(`Error updating ${location.name}:`, updateError);
-                errors++;
-              } else {
-                console.log(`✅ Updated ${location.name} with city: ${city}`);
-                updated++;
-              }
-            }
+        for (const component of result.address_components) {
+          // Prioritize locality (main city)
+          if (component.types.includes('locality')) {
+            locality = component.long_name;
+          } 
+          // Fallback to administrative_area_level_2 (county/region)
+          else if (component.types.includes('administrative_area_level_2')) {
+            adminLevel2 = component.long_name;
           }
+        }
+
+        // Choose locality first, then admin level 2
+        city = locality || adminLevel2;
+
+        // Normalize city name - remove postal districts and "County" prefix
+        if (city) {
+          // Remove postal district numbers (e.g., "Dublin 2" -> "Dublin")
+          city = city.replace(/\s+\d+$/, '');
+          
+          // Remove "County" prefix (e.g., "County Dublin" -> "Dublin")
+          city = city.replace(/^County\s+/i, '');
+          
+          // Trim whitespace
+          city = city.trim();
+        }
+
+        if (city) {
+          const { error: updateError } = await supabase
+            .from('locations')
+            .update({ city })
+            .eq('id', location.id);
+
+          if (updateError) {
+            console.error(`Error updating ${location.name}:`, updateError);
+            errors++;
+          } else {
+            console.log(`✅ Updated ${location.name} with city: ${city}`);
+            updated++;
+          }
+        }
+      }
 
           // Rate limiting - wait 100ms between requests
           await new Promise(resolve => setTimeout(resolve, 100));
@@ -118,17 +135,34 @@ serve(async (req) => {
     if (data.status === 'OK' && data.results.length > 0) {
       const result = data.results[0];
       let city = '';
+      let locality = '';
+      let adminLevel2 = '';
 
       // Extract city from address components
       for (const component of result.address_components) {
+        // Prioritize locality (main city)
         if (component.types.includes('locality')) {
-          city = component.long_name;
-          break;
-        } else if (component.types.includes('administrative_area_level_2')) {
-          city = component.long_name;
-        } else if (component.types.includes('administrative_area_level_1') && !city) {
-          city = component.long_name;
+          locality = component.long_name;
+        } 
+        // Fallback to administrative_area_level_2 (county/region)
+        else if (component.types.includes('administrative_area_level_2')) {
+          adminLevel2 = component.long_name;
         }
+      }
+
+      // Choose locality first, then admin level 2
+      city = locality || adminLevel2;
+
+      // Normalize city name - remove postal districts and "County" prefix
+      if (city) {
+        // Remove postal district numbers (e.g., "Dublin 2" -> "Dublin")
+        city = city.replace(/\s+\d+$/, '');
+        
+        // Remove "County" prefix (e.g., "County Dublin" -> "Dublin")
+        city = city.replace(/^County\s+/i, '');
+        
+        // Trim whitespace
+        city = city.trim();
       }
 
       // Update location if locationId provided

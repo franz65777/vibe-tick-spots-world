@@ -139,10 +139,10 @@ const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
 
         <div className="flex gap-2">
           <Select value={selectedCity} onValueChange={setSelectedCity}>
-            <SelectTrigger className="flex-1">
+            <SelectTrigger className="flex-1 bg-background">
               <SelectValue placeholder="All Cities" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-background z-50">
               <SelectItem value="all">All Cities</SelectItem>
               {cities.map(city => (
                 <SelectItem key={city} value={city}>
@@ -153,10 +153,10 @@ const SavedLocationsList = ({ isOpen, onClose }: SavedLocationsListProps) => {
           </Select>
 
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="flex-1">
+            <SelectTrigger className="flex-1 bg-background">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-background z-50">
               <SelectItem value="recent">Recently Saved</SelectItem>
               <SelectItem value="name">Name A-Z</SelectItem>
               <SelectItem value="city">City A-Z</SelectItem>
