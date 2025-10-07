@@ -1358,6 +1358,7 @@ export type Database = {
           media_urls: string[]
           metadata: Json | null
           saves_count: number | null
+          shares_count: number
           tagged_users: string[] | null
           updated_at: string
           user_id: string
@@ -1372,6 +1373,7 @@ export type Database = {
           media_urls: string[]
           metadata?: Json | null
           saves_count?: number | null
+          shares_count?: number
           tagged_users?: string[] | null
           updated_at?: string
           user_id: string
@@ -1386,6 +1388,7 @@ export type Database = {
           media_urls?: string[]
           metadata?: Json | null
           saves_count?: number | null
+          shares_count?: number
           tagged_users?: string[] | null
           updated_at?: string
           user_id?: string

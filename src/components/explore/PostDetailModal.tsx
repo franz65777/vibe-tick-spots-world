@@ -36,6 +36,7 @@ interface PostData {
   likes_count: number;
   comments_count: number;
   saves_count: number;
+  shares_count: number;
   created_at: string;
   location_id: string | null;
   profiles: {
@@ -117,6 +118,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
           likes_count, 
           comments_count,
           saves_count,
+          shares_count,
           created_at,
           location_id,
           locations (
@@ -153,6 +155,9 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
           avatar_url: profileData?.avatar_url || null,
         },
       } as PostData);
+      
+      // Update shares count from the loaded data
+      setSharesCount(postData.shares_count || 0);
     } catch (error) {
       console.error('Error loading post:', error);
       toast.error('Failed to load post');
@@ -290,25 +295,6 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
     }
   };
 
-  // Load shares count on mount
-  useEffect(() => {
-    if (isOpen && postId) {
-      loadSharesCount();
-    }
-  }, [isOpen, postId]);
-
-  const loadSharesCount = async () => {
-    try {
-      const { count } = await supabase
-        .from('post_shares')
-        .select('*', { count: 'exact', head: true })
-        .eq('post_id', postId);
-      
-      setSharesCount(count || 0);
-    } catch (error) {
-      console.error('Error loading shares count:', error);
-    }
-  };
 
   const handleDelete = async () => {
     if (!post) return;
