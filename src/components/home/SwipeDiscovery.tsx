@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import swipeNo from '@/assets/swipe-no.png';
 import swipeSave from '@/assets/swipe-save.png';
+import CityLabel from '@/components/common/CityLabel';
 
 interface SwipeLocation {
   id: string;
@@ -454,7 +455,14 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
                     {currentLocation.city && (
                       <div className="flex items-center gap-1.5 text-white text-sm mb-1.5">
                         <MapPin className="w-4 h-4" />
-                        <span className="drop-shadow">{currentLocation.city}</span>
+                        <span className="drop-shadow">
+                          <CityLabel 
+                            id={currentLocation.place_id || currentLocation.id}
+                            city={currentLocation.city}
+                            address={currentLocation.address}
+                            coordinates={currentLocation.coordinates}
+                          />
+                        </span>
                       </div>
                     )}
                     {currentLocation.category && (

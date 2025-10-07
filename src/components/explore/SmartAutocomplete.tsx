@@ -148,13 +148,17 @@ const SmartAutocomplete = ({
           .limit(5);
 
         if (data) {
-          const locationResults: AutocompleteResult[] = data.map(location => ({
-            type: 'place' as const,
-            id: location.id,
-            title: location.name,
-            subtitle: `${location.category} • ${location.city}, ${location.country}`,
-            category: location.category
-          }));
+          const locationResults: AutocompleteResult[] = data.map(location => {
+            const cityPart = normalizeCity(location.city);
+            const locationText = cityPart !== 'Unknown' ? `${cityPart}${location.country ? `, ${location.country}` : ''}` : (location.country || '');
+            return ({
+              type: 'place' as const,
+              id: location.id,
+              title: location.name,
+              subtitle: `${location.category} • ${locationText}`.trim(),
+              category: location.category
+            });
+          });
           setResults(locationResults);
         }
       } else {

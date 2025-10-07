@@ -26,6 +26,14 @@ export function useNormalizedCity(params: {
     return /(street|st\.?|avenue|ave\.?|road|rd\.?|square|sq\.?|piazza|platz|plaza|place|lane|ln\.?|drive|dr\.?|court|ct\.?|alley|way|quay|boulevard|blvd\.?|rue|via|calle|estrada|rua)/i.test(v);
   };
 
+  // Heuristics to detect business/place names (non-city-like)
+  const isNonCityLike = (value?: string | null) => {
+    if (!value) return false;
+    const v = value.toLowerCase();
+    if (isStreetLike(v)) return true;
+    return /(bar|pub|restaurant|cafe|caf[eé]|lounge|house|hotel|museum|gallery|bakery|pizzeria|pizza|coffee|club|park|market|shop|store|salon|studio|gym|spa|church|cathedral|mosque|temple|university|college|school|library|cinema|theatre|theater|stadium|arena|beach|harbour|harbor|port)/i.test(v);
+  };
+
   // Extract best city-like segment from a freeform address
   const extractCityFromAddress = (addr?: string | null) => {
     if (!addr) return '';
@@ -39,7 +47,6 @@ export function useNormalizedCity(params: {
     }
     return '';
   };
-
   const [label, setLabel] = useState<string>(() => {
     const base = (city && city.trim()) || extractCityFromAddress(address) || '';
     const normalized = normalizeCity(base || null);
@@ -55,11 +62,11 @@ export function useNormalizedCity(params: {
   useEffect(() => {
     let isMounted = true;
 
-    const baseCity = (city && city.trim()) || (address?.split(',')[1]?.trim() ?? '') || '';
+    const baseCity = (city && city.trim()) || extractCityFromAddress(address) || '';
     const normalized = normalizeCity(baseCity || null);
 
-    // If already good, set and stop
-    if (normalized !== 'Unknown' && normalized.length > 2) {
+    // If already good, set and stop (exclude street/business-like strings)
+    if (normalized !== 'Unknown' && normalized.length > 2 && !isNonCityLike(normalized)) {
       setLabel(normalized);
       return;
     }

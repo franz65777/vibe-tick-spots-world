@@ -3,6 +3,7 @@ import React from 'react';
 import { MapPin, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getCategoryIcon, getCategoryColor } from '@/utils/categoryIcons';
+import CityLabel from '@/components/common/CityLabel';
 
 interface PlaceMessageCardProps {
   placeData: {
@@ -34,10 +35,15 @@ const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => 
         </div>
         <div className="flex-1 min-w-0">
           <h4 className="font-semibold text-sm text-foreground truncate">{placeData.name}</h4>
-          {(placeData.city || placeData.address) && (
+          {(placeData.city || placeData.address || placeData.coordinates) && (
             <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
               <MapPin className="w-3 h-3" />
-              {placeData.city || placeData.address}
+              <CityLabel 
+                id={placeData.google_place_id || placeData.id}
+                city={placeData.city}
+                address={placeData.address}
+                coordinates={placeData.coordinates}
+              />
             </p>
           )}
         </div>

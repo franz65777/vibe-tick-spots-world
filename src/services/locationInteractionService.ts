@@ -279,7 +279,7 @@ class LocationInteractionService {
             addedBy: userProfile?.full_name || userProfile?.username || 'Someone',
             addedDate: new Date(saved.created_at).toLocaleDateString(),
             popularity: 75,
-            city: location.address?.split(',')[1]?.trim() || 'Unknown',
+            city: undefined,
             isNew: false,
             image: undefined,
             friendsWhoSaved: [],

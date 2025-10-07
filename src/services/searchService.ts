@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { imageService } from './imageService';
+import { normalizeCity } from '@/utils/cityNormalization';
 
 export interface LocationRecommendation {
   id: string;
@@ -157,9 +158,13 @@ class SearchService {
         if (totalPosts > 0) {
           console.log(`🎨 Generating AI image for location: ${representativeLocation.name} (${representativeLocation.category})`);
           
+          const baseCity = normalizeCity(representativeLocation.city);
+          const fallbackCity = normalizeCity(representativeLocation.address?.split(',')[1]?.trim() || null);
+          const displayCity = baseCity !== 'Unknown' ? baseCity : fallbackCity;
+          
           const aiLocationImage = await imageService.getPlaceImage(
             representativeLocation.name,
-            representativeLocation.city || representativeLocation.address?.split(',')[1]?.trim() || 'Unknown',
+            displayCity !== 'Unknown' ? displayCity : 'Unknown',
             representativeLocation.category
           );
           
@@ -172,7 +177,7 @@ class SearchService {
             name: representativeLocation.name,
             category: representativeLocation.category,
             address: representativeLocation.address,
-            city: representativeLocation.city || representativeLocation.address?.split(',')[1]?.trim() || 'Unknown',
+            city: (displayCity !== 'Unknown' ? displayCity : undefined) || undefined,
             coordinates: { 
               lat: parseFloat(representativeLocation.latitude?.toString() || '0'), 
               lng: parseFloat(representativeLocation.longitude?.toString() || '0') 
