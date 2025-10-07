@@ -11,6 +11,7 @@ import { getPostComments, addPostComment, type PostComment } from '@/services/po
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 
 interface PostDetailModalProps {
   postId: string;
@@ -50,6 +51,7 @@ interface PostData {
 
 export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProps) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { likedPosts, toggleLike, refetch: refetchEngagement } = usePostEngagement();
   const { savePlace, isPlaceSaved } = useSavedPlaces();
   const [post, setPost] = useState<PostData | null>(null);
@@ -60,6 +62,8 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [submittingComment, setSubmittingComment] = useState(false);
   const [savingLocation, setSavingLocation] = useState(false);
+  const [optimisticLikeCount, setOptimisticLikeCount] = useState<number | null>(null);
+  const [optimisticCommentCount, setOptimisticCommentCount] = useState<number | null>(null);
 
   useEffect(() => {
     if (isOpen && postId) {
@@ -156,10 +160,15 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
   const handleLike = async () => {
     if (!user || !post) return;
 
+    // Optimistic update
+    const isCurrentlyLiked = likedPosts.has(postId);
+    const newLikeCount = isCurrentlyLiked ? post.likes_count - 1 : post.likes_count + 1;
+    setOptimisticLikeCount(newLikeCount);
+
     const success = await toggleLike(postId);
     if (success) {
       // Create notification for post owner
-      if (post.user_id !== user.id && !likedPosts.has(postId)) {
+      if (post.user_id !== user.id && !isCurrentlyLiked) {
         await supabase.from('notifications').insert({
           user_id: post.user_id,
           type: 'like',
@@ -176,6 +185,9 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
       await loadPostData();
       await refetchEngagement();
       await loadPostLikers();
+      setOptimisticLikeCount(null);
+    } else {
+      setOptimisticLikeCount(null);
     }
   };
 
@@ -183,6 +195,9 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
     e.preventDefault();
     if (!user || !newComment.trim() || !post) return;
 
+    // Optimistic update
+    setOptimisticCommentCount((post.comments_count || 0) + 1);
+    
     setSubmittingComment(true);
     try {
       const comment = await addPostComment(postId, user.id, newComment);
@@ -207,12 +222,14 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
           });
         }
         
-        await loadPostData(); // Refresh comment count
+        await loadPostData();
+        setOptimisticCommentCount(null);
         toast.success('Comment added');
       }
     } catch (error) {
       console.error('Error adding comment:', error);
       toast.error('Failed to add comment');
+      setOptimisticCommentCount(null);
     } finally {
       setSubmittingComment(false);
     }
@@ -277,6 +294,27 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
   if (!isOpen) return null;
 
   const isLocationSaved = post?.locations ? isPlaceSaved(post.locations.google_place_id || post.locations.id) : false;
+  const displayLikeCount = optimisticLikeCount !== null ? optimisticLikeCount : post?.likes_count || 0;
+  const displayCommentCount = optimisticCommentCount !== null ? optimisticCommentCount : post?.comments_count || 0;
+
+  const handleLocationClick = () => {
+    if (post?.locations) {
+      onClose();
+      navigate('/explore', { 
+        state: { 
+          selectedLocation: {
+            id: post.locations.id,
+            google_place_id: post.locations.google_place_id,
+            name: post.locations.name,
+            category: post.locations.category,
+            city: post.locations.city,
+            latitude: post.locations.latitude,
+            longitude: post.locations.longitude
+          }
+        } 
+      });
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/95 z-[60] flex items-center justify-center p-0">
@@ -358,15 +396,25 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
 
             {/* Details Section - Right Side */}
             <div className="w-full md:w-[40%] flex flex-col bg-background">
-              {/* User header at the top */}
+              {/* User header at the top with location */}
               <div className="px-4 py-3 border-b border-border flex items-center gap-3">
-                <Avatar className="w-8 h-8">
+                <Avatar className="w-8 h-8 flex-shrink-0">
                   <AvatarImage src={post.profiles.avatar_url || undefined} />
                   <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
                     {post.profiles.username[0].toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <p className="font-semibold text-sm">{post.profiles.username}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm truncate">{post.profiles.username}</p>
+                  {post.locations && (
+                    <button
+                      onClick={handleLocationClick}
+                      className="text-xs text-muted-foreground hover:underline truncate block w-full text-left"
+                    >
+                      {post.locations.name}
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Scrollable Caption & Comments */}
@@ -424,36 +472,42 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
               {/* Bottom section with actions */}
               <div className="border-t border-border">
                 {/* Action buttons row */}
-                <div className="px-4 py-2.5 flex items-center justify-between">
+                <div className="px-4 py-3 flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <button
                       onClick={handleLike}
-                      className="hover:opacity-60 transition-opacity"
+                      className="flex items-center gap-1.5 hover:opacity-60 transition-opacity"
                     >
                       <Heart 
-                        className={`w-7 h-7 ${likedPosts.has(postId) ? 'fill-red-500 text-red-500' : ''}`} 
+                        className={`w-6 h-6 ${likedPosts.has(postId) ? 'fill-red-500 text-red-500' : ''}`} 
                       />
+                      {displayLikeCount > 0 && (
+                        <span className="text-sm font-medium">{displayLikeCount}</span>
+                      )}
                     </button>
-                    <button className="hover:opacity-60 transition-opacity">
-                      <MessageCircle className="w-7 h-7" />
+                    <button className="flex items-center gap-1.5 hover:opacity-60 transition-opacity">
+                      <MessageCircle className="w-6 h-6" />
+                      {displayCommentCount > 0 && (
+                        <span className="text-sm font-medium">{displayCommentCount}</span>
+                      )}
                     </button>
                     <button 
                       onClick={handleShare}
                       className="hover:opacity-60 transition-opacity"
                     >
-                      <Send className="w-7 h-7" />
+                      <Send className="w-6 h-6" />
                     </button>
                   </div>
                   {post.locations && (
                     <button
                       onClick={isLocationSaved ? undefined : handlePinLocation}
                       disabled={savingLocation || isLocationSaved}
-                      className={`hover:opacity-60 transition-opacity ${
-                        isLocationSaved ? 'cursor-default opacity-100' : ''
+                      className={`transition-opacity ${
+                        isLocationSaved ? 'cursor-default opacity-100' : 'hover:opacity-60'
                       }`}
                     >
                       <MapPin 
-                        className={`w-7 h-7 ${
+                        className={`w-6 h-6 ${
                           isLocationSaved 
                             ? 'fill-current' 
                             : ''
@@ -464,27 +518,26 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
                 </div>
 
                 {/* Like count with avatars */}
-                <div className="px-4 pb-2">
-                  {post.likes_count > 0 && (
-                    <div className="flex items-center gap-2 mb-1">
-                      {postLikers.length > 0 && (
-                        <div className="flex -space-x-2">
-                          {postLikers.slice(0, 3).map((liker) => (
-                            <Avatar key={liker.id} className="w-5 h-5 border-2 border-background">
-                              <AvatarImage src={liker.avatar_url || undefined} />
-                              <AvatarFallback className="bg-muted text-[10px]">
-                                {liker.username[0].toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                          ))}
-                        </div>
-                      )}
-                      <p className="text-sm font-semibold">
-                        {post.likes_count === 1 ? '1 like' : `${post.likes_count} likes`}
+                {displayLikeCount > 0 && postLikers.length > 0 && (
+                  <div className="px-4 pb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex -space-x-2">
+                        {postLikers.slice(0, 3).map((liker) => (
+                          <Avatar key={liker.id} className="w-5 h-5 border-2 border-background">
+                            <AvatarImage src={liker.avatar_url || undefined} />
+                            <AvatarFallback className="bg-muted text-[10px]">
+                              {liker.username[0].toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                        ))}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Liked by <span className="font-semibold text-foreground">{postLikers[0].username}</span>
+                        {postLikers.length > 1 && ` and ${displayLikeCount - 1} ${displayLikeCount - 1 === 1 ? 'other' : 'others'}`}
                       </p>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {/* Timestamp */}
                 <div className="px-4 pb-3">
