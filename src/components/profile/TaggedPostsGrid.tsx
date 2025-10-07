@@ -2,15 +2,13 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
-import PostDetailModal from './PostDetailModal';
-import { usePostEngagement } from '@/hooks/usePostEngagement';
+import PostDetailModal from '../explore/PostDetailModal';
 
 const TaggedPostsGrid = () => {
   const { user } = useAuth();
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPost, setSelectedPost] = useState<any>(null);
-  const { isLiked: checkIsLiked, isSaved: checkIsSaved, toggleLike, toggleSave } = usePostEngagement();
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -87,7 +85,7 @@ const TaggedPostsGrid = () => {
           return (
             <button
               key={post.id}
-              onClick={() => setSelectedPost(post)}
+              onClick={() => setSelectedPostId(post.id)}
               className="relative aspect-square overflow-hidden bg-muted group"
             >
               {isVideo ? (
@@ -108,15 +106,12 @@ const TaggedPostsGrid = () => {
         })}
       </div>
 
-      {selectedPost && (
+      {selectedPostId && (
         <PostDetailModal
-          post={selectedPost}
-          isOpen={!!selectedPost}
-          onClose={() => setSelectedPost(null)}
-          isLiked={checkIsLiked(selectedPost.id)}
-          isSaved={checkIsSaved(selectedPost.id)}
-          onLikeToggle={() => toggleLike(selectedPost.id)}
-          onSaveToggle={() => toggleSave(selectedPost.id)}
+          postId={selectedPostId}
+          isOpen={true}
+          onClose={() => setSelectedPostId(null)}
+          source="profile"
         />
       )}
     </>

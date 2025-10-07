@@ -601,8 +601,8 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
                 </button>
               )}
 
-              {/* Timestamp - subtle and small */}
-              <p className="text-[10px] text-muted-foreground/60">
+              {/* Timestamp - subtle and small, left-aligned */}
+              <p className="text-[10px] text-muted-foreground/60 text-left">
                 {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
               </p>
             </div>
