@@ -29,13 +29,29 @@ export const useCityEngagement = (cityName: string | null, coords?: { lat: numbe
     const fetchEngagement = async () => {
       setLoading(true);
       try {
-        let rpcName = 'get_city_engagement';
-        let params: any = { p_city: cityName, p_user: user.id };
+        let data: any;
+        let error: any;
+        
         if (coords?.lat && coords?.lng) {
-          rpcName = 'get_city_engagement_geo';
-          params = { p_lat: coords.lat, p_lng: coords.lng, p_radius_km: 25, p_user: user.id };
+          // Use geo-based query
+          const result = await supabase.rpc('get_city_engagement_geo', { 
+            p_lat: coords.lat, 
+            p_lng: coords.lng, 
+            p_radius_km: 25, 
+            p_user: user.id 
+          });
+          data = result.data;
+          error = result.error;
+        } else {
+          // Use city name query
+          const result = await supabase.rpc('get_city_engagement', { 
+            p_city: cityName, 
+            p_user: user.id 
+          });
+          data = result.data;
+          error = result.error;
         }
-        const { data, error } = await supabase.rpc(rpcName, params);
+        
         if (error) {
           console.error('❌ RPC error for city:', cityName || JSON.stringify(coords), error);
           throw error;
