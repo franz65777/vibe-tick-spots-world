@@ -42,27 +42,35 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
 
         if (savedPlacesError) console.error('Error fetching saved_places:', savedPlacesError);
 
-        // Fetch from user_saved_locations table
-        const { data: userSavedLocations, error: userSavedError } = await supabase
+        // Fetch from user_saved_locations table (fetch IDs first, then load locations separately)
+        const { data: userSavedRows, error: userSavedError } = await supabase
           .from('user_saved_locations')
-          .select(`
-            id,
-            created_at,
-            locations (
-              id,
-              name,
-              category,
-              city,
-              latitude,
-              longitude,
-              google_place_id,
-              address
-            )
-          `)
+          .select('location_id, created_at')
           .eq('user_id', targetUserId)
           .order('created_at', { ascending: false });
 
         if (userSavedError) console.error('Error fetching user_saved_locations:', userSavedError);
+
+        // Load related locations in a separate query (no FK required)
+        let locationsMap: Record<string, any> = {};
+        if (userSavedRows && userSavedRows.length > 0) {
+          const locationIds = userSavedRows
+            .map((r: any) => r.location_id)
+            .filter((id: string | null) => Boolean(id));
+
+          if (locationIds.length > 0) {
+            const { data: locationsData, error: locationsError } = await supabase
+              .from('locations')
+              .select('id, name, category, city, latitude, longitude, google_place_id, address')
+              .in('id', locationIds);
+
+            if (locationsError) console.error('Error fetching locations:', locationsError);
+
+            locationsMap = Object.fromEntries(
+              (locationsData || []).map((loc: any) => [loc.id, loc])
+            );
+          }
+        }
 
         // Group by city
         const groupedByCity: any = {};
@@ -81,8 +89,8 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
           });
         });
 
-        userSavedLocations?.forEach((item: any) => {
-          const location = item.locations;
+        (userSavedRows || []).forEach((item: any) => {
+          const location = item?.location_id ? locationsMap[item.location_id] : null;
           if (!location) return;
           const city = location.city || 'Unknown';
           if (!groupedByCity[city]) groupedByCity[city] = [];
@@ -92,6 +100,8 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
             category: location.category || 'place',
             city,
             coordinates: { lat: location.latitude || 0, lng: location.longitude || 0 },
+            address: location.address,
+            google_place_id: location.google_place_id,
             savedAt: item.created_at
           });
         });
@@ -337,7 +347,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
                     city: p.city,
                     address: p.address,
                     google_place_id: p.google_place_id,
-                    coordinates: { lat: p.latitude || 0, lng: p.longitude || 0 },
+                    coordinates: p.coordinates || { lat: 0, lng: 0 },
                     savedCount: p.savedCount || 0,
                     postsCount: p.postsCount || 0
                   }}
