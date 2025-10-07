@@ -3,6 +3,7 @@ import { X, Heart, MessageCircle, Share2, ChevronLeft, ChevronRight } from 'luci
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePostEngagement } from '@/hooks/usePostEngagement';
 import { getPostComments, addPostComment, type PostComment } from '@/services/postCommentService';
@@ -14,6 +15,12 @@ interface PostDetailModalProps {
   postId: string;
   isOpen: boolean;
   onClose: () => void;
+}
+
+interface PostLiker {
+  id: string;
+  username: string;
+  avatar_url: string | null;
 }
 
 interface PostData {
@@ -35,6 +42,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
   const { likedPosts, toggleLike, refetch: refetchEngagement } = usePostEngagement();
   const [post, setPost] = useState<PostData | null>(null);
   const [comments, setComments] = useState<PostComment[]>([]);
+  const [postLikers, setPostLikers] = useState<PostLiker[]>([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(true);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
@@ -44,6 +52,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
     if (isOpen && postId) {
       loadPostData();
       loadComments();
+      loadPostLikers();
     }
   }, [isOpen, postId]);
 
@@ -85,6 +94,34 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
     setComments(fetchedComments);
   };
 
+  const loadPostLikers = async () => {
+    try {
+      const { data: likes, error } = await supabase
+        .from('post_likes')
+        .select(`
+          user_id,
+          profiles:user_id (
+            username,
+            avatar_url
+          )
+        `)
+        .eq('post_id', postId)
+        .limit(10);
+
+      if (error) throw error;
+
+      const likers = likes?.map((like: any) => ({
+        id: like.user_id,
+        username: like.profiles?.username || 'User',
+        avatar_url: like.profiles?.avatar_url || null,
+      })) || [];
+
+      setPostLikers(likers);
+    } catch (error) {
+      console.error('Error loading post likers:', error);
+    }
+  };
+
   const handleLike = async () => {
     if (!user || !post) return;
 
@@ -107,6 +144,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
       }
       await loadPostData();
       await refetchEngagement();
+      await loadPostLikers();
     }
   };
 
@@ -183,31 +221,40 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
-      <div className="relative bg-background w-full h-full max-w-6xl max-h-screen flex flex-col md:flex-row">
+    <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-[60] flex items-center justify-center">
+      <div className="relative bg-card border border-border w-full h-full max-w-6xl max-h-screen flex flex-col md:flex-row rounded-lg md:rounded-2xl shadow-2xl overflow-hidden">
         {/* Close button */}
         <Button
           variant="ghost"
           size="icon"
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 bg-background/80 backdrop-blur-sm"
+          className="absolute top-3 right-3 z-10 bg-muted/80 backdrop-blur-sm hover:bg-muted rounded-full"
         >
           <X className="w-5 h-5" />
         </Button>
 
         {loading ? (
           <div className="flex items-center justify-center w-full h-full">
-            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         ) : post ? (
           <>
             {/* Media Section */}
-            <div className="relative w-full md:w-2/3 bg-black flex items-center justify-center">
-              <img
-                src={post.media_urls[currentMediaIndex]}
-                alt="Post"
-                className="max-w-full max-h-full object-contain"
-              />
+            <div className="relative w-full md:w-2/3 bg-muted/20 flex items-center justify-center">
+              {post.media_urls[currentMediaIndex]?.endsWith('.mp4') || 
+               post.media_urls[currentMediaIndex]?.endsWith('.mov') ? (
+                <video
+                  src={post.media_urls[currentMediaIndex]}
+                  controls
+                  className="max-w-full max-h-full object-contain"
+                />
+              ) : (
+                <img
+                  src={post.media_urls[currentMediaIndex]}
+                  alt="Post"
+                  className="max-w-full max-h-full object-contain"
+                />
+              )}
 
               {/* Navigation arrows for multiple media */}
               {post.media_urls.length > 1 && (
@@ -217,7 +264,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
                       variant="ghost"
                       size="icon"
                       onClick={prevMedia}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white"
+                      className="absolute left-4 top-1/2 -translate-y-1/2 bg-background/90 hover:bg-background backdrop-blur-sm rounded-full shadow-lg"
                     >
                       <ChevronLeft className="w-6 h-6" />
                     </Button>
@@ -227,19 +274,20 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
                       variant="ghost"
                       size="icon"
                       onClick={nextMedia}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 bg-background/90 hover:bg-background backdrop-blur-sm rounded-full shadow-lg"
                     >
                       <ChevronRight className="w-6 h-6" />
                     </Button>
                   )}
                   
                   {/* Media indicator dots */}
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 bg-background/80 backdrop-blur-sm px-3 py-2 rounded-full">
                     {post.media_urls.map((_, index) => (
-                      <div
+                      <button
                         key={index}
+                        onClick={() => setCurrentMediaIndex(index)}
                         className={`w-2 h-2 rounded-full transition-all ${
-                          index === currentMediaIndex ? 'bg-white w-3' : 'bg-white/50'
+                          index === currentMediaIndex ? 'bg-primary w-3' : 'bg-muted-foreground/50'
                         }`}
                       />
                     ))}
@@ -249,15 +297,17 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
             </div>
 
             {/* Details Section */}
-            <div className="w-full md:w-1/3 flex flex-col bg-background">
+            <div className="w-full md:w-1/3 flex flex-col bg-card">
               {/* User header */}
-              <div className="p-4 border-b flex items-center gap-3">
-                <Avatar className="w-10 h-10">
+              <div className="p-4 border-b border-border flex items-center gap-3">
+                <Avatar className="w-11 h-11 ring-2 ring-border">
                   <AvatarImage src={post.profiles.avatar_url || undefined} />
-                  <AvatarFallback>{post.profiles.username[0].toUpperCase()}</AvatarFallback>
+                  <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                    {post.profiles.username[0].toUpperCase()}
+                  </AvatarFallback>
                 </Avatar>
-                <div className="flex-1">
-                  <p className="font-semibold text-sm">{post.profiles.username}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm truncate">{post.profiles.username}</p>
                   <p className="text-xs text-muted-foreground">
                     {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
                   </p>
@@ -266,84 +316,152 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
 
               {/* Caption */}
               {post.caption && (
-                <div className="p-4 border-b">
-                  <p className="text-sm">{post.caption}</p>
+                <div className="p-4 border-b border-border">
+                  <p className="text-sm leading-relaxed">{post.caption}</p>
                 </div>
               )}
 
               {/* Comments section */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {comments.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">
-                    No comments yet. Be the first to comment!
-                  </p>
-                ) : (
-                  comments.map((comment) => (
-                    <div key={comment.id} className="flex gap-3">
-                      <Avatar className="w-8 h-8 flex-shrink-0">
-                        <AvatarImage src={comment.avatar_url || undefined} />
-                        <AvatarFallback>{comment.username?.[0]?.toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm">
-                          <span className="font-semibold">{comment.username}</span>{' '}
-                          <span className="text-muted-foreground">{comment.content}</span>
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-                        </p>
-                      </div>
+              <ScrollArea className="flex-1 p-4">
+                <div className="space-y-4 pr-4">
+                  {comments.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <MessageCircle className="w-12 h-12 text-muted-foreground/40 mb-3" />
+                      <p className="text-sm text-muted-foreground font-medium">
+                        No comments yet
+                      </p>
+                      <p className="text-xs text-muted-foreground/70 mt-1">
+                        Be the first to share your thoughts!
+                      </p>
                     </div>
-                  ))
-                )}
-              </div>
+                  ) : (
+                    comments.map((comment) => (
+                      <div key={comment.id} className="flex gap-3 group">
+                        <Avatar className="w-8 h-8 flex-shrink-0">
+                          <AvatarImage src={comment.avatar_url || undefined} />
+                          <AvatarFallback className="bg-muted text-xs">
+                            {comment.username?.[0]?.toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="bg-muted/50 rounded-2xl px-3 py-2">
+                            <p className="text-sm font-semibold mb-0.5">{comment.username}</p>
+                            <p className="text-sm text-foreground/90 leading-relaxed break-words">
+                              {comment.content}
+                            </p>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1.5 px-3">
+                            {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
 
               {/* Actions */}
-              <div className="border-t p-4 space-y-3">
-                <div className="flex items-center gap-4">
+              <div className="border-t border-border p-4 space-y-3 bg-card">
+                <div className="flex items-center gap-1">
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={handleLike}
-                    className={likedPosts.has(postId) ? 'text-red-500' : ''}
+                    className={`hover:scale-110 transition-transform ${
+                      likedPosts.has(postId) ? 'text-red-500 hover:text-red-600' : 'hover:text-red-500'
+                    }`}
                   >
-                    <Heart className={`w-6 h-6 ${likedPosts.has(postId) ? 'fill-current' : ''}`} />
+                    <Heart 
+                      className={`w-6 h-6 ${likedPosts.has(postId) ? 'fill-current' : ''}`} 
+                    />
                   </Button>
-                  <Button variant="ghost" size="icon">
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    className="hover:scale-110 transition-transform hover:text-primary"
+                  >
                     <MessageCircle className="w-6 h-6" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={handleShare}>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={handleShare}
+                    className="hover:scale-110 transition-transform hover:text-primary"
+                  >
                     <Share2 className="w-6 h-6" />
                   </Button>
                 </div>
 
-                <div className="text-sm font-semibold">
-                  {post.likes_count} {post.likes_count === 1 ? 'like' : 'likes'}
-                </div>
+                {/* Liked by avatars */}
+                {postLikers.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <div className="flex -space-x-2">
+                      {postLikers.slice(0, 3).map((liker) => (
+                        <Avatar key={liker.id} className="w-6 h-6 ring-2 ring-card">
+                          <AvatarImage src={liker.avatar_url || undefined} />
+                          <AvatarFallback className="bg-muted text-[10px]">
+                            {liker.username[0].toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Liked by{' '}
+                      <span className="font-semibold text-foreground">{postLikers[0].username}</span>
+                      {postLikers.length > 1 && (
+                        <span>
+                          {' '}and{' '}
+                          <span className="font-semibold text-foreground">
+                            {postLikers.length - 1} other{postLikers.length > 2 ? 's' : ''}
+                          </span>
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                )}
+
+                {/* Like count fallback */}
+                {postLikers.length === 0 && post.likes_count > 0 && (
+                  <div className="text-sm font-semibold">
+                    {post.likes_count} {post.likes_count === 1 ? 'like' : 'likes'}
+                  </div>
+                )}
 
                 {/* Add comment form */}
-                <form onSubmit={handleCommentSubmit} className="flex gap-2">
-                  <Textarea
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Add a comment..."
-                    className="flex-1 min-h-[40px] max-h-[120px] resize-none"
-                    disabled={submittingComment}
-                  />
+                <form onSubmit={handleCommentSubmit} className="flex items-end gap-2 pt-2">
+                  <div className="flex-1 relative">
+                    <Textarea
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      placeholder="Add a comment..."
+                      className="flex-1 min-h-[44px] max-h-[120px] resize-none rounded-2xl border-muted pr-12 focus-visible:ring-primary"
+                      disabled={submittingComment}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          if (newComment.trim()) {
+                            handleCommentSubmit(e);
+                          }
+                        }
+                      }}
+                    />
+                  </div>
                   <Button
                     type="submit"
                     disabled={!newComment.trim() || submittingComment}
                     size="sm"
+                    className="rounded-full px-6 h-[44px] font-semibold"
                   >
-                    Post
+                    {submittingComment ? 'Posting...' : 'Post'}
                   </Button>
                 </form>
               </div>
             </div>
           </>
         ) : (
-          <div className="flex items-center justify-center w-full h-full">
-            <p className="text-muted-foreground">Failed to load post</p>
+          <div className="flex flex-col items-center justify-center w-full h-full gap-3">
+            <X className="w-12 h-12 text-muted-foreground/40" />
+            <p className="text-muted-foreground font-medium">Failed to load post</p>
           </div>
         )}
       </div>
