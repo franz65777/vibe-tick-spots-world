@@ -6,7 +6,7 @@ export interface DirectMessage {
   sender_id: string;
   receiver_id: string;
   content?: string;
-  message_type: 'text' | 'place_share' | 'trip_share' | 'post_share';
+  message_type: 'text' | 'place_share' | 'trip_share' | 'post_share' | 'profile_share';
   shared_content?: any;
   created_at: string;
   read_at?: string;
@@ -118,6 +118,49 @@ class MessageService {
       } as DirectMessage;
     } catch (error) {
       console.error('Error sending post share:', error);
+      return null;
+    }
+  }
+
+  async sendProfileShare(receiverId: string, profileData: any): Promise<DirectMessage | null> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('direct_messages')
+        .insert({
+          sender_id: user.id,
+          receiver_id: receiverId,
+          message_type: 'profile_share' as const,
+          shared_content: profileData,
+          content: `Check out @${profileData.username}'s profile`
+        })
+        .select('*')
+        .single();
+
+      if (error) throw error;
+
+      const { data: senderProfile } = await supabase
+        .from('profiles')
+        .select('username, full_name, avatar_url')
+        .eq('id', user.id)
+        .single();
+
+      return {
+        ...data,
+        sender: senderProfile ? {
+          username: senderProfile.username || 'Unknown',
+          full_name: senderProfile.full_name || 'Unknown User',
+          avatar_url: senderProfile.avatar_url || ''
+        } : {
+          username: 'Unknown',
+          full_name: 'Unknown User',
+          avatar_url: ''
+        }
+      } as DirectMessage;
+    } catch (error) {
+      console.error('Error sending profile share:', error);
       return null;
     }
   }
@@ -250,7 +293,7 @@ class MessageService {
           sender_id: message.sender_id,
           receiver_id: message.receiver_id,
           content: message.content || undefined,
-          message_type: message.message_type as 'text' | 'place_share' | 'trip_share' | 'post_share',
+          message_type: message.message_type as 'text' | 'place_share' | 'trip_share' | 'post_share' | 'profile_share',
           shared_content: message.shared_content || undefined,
           created_at: message.created_at,
           read_at: message.read_at || undefined,

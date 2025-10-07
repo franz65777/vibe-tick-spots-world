@@ -50,6 +50,15 @@ export const useNotifications = () => {
     try {
       console.log('Fetching notifications for user:', user.id);
       
+      // Get muted users
+      const { data: mutedSettings } = await supabase
+        .from('user_notification_settings')
+        .select('business_id')
+        .eq('user_id', user.id)
+        .eq('is_muted', true);
+      
+      const mutedUserIds = mutedSettings?.map(s => s.business_id).filter(Boolean) || [];
+      
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
@@ -63,11 +72,17 @@ export const useNotifications = () => {
         setNotifications([]);
       } else {
         console.log('Notifications fetched successfully:', data?.length || 0);
-        // Transform the data to match our interface
-        const transformedData = (data || []).map(item => ({
-          ...item,
-          data: typeof item.data === 'string' ? JSON.parse(item.data) : (item.data || {})
-        }));
+        // Transform and filter out notifications from muted users
+        const transformedData = (data || [])
+          .map(item => ({
+            ...item,
+            data: typeof item.data === 'string' ? JSON.parse(item.data) : (item.data || {})
+          }))
+          .filter(notification => {
+            // Filter out notifications from muted users
+            const notifUserId = notification.data?.user_id;
+            return !notifUserId || !mutedUserIds.includes(notifUserId);
+          });
         setNotifications(transformedData);
       }
       
@@ -92,8 +107,25 @@ export const useNotifications = () => {
             table: 'notifications',
             filter: `user_id=eq.${user.id}`
           },
-          (payload) => {
+          async (payload) => {
             console.log('New notification received:', payload);
+            
+            // Check if the notification is from a muted user
+            const notifUserId = payload.new.data?.user_id;
+            if (notifUserId) {
+              const { data: mutedSetting } = await supabase
+                .from('user_notification_settings')
+                .select('is_muted')
+                .eq('user_id', user.id)
+                .eq('business_id', notifUserId)
+                .single();
+              
+              if (mutedSetting?.is_muted) {
+                console.log('Notification from muted user, ignoring');
+                return;
+              }
+            }
+            
             const newNotification = {
               ...payload.new,
               data: typeof payload.new.data === 'string' ? JSON.parse(payload.new.data) : (payload.new.data || {})

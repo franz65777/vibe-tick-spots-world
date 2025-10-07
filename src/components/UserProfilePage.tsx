@@ -157,43 +157,43 @@ const UserProfilePage = () => {
             </div>
           </div>
 
-          {/* Username and Stats Column */}
+          {/* Username, Badge and Stats Column */}
           <div className="flex-1 flex flex-col gap-3">
-            {/* Username */}
-            <div className="flex items-center justify-between">
+            {/* Username with Badge */}
+            <div className="flex items-center gap-2">
               <h2 className="text-base font-semibold">{displayUsername}</h2>
-              {/* Small Badge */}
+              {/* Visible Badge */}
               {!isOwnProfile && (
-                <div className="scale-[0.35] origin-top-right -mr-4 -mt-2">
+                <div className="scale-75 origin-left">
                   <BadgeDisplay userId={userId} />
                 </div>
               )}
             </div>
 
-            {/* Stats Row */}
-            <div className="flex gap-6">
+            {/* Stats Row - Followers, Following, Saved Places */}
+            <div className="flex gap-4 text-sm">
               <button 
-                className="text-center"
                 onClick={() => openModal('followers')}
+                className="hover:opacity-70 transition-opacity"
               >
-                <div className="text-base font-bold">{profile.posts_count || 0}</div>
-                <div className="text-xs text-muted-foreground">posts</div>
+                <span className="font-bold">{profile.followers_count || 0}</span>{' '}
+                <span className="text-muted-foreground">followers</span>
               </button>
               
               <button 
-                className="text-center"
-                onClick={() => openModal('followers')}
-              >
-                <div className="text-base font-bold">{profile.followers_count || 0}</div>
-                <div className="text-xs text-muted-foreground">followers</div>
-              </button>
-              
-              <button 
-                className="text-center"
                 onClick={() => openModal('following')}
+                className="hover:opacity-70 transition-opacity"
               >
-                <div className="text-base font-bold">{profile.following_count || 0}</div>
-                <div className="text-xs text-muted-foreground">following</div>
+                <span className="font-bold">{profile.following_count || 0}</span>{' '}
+                <span className="text-muted-foreground">following</span>
+              </button>
+              
+              <button 
+                onClick={() => setIsLocationsListOpen(true)}
+                className="hover:opacity-70 transition-opacity"
+              >
+                <span className="font-bold">{profile.places_visited || 0}</span>{' '}
+                <span className="text-muted-foreground">saved places</span>
               </button>
             </div>
           </div>
@@ -212,14 +212,6 @@ const UserProfilePage = () => {
             {profile.bio}
           </p>
         )}
-
-        {/* Saved Places Count */}
-        <button 
-          className="text-sm text-foreground mb-3"
-          onClick={() => setIsLocationsListOpen(true)}
-        >
-          <span className="font-semibold">{profile.places_visited || 0}</span> saved places
-        </button>
 
         {/* Mutual Followers */}
         {!isOwnProfile && mutualFollowers.length > 0 && (

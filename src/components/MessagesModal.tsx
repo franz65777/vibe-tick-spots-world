@@ -11,6 +11,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import PlaceMessageCard from './messages/PlaceMessageCard';
 import PostMessageCard from './messages/PostMessageCard';
+import ProfileMessageCard from './messages/ProfileMessageCard';
 import { useNavigate } from 'react-router-dom';
 
 interface MessagesModalProps {
@@ -384,7 +385,7 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
                         key={message.id}
                         className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
                       >
-                        {['place_share', 'post_share'].includes(message.message_type) &&
+                        {['place_share', 'post_share', 'profile_share'].includes(message.message_type) &&
                         message.shared_content ? (
                           <div className={`max-w-[85%] ${isOwn ? 'ml-8' : 'mr-8'}`}>
                             {message.content && (
@@ -403,9 +404,7 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
                                 <PlaceMessageCard
                                   placeData={message.shared_content}
                                   onViewPlace={(placeData) => {
-                                    // Close the message modal
                                     onClose();
-                                    // Navigate to /explore and open location
                                     navigate('/explore', { 
                                       state: { 
                                         sharedPlace: {
@@ -424,6 +423,9 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
                               )}
                               {message.message_type === 'post_share' && (
                                 <PostMessageCard postData={message.shared_content} />
+                              )}
+                              {message.message_type === 'profile_share' && (
+                                <ProfileMessageCard profileData={message.shared_content} />
                               )}
                             </div>
                           </div>

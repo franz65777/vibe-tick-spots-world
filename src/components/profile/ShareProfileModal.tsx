@@ -61,10 +61,16 @@ const ShareProfileModal = ({ isOpen, onClose, profileId, profileUsername }: Shar
 
     setSending(recipientId);
     try {
-      const profileUrl = `${window.location.origin}/profile/${profileId}`;
-      const message = `Check out @${profileUsername}'s profile: ${profileUrl}`;
+      // Fetch the profile data to share
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url, bio, follower_count, following_count, posts_count')
+        .eq('id', profileId)
+        .single();
 
-      await messageService.sendTextMessage(recipientId, message);
+      if (error) throw error;
+
+      await messageService.sendProfileShare(recipientId, profileData);
       
       toast.success(`Profile shared with @${recipientUsername}`);
       onClose();
