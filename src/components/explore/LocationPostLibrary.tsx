@@ -467,41 +467,44 @@ const LocationPostLibrary = ({
             <h3 className="text-xl font-semibold text-gray-900 mb-2">No posts yet</h3>
             <p className="text-gray-600 mb-6">Be the first to share your experience at {place.name}!</p>
             
-            {/* Show user's posts from their profile */}
-            {userPosts && userPosts.length > 0 && (
+            {/* Show user's posts from their profile - only for this location */}
+            {userPosts && userPosts.filter(post => post.location_id === place.id || post.locations?.id === place.id).length > 0 && (
               <div className="w-full mt-6">
-                <h4 className="text-sm font-medium text-gray-700 mb-3">Your Recent Posts</h4>
+                <h4 className="text-sm font-medium text-gray-700 mb-3">Your Posts at {place.name}</h4>
                 <div className="grid grid-cols-2 gap-3">
-                  {userPosts.slice(0, 4).map((post) => (
-                    <div 
-                      key={post.id} 
-                      className="relative h-32 bg-gray-200 rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition shadow-sm"
-                      onClick={() => {
-                        const mappedPost: LocationPost = {
-                          id: post.id,
-                          user_id: post.user_id,
-                          caption: post.caption || null,
-                          media_urls: post.media_urls || [],
-                          likes_count: post.likes_count || 0,
-                          comments_count: post.comments_count || 0,
-                          saves_count: post.saves_count || 0,
-                          created_at: post.created_at,
-                          metadata: {},
-                          profiles: null
-                        };
-                        setSelectedPost(mappedPost);
-                      }}
-                    >
-                      {post.media_urls && post.media_urls.length > 0 && (
-                        <img 
-                          src={post.media_urls[0]} 
-                          alt="Post" 
-                          className="w-full h-full object-cover" 
-                          loading="lazy" 
-                        />
-                      )}
-                    </div>
-                  ))}
+                  {userPosts
+                    .filter(post => post.location_id === place.id || post.locations?.id === place.id)
+                    .slice(0, 4)
+                    .map((post) => (
+                      <div 
+                        key={post.id} 
+                        className="relative h-32 bg-gray-200 rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition shadow-sm"
+                        onClick={() => {
+                          const mappedPost: LocationPost = {
+                            id: post.id,
+                            user_id: post.user_id,
+                            caption: post.caption || null,
+                            media_urls: post.media_urls || [],
+                            likes_count: post.likes_count || 0,
+                            comments_count: post.comments_count || 0,
+                            saves_count: post.saves_count || 0,
+                            created_at: post.created_at,
+                            metadata: {},
+                            profiles: null
+                          };
+                          setSelectedPost(mappedPost);
+                        }}
+                      >
+                        {post.media_urls && post.media_urls.length > 0 && (
+                          <img 
+                            src={post.media_urls[0]} 
+                            alt="Post" 
+                            className="w-full h-full object-cover" 
+                            loading="lazy" 
+                          />
+                        )}
+                      </div>
+                    ))}
                 </div>
               </div>
             )}
