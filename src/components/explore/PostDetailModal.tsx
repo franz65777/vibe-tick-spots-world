@@ -35,6 +35,7 @@ interface PostData {
   media_urls: string[];
   likes_count: number;
   comments_count: number;
+  saves_count: number;
   created_at: string;
   location_id: string | null;
   profiles: {
@@ -68,6 +69,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
   const [commentsDrawerOpen, setCommentsDrawerOpen] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [mediaAspectRatio, setMediaAspectRatio] = useState<'vertical' | 'horizontal'>('vertical');
+  const [sharesCount, setSharesCount] = useState<number>(0);
 
   useEffect(() => {
     if (isOpen && postId) {
@@ -113,7 +115,8 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
           caption, 
           media_urls, 
           likes_count, 
-          comments_count, 
+          comments_count,
+          saves_count,
           created_at,
           location_id,
           locations (
@@ -252,12 +255,21 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
     try {
       const shareUrl = `${window.location.origin}/post/${postId}`;
       
-      // Track share in database
-      await supabase.from('post_shares').insert({
+      // Track share in database and get updated count
+      const { error } = await supabase.from('post_shares').insert({
         post_id: postId,
-        user_id: user.id,
-        shared_at: new Date().toISOString()
+        user_id: user.id
       });
+
+      if (error) throw error;
+
+      // Get updated shares count
+      const { count } = await supabase
+        .from('post_shares')
+        .select('*', { count: 'exact', head: true })
+        .eq('post_id', postId);
+
+      setSharesCount(count || 0);
       
       if (navigator.share) {
         await navigator.share({
@@ -275,6 +287,26 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
       if ((error as Error).name !== 'AbortError') {
         toast.error('Failed to share post');
       }
+    }
+  };
+
+  // Load shares count on mount
+  useEffect(() => {
+    if (isOpen && postId) {
+      loadSharesCount();
+    }
+  }, [isOpen, postId]);
+
+  const loadSharesCount = async () => {
+    try {
+      const { count } = await supabase
+        .from('post_shares')
+        .select('*', { count: 'exact', head: true })
+        .eq('post_id', postId);
+      
+      setSharesCount(count || 0);
+    } catch (error) {
+      console.error('Error loading shares count:', error);
     }
   };
 
@@ -535,32 +567,47 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
             <div className="px-4 py-2 bg-background flex-shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  {/* Like button */}
-                  <button
-                    onClick={handleLike}
-                    disabled={!user || likingPost}
-                    className="flex items-center gap-1.5 hover:opacity-60 transition-opacity disabled:opacity-50"
-                  >
-                    <Heart 
-                      className={`w-6 h-6 transition-colors ${likedPosts.has(postId) ? 'fill-red-500 text-red-500' : ''}`} 
-                    />
-                  </button>
+                  {/* Like button with count */}
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={handleLike}
+                      disabled={!user || likingPost}
+                      className="flex items-center gap-1.5 hover:opacity-60 transition-opacity disabled:opacity-50"
+                    >
+                      <Heart 
+                        className={`w-6 h-6 transition-colors ${likedPosts.has(postId) ? 'fill-red-500 text-red-500' : ''}`} 
+                      />
+                    </button>
+                    {post.likes_count > 0 && (
+                      <span className="text-sm text-muted-foreground">{post.likes_count}</span>
+                    )}
+                  </div>
                   
-                  {/* Comment button */}
-                  <button
-                    onClick={() => setCommentsDrawerOpen(true)}
-                    className="flex items-center gap-1.5 hover:opacity-60 transition-opacity"
-                  >
-                    <MessageCircle className="w-6 h-6" />
-                  </button>
+                  {/* Comment button with count */}
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setCommentsDrawerOpen(true)}
+                      className="flex items-center gap-1.5 hover:opacity-60 transition-opacity"
+                    >
+                      <MessageCircle className="w-6 h-6" />
+                    </button>
+                    {post.comments_count > 0 && (
+                      <span className="text-sm text-muted-foreground">{post.comments_count}</span>
+                    )}
+                  </div>
                   
-                  {/* Share button */}
-                  <button
-                    onClick={handleShare}
-                    className="flex items-center gap-1.5 hover:opacity-60 transition-opacity"
-                  >
-                    <Send className="w-6 h-6" />
-                  </button>
+                  {/* Share button with count */}
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={handleShare}
+                      className="flex items-center gap-1.5 hover:opacity-60 transition-opacity"
+                    >
+                      <Send className="w-6 h-6" />
+                    </button>
+                    {sharesCount > 0 && (
+                      <span className="text-sm text-muted-foreground">{sharesCount}</span>
+                    )}
+                  </div>
                 </div>
                 
                 {/* Pin button - right aligned */}
@@ -580,7 +627,24 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
               </div>
             </div>
 
-            {/* Like count and caption */}
+            {/* Like count section - more compact without showing likers */}
+            <div className="px-4 py-1 bg-background flex-shrink-0">
+              {(post.likes_count > 0 || post.saves_count > 0 || sharesCount > 0) && (
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  {post.likes_count > 0 && (
+                    <span>{post.likes_count} {post.likes_count === 1 ? 'like' : 'likes'}</span>
+                  )}
+                  {post.saves_count > 0 && (
+                    <span>{post.saves_count} {post.saves_count === 1 ? 'save' : 'saves'}</span>
+                  )}
+                  {sharesCount > 0 && (
+                    <span>{sharesCount} {sharesCount === 1 ? 'share' : 'shares'}</span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Caption and interaction */}
             <div className="px-4 py-3 bg-background flex-shrink-0">
               {post.likes_count > 0 && (
                 <div className="flex items-center gap-2 mb-2">
