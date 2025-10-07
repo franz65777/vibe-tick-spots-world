@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { supabase } from '@/integrations/supabase/client';
+import { normalizeCity } from '@/utils/cityNormalization';
 import RecentUserSearches from './RecentUserSearches';
 
 interface AutocompleteResult {
