@@ -2,16 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { X, Heart, MessageCircle, Send, ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePostEngagement } from '@/hooks/usePostEngagement';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
-import { getPostComments, addPostComment, type PostComment } from '@/services/postCommentService';
+import { getPostComments, type PostComment } from '@/services/postCommentService';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import { PostCommentsDrawer } from './PostCommentsDrawer';
 
 interface PostDetailModalProps {
   postId: string;
@@ -57,13 +56,11 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
   const [post, setPost] = useState<PostData | null>(null);
   const [comments, setComments] = useState<PostComment[]>([]);
   const [postLikers, setPostLikers] = useState<PostLiker[]>([]);
-  const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(true);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
-  const [submittingComment, setSubmittingComment] = useState(false);
   const [savingLocation, setSavingLocation] = useState(false);
-  const [optimisticLikeCount, setOptimisticLikeCount] = useState<number | null>(null);
-  const [optimisticCommentCount, setOptimisticCommentCount] = useState<number | null>(null);
+  const [likingPost, setLikingPost] = useState(false);
+  const [commentsDrawerOpen, setCommentsDrawerOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen && postId) {
@@ -158,18 +155,17 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
   };
 
   const handleLike = async () => {
-    if (!user || !post) return;
+    if (!user || !post || likingPost) return;
 
-    // Optimistic update
+    setLikingPost(true);
     const isCurrentlyLiked = likedPosts.has(postId);
     const newLikeCount = isCurrentlyLiked ? post.likes_count - 1 : post.likes_count + 1;
-    setOptimisticLikeCount(newLikeCount);
+
+    // Optimistic update
+    setPost(prev => prev ? { ...prev, likes_count: newLikeCount } : null);
 
     const success = await toggleLike(postId);
     if (success) {
-      // Update post data without full reload
-      setPost(prev => prev ? { ...prev, likes_count: newLikeCount } : null);
-      
       // Create notification for post owner
       if (post.user_id !== user.id && !isCurrentlyLiked) {
         supabase.from('notifications').insert({
@@ -188,58 +184,17 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
       
       // Reload likers only
       loadPostLikers();
-      setOptimisticLikeCount(null);
     } else {
-      setOptimisticLikeCount(null);
+      // Revert on failure
+      setPost(prev => prev ? { ...prev, likes_count: post.likes_count } : null);
     }
+    
+    setLikingPost(false);
   };
 
-  const handleCommentSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user || !newComment.trim() || !post) return;
-
-    const commentContent = newComment;
-    const newCount = (post.comments_count || 0) + 1;
-    
-    // Optimistic update
-    setOptimisticCommentCount(newCount);
-    setNewComment('');
-    
-    setSubmittingComment(true);
-    try {
-      const comment = await addPostComment(postId, user.id, commentContent);
-      if (comment) {
-        setComments([...comments, comment]);
-        setPost(prev => prev ? { ...prev, comments_count: newCount } : null);
-        
-        // Create notification for post owner
-        if (post.user_id !== user.id) {
-          supabase.from('notifications').insert({
-            user_id: post.user_id,
-            type: 'comment',
-            title: 'New comment on your post',
-            message: `${user.user_metadata?.username || 'Someone'} commented: "${commentContent.slice(0, 50)}${commentContent.length > 50 ? '...' : ''}"`,
-            data: {
-              post_id: postId,
-              user_id: user.id,
-              user_name: user.user_metadata?.username,
-              user_avatar: user.user_metadata?.avatar_url,
-              comment: commentContent,
-            },
-          });
-        }
-        
-        setOptimisticCommentCount(null);
-        toast.success('Comment added');
-      }
-    } catch (error) {
-      console.error('Error adding comment:', error);
-      toast.error('Failed to add comment');
-      setOptimisticCommentCount(null);
-      setNewComment(commentContent);
-    } finally {
-      setSubmittingComment(false);
-    }
+  const handleCommentAdded = (comment: PostComment) => {
+    setComments([...comments, comment]);
+    setPost(prev => prev ? { ...prev, comments_count: (prev.comments_count || 0) + 1 } : null);
   };
 
   const handleShare = async () => {
@@ -301,8 +256,6 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
   if (!isOpen) return null;
 
   const isLocationSaved = post?.locations ? isPlaceSaved(post.locations.google_place_id || post.locations.id) : false;
-  const displayLikeCount = optimisticLikeCount !== null ? optimisticLikeCount : post?.likes_count || 0;
-  const displayCommentCount = optimisticCommentCount !== null ? optimisticCommentCount : post?.comments_count || 0;
 
   const handleLocationClick = () => {
     if (post?.locations) {
@@ -330,8 +283,9 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
   };
 
   return (
-    <div className="fixed inset-0 bg-black/95 z-[60] flex items-center justify-center p-0 pb-16 md:pb-0">
-      <div className="relative bg-background w-full h-full max-w-2xl md:max-w-4xl max-h-[calc(100vh-64px)] md:max-h-[95vh] flex flex-col overflow-hidden md:rounded-lg">
+    <>
+      <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-0">
+        <div className="relative bg-background w-full h-full max-w-2xl md:max-w-4xl max-h-[calc(100vh-80px)] md:max-h-[95vh] flex flex-col overflow-hidden md:rounded-lg mb-16 md:mb-0">
         {/* Close button */}
         <Button
           variant="ghost"
@@ -440,7 +394,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
                   {/* Like button */}
                   <button
                     onClick={handleLike}
-                    disabled={!user}
+                    disabled={!user || likingPost}
                     className="flex items-center gap-1.5 hover:opacity-60 transition-opacity disabled:opacity-50"
                   >
                     <Heart 
@@ -450,7 +404,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
                   
                   {/* Comment button */}
                   <button
-                    onClick={() => document.getElementById('comment-input')?.focus()}
+                    onClick={() => setCommentsDrawerOpen(true)}
                     className="flex items-center gap-1.5 hover:opacity-60 transition-opacity"
                   >
                     <MessageCircle className="w-6 h-6" />
@@ -484,7 +438,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
 
             {/* Like count and timestamp */}
             <div className="px-4 py-2 bg-background flex-shrink-0">
-              {displayLikeCount > 0 && (
+              {post.likes_count > 0 && (
                 <div className="flex items-center gap-2 mb-1">
                   {postLikers.length > 0 && (
                     <div className="flex -space-x-2">
@@ -499,8 +453,8 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
                     </div>
                   )}
                   <p className="text-sm">
-                    <span className="font-semibold">{displayLikeCount.toLocaleString()}</span>
-                    {displayLikeCount === 1 ? ' like' : ' likes'}
+                    <span className="font-semibold">{post.likes_count.toLocaleString()}</span>
+                    {post.likes_count === 1 ? ' like' : ' likes'}
                   </p>
                 </div>
               )}
@@ -509,83 +463,6 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
                 {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
               </p>
             </div>
-
-            {/* Scrollable Caption & Comments */}
-            <ScrollArea className="flex-1 px-4 py-3 bg-background overflow-y-auto">
-              <div className="space-y-4 pb-4">
-                {/* Caption */}
-                {post.caption && (
-                  <div className="flex gap-3">
-                    <Avatar className="w-8 h-8 flex-shrink-0">
-                      <AvatarImage src={post.profiles.avatar_url || undefined} />
-                      <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                        {post.profiles.username[0].toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <p className="text-sm">
-                        <span className="font-semibold mr-2">{post.profiles.username}</span>
-                        {post.caption}
-                      </p>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Comments */}
-                {comments.length === 0 && !post.caption && (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <MessageCircle className="w-12 h-12 text-muted-foreground/20 mb-2" />
-                    <p className="text-sm text-muted-foreground">No comments yet</p>
-                    <p className="text-xs text-muted-foreground mt-1">Be the first to comment</p>
-                  </div>
-                )}
-                
-                {comments.map((comment) => (
-                  <div key={comment.id} className="flex gap-3">
-                    <Avatar className="w-8 h-8 flex-shrink-0">
-                      <AvatarImage src={comment.avatar_url || undefined} />
-                      <AvatarFallback className="bg-muted text-xs">
-                        {comment.username?.[0]?.toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm">
-                        <span className="font-semibold mr-2">{comment.username}</span>
-                        {comment.content}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-
-            {/* Comment input form - at the bottom */}
-            <form onSubmit={handleCommentSubmit} className="px-4 py-3 border-t border-border bg-background flex-shrink-0">
-              <div className="flex gap-3 items-center">
-                <Textarea
-                  id="comment-input"
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Add a comment..."
-                  disabled={!user || submittingComment}
-                  className="flex-1 min-h-0 resize-none border-none focus-visible:ring-0 px-0"
-                  rows={1}
-                />
-                {newComment.trim() && (
-                  <Button 
-                    type="submit" 
-                    size="sm"
-                    disabled={submittingComment || !user}
-                    className="font-semibold"
-                  >
-                    {submittingComment ? 'Posting...' : 'Post'}
-                  </Button>
-                )}
-              </div>
-            </form>
           </>
         ) : (
           <div className="flex flex-col items-center justify-center w-full h-full gap-2">
@@ -593,8 +470,19 @@ export const PostDetailModal = ({ postId, isOpen, onClose }: PostDetailModalProp
             <p className="text-muted-foreground">Failed to load post</p>
           </div>
         )}
+        </div>
       </div>
-    </div>
+
+      {/* Comments Drawer */}
+      <PostCommentsDrawer
+        isOpen={commentsDrawerOpen}
+        onClose={() => setCommentsDrawerOpen(false)}
+        postId={postId}
+        postOwnerId={post?.user_id || ''}
+        comments={comments}
+        onCommentAdded={handleCommentAdded}
+      />
+    </>
   );
 };
 
