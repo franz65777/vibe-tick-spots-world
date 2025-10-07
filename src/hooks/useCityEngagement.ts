@@ -12,13 +12,13 @@ interface CityEngagement {
   }>;
 }
 
-export const useCityEngagement = (cityName: string | null) => {
+export const useCityEngagement = (cityName: string | null, coords?: { lat: number; lng: number } | null) => {
   const { user } = useAuth();
   const [engagement, setEngagement] = useState<CityEngagement | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!cityName || !user) {
+    if ((!cityName && !coords) || !user) {
       setEngagement(null);
       return;
     }
@@ -29,13 +29,18 @@ export const useCityEngagement = (cityName: string | null) => {
     const fetchEngagement = async () => {
       setLoading(true);
       try {
-        console.log('🔍 Fetching city engagement for:', cityName, 'user:', user.id);
-        const { data, error } = await supabase.rpc('get_city_engagement', { p_city: cityName, p_user: user.id } as any);
+        let rpcName = 'get_city_engagement';
+        let params: any = { p_city: cityName, p_user: user.id };
+        if (coords?.lat && coords?.lng) {
+          rpcName = 'get_city_engagement_geo';
+          params = { p_lat: coords.lat, p_lng: coords.lng, p_radius_km: 25, p_user: user.id };
+        }
+        const { data, error } = await supabase.rpc(rpcName, params);
         if (error) {
-          console.error('❌ RPC error for city:', cityName, error);
+          console.error('❌ RPC error for city:', cityName || JSON.stringify(coords), error);
           throw error;
         }
-        console.log('📊 City engagement raw data for', cityName, ':', data, 'Total pins:', data?.[0]?.total_pins, 'Followed users:', data?.[0]?.followed_users);
+        console.log('📊 City engagement raw data for', cityName || JSON.stringify(coords), ':', data, 'Total pins:', data?.[0]?.total_pins, 'Followed users:', data?.[0]?.followed_users);
 
         const totalPins = Number(data?.[0]?.total_pins) || 0;
         const followedUsers = ((data?.[0]?.followed_users as any) || []) as Array<{
@@ -44,7 +49,7 @@ export const useCityEngagement = (cityName: string | null) => {
           avatar_url: string | null;
         }>;
 
-        setEngagement({ city: cityName, totalPins, followedUsers });
+        setEngagement({ city: cityName || '', totalPins, followedUsers });
       } catch (error) {
         console.error('❌ Error fetching city engagement:', error);
         setEngagement(null);
@@ -79,7 +84,7 @@ export const useCityEngagement = (cityName: string | null) => {
       if (channel) supabase.removeChannel(channel);
       if (intervalId) clearInterval(intervalId);
     };
-  }, [cityName, user?.id]);
+  }, [cityName, coords?.lat, coords?.lng, user?.id]);
 
   return { engagement, loading };
 };

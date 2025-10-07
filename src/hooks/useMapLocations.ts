@@ -104,21 +104,23 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity }: 
             console.error('Error fetching following locations:', followingError);
             finalLocations = [];
           } else if (followingLocations) {
-            finalLocations = followingLocations
-              .map(location => ({
-                id: location.id,
-                name: location.name,
-                category: location.category,
-                address: location.address,
-                city: location.city,
-                coordinates: {
-                  lat: Number(location.latitude) || 0,
-                  lng: Number(location.longitude) || 0
-                },
+            // followingLocations rows come from saved_places and user_saved_locations union
+            finalLocations = (followingLocations as any[]).map((row: any) => {
+              const coords = (row.coordinates as any) || {};
+              const lat = Number(coords.lat ?? row.latitude ?? 0) || 0;
+              const lng = Number(coords.lng ?? row.longitude ?? 0) || 0;
+              return {
+                id: row.place_id || row.id, // prefer google place id for uniqueness
+                name: row.place_name || row.name,
+                category: row.place_category || row.category,
+                address: row.address,
+                city: row.city,
+                coordinates: { lat, lng },
                 isFollowing: true,
-                user_id: location.created_by,
-                created_at: location.created_at
-              }));
+                user_id: row.user_id || row.created_by,
+                created_at: row.created_at
+              } as MapLocation;
+            });
           }
           break;
         }
@@ -282,6 +284,11 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity }: 
         const { lat, lng } = location.coordinates || { lat: 0, lng: 0 };
         return Number.isFinite(lat) && Number.isFinite(lng) && !(lat === 0 && lng === 0);
       });
+
+      // If following filter, indicate presence
+      if (mapFilter === 'following') {
+        console.log('✅ Following locations after filter:', finalLocations.length);
+      }
 
       console.log(`✅ Found ${finalLocations.length} ${mapFilter} locations (after dedupe)`);
       setLocations(finalLocations);

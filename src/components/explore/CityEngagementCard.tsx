@@ -7,16 +7,17 @@ interface CityEngagementCardProps {
   cityName: string;
   onClick: () => void;
   baseCount?: number;
+  coords?: { lat: number; lng: number };
 }
 
-const CityEngagementCard = ({ cityName, onClick, baseCount = 0 }: CityEngagementCardProps) => {
-  const { engagement, loading } = useCityEngagement(cityName);
+const CityEngagementCard = ({ cityName, onClick, baseCount = 0, coords }: CityEngagementCardProps) => {
+  const { engagement, loading } = useCityEngagement(cityName, coords);
 
   // Always prefer live engagement data; do not cap or fallback to static counts
   const totalPins = typeof engagement?.totalPins === 'number' ? engagement.totalPins : 0;
   const followedUsers = engagement?.followedUsers || [];
 
-  console.log(`🏙️ ${cityName} - Pins: ${totalPins}, Followed users:`, followedUsers.length);
+  console.log(`🏙️ ${cityName} - Pins: ${totalPins}, Followed users:`, followedUsers.length, coords ? `@ ${coords.lat},${coords.lng}` : '');
 
   const displayCount = `${totalPins}`;
 

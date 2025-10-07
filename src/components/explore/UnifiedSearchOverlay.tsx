@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, MapPin, Loader2 } from 'lucide-react';
 import { loadGoogleMapsAPI } from '@/lib/googleMaps';
-import { useCityEngagement } from '@/hooks/useCityEngagement';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { useCityEngagement } from '@/hooks/useCityEngagement'; // keep usage
 import CityEngagementCard from './CityEngagementCard';
-
 interface UnifiedSearchOverlayProps {
   isOpen: boolean;
   onClose: () => void;
@@ -199,12 +197,13 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
       <div className="flex-1 overflow-y-auto px-4 py-4 bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
         {!query.trim() && (
           <div className="flex flex-wrap gap-2 mb-4">
-            {(trendingCities.length ? trendingCities : popularCities.map(c => ({ name: c.name, count: 0 }))).map((item) => (
+            {(trendingCities.length ? trendingCities : popularCities.map(c => ({ name: c.name, count: 0, lat: c.lat, lng: c.lng }))).map((item) => (
               <CityEngagementCard
                 key={item.name}
                 cityName={item.name}
+                coords={'lat' in item && 'lng' in item ? { lat: (item as any).lat, lng: (item as any).lng } : undefined}
                 onClick={() => selectCityByName(item.name)}
-                baseCount={'count' in item ? item.count : 0}
+                baseCount={'count' in item ? (item as any).count : 0}
               />
             ))}
           </div>
@@ -223,6 +222,7 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
               <CityEngagementCard
                 key={index}
                 cityName={city.name.split(',')[0].trim()}
+                coords={{ lat: city.lat, lng: city.lng }}
                 onClick={() => handleCitySelect(city)}
               />
             ))}
