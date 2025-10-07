@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, MessageCircle, Send, ChevronLeft, ChevronRight, MapPin, MoreVertical, Trash2, EyeOff, X } from 'lucide-react';
+import { Heart, MessageCircle, Send, ChevronLeft, ChevronRight, MapPin, MoreHorizontal, Trash2, EyeOff, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -357,12 +357,10 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-0">
-        <div className="relative bg-background w-full h-full max-w-2xl md:max-w-4xl max-h-[calc(100vh-80px)] md:max-h-[95vh] flex flex-col overflow-hidden md:rounded-lg mb-16 md:mb-0">
-        
-        {/* Top bar with back button, title, and menu */}
-        <div className="absolute top-0 left-0 right-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
-          <div className="flex items-center justify-between px-4 py-3">
+      <div className="fixed inset-0 bg-background z-50 flex flex-col overflow-hidden pb-20">
+        {/* Top bar with back button and title */}
+        <div className="flex-shrink-0 bg-background border-b border-border">
+          <div className="flex items-center px-4 py-3">
             <Button
               variant="ghost"
               size="icon"
@@ -372,42 +370,11 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
               <ChevronLeft className="w-6 h-6" />
             </Button>
             
-            <div className="absolute left-1/2 -translate-x-1/2">
+            <div className="flex-1 text-center">
               <p className="font-semibold">{getHeaderText()}</p>
-              {post && (
-                <p className="text-xs text-muted-foreground">{post.profiles.username}</p>
-              )}
             </div>
             
-            {post && user && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="hover:bg-muted rounded-full"
-                  >
-                    <MoreVertical className="w-6 h-6" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {post.user_id === user.id ? (
-                    <DropdownMenuItem
-                      onClick={() => setShowDeleteDialog(true)}
-                      className="text-destructive focus:text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete Post
-                    </DropdownMenuItem>
-                  ) : (
-                    <DropdownMenuItem onClick={handleHide}>
-                      <EyeOff className="w-4 h-4 mr-2" />
-                      Hide Post
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+            <div className="w-10" /> {/* Spacer for centering */}
           </div>
         </div>
 
@@ -416,9 +383,9 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
             <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         ) : post ? (
-          <>
+          <div className="flex flex-col flex-1 overflow-y-auto">
             {/* Header - Avatar, Username, Location */}
-            <div className="px-4 py-3 border-b border-border flex items-center gap-3 bg-background flex-shrink-0 mt-[57px]">
+            <div className="px-4 py-3 border-b border-border flex items-center gap-3 bg-background flex-shrink-0">
               <Avatar className="w-9 h-9 flex-shrink-0">
                 <AvatarImage src={post.profiles.avatar_url || undefined} />
                 <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
@@ -435,12 +402,43 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
                 {post.locations && (
                   <button
                     onClick={handleLocationClick}
-                    className="text-xs text-muted-foreground hover:underline truncate text-left"
+                    className="text-xs text-muted-foreground hover:underline truncate text-left flex items-center gap-1"
                   >
                     {post.locations.name}
                   </button>
                 )}
               </div>
+              
+              {/* 3-dot menu moved here */}
+              {user && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="hover:bg-muted rounded-full flex-shrink-0"
+                    >
+                      <MoreHorizontal className="w-5 h-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {post.user_id === user.id ? (
+                      <DropdownMenuItem
+                        onClick={() => setShowDeleteDialog(true)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete Post
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem onClick={handleHide}>
+                        <EyeOff className="w-4 h-4 mr-2" />
+                        Hide Post
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
 
             {/* Media Section */}
@@ -557,10 +555,10 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
               </div>
             </div>
 
-            {/* Like count and timestamp */}
-            <div className="px-4 py-2 bg-background flex-shrink-0">
+            {/* Like count and caption */}
+            <div className="px-4 py-3 bg-background flex-shrink-0 border-b border-border">
               {post.likes_count > 0 && (
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-2">
                   {postLikers.length > 0 && (
                     <div className="flex -space-x-2">
                       {postLikers.slice(0, 3).map((liker) => (
@@ -580,18 +578,40 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
                 </div>
               )}
 
+              {/* Caption */}
+              {post.caption && (
+                <p className="text-sm mb-2">
+                  <button
+                    onClick={() => navigate(`/profile/${post.user_id}`)}
+                    className="font-semibold hover:opacity-70 mr-2"
+                  >
+                    {post.profiles.username}
+                  </button>
+                  <span>{post.caption}</span>
+                </p>
+              )}
+
+              {/* View comments button */}
+              {post.comments_count > 0 && (
+                <button
+                  onClick={() => setCommentsDrawerOpen(true)}
+                  className="text-sm text-muted-foreground hover:text-foreground mb-2"
+                >
+                  View all {post.comments_count} {post.comments_count === 1 ? 'comment' : 'comments'}
+                </button>
+              )}
+
               <p className="text-xs text-muted-foreground uppercase">
                 {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
               </p>
             </div>
-          </>
+          </div>
         ) : (
           <div className="flex flex-col items-center justify-center w-full h-full gap-2">
             <X className="w-12 h-12 text-destructive" />
             <p className="text-muted-foreground">Failed to load post</p>
           </div>
         )}
-        </div>
       </div>
 
       {/* Delete Confirmation Dialog */}
