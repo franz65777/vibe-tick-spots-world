@@ -231,23 +231,32 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
 
     try {
       const isSaved = userSavedIds.has(locationId);
+      const location = locations.find(l => l.id === locationId);
+      if (!location) return;
       
       if (isSaved) {
-        // Unsave - need to delete ALL saves for this location (in case there are duplicates)
-        const location = locations.find(l => l.id === locationId);
-        if (location) {
-          // Find all location IDs with same google_place_id or coordinates
-          const { data: allLocationData } = await supabase
-            .from('locations')
-            .select('id')
-            .or(
-              location.google_place_id 
-                ? `google_place_id.eq.${location.google_place_id}` 
-                : `and(latitude.eq.${location.coordinates.lat},longitude.eq.${location.coordinates.lng})`
-            );
-          
-          const allIds = allLocationData?.map(l => l.id) || [locationId];
-          
+        // Unsave from both tables
+        if (location.google_place_id) {
+          // Delete from saved_places
+          await supabase
+            .from('saved_places')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('place_id', location.google_place_id);
+        }
+        
+        // Also check if this is an internal location and delete from user_saved_locations
+        const { data: internalLocations } = await supabase
+          .from('locations')
+          .select('id')
+          .or(
+            location.google_place_id 
+              ? `google_place_id.eq.${location.google_place_id}` 
+              : `and(latitude.eq.${location.coordinates.lat},longitude.eq.${location.coordinates.lng})`
+          );
+        
+        if (internalLocations && internalLocations.length > 0) {
+          const allIds = internalLocations.map(l => l.id);
           await supabase
             .from('user_saved_locations')
             .delete()
@@ -259,13 +268,30 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
         newSet.delete(locationId);
         setUserSavedIds(newSet);
       } else {
-        // Save
-        await supabase
-          .from('user_saved_locations')
-          .insert({
-            user_id: user.id,
-            location_id: locationId
-          });
+        // Save - prioritize saved_places if it has google_place_id
+        if (location.google_place_id) {
+          await supabase
+            .from('saved_places')
+            .insert({
+              user_id: user.id,
+              place_id: location.google_place_id,
+              place_name: location.name,
+              place_category: location.category,
+              city: location.city,
+              coordinates: {
+                lat: location.coordinates.lat,
+                lng: location.coordinates.lng
+              }
+            });
+        } else {
+          // Save to user_saved_locations if no google_place_id
+          await supabase
+            .from('user_saved_locations')
+            .insert({
+              user_id: user.id,
+              location_id: locationId
+            });
+        }
         
         const newSet = new Set(userSavedIds);
         newSet.add(locationId);
