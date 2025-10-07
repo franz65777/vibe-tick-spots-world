@@ -11,6 +11,9 @@ export const usePostEngagement = () => {
   useEffect(() => {
     if (user) {
       loadUserEngagement();
+    } else {
+      setLikedPosts(new Set());
+      setSavedPosts(new Set());
     }
   }, [user]);
 

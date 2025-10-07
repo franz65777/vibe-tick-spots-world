@@ -79,6 +79,49 @@ class MessageService {
     }
   }
 
+  async sendPostShare(receiverId: string, postData: { id: string; caption?: string | null; media_urls?: string[]; }): Promise<DirectMessage | null> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('direct_messages')
+        .insert({
+          sender_id: user.id,
+          receiver_id: receiverId,
+          message_type: 'post_share' as const,
+          shared_content: postData,
+          content: postData.caption ? postData.caption.slice(0, 140) : 'Shared a post'
+        })
+        .select('*')
+        .single();
+
+      if (error) throw error;
+
+      const { data: senderProfile } = await supabase
+        .from('profiles')
+        .select('username, full_name, avatar_url')
+        .eq('id', user.id)
+        .single();
+
+      return {
+        ...data,
+        sender: senderProfile ? {
+          username: senderProfile.username || 'Unknown',
+          full_name: senderProfile.full_name || 'Unknown User',
+          avatar_url: senderProfile.avatar_url || ''
+        } : {
+          username: 'Unknown',
+          full_name: 'Unknown User',
+          avatar_url: ''
+        }
+      } as DirectMessage;
+    } catch (error) {
+      console.error('Error sending post share:', error);
+      return null;
+    }
+  }
+
   async sendTextMessage(receiverId: string, content: string): Promise<DirectMessage | null> {
     try {
       const { data: { user } } = await supabase.auth.getUser();

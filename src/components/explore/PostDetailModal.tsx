@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { PostCommentsDrawer } from './PostCommentsDrawer';
+import PostShareModal from './PostShareModal';
 
 interface PostDetailModalProps {
   postId: string;
@@ -71,12 +72,14 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [mediaAspectRatio, setMediaAspectRatio] = useState<'vertical' | 'horizontal'>('vertical');
   const [sharesCount, setSharesCount] = useState<number>(0);
+  const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen && postId) {
       loadPostData();
       loadComments();
       loadPostLikers();
+      refetchEngagement();
       setCurrentMediaIndex(0);
     }
   }, [isOpen, postId]);
@@ -250,59 +253,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
 
   const handleCommentAdded = async (comment: PostComment) => {
     setComments([...comments, comment]);
-    // Reload post to get updated count from database
     await loadPostData();
-  };
-
-  const handleShare = async () => {
-    if (!post || !user) return;
-    
-    const shareUrl = `${window.location.origin}/post/${postId}`;
-
-    try {
-      // Record share first (count is updated via DB trigger)
-      const { error } = await supabase.from('post_shares').insert({
-        post_id: postId,
-        user_id: user.id,
-      });
-      if (error) throw error;
-
-      // Optimistically bump local count to feel responsive
-      setSharesCount((c) => (c || 0) + 1);
-
-      // Try native share, gracefully fall back to clipboard on denial/unsupported
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: `Check out this post by ${post.profiles.username}`,
-            text: post.caption || 'Check out this post!',
-            url: shareUrl,
-          });
-          toast.success('Post shared successfully!');
-        } catch (err: any) {
-          // Permission denied or user canceled -> fallback to clipboard
-          try {
-            await navigator.clipboard.writeText(shareUrl);
-            toast.success('Link copied to clipboard');
-          } catch {
-            toast.error('Unable to share');
-          }
-        }
-      } else {
-        await navigator.clipboard.writeText(shareUrl);
-        toast.success('Link copied to clipboard');
-      }
-
-      // Sync count from DB (in case of race conditions)
-      const { count } = await supabase
-        .from('post_shares')
-        .select('*', { count: 'exact', head: true })
-        .eq('post_id', postId);
-      setSharesCount(count || 0);
-    } catch (error) {
-      console.error('Error sharing:', error);
-      toast.error('Unable to share');
-    }
   };
 
 
@@ -595,7 +546,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
                   {/* Share button with count */}
                   <div className="flex items-center gap-1">
                     <button
-                      onClick={handleShare}
+                      onClick={() => setShareOpen(true)}
                       className="flex items-center gap-1.5 hover:opacity-60 transition-opacity"
                     >
                       <Send className="w-6 h-6" />
@@ -730,6 +681,14 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
         postOwnerId={post?.user_id || ''}
         comments={comments}
         onCommentAdded={handleCommentAdded}
+      />
+
+      {/* Share Modal */}
+      <PostShareModal
+        isOpen={shareOpen}
+        onClose={() => setShareOpen(false)}
+        post={post ? { id: post.id, caption: post.caption, media_urls: post.media_urls } : null}
+        onShared={async () => { await loadPostData(); }}
       />
     </>
   );
