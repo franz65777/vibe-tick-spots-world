@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, MessageCircle, Send, ChevronLeft, ChevronRight, MapPin, MoreVertical, Trash2, EyeOff } from 'lucide-react';
+import { Heart, MessageCircle, Send, ChevronLeft, ChevronRight, MapPin, MoreVertical, Trash2, EyeOff, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';

@@ -722,6 +722,35 @@ export type Database = {
           },
         ]
       }
+      hidden_posts: {
+        Row: {
+          hidden_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          hidden_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          hidden_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hidden_posts_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       interactions: {
         Row: {
           action_type: string
@@ -1282,6 +1311,35 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "post_saves_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_shares: {
+        Row: {
+          id: string
+          post_id: string
+          shared_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          post_id: string
+          shared_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          post_id?: string
+          shared_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_shares_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: false
             referencedRelation: "posts"
