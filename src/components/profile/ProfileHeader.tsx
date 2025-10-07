@@ -145,7 +145,7 @@ const ProfileHeader = ({
               </div>
             </div>
             
-            <div className="absolute bottom-0 left-0 w-5 h-5 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors shadow-md">
+            <div className="absolute bottom-0 right-0 w-5 h-5 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors shadow-md">
               <Camera className="w-2.5 h-2.5 text-primary-foreground" />
             </div>
           </button>

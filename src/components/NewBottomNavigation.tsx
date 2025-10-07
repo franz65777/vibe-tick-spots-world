@@ -3,14 +3,14 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { Map, Search, Plus, Activity, User } from 'lucide-react';
-import { useBusinessProfile } from '@/hooks/useBusinessProfile';
+
 import { toast } from 'sonner';
 
 const NewBottomNavigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { trackEvent } = useAnalytics();
-  const { hasValidBusinessAccount, loading: businessLoading } = useBusinessProfile();
+  
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [isLongPressing, setIsLongPressing] = useState(false);
 
@@ -22,13 +22,9 @@ const NewBottomNavigation = () => {
   const handleProfileLongPressStart = () => {
     const timer = setTimeout(() => {
       setIsLongPressing(true);
-      if (!businessLoading && hasValidBusinessAccount) {
-        localStorage.setItem('accountMode', 'business');
-        navigate('/business');
-        toast.success('Switched to Business Account');
-      } else if (!businessLoading) {
-        toast.error('No verified business account');
-      }
+      localStorage.setItem('accountMode', 'business');
+      navigate('/business');
+      toast.success('Switched to Business Account');
     }, 800); // 800ms long press
     setLongPressTimer(timer);
   };
