@@ -21,6 +21,11 @@ import LeaderboardPage from '@/pages/LeaderboardPage';
 import AdminAnalyticsPage from '@/pages/AdminAnalyticsPage';
 import NotificationsPage from '@/pages/NotificationsPage';
 import MessagesPage from '@/pages/MessagesPage';
+import BusinessOverviewPage from '@/pages/business/BusinessOverviewPage';
+import BusinessAnalyticsPage from '@/pages/business/BusinessAnalyticsPage';
+import BusinessAddPage from '@/pages/business/BusinessAddPage';
+import BusinessFeedPage from '@/pages/business/BusinessFeedPage';
+import BusinessProfilePage from '@/pages/business/BusinessProfilePage';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { retentionAnalyticsService } from '@/services/retentionAnalyticsService';
@@ -61,7 +66,12 @@ function AppContent() {
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/messages" element={<MessagesPage />} />
-                <Route path="/business" element={<BusinessDashboardPage />} />
+                <Route path="/business" element={<BusinessOverviewPage />} />
+                <Route path="/business/analytics" element={<BusinessAnalyticsPage />} />
+                <Route path="/business/add" element={<BusinessAddPage />} />
+                <Route path="/business/feed" element={<BusinessFeedPage />} />
+                <Route path="/business/profile" element={<BusinessProfilePage />} />
+                <Route path="/business-dashboard" element={<BusinessDashboardPage />} />
                 <Route path="/business-claim" element={<BusinessClaimPage />} />
                 <Route path="/subscription" element={<SubscriptionPage />} />
                 <Route path="/profile/:userId" element={<UserProfilePage />} />
