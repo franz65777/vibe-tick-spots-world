@@ -54,8 +54,6 @@ const HomePage = () => {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   // Modal states
   const [isCreateStoryModalOpen, setIsCreateStoryModalOpen] = useState(false);
-  const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
-  const [isMessagesModalOpen, setIsMessagesModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
   const [isLocationDetailOpen, setIsLocationDetailOpen] = useState(false);
@@ -356,8 +354,6 @@ const HomePage = () => {
           currentCity={currentCity}
           onSearchChange={setSearchQuery}
           onSearchKeyPress={() => {}}
-          onNotificationsClick={() => setIsNotificationsModalOpen(true)}
-          onMessagesClick={() => setIsMessagesModalOpen(true)}
           onCreateStoryClick={() => setIsCreateStoryModalOpen(true)}
           onCitySelect={handleCityChange}
           onOpenSearchOverlay={() => setIsSearchOverlayOpen(true)}
@@ -436,8 +432,6 @@ const HomePage = () => {
 
       <ModalsManager 
         isCreateStoryModalOpen={isCreateStoryModalOpen}
-        isNotificationsModalOpen={isNotificationsModalOpen}
-        isMessagesModalOpen={isMessagesModalOpen}
         isShareModalOpen={isShareModalOpen}
         isCommentModalOpen={isCommentModalOpen}
         isLocationDetailOpen={isLocationDetailOpen}
@@ -448,8 +442,6 @@ const HomePage = () => {
         stories={stories}
         currentStoryIndex={currentStoryIndex}
         onCreateStoryModalClose={() => setIsCreateStoryModalOpen(false)}
-        onNotificationsModalClose={() => setIsNotificationsModalOpen(false)}
-        onMessagesModalClose={() => setIsMessagesModalOpen(false)}
         onShareModalClose={() => setIsShareModalOpen(false)}
         onCommentModalClose={() => setIsCommentModalOpen(false)}
         onLocationDetailClose={() => setIsLocationDetailOpen(false)}

@@ -71,8 +71,6 @@ const SimpleHomePage = () => {
         currentCity={currentCity}
         onSearchChange={setSearchQuery}
         onSearchKeyPress={() => {}}
-        onNotificationsClick={() => {}}
-        onMessagesClick={() => {}}
         onCreateStoryClick={() => {}}
         onCitySelect={handleCityChange}
         onOpenSearchOverlay={() => {}}

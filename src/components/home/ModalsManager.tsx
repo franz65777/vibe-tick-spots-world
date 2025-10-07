@@ -1,7 +1,5 @@
 
 import CreateStoryModal from '@/components/CreateStoryModal';
-import NotificationsModal from '@/components/NotificationsModal';
-import MessagesModal from '@/components/MessagesModal';
 import ShareModal from '@/components/home/ShareModal';
 import CommentModal from '@/components/home/CommentModal';
 import LocationPostLibrary from '@/components/explore/LocationPostLibrary';
@@ -42,8 +40,6 @@ interface Story {
 
 interface ModalsManagerProps {
   isCreateStoryModalOpen: boolean;
-  isNotificationsModalOpen: boolean;
-  isMessagesModalOpen: boolean;
   isShareModalOpen: boolean;
   isCommentModalOpen: boolean;
   isLocationDetailOpen: boolean;
@@ -54,8 +50,6 @@ interface ModalsManagerProps {
   stories: Story[];
   currentStoryIndex: number;
   onCreateStoryModalClose: () => void;
-  onNotificationsModalClose: () => void;
-  onMessagesModalClose: () => void;
   onShareModalClose: () => void;
   onCommentModalClose: () => void;
   onLocationDetailClose: () => void;
@@ -68,8 +62,6 @@ interface ModalsManagerProps {
 
 const ModalsManager = ({
   isCreateStoryModalOpen,
-  isNotificationsModalOpen,
-  isMessagesModalOpen,
   isShareModalOpen,
   isCommentModalOpen,
   isLocationDetailOpen,
@@ -80,8 +72,6 @@ const ModalsManager = ({
   stories,
   currentStoryIndex,
   onCreateStoryModalClose,
-  onNotificationsModalClose,
-  onMessagesModalClose,
   onShareModalClose,
   onCommentModalClose,
   onLocationDetailClose,
@@ -97,16 +87,6 @@ const ModalsManager = ({
         isOpen={isCreateStoryModalOpen}
         onClose={onCreateStoryModalClose}
         onStoryCreated={onStoryCreated}
-      />
-
-      <NotificationsModal
-        isOpen={isNotificationsModalOpen}
-        onClose={onNotificationsModalClose}
-      />
-
-      <MessagesModal
-        isOpen={isMessagesModalOpen}
-        onClose={onMessagesModalClose}
       />
 
       <ShareModal

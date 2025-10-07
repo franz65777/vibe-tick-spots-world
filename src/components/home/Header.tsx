@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Bell, Send } from 'lucide-react';
 import CityAutocompleteBar from '../common/CityAutocompleteBar';
-import MessageHistoryModal from './MessageHistoryModal';
 import { useNotifications } from '@/hooks/useNotifications';
 
 interface HeaderProps {
@@ -10,8 +10,6 @@ interface HeaderProps {
   currentCity: string;
   onSearchChange: (query: string) => void;
   onSearchKeyPress: (e: React.KeyboardEvent<HTMLInputElement>) => void;
-  onNotificationsClick: () => void;
-  onMessagesClick: () => void;
   onCreateStoryClick: () => void;
   onCitySelect: (city: string, coords?: { lat: number; lng: number }) => void;
   onOpenSearchOverlay: () => void;
@@ -22,13 +20,11 @@ const Header = ({
   currentCity,
   onSearchChange,
   onSearchKeyPress,
-  onNotificationsClick,
-  onMessagesClick,
   onCreateStoryClick,
   onCitySelect,
   onOpenSearchOverlay
 }: HeaderProps) => {
-  const [isMessageHistoryOpen, setIsMessageHistoryOpen] = useState(false);
+  const navigate = useNavigate();
   const { unreadCount } = useNotifications();
 
   return (
@@ -51,7 +47,7 @@ const Header = ({
           <div className="flex items-center gap-1 flex-shrink-0">
             {/* Notifications Button */}
             <button 
-              onClick={onNotificationsClick} 
+              onClick={() => navigate('/notifications')} 
               className="relative p-2.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all duration-200 active:scale-95"
             >
               <div className="relative">
@@ -68,7 +64,7 @@ const Header = ({
             
             {/* Messages Button */}
             <button 
-              onClick={onMessagesClick} 
+              onClick={() => navigate('/messages')} 
               className="relative p-2.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all duration-200 active:scale-95"
               aria-label="Open messages"
             >
@@ -79,11 +75,6 @@ const Header = ({
           </div>
         </div>
       </header>
-
-      <MessageHistoryModal 
-        isOpen={isMessageHistoryOpen} 
-        onClose={() => setIsMessageHistoryOpen(false)} 
-      />
     </>
   );
 };

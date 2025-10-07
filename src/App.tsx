@@ -19,6 +19,8 @@ import FeedPage from '@/pages/FeedPage';
 import ActivityFeedPage from '@/pages/ActivityFeedPage';
 import LeaderboardPage from '@/pages/LeaderboardPage';
 import AdminAnalyticsPage from '@/pages/AdminAnalyticsPage';
+import NotificationsPage from '@/pages/NotificationsPage';
+import MessagesPage from '@/pages/MessagesPage';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { retentionAnalyticsService } from '@/services/retentionAnalyticsService';
@@ -57,6 +59,8 @@ function AppContent() {
                 <Route path="/activity" element={<ActivityFeedPage />} />
                 <Route path="/leaderboard" element={<LeaderboardPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
+                <Route path="/messages" element={<MessagesPage />} />
                 <Route path="/business" element={<BusinessDashboardPage />} />
                 <Route path="/business-claim" element={<BusinessClaimPage />} />
                 <Route path="/subscription" element={<SubscriptionPage />} />
