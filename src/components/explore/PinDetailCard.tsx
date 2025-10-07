@@ -26,6 +26,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
   const [postsPage, setPostsPage] = useState(1);
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [selectedPost, setSelectedPost] = useState<any>(null);
+  const [locationDetails, setLocationDetails] = useState<any>(null);
 
   const fetchPosts = async (page: number = 1) => {
     setPostsLoading(true);
@@ -36,11 +37,14 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
       if (!locationId && place.google_place_id) {
         const { data: locationData } = await supabase
           .from('locations')
-          .select('id')
+          .select('id, city, address, name')
           .eq('google_place_id', place.google_place_id)
           .maybeSingle();
         
-        locationId = locationData?.id;
+        if (locationData) {
+          locationId = locationData.id;
+          setLocationDetails(locationData);
+        }
       }
       
       if (locationId) {
@@ -157,10 +161,12 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                 <CategoryIcon category={place.category || 'place'} className="w-10 h-10" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-base text-foreground truncate">{place.name}</h3>
+                <h3 className="font-semibold text-base text-foreground truncate">{locationDetails?.name || place.name}</h3>
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <MapPin className="w-3 h-3" />
-                  <span className="truncate">{place.city || place.address?.split(',')[1]?.trim() || 'Unknown'}</span>
+                  <span className="truncate">
+                    {locationDetails?.city || place.city || locationDetails?.address?.split(',')[1]?.trim() || place.address?.split(',')[1]?.trim() || 'Unknown'}
+                  </span>
                 </div>
               </div>
               <button

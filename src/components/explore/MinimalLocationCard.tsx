@@ -34,7 +34,19 @@ const MinimalLocationCard = ({
           
         </div>
         
-        {onSaveToggle}
+        {onSaveToggle && (
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              onSaveToggle(e);
+            }}
+            variant="ghost"
+            size="sm"
+            className="flex-shrink-0"
+          >
+            <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
+          </Button>
+        )}
       </div>
     </div>;
 };
