@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, MapPin, Calendar, Users, Heart, MessageCircle, Share2, Bookmark, X, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -338,9 +338,8 @@ const LocationPostLibrary = ({
     window.location.href = '/add';
   };
   if (selectedPost) {
-    return <Drawer open={!!selectedPost} onOpenChange={open => !open && setSelectedPost(null)}>
-        <DrawerContent className="h-[95vh]">
-          <div className="fixed inset-0 bg-black z-50 flex flex-col h-full">
+    return (
+      <div className="fixed inset-0 bg-black z-50 flex flex-col h-full">
         {/* Individual Post View */}
         <div className="flex items-center justify-between p-4 bg-black text-white">
           <Button variant="ghost" size="sm" onClick={() => setSelectedPost(null)} className="text-white hover:bg-white/20">
@@ -400,192 +399,213 @@ const LocationPostLibrary = ({
                 <Bookmark className={`w-4 h-4 ${savedPosts.has(selectedPost.id) ? 'fill-current' : ''}`} />
               </Button>
             </div>
-            </div>
           </div>
         </div>
-        </DrawerContent>
-      </Drawer>;
+      </div>
+    );
   }
-  return <Drawer open={isOpen} onOpenChange={open => !open && onClose()} modal={false}>
-      <DrawerContent className="h-[90vh]">
-        {loading ? <div className="flex items-center justify-center h-full">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-gray-600 font-medium">Loading posts...</span>
-            </div>
-          </div> : <div className="flex flex-col h-full overflow-hidden">
-      {/* Header */}
-      <div className="bg-white px-4 py-4 flex items-center gap-3 shadow-sm border-b">
-        <Button variant="ghost" size="sm" onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
-          <ChevronLeft className="w-5 h-5" />
-        </Button>
-        
-        <div className="flex-1">
-          <h1 className="font-bold text-lg text-gray-900">{place.name}</h1>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <MapPin className="w-4 h-4" />
-            <span>{detailedAddress}</span>
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-background z-50 flex flex-col">
+      {loading ? (
+        <div className="flex items-center justify-center h-full">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-gray-600 font-medium">Loading posts...</span>
           </div>
         </div>
-
-        <div className="text-right">
-          <div className="text-lg font-bold text-gray-900">
-            {posts.length}
-          </div>
-          <div className="text-xs text-gray-500">
-            post{posts.length !== 1 ? 's' : ''}
-          </div>
-        </div>
-      </div>
-
-      {/* Actions */}
-      <div className="bg-white px-4 py-3 border-b">
-        <div className="grid grid-cols-4 gap-2">
-          <Button
-            onClick={handleSaveLocation}
-            size="sm"
-            variant="secondary"
-            className="flex-col h-auto py-3 gap-1 rounded-2xl"
-          >
-            <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
-            <span className="text-xs">{isSaved ? 'Saved' : 'Save'}</span>
-          </Button>
-
-          <Button
-            onClick={handleVisited}
-            size="sm"
-            variant="secondary"
-            className="flex-col h-auto py-3 gap-1 rounded-2xl"
-          >
-            <Heart className="w-5 h-5" />
-            <span className="text-xs">Visited</span>
-          </Button>
-
-          <Button
-            onClick={() => {
-              const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-              const coords = place.coordinates ? `${place.coordinates.lat},${place.coordinates.lng}` : '';
-              const url = isIOS 
-                ? `maps://maps.apple.com/?daddr=${coords}`
-                : `https://www.google.com/maps/dir/?api=1&destination=${coords}`;
-              window.open(url, '_blank');
-            }}
-            size="sm"
-            variant="secondary"
-            className="flex-col h-auto py-3 gap-1 rounded-2xl"
-          >
-            <Navigation className="w-5 h-5" />
-            <span className="text-xs">Directions</span>
-          </Button>
-
-          <Button
-            onClick={() => setIsShareModalOpen(true)}
-            size="sm"
-            variant="secondary"
-            className="flex-col h-auto py-3 gap-1 rounded-2xl"
-          >
-            <Share2 className="w-5 h-5" />
-            <span className="text-xs">Share</span>
-          </Button>
-        </div>
-      </div>
-
-      {/* Posts Library - vertical grid */}
-      <div className="flex-1 overflow-y-auto bg-gray-50">
-        {posts.length === 0 ? <div className="flex flex-col items-center justify-center h-full text-center px-8">
-            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
-              <MapPin className="w-10 h-10 text-gray-400" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No posts yet</h3>
-            <p className="text-gray-600 mb-6">Be the first to share your experience at {place.name}!</p>
+      ) : (
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className="bg-white px-4 py-4 flex items-center gap-3 shadow-sm border-b">
+            <Button variant="ghost" size="sm" onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
+              <ChevronLeft className="w-5 h-5" />
+            </Button>
             
-            {/* Show user's posts from their profile - only for this location */}
-            {userPosts && userPosts.filter(post => post.location_id === place.id || post.locations?.id === place.id).length > 0 && (
-              <div className="w-full mt-6">
-                <h4 className="text-sm font-medium text-gray-700 mb-3">Your Posts at {place.name}</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  {userPosts
-                    .filter(post => post.location_id === place.id || post.locations?.id === place.id)
-                    .slice(0, 4)
-                    .map((post) => (
-                      <div 
-                        key={post.id} 
-                        className="relative h-32 bg-gray-200 rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition shadow-sm"
-                        onClick={() => {
-                          const mappedPost: LocationPost = {
-                            id: post.id,
-                            user_id: post.user_id,
-                            caption: post.caption || null,
-                            media_urls: post.media_urls || [],
-                            likes_count: post.likes_count || 0,
-                            comments_count: post.comments_count || 0,
-                            saves_count: post.saves_count || 0,
-                            created_at: post.created_at,
-                            metadata: {},
-                            profiles: null
-                          };
-                          setSelectedPost(mappedPost);
-                        }}
-                      >
-                        {post.media_urls && post.media_urls.length > 0 && (
-                          <img 
-                            src={post.media_urls[0]} 
-                            alt="Post" 
-                            className="w-full h-full object-cover" 
-                            loading="lazy" 
-                          />
-                        )}
-                      </div>
-                    ))}
+            <div className="flex-1">
+              <h1 className="font-bold text-lg text-gray-900">{place.name}</h1>
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <MapPin className="w-4 h-4" />
+                <span>{detailedAddress}</span>
+              </div>
+            </div>
+
+            <div className="text-right">
+              <div className="text-lg font-bold text-gray-900">
+                {posts.length}
+              </div>
+              <div className="text-xs text-gray-500">
+                post{posts.length !== 1 ? 's' : ''}
+              </div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="bg-white px-4 py-3 border-b">
+            <div className="grid grid-cols-4 gap-2">
+              <Button
+                onClick={handleSaveLocation}
+                size="sm"
+                variant="secondary"
+                className="flex-col h-auto py-3 gap-1 rounded-2xl"
+              >
+                <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
+                <span className="text-xs">{isSaved ? 'Saved' : 'Save'}</span>
+              </Button>
+
+              <Button
+                onClick={handleVisited}
+                size="sm"
+                variant="secondary"
+                className="flex-col h-auto py-3 gap-1 rounded-2xl"
+              >
+                <Heart className="w-5 h-5" />
+                <span className="text-xs">Visited</span>
+              </Button>
+
+              <Button
+                onClick={() => {
+                  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                  const coords = place.coordinates ? `${place.coordinates.lat},${place.coordinates.lng}` : '';
+                  const url = isIOS 
+                    ? `maps://maps.apple.com/?daddr=${coords}`
+                    : `https://www.google.com/maps/dir/?api=1&destination=${coords}`;
+                  window.open(url, '_blank');
+                }}
+                size="sm"
+                variant="secondary"
+                className="flex-col h-auto py-3 gap-1 rounded-2xl"
+              >
+                <Navigation className="w-5 h-5" />
+                <span className="text-xs">Directions</span>
+              </Button>
+
+              <Button
+                onClick={() => setIsShareModalOpen(true)}
+                size="sm"
+                variant="secondary"
+                className="flex-col h-auto py-3 gap-1 rounded-2xl"
+              >
+                <Share2 className="w-5 h-5" />
+                <span className="text-xs">Share</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Posts Library - vertical grid with scrolling */}
+          <div className="flex-1 overflow-y-auto bg-gray-50">
+            {posts.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-center px-8">
+                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+                  <MapPin className="w-10 h-10 text-gray-400" />
                 </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No posts yet</h3>
+                <p className="text-gray-600 mb-6">Be the first to share your experience at {place.name}!</p>
+                
+                {/* Show user's posts from their profile - only for this location */}
+                {userPosts && userPosts.filter(post => post.location_id === place.id || post.locations?.id === place.id).length > 0 && (
+                  <div className="w-full mt-6">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Your Posts at {place.name}</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      {userPosts
+                        .filter(post => post.location_id === place.id || post.locations?.id === place.id)
+                        .slice(0, 4)
+                        .map((post) => (
+                          <div 
+                            key={post.id} 
+                            className="relative h-32 bg-gray-200 rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition shadow-sm"
+                            onClick={() => {
+                              const mappedPost: LocationPost = {
+                                id: post.id,
+                                user_id: post.user_id,
+                                caption: post.caption || null,
+                                media_urls: post.media_urls || [],
+                                likes_count: post.likes_count || 0,
+                                comments_count: post.comments_count || 0,
+                                saves_count: post.saves_count || 0,
+                                created_at: post.created_at,
+                                metadata: {},
+                                profiles: null
+                              };
+                              setSelectedPost(mappedPost);
+                            }}
+                          >
+                            {post.media_urls && post.media_urls.length > 0 && (
+                              <img 
+                                src={post.media_urls[0]} 
+                                alt="Post" 
+                                className="w-full h-full object-cover" 
+                                loading="lazy" 
+                              />
+                            )}
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+                
+                <Button className="bg-blue-600 hover:bg-blue-700 mt-6" onClick={() => window.location.href = '/add'}>
+                  Share Your Experience
+                </Button>
+              </div>
+            ) : (
+              <div className="p-3">
+                <div className="grid grid-cols-2 gap-3">
+                  {posts.map(post => (
+                    <div 
+                      key={post.id} 
+                      className="relative h-48 bg-gray-200 rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition shadow-sm" 
+                      onClick={() => setSelectedPost(post)}
+                    >
+                      {post.media_urls && post.media_urls.length > 0 && (
+                        <>
+                          <img src={post.media_urls[0]} alt="Post" className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                          {/* User Avatar Overlay */}
+                          <div className="absolute top-2 left-2">
+                            <Avatar className="w-8 h-8 border-2 border-white shadow-lg">
+                              <AvatarImage src={post.profiles?.avatar_url} />
+                              <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                                {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
+                              </AvatarFallback>
+                            </Avatar>
+                          </div>
+                        </>
+                      )}
+                      {post.media_urls && post.media_urls.length > 1 && (
+                        <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium">
+                          +{post.media_urls.length - 1}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Load More Button */}
+                {hasMorePosts && (
+                  <div className="mt-4 flex justify-center pb-4">
+                    <Button onClick={loadMorePosts} disabled={loading} variant="outline" size="sm">
+                      {loading ? 'Loading...' : 'Load More'}
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
-            
-            <Button className="bg-blue-600 hover:bg-blue-700 mt-6" onClick={() => window.location.href = '/add'}>
-              Share Your Experience
-            </Button>
-          </div> : <div className="p-3">
-            <div className="grid grid-cols-2 gap-3">
-              {posts.map(post => <div key={post.id} className="relative h-48 bg-gray-200 rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition shadow-sm" onClick={() => setSelectedPost(post)}>
-                  {post.media_urls && post.media_urls.length > 0 && <>
-                      <img src={post.media_urls[0]} alt="Post" className="w-full h-full object-cover" loading="lazy" decoding="async" />
-                      {/* User Avatar Overlay */}
-                      <div className="absolute top-2 left-2">
-                        <Avatar className="w-8 h-8 border-2 border-white shadow-lg">
-                          <AvatarImage src={post.profiles?.avatar_url} />
-                          <AvatarFallback className="text-xs bg-primary text-primary-foreground">
-                            {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
-                          </AvatarFallback>
-                        </Avatar>
-                      </div>
-                    </>}
-                  {post.media_urls && post.media_urls.length > 1 && <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium">
-                      +{post.media_urls.length - 1}
-                    </div>}
-                </div>)}
-            </div>
-            
-            {/* Load More Button */}
-            {hasMorePosts && <div className="mt-4 flex justify-center pb-4">
-                <Button onClick={loadMorePosts} disabled={loading} variant="outline" size="sm">
-                  {loading ? 'Loading...' : 'Load More'}
-                </Button>
-              </div>}
-          </div>}
-      </div>
+          </div>
 
-        {/* Visited -> comments modal */}
-        <PlaceInteractionModal isOpen={showComments} onClose={() => setShowComments(false)} mode="comments" place={{
-          id: place.id,
-          name: place.name,
-          category: place.category,
-          coordinates: place.coordinates
-        }} />
+          {/* Visited -> comments modal */}
+          <PlaceInteractionModal isOpen={showComments} onClose={() => setShowComments(false)} mode="comments" place={{
+            id: place.id,
+            name: place.name,
+            category: place.category,
+            coordinates: place.coordinates
+          }} />
 
-        {/* Share modal */}
-        <PinShareModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} place={place} />
-      </div>}
-      </DrawerContent>
-    </Drawer>;
+          {/* Share modal */}
+          <PinShareModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} place={place} />
+        </div>
+      )}
+    </div>
+  );
 };
 export default LocationPostLibrary;
