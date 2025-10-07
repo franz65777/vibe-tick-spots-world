@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import LocationPostLibrary from './LocationPostLibrary';
 import { AllowedCategory, categoryDisplayNames } from '@/utils/allowedCategories';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
-import { normalizeCity } from '@/utils/cityNormalization';
+import CityLabel from '@/components/common/CityLabel';
 
 interface LocationGridProps {
   searchQuery?: string;
@@ -381,7 +381,7 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
                   {location.name}
                 </h4>
                 <p className="text-xs text-gray-500 line-clamp-1">
-                  {normalizeCity(location.city)} • {location.postsCount || 0} {location.postsCount === 1 ? 'post' : 'posts'}
+                  <CityLabel id={location.google_place_id || location.id} city={location.city} address={location.address} coordinates={location.coordinates} /> • {location.postsCount || 0} {location.postsCount === 1 ? 'post' : 'posts'}
                 </p>
               </div>
             </div>

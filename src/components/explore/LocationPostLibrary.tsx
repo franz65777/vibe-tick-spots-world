@@ -10,6 +10,7 @@ import { locationInteractionService } from '@/services/locationInteractionServic
 import PlaceInteractionModal from '@/components/home/PlaceInteractionModal';
 import PinShareModal from './PinShareModal';
 import { toast } from 'sonner';
+import { useNormalizedCity } from '@/hooks/useNormalizedCity';
 import { useUserPosts } from '@/hooks/useUserPosts';
 interface LocationPost {
   id: string;
@@ -62,7 +63,12 @@ const LocationPostLibrary = ({
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
   const { posts: userPosts } = useUserPosts(user?.id);
-  const displayCity = place?.city || place?.address?.split(',')[1]?.trim() || 'Unknown City';
+  const { cityLabel: displayCity } = useNormalizedCity({
+    id: place?.google_place_id || place?.id,
+    city: place?.city,
+    coordinates: place?.coordinates,
+    address: place?.address
+  });
   const {
     trackSave,
     trackVisit

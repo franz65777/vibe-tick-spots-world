@@ -6,6 +6,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { locationInteractionService } from '@/services/locationInteractionService';
 import { supabase } from '@/integrations/supabase/client';
 import VisitedModal from './VisitedModal';
+import { useNormalizedCity } from '@/hooks/useNormalizedCity';
 import PinShareModal from './PinShareModal';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import PostDetailModal from './PostDetailModal';
@@ -28,6 +29,12 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [selectedPost, setSelectedPost] = useState<any>(null);
   const [locationDetails, setLocationDetails] = useState<any>(null);
+  const { cityLabel } = useNormalizedCity({
+    id: place.google_place_id || place.id,
+    city: locationDetails?.city || place.city,
+    coordinates: place.coordinates,
+    address: locationDetails?.address || place.address
+  });
 
   const locationIdForEngagement = place.id || locationDetails?.id || null;
   const googlePlaceIdForEngagement = place.google_place_id || locationDetails?.google_place_id || null;
@@ -191,7 +198,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <MapPin className="w-3 h-3" />
                   <span className="truncate">
-                    {locationDetails?.city || place.city || locationDetails?.address?.split(',')[1]?.trim() || place.address?.split(',')[1]?.trim() || 'Unknown'}
+                    {cityLabel || 'Unknown'}
                   </span>
                 </div>
               </div>
