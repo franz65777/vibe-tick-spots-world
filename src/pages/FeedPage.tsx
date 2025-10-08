@@ -73,7 +73,15 @@ const FeedPage = () => {
         })
         .subscribe();
 
-      channels = [postsChannel, commentsChannel, savedPlacesChannel, savedLocationsChannel, interactionsChannel];
+      // Listen to reviews from followed users
+      const reviewsChannel = supabase
+        .channel('feed-reviews')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'post_reviews' }, () => {
+          loadFeed();
+        })
+        .subscribe();
+
+      channels = [postsChannel, commentsChannel, savedPlacesChannel, savedLocationsChannel, interactionsChannel, reviewsChannel];
     };
 
     setupRealtime();
@@ -86,11 +94,30 @@ const FeedPage = () => {
 
   const handleItemClick = (item: FeedItemType) => {
     if (item.post_id) {
-      // Navigate to post detail
-      navigate(`/explore`); // You can enhance this to open the post modal
+      // Navigate to post detail or location
+      if (item.event_type === 'review' && item.location_id) {
+        // Navigate to home with location opened
+        navigate('/', { 
+          state: { 
+            openPinDetail: {
+              id: item.location_id,
+              name: item.location_name || 'Location'
+            }
+          } 
+        });
+      } else {
+        navigate(`/explore`); // You can enhance this to open the post modal
+      }
     } else if (item.location_id) {
-      // Navigate to location
-      navigate(`/explore`);
+      // Navigate to location on map
+      navigate('/', { 
+        state: { 
+          openPinDetail: {
+            id: item.location_id,
+            name: item.location_name || 'Location'
+          }
+        } 
+      });
     }
   };
 
@@ -219,12 +246,39 @@ const FeedPage = () => {
                         </p>
                       )}
 
-                      {/* Location badge if available */}
+                      {/* Rating display for reviews */}
+                      {item.event_type === 'review' && item.rating && (
+                        <div className="flex items-center gap-2 mt-2 bg-yellow-50 rounded-lg p-2">
+                          <span className="text-2xl font-bold text-yellow-600">{item.rating}/10</span>
+                          <div className="flex">
+                            {[...Array(Math.ceil(item.rating / 2))].map((_, i) => (
+                              <span key={i} className="text-yellow-400">⭐</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Location badge if available - clickable */}
                       {item.location_name && (
-                        <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-600">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (item.location_id) {
+                              navigate('/', { 
+                                state: { 
+                                  openPinDetail: {
+                                    id: item.location_id,
+                                    name: item.location_name
+                                  }
+                                } 
+                              });
+                            }
+                          }}
+                          className="flex items-center gap-1.5 mt-2 text-xs text-blue-600 hover:text-blue-700 font-medium bg-blue-50 rounded-lg px-2 py-1 w-fit"
+                        >
                           <MapPin className="w-3.5 h-3.5" />
                           <span className="truncate">{item.location_name}</span>
-                        </div>
+                        </button>
                       )}
                     </div>
                   </div>

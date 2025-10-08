@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, MessageCircle, Send, ChevronLeft, ChevronRight, MapPin, MoreHorizontal, Trash2, EyeOff, X } from 'lucide-react';
+import { Heart, MessageCircle, Send, ChevronLeft, ChevronRight, MapPin, MoreHorizontal, Trash2, EyeOff, X, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -15,6 +15,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { PostCommentsDrawer } from './PostCommentsDrawer';
 import PostShareModal from './PostShareModal';
+import { ReviewModal } from './ReviewModal';
+import { getPostReviews, type PostReview } from '@/services/reviewService';
 
 interface PostDetailModalProps {
   postId: string;
@@ -73,16 +75,24 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
   const [mediaAspectRatio, setMediaAspectRatio] = useState<'vertical' | 'horizontal'>('vertical');
   const [sharesCount, setSharesCount] = useState<number>(0);
   const [shareOpen, setShareOpen] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviews, setReviews] = useState<PostReview[]>([]);
 
   useEffect(() => {
     if (isOpen && postId) {
       loadPostData();
       loadComments();
       loadPostLikers();
+      loadReviews();
       refetchEngagement();
       setCurrentMediaIndex(0);
     }
   }, [isOpen, postId]);
+
+  const loadReviews = async () => {
+    const fetchedReviews = await getPostReviews(postId);
+    setReviews(fetchedReviews);
+  };
 
   // Detect aspect ratio when media loads
   useEffect(() => {
@@ -543,6 +553,19 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
                     )}
                   </div>
                   
+                  {/* Review button with count */}
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setReviewOpen(true)}
+                      className="flex items-center gap-1.5 hover:opacity-60 transition-opacity"
+                    >
+                      <Star className={`w-6 h-6 ${reviews.some(r => r.user_id === user?.id) ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                    </button>
+                    {reviews.length > 0 && (
+                      <span className="text-sm text-muted-foreground">{reviews.length}</span>
+                    )}
+                  </div>
+                  
                   {/* Share button with count */}
                   <div className="flex items-center gap-1">
                     <button
@@ -684,12 +707,28 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
       />
 
       {/* Share Modal */}
+      {/* Share Modal */}
       <PostShareModal
         isOpen={shareOpen}
         onClose={() => setShareOpen(false)}
         post={post ? { id: post.id, caption: post.caption, media_urls: post.media_urls } : null}
         onShared={async () => { await loadPostData(); }}
       />
+
+      {/* Review Modal */}
+      {post && (
+        <ReviewModal
+          postId={postId}
+          locationId={post.location_id}
+          locationName={post.locations?.name}
+          isOpen={reviewOpen}
+          onClose={() => setReviewOpen(false)}
+          onReviewSubmitted={() => {
+            loadReviews();
+            loadPostData();
+          }}
+        />
+      )}
     </>
   );
 };
