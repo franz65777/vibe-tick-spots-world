@@ -6,9 +6,8 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
-import CityLabel from '@/components/common/CityLabel';
-import xIcon from '@/assets/icon-x-red.png';
-import likeIcon from '@/assets/icon-like-pin.png';
+import xIcon from '@/assets/swipe-no.png';
+import pinIcon from '@/assets/swipe-pin.png';
 
 interface SwipeLocation {
   id: string;
@@ -459,13 +458,9 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                     </h3>
                     <div className="flex items-center gap-2 text-white/90 text-base">
                       <MapPin className="w-5 h-5" />
-                      <CityLabel 
-                        id={currentLocation.place_id}
-                        city={currentLocation.city}
-                        address={currentLocation.address}
-                        coordinates={currentLocation.coordinates}
-                        className="font-medium"
-                      />
+                      <span className="font-medium">
+                        {currentLocation.city || currentLocation.address?.split(',')[1]?.trim() || 'Nearby'}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       <CategoryIcon category={currentLocation.category} className="w-5 h-5 text-white" />
@@ -478,18 +473,18 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                     <button
                       onClick={() => handleSwipe('left')}
                       disabled={swipeDirection !== null}
-                      className="w-20 h-20 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
+                      className="w-20 h-20 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
                       aria-label="Pass"
                     >
-                      <img src={xIcon} alt="Pass" className="w-14 h-14" />
+                      <img src={xIcon} alt="Pass" className="w-14 h-14 object-contain" />
                     </button>
                     <button
                       onClick={() => handleSwipe('right')}
                       disabled={swipeDirection !== null}
-                      className="w-20 h-20 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
+                      className="w-20 h-20 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
                       aria-label="Save"
                     >
-                      <img src={likeIcon} alt="Save" className="w-14 h-14" />
+                      <img src={pinIcon} alt="Save" className="w-14 h-14 object-contain" />
                     </button>
                   </div>
                 </div>
