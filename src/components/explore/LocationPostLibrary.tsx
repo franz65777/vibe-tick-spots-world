@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { useNormalizedCity } from '@/hooks/useNormalizedCity';
 import { useUserPosts } from '@/hooks/useUserPosts';
 import { useDetailedAddress } from '@/hooks/useDetailedAddress';
+import { useLocationStats } from '@/hooks/useLocationStats';
 interface LocationPost {
   id: string;
   user_id: string;
@@ -83,6 +84,10 @@ const LocationPostLibrary = ({
     trackSave,
     trackVisit
   } = useLocationInteraction();
+  const { stats, loading: statsLoading } = useLocationStats(
+    place?.id || null,
+    place?.google_place_id || null
+  );
 
   // All hooks MUST be called before any early returns
   useEffect(() => {
@@ -361,19 +366,29 @@ const LocationPostLibrary = ({
             </Button>
             
             <div className="flex-1">
-              <h1 className="font-bold text-lg text-gray-900">{place.name}</h1>
+              <div className="flex items-center gap-2 mb-1">
+                <h1 className="font-bold text-lg text-gray-900">{place.name}</h1>
+                {/* Pin Count & Rating */}
+                {!statsLoading && (
+                  <div className="flex items-center gap-1.5">
+                    {stats.totalSaves > 0 && (
+                      <div className="flex items-center gap-1 bg-blue-50 px-2 py-0.5 rounded-full">
+                        <Bookmark className="w-3 h-3 fill-blue-600 text-blue-600" />
+                        <span className="text-xs font-semibold text-blue-600">{stats.totalSaves}</span>
+                      </div>
+                    )}
+                    {stats.averageRating && (
+                      <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-full">
+                        <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                        <span className="text-xs font-semibold text-amber-600">{stats.averageRating.toFixed(1)}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <MapPin className="w-4 h-4" />
                 <span>{detailedAddress}</span>
-              </div>
-            </div>
-
-            <div className="text-right">
-              <div className="text-lg font-bold text-gray-900">
-                {posts.length}
-              </div>
-              <div className="text-xs text-gray-500">
-                post{posts.length !== 1 ? 's' : ''}
               </div>
             </div>
           </div>

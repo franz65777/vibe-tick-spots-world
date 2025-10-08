@@ -36,13 +36,15 @@ const LocationReviewModal = ({ isOpen, onClose, location }: LocationReviewModalP
 
     setSubmitting(true);
     try {
-      // Create an interaction for the location
-      await supabase.from('interactions').insert({
-        user_id: user.id,
-        location_id: location.id,
-        action_type: 'review',
-        weight: 5.0
-      });
+      // Create an interaction for the location with the rating as weight
+      if (rating) {
+        await supabase.from('interactions').insert({
+          user_id: user.id,
+          location_id: location.id,
+          action_type: 'review',
+          weight: rating
+        });
+      }
 
       // If there's a comment, add it to place_comments
       if (comment.trim()) {
@@ -55,10 +57,11 @@ const LocationReviewModal = ({ isOpen, onClose, location }: LocationReviewModalP
       }
 
       toast({ 
-        title: 'Success!', 
+        title: '✨ Review Submitted!',
         description: rating 
-          ? `You rated ${location.name} ${rating}/10${comment ? ' and left a comment' : ''}` 
-          : 'Your comment was posted'
+          ? `You rated ${location.name} ${rating}/10${comment.trim() ? ' and shared your experience' : ''}!` 
+          : 'Your review has been posted successfully',
+        duration: 4000,
       });
       
       onClose();
