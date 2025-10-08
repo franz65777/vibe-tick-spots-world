@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, MapPin, Search, Users } from 'lucide-react';
+import { ArrowLeft, MapPin, Search, Users, X as XIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
-import xIcon from '@/assets/swipe-no.png';
-import pinIcon from '@/assets/swipe-pin.png';
+import CityLabel from '@/components/common/CityLabel';
 
 interface SwipeLocation {
   id: string;
@@ -458,9 +457,13 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                     </h3>
                     <div className="flex items-center gap-2 text-white/90 text-base">
                       <MapPin className="w-5 h-5" />
-                      <span className="font-medium">
-                        {currentLocation.city || currentLocation.address?.split(',')[1]?.trim() || 'Nearby'}
-                      </span>
+                      <CityLabel 
+                        id={currentLocation.place_id}
+                        city={currentLocation.city}
+                        address={currentLocation.address}
+                        coordinates={currentLocation.coordinates}
+                        className="font-medium"
+                      />
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       <CategoryIcon category={currentLocation.category} className="w-5 h-5 text-white" />
@@ -476,7 +479,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                       className="w-20 h-20 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
                       aria-label="Pass"
                     >
-                      <img src={xIcon} alt="Pass" className="w-14 h-14 object-contain" />
+                      <XIcon className="w-14 h-14 text-white" />
                     </button>
                     <button
                       onClick={() => handleSwipe('right')}
@@ -484,7 +487,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                       className="w-20 h-20 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
                       aria-label="Save"
                     >
-                      <img src={pinIcon} alt="Save" className="w-14 h-14 object-contain" />
+                      <MapPin className="w-14 h-14 text-white" />
                     </button>
                   </div>
                 </div>
