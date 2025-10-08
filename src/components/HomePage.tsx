@@ -10,7 +10,6 @@ import StoriesSection from './home/StoriesSection';
 import MapSection from './home/MapSection';
 import ModalsManager from './home/ModalsManager';
 import CommunityHighlights from './home/CommunityHighlights';
-import SwipeDiscovery from './home/SwipeDiscovery';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '@/lib/googleMaps';
 import { supabase } from '@/integrations/supabase/client';
 import { ThemeToggle } from './ThemeToggle';
@@ -62,7 +61,6 @@ const HomePage = () => {
   const [commentPlace, setCommentPlace] = useState<LocalPlace | null>(null);
   const [locationDetailPlace, setLocationDetailPlace] = useState<LocalPlace | null>(null);
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
-  const [isSwipeDiscoveryOpen, setIsSwipeDiscoveryOpen] = useState(false);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   const [initialPinToShow, setInitialPinToShow] = useState<Place | null>(null);
   
@@ -360,63 +358,46 @@ const HomePage = () => {
         />
       
       <main className="flex-1 flex flex-col overflow-hidden">
-        {!isSwipeDiscoveryOpen && (
-          <div className="h-[90px] flex-shrink-0">
-            <StoriesSection
-              stories={stories}
-              onCreateStory={() => setIsCreateStoryModalOpen(true)}
-              onStoryClick={(index) => {
-                setCurrentStoryIndex(index);
-                setIsStoriesViewerOpen(true);
-              }}
-            />
-          </div>
-        )}
+        <div className="h-[90px] flex-shrink-0">
+          <StoriesSection
+            stories={stories}
+            onCreateStory={() => setIsCreateStoryModalOpen(true)}
+            onStoryClick={(index) => {
+              setCurrentStoryIndex(index);
+              setIsStoriesViewerOpen(true);
+            }}
+          />
+        </div>
         
         {/* Discover Section - 130px, no white container */}
-        {!isSwipeDiscoveryOpen && (
-          <div className="h-[130px] flex-shrink-0">
-            <CommunityHighlights
-              currentCity={currentCity}
-              userLocation={userLocation}
-              onLocationClick={(locationId: string, coordinates?: { lat: number; lng: number }) => {
-                if (coordinates) {
-                  setMapCenter(coordinates);
-                }
-              }}
-              onUserClick={(userId: string) => {
-                navigate('/explore');
-              }}
-              onMapLocationClick={(coords: { lat: number; lng: number }) => setMapCenter(coords)}
-              onSwipeDiscoveryOpen={() => setIsSwipeDiscoveryOpen(true)}
-            />
-          </div>
-        )}
+        <div className="h-[130px] flex-shrink-0">
+          <CommunityHighlights
+            currentCity={currentCity}
+            userLocation={userLocation}
+            onLocationClick={(locationId: string, coordinates?: { lat: number; lng: number }) => {
+              if (coordinates) {
+                setMapCenter(coordinates);
+              }
+            }}
+            onUserClick={(userId: string) => {
+              navigate('/explore');
+            }}
+            onMapLocationClick={(coords: { lat: number; lng: number }) => setMapCenter(coords)}
+            onSwipeDiscoveryOpen={() => navigate('/discover')}
+          />
+        </div>
         
         {/* Map Section - reduced by 20%, with expand functionality */}
-        {!isSwipeDiscoveryOpen && (
-          <div className={isMapExpanded ? "fixed inset-0 z-50" : "h-[35vh] flex-shrink-0"}>
-            <MapSection
-              mapCenter={mapCenter}
-              currentCity={currentCity}
-              isExpanded={isMapExpanded}
-              onToggleExpand={() => setIsMapExpanded(!isMapExpanded)}
-              initialSelectedPlace={initialPinToShow}
-              onClearInitialPlace={() => setInitialPinToShow(null)}
-            />
-          </div>
-        )}
-
-        {/* Swipe Discovery - Full screen when open */}
-        {isSwipeDiscoveryOpen && (
-          <div className="flex-1">
-            <SwipeDiscovery
-              isOpen={isSwipeDiscoveryOpen}
-              onClose={() => setIsSwipeDiscoveryOpen(false)}
-              userLocation={userLocation}
-            />
-          </div>
-        )}
+        <div className={isMapExpanded ? "fixed inset-0 z-50" : "h-[35vh] flex-shrink-0"}>
+          <MapSection
+            mapCenter={mapCenter}
+            currentCity={currentCity}
+            isExpanded={isMapExpanded}
+            onToggleExpand={() => setIsMapExpanded(!isMapExpanded)}
+            initialSelectedPlace={initialPinToShow}
+            onClearInitialPlace={() => setInitialPinToShow(null)}
+          />
+        </div>
       </main>
 
       {/* Full-screen Search Overlay (fades background) */}

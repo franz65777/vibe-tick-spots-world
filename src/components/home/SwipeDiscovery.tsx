@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { X, MapPin, Search, Users } from 'lucide-react';
+import { ArrowLeft, MapPin, Search, Users, Heart, X as XIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
-import swipeNo from '@/assets/swipe-no.png';
-import swipeSave from '@/assets/swipe-save.png';
 import CityLabel from '@/components/common/CityLabel';
 
 interface SwipeLocation {
@@ -30,12 +28,10 @@ interface SwipeLocation {
 }
 
 interface SwipeDiscoveryProps {
-  isOpen: boolean;
-  onClose: () => void;
   userLocation: { lat: number; lng: number } | null;
 }
 
-const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) => {
+const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [locations, setLocations] = useState<SwipeLocation[]>([]);
@@ -46,19 +42,17 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
   const [touchOffset, setTouchOffset] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
-    if (isOpen) {
-      fetchDailyLocations();
-    }
-  }, [isOpen, userLocation]);
+    fetchDailyLocations();
+  }, [userLocation, user]);
 
   // Auto-load more when reaching near the end
   useEffect(() => {
-    if (!isOpen || loading) return;
+    if (loading) return;
     if (locations.length > 0 && currentIndex >= locations.length - 2) {
       console.log('🔄 Auto-loading more locations...');
       fetchDailyLocations();
     }
-  }, [currentIndex, locations.length, isOpen]);
+  }, [currentIndex, locations.length]);
 
   const fetchDailyLocations = async () => {
     if (!user) return;
@@ -330,85 +324,88 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
     setTouchStart(null);
   };
 
-  if (!isOpen) return null;
-
   const currentLocation = locations[currentIndex];
-  const hasMore = currentIndex < locations.length && locations.length > 0;
-  const showEmptyState = !loading && locations.length === 0;
 
   return (
-    <div className="w-full h-full bg-gray-50 flex flex-col">
-      <div className="relative w-full h-full flex flex-col">
+    <div className="fixed inset-0 bg-gradient-to-b from-gray-50 to-gray-100 z-50 flex flex-col">
+      {/* Header with back button */}
+      <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3 shadow-sm">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          aria-label="Go back"
+        >
+          <ArrowLeft className="w-5 h-5 text-gray-700" />
+        </button>
+        <div className="flex-1">
+          <h1 className="text-lg font-semibold text-gray-900">Discover Places</h1>
+          <p className="text-xs text-gray-500">
+            {locations.length > 0 ? `${currentIndex + 1} of ${locations.length}` : 'Loading...'}
+          </p>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-hidden">
         {loading ? (
-          <div className="h-full flex items-center justify-center">
-            <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          <div className="h-full flex flex-col items-center justify-center p-8">
+            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+            <p className="text-gray-600 font-medium">Finding amazing places...</p>
           </div>
         ) : !currentLocation ? (
-          <div className="h-full flex items-center justify-center p-8 text-center relative">
-            {/* Exit button */}
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white flex items-center justify-center transition-all z-10"
-              aria-label="Close"
-            >
-              <X className="w-6 h-6 text-gray-900" />
-            </button>
-            
+          <div className="h-full flex items-center justify-center p-8 text-center">
             {/* Empty state content */}
-            <div className="space-y-6 max-w-sm">
+            <div className="space-y-6 max-w-sm mx-auto">
               <div className="flex items-center justify-center">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
-                  <Users className="w-10 h-10 text-white" />
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center shadow-lg">
+                  <Users className="w-12 h-12 text-white" />
                 </div>
               </div>
               
               <div className="space-y-3">
-                <h3 className="text-xl font-bold text-foreground">No Places to Discover</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">
-                  Follow more people to see their saved locations and discover new places to explore
+                <h3 className="text-2xl font-bold text-gray-900">No Places to Discover</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Follow more people to see their saved locations and discover amazing new places to explore
                 </p>
               </div>
               
-              <div className="flex flex-col items-center gap-3 pt-2">
+              <div className="flex flex-col items-stretch gap-3 pt-4">
                 <Button 
-                  onClick={() => { 
-                    onClose(); 
-                    navigate('/explore'); 
-                  }} 
-                  className="rounded-full px-6 py-2 font-semibold"
+                  onClick={() => navigate('/explore')} 
+                  className="rounded-full h-12 text-base font-semibold"
                   size="lg"
                 >
-                  <Search className="w-4 h-4 mr-2" />
+                  <Search className="w-5 h-5 mr-2" />
                   Find People to Follow
                 </Button>
                 <Button 
                   onClick={fetchDailyLocations} 
-                  variant="ghost" 
-                  className="rounded-full px-6 text-sm"
+                  variant="outline" 
+                  className="rounded-full h-12 text-base"
                 >
                   Try Again
                 </Button>
               </div>
             </div>
           </div>
-        ) : currentLocation ? (
-          <div className="flex-1 flex items-start justify-center p-4 pt-2">
+        ) : (
+          <div className="h-full flex items-center justify-center p-4">
             {/* Swipeable Card */}
             <div
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
-              className="w-full max-w-md h-[360px] transition-transform duration-300"
+              className="w-full max-w-lg transition-transform duration-300"
               style={{
                 transform: swipeDirection 
                   ? swipeDirection === 'left' 
-                    ? 'translateX(-120%) rotate(-15deg)' 
-                    : 'translateX(120%) rotate(15deg)'
-                  : `translateX(${touchOffset.x}px) rotate(${touchOffset.x * 0.05}deg)`,
-                opacity: swipeDirection ? 0 : 1 - Math.abs(touchOffset.x) / 500
+                    ? 'translateX(-120%) rotate(-10deg)' 
+                    : 'translateX(120%) rotate(10deg)'
+                  : `translateX(${touchOffset.x}px) rotate(${touchOffset.x * 0.03}deg)`,
+                opacity: swipeDirection ? 0 : 1 - Math.abs(touchOffset.x) / 600
               }}
             >
-              <div className="relative w-full h-full rounded-3xl overflow-hidden shadow-2xl bg-white">
+              <div className="relative w-full aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl bg-white">
                 {/* Image or Gradient Background */}
                 <div className="absolute inset-0">
                   {currentLocation.image_url ? (
@@ -418,93 +415,82 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 flex items-center justify-center">
-                      <CategoryIcon category={currentLocation.category} className="w-28 h-28 opacity-70" />
+                    <div className="w-full h-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center">
+                      <CategoryIcon category={currentLocation.category} className="w-32 h-32 opacity-40" />
                     </div>
                   )}
                   
-                  {/* Gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                  {/* Gradient overlays */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/20" />
                 </div>
 
-                {/* Top Left - Saved by avatar */}
+                {/* Top - Saved by avatar */}
                 {currentLocation.saved_by && (
-                  <div className="absolute top-4 left-4 flex items-center gap-2 bg-black/60 backdrop-blur-sm rounded-full px-3 py-2">
+                  <div className="absolute top-6 left-6 flex items-center gap-2 bg-black/70 backdrop-blur-md rounded-full px-4 py-2.5 shadow-lg">
                     {currentLocation.saved_by.avatar_url ? (
                       <img 
                         src={currentLocation.saved_by.avatar_url} 
                         alt={currentLocation.saved_by.username}
-                        className="w-7 h-7 rounded-full object-cover"
+                        className="w-8 h-8 rounded-full object-cover ring-2 ring-white/30"
                       />
                     ) : (
-                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
-                        <span className="text-white text-xs font-semibold">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center ring-2 ring-white/30">
+                        <span className="text-white text-sm font-bold">
                           {currentLocation.saved_by.username[0]?.toUpperCase()}
                         </span>
                       </div>
                     )}
-                    <span className="text-white text-sm font-medium">{currentLocation.saved_by.username}</span>
+                    <span className="text-white text-sm font-semibold">
+                      {currentLocation.saved_by.username}
+                    </span>
                   </div>
                 )}
 
-                {/* Top Right - X button */}
-                <button
-                  onClick={onClose}
-                  className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white flex items-center justify-center transition-all z-10"
-                >
-                  <X className="w-6 h-6 text-gray-900" />
-                </button>
-
-                {/* Bottom Info - Shifted up */}
-                <div className="absolute bottom-16 left-0 right-0 p-6">
-                  <div className="flex-1 mb-3">
-                    <h3 className="text-2xl font-bold text-white drop-shadow-lg mb-1.5">
+                {/* Bottom Info */}
+                <div className="absolute bottom-0 left-0 right-0 p-6 pb-8">
+                  <div className="mb-6">
+                    <h3 className="text-3xl font-bold text-white drop-shadow-lg mb-2">
                       {currentLocation.name}
                     </h3>
-                    {currentLocation.city && (
-                      <div className="flex items-center gap-1.5 text-white text-sm mb-1.5">
-                        <MapPin className="w-4 h-4" />
-                        <span className="drop-shadow">
-                          <CityLabel 
-                            id={currentLocation.place_id || currentLocation.id}
-                            city={currentLocation.city}
-                            address={currentLocation.address}
-                            coordinates={currentLocation.coordinates}
-                          />
-                        </span>
-                      </div>
-                    )}
-                    {currentLocation.category && (
-                      <div className="inline-block px-2.5 py-1 bg-white/20 backdrop-blur-sm rounded-full">
-                        <span className="text-white text-xs font-medium capitalize">
-                          {currentLocation.category}
-                        </span>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2 text-white/90 text-base">
+                      <MapPin className="w-5 h-5" />
+                      <CityLabel 
+                        id={currentLocation.place_id}
+                        city={currentLocation.city}
+                        coordinates={currentLocation.coordinates}
+                        className="font-medium"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <CategoryIcon category={currentLocation.category} className="w-5 h-5 text-white" />
+                      <span className="text-white/80 text-sm capitalize">{currentLocation.category}</span>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons Inside Card */}
+                  <div className="flex items-center justify-center gap-6">
+                    <button
+                      onClick={() => handleSwipe('left')}
+                      disabled={swipeDirection !== null}
+                      className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md border-2 border-white/30 shadow-xl hover:bg-white/20 hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
+                      aria-label="Pass"
+                    >
+                      <XIcon className="w-7 h-7 text-white stroke-[2.5]" />
+                    </button>
+                    <button
+                      onClick={() => handleSwipe('right')}
+                      disabled={swipeDirection !== null}
+                      className="w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 shadow-2xl hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center ring-4 ring-white/20"
+                      aria-label="Save"
+                    >
+                      <Heart className="w-9 h-9 text-white fill-white stroke-[2]" />
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
-
-            {/* Action buttons - Shifted up */}
-            <div className="absolute bottom-24 left-1/2 -translate-x-1/2 flex items-center justify-center gap-8">
-              <button
-                onClick={() => handleSwipe('left')}
-                className="w-16 h-16 rounded-full bg-white shadow-xl flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-                aria-label="Pass"
-              >
-                <img src={swipeNo} alt="Pass" className="w-10 h-10" />
-              </button>
-              <button
-                onClick={() => handleSwipe('right')}
-                className="w-16 h-16 rounded-full bg-white shadow-xl flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-                aria-label="Save for later"
-              >
-                <img src={swipeSave} alt="Save" className="w-10 h-10" />
-              </button>
-            </div>
           </div>
-        ) : null}
+        )}
       </div>
     </div>
   );

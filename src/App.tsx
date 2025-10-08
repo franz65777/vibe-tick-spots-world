@@ -21,6 +21,7 @@ import LeaderboardPage from '@/pages/LeaderboardPage';
 import AdminAnalyticsPage from '@/pages/AdminAnalyticsPage';
 import NotificationsPage from '@/pages/NotificationsPage';
 import MessagesPage from '@/pages/MessagesPage';
+import DiscoverPage from '@/pages/DiscoverPage';
 import BusinessOverviewPage from '@/pages/business/BusinessOverviewPage';
 import BusinessAnalyticsPage from '@/pages/business/BusinessAnalyticsPage';
 import BusinessAddPage from '@/pages/business/BusinessAddPage';
@@ -59,6 +60,7 @@ function AppContent() {
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/explore" element={<ExplorePage />} />
+                <Route path="/discover" element={<DiscoverPage />} />
                 <Route path="/add" element={<AddLocationPage />} />
                 <Route path="/feed" element={<FeedPage />} />
                 <Route path="/activity" element={<ActivityFeedPage />} />
