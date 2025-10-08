@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, MapPin, Search, Users, Heart, X as XIcon } from 'lucide-react';
+import { ArrowLeft, MapPin, Search, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,8 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import CityLabel from '@/components/common/CityLabel';
+import swipeNoIcon from '@/assets/swipe-no.png';
+import swipeSaveIcon from '@/assets/swipe-save.png';
 
 interface SwipeLocation {
   id: string;
@@ -114,8 +116,8 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
           place_id: s.place_id || '',
           name: s.place_name || 'Unknown Place',
           category: s.place_category || 'place',
-          city: s.city || 'Unknown City',
-          address: undefined,
+          city: s.city || null,
+          address: s.address || null,
           image_url: undefined,
           coordinates: coords,
           saved_by: {
@@ -472,18 +474,18 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                     <button
                       onClick={() => handleSwipe('left')}
                       disabled={swipeDirection !== null}
-                      className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md border-2 border-white/30 shadow-xl hover:bg-white/20 hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
+                      className="w-20 h-20 rounded-full bg-white/10 backdrop-blur-md shadow-xl hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
                       aria-label="Pass"
                     >
-                      <XIcon className="w-7 h-7 text-white stroke-[2.5]" />
+                      <img src={swipeNoIcon} alt="Pass" className="w-12 h-12" />
                     </button>
                     <button
                       onClick={() => handleSwipe('right')}
                       disabled={swipeDirection !== null}
-                      className="w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 shadow-2xl hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center ring-4 ring-white/20"
+                      className="w-24 h-24 rounded-full bg-white/10 backdrop-blur-md shadow-2xl hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
                       aria-label="Save"
                     >
-                      <Heart className="w-9 h-9 text-white fill-white stroke-[2]" />
+                      <img src={swipeSaveIcon} alt="Save" className="w-16 h-16" />
                     </button>
                   </div>
                 </div>

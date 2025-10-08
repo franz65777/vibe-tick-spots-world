@@ -11,13 +11,14 @@ interface AuthenticatedLayoutProps {
 const AuthenticatedLayout: React.FC<AuthenticatedLayoutProps> = ({ children }) => {
   const location = useLocation();
   const isBusinessRoute = location.pathname.startsWith('/business');
+  const isDiscoverRoute = location.pathname === '/discover';
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="pb-16">
+      <div className={isDiscoverRoute ? "" : "pb-16"}>
         {children}
       </div>
-      {isBusinessRoute ? <BusinessBottomNavigation /> : <NewBottomNavigation />}
+      {!isDiscoverRoute && (isBusinessRoute ? <BusinessBottomNavigation /> : <NewBottomNavigation />)}
     </div>
   );
 };
