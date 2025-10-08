@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Coffee, 
   Utensils, 
@@ -18,9 +18,10 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMapFilter } from '@/contexts/MapFilterContext';
-import { useSecureUserSearch } from '@/hooks/useSecureUserSearch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface CategoryFilter {
   id: string;
@@ -39,7 +40,12 @@ export const categoryFilters: CategoryFilter[] = [
   { id: 'entertainment', name: 'Entertainment', icon: Star, color: 'bg-pink-500' }
 ];
 
-const MapCategoryFilters = () => {
+interface MapCategoryFiltersProps {
+  currentCity?: string;
+}
+
+const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
+  const { user: currentUser } = useAuth();
   const { 
     activeFilter, 
     setActiveFilter, 
@@ -54,7 +60,8 @@ const MapCategoryFilters = () => {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [showUserSearch, setShowUserSearch] = useState(false);
-  const { users, searchUsers } = useSecureUserSearch();
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const mapFilters = [
     { id: 'following' as const, name: 'Following', icon: Users, description: 'Places from people you follow' },
@@ -78,10 +85,100 @@ const MapCategoryFilters = () => {
     setShowUserSearch(false);
   };
 
+  // Fetch users with saved places in the current city
+  useEffect(() => {
+    if (showUserSearch && activeFilter === 'following' && currentUser) {
+      searchUsersWithSavedPlacesInCity('');
+    }
+  }, [showUserSearch, activeFilter, currentUser, currentCity]);
+
+  const searchUsersWithSavedPlacesInCity = async (query: string) => {
+    if (!currentUser) return;
+    
+    setLoading(true);
+    try {
+      // Get users the current user follows
+      const { data: followsData } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', currentUser.id);
+      
+      const followingIds = followsData?.map(f => f.following_id) || [];
+      
+      if (followingIds.length === 0) {
+        setUsers([]);
+        setLoading(false);
+        return;
+      }
+
+      // Get users who have saved places in the current city
+      const normalizedCity = currentCity?.trim().toLowerCase();
+      
+      // Query saved_places (Google Places)
+      const { data: savedPlacesUsers } = await supabase
+        .from('saved_places')
+        .select('user_id, city')
+        .in('user_id', followingIds);
+      
+      // Query user_saved_locations (internal locations)
+      const { data: savedLocUsers } = await supabase
+        .from('user_saved_locations')
+        .select(`
+          user_id,
+          locations!inner(city)
+        `)
+        .in('user_id', followingIds);
+      
+      // Combine and filter by city
+      const userIdsWithSavesInCity = new Set<string>();
+      
+      savedPlacesUsers?.forEach(sp => {
+        const spCity = sp.city?.trim().toLowerCase();
+        if (!normalizedCity || !spCity || spCity.includes(normalizedCity) || normalizedCity.includes(spCity)) {
+          userIdsWithSavesInCity.add(sp.user_id);
+        }
+      });
+      
+      savedLocUsers?.forEach((sl: any) => {
+        const locCity = sl.locations?.city?.trim().toLowerCase();
+        if (!normalizedCity || !locCity || locCity.includes(normalizedCity) || normalizedCity.includes(locCity)) {
+          userIdsWithSavesInCity.add(sl.user_id);
+        }
+      });
+      
+      if (userIdsWithSavesInCity.size === 0) {
+        setUsers([]);
+        setLoading(false);
+        return;
+      }
+      
+      // Fetch profile data for these users
+      let profileQuery = supabase
+        .from('profiles')
+        .select('id, username, avatar_url, bio')
+        .in('id', Array.from(userIdsWithSavesInCity));
+      
+      if (query.trim()) {
+        profileQuery = profileQuery.ilike('username', `%${query}%`);
+      }
+      
+      const { data: profiles } = await profileQuery;
+      
+      setUsers(profiles || []);
+    } catch (error) {
+      console.error('Error fetching users with saves in city:', error);
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     if (value.trim()) {
-      searchUsers(value);
+      searchUsersWithSavedPlacesInCity(value);
+    } else {
+      searchUsersWithSavedPlacesInCity('');
     }
   };
 
@@ -158,26 +255,29 @@ const MapCategoryFilters = () => {
 
       {/* User Search Bar - Shown when Following is active and search is enabled */}
       {showUserSearch && activeFilter === 'following' && (
-        <div className="mb-2 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 p-2">
+        <div className="mb-2 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 p-3">
           <div className="flex items-center gap-2">
-            <Search className="w-4 h-4 text-gray-400" />
+            <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
             <Input
               type="text"
               placeholder="Search people you follow..."
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="flex-1 border-0 focus-visible:ring-0 h-8 text-sm"
+              className="flex-1 border-0 focus-visible:ring-0 h-8 text-sm bg-transparent"
             />
+            {loading && (
+              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin flex-shrink-0"></div>
+            )}
             <button
               onClick={() => setShowUserSearch(true)}
-              className="p-1.5 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+              className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex-shrink-0"
               title="Add another person"
             >
               <Plus className="w-4 h-4" />
             </button>
             <button
               onClick={handleExitSearch}
-              className="p-1.5 rounded-md bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+              className="p-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors flex-shrink-0"
               title="Clear filter"
             >
               <X className="w-4 h-4" />
@@ -185,19 +285,19 @@ const MapCategoryFilters = () => {
           </div>
 
           {/* Search Results */}
-          {searchQuery.trim() && users.length > 0 && (
-            <div className="mt-2 max-h-48 overflow-y-auto space-y-1">
+          {users.length > 0 && (
+            <div className="mt-3 max-h-48 overflow-y-auto space-y-1.5 rounded-lg">
               {users
-                .filter(u => u.is_following && !selectedFollowedUserIds.includes(u.id))
+                .filter(u => !selectedFollowedUserIds.includes(u.id))
                 .map(user => (
                   <button
                     key={user.id}
                     onClick={() => handleUserSelect(user.id)}
-                    className="w-full flex items-center gap-2 p-2 rounded-md hover:bg-gray-100 transition-colors text-left"
+                    className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-100 transition-colors text-left"
                   >
-                    <Avatar className="w-8 h-8">
+                    <Avatar className="w-9 h-9 flex-shrink-0">
                       <AvatarImage src={user.avatar_url || ''} />
-                      <AvatarFallback>
+                      <AvatarFallback className="text-sm">
                         {user.username?.[0]?.toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
@@ -213,16 +313,22 @@ const MapCategoryFilters = () => {
                 ))}
             </div>
           )}
+          
+          {users.length === 0 && !loading && (
+            <p className="mt-3 text-xs text-gray-500 text-center">
+              No followed users have saved places in {currentCity || 'this city'}
+            </p>
+          )}
 
           {/* Selected Users */}
           {selectedUsers.length > 0 && (
-            <div className="mt-2 pt-2 border-t border-gray-200">
-              <p className="text-xs text-gray-500 mb-2">Showing pins from:</p>
-              <div className="flex flex-wrap gap-1">
+            <div className="mt-3 pt-3 border-t border-gray-200">
+              <p className="text-xs text-gray-500 mb-2 font-medium">Showing pins from:</p>
+              <div className="flex flex-wrap gap-1.5">
                 {selectedUsers.map(user => (
                   <div
                     key={user.id}
-                    className="flex items-center gap-1 px-2 py-1 bg-blue-50 rounded-full text-xs"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 rounded-full text-xs border border-blue-100"
                   >
                     <Avatar className="w-4 h-4">
                       <AvatarImage src={user.avatar_url || ''} />
@@ -230,10 +336,10 @@ const MapCategoryFilters = () => {
                         {user.username?.[0]?.toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="text-blue-900">{user.username}</span>
+                    <span className="text-blue-900 font-medium">{user.username}</span>
                     <button
                       onClick={() => removeFollowedUser(user.id)}
-                      className="ml-1 text-blue-600 hover:text-blue-800"
+                      className="ml-0.5 text-blue-600 hover:text-blue-800 transition-colors"
                     >
                       <X className="w-3 h-3" />
                     </button>

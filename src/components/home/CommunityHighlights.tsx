@@ -21,7 +21,7 @@ const CommunityHighlights: React.FC<CommunityHighlightsProps> = ({
   return (
     <div className="h-full bg-white/50 backdrop-blur-sm border-y border-gray-100">
       <PopularSpots
-        userLocation={userLocation}
+        currentCity={currentCity}
         onLocationClick={onMapLocationClick}
         onSwipeDiscoveryOpen={onSwipeDiscoveryOpen}
       />

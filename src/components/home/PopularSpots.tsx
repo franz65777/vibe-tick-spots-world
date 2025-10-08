@@ -21,37 +21,33 @@ interface PopularSpot {
 }
 
 interface PopularSpotsProps {
-  userLocation: { lat: number; lng: number } | null;
+  currentCity?: string;
   onLocationClick?: (coords: { lat: number; lng: number }) => void;
   onSwipeDiscoveryOpen?: () => void;
 }
 
-const PopularSpots = ({ userLocation, onLocationClick, onSwipeDiscoveryOpen }: PopularSpotsProps) => {
+const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen }: PopularSpotsProps) => {
   const { user } = useAuth();
   const [popularSpots, setPopularSpots] = useState<PopularSpot[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchPopularSpots();
-  }, [userLocation]);
-
-  // Haversine distance in km
-  const distanceKm = (a: {lat:number;lng:number}, b: {lat:number;lng:number}) => {
-    const toRad = (v: number) => (v * Math.PI) / 180;
-    const R = 6371; // km
-    const dLat = toRad(b.lat - a.lat);
-    const dLng = toRad(b.lng - a.lng);
-    const lat1 = toRad(a.lat);
-    const lat2 = toRad(b.lat);
-    const s = Math.sin(dLat/2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng/2) ** 2;
-    return 2 * R * Math.asin(Math.min(1, Math.sqrt(s)));
-  };
+  }, [currentCity]);
 
   const fetchPopularSpots = async () => {
+    if (!currentCity) {
+      setPopularSpots([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
 
-      // Fetch ALL locations from ALL users
+      const normalizedCity = currentCity.trim().toLowerCase();
+
+      // Fetch locations from internal database
       const { data: locationsData, error: locationsError } = await supabase
         .from('locations')
         .select(`
@@ -64,11 +60,11 @@ const PopularSpots = ({ userLocation, onLocationClick, onSwipeDiscoveryOpen }: P
           latitude,
           longitude
         `)
-        .limit(200);
+        .limit(500);
 
       if (locationsError) throw locationsError;
 
-      // Get ALL saves from ALL users for these locations
+      // Get saves count for all locations
       const locationIds = locationsData?.map(l => l.id) || [];
       const { data: savesData } = await supabase
         .from('user_saved_locations')
@@ -80,21 +76,38 @@ const PopularSpots = ({ userLocation, onLocationClick, onSwipeDiscoveryOpen }: P
         savesMap.set(save.location_id, (savesMap.get(save.location_id) || 0) + 1);
       });
 
-      // Process locations
+      // Get saves from Google Places (saved_places table)
+      const { data: googleSavesData } = await supabase
+        .from('saved_places')
+        .select('place_id');
+
+      const googleSavesMap = new Map<string, number>();
+      googleSavesData?.forEach(save => {
+        googleSavesMap.set(save.place_id, (googleSavesMap.get(save.place_id) || 0) + 1);
+      });
+
+      // Process and filter locations by city
       const locationMap = new Map<string, PopularSpot>();
 
       locationsData?.forEach((location) => {
-        const key = location.google_place_id || `${location.latitude}-${location.longitude}`;
+        const locationCity = location.city?.trim().toLowerCase();
         
-        if (!locationMap.has(key)) {
-          const savesCount = savesMap.get(location.id) || 0;
-          // Only include locations with at least 1 save
-          if (savesCount > 0) {
+        // Filter by city
+        if (!locationCity || (!locationCity.includes(normalizedCity) && !normalizedCity.includes(locationCity))) {
+          return;
+        }
+
+        const key = location.google_place_id || location.id;
+        const savesCount = (savesMap.get(location.id) || 0) + (location.google_place_id ? (googleSavesMap.get(location.google_place_id) || 0) : 0);
+        
+        // Only include locations with at least 1 save
+        if (savesCount > 0) {
+          if (!locationMap.has(key) || (locationMap.get(key)?.savesCount || 0) < savesCount) {
             locationMap.set(key, {
               id: location.id,
               name: location.name,
               category: location.category,
-              city: location.city || location.address?.split(',')[1]?.trim() || 'Unknown',
+              city: location.city || 'Unknown',
               address: location.address,
               google_place_id: location.google_place_id,
               savesCount,
@@ -107,16 +120,10 @@ const PopularSpots = ({ userLocation, onLocationClick, onSwipeDiscoveryOpen }: P
         }
       });
 
-      // Filter by proximity (<= 2km) and sort by saves, then distance
-      const allSpots = Array.from(locationMap.values());
-      const withDistance = userLocation
-        ? allSpots.map((s) => ({ ...s, __dist: distanceKm(s.coordinates, userLocation) }))
-        : allSpots.map((s) => ({ ...s, __dist: Infinity }));
-      const filtered = userLocation ? withDistance.filter((s: any) => s.__dist <= 2) : withDistance;
-      const topSpots = filtered
-        .sort((a: any, b: any) => (b.savesCount - a.savesCount) || (a.__dist - b.__dist))
-        .slice(0, 10)
-        .map(({ __dist, ...rest }: any) => rest);
+      // Sort by saves count and get top 10
+      const topSpots = Array.from(locationMap.values())
+        .sort((a, b) => b.savesCount - a.savesCount)
+        .slice(0, 10);
 
       setPopularSpots(topSpots);
     } catch (error) {
@@ -151,8 +158,8 @@ const PopularSpots = ({ userLocation, onLocationClick, onSwipeDiscoveryOpen }: P
             <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-pink-500 rounded-lg flex items-center justify-center">
               <TrendingUp className="w-4 h-4 text-white" />
             </div>
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900">Popular Near You</h3>
+            <div className="flex flex-col">
+              <h3 className="text-sm font-semibold text-gray-900">Top Pinned in {currentCity}</h3>
               <p className="text-xs text-gray-500">Most saved locations</p>
             </div>
           </div>

@@ -158,7 +158,7 @@ const MapSection = ({
         />
 
         {/* Map Category Filters - Hidden when pin detail is open */}
-        {!selectedPlace && <MapCategoryFilters />}
+        {!selectedPlace && <MapCategoryFilters currentCity={currentCity} />}
 
         {/* Map Controls - List View and Expand Toggle */}
         <div className="absolute bottom-6 right-3 z-40 flex flex-col gap-2">
