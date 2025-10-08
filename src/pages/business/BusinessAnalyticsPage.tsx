@@ -13,6 +13,10 @@ interface AnalyticsData {
   savesOverTime: { date: string; count: number }[];
   postsOverTime: { date: string; count: number }[];
   weeklyEngagement: { week: string; minutes: number }[];
+  savesChange: number;
+  postsChange: number;
+  sharesChange: number;
+  timeChange: number;
 }
 
 const BusinessAnalyticsPage = () => {
@@ -70,14 +74,20 @@ const BusinessAnalyticsPage = () => {
       // Calculate REAL average time spent viewing location cards
       const avgTimeSpent = await calculateAverageViewTime(locationData.id, locationData.google_place_id);
 
-      // Calculate saves over time (last 30 days)
-      const savesOverTime = await calculateSavesOverTime(locationData.id, locationData.google_place_id);
+      // Calculate saves over time (last 7 days - weekly)
+      const savesOverTime = await calculateWeeklySaves(locationData.id, locationData.google_place_id);
 
-      // Calculate posts over time (last 30 days)
-      const postsOverTime = calculatePostsOverTime(postsData || []);
+      // Calculate posts over time (last 7 days - weekly)
+      const postsOverTime = calculateWeeklyPosts(postsData || []);
 
       // Calculate weekly engagement time (real data)
       const weeklyEngagement = await calculateWeeklyEngagement(locationData.id, locationData.google_place_id);
+
+      // Calculate percentage changes
+      const savesChange = calculatePercentageChange(savesOverTime);
+      const postsChange = calculatePercentageChange(postsOverTime);
+      const sharesChange = totalShares > 0 ? calculateSharesChange(postsData || []) : 0;
+      const timeChange = calculateTimeChange(weeklyEngagement);
 
       setAnalytics({
         totalSaves,
@@ -87,6 +97,10 @@ const BusinessAnalyticsPage = () => {
         savesOverTime,
         postsOverTime,
         weeklyEngagement,
+        savesChange,
+        postsChange,
+        sharesChange,
+        timeChange,
       });
     } catch (error) {
       console.error('Error fetching analytics:', error);
@@ -146,8 +160,8 @@ const BusinessAnalyticsPage = () => {
     return result;
   };
 
-  const calculateSavesOverTime = async (locationId: string, googlePlaceId: string | null) => {
-    const days = 30;
+  const calculateWeeklySaves = async (locationId: string, googlePlaceId: string | null) => {
+    const days = 7;
     const result: { date: string; count: number }[] = [];
 
     for (let i = days - 1; i >= 0; i--) {
@@ -159,12 +173,14 @@ const BusinessAnalyticsPage = () => {
         .from('user_saved_locations')
         .select('*', { count: 'exact', head: true })
         .eq('location_id', locationId)
+        .gte('created_at', `${dateStr}T00:00:00`)
         .lte('created_at', `${dateStr}T23:59:59`);
 
       const { count: externalCount } = await supabase
         .from('saved_places')
         .select('*', { count: 'exact', head: true })
         .eq('place_id', googlePlaceId || '')
+        .gte('created_at', `${dateStr}T00:00:00`)
         .lte('created_at', `${dateStr}T23:59:59`);
 
       result.push({
@@ -176,8 +192,8 @@ const BusinessAnalyticsPage = () => {
     return result;
   };
 
-  const calculatePostsOverTime = (posts: any[]) => {
-    const days = 30;
+  const calculateWeeklyPosts = (posts: any[]) => {
+    const days = 7;
     const result: { date: string; count: number }[] = [];
 
     for (let i = days - 1; i >= 0; i--) {
@@ -187,7 +203,7 @@ const BusinessAnalyticsPage = () => {
 
       const count = posts.filter(post => {
         const postDate = new Date(post.created_at).toISOString().split('T')[0];
-        return postDate <= dateStr;
+        return postDate === dateStr;
       }).length;
 
       result.push({
@@ -197,6 +213,44 @@ const BusinessAnalyticsPage = () => {
     }
 
     return result;
+  };
+
+  const calculatePercentageChange = (data: { date: string; count: number }[]) => {
+    if (data.length < 2) return 0;
+    
+    const firstHalf = data.slice(0, Math.floor(data.length / 2));
+    const secondHalf = data.slice(Math.floor(data.length / 2));
+    
+    const firstTotal = firstHalf.reduce((sum, item) => sum + item.count, 0);
+    const secondTotal = secondHalf.reduce((sum, item) => sum + item.count, 0);
+    
+    if (firstTotal === 0) return secondTotal > 0 ? 100 : 0;
+    
+    return Math.round(((secondTotal - firstTotal) / firstTotal) * 100);
+  };
+
+  const calculateSharesChange = (posts: any[]) => {
+    const now = new Date();
+    const lastWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    
+    const lastWeekShares = posts.filter(p => new Date(p.created_at) >= lastWeek).reduce((sum, p) => sum + (p.shares_count || 0), 0);
+    const previousWeekShares = posts.filter(p => new Date(p.created_at) >= twoWeeksAgo && new Date(p.created_at) < lastWeek).reduce((sum, p) => sum + (p.shares_count || 0), 0);
+    
+    if (previousWeekShares === 0) return lastWeekShares > 0 ? 100 : 0;
+    
+    return Math.round(((lastWeekShares - previousWeekShares) / previousWeekShares) * 100);
+  };
+
+  const calculateTimeChange = (weeklyData: { week: string; minutes: number }[]) => {
+    if (weeklyData.length < 2) return 0;
+    
+    const lastWeek = weeklyData[weeklyData.length - 1].minutes;
+    const previousWeek = weeklyData[weeklyData.length - 2].minutes;
+    
+    if (previousWeek === 0) return lastWeek > 0 ? 100 : 0;
+    
+    return Math.round(((lastWeek - previousWeek) / previousWeek) * 100);
   };
 
   if (loading) {
@@ -236,10 +290,12 @@ const BusinessAnalyticsPage = () => {
                 <div>
                   <p className="text-xs text-muted-foreground">Total Saves</p>
                   <p className="text-xl font-bold text-foreground mt-0.5">{analytics.totalSaves}</p>
-                  <p className="text-[10px] text-emerald-600 mt-0.5 flex items-center gap-0.5">
-                    <TrendingUp className="w-2.5 h-2.5" />
-                    +12% this month
-                  </p>
+                  {analytics.savesChange !== 0 && (
+                    <p className={`text-[10px] mt-0.5 flex items-center gap-0.5 ${analytics.savesChange > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                      <TrendingUp className={`w-2.5 h-2.5 ${analytics.savesChange < 0 ? 'rotate-180' : ''}`} />
+                      {analytics.savesChange > 0 ? '+' : ''}{analytics.savesChange}% this week
+                    </p>
+                  )}
                 </div>
                 <Heart className="w-7 h-7 text-primary/20" />
               </div>
@@ -252,10 +308,12 @@ const BusinessAnalyticsPage = () => {
                 <div>
                   <p className="text-xs text-muted-foreground">Total Posts</p>
                   <p className="text-xl font-bold text-foreground mt-0.5">{analytics.totalPosts}</p>
-                  <p className="text-[10px] text-emerald-600 mt-0.5 flex items-center gap-0.5">
-                    <TrendingUp className="w-2.5 h-2.5" />
-                    +8% this week
-                  </p>
+                  {analytics.postsChange !== 0 && (
+                    <p className={`text-[10px] mt-0.5 flex items-center gap-0.5 ${analytics.postsChange > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                      <TrendingUp className={`w-2.5 h-2.5 ${analytics.postsChange < 0 ? 'rotate-180' : ''}`} />
+                      {analytics.postsChange > 0 ? '+' : ''}{analytics.postsChange}% this week
+                    </p>
+                  )}
                 </div>
                 <FileText className="w-7 h-7 text-primary/20" />
               </div>
@@ -268,10 +326,12 @@ const BusinessAnalyticsPage = () => {
                 <div>
                   <p className="text-xs text-muted-foreground">Total Shares</p>
                   <p className="text-xl font-bold text-foreground mt-0.5">{analytics.totalShares}</p>
-                  <p className="text-[10px] text-emerald-600 mt-0.5 flex items-center gap-0.5">
-                    <TrendingUp className="w-2.5 h-2.5" />
-                    +15% this week
-                  </p>
+                  {analytics.sharesChange !== 0 && (
+                    <p className={`text-[10px] mt-0.5 flex items-center gap-0.5 ${analytics.sharesChange > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                      <TrendingUp className={`w-2.5 h-2.5 ${analytics.sharesChange < 0 ? 'rotate-180' : ''}`} />
+                      {analytics.sharesChange > 0 ? '+' : ''}{analytics.sharesChange}% this week
+                    </p>
+                  )}
                 </div>
                 <Share2 className="w-7 h-7 text-primary/20" />
               </div>
@@ -284,10 +344,12 @@ const BusinessAnalyticsPage = () => {
                 <div>
                   <p className="text-xs text-muted-foreground">Avg. Time</p>
                   <p className="text-xl font-bold text-foreground mt-0.5">{analytics.avgTimeSpent}m</p>
-                  <p className="text-[10px] text-emerald-600 mt-0.5 flex items-center gap-0.5">
-                    <TrendingUp className="w-2.5 h-2.5" />
-                    +5% this week
-                  </p>
+                  {analytics.timeChange !== 0 && (
+                    <p className={`text-[10px] mt-0.5 flex items-center gap-0.5 ${analytics.timeChange > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                      <TrendingUp className={`w-2.5 h-2.5 ${analytics.timeChange < 0 ? 'rotate-180' : ''}`} />
+                      {analytics.timeChange > 0 ? '+' : ''}{analytics.timeChange}% this week
+                    </p>
+                  )}
                 </div>
                 <Clock className="w-7 h-7 text-primary/20" />
               </div>
@@ -298,7 +360,7 @@ const BusinessAnalyticsPage = () => {
         {/* Saves Over Time Chart */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Saves Over Time (Last 30 Days)</CardTitle>
+            <CardTitle className="text-sm">Saves Over Time (Last 7 Days)</CardTitle>
           </CardHeader>
           <CardContent className="px-2">
             <ChartContainer
@@ -337,7 +399,7 @@ const BusinessAnalyticsPage = () => {
         {/* Posts Over Time Chart */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Posts Growth (Last 30 Days)</CardTitle>
+            <CardTitle className="text-sm">Posts Growth (Last 7 Days)</CardTitle>
           </CardHeader>
           <CardContent className="px-2">
             <ChartContainer
@@ -420,7 +482,11 @@ const BusinessAnalyticsPage = () => {
               <div>
                 <p className="text-xs font-medium text-foreground">Growing Popularity</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                  Your location saves increased by 12% this month. Keep engaging with users!
+                  {analytics.savesChange > 0 
+                    ? `Your location saves increased by ${analytics.savesChange}% this week. Keep engaging!`
+                    : analytics.savesChange < 0
+                    ? `Your location saves decreased by ${Math.abs(analytics.savesChange)}% this week.`
+                    : 'Your location saves remained steady this week.'}
                 </p>
               </div>
             </div>

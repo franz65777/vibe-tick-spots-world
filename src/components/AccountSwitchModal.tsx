@@ -71,11 +71,11 @@ const AccountSwitchModal: React.FC<AccountSwitchModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md rounded-3xl mt-8">
-        <div className="space-y-6 pt-2">
+      <DialogContent className="sm:max-w-md rounded-3xl p-0 gap-0 bottom-[88px] top-auto translate-y-0 data-[state=open]:slide-in-from-bottom-0 max-w-[calc(100%-32px)] sm:max-w-[calc(640px-32px)] mx-auto">
+        <div className="space-y-4 px-6 pt-4 pb-6">
           <div className="text-center">
-            <h2 className="text-xl font-semibold mb-2">Switch Account</h2>
-            <p className="text-sm text-muted-foreground">
+            <h2 className="text-lg font-semibold mb-1">Switch Account</h2>
+            <p className="text-xs text-muted-foreground">
               Choose which account to use
             </p>
           </div>
