@@ -15,7 +15,7 @@ interface SwipeLocation {
   place_id: string;
   name: string;
   category: string;
-  city: string;
+  city: string | null;
   address?: string;
   image_url?: string;
   coordinates: {
@@ -100,7 +100,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       console.log('📍 Friends saves data:', friendsSaves);
       
       let candidates: SwipeLocation[] = (friendsSaves || []).map((s: any) => {
-        let coords = { lat: 0, lng: 0 };
+        let coords: any = { lat: 0, lng: 0 };
         try {
           coords = typeof s.coordinates === 'string' 
             ? JSON.parse(s.coordinates) 
@@ -109,7 +109,10 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
           console.error('Error parsing coordinates for', s.place_name, e);
         }
         
-        console.log(`📌 Processing place: ${s.place_name} from ${s.username}`, { coords, city: s.city });
+        const latNum = Number(coords?.lat ?? coords?.latitude ?? 0);
+        const lngNum = Number(coords?.lng ?? coords?.longitude ?? 0);
+        
+        console.log(`📌 Processing place: ${s.place_name} from ${s.username}`, { coords: { lat: latNum, lng: lngNum }, city: s.city });
         
         return {
           id: s.place_id || `temp-${Math.random()}`,
@@ -119,7 +122,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
           city: s.city || null,
           address: s.address || null,
           image_url: undefined,
-          coordinates: coords,
+          coordinates: { lat: latNum, lng: lngNum },
           saved_by: {
             id: s.user_id || '',
             username: s.username || 'User',
@@ -459,6 +462,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                       <CityLabel 
                         id={currentLocation.place_id}
                         city={currentLocation.city}
+                        address={currentLocation.address}
                         coordinates={currentLocation.coordinates}
                         className="font-medium"
                       />
@@ -474,7 +478,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                     <button
                       onClick={() => handleSwipe('left')}
                       disabled={swipeDirection !== null}
-                      className="w-20 h-20 rounded-full bg-white/10 backdrop-blur-md shadow-xl hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
+                      className="w-20 h-20 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
                       aria-label="Pass"
                     >
                       <img src={swipeNoIcon} alt="Pass" className="w-12 h-12" />
@@ -482,7 +486,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                     <button
                       onClick={() => handleSwipe('right')}
                       disabled={swipeDirection !== null}
-                      className="w-24 h-24 rounded-full bg-white/10 backdrop-blur-md shadow-2xl hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
+                      className="w-20 h-20 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
                       aria-label="Save"
                     >
                       <img src={swipeSaveIcon} alt="Save" className="w-16 h-16" />
