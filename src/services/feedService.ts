@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { getCachedData } from './performanceService';
+import cameraIcon from '@/assets/camera-icon.png';
 
 export interface FeedItem {
   id: string;
@@ -12,6 +13,7 @@ export interface FeedItem {
   post_id: string | null;
   content: string | null;
   media_url: string | null;
+  media_urls?: string[]; // Multiple media URLs
   created_at: string;
   rating?: number; // For reviews
 }
@@ -106,6 +108,7 @@ export async function getUserFeed(userId: string, limit: number = 50): Promise<F
         post_id: post.id,
         content: post.caption,
         media_url: post.media_urls?.[0] || null,
+        media_urls: post.media_urls || [],
         created_at: post.created_at,
         rating: post.rating || undefined,
       };
@@ -148,9 +151,10 @@ export async function getUserFeed(userId: string, limit: number = 50): Promise<F
  * Get event icon and text for feed items
  */
 export function getFeedEventDisplay(eventType: string): {
-  icon: string;
+  icon: string | null;
   action: string;
   color: string;
+  iconType?: 'image' | 'emoji';
 } {
   switch (eventType) {
     case 'rated_post':
@@ -162,7 +166,7 @@ export function getFeedEventDisplay(eventType: string): {
     case 'saved_location':
       return { icon: '📌', action: 'saved', color: 'text-blue-500' };
     case 'new_post':
-      return { icon: '📸', action: 'posted about', color: 'text-pink-500' };
+      return { icon: cameraIcon, action: 'posted about', color: 'text-pink-500', iconType: 'image' };
     case 'new_comment':
       return { icon: '💬', action: 'commented on', color: 'text-green-500' };
     case 'like_location':

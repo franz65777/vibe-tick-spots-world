@@ -77,6 +77,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
   const [shareOpen, setShareOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviews, setReviews] = useState<PostReview[]>([]);
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen && postId) {
@@ -93,6 +94,22 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
     const fetchedReviews = await getPostReviews(postId);
     setReviews(fetchedReviews);
   };
+
+  // Track scroll position for media index
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container || !post || post.media_urls.length <= 1) return;
+
+    const handleScroll = () => {
+      const scrollLeft = container.scrollLeft;
+      const containerWidth = container.offsetWidth;
+      const index = Math.round(scrollLeft / containerWidth);
+      setCurrentMediaIndex(index);
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [post]);
 
   // Detect aspect ratio when media loads
   useEffect(() => {
@@ -455,70 +472,79 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
               )}
             </div>
 
-            {/* Media Section */}
-            <div 
-              className="relative bg-black flex items-center justify-center flex-shrink-0" 
-              style={{ 
-                aspectRatio: mediaAspectRatio === 'vertical' ? '4/5' : '16/9',
-                maxHeight: '60vh'
-              }}
-            >
-              {post.media_urls[currentMediaIndex]?.endsWith('.mp4') || 
-               post.media_urls[currentMediaIndex]?.endsWith('.mov') ? (
-                <video
-                  src={post.media_urls[currentMediaIndex]}
-                  controls
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <img
-                  src={post.media_urls[currentMediaIndex]}
-                  alt="Post"
-                  className="w-full h-full object-cover"
-                />
-              )}
-
-              {/* Navigation arrows */}
-              {post.media_urls.length > 1 && (
-                <>
-                  {currentMediaIndex > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={prevMedia}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full"
+            {/* Media Section with Horizontal Scrolling */}
+            {post.media_urls.length > 1 ? (
+              <div 
+                ref={scrollContainerRef}
+                className="relative bg-black flex-shrink-0 overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+              >
+                <div className="flex">
+                  {post.media_urls.map((url, index) => (
+                    <div 
+                      key={index}
+                      className="snap-center flex-shrink-0 flex items-center justify-center" 
+                      style={{ 
+                        width: '100vw',
+                        maxWidth: '100%',
+                        aspectRatio: mediaAspectRatio === 'vertical' ? '4/5' : '16/9',
+                        maxHeight: '60vh'
+                      }}
                     >
-                      <ChevronLeft className="w-6 h-6" />
-                    </Button>
-                  )}
-                  {currentMediaIndex < post.media_urls.length - 1 && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={nextMedia}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full"
-                    >
-                      <ChevronRight className="w-6 h-6" />
-                    </Button>
-                  )}
-                  
-                  {/* Media indicator dots */}
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
-                    {post.media_urls.map((_, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setCurrentMediaIndex(index)}
-                        className={`rounded-full transition-all ${
-                          index === currentMediaIndex 
-                            ? 'w-2 h-2 bg-primary' 
-                            : 'w-1.5 h-1.5 bg-white/60'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
+                      {url.endsWith('.mp4') || url.endsWith('.mov') ? (
+                        <video
+                          src={url}
+                          controls
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <img
+                          src={url}
+                          alt={`Post ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Media indicator dots */}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 pointer-events-none">
+                  {post.media_urls.map((_, index) => (
+                    <div
+                      key={index}
+                      className={`rounded-full transition-all ${
+                        index === currentMediaIndex 
+                          ? 'w-2 h-2 bg-primary' 
+                          : 'w-1.5 h-1.5 bg-white/60'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div 
+                className="relative bg-black flex items-center justify-center flex-shrink-0" 
+                style={{ 
+                  aspectRatio: mediaAspectRatio === 'vertical' ? '4/5' : '16/9',
+                  maxHeight: '60vh'
+                }}
+              >
+                {post.media_urls[0]?.endsWith('.mp4') || 
+                 post.media_urls[0]?.endsWith('.mov') ? (
+                  <video
+                    src={post.media_urls[0]}
+                    controls
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <img
+                    src={post.media_urls[0]}
+                    alt="Post"
+                    className="w-full h-full object-cover"
+                  />
+                )}
+              </div>
+            )}
 
             {/* Action buttons - RIGHT below media */}
             <div className="px-4 py-2 bg-background flex-shrink-0">

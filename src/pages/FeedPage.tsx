@@ -135,10 +135,10 @@ const FeedPage = () => {
   return (
     <AuthenticatedLayout>
       <div className="min-h-screen bg-gray-50 pb-20">
-        {/* Modern Header */}
-        <div className="bg-white border-b border-gray-200 pt-12">
-          <div className="p-4 pt-2">
-            <div className="flex items-center gap-3 mb-2">
+        {/* Modern Header - Reduced padding */}
+        <div className="bg-white border-b border-gray-200 pt-2">
+          <div className="p-4 pb-3">
+            <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
                 <Sparkles className="w-5 h-5 text-white" />
               </div>
@@ -198,57 +198,62 @@ const FeedPage = () => {
                   className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer"
                   onClick={() => handleItemClick(item)}
                 >
-                  <div className="flex items-start gap-3">
-                    {/* User Avatar */}
-                    <Avatar className="w-12 h-12 flex-shrink-0">
-                      <AvatarImage src={item.avatar_url || ''} />
-                      <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white font-semibold">
-                        {item.username?.[0]?.toUpperCase() || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start gap-2 mb-1">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm leading-snug">
+                  <div className="flex flex-col">
+                    {/* Header with avatar and user info */}
+                    <div className="flex items-center gap-2 mb-2">
+                      <Avatar className="w-8 h-8 flex-shrink-0">
+                        <AvatarImage src={item.avatar_url || ''} />
+                        <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white font-semibold text-xs">
+                          {item.username?.[0]?.toUpperCase() || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm leading-tight">
+                          <span className="font-semibold text-gray-900">
+                            {item.username}
+                          </span>
+                          {' '}
+                          <span className="text-gray-600">{display.action}</span>
+                          {' '}
+                          {item.location_name && (
                             <span className="font-semibold text-gray-900">
-                              {item.username}
+                              {item.location_name}
                             </span>
-                            {' '}
-                            <span className="text-gray-600">{display.action}</span>
-                            {' '}
-                            {item.location_name && (
-                              <span className="font-semibold text-gray-900">
-                                {item.location_name}
-                              </span>
-                            )}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-0.5">
-                            {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {item.rating && item.event_type === 'rated_post' && (
-                            <div className="flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded-full">
-                              <span className="text-lg font-bold text-primary">{item.rating}</span>
-                              <span className="text-xs text-primary">/10</span>
-                            </div>
                           )}
-                          <span className="text-xl">{display.icon}</span>
-                        </div>
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
+                        </p>
                       </div>
+                      <div className="flex items-center gap-2">
+                        {item.rating && item.event_type === 'rated_post' && (
+                          <div className="flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded-full">
+                            <span className="text-lg font-bold text-primary">{item.rating}</span>
+                            <span className="text-xs text-primary">/10</span>
+                          </div>
+                        )}
+                        {display.iconType === 'image' && display.icon ? (
+                          <img src={display.icon} alt="camera" className="w-6 h-6 object-contain" />
+                        ) : (
+                          <span className="text-xl">{display.icon}</span>
+                        )}
+                      </div>
+                    </div>
 
-                      {/* Media preview if available */}
-                      {item.media_url && (
-                        <div className="mt-2 rounded-lg overflow-hidden">
-                          <img 
-                            src={item.media_url} 
-                            alt={item.location_name || 'Post image'}
-                            className="w-full h-48 object-cover"
-                          />
-                        </div>
-                      )}
+                    {/* Media preview if available - bigger and centered with horizontal scroll */}
+                    {item.media_urls && item.media_urls.length > 0 && (
+                      <div className="mt-1 rounded-xl overflow-x-auto snap-x snap-mandatory scrollbar-hide flex gap-2">
+                        {item.media_urls.map((url, idx) => (
+                          <div key={idx} className="snap-center flex-shrink-0 w-full">
+                            <img 
+                              src={url} 
+                              alt={`${item.location_name || 'Post'} ${idx + 1}`}
+                              className="w-full h-64 object-cover rounded-xl"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
                        {/* Post content if available */}
                       {item.content && item.event_type !== 'review' && (
@@ -284,29 +289,28 @@ const FeedPage = () => {
                         </div>
                       )}
 
-                      {/* Location badge if available - clickable */}
-                      {item.location_name && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (item.location_id) {
-                              navigate('/', { 
-                                state: { 
-                                  openPinDetail: {
-                                    id: item.location_id,
-                                    name: item.location_name
-                                  }
-                                } 
-                              });
-                            }
-                          }}
-                          className="flex items-center gap-1.5 mt-2 text-xs text-blue-600 hover:text-blue-700 font-medium bg-blue-50 rounded-lg px-2 py-1 w-fit"
-                        >
-                          <MapPin className="w-3.5 h-3.5" />
-                          <span className="truncate">{item.location_name}</span>
-                        </button>
-                      )}
-                    </div>
+                    {/* Location badge if available - clickable */}
+                    {item.location_name && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (item.location_id) {
+                            navigate('/', { 
+                              state: { 
+                                openPinDetail: {
+                                  id: item.location_id,
+                                  name: item.location_name
+                                }
+                              } 
+                            });
+                          }
+                        }}
+                        className="flex items-center gap-1.5 mt-2 text-xs text-blue-600 hover:text-blue-700 font-medium bg-blue-50 rounded-lg px-2 py-1 w-fit"
+                      >
+                        <MapPin className="w-3.5 h-3.5" />
+                        <span className="truncate">{item.location_name}</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               );

@@ -1,12 +1,16 @@
-
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import * as engagementService from '@/services/postEngagementService';
 
+/**
+ * Hook for managing post engagement (likes, saves, shares)
+ * Completely rewritten to use new service
+ */
 export const usePostEngagement = () => {
   const { user } = useAuth();
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -20,111 +24,78 @@ export const usePostEngagement = () => {
   const loadUserEngagement = async () => {
     if (!user) return;
 
+    setLoading(true);
     try {
-      // Load liked posts
-      const { data: likes } = await supabase
-        .from('post_likes')
-        .select('post_id')
-        .eq('user_id', user.id);
+      const [liked, saved] = await Promise.all([
+        engagementService.getUserLikedPosts(user.id),
+        engagementService.getUserSavedPosts(user.id),
+      ]);
 
-      // Load saved posts
-      const { data: saves } = await supabase
-        .from('post_saves')
-        .select('post_id')
-        .eq('user_id', user.id);
-
-      setLikedPosts(new Set(likes?.map(l => l.post_id) || []));
-      setSavedPosts(new Set(saves?.map(s => s.post_id) || []));
+      setLikedPosts(liked);
+      setSavedPosts(saved);
     } catch (error) {
       console.error('Error loading user engagement:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const toggleLike = async (postId: string) => {
+  const toggleLike = async (postId: string): Promise<boolean> => {
     if (!user) return false;
 
-    try {
-      const isLiked = likedPosts.has(postId);
+    const isLiked = likedPosts.has(postId);
+    const success = await engagementService.togglePostLike(user.id, postId);
 
-      if (isLiked) {
-        // Unlike
-        const { error } = await supabase
-          .from('post_likes')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('post_id', postId);
-
-        if (!error) {
-          setLikedPosts(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(postId);
-            return newSet;
-          });
+    if (success) {
+      setLikedPosts(prev => {
+        const newSet = new Set(prev);
+        if (isLiked) {
+          newSet.delete(postId);
+        } else {
+          newSet.add(postId);
         }
-      } else {
-        // Like
-        const { error } = await supabase
-          .from('post_likes')
-          .insert({ user_id: user.id, post_id: postId });
-
-        if (!error) {
-          setLikedPosts(prev => new Set([...prev, postId]));
-        }
-      }
-
-      return true;
-    } catch (error) {
-      console.error('Error toggling like:', error);
-      return false;
+        return newSet;
+      });
     }
+
+    return success;
   };
 
-  const toggleSave = async (postId: string) => {
+  const toggleSave = async (postId: string): Promise<boolean> => {
     if (!user) return false;
 
-    try {
-      const isSaved = savedPosts.has(postId);
+    const isSaved = savedPosts.has(postId);
+    const success = await engagementService.togglePostSave(user.id, postId);
 
-      if (isSaved) {
-        // Unsave
-        const { error } = await supabase
-          .from('post_saves')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('post_id', postId);
-
-        if (!error) {
-          setSavedPosts(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(postId);
-            return newSet;
-          });
+    if (success) {
+      setSavedPosts(prev => {
+        const newSet = new Set(prev);
+        if (isSaved) {
+          newSet.delete(postId);
+        } else {
+          newSet.add(postId);
         }
-      } else {
-        // Save
-        const { error } = await supabase
-          .from('post_saves')
-          .insert({ user_id: user.id, post_id: postId });
-
-        if (!error) {
-          setSavedPosts(prev => new Set([...prev, postId]));
-        }
-      }
-
-      return true;
-    } catch (error) {
-      console.error('Error toggling save:', error);
-      return false;
+        return newSet;
+      });
     }
+
+    return success;
+  };
+
+  const recordShare = async (postId: string): Promise<boolean> => {
+    if (!user) return false;
+    return await engagementService.recordPostShare(user.id, postId);
   };
 
   return {
     likedPosts,
     savedPosts,
+    loading,
     toggleLike,
     toggleSave,
+    recordShare,
     isLiked: (postId: string) => likedPosts.has(postId),
     isSaved: (postId: string) => savedPosts.has(postId),
-    refetch: loadUserEngagement
+    refetch: loadUserEngagement,
   };
 };
