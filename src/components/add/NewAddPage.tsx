@@ -15,6 +15,7 @@ export const NewAddPage = () => {
   const [selectedLocation, setSelectedLocation] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [taggedUsers, setTaggedUsers] = useState<any[]>([]);
+  const [rating, setRating] = useState<number | undefined>();
   const [isUploading, setIsUploading] = useState(false);
 
   const handleFilesSelect = (files: FileList) => {
@@ -185,6 +186,7 @@ export const NewAddPage = () => {
           caption: caption.trim() || null,
           media_urls: mediaUrls,
           tagged_users: taggedUsers.map(u => u.id),
+          rating: rating || null,
         })
         .select()
         .single();
@@ -228,6 +230,7 @@ export const NewAddPage = () => {
       selectedLocation={selectedLocation}
       selectedCategory={selectedCategory}
       taggedUsers={taggedUsers}
+      rating={rating}
       isUploading={isUploading}
       onFilesSelect={handleFilesSelect}
       onRemoveFile={handleRemoveFile}
@@ -236,6 +239,7 @@ export const NewAddPage = () => {
       onCategoryChange={setSelectedCategory}
       onUserTagged={handleUserTagged}
       onUserRemoved={handleUserRemoved}
+      onRatingChange={setRating}
       onSubmit={handleSubmit}
     />
   );

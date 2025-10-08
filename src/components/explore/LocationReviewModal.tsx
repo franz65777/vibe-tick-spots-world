@@ -74,27 +74,27 @@ const LocationReviewModal = ({ isOpen, onClose, location }: LocationReviewModalP
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-background max-w-md">
-        <div className="flex items-center justify-between mb-4">
+      <DialogContent className="bg-background max-w-md rounded-3xl sm:rounded-3xl">
+        <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold">Review {location.name}</h2>
-          <button onClick={onClose} className="p-2 hover:bg-muted rounded-lg">
+          <button onClick={onClose} className="p-2 hover:bg-muted rounded-xl transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Rating */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <label className="text-sm font-medium">Rating (optional)</label>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               {[...Array(10)].map((_, i) => (
                 <button
                   key={i}
                   type="button"
                   onClick={() => setRating(rating === i + 1 ? undefined : i + 1)}
-                  className={`w-10 h-10 rounded-lg font-semibold transition-all ${
+                  className={`w-12 h-12 rounded-2xl font-semibold transition-all ${
                     rating && rating >= i + 1
-                      ? 'bg-primary text-primary-foreground'
+                      ? 'bg-primary text-primary-foreground shadow-sm'
                       : 'bg-muted text-muted-foreground hover:bg-muted/80'
                   }`}
                 >
@@ -108,13 +108,13 @@ const LocationReviewModal = ({ isOpen, onClose, location }: LocationReviewModalP
           </div>
 
           {/* Comment */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <label className="text-sm font-medium">Comment (optional)</label>
             <Textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder="Share your experience..."
-              className="min-h-[100px]"
+              className="min-h-[120px] rounded-2xl resize-none"
             />
           </div>
 
@@ -122,7 +122,7 @@ const LocationReviewModal = ({ isOpen, onClose, location }: LocationReviewModalP
           <Button
             onClick={handleSubmit}
             disabled={submitting || (!rating && !comment.trim())}
-            className="w-full"
+            className="w-full h-12 rounded-2xl font-semibold"
           >
             {submitting ? 'Submitting...' : 'Submit Review'}
           </Button>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, MapPin, Calendar, Users, Heart, MessageCircle, Share2, Bookmark, X, Navigation } from 'lucide-react';
+import { ChevronLeft, MapPin, Calendar, Users, Heart, MessageCircle, Share2, Bookmark, X, Navigation, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -10,6 +10,7 @@ import { locationInteractionService } from '@/services/locationInteractionServic
 import PlaceInteractionModal from '@/components/home/PlaceInteractionModal';
 import PinShareModal from './PinShareModal';
 import PostDetailModal from './PostDetailModal';
+import LocationReviewModal from './LocationReviewModal';
 import { toast } from 'sonner';
 import { useNormalizedCity } from '@/hooks/useNormalizedCity';
 import { useUserPosts } from '@/hooks/useUserPosts';
@@ -61,6 +62,7 @@ const LocationPostLibrary = ({
   const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
   const [showComments, setShowComments] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [postsPage, setPostsPage] = useState(1);
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
@@ -390,13 +392,13 @@ const LocationPostLibrary = ({
               </Button>
 
               <Button
-                onClick={handleVisited}
+                onClick={() => setIsReviewModalOpen(true)}
                 size="sm"
                 variant="secondary"
                 className="flex-col h-auto py-3 gap-1 rounded-2xl"
               >
-                <Heart className="w-5 h-5" />
-                <span className="text-xs">Visited</span>
+                <Star className="w-5 h-5" />
+                <span className="text-xs">Review</span>
               </Button>
 
               <Button
@@ -534,6 +536,17 @@ const LocationPostLibrary = ({
               source="pin"
             />
           )}
+          
+          {/* Review Modal */}
+          <LocationReviewModal
+            isOpen={isReviewModalOpen}
+            onClose={() => setIsReviewModalOpen(false)}
+            location={{
+              id: place.id,
+              name: place.name,
+              google_place_id: place.google_place_id
+            }}
+          />
         </div>
       )}
     </div>
