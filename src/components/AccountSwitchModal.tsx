@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Check, Building2, User } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
+import { getCategoryIcon } from '@/utils/categoryIcons';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
 interface AccountSwitchModalProps {
@@ -19,6 +21,36 @@ const AccountSwitchModal: React.FC<AccountSwitchModalProps> = ({
   currentMode,
 }) => {
   const { profile } = useProfile();
+  const [locationName, setLocationName] = useState<string>('Business Account');
+  const [locationCategory, setLocationCategory] = useState<string>('restaurant');
+
+  useEffect(() => {
+    const fetchLocation = async () => {
+      if (!profile?.id) return;
+
+      try {
+        // Fetch the first location for this business (we can enhance this later)
+        const { data, error } = await supabase
+          .from('locations')
+          .select('name, category')
+          .limit(1)
+          .maybeSingle();
+
+        if (data && !error) {
+          setLocationName(data.name);
+          setLocationCategory(data.category || 'restaurant');
+        }
+      } catch (err) {
+        console.error('Error fetching location:', err);
+      }
+    };
+
+    if (open) {
+      fetchLocation();
+    }
+  }, [open, profile?.id]);
+
+  const CategoryIcon = getCategoryIcon(locationCategory);
 
   const accounts = [
     {
@@ -30,17 +62,17 @@ const AccountSwitchModal: React.FC<AccountSwitchModalProps> = ({
     },
     {
       id: 'business',
-      name: 'Business Account',
-      avatar: profile?.avatar_url,
-      icon: <Building2 className="w-5 h-5" />,
+      name: locationName,
+      avatar: null, // Will use category icon instead
+      icon: <CategoryIcon className="w-5 h-5" />,
       description: 'Business Dashboard',
     },
   ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <div className="space-y-4">
+      <DialogContent className="sm:max-w-md rounded-3xl mt-8">
+        <div className="space-y-6 pt-2">
           <div className="text-center">
             <h2 className="text-xl font-semibold mb-2">Switch Account</h2>
             <p className="text-sm text-muted-foreground">
@@ -48,7 +80,7 @@ const AccountSwitchModal: React.FC<AccountSwitchModalProps> = ({
             </p>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             {accounts.map((account) => (
               <button
                 key={account.id}
@@ -57,7 +89,7 @@ const AccountSwitchModal: React.FC<AccountSwitchModalProps> = ({
                   onOpenChange(false);
                 }}
                 className={cn(
-                  'w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all hover:bg-accent/50',
+                  'w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all hover:bg-accent/50',
                   currentMode === account.id
                     ? 'border-primary bg-primary/5'
                     : 'border-border bg-background'
@@ -65,10 +97,18 @@ const AccountSwitchModal: React.FC<AccountSwitchModalProps> = ({
               >
                 <div className="relative">
                   <Avatar className="w-12 h-12">
-                    <AvatarImage src={account.avatar} />
-                    <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10">
-                      {account.icon}
-                    </AvatarFallback>
+                    {account.id === 'personal' ? (
+                      <>
+                        <AvatarImage src={account.avatar} />
+                        <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10">
+                          {account.icon}
+                        </AvatarFallback>
+                      </>
+                    ) : (
+                      <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10">
+                        {account.icon}
+                      </AvatarFallback>
+                    )}
                   </Avatar>
                   {currentMode === account.id && (
                     <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center border-2 border-background">
