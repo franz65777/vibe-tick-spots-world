@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, MapPin, Search, Users, X as XIcon } from 'lucide-react';
+import { ArrowLeft, MapPin, Search, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,8 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import CityLabel from '@/components/common/CityLabel';
+import swipeNo from '@/assets/swipe-no.png';
+import swipePin from '@/assets/swipe-pin.png';
 
 interface SwipeLocation {
   id: string;
@@ -129,6 +131,31 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
         };
       });
 
+      // Enrich candidates with internal location data (city/address/coords/image)
+      if (candidates.length > 0) {
+        const placeIds = Array.from(new Set(candidates.map(c => c.place_id).filter(Boolean)));
+        if (placeIds.length) {
+          const { data: locRows } = await supabase
+            .from('locations')
+            .select('google_place_id, city, address, latitude, longitude, image_url')
+            .in('google_place_id', placeIds);
+          const byId = new Map((locRows || []).map((r: any) => [r.google_place_id, r]));
+          candidates = candidates.map(c => {
+            const m: any = byId.get(c.place_id);
+            if (!m) return c;
+            const lat = Number(c.coordinates?.lat) || Number(m.latitude) || 0;
+            const lng = Number(c.coordinates?.lng) || Number(m.longitude) || 0;
+            return {
+              ...c,
+              city: c.city || m.city || null,
+              address: c.address || m.address || null,
+              image_url: c.image_url || m.image_url || undefined,
+              coordinates: { lat, lng },
+            };
+          });
+        }
+      }
+
       // Fallback: if no follows or no candidates, show recent public locations (with google_place_id)
       if (candidates.length === 0) {
         console.log('⚠️ No friends saves, loading fallback locations');
@@ -144,7 +171,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
           name: l.name || 'Unknown Place',
           category: l.category || 'place',
           city: l.city || 'Unknown',
-          address: undefined,
+          address: l.address || null,
           image_url: l.image_url || undefined,
           coordinates: { lat: Number(l.latitude) || 0, lng: Number(l.longitude) || 0 },
           saved_by: undefined,
@@ -479,7 +506,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                       className="w-20 h-20 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
                       aria-label="Pass"
                     >
-                      <XIcon className="w-14 h-14 text-white" />
+                      <img src={swipeNo} alt="Pass" className="w-14 h-14 object-contain" />
                     </button>
                     <button
                       onClick={() => handleSwipe('right')}
@@ -487,7 +514,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                       className="w-20 h-20 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
                       aria-label="Save"
                     >
-                      <MapPin className="w-14 h-14 text-white" />
+                      <img src={swipePin} alt="Save" className="w-14 h-14 object-contain" />
                     </button>
                   </div>
                 </div>
