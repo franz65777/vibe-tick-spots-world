@@ -15,6 +15,7 @@ import LocationPostLibrary from './LocationPostLibrary';
 import { getCategoryColor } from '@/utils/categoryIcons';
 import { normalizeCity } from '@/utils/cityNormalization';
 import { useNormalizedCity } from '@/hooks/useNormalizedCity';
+import { useLocationStats } from '@/hooks/useLocationStats';
 
 interface CompactLocationCardProps {
   place: Place;
@@ -38,6 +39,8 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
     coordinates: place.coordinates,
     address: place.address || null
   });
+
+  const { stats } = useLocationStats(place.id, place.google_place_id || null);
 
   useEffect(() => {
     loadSmartImage();
@@ -181,13 +184,19 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
             </h3>
 
             {/* Location Row */}
-            <div className="flex items-center gap-2 text-xs text-gray-600">
+            <div className="flex items-center gap-2 text-xs text-gray-600 flex-wrap">
               <div className="flex items-center gap-0.5">
                 <MapPin className="w-2.5 h-2.5 text-gray-400" />
                 <span className="font-medium">{getCityName()}</span>
               </div>
               {getDistanceText() && (
                 <span className="font-medium">{getDistanceText()}</span>
+              )}
+              {stats.averageRating && (
+                <div className="flex items-center gap-1 bg-yellow-50 px-1.5 py-0.5 rounded-full">
+                  <Star className="w-2.5 h-2.5 fill-yellow-400 text-yellow-400" />
+                  <span className="text-xs font-semibold text-yellow-700">{stats.averageRating.toFixed(1)}</span>
+                </div>
               )}
             </div>
 

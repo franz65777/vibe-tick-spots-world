@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface LocationReviewModalProps {
   isOpen: boolean;
@@ -25,12 +25,12 @@ const LocationReviewModal = ({ isOpen, onClose, location }: LocationReviewModalP
 
   const handleSubmit = async () => {
     if (!user) {
-      toast({ title: 'Error', description: 'You must be logged in to review' });
+      toast.error('You must be logged in to review');
       return;
     }
 
     if (!rating && !comment.trim()) {
-      toast({ title: 'Error', description: 'Please provide a rating or comment' });
+      toast.error('Please provide a rating or comment');
       return;
     }
 
@@ -56,20 +56,20 @@ const LocationReviewModal = ({ isOpen, onClose, location }: LocationReviewModalP
         });
       }
 
-      toast({ 
-        title: '✨ Review Submitted!',
-        description: rating 
-          ? `You rated ${location.name} ${rating}/10${comment.trim() ? ' and shared your experience' : ''}!` 
-          : 'Your review has been posted successfully',
-        duration: 4000,
-      });
+      toast.success(rating 
+        ? `You rated ${location.name} ${rating}/10${comment.trim() ? ' and shared your experience' : ''}!` 
+        : 'Your review has been posted successfully',
+        {
+          duration: 3000,
+        }
+      );
       
       onClose();
       setRating(undefined);
       setComment('');
     } catch (error) {
       console.error('Error submitting review:', error);
-      toast({ title: 'Error', description: 'Failed to submit review' });
+      toast.error('Failed to submit review');
     } finally {
       setSubmitting(false);
     }

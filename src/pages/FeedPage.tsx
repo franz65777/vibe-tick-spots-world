@@ -4,16 +4,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { getUserFeed, getFeedEventDisplay, FeedItem as FeedItemType } from '@/services/feedService';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MapPin, Sparkles, TrendingUp } from 'lucide-react';
+import { MapPin, Sparkles, TrendingUp, MessageSquare } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import AuthenticatedLayout from '@/components/AuthenticatedLayout';
+import PostDetailModal from '@/components/explore/PostDetailModal';
 
 const FeedPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [feedItems, setFeedItems] = useState<FeedItemType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -93,26 +95,27 @@ const FeedPage = () => {
   }, [user?.id]);
 
   const handleItemClick = (item: FeedItemType) => {
-    if (item.post_id) {
-      // Navigate to post detail or location
-      if (item.event_type === 'review' && item.location_id) {
-        // Navigate to home with location opened
-        navigate('/', { 
-          state: { 
-            openPinDetail: {
-              id: item.location_id,
-              name: item.location_name || 'Location'
-            }
-          } 
-        });
-      } else {
-        navigate(`/explore`); // You can enhance this to open the post modal
-      }
-    } else if (item.location_id) {
-      // Navigate to location on map
-      navigate('/', { 
+    // If it's a post with images/content, open post detail modal
+    if (item.post_id && item.event_type === 'new_post' && item.media_url) {
+      setSelectedPostId(item.post_id);
+    } 
+    // If it's a review/comment or interaction with a location, open location detail
+    else if (item.location_id && (item.event_type === 'review' || item.event_type === 'new_comment' || item.event_type.includes('_location'))) {
+      navigate('/explore', { 
         state: { 
-          openPinDetail: {
+          openLocationDetail: {
+            id: item.location_id,
+            name: item.location_name || 'Location',
+            google_place_id: item.location_id
+          }
+        } 
+      });
+    }
+    // Default: navigate to location if available
+    else if (item.location_id) {
+      navigate('/explore', { 
+        state: { 
+          openLocationDetail: {
             id: item.location_id,
             name: item.location_name || 'Location'
           }
@@ -247,8 +250,8 @@ const FeedPage = () => {
                         </div>
                       )}
 
-                      {/* Post content if available */}
-                      {item.content && (
+                       {/* Post content if available */}
+                      {item.content && item.event_type !== 'review' && (
                         <p className="text-sm text-gray-700 mt-2 line-clamp-2 bg-gray-50 rounded-lg p-2">
                           {item.content}
                         </p>
@@ -263,6 +266,21 @@ const FeedPage = () => {
                               <span key={i} className="text-yellow-400">⭐</span>
                             ))}
                           </div>
+                          {item.content && (
+                            <p className="text-sm text-gray-700 mt-1 flex-1">
+                              {item.content}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Comment display */}
+                      {item.event_type === 'new_comment' && item.content && (
+                        <div className="flex items-start gap-2 mt-2 bg-blue-50 rounded-lg p-2">
+                          <MessageSquare className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
+                          <p className="text-sm text-gray-700 flex-1">
+                            {item.content}
+                          </p>
                         </div>
                       )}
 
@@ -297,6 +315,15 @@ const FeedPage = () => {
         )}
         </div>
       </div>
+
+      {/* Post Detail Modal */}
+      {selectedPostId && (
+        <PostDetailModal
+          postId={selectedPostId}
+          isOpen={!!selectedPostId}
+          onClose={() => setSelectedPostId(null)}
+        />
+      )}
     </AuthenticatedLayout>
   );
 };

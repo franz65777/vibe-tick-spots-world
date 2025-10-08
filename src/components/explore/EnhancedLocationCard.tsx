@@ -6,6 +6,7 @@ import { locationInteractionService } from '@/services/locationInteractionServic
 import PinShareModal from './PinShareModal';
 import LocationReviewModal from './LocationReviewModal';
 import { useNormalizedCity } from '@/hooks/useNormalizedCity';
+import { useLocationStats } from '@/hooks/useLocationStats';
 
 interface EnhancedLocationCardProps {
   place: any;
@@ -26,6 +27,8 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
     coordinates: place.coordinates,
     address: place.address
   });
+
+  const { stats } = useLocationStats(place.id, place.google_place_id);
 
   useEffect(() => {
     const checkInteractions = async () => {
@@ -137,9 +140,17 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
         <div className="flex items-start justify-between mb-2">
           <div className="flex-1">
             <h3 className="font-bold text-gray-900 text-base leading-tight mb-1">{place.name}</h3>
-            <div className="flex items-center gap-1 text-gray-500">
-              <MapPin className="w-3 h-3" />
-              <span className="text-xs">{cityLabel || 'Unknown location'}</span>
+            <div className="flex items-center gap-2 text-gray-500 flex-wrap">
+              <div className="flex items-center gap-1">
+                <MapPin className="w-3 h-3" />
+                <span className="text-xs">{cityLabel || 'Unknown location'}</span>
+              </div>
+              {stats.averageRating && (
+                <div className="flex items-center gap-1 bg-yellow-50 px-2 py-0.5 rounded-full">
+                  <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                  <span className="text-xs font-semibold text-yellow-700">{stats.averageRating.toFixed(1)}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
