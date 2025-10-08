@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Star } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { MapPin, Upload, Image as ImageIcon } from 'lucide-react';
 import BusinessLocationPosts from '@/components/business/BusinessLocationPosts';
-import { getCategoryColor } from '@/utils/categoryIcons';
+import { getCategoryColor, getCategoryIcon } from '@/utils/categoryIcons';
+import { formatDetailedAddress } from '@/utils/addressFormatter';
 import { toast } from 'sonner';
 
 interface Location {
@@ -37,6 +39,8 @@ const BusinessOverviewPage = () => {
   const [location, setLocation] = useState<Location | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchLocationAndPosts();
@@ -129,18 +133,53 @@ const BusinessOverviewPage = () => {
     }
   };
 
+  const handleCoverImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !location) return;
+
+    try {
+      setUploading(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${location.id}-${Date.now()}.${fileExt}`;
+      const filePath = `location-covers/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('location-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('location-images')
+        .getPublicUrl(filePath);
+
+      const { error: updateError } = await supabase
+        .from('locations')
+        .update({ image_url: publicUrl })
+        .eq('id', location.id);
+
+      if (updateError) throw updateError;
+
+      setLocation({ ...location, image_url: publicUrl });
+      toast.success('Cover image updated successfully');
+    } catch (error) {
+      console.error('Error uploading cover image:', error);
+      toast.error('Failed to upload cover image');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const formatCategory = (category: string) => {
     return category.charAt(0).toUpperCase() + category.slice(1);
   };
 
-  const getPlaceholderImage = () => {
-    const colors = [
-      'bg-gradient-to-br from-blue-400 to-blue-600',
-      'bg-gradient-to-br from-purple-400 to-purple-600',
-      'bg-gradient-to-br from-green-400 to-green-600',
-    ];
-    const colorIndex = location ? location.id.length % colors.length : 0;
-    return colors[colorIndex];
+  const formatLocationAddress = () => {
+    if (!location) return '';
+    return formatDetailedAddress({
+      city: location.city,
+      address: location.address,
+    });
   };
 
   if (loading) {
@@ -167,57 +206,86 @@ const BusinessOverviewPage = () => {
   return (
     <div className="min-h-screen bg-background pb-24">
       <div className="max-w-screen-sm mx-auto">
-        {/* Location Card */}
-        <Card className="overflow-hidden rounded-none border-x-0 border-t-0 shadow-none">
-          <div className="relative">
-            {location.image_url ? (
-              <div className="aspect-[16/9] overflow-hidden">
-                <img
-                  src={location.image_url}
-                  alt={location.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            ) : (
-              <div className={`aspect-[16/9] ${getPlaceholderImage()} flex items-center justify-center`}>
-                <MapPin className="w-16 h-16 text-white/80" />
-              </div>
-            )}
-
-            {/* Category Badge */}
-            <div className="absolute top-4 left-4">
-              <Badge className={`${getCategoryColor(location.category)} bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full border-0 font-medium shadow-sm`}>
-                {formatCategory(location.category)}
-              </Badge>
-            </div>
+        {/* Location Header */}
+        <div className="p-6 border-b bg-card">
+          <h1 className="text-2xl font-bold text-foreground mb-2">
+            {location.name}
+          </h1>
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <MapPin className="w-4 h-4 flex-shrink-0" />
+            <span className="text-sm">{formatLocationAddress()}</span>
           </div>
+        </div>
 
-          <CardContent className="p-6">
-            <div className="space-y-2">
-              <h1 className="text-2xl font-bold text-foreground">
-                {location.name}
-              </h1>
-              {location.city && (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <MapPin className="w-4 h-4" />
-                  <span className="text-sm">{location.city}</span>
+        {/* Cover Image Upload Section */}
+        <Card className="m-4 overflow-hidden">
+          <CardContent className="p-0">
+            <div className="relative group">
+              {location.image_url ? (
+                <div className="aspect-[16/9] overflow-hidden bg-muted">
+                  <img
+                    src={location.image_url}
+                    alt={location.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="aspect-[16/9] bg-gradient-to-br from-muted to-muted/50 flex flex-col items-center justify-center">
+                  {React.createElement(getCategoryIcon(location.category), {
+                    className: 'w-16 h-16 text-muted-foreground/40',
+                    strokeWidth: 1.5
+                  })}
+                  <p className="text-sm text-muted-foreground mt-2">No cover image</p>
                 </div>
               )}
-              {location.address && (
-                <p className="text-sm text-muted-foreground">{location.address}</p>
-              )}
+
+              {/* Upload Button Overlay */}
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="gap-2"
+                >
+                  {uploading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      Upload Cover Image
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {/* Category Badge */}
+              <div className="absolute top-4 left-4">
+                <Badge className={`${getCategoryColor(location.category)} bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full border-0 font-medium shadow-sm`}>
+                  {formatCategory(location.category)}
+                </Badge>
+              </div>
             </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleCoverImageUpload}
+              className="hidden"
+            />
           </CardContent>
         </Card>
 
         {/* Posts Section */}
-        <div className="p-4">
+        <div className="px-4 pb-4">
           <div className="mb-4">
             <h2 className="text-lg font-semibold text-foreground">
               User Posts ({posts.length})
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Pin posts to feature them at the top for all users
+              Posts from users who tagged this location
             </p>
           </div>
 
