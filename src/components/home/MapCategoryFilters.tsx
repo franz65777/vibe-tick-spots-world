@@ -85,15 +85,14 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
     setShowUserSearch(false);
   };
 
-  // Fetch users with saved places in the current city
   useEffect(() => {
-    if (showUserSearch && activeFilter === 'following' && currentUser) {
+    if (showUserSearch && activeFilter === 'following' && currentUser && currentCity) {
       searchUsersWithSavedPlacesInCity('');
     }
   }, [showUserSearch, activeFilter, currentUser, currentCity]);
 
   const searchUsersWithSavedPlacesInCity = async (query: string) => {
-    if (!currentUser) return;
+    if (!currentUser || !currentCity) return;
     
     setLoading(true);
     try {
@@ -111,8 +110,7 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
         return;
       }
 
-      // Get users who have saved places in the current city
-      const normalizedCity = currentCity?.trim().toLowerCase();
+      const normalizedCity = currentCity.trim().toLowerCase();
       
       // Query saved_places (Google Places)
       const { data: savedPlacesUsers } = await supabase
@@ -134,14 +132,14 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
       
       savedPlacesUsers?.forEach(sp => {
         const spCity = sp.city?.trim().toLowerCase();
-        if (!normalizedCity || !spCity || spCity.includes(normalizedCity) || normalizedCity.includes(spCity)) {
+        if (spCity && (spCity.includes(normalizedCity) || normalizedCity.includes(spCity))) {
           userIdsWithSavesInCity.add(sp.user_id);
         }
       });
       
       savedLocUsers?.forEach((sl: any) => {
         const locCity = sl.locations?.city?.trim().toLowerCase();
-        if (!normalizedCity || !locCity || locCity.includes(normalizedCity) || normalizedCity.includes(locCity)) {
+        if (locCity && (locCity.includes(normalizedCity) || normalizedCity.includes(locCity))) {
           userIdsWithSavesInCity.add(sl.user_id);
         }
       });
