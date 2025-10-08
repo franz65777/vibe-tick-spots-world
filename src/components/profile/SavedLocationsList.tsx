@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect } from 'react';
-import { ArrowLeft, Search, MapPin, X } from 'lucide-react';
+import { ArrowLeft, Search, MapPin, X, Star } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import MinimalLocationCard from '@/components/explore/MinimalLocationCard';
 import LocationPostLibrary from '@/components/explore/LocationPostLibrary';
+import LocationReviewModal from '@/components/explore/LocationReviewModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -23,6 +24,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
   const [selectedCity, setSelectedCity] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
   const [selectedPlace, setSelectedPlace] = useState<any>(null);
+  const [reviewModalPlace, setReviewModalPlace] = useState<any>(null);
 
   useEffect(() => {
     const loadSavedPlaces = async () => {
@@ -353,18 +355,46 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
                   }}
                   onCardClick={() => handlePlaceClick(p)}
                 />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-2 right-2 h-6 w-6 bg-background/80 hover:bg-background opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={(e) => handleUnsave(e, p)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 bg-background/80 hover:bg-background"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setReviewModalPlace(p);
+                    }}
+                  >
+                    <Star className="h-4 w-4" />
+                  </Button>
+                  {isOwnProfile && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 bg-background/80 hover:bg-background"
+                      onClick={(e) => handleUnsave(e, p)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
         </div>
+      )}
+
+      {/* Review Modal */}
+      {reviewModalPlace && (
+        <LocationReviewModal
+          isOpen={true}
+          onClose={() => setReviewModalPlace(null)}
+          location={{
+            id: reviewModalPlace.id,
+            name: reviewModalPlace.name,
+            google_place_id: reviewModalPlace.google_place_id
+          }}
+        />
       )}
     </div>
   );

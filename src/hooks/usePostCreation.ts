@@ -15,6 +15,7 @@ interface CreatePostData {
     types: string[];
   };
   taggedUsers?: string[]; // Array of user IDs
+  rating?: number; // Optional 1-10 rating
 }
 
 export const usePostCreation = () => {
@@ -22,7 +23,7 @@ export const usePostCreation = () => {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  const createPost = async ({ caption, files, location, taggedUsers }: CreatePostData) => {
+  const createPost = async ({ caption, files, location, taggedUsers, rating }: CreatePostData) => {
     if (!user) throw new Error('User not authenticated');
     
     setUploading(true);
@@ -151,6 +152,7 @@ export const usePostCreation = () => {
           caption: caption || null,
           media_urls: mediaUrls,
           tagged_users: taggedUsers || [],
+          rating: rating || null,
         })
         .select('id, location_id')
         .single();

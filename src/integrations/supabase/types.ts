@@ -1435,6 +1435,7 @@ export type Database = {
           location_id: string | null
           media_urls: string[]
           metadata: Json | null
+          rating: number | null
           saves_count: number | null
           shares_count: number
           tagged_users: string[] | null
@@ -1450,6 +1451,7 @@ export type Database = {
           location_id?: string | null
           media_urls: string[]
           metadata?: Json | null
+          rating?: number | null
           saves_count?: number | null
           shares_count?: number
           tagged_users?: string[] | null
@@ -1465,6 +1467,7 @@ export type Database = {
           location_id?: string | null
           media_urls?: string[]
           metadata?: Json | null
+          rating?: number | null
           saves_count?: number | null
           shares_count?: number
           tagged_users?: string[] | null

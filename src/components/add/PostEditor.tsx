@@ -15,6 +15,7 @@ interface PostEditorProps {
   selectedLocation: any;
   selectedCategory: string;
   taggedUsers: any[];
+  rating?: number;
   isUploading: boolean;
   onFilesSelect: (files: FileList) => void;
   onRemoveFile: (index: number) => void;
@@ -23,6 +24,7 @@ interface PostEditorProps {
   onCategoryChange: (category: string) => void;
   onUserTagged: (user: any) => void;
   onUserRemoved: (userId: string) => void;
+  onRatingChange?: (rating: number | undefined) => void;
   onSubmit: () => void;
 }
 
@@ -33,6 +35,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({
   selectedLocation,
   selectedCategory,
   taggedUsers,
+  rating,
   isUploading,
   onFilesSelect,
   onRemoveFile,
@@ -41,6 +44,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({
   onCategoryChange,
   onUserTagged,
   onUserRemoved,
+  onRatingChange,
   onSubmit
 }) => {
   const navigate = useNavigate();
@@ -123,6 +127,34 @@ export const PostEditor: React.FC<PostEditorProps> = ({
             selectedCategory={selectedCategory}
             onCategoryChange={onCategoryChange}
           />
+
+          {/* Optional Rating */}
+          {onRatingChange && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Rate this place (optional)</label>
+              <div className="flex gap-2">
+                {[...Array(10)].map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => onRatingChange(rating === i + 1 ? undefined : i + 1)}
+                    className={`w-10 h-10 rounded-lg font-semibold transition-all ${
+                      rating && rating >= i + 1
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    }`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+              {rating && (
+                <p className="text-xs text-muted-foreground">
+                  You rated this {rating}/10
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

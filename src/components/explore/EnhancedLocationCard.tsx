@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { MapPin, Heart, Bookmark, Users, MessageSquare, Share2, Navigation } from 'lucide-react';
+import { MapPin, Heart, Bookmark, Users, MessageSquare, Share2, Navigation, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { locationInteractionService } from '@/services/locationInteractionService';
 import PinShareModal from './PinShareModal';
+import LocationReviewModal from './LocationReviewModal';
 import { useNormalizedCity } from '@/hooks/useNormalizedCity';
 
 interface EnhancedLocationCardProps {
@@ -17,6 +18,7 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
   const [likeCount, setLikeCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
   const { cityLabel } = useNormalizedCity({
     id: place.google_place_id || place.id,
@@ -176,14 +178,14 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
           <Button
             onClick={(e) => {
               e.stopPropagation();
-              window.location.href = '/add';
+              setIsReviewModalOpen(true);
             }}
             size="sm"
             variant="secondary"
             className="flex-col h-auto py-3 gap-1 rounded-2xl"
           >
-            <Heart className="w-5 h-5" />
-            <span className="text-xs">Visited</span>
+            <Star className="w-5 h-5" />
+            <span className="text-xs">Review</span>
           </Button>
 
           <Button
@@ -224,6 +226,17 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
         place={place}
+      />
+
+      {/* Review Modal */}
+      <LocationReviewModal
+        isOpen={isReviewModalOpen}
+        onClose={() => setIsReviewModalOpen(false)}
+        location={{
+          id: place.id,
+          name: place.name,
+          google_place_id: place.google_place_id
+        }}
       />
     </div>
   );

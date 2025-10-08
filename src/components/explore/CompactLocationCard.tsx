@@ -10,6 +10,7 @@ import { usePinEngagement } from '@/hooks/usePinEngagement';
 import { imageService } from '@/services/imageService';
 import CommentModal from './CommentModal';
 import PinShareModal from './PinShareModal';
+import LocationReviewModal from './LocationReviewModal';
 import LocationPostLibrary from './LocationPostLibrary';
 import { getCategoryColor } from '@/utils/categoryIcons';
 import { normalizeCity } from '@/utils/cityNormalization';
@@ -27,6 +28,7 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
   const [isSaving, setIsSaving] = useState(false);
   const [commentModalOpen, setCommentModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [libraryModalOpen, setLibraryModalOpen] = useState(false);
   const [smartImage, setSmartImage] = useState<string>('');
   const [imageLoading, setImageLoading] = useState(true);
@@ -235,11 +237,14 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => window.location.href = '/add'}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setReviewModalOpen(true);
+                }}
                 className="h-auto py-2 px-2 rounded-2xl flex flex-col items-center gap-1 bg-gray-50 text-gray-700 hover:bg-gray-100 transition-all"
               >
-                <Heart className="w-4 h-4" />
-                <span className="text-[10px] font-medium">Visited</span>
+                <Star className="w-4 h-4" />
+                <span className="text-[10px] font-medium">Review</span>
               </Button>
               
               <Button
@@ -276,6 +281,16 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
         isOpen={shareModalOpen}
         onClose={() => setShareModalOpen(false)}
         place={place}
+      />
+
+      <LocationReviewModal
+        isOpen={reviewModalOpen}
+        onClose={() => setReviewModalOpen(false)}
+        location={{
+          id: place.id,
+          name: place.name,
+          google_place_id: place.google_place_id
+        }}
       />
 
       {libraryModalOpen && (

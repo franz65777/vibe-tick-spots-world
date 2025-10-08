@@ -206,7 +206,7 @@ const FeedPage = () => {
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2 mb-1">
+                      <div className="flex items-start gap-2 mb-1">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm leading-snug">
                             <span className="font-semibold text-gray-900">
@@ -225,7 +225,15 @@ const FeedPage = () => {
                             {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
                           </p>
                         </div>
-                        <span className="text-xl">{display.icon}</span>
+                        <div className="flex items-center gap-2">
+                          {item.rating && item.event_type === 'rated_post' && (
+                            <div className="flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded-full">
+                              <span className="text-lg font-bold text-primary">{item.rating}</span>
+                              <span className="text-xs text-primary">/10</span>
+                            </div>
+                          )}
+                          <span className="text-xl">{display.icon}</span>
+                        </div>
                       </div>
 
                       {/* Media preview if available */}

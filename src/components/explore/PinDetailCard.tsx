@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Navigation, Heart, Bookmark, MessageSquare, ChevronLeft, Share2 } from 'lucide-react';
+import { MapPin, Navigation, Heart, Bookmark, MessageSquare, ChevronLeft, Share2, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import VisitedModal from './VisitedModal';
 import { useNormalizedCity } from '@/hooks/useNormalizedCity';
 import PinShareModal from './PinShareModal';
+import LocationReviewModal from './LocationReviewModal';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import PostDetailModal from './PostDetailModal';
 import { usePinEngagement } from '@/hooks/usePinEngagement';
@@ -25,6 +26,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
   const [posts, setPosts] = useState<any[]>([]);
   const [showVisitedModal, setShowVisitedModal] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
   const [postsLoading, setPostsLoading] = useState(false);
   const [postsPage, setPostsPage] = useState(1);
   const [hasMorePosts, setHasMorePosts] = useState(true);
@@ -283,13 +285,16 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
               </Button>
 
               <Button
-                onClick={() => window.location.href = '/add'}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setReviewOpen(true);
+                }}
                 size="sm"
                 variant="secondary"
                 className="flex-col h-auto py-3 gap-1 rounded-2xl"
               >
-                <Heart className="w-5 h-5" />
-                <span className="text-xs">Visited</span>
+                <Star className="w-5 h-5" />
+                <span className="text-xs">Review</span>
               </Button>
 
               <Button
@@ -412,6 +417,16 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
         isOpen={shareOpen}
         onClose={() => setShareOpen(false)}
         place={place}
+      />
+
+      <LocationReviewModal
+        isOpen={reviewOpen}
+        onClose={() => setReviewOpen(false)}
+        location={{
+          id: place.id,
+          name: place.name,
+          google_place_id: place.google_place_id
+        }}
       />
 
       {selectedPostId && (

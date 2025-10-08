@@ -553,19 +553,6 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
                     )}
                   </div>
                   
-                  {/* Review button with count */}
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => setReviewOpen(true)}
-                      className="flex items-center gap-1.5 hover:opacity-60 transition-opacity"
-                    >
-                      <Star className={`w-6 h-6 ${reviews.some(r => r.user_id === user?.id) ? 'fill-yellow-400 text-yellow-400' : ''}`} />
-                    </button>
-                    {reviews.length > 0 && (
-                      <span className="text-sm text-muted-foreground">{reviews.length}</span>
-                    )}
-                  </div>
-                  
                   {/* Share button with count */}
                   <div className="flex items-center gap-1">
                     <button
