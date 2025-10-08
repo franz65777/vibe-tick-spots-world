@@ -11,7 +11,7 @@ interface CityLabelProps {
 
 const CityLabel: React.FC<CityLabelProps> = ({ id, city, coordinates, address, className }) => {
   const { cityLabel } = useNormalizedCity({ id, city, coordinates, address });
-  return <span className={className}>{cityLabel || 'Unknown'}</span>;
+  return <span className={className}>{cityLabel && cityLabel !== 'Unknown' ? cityLabel : 'Nearby'}</span>;
 };
 
 export default CityLabel;

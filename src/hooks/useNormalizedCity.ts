@@ -78,9 +78,13 @@ export function useNormalizedCity(params: {
     }
 
     // If we have coordinates, reverse geocode
-    const lat = coordinates?.lat;
-    const lng = coordinates?.lng;
-    if (!lat || !lng) {
+    const lat = coordinates?.lat !== undefined ? Number(coordinates.lat) : undefined;
+    const lng = coordinates?.lng !== undefined ? Number(coordinates.lng) : undefined;
+    if (
+      lat === undefined || lng === undefined ||
+      lat === null || lng === null ||
+      Number.isNaN(lat) || Number.isNaN(lng)
+    ) {
       setLabel(normalized || 'Unknown');
       return;
     }

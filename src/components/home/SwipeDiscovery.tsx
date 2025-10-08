@@ -7,8 +7,8 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import CityLabel from '@/components/common/CityLabel';
-import swipeNoIcon from '@/assets/swipe-no.png';
-import swipeSaveIcon from '@/assets/swipe-save.png';
+import xIcon from '@/assets/icon-x-red.png';
+import likeIcon from '@/assets/icon-like-pin.png';
 
 interface SwipeLocation {
   id: string;
@@ -273,7 +273,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
         if (needCity && location.coordinates?.lat && location.coordinates?.lng) {
           try {
             const { data: geo } = await supabase.functions.invoke('reverse-geocode', {
-              body: { lat: location.coordinates.lat, lng: location.coordinates.lng }
+              body: { latitude: location.coordinates.lat, longitude: location.coordinates.lng }
             });
             const city = geo?.city || null;
             if (city) {
@@ -481,7 +481,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                       className="w-20 h-20 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
                       aria-label="Pass"
                     >
-                      <img src={swipeNoIcon} alt="Pass" className="w-12 h-12" />
+                      <img src={xIcon} alt="Pass" className="w-14 h-14" />
                     </button>
                     <button
                       onClick={() => handleSwipe('right')}
@@ -489,7 +489,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                       className="w-20 h-20 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
                       aria-label="Save"
                     >
-                      <img src={swipeSaveIcon} alt="Save" className="w-16 h-16" />
+                      <img src={likeIcon} alt="Save" className="w-14 h-14" />
                     </button>
                   </div>
                 </div>
