@@ -41,50 +41,84 @@ export const usePostEngagement = () => {
   };
 
   const toggleLike = async (postId: string): Promise<boolean> => {
-    if (!user) return false;
-
-    const isLiked = likedPosts.has(postId);
-    const success = await engagementService.togglePostLike(user.id, postId);
-
-    if (success) {
-      setLikedPosts(prev => {
-        const newSet = new Set(prev);
-        if (isLiked) {
-          newSet.delete(postId);
-        } else {
-          newSet.add(postId);
-        }
-        return newSet;
-      });
+    if (!user) {
+      console.error('No user found for toggleLike');
+      return false;
     }
 
-    return success;
+    console.log('Toggling like for post:', postId, 'User:', user.id);
+    const isLiked = likedPosts.has(postId);
+    
+    try {
+      const success = await engagementService.togglePostLike(user.id, postId);
+      console.log('Toggle like result:', success);
+
+      if (success) {
+        setLikedPosts(prev => {
+          const newSet = new Set(prev);
+          if (isLiked) {
+            newSet.delete(postId);
+          } else {
+            newSet.add(postId);
+          }
+          return newSet;
+        });
+      }
+
+      return success;
+    } catch (error) {
+      console.error('Error in toggleLike:', error);
+      return false;
+    }
   };
 
   const toggleSave = async (postId: string): Promise<boolean> => {
-    if (!user) return false;
-
-    const isSaved = savedPosts.has(postId);
-    const success = await engagementService.togglePostSave(user.id, postId);
-
-    if (success) {
-      setSavedPosts(prev => {
-        const newSet = new Set(prev);
-        if (isSaved) {
-          newSet.delete(postId);
-        } else {
-          newSet.add(postId);
-        }
-        return newSet;
-      });
+    if (!user) {
+      console.error('No user found for toggleSave');
+      return false;
     }
 
-    return success;
+    console.log('Toggling save for post:', postId, 'User:', user.id);
+    const isSaved = savedPosts.has(postId);
+    
+    try {
+      const success = await engagementService.togglePostSave(user.id, postId);
+      console.log('Toggle save result:', success);
+
+      if (success) {
+        setSavedPosts(prev => {
+          const newSet = new Set(prev);
+          if (isSaved) {
+            newSet.delete(postId);
+          } else {
+            newSet.add(postId);
+          }
+          return newSet;
+        });
+      }
+
+      return success;
+    } catch (error) {
+      console.error('Error in toggleSave:', error);
+      return false;
+    }
   };
 
   const recordShare = async (postId: string): Promise<boolean> => {
-    if (!user) return false;
-    return await engagementService.recordPostShare(user.id, postId);
+    if (!user) {
+      console.error('No user found for recordShare');
+      return false;
+    }
+    
+    console.log('Recording share for post:', postId, 'User:', user.id);
+    try {
+      const success = await engagementService.recordPostShare(user.id, postId);
+      console.log('Record share result:', success);
+      return success;
+    } catch (error) {
+      console.error('Error in recordShare:', error);
+      return false;
+    }
   };
 
   return {

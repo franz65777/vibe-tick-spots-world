@@ -251,6 +251,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                       )}
                       {stats.averageRating && (
                         <div className="flex items-center gap-1 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                          <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
                           <span className="text-xs font-semibold text-amber-600">{stats.averageRating.toFixed(1)}</span>
                         </div>
                       )}

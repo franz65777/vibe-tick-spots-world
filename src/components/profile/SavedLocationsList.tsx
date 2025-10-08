@@ -7,6 +7,7 @@ import MinimalLocationCard from '@/components/explore/MinimalLocationCard';
 import LocationPostLibrary from '@/components/explore/LocationPostLibrary';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { normalizeCity } from '@/utils/cityNormalization';
 
 interface SavedLocationsListProps {
   isOpen: boolean;
@@ -72,11 +73,12 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
           }
         }
 
-        // Group by city
+        // Group by city (normalized)
         const groupedByCity: any = {};
         
         savedPlacesData?.forEach((place: any) => {
-          const city = place.city || 'Unknown';
+          const rawCity = place.city || 'Unknown';
+          const city = normalizeCity(rawCity);
           if (!groupedByCity[city]) groupedByCity[city] = [];
           const coords = place.coordinates as any;
           groupedByCity[city].push({
@@ -92,7 +94,8 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
         (userSavedRows || []).forEach((item: any) => {
           const location = item?.location_id ? locationsMap[item.location_id] : null;
           if (!location) return;
-          const city = location.city || 'Unknown';
+          const rawCity = location.city || 'Unknown';
+          const city = normalizeCity(rawCity);
           if (!groupedByCity[city]) groupedByCity[city] = [];
           groupedByCity[city].push({
             id: location.google_place_id || location.id,

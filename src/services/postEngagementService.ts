@@ -16,13 +16,17 @@ export interface PostEngagementCounts {
  */
 export async function togglePostLike(userId: string, postId: string): Promise<boolean> {
   try {
+    console.log('🔧 togglePostLike called:', { userId, postId });
+    
     // Check if already liked
-    const { data: existingLike } = await supabase
+    const { data: existingLike, error: checkError } = await supabase
       .from('post_likes')
       .select('id')
       .eq('user_id', userId)
       .eq('post_id', postId)
       .maybeSingle();
+
+    console.log('🔧 Existing like check:', { existingLike, checkError });
 
     if (existingLike) {
       // Unlike
@@ -32,7 +36,11 @@ export async function togglePostLike(userId: string, postId: string): Promise<bo
         .eq('user_id', userId)
         .eq('post_id', postId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error unliking post:', error);
+        throw error;
+      }
+      console.log('✅ Post unliked successfully');
       return true;
     } else {
       // Like
@@ -40,11 +48,15 @@ export async function togglePostLike(userId: string, postId: string): Promise<bo
         .from('post_likes')
         .insert({ user_id: userId, post_id: postId });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error liking post:', error);
+        throw error;
+      }
+      console.log('✅ Post liked successfully');
       return true;
     }
   } catch (error) {
-    console.error('Error toggling post like:', error);
+    console.error('❌ Error toggling post like:', error);
     return false;
   }
 }
@@ -54,13 +66,17 @@ export async function togglePostLike(userId: string, postId: string): Promise<bo
  */
 export async function togglePostSave(userId: string, postId: string): Promise<boolean> {
   try {
+    console.log('🔧 togglePostSave called:', { userId, postId });
+    
     // Check if already saved
-    const { data: existingSave } = await supabase
+    const { data: existingSave, error: checkError } = await supabase
       .from('post_saves')
       .select('id')
       .eq('user_id', userId)
       .eq('post_id', postId)
       .maybeSingle();
+
+    console.log('🔧 Existing save check:', { existingSave, checkError });
 
     if (existingSave) {
       // Unsave
@@ -70,7 +86,11 @@ export async function togglePostSave(userId: string, postId: string): Promise<bo
         .eq('user_id', userId)
         .eq('post_id', postId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error unsaving post:', error);
+        throw error;
+      }
+      console.log('✅ Post unsaved successfully');
       return true;
     } else {
       // Save
@@ -78,11 +98,15 @@ export async function togglePostSave(userId: string, postId: string): Promise<bo
         .from('post_saves')
         .insert({ user_id: userId, post_id: postId });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error saving post:', error);
+        throw error;
+      }
+      console.log('✅ Post saved successfully');
       return true;
     }
   } catch (error) {
-    console.error('Error toggling post save:', error);
+    console.error('❌ Error toggling post save:', error);
     return false;
   }
 }
@@ -92,14 +116,21 @@ export async function togglePostSave(userId: string, postId: string): Promise<bo
  */
 export async function recordPostShare(userId: string, postId: string): Promise<boolean> {
   try {
+    console.log('🔧 recordPostShare called:', { userId, postId });
+    
     const { error } = await supabase
       .from('post_shares')
       .insert({ user_id: userId, post_id: postId });
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Error recording post share:', error);
+      throw error;
+    }
+    
+    console.log('✅ Post share recorded successfully');
     return true;
   } catch (error) {
-    console.error('Error recording post share:', error);
+    console.error('❌ Error recording post share:', error);
     return false;
   }
 }
