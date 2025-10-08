@@ -60,6 +60,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen }: Po
           latitude,
           longitude
         `)
+.or(`city.ilike.%${normalizedCity}%,address.ilike.%${normalizedCity}%`)
         .limit(500);
 
       if (locationsError) throw locationsError;
@@ -78,8 +79,9 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen }: Po
 
       // Get saves from Google Places (saved_places table)
       const { data: googleSavesData } = await supabase
-        .from('saved_places')
-        .select('place_id');
+.from('saved_places')
+        .select('place_id')
+        .ilike('city', `%${normalizedCity}%`);
 
       const googleSavesMap = new Map<string, number>();
       googleSavesData?.forEach(save => {
@@ -146,9 +148,6 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen }: Po
     );
   }
 
-  if (popularSpots.length === 0) {
-    return null;
-  }
 
   return (
     <>

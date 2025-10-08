@@ -115,8 +115,9 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
       // Query saved_places (Google Places)
       const { data: savedPlacesUsers } = await supabase
         .from('saved_places')
-        .select('user_id, city')
-        .in('user_id', followingIds);
+.select('user_id, city')
+        .in('user_id', followingIds)
+        .ilike('city', `%${normalizedCity}%`);
       
       // Query user_saved_locations (internal locations)
       const { data: savedLocUsers } = await supabase

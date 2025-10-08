@@ -43,13 +43,16 @@ export const useUserBadges = (userId?: string) => {
     tripsCount: 0
   });
   const [loading, setLoading] = useState(true);
-  const previousEarnedBadges = useRef<Set<string>>(new Set());
+const previousEarnedBadges = useRef<Set<string>>(new Set());
 
-  useEffect(() => {
-    if (targetUserId) {
-      fetchUserStats();
-    }
-  }, [targetUserId]);
+useEffect(() => {
+  if (!targetUserId) return;
+  try {
+    const raw = localStorage.getItem(`badge_notified_${targetUserId}`);
+    previousEarnedBadges.current = new Set(raw ? JSON.parse(raw) : []);
+  } catch {}
+  fetchUserStats();
+}, [targetUserId]);
 
   const fetchUserStats = async () => {
     if (!targetUserId) return;
@@ -360,22 +363,34 @@ export const useUserBadges = (userId?: string) => {
       }
     ];
 
-    // Track earned badges for notifications
+    // Track earned badges for notifications (one-time)
+    const storageKey = targetUserId ? `badge_notified_${targetUserId}` : '';
+    let notified = new Set<string>();
+    try {
+      const raw = storageKey ? localStorage.getItem(storageKey) : null;
+      notified = new Set(raw ? JSON.parse(raw) : []);
+    } catch {}
+
     allBadges.forEach(badge => {
       if (badge.earned) {
         currentEarnedIds.add(badge.id);
         
-        // Check if this is a newly earned badge
-        if (!previousEarnedBadges.current.has(badge.id) && user?.id === targetUserId) {
+        if (user?.id === targetUserId && !notified.has(badge.id)) {
           toast.success(`${badge.icon} New Badge Unlocked: ${badge.name}`, {
             duration: 5000,
             description: badge.description
           });
+          notified.add(badge.id);
         }
       }
     });
 
-    // Update previous earned badges
+    // Persist notified set and update previous earned badges
+    try {
+      if (storageKey) {
+        localStorage.setItem(storageKey, JSON.stringify(Array.from(notified)));
+      }
+    } catch {}
     previousEarnedBadges.current = currentEarnedIds;
 
     // Filter badges to show only current level and next level for each category
