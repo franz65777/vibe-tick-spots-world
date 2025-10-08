@@ -9,6 +9,11 @@ interface MapFilterContextType {
   setSelectedCategories: (categories: string[]) => void;
   toggleCategory: (categoryId: string) => void;
   clearCategories: () => void;
+  selectedFollowedUserIds: string[];
+  setSelectedFollowedUserIds: (userIds: string[]) => void;
+  addFollowedUser: (userId: string) => void;
+  removeFollowedUser: (userId: string) => void;
+  clearFollowedUsers: () => void;
 }
 
 const MapFilterContext = createContext<MapFilterContextType | undefined>(undefined);
@@ -16,6 +21,7 @@ const MapFilterContext = createContext<MapFilterContextType | undefined>(undefin
 export const MapFilterProvider = ({ children }: { children: ReactNode }) => {
   const [activeFilter, setActiveFilter] = useState<MapFilter>('popular');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedFollowedUserIds, setSelectedFollowedUserIds] = useState<string[]>([]);
 
   const toggleCategory = (categoryId: string) => {
     setSelectedCategories(prev => 
@@ -29,10 +35,27 @@ export const MapFilterProvider = ({ children }: { children: ReactNode }) => {
     setSelectedCategories([]);
   };
 
-  // Reset categories when filter changes
+  const addFollowedUser = (userId: string) => {
+    setSelectedFollowedUserIds(prev => 
+      prev.includes(userId) ? prev : [...prev, userId]
+    );
+  };
+
+  const removeFollowedUser = (userId: string) => {
+    setSelectedFollowedUserIds(prev => prev.filter(id => id !== userId));
+  };
+
+  const clearFollowedUsers = () => {
+    setSelectedFollowedUserIds([]);
+  };
+
+  // Reset categories and followed users when filter changes
   const handleSetActiveFilter = (filter: MapFilter) => {
     setActiveFilter(filter);
     setSelectedCategories([]);
+    if (filter !== 'following') {
+      setSelectedFollowedUserIds([]);
+    }
   };
 
   return (
@@ -44,6 +67,11 @@ export const MapFilterProvider = ({ children }: { children: ReactNode }) => {
         setSelectedCategories,
         toggleCategory,
         clearCategories,
+        selectedFollowedUserIds,
+        setSelectedFollowedUserIds,
+        addFollowedUser,
+        removeFollowedUser,
+        clearFollowedUsers,
       }}
     >
       {children}

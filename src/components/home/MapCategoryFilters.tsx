@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Coffee, 
   Utensils, 
@@ -11,10 +11,16 @@ import {
   Users,
   TrendingUp,
   Bookmark,
-  Star
+  Star,
+  Search,
+  X,
+  Plus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMapFilter } from '@/contexts/MapFilterContext';
+import { useSecureUserSearch } from '@/hooks/useSecureUserSearch';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
 
 export interface CategoryFilter {
   id: string;
@@ -34,7 +40,22 @@ export const categoryFilters: CategoryFilter[] = [
 ];
 
 const MapCategoryFilters = () => {
-  const { activeFilter, setActiveFilter, selectedCategories, toggleCategory, clearCategories } = useMapFilter();
+  const { 
+    activeFilter, 
+    setActiveFilter, 
+    selectedCategories, 
+    toggleCategory, 
+    clearCategories,
+    selectedFollowedUserIds,
+    addFollowedUser,
+    removeFollowedUser,
+    clearFollowedUsers
+  } = useMapFilter();
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showUserSearch, setShowUserSearch] = useState(false);
+  const { users, searchUsers } = useSecureUserSearch();
+
   const mapFilters = [
     { id: 'following' as const, name: 'Following', icon: Users, description: 'Places from people you follow' },
     { id: 'popular' as const, name: 'Popular', icon: TrendingUp, description: 'Trending locations nearby' },
@@ -42,11 +63,46 @@ const MapCategoryFilters = () => {
     { id: 'saved' as const, name: 'Saved', icon: Bookmark, description: 'Your saved places' }
   ];
 
+  const handleFollowingClick = () => {
+    if (activeFilter === 'following') {
+      setShowUserSearch(!showUserSearch);
+    } else {
+      setActiveFilter('following');
+      setShowUserSearch(true);
+    }
+  };
+
+  const handleUserSelect = (userId: string) => {
+    addFollowedUser(userId);
+    setSearchQuery('');
+    setShowUserSearch(false);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    if (value.trim()) {
+      searchUsers(value);
+    }
+  };
+
+  const handleExitSearch = () => {
+    setShowUserSearch(false);
+    setSearchQuery('');
+    clearFollowedUsers();
+  };
+
+  // Get selected user details
+  const selectedUsers = users.filter(u => selectedFollowedUserIds.includes(u.id));
+
   return (
     <div className="absolute top-4 left-4 right-4 z-50">
-      {/* Main Map Filters - 4 buttons */}
-      <div className="grid grid-cols-4 gap-1.5 mb-2">
-        {mapFilters.map((filter) => {
+      {/* Main Map Filters - Show all or just Following based on state */}
+      <div className={cn(
+        "mb-2 transition-all duration-200",
+        showUserSearch && activeFilter === 'following' ? "grid grid-cols-1 gap-1.5" : "grid grid-cols-4 gap-1.5"
+      )}>
+        {/* Following Filter - Always visible */}
+        {mapFilters.filter(f => showUserSearch && activeFilter === 'following' ? f.id === 'following' : true).map((filter) => {
           const IconComponent = filter.icon;
           const isActive = activeFilter === filter.id;
           
@@ -69,7 +125,7 @@ const MapCategoryFilters = () => {
           return (
             <button
               key={filter.id}
-              onClick={() => setActiveFilter(filter.id)}
+              onClick={() => filter.id === 'following' ? handleFollowingClick() : setActiveFilter(filter.id)}
               className={cn(
                 "flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 backdrop-blur-sm border shadow-sm",
                 filterColors[filter.id as keyof typeof filterColors]
@@ -78,10 +134,116 @@ const MapCategoryFilters = () => {
             >
               <IconComponent className="w-3.5 h-3.5" />
               <span className="hidden sm:inline text-xs">{filter.name}</span>
+              {filter.id === 'following' && selectedUsers.length > 0 && (
+                <div className="flex items-center -space-x-1 ml-1">
+                  {selectedUsers.slice(0, 3).map(user => (
+                    <Avatar key={user.id} className="w-4 h-4 border border-white">
+                      <AvatarImage src={user.avatar_url || ''} />
+                      <AvatarFallback className="text-[8px]">
+                        {user.username?.[0]?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                  ))}
+                  {selectedUsers.length > 3 && (
+                    <div className="w-4 h-4 rounded-full bg-blue-700 border border-white flex items-center justify-center text-[8px] text-white">
+                      +{selectedUsers.length - 3}
+                    </div>
+                  )}
+                </div>
+              )}
             </button>
           );
         })}
       </div>
+
+      {/* User Search Bar - Shown when Following is active and search is enabled */}
+      {showUserSearch && activeFilter === 'following' && (
+        <div className="mb-2 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 p-2">
+          <div className="flex items-center gap-2">
+            <Search className="w-4 h-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Search people you follow..."
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="flex-1 border-0 focus-visible:ring-0 h-8 text-sm"
+            />
+            <button
+              onClick={() => setShowUserSearch(true)}
+              className="p-1.5 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+              title="Add another person"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+            <button
+              onClick={handleExitSearch}
+              className="p-1.5 rounded-md bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+              title="Clear filter"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Search Results */}
+          {searchQuery.trim() && users.length > 0 && (
+            <div className="mt-2 max-h-48 overflow-y-auto space-y-1">
+              {users
+                .filter(u => u.is_following && !selectedFollowedUserIds.includes(u.id))
+                .map(user => (
+                  <button
+                    key={user.id}
+                    onClick={() => handleUserSelect(user.id)}
+                    className="w-full flex items-center gap-2 p-2 rounded-md hover:bg-gray-100 transition-colors text-left"
+                  >
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage src={user.avatar_url || ''} />
+                      <AvatarFallback>
+                        {user.username?.[0]?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {user.username || 'Unknown User'}
+                      </p>
+                      {user.bio && (
+                        <p className="text-xs text-gray-500 truncate">{user.bio}</p>
+                      )}
+                    </div>
+                  </button>
+                ))}
+            </div>
+          )}
+
+          {/* Selected Users */}
+          {selectedUsers.length > 0 && (
+            <div className="mt-2 pt-2 border-t border-gray-200">
+              <p className="text-xs text-gray-500 mb-2">Showing pins from:</p>
+              <div className="flex flex-wrap gap-1">
+                {selectedUsers.map(user => (
+                  <div
+                    key={user.id}
+                    className="flex items-center gap-1 px-2 py-1 bg-blue-50 rounded-full text-xs"
+                  >
+                    <Avatar className="w-4 h-4">
+                      <AvatarImage src={user.avatar_url || ''} />
+                      <AvatarFallback className="text-[8px]">
+                        {user.username?.[0]?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-blue-900">{user.username}</span>
+                    <button
+                      onClick={() => removeFollowedUser(user.id)}
+                      className="ml-1 text-blue-600 hover:text-blue-800"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Category Filters */}
       {selectedCategories.length > 0 || categoryFilters.length > 0 ? (

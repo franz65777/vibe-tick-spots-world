@@ -26,9 +26,10 @@ interface UseMapLocationsProps {
   mapFilter: MapFilter;
   selectedCategories: string[];
   currentCity: string;
+  selectedFollowedUserIds?: string[];
 }
 
-export const useMapLocations = ({ mapFilter, selectedCategories, currentCity }: UseMapLocationsProps) => {
+export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, selectedFollowedUserIds = [] }: UseMapLocationsProps) => {
   const [locations, setLocations] = useState<MapLocation[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +59,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity }: 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [mapFilter, selectedCategories.join(','), currentCity, user?.id]);
+  }, [mapFilter, selectedCategories.join(','), currentCity, user?.id, selectedFollowedUserIds.join(',')]);
 
   const fetchLocations = async () => {
     if (!user) return;
@@ -142,9 +143,14 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity }: 
             } as MapLocation;
           }) ?? [];
 
-          // Merge and apply category filter if provided
+          // Merge and apply filters
           const merged = [...fromLocations, ...fromSavedPlaces].filter((loc) => {
+            // Apply category filter
             if (selectedCategories.length > 0 && !selectedCategories.includes(loc.category)) return false;
+            
+            // Apply specific user filter if provided
+            if (selectedFollowedUserIds.length > 0 && !selectedFollowedUserIds.includes(loc.user_id)) return false;
+            
             return true;
           });
 

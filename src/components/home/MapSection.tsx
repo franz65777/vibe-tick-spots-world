@@ -43,13 +43,14 @@ const MapSection = ({
   const [pinToShare, setPinToShare] = useState<PinShareData | null>(null);
   
   // Use global filter context - single source of truth
-  const { activeFilter, selectedCategories, setActiveFilter, toggleCategory } = useMapFilter();
+  const { activeFilter, selectedCategories, selectedFollowedUserIds, setActiveFilter, toggleCategory } = useMapFilter();
   
   // Fetch locations based on current filters
   const { locations, loading, error, refetch } = useMapLocations({
     mapFilter: activeFilter,
     selectedCategories,
-    currentCity
+    currentCity,
+    selectedFollowedUserIds
   });
 
   // Handle initial selected place from navigation
