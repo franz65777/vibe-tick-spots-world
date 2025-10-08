@@ -894,6 +894,36 @@ export type Database = {
         }
         Relationships: []
       }
+      location_view_duration: {
+        Row: {
+          created_at: string
+          duration_seconds: number
+          google_place_id: string | null
+          id: string
+          location_id: string | null
+          user_id: string
+          viewed_at: string
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds: number
+          google_place_id?: string | null
+          id?: string
+          location_id?: string | null
+          user_id: string
+          viewed_at?: string
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number
+          google_place_id?: string | null
+          id?: string
+          location_id?: string | null
+          user_id?: string
+          viewed_at?: string
+        }
+        Relationships: []
+      }
       locations: {
         Row: {
           address: string | null

@@ -67,26 +67,23 @@ const BusinessAnalyticsPage = () => {
       const totalPosts = postsCount || 0;
       const totalShares = postsData?.reduce((sum, post) => sum + (post.shares_count || 0), 0) || 0;
 
+      // Calculate REAL average time spent viewing location cards
+      const avgTimeSpent = await calculateAverageViewTime(locationData.id, locationData.google_place_id);
+
       // Calculate saves over time (last 30 days)
       const savesOverTime = await calculateSavesOverTime(locationData.id, locationData.google_place_id);
 
       // Calculate posts over time (last 30 days)
       const postsOverTime = calculatePostsOverTime(postsData || []);
 
-      // Calculate weekly engagement (mock data for now - would need actual tracking)
-      const weeklyEngagement = [
-        { week: '4 weeks ago', minutes: 12 },
-        { week: '3 weeks ago', minutes: 18 },
-        { week: '2 weeks ago', minutes: 15 },
-        { week: 'Last week', minutes: 22 },
-        { week: 'This week', minutes: 28 },
-      ];
+      // Calculate weekly engagement time (real data)
+      const weeklyEngagement = await calculateWeeklyEngagement(locationData.id, locationData.google_place_id);
 
       setAnalytics({
         totalSaves,
         totalPosts,
         totalShares,
-        avgTimeSpent: 22, // This would come from actual tracking
+        avgTimeSpent,
         savesOverTime,
         postsOverTime,
         weeklyEngagement,
@@ -96,6 +93,57 @@ const BusinessAnalyticsPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const calculateAverageViewTime = async (locationId: string, googlePlaceId: string | null): Promise<number> => {
+    try {
+      // Get all view durations for this location
+      const { data: viewData } = await supabase
+        .from('location_view_duration')
+        .select('duration_seconds')
+        .or(`location_id.eq.${locationId},google_place_id.eq.${googlePlaceId || 'null'}`);
+
+      if (!viewData || viewData.length === 0) return 0;
+
+      const totalSeconds = viewData.reduce((sum, view) => sum + view.duration_seconds, 0);
+      const avgSeconds = totalSeconds / viewData.length;
+      
+      // Return in minutes
+      return Math.round(avgSeconds / 60);
+    } catch (error) {
+      console.error('Error calculating average view time:', error);
+      return 0;
+    }
+  };
+
+  const calculateWeeklyEngagement = async (locationId: string, googlePlaceId: string | null) => {
+    const weeks = 5;
+    const result: { week: string; minutes: number }[] = [];
+
+    for (let i = weeks - 1; i >= 0; i--) {
+      const weekEnd = new Date();
+      weekEnd.setDate(weekEnd.getDate() - (i * 7));
+      const weekStart = new Date(weekEnd);
+      weekStart.setDate(weekStart.getDate() - 7);
+
+      const { data: viewData } = await supabase
+        .from('location_view_duration')
+        .select('duration_seconds')
+        .or(`location_id.eq.${locationId},google_place_id.eq.${googlePlaceId || 'null'}`)
+        .gte('viewed_at', weekStart.toISOString())
+        .lte('viewed_at', weekEnd.toISOString());
+
+      const totalSeconds = (viewData || []).reduce((sum, view) => sum + view.duration_seconds, 0);
+      const minutes = Math.round(totalSeconds / 60);
+
+      const weekLabel = i === 0 ? 'This week' : 
+                       i === 1 ? 'Last week' : 
+                       `${i} weeks ago`;
+
+      result.push({ week: weekLabel, minutes });
+    }
+
+    return result;
   };
 
   const calculateSavesOverTime = async (locationId: string, googlePlaceId: string | null) => {
@@ -174,74 +222,74 @@ const BusinessAnalyticsPage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <div className="max-w-screen-sm mx-auto p-4 space-y-4">
+      <div className="max-w-screen-sm mx-auto px-3 py-3 space-y-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Business Analytics</h1>
-          <p className="text-sm text-muted-foreground mt-1">Track your location's performance</p>
+          <h1 className="text-xl font-bold text-foreground">Business Analytics</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">Track your location's performance</p>
         </div>
 
         {/* Key Metrics Grid */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2.5">
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-5 pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Saves</p>
-                  <p className="text-2xl font-bold text-foreground mt-1">{analytics.totalSaves}</p>
-                  <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
-                    <TrendingUp className="w-3 h-3" />
+                  <p className="text-xs text-muted-foreground">Total Saves</p>
+                  <p className="text-xl font-bold text-foreground mt-0.5">{analytics.totalSaves}</p>
+                  <p className="text-[10px] text-emerald-600 mt-0.5 flex items-center gap-0.5">
+                    <TrendingUp className="w-2.5 h-2.5" />
                     +12% this month
                   </p>
                 </div>
-                <Heart className="w-8 h-8 text-primary/20" />
+                <Heart className="w-7 h-7 text-primary/20" />
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-5 pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Posts</p>
-                  <p className="text-2xl font-bold text-foreground mt-1">{analytics.totalPosts}</p>
-                  <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
-                    <TrendingUp className="w-3 h-3" />
+                  <p className="text-xs text-muted-foreground">Total Posts</p>
+                  <p className="text-xl font-bold text-foreground mt-0.5">{analytics.totalPosts}</p>
+                  <p className="text-[10px] text-emerald-600 mt-0.5 flex items-center gap-0.5">
+                    <TrendingUp className="w-2.5 h-2.5" />
                     +8% this week
                   </p>
                 </div>
-                <FileText className="w-8 h-8 text-primary/20" />
+                <FileText className="w-7 h-7 text-primary/20" />
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-5 pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Shares</p>
-                  <p className="text-2xl font-bold text-foreground mt-1">{analytics.totalShares}</p>
-                  <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
-                    <TrendingUp className="w-3 h-3" />
+                  <p className="text-xs text-muted-foreground">Total Shares</p>
+                  <p className="text-xl font-bold text-foreground mt-0.5">{analytics.totalShares}</p>
+                  <p className="text-[10px] text-emerald-600 mt-0.5 flex items-center gap-0.5">
+                    <TrendingUp className="w-2.5 h-2.5" />
                     +15% this week
                   </p>
                 </div>
-                <Share2 className="w-8 h-8 text-primary/20" />
+                <Share2 className="w-7 h-7 text-primary/20" />
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-5 pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Avg. Time</p>
-                  <p className="text-2xl font-bold text-foreground mt-1">{analytics.avgTimeSpent}m</p>
-                  <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
-                    <TrendingUp className="w-3 h-3" />
+                  <p className="text-xs text-muted-foreground">Avg. Time</p>
+                  <p className="text-xl font-bold text-foreground mt-0.5">{analytics.avgTimeSpent}m</p>
+                  <p className="text-[10px] text-emerald-600 mt-0.5 flex items-center gap-0.5">
+                    <TrendingUp className="w-2.5 h-2.5" />
                     +5% this week
                   </p>
                 </div>
-                <Clock className="w-8 h-8 text-primary/20" />
+                <Clock className="w-7 h-7 text-primary/20" />
               </div>
             </CardContent>
           </Card>
@@ -249,10 +297,10 @@ const BusinessAnalyticsPage = () => {
 
         {/* Saves Over Time Chart */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Saves Over Time (Last 30 Days)</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Saves Over Time (Last 30 Days)</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-2">
             <ChartContainer
               config={{
                 count: {
@@ -260,25 +308,25 @@ const BusinessAnalyticsPage = () => {
                   color: "hsl(var(--primary))",
                 },
               }}
-              className="h-[200px]"
+              className="h-[160px]"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={analytics.savesOverTime}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <LineChart data={analytics.savesOverTime} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" opacity={0.3} />
                   <XAxis 
                     dataKey="date" 
-                    className="text-xs"
-                    tick={{ fontSize: 10 }}
-                    interval="preserveStartEnd"
+                    tick={{ fontSize: 9 }}
+                    interval="preserveEnd"
+                    tickMargin={5}
                   />
-                  <YAxis className="text-xs" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 9 }} width={30} />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Line 
                     type="monotone" 
                     dataKey="count" 
                     stroke="hsl(var(--primary))" 
                     strokeWidth={2}
-                    dot={{ fill: "hsl(var(--primary))" }}
+                    dot={{ fill: "hsl(var(--primary))", r: 3 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -288,10 +336,10 @@ const BusinessAnalyticsPage = () => {
 
         {/* Posts Over Time Chart */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Posts Growth (Last 30 Days)</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Posts Growth (Last 30 Days)</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-2">
             <ChartContainer
               config={{
                 count: {
@@ -299,25 +347,25 @@ const BusinessAnalyticsPage = () => {
                   color: "hsl(var(--primary))",
                 },
               }}
-              className="h-[200px]"
+              className="h-[160px]"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={analytics.postsOverTime}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <LineChart data={analytics.postsOverTime} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" opacity={0.3} />
                   <XAxis 
                     dataKey="date" 
-                    className="text-xs"
-                    tick={{ fontSize: 10 }}
-                    interval="preserveStartEnd"
+                    tick={{ fontSize: 9 }}
+                    interval="preserveEnd"
+                    tickMargin={5}
                   />
-                  <YAxis className="text-xs" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 9 }} width={30} />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Line 
                     type="monotone" 
                     dataKey="count" 
                     stroke="hsl(var(--primary))" 
                     strokeWidth={2}
-                    dot={{ fill: "hsl(var(--primary))" }}
+                    dot={{ fill: "hsl(var(--primary))", r: 3 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -327,10 +375,10 @@ const BusinessAnalyticsPage = () => {
 
         {/* Weekly Engagement Chart */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Weekly Engagement Time</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Weekly Engagement Time</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-2">
             <ChartContainer
               config={{
                 minutes: {
@@ -338,22 +386,22 @@ const BusinessAnalyticsPage = () => {
                   color: "hsl(var(--primary))",
                 },
               }}
-              className="h-[200px]"
+              className="h-[160px]"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={analytics.weeklyEngagement}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <BarChart data={analytics.weeklyEngagement} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" opacity={0.3} />
                   <XAxis 
                     dataKey="week" 
-                    className="text-xs"
-                    tick={{ fontSize: 10 }}
+                    tick={{ fontSize: 9 }}
+                    tickMargin={5}
                   />
-                  <YAxis className="text-xs" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 9 }} width={30} />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Bar 
                     dataKey="minutes" 
                     fill="hsl(var(--primary))" 
-                    radius={[8, 8, 0, 0]}
+                    radius={[6, 6, 0, 0]}
                   />
                 </BarChart>
               </ResponsiveContainer>
@@ -363,35 +411,35 @@ const BusinessAnalyticsPage = () => {
 
         {/* Insights Section */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Key Insights</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Key Insights</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-start gap-3 p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg">
-              <TrendingUp className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+          <CardContent className="space-y-2.5">
+            <div className="flex items-start gap-2.5 p-2.5 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg">
+              <TrendingUp className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-foreground">Growing Popularity</p>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-xs font-medium text-foreground">Growing Popularity</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
                   Your location saves increased by 12% this month. Keep engaging with users!
                 </p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-              <Users className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="flex items-start gap-2.5 p-2.5 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+              <Users className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-foreground">High Engagement</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Users spend an average of {analytics.avgTimeSpent} minutes viewing your posts weekly.
+                <p className="text-xs font-medium text-foreground">High Engagement</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  Users spend an average of {analytics.avgTimeSpent} minutes viewing your content.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
-              <Share2 className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
+            <div className="flex items-start gap-2.5 p-2.5 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
+              <Share2 className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-foreground">Social Reach</p>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-xs font-medium text-foreground">Social Reach</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
                   Your content has been shared {analytics.totalShares} times, expanding your reach.
                 </p>
               </div>

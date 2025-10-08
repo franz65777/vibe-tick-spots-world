@@ -30,6 +30,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [locationDetails, setLocationDetails] = useState<any>(null);
+  const [viewStartTime] = useState<number>(Date.now());
   const { cityLabel } = useNormalizedCity({
     id: place.google_place_id || place.id,
     city: locationDetails?.city || place.city,
@@ -149,6 +150,35 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
     };
     fetchLocationById();
   }, [place.id]);
+
+  // Track view duration when component unmounts or closes
+  useEffect(() => {
+    return () => {
+      const trackViewDuration = async () => {
+        try {
+          const durationSeconds = Math.round((Date.now() - viewStartTime) / 1000);
+          
+          // Only track if viewed for at least 1 second
+          if (durationSeconds < 1) return;
+
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+
+          await supabase.from('location_view_duration').insert({
+            user_id: user.id,
+            location_id: place.id || locationDetails?.id || null,
+            google_place_id: place.google_place_id || locationDetails?.google_place_id || null,
+            duration_seconds: durationSeconds,
+            viewed_at: new Date().toISOString()
+          });
+        } catch (error) {
+          console.error('Error tracking view duration:', error);
+        }
+      };
+
+      trackViewDuration();
+    };
+  }, [viewStartTime, place.id, place.google_place_id, locationDetails]);
 
   const handleSaveToggle = async () => {
     setLoading(true);
