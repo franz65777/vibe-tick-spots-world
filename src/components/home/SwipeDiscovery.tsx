@@ -325,7 +325,7 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
 
   const currentLocation = locations[currentIndex];
   const hasMore = currentIndex < locations.length && locations.length > 0;
-  const showEmptyState = !loading && (locations.length === 0 || currentIndex >= locations.length);
+  const showEmptyState = !loading && locations.length === 0;
 
   return (
     <div className="w-full h-full bg-gray-50 flex flex-col">
@@ -334,7 +334,7 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
           <div className="h-full flex items-center justify-center">
             <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
           </div>
-        ) : showEmptyState ? (
+        ) : !currentLocation ? (
           <div className="h-full flex items-center justify-center p-8 text-center relative">
             {/* Exit button */}
             <button

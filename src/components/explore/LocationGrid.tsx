@@ -5,6 +5,7 @@ import LocationPostLibrary from './LocationPostLibrary';
 import { AllowedCategory, categoryDisplayNames } from '@/utils/allowedCategories';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import CityLabel from '@/components/common/CityLabel';
+import { getCachedData, clearCache } from '@/services/performanceService';
 
 interface LocationGridProps {
   searchQuery?: string;
@@ -37,11 +38,42 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
 
   useEffect(() => {
     fetchLocations();
-  }, [searchQuery, selectedCategory]);
+  }, [searchQuery, selectedCategory, user?.id]);
 
   const fetchLocations = async () => {
+    if (!user) {
+      setLocations([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
+
+      // Create cache key based on search and category
+      const cacheKey = `locations-grid-${searchQuery || 'all'}-${selectedCategory || 'all'}-${user.id}`;
+
+      // Use cached data with 2 minute expiry for better performance
+      const cachedLocations = await getCachedData(
+        cacheKey,
+        async () => {
+          return await fetchLocationsData();
+        },
+        2 * 60 * 1000 // 2 minutes cache
+      );
+
+      setLocations(cachedLocations.locations);
+      setUserSavedIds(cachedLocations.userSavedIds);
+    } catch (error) {
+      console.error('Error fetching locations:', error);
+      setLocations([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchLocationsData = async () => {
+    if (!user) return { locations: [], userSavedIds: new Set<string>() };
 
       // Fetch from locations table
       let query = supabase
@@ -230,14 +262,10 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
         .map(({ allLocationIds, nameCityKey, gpKey, ...rest }) => rest)
         .sort((a, b) => b.savesCount - a.savesCount);
 
-      setLocations(uniqueLocations);
-
-    } catch (error) {
-      console.error('Error fetching locations:', error);
-      setLocations([]);
-    } finally {
-      setLoading(false);
-    }
+      return {
+        locations: uniqueLocations,
+        userSavedIds: finalUserSavedIds
+      };
   };
 
   const handleLocationClick = (location: LocationCard) => {
@@ -318,7 +346,9 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
         setUserSavedIds(newSet);
       }
 
-      // Refresh locations to update save counts
+      // Clear cache and refresh locations to update save counts
+      const cacheKey = `locations-grid-${searchQuery || 'all'}-${selectedCategory || 'all'}-${user.id}`;
+      clearCache(cacheKey);
       fetchLocations();
     } catch (error) {
       console.error('Error toggling save:', error);
