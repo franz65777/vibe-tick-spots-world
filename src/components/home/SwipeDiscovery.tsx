@@ -53,11 +53,12 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
 
   // Auto-load more when reaching near the end
   useEffect(() => {
-    if (!isOpen) return;
-    if (locations.length > 0 && currentIndex >= locations.length - 2 && !loading) {
+    if (!isOpen || loading) return;
+    if (locations.length > 0 && currentIndex >= locations.length - 2) {
+      console.log('🔄 Auto-loading more locations...');
       fetchDailyLocations();
     }
-  }, [currentIndex, locations.length, isOpen, loading]);
+  }, [currentIndex, locations.length, isOpen]);
 
   const fetchDailyLocations = async () => {
     if (!user) return;
@@ -167,8 +168,11 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
       if (filtered.length === 0) {
         console.log('⚠️ No new locations to show after filtering');
         console.log('📊 Status: mySavedPlaceIds:', mySavedPlaceIds.size, 'swipedPlaceIds:', swipedPlaceIds.size);
-        setLocations([]);
-        setCurrentIndex(0);
+        // Only reset if this is the initial load
+        if (locations.length === 0) {
+          setLocations([]);
+          setCurrentIndex(0);
+        }
         setLoading(false);
         return;
       }
@@ -177,8 +181,13 @@ const SwipeDiscovery = ({ isOpen, onClose, userLocation }: SwipeDiscoveryProps) 
       const shuffled = filtered.sort(() => Math.random() - 0.5).slice(0, 20);
       console.log('🎲 Showing', shuffled.length, 'shuffled locations');
 
-      setLocations(shuffled);
-      setCurrentIndex(0);
+      // Only append new locations if we have existing ones
+      if (locations.length > 0 && currentIndex > 0) {
+        setLocations(prev => [...prev, ...shuffled]);
+      } else {
+        setLocations(shuffled);
+        setCurrentIndex(0);
+      }
     } catch (error) {
       console.error('❌ Error fetching swipe locations:', error);
       toast.error('Failed to load locations');
