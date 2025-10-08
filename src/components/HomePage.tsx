@@ -142,40 +142,67 @@ const HomePage = () => {
     try { localStorage.setItem('lastMapCenter', JSON.stringify(mapCenter)); } catch {}
   }, [mapCenter]);
 
-  // Derive city name from geolocation via Google Geocoder
+  // Derive city name from geolocation via Google Geocoder or manual mapping
   useEffect(() => {
     const setCityFromLocation = async () => {
-      if (!userLocation || !isGoogleMapsLoaded()) return;
+      if (!userLocation) return;
       
-      try {
-        const geocoder = new window.google.maps.Geocoder();
-        const result = await geocoder.geocode({ location: userLocation });
-        
-        if (result.results && result.results[0]) {
-          // Look for city in address components
-          const cityComponent = result.results[0].address_components.find(
-            (c) => c.types.includes('locality') || c.types.includes('administrative_area_level_2')
-          );
+      // Try manual city detection first for instant results
+      const manualCity = getManualCity(userLocation.lat, userLocation.lng);
+      if (manualCity !== 'Unknown City') {
+        setCurrentCity(manualCity);
+        setSearchQuery(manualCity);
+        console.log('✅ City detected instantly:', manualCity);
+      }
+
+      // Then try Google Geocoder if available for more accuracy
+      if (isGoogleMapsLoaded()) {
+        try {
+          const geocoder = new window.google.maps.Geocoder();
+          const result = await geocoder.geocode({ location: userLocation });
           
-          if (cityComponent) {
-            const city = cityComponent.long_name;
-            setCurrentCity(city);
-            setSearchQuery(city); // Set the search query to show current city
-            console.log('Current city set to:', city);
+          if (result.results && result.results[0]) {
+            const cityComponent = result.results[0].address_components.find(
+              (c) => c.types.includes('locality') || c.types.includes('administrative_area_level_2')
+            );
+            
+            if (cityComponent) {
+              const city = cityComponent.long_name;
+              setCurrentCity(city);
+              setSearchQuery(city);
+              console.log('✅ City refined with Google:', city);
+            }
           }
+        } catch (error) {
+          console.error('Error geocoding location:', error);
         }
-      } catch (error) {
-        console.error('Error geocoding location:', error);
       }
     };
 
-    // Wait a bit for Google Maps API to load
-    const timer = setTimeout(() => {
-      setCityFromLocation();
-    }, 1000);
-
-    return () => clearTimeout(timer);
+    setCityFromLocation();
   }, [userLocation]);
+
+  // Manual city detection for instant results
+  const getManualCity = (lat: number, lng: number): string => {
+    const cities = [
+      { name: 'San Francisco', lat: 37.7749, lng: -122.4194, radius: 0.5 },
+      { name: 'New York', lat: 40.7128, lng: -74.0060, radius: 0.5 },
+      { name: 'London', lat: 51.5074, lng: -0.1278, radius: 0.5 },
+      { name: 'Paris', lat: 48.8566, lng: 2.3522, radius: 0.5 },
+      { name: 'Dublin', lat: 53.3498, lng: -6.2603, radius: 0.5 },
+      { name: 'Milan', lat: 45.4642, lng: 9.1900, radius: 0.5 },
+      { name: 'Rome', lat: 41.9028, lng: 12.4964, radius: 0.5 },
+      { name: 'Barcelona', lat: 41.3851, lng: 2.1734, radius: 0.5 },
+      { name: 'Amsterdam', lat: 52.3676, lng: 4.9041, radius: 0.5 },
+      { name: 'Berlin', lat: 52.5200, lng: 13.4050, radius: 0.5 }
+    ];
+
+    for (const city of cities) {
+      const distance = Math.sqrt(Math.pow(lat - city.lat, 2) + Math.pow(lng - city.lng, 2));
+      if (distance <= city.radius) return city.name;
+    }
+    return 'Unknown City';
+  };
 
   const handleCityChange = (city: string, coords?: { lat: number; lng: number }) => {
     console.log('HomePage - City changed to:', city, coords);

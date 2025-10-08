@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, MapPin, Search, Users } from 'lucide-react';
+import { ArrowLeft, MapPin, Search, Users, UserPlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -61,45 +61,28 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
 
     try {
       setLoading(true);
-      console.log('🔄 Fetching swipe locations for user:', user.id);
 
-      // Exclude all previously swiped locations to avoid repeats
-      const { data: swipedData } = await supabase
-        .from('location_swipes')
-        .select('location_id')
-        .eq('user_id', user.id);
+      // Parallel queries for better performance
+      const [swipedData, mySavedPlaces, friendsSaves] = await Promise.all([
+        supabase.from('location_swipes').select('location_id').eq('user_id', user.id),
+        supabase.from('saved_places').select('place_id').eq('user_id', user.id),
+        supabase.rpc('get_following_saved_places', { limit_count: 50 })
+      ]);
 
-      const swipedLocationIds = (swipedData || []).map((s) => s.location_id);
+      const swipedLocationIds = (swipedData.data || []).map((s) => s.location_id);
+      const mySavedPlaceIds = new Set((mySavedPlaces.data || []).map((s) => s.place_id) as string[]);
 
-      // Map swiped location ids -> google_place_id to avoid repeats by place
+      // Get swipedPlaceIds efficiently
       let swipedPlaceIds: Set<string> = new Set();
       if (swipedLocationIds.length > 0) {
-        const { data: swipedLocations } = await supabase
+        const { data } = await supabase
           .from('locations')
           .select('google_place_id')
           .in('id', swipedLocationIds);
-        swipedPlaceIds = new Set((swipedLocations || []).map(l => l.google_place_id).filter(Boolean) as string[]);
+        swipedPlaceIds = new Set((data || []).map(l => l.google_place_id).filter(Boolean) as string[]);
       }
 
-      // Get my saved place_ids to exclude
-      const { data: mySavedPlaces } = await supabase
-        .from('saved_places')
-        .select('place_id')
-        .eq('user_id', user.id);
-      const mySavedPlaceIds = new Set((mySavedPlaces || []).map((s) => s.place_id) as string[]);
-      console.log(`🔖 I have ${mySavedPlaceIds.size} saved places`);
-
-      // Use new RPC to get followed users' saves with profile info
-      const { data: friendsSaves, error: savesError } = await supabase
-        .rpc('get_following_saved_places', { limit_count: 100 });
-
-      if (savesError) {
-        console.error('❌ Error fetching friends saves:', savesError);
-      }
-
-      console.log('📍 Friends saves data:', friendsSaves);
-      
-      let candidates: SwipeLocation[] = (friendsSaves || []).map((s: any) => {
+      let candidates: SwipeLocation[] = (friendsSaves.data || []).map((s: any) => {
         let coords: any = { lat: 0, lng: 0 };
         try {
           coords = typeof s.coordinates === 'string' 
@@ -401,11 +384,11 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
               
               <div className="flex flex-col items-stretch gap-3 pt-4">
                 <Button 
-                  onClick={() => navigate('/explore')} 
+                  onClick={() => navigate('/explore', { state: { searchMode: 'users' } })} 
                   className="rounded-full h-12 text-base font-semibold"
                   size="lg"
                 >
-                  <Search className="w-5 h-5 mr-2" />
+                  <UserPlus className="w-5 h-5 mr-2" />
                   Find People to Follow
                 </Button>
                 <Button 
@@ -419,13 +402,13 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
             </div>
           </div>
         ) : (
-          <div className="h-full flex items-center justify-center p-4">
+          <div className="h-full flex items-center justify-center p-3">
             {/* Swipeable Card */}
             <div
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
-              className="w-full max-w-lg transition-transform duration-300"
+              className="w-full max-w-md transition-transform duration-300"
               style={{
                 transform: swipeDirection 
                   ? swipeDirection === 'left' 
@@ -435,7 +418,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                 opacity: swipeDirection ? 0 : 1 - Math.abs(touchOffset.x) / 600
               }}
             >
-              <div className="relative w-full aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl bg-white">
+              <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden shadow-xl bg-white border border-gray-100">
                 {/* Image or Gradient Background */}
                 <div className="absolute inset-0">
                   {currentLocation.image_url ? (

@@ -36,7 +36,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen }: Po
   }, [currentCity]);
 
   const fetchPopularSpots = async () => {
-    if (!currentCity) {
+    if (!currentCity || currentCity === 'Unknown City') {
       setPopularSpots([]);
       setLoading(false);
       return;
@@ -44,29 +44,27 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen }: Po
 
     try {
       setLoading(true);
-
       const normalizedCity = currentCity.trim().toLowerCase();
 
-      // Fetch locations from internal database
-      const { data: locationsData, error: locationsError } = await supabase
-        .from('locations')
-        .select(`
-          id,
-          name,
-          category,
-          city,
-          address,
-          google_place_id,
-          latitude,
-          longitude
-        `)
-.or(`city.ilike.%${normalizedCity}%,address.ilike.%${normalizedCity}%`)
-        .limit(500);
+      // Parallel queries for performance
+      const [locationsResult, googleSavesResult] = await Promise.all([
+        supabase
+          .from('locations')
+          .select('id, name, category, city, address, google_place_id, latitude, longitude')
+          .or(`city.ilike.%${normalizedCity}%,address.ilike.%${normalizedCity}%`)
+          .limit(200),
+        supabase
+          .from('saved_places')
+          .select('place_id')
+          .ilike('city', `%${normalizedCity}%`)
+      ]);
 
-      if (locationsError) throw locationsError;
+      if (locationsResult.error) throw locationsResult.error;
 
-      // Get saves count for all locations
-      const locationIds = locationsData?.map(l => l.id) || [];
+      const locationsData = locationsResult.data || [];
+      const locationIds = locationsData.map(l => l.id);
+
+      // Get saves count for locations
       const { data: savesData } = await supabase
         .from('user_saved_locations')
         .select('location_id')
@@ -77,14 +75,8 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen }: Po
         savesMap.set(save.location_id, (savesMap.get(save.location_id) || 0) + 1);
       });
 
-      // Get saves from Google Places (saved_places table)
-      const { data: googleSavesData } = await supabase
-.from('saved_places')
-        .select('place_id')
-        .ilike('city', `%${normalizedCity}%`);
-
       const googleSavesMap = new Map<string, number>();
-      googleSavesData?.forEach(save => {
+      googleSavesResult.data?.forEach(save => {
         googleSavesMap.set(save.place_id, (googleSavesMap.get(save.place_id) || 0) + 1);
       });
 
@@ -140,44 +132,45 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen }: Po
     onLocationClick?.(spot.coordinates);
   };
 
-  if (loading) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-
   return (
-    <>
-      <div className="h-full px-4 py-3">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-pink-500 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-4 h-4 text-white" />
-            </div>
-            <div className="flex flex-col">
-              <h3 className="text-sm font-semibold text-gray-900">Top Pinned in {currentCity}</h3>
-              <p className="text-xs text-gray-500">Most saved locations</p>
-            </div>
+    <div className="h-full px-4 py-3 bg-white/50">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-pink-500 rounded-lg flex items-center justify-center shadow-sm">
+            <TrendingUp className="w-4 h-4 text-white" />
           </div>
-          <button
-            onClick={onSwipeDiscoveryOpen}
-            className="w-10 h-10 flex items-center justify-center transition-all hover:scale-110"
-            aria-label="Discover places"
-          >
-            <img src={fireIcon} alt="Discover" className="w-8 h-8" />
-          </button>
+          <div className="flex flex-col">
+            <h3 className="text-sm font-semibold text-gray-900">
+              {loading ? 'Loading...' : `Top Pinned${currentCity ? ` in ${currentCity}` : ''}`}
+            </h3>
+            <p className="text-xs text-gray-500">
+              {loading ? 'Finding popular spots' : 'Most saved locations'}
+            </p>
+          </div>
         </div>
+        <button
+          onClick={onSwipeDiscoveryOpen}
+          className="w-10 h-10 flex items-center justify-center transition-all hover:scale-110"
+          aria-label="Discover places"
+        >
+          <img src={fireIcon} alt="Discover" className="w-8 h-8" />
+        </button>
+      </div>
 
-        {/* Horizontal chips - minimal, no images */}
+      {/* Horizontal chips */}
+      {loading ? (
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="flex-shrink-0 w-40 h-10 rounded-lg bg-gray-200 animate-pulse" />
+          ))}
+        </div>
+      ) : popularSpots.length > 0 ? (
         <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
           {popularSpots.map((spot) => (
             <button
               key={spot.id}
               onClick={() => handleSpotClick(spot)}
-              className="flex-shrink-0 px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 flex items-center gap-2"
+              className="flex-shrink-0 px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 flex items-center gap-2 transition-all hover:shadow-md"
               aria-label={`Zoom to ${spot.name}`}
             >
               <CategoryIcon category={spot.category} className="w-5 h-5" />
@@ -187,9 +180,12 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen }: Po
             </button>
           ))}
         </div>
-      </div>
-
-    </>
+      ) : (
+        <p className="text-xs text-gray-500 text-center py-4">
+          No popular spots found in {currentCity || 'this area'}
+        </p>
+      )}
+    </div>
   );
 };
 

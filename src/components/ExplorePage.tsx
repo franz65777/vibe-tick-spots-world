@@ -25,7 +25,10 @@ const ExplorePage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchMode, setSearchMode] = useState<'locations' | 'users'>('locations');
+  const [searchMode, setSearchMode] = useState<'locations' | 'users'>(() => {
+    const state = location.state as { searchMode?: 'locations' | 'users' } | null;
+    return state?.searchMode || 'locations';
+  });
   const [isSearching, setIsSearching] = useState(false);
   const [userRecommendations, setUserRecommendations] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
