@@ -2527,6 +2527,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_verified_business: {
+        Args: { business_user_id: string }
+        Returns: boolean
+      }
       refresh_trending_locations: {
         Args: Record<PropertyKey, never>
         Returns: undefined
