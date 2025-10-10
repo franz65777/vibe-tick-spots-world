@@ -1,20 +1,11 @@
 
-import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { LogIn, UserPlus, MapPin } from 'lucide-react';
 
 const WelcomePage = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
-  const [authMode, setAuthMode] = useState<'welcome' | 'login' | 'signup'>('welcome');
-
-  useEffect(() => {
-    if (user) {
-      navigate('/');
-    }
-  }, [user, navigate]);
 
   const handleSignUp = () => {
     navigate('/auth?mode=signup');
