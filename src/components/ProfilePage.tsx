@@ -41,7 +41,8 @@ const ProfilePage = () => {
       });
       return;
     }
-    // Store business mode in localStorage
+    // Note: localStorage only used for UI preference, not authorization
+    // Actual authorization is verified server-side via business_profiles table
     localStorage.setItem('accountMode', 'business');
     navigate('/business');
   };

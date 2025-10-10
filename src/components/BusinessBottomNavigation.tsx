@@ -38,6 +38,8 @@ const BusinessBottomNavigation = () => {
   };
 
   const handleAccountSwitch = (mode: 'personal' | 'business') => {
+    // Note: localStorage only used for UI preference, not authorization
+    // Actual authorization is verified server-side via business_profiles table
     localStorage.setItem('accountMode', mode);
     if (mode === 'personal') {
       navigate('/profile');

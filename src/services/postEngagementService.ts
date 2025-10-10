@@ -1,8 +1,12 @@
 import { supabase } from '@/integrations/supabase/client';
+import { z } from 'zod';
 
 /**
  * Complete rewrite of post engagement service for likes, comments, and shares
+ * Now includes input validation for security
  */
+
+const uuidSchema = z.string().uuid();
 
 export interface PostEngagementCounts {
   likes: number;
@@ -16,6 +20,27 @@ export interface PostEngagementCounts {
  */
 export async function togglePostLike(userId: string, postId: string): Promise<boolean> {
   try {
+    // Validate UUIDs
+    const userValidation = uuidSchema.safeParse(userId);
+    const postValidation = uuidSchema.safeParse(postId);
+    
+    if (!userValidation.success || !postValidation.success) {
+      console.error('Invalid UUID provided to togglePostLike');
+      return false;
+    }
+
+    // Verify post exists
+    const { data: post, error: postCheckError } = await supabase
+      .from('posts')
+      .select('id')
+      .eq('id', postId)
+      .maybeSingle();
+
+    if (postCheckError || !post) {
+      console.error('Post does not exist:', postId);
+      return false;
+    }
+
     console.log('🔧 togglePostLike called:', { userId, postId });
     
     // Check if already liked
@@ -66,6 +91,27 @@ export async function togglePostLike(userId: string, postId: string): Promise<bo
  */
 export async function togglePostSave(userId: string, postId: string): Promise<boolean> {
   try {
+    // Validate UUIDs
+    const userValidation = uuidSchema.safeParse(userId);
+    const postValidation = uuidSchema.safeParse(postId);
+    
+    if (!userValidation.success || !postValidation.success) {
+      console.error('Invalid UUID provided to togglePostSave');
+      return false;
+    }
+
+    // Verify post exists
+    const { data: post, error: postCheckError } = await supabase
+      .from('posts')
+      .select('id')
+      .eq('id', postId)
+      .maybeSingle();
+
+    if (postCheckError || !post) {
+      console.error('Post does not exist:', postId);
+      return false;
+    }
+
     console.log('🔧 togglePostSave called:', { userId, postId });
     
     // Check if already saved
@@ -116,6 +162,27 @@ export async function togglePostSave(userId: string, postId: string): Promise<bo
  */
 export async function recordPostShare(userId: string, postId: string): Promise<boolean> {
   try {
+    // Validate UUIDs
+    const userValidation = uuidSchema.safeParse(userId);
+    const postValidation = uuidSchema.safeParse(postId);
+    
+    if (!userValidation.success || !postValidation.success) {
+      console.error('Invalid UUID provided to recordPostShare');
+      return false;
+    }
+
+    // Verify post exists
+    const { data: post, error: postCheckError } = await supabase
+      .from('posts')
+      .select('id')
+      .eq('id', postId)
+      .maybeSingle();
+
+    if (postCheckError || !post) {
+      console.error('Post does not exist:', postId);
+      return false;
+    }
+
     console.log('🔧 recordPostShare called:', { userId, postId });
     
     const { error } = await supabase
