@@ -6,6 +6,12 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { z } from 'zod';
+
+const reviewSchema = z.object({
+  comment: z.string().trim().max(500, 'Comment must be 500 characters or less'),
+  rating: z.number().min(1).max(10).optional()
+});
 
 interface LocationReviewModalProps {
   isOpen: boolean;
@@ -34,6 +40,18 @@ const LocationReviewModal = ({ isOpen, onClose, location }: LocationReviewModalP
       return;
     }
 
+    // Validate input with zod
+    const validation = reviewSchema.safeParse({ 
+      comment: comment.trim(), 
+      rating 
+    });
+    
+    if (!validation.success) {
+      const errors = validation.error.errors.map(e => e.message).join(', ');
+      toast.error(errors);
+      return;
+    }
+
     setSubmitting(true);
     try {
       // Create an interaction for the location with the rating as weight
@@ -47,12 +65,12 @@ const LocationReviewModal = ({ isOpen, onClose, location }: LocationReviewModalP
       }
 
       // If there's a comment, add it to place_comments
-      if (comment.trim()) {
+      if (validation.data.comment) {
         const placeId = location.google_place_id || location.id;
         await supabase.from('place_comments').insert({
           user_id: user.id,
           place_id: placeId,
-          content: comment.trim()
+          content: validation.data.comment
         });
       }
 
@@ -118,7 +136,11 @@ const LocationReviewModal = ({ isOpen, onClose, location }: LocationReviewModalP
               onChange={(e) => setComment(e.target.value)}
               placeholder="Share your experience..."
               className="min-h-[120px] rounded-2xl resize-none"
+              maxLength={500}
             />
+            <p className="text-xs text-muted-foreground">
+              {comment.length}/500 characters
+            </p>
           </div>
 
           {/* Submit Button */}

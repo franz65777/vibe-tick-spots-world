@@ -36,27 +36,15 @@ export const trackSecurityEvent = async (eventData: SecurityEvent) => {
 };
 
 /**
- * Check if a user has exceeded rate limits for authentication attempts
+ * @deprecated This function is insecure and should not be used.
+ * Client-side rate limiting can be bypassed. Implement rate limiting
+ * server-side using Supabase Edge Functions or RLS policies.
+ * 
+ * SECURITY WARNING: Do not use this function for authentication protection.
  */
 export const checkAuthRateLimit = async (): Promise<boolean> => {
-  try {
-    // Get client IP (this would be handled server-side in production)
-    const response = await fetch('https://api.ipify.org?format=json');
-    const { ip } = await response.json();
-    
-    const { data, error } = await supabase
-      .rpc('check_auth_rate_limit', { user_ip: ip });
-
-    if (error) {
-      console.error('Error checking rate limit:', error);
-      return true; // Allow by default if check fails
-    }
-
-    return data;
-  } catch (error) {
-    console.error('Rate limit check error:', error);
-    return true; // Allow by default if check fails
-  }
+  console.warn('checkAuthRateLimit is deprecated and insecure. Use server-side rate limiting instead.');
+  return true; // Always return true - this function is no longer functional
 };
 
 /**
