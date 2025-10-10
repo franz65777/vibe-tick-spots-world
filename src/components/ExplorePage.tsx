@@ -69,10 +69,10 @@ const ExplorePage = () => {
       setSelectedLocation(normalizedPlace);
       setIsLocationModalOpen(true);
       
-      // Clear the state
-      navigate('/explore', { replace: true, state: {} });
+      // Clear the state only if it was used
+      navigate('/explore', { replace: true });
     }
-  }, [location.state]);
+  }, [location.state, navigate]);
 
   // Load user recommendations only
   useEffect(() => {

@@ -72,8 +72,10 @@ const HomePage = () => {
   // Handle navigation state for opening pin detail from posts
   useEffect(() => {
     const state = location.state as any;
+    let usedState = false;
     if (state?.centerMap) {
       setMapCenter({ lat: state.centerMap.lat, lng: state.centerMap.lng });
+      usedState = true;
     }
     if (state?.openPinDetail) {
       const pin = state.openPinDetail;
@@ -89,10 +91,13 @@ const HomePage = () => {
         visitors: []
       };
       setInitialPinToShow(placeToShow);
+      usedState = true;
     }
-    // Clear navigation state
-    navigate(location.pathname, { replace: true, state: {} });
-  }, [location.state]);
+    // Only clear navigation state if we actually consumed it
+    if (usedState) {
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location.state, location.pathname, navigate]);
 
   // Get user's current location on component mount and when tab becomes visible
   useEffect(() => {
