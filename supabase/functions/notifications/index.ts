@@ -1,11 +1,32 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
+
+// Input validation schemas
+const sendNotificationSchema = z.object({
+  userId: z.string().uuid(),
+  type: z.string().min(1).max(50),
+  title: z.string().min(1).max(200),
+  message: z.string().min(1).max(1000),
+  data: z.record(z.any()).optional().default({})
+})
+
+const broadcastNotificationSchema = z.object({
+  userIds: z.array(z.string().uuid()).min(1).max(1000),
+  type: z.string().min(1).max(50),
+  title: z.string().min(1).max(200),
+  message: z.string().min(1).max(1000),
+  data: z.record(z.any()).optional().default({})
+})
+
+const markReadSchema = z.object({
+  notificationIds: z.array(z.string().uuid()).min(1)
+})
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -35,14 +56,20 @@ serve(async (req) => {
 
     switch (`${req.method}:${action}`) {
       case 'POST:send': {
-        const { userId, type, title, message, data = {} } = await req.json()
+        const body = await req.json()
+        const validation = sendNotificationSchema.safeParse(body)
         
-        if (!userId || !type || !title || !message) {
-          return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+        if (!validation.success) {
+          return new Response(JSON.stringify({ 
+            error: 'Invalid input', 
+            details: validation.error.issues 
+          }), {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           })
         }
+
+        const { userId, type, title, message, data } = validation.data
 
         const { data: notification, error } = await supabaseClient
           .from('notifications')
@@ -70,14 +97,20 @@ serve(async (req) => {
       }
 
       case 'POST:broadcast': {
-        const { userIds, type, title, message, data = {} } = await req.json()
+        const body = await req.json()
+        const validation = broadcastNotificationSchema.safeParse(body)
         
-        if (!userIds || !Array.isArray(userIds) || !type || !title || !message) {
-          return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+        if (!validation.success) {
+          return new Response(JSON.stringify({ 
+            error: 'Invalid input', 
+            details: validation.error.issues 
+          }), {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           })
         }
+
+        const { userIds, type, title, message, data } = validation.data
 
         const notifications = userIds.map(userId => ({
           user_id: userId,
@@ -132,14 +165,20 @@ serve(async (req) => {
       }
 
       case 'PUT:read': {
-        const { notificationIds } = await req.json()
+        const body = await req.json()
+        const validation = markReadSchema.safeParse(body)
         
-        if (!notificationIds || !Array.isArray(notificationIds)) {
-          return new Response(JSON.stringify({ error: 'Missing notificationIds array' }), {
+        if (!validation.success) {
+          return new Response(JSON.stringify({ 
+            error: 'Invalid input', 
+            details: validation.error.issues 
+          }), {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           })
         }
+
+        const { notificationIds } = validation.data
 
         const { data: updatedNotifications, error } = await supabaseClient
           .from('notifications')

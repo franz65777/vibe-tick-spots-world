@@ -1,10 +1,19 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schemas
+const geocodeSchema = z.object({
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+  locationId: z.string().uuid().optional(),
+  batchMode: z.boolean().optional().default(false)
+});
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -19,7 +28,20 @@ serve(async (req) => {
       throw new Error('Google Maps API key not configured');
     }
 
-    const { latitude, longitude, locationId, batchMode = false } = await req.json();
+    const body = await req.json();
+    const validation = geocodeSchema.safeParse(body);
+    
+    if (!validation.success) {
+      return new Response(JSON.stringify({ 
+        error: 'Invalid input', 
+        details: validation.error.issues 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const { latitude, longitude, locationId, batchMode } = validation.data;
 
     // If batch mode, fetch all locations from DB
     if (batchMode) {

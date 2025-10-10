@@ -1,11 +1,24 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
+
+// Input validation schemas
+const friendRequestSchema = z.object({
+  requestedUserId: z.string().uuid()
+})
+
+const acceptRequestSchema = z.object({
+  requestId: z.string().uuid()
+})
+
+const blockUserSchema = z.object({
+  userId: z.string().uuid()
+})
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -35,14 +48,20 @@ serve(async (req) => {
 
     switch (`${req.method}:${action}`) {
       case 'POST:request': {
-        const { requestedUserId } = await req.json()
+        const body = await req.json()
+        const validation = friendRequestSchema.safeParse(body)
         
-        if (!requestedUserId) {
-          return new Response(JSON.stringify({ error: 'Missing requestedUserId' }), {
+        if (!validation.success) {
+          return new Response(JSON.stringify({ 
+            error: 'Invalid input', 
+            details: validation.error.issues 
+          }), {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           })
         }
+
+        const { requestedUserId } = validation.data
 
         // Check if request already exists
         const { data: existingRequest } = await supabaseClient
@@ -95,14 +114,20 @@ serve(async (req) => {
       }
 
       case 'POST:accept': {
-        const { requestId } = await req.json()
+        const body = await req.json()
+        const validation = acceptRequestSchema.safeParse(body)
         
-        if (!requestId) {
-          return new Response(JSON.stringify({ error: 'Missing requestId' }), {
+        if (!validation.success) {
+          return new Response(JSON.stringify({ 
+            error: 'Invalid input', 
+            details: validation.error.issues 
+          }), {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           })
         }
+
+        const { requestId } = validation.data
 
         const { data: friendRequest, error } = await supabaseClient
           .from('friend_requests')
@@ -126,14 +151,20 @@ serve(async (req) => {
       }
 
       case 'POST:block': {
-        const { userId } = await req.json()
+        const body = await req.json()
+        const validation = blockUserSchema.safeParse(body)
         
-        if (!userId) {
-          return new Response(JSON.stringify({ error: 'Missing userId' }), {
+        if (!validation.success) {
+          return new Response(JSON.stringify({ 
+            error: 'Invalid input', 
+            details: validation.error.issues 
+          }), {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           })
         }
+
+        const { userId } = validation.data
 
         // Update or create blocked status
         const { data: blockedRequest, error } = await supabaseClient
