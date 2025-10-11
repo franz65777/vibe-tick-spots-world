@@ -75,12 +75,8 @@ class ImageService {
     return imageUrl;
   }
 
-  // Generate static map URL for place
-  getStaticMapUrl(lat: number, lng: number): string {
-    // Using Google Static Maps API - user needs to add API key
-    const API_KEY = 'YOUR_GOOGLE_MAPS_API_KEY';
-    return `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=15&size=100x100&markers=color:red%7C${lat},${lng}&key=${API_KEY}`;
-  }
+  // Note: Static map URL generation requires Google Maps API key configuration
+  // via edge functions. Removed to prevent hardcoded API key placeholder.
 }
 
 export const imageService = new ImageService();

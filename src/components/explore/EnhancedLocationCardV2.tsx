@@ -60,17 +60,6 @@ const EnhancedLocationCardV2 = ({ place, onCardClick }: EnhancedLocationCardV2Pr
     }
   };
 
-  // Generate Google Maps Static API URL for map preview
-  const getStaticMapUrl = () => {
-    const { lat, lng } = place.coordinates;
-    const apiKey = 'YOUR_GOOGLE_MAPS_API_KEY'; // Should be from env
-    const zoom = 15;
-    const size = '600x300';
-    const markerColor = '0x3B82F6';
-    
-    return `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=${zoom}&size=${size}&markers=color:${markerColor}%7C${lat},${lng}&key=${apiKey}&style=feature:poi|visibility:off`;
-  };
-
   const formatCategory = (category: string) => {
     return category.charAt(0).toUpperCase() + category.slice(1).replace(/_/g, ' ');
   };
