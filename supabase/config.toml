@@ -19,9 +19,6 @@ max_rows = 1000
 [functions]
 verify_jwt = true
 
-[functions.google-maps-config]
-verify_jwt = true
-
 [functions.friends]
 verify_jwt = true
 

@@ -8,38 +8,16 @@ declare global {
   }
 }
 
-import { supabase } from '@/integrations/supabase/client';
 import { Loader } from '@googlemaps/js-api-loader';
 
-// Securely fetch API key from Supabase edge function
-let GOOGLE_MAPS_API_KEY: string | null = null;
+// Get API key from environment variable (configured with domain restrictions in Google Cloud Console)
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
-const fetchGoogleMapsApiKey = async (): Promise<string> => {
-  if (GOOGLE_MAPS_API_KEY) {
-    return GOOGLE_MAPS_API_KEY;
+const getGoogleMapsApiKey = (): string => {
+  if (!GOOGLE_MAPS_API_KEY) {
+    throw new Error('Google Maps API key not configured. Please add VITE_GOOGLE_MAPS_API_KEY to your .env file');
   }
-
-  try {
-    console.log('🗺️ Fetching Google Maps API key from Supabase...');
-    const { data, error } = await supabase.functions.invoke('google-maps-config');
-    
-    if (error) {
-      console.error('❌ Error fetching Google Maps API key:', error);
-      throw new Error('Failed to fetch Google Maps API key: ' + JSON.stringify(error));
-    }
-    
-    if (!data?.apiKey) {
-      console.error('❌ No API key returned from server, data:', data);
-      throw new Error('No API key returned from server');
-    }
-    
-    GOOGLE_MAPS_API_KEY = data.apiKey;
-    console.log('✅ Google Maps API key fetched successfully, length:', data.apiKey.length);
-    return GOOGLE_MAPS_API_KEY;
-  } catch (error) {
-    console.error('Error fetching Google Maps API key:', error);
-    throw error;
-  }
+  return GOOGLE_MAPS_API_KEY;
 };
 
 export const loadGoogleMapsAPI = (): Promise<void> => {
@@ -51,8 +29,8 @@ export const loadGoogleMapsAPI = (): Promise<void> => {
     }
 
     try {
-      const apiKey = await fetchGoogleMapsApiKey();
-      console.log('🗺️ Initializing Google Maps via official Loader with API key length:', apiKey.length);
+      const apiKey = getGoogleMapsApiKey();
+      console.log('🗺️ Initializing Google Maps via official Loader');
       const loader = new Loader({
         apiKey,
         version: 'weekly',
