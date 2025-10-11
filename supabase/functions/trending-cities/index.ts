@@ -12,12 +12,13 @@ serve(async (req) => {
   }
 
   try {
+    // Use ANON key to respect RLS policies - only publicly visible data
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
-    // Fetch all saved places cities (RLS bypassed via service role)
+    // Fetch saved places cities - respects RLS policies
     const { data: saves, error } = await supabaseClient
       .from('saved_places')
       .select('city')
