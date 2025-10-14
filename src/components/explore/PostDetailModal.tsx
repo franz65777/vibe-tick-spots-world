@@ -242,40 +242,51 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
     if (!user || !post || likingPost) return;
 
     setLikingPost(true);
-    const isCurrentlyLiked = likedPosts.has(postId);
+    try {
+      const isCurrentlyLiked = likedPosts.has(postId);
 
-    const success = await toggleLike(postId);
-    
-    if (success) {
-      // Refetch engagement state
-      await refetchEngagement();
+      const success = await toggleLike(postId);
       
-      // Create notification for post owner (only on new like)
-      if (post.user_id !== user.id && !isCurrentlyLiked) {
-        try {
-          await supabase.from('notifications').insert({
-            user_id: post.user_id,
-            type: 'like',
-            title: 'New like on your post',
-            message: `${user.user_metadata?.username || 'Someone'} liked your post`,
-            data: {
-              post_id: postId,
-              user_id: user.id,
-              user_name: user.user_metadata?.username,
-              user_avatar: user.user_metadata?.avatar_url,
-            },
-          });
-        } catch (err) {
-          console.error('Error creating notification:', err);
+      if (success) {
+        // Refetch engagement state
+        await refetchEngagement();
+        
+        // Create notification for post owner (only on new like)
+        if (post.user_id !== user.id && !isCurrentlyLiked) {
+          try {
+            // Fetch current user's profile data
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('username, avatar_url')
+              .eq('id', user.id)
+              .maybeSingle();
+
+            await supabase.from('notifications').insert({
+              user_id: post.user_id,
+              type: 'like',
+              title: 'New like on your post',
+              message: `${profile?.username || 'Someone'} liked your post`,
+              data: {
+                post_id: postId,
+                user_id: user.id,
+                user_name: profile?.username,
+                user_avatar: profile?.avatar_url,
+                post_image: post.media_urls?.[0],
+                caption: post.caption
+              },
+            });
+          } catch (err) {
+            console.error('Error creating notification:', err);
+          }
         }
+        
+        // Reload post data (counts updated by DB trigger)
+        await loadPostData();
+        await loadPostLikers();
       }
-      
-      // Reload post data (counts updated by DB trigger)
-      await loadPostData();
-      await loadPostLikers();
+    } finally {
+      setLikingPost(false);
     }
-    
-    setLikingPost(false);
   };
 
   const handleCommentAdded = async (comment: PostComment) => {

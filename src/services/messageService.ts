@@ -91,7 +91,7 @@ class MessageService {
           receiver_id: receiverId,
           message_type: 'post_share' as const,
           shared_content: postData,
-          content: postData.caption ? postData.caption.slice(0, 140) : 'Shared a post'
+          content: null  // No duplicate content - shown in card
         })
         .select('*')
         .single();

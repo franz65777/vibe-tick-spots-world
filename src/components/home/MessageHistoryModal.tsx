@@ -65,10 +65,39 @@ const MessageHistoryModal = ({ isOpen, onClose }: MessageHistoryModalProps) => {
     return `${diffInDays}d ago`;
   };
 
+  const handleMessageClick = (message: DirectMessage) => {
+    if (message.message_type === 'post_share' && message.shared_content?.id) {
+      // Import PostDetailModal dynamically
+      import('@/components/explore/PostDetailModal').then(({ PostDetailModal }) => {
+        // Create a temporary container to render the modal
+        const container = document.createElement('div');
+        document.body.appendChild(container);
+        
+        // Render the modal
+        import('react-dom/client').then(({ createRoot }) => {
+          const root = createRoot(container);
+          root.render(
+            <PostDetailModal
+              postId={message.shared_content.id}
+              isOpen={true}
+              onClose={() => {
+                root.unmount();
+                document.body.removeChild(container);
+              }}
+            />
+          );
+        });
+      });
+    }
+  };
+
   const renderMessage = (message: DirectMessage) => (
     <div
       key={message.id}
-      className="flex items-start gap-4 p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all duration-200"
+      onClick={() => handleMessageClick(message)}
+      className={`flex items-start gap-4 p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all duration-200 ${
+        message.message_type === 'post_share' ? 'cursor-pointer' : ''
+      }`}
     >
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2 mb-1">
@@ -80,10 +109,28 @@ const MessageHistoryModal = ({ isOpen, onClose }: MessageHistoryModalProps) => {
                   {message.shared_content?.name || 'Unknown location'}
                 </p>
               </div>
+            ) : message.message_type === 'post_share' ? (
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                <p className="text-sm font-medium text-purple-900 mb-1">📸 Shared a post</p>
+                {message.shared_content?.media_urls?.[0] && (
+                  <img 
+                    src={message.shared_content.media_urls[0]} 
+                    alt="Post preview" 
+                    className="w-full h-32 object-cover rounded mt-2"
+                  />
+                )}
+                {message.shared_content?.caption && (
+                  <p className="text-xs text-purple-700 mt-2 line-clamp-2">
+                    {message.shared_content.caption}
+                  </p>
+                )}
+              </div>
             ) : (
-              <p className="text-sm text-gray-900 break-words">
-                {message.content}
-              </p>
+              message.content && (
+                <p className="text-sm text-gray-900 break-words">
+                  {message.content}
+                </p>
+              )
             )}
           </div>
           <div className="flex items-center gap-1 text-xs text-gray-500 flex-shrink-0">

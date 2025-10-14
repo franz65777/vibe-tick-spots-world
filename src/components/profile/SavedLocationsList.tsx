@@ -77,10 +77,10 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
         const groupedByCity: any = {};
         
         savedPlacesData?.forEach((place: any) => {
-          const rawCity = place.city || 'Unknown';
+          const coords = place.coordinates as any;
+          const rawCity = place.city || (coords?.lat ? 'Nearby' : 'Unknown');
           const city = normalizeCity(rawCity);
           if (!groupedByCity[city]) groupedByCity[city] = [];
-          const coords = place.coordinates as any;
           groupedByCity[city].push({
             id: place.place_id,
             name: place.place_name,
@@ -94,7 +94,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
         (userSavedRows || []).forEach((item: any) => {
           const location = item?.location_id ? locationsMap[item.location_id] : null;
           if (!location) return;
-          const rawCity = location.city || 'Unknown';
+          const rawCity = location.city || location.address?.split(',').slice(-2)[0]?.trim() || 'Nearby';
           const city = normalizeCity(rawCity);
           if (!groupedByCity[city]) groupedByCity[city] = [];
           groupedByCity[city].push({
