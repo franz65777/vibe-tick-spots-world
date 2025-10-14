@@ -243,9 +243,11 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
 
     setLikingPost(true);
     try {
+      console.log('Toggling like for post:', postId, 'User:', user.id);
       const isCurrentlyLiked = likedPosts.has(postId);
 
       const success = await toggleLike(postId);
+      console.log('Toggle like result:', success);
       
       if (success) {
         // Refetch engagement state
@@ -283,7 +285,13 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
         // Reload post data (counts updated by DB trigger)
         await loadPostData();
         await loadPostLikers();
+        toast.success(isCurrentlyLiked ? 'Post unliked' : 'Post liked');
+      } else {
+        toast.error('Failed to toggle like. Please try again.');
       }
+    } catch (error) {
+      console.error('Error in handleLike:', error);
+      toast.error('Failed to toggle like');
     } finally {
       setLikingPost(false);
     }
