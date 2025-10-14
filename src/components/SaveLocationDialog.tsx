@@ -74,19 +74,19 @@ const SaveLocationDialog = ({ isOpen, onClose, onLocationSaved }: SaveLocationDi
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end justify-center pb-20">
-      <div className="bg-white dark:bg-gray-900 rounded-3xl w-full max-w-md max-h-[70vh] overflow-y-auto shadow-2xl">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-foreground">Save New Location</h2>
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center pb-24">
+      <div className="bg-background rounded-t-3xl w-full max-w-md max-h-[65vh] overflow-y-auto shadow-2xl">
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-bold text-foreground">Save Location to Favorites</h2>
             <button onClick={onClose} className="w-8 h-8 flex items-center justify-center">
               <X className="w-5 h-5 text-gray-500" />
             </button>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2">
             <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-2">
+              <label className="block text-sm font-medium text-muted-foreground mb-1">
                 Location Name *
               </label>
               <Input
@@ -98,7 +98,7 @@ const SaveLocationDialog = ({ isOpen, onClose, onLocationSaved }: SaveLocationDi
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-2">
+              <label className="block text-sm font-medium text-muted-foreground mb-1">
                 Category *
               </label>
               <Select
@@ -119,7 +119,7 @@ const SaveLocationDialog = ({ isOpen, onClose, onLocationSaved }: SaveLocationDi
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-2">
+              <label className="block text-sm font-medium text-muted-foreground mb-1">
                 Address (Optional)
               </label>
               <Input
@@ -130,11 +130,11 @@ const SaveLocationDialog = ({ isOpen, onClose, onLocationSaved }: SaveLocationDi
               />
             </div>
 
-            <div className="pt-2">
+            <div className="pt-1">
               <Button
                 onClick={handleSave}
                 disabled={isLoading}
-                className="w-full"
+                className="w-full h-11"
                 size="lg"
               >
                 {isLoading ? (
@@ -152,9 +152,9 @@ const SaveLocationDialog = ({ isOpen, onClose, onLocationSaved }: SaveLocationDi
             </div>
           </div>
 
-          <div className="mt-3 p-3 bg-primary/10 rounded-xl">
+          <div className="mt-2 p-2.5 bg-primary/10 rounded-xl">
             <p className="text-xs text-muted-foreground">
-              💡 When you save a location, you're creating a hub where all future media uploads with this location tag will appear!
+              💡 Save locations to easily find them later and see all posts tagged here
             </p>
           </div>
         </div>

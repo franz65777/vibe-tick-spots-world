@@ -78,7 +78,15 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
         
         savedPlacesData?.forEach((place: any) => {
           const coords = place.coordinates as any;
-          const rawCity = place.city || (coords?.lat ? 'Nearby' : 'Unknown');
+          let rawCity = place.city;
+          
+          // If no city but we have coordinates, mark as Nearby
+          if (!rawCity && coords?.lat && coords?.lng) {
+            rawCity = 'Nearby';
+          } else if (!rawCity) {
+            rawCity = 'Unknown';
+          }
+          
           const city = normalizeCity(rawCity);
           if (!groupedByCity[city]) groupedByCity[city] = [];
           groupedByCity[city].push({
@@ -94,7 +102,27 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
         (userSavedRows || []).forEach((item: any) => {
           const location = item?.location_id ? locationsMap[item.location_id] : null;
           if (!location) return;
-          const rawCity = location.city || location.address?.split(',').slice(-2)[0]?.trim() || 'Nearby';
+          
+          let rawCity = location.city;
+          
+          // Try to extract city from address if city is missing
+          if (!rawCity && location.address) {
+            const addressParts = location.address.split(',').map((p: string) => p.trim());
+            // Usually city is second to last or last part
+            if (addressParts.length >= 2) {
+              rawCity = addressParts[addressParts.length - 2] || addressParts[addressParts.length - 1];
+            } else if (addressParts.length === 1) {
+              rawCity = addressParts[0];
+            }
+          }
+          
+          // If still no city but we have coordinates, mark as Nearby
+          if (!rawCity && (location.latitude || location.longitude)) {
+            rawCity = 'Nearby';
+          } else if (!rawCity) {
+            rawCity = 'Unknown';
+          }
+          
           const city = normalizeCity(rawCity);
           if (!groupedByCity[city]) groupedByCity[city] = [];
           groupedByCity[city].push({
