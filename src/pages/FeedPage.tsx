@@ -296,64 +296,22 @@ const FeedPage = () => {
 
                     {/* Action row for posts */}
                     {isPost && (
-                      <div className="mt-3 flex items-center justify-between">
-                        <div className="flex items-center gap-6">
-                          {/* Like */}
-                          <button
-                            className="flex items-center gap-1.5 hover:opacity-75"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (!item.post_id) return;
-                              toggleLike(item.post_id);
-                              // optimistic UI
-                              setFeedItems(prev => prev.map(fi => fi.id === item.id ? { ...fi, likes_count: (fi.likes_count || 0) + (likedPosts.has(item.post_id!) ? -1 : 1) } : fi));
-                            }}
-                          >
-                            <Heart className={`w-5 h-5 ${item.post_id && likedPosts.has(item.post_id) ? 'fill-red-500 text-red-500' : ''}`} />
-                            <span className="text-sm text-muted-foreground">{item.likes_count ?? 0}</span>
-                          </button>
-                          {/* Comment */}
-                          <button
-                            className="flex items-center gap-1.5 hover:opacity-75"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (!item.post_id) return;
-                              setSelectedPostId(item.post_id);
-                              setOpenCommentsOnLoad(true);
-                              setOpenShareOnLoad(false);
-                            }}
-                          >
-                            <MessageCircle className="w-5 h-5" />
-                            <span className="text-sm text-muted-foreground">{item.comments_count ?? 0}</span>
-                          </button>
-                          {/* Share */}
-                          <button
-                            className="flex items-center gap-1.5 hover:opacity-75"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (!item.post_id) return;
-                              setSelectedPostId(item.post_id);
-                              setOpenCommentsOnLoad(false);
-                              setOpenShareOnLoad(true);
-                            }}
-                          >
-                            <Send className="w-5 h-5" />
-                            <span className="text-sm text-muted-foreground">{item.shares_count ?? 0}</span>
-                          </button>
-                        </div>
-                        <button
-                          className="hover:opacity-75"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (item.location_id) {
-                              navigate('/explore', { state: { openLocationDetail: { id: item.location_id, name: item.location_name } } });
-                            }
-                          }}
-                          aria-label="Open location"
-                        >
-                          <MapPin className="w-5 h-5" />
-                        </button>
-                      </div>
+                      <PostActions
+                        postId={item.post_id!}
+                        likesCount={item.likes_count || 0}
+                        commentsCount={item.comments_count || 0}
+                        sharesCount={item.shares_count || 0}
+                        onCommentClick={() => {
+                          setSelectedPostId(item.post_id!);
+                          setOpenCommentsOnLoad(true);
+                          setOpenShareOnLoad(false);
+                        }}
+                        onShareClick={() => {
+                          setSelectedPostId(item.post_id!);
+                          setOpenShareOnLoad(true);
+                          setOpenCommentsOnLoad(false);
+                        }}
+                      />
                     )}
                   </div>
                 </article>
@@ -361,7 +319,6 @@ const FeedPage = () => {
             })}
           </div>
         )}
-        </div>
       </div>
 
       {selectedPostId && (
