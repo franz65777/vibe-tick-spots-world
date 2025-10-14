@@ -9,6 +9,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import AuthenticatedLayout from '@/components/AuthenticatedLayout';
 import PostDetailModal from '@/components/explore/PostDetailModal';
+import { usePostEngagement } from '@/hooks/usePostEngagement';
 
 const FeedPage = () => {
   const { user } = useAuth();
