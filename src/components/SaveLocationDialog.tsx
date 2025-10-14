@@ -74,10 +74,10 @@ const SaveLocationDialog = ({ isOpen, onClose, onLocationSaved }: SaveLocationDi
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center pb-24">
-      <div className="bg-background rounded-t-3xl w-full max-w-md max-h-[65vh] overflow-y-auto shadow-2xl">
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-3">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center pb-[calc(env(safe-area-inset-bottom)+72px)] px-4">
+      <div className="bg-background rounded-t-3xl w-full max-w-sm max-h-[55vh] overflow-y-auto shadow-2xl overflow-hidden ring-1 ring-border">
+        <div className="p-3">
+          <div className="flex items-center justify-between mb-2">
             <h2 className="text-lg font-bold text-foreground">Save Location to Favorites</h2>
             <button onClick={onClose} className="w-8 h-8 flex items-center justify-center">
               <X className="w-5 h-5 text-gray-500" />
@@ -134,7 +134,7 @@ const SaveLocationDialog = ({ isOpen, onClose, onLocationSaved }: SaveLocationDi
               <Button
                 onClick={handleSave}
                 disabled={isLoading}
-                className="w-full h-11"
+                className="w-full h-10"
                 size="lg"
               >
                 {isLoading ? (

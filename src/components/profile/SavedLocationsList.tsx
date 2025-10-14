@@ -25,6 +25,34 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
   const [sortBy, setSortBy] = useState('recent');
   const [selectedPlace, setSelectedPlace] = useState<any>(null);
 
+  // Heuristics aligned with search/map city logic
+  const isStreetLike = (value?: string | null) => {
+    if (!value) return false;
+    const v = value.toLowerCase();
+    if (/\d/.test(v)) return true;
+    return /(street|st\.?|avenue|ave\.?|road|rd\.?|square|sq\.?|piazza|platz|plaza|place|lane|ln\.?|drive|dr\.?|court|ct\.?|alley|way|quay|boulevard|blvd\.?|rue|via|calle|estrada|rua)/i.test(v);
+  };
+  const extractCityFromAddress = (addr?: string | null) => {
+    if (!addr) return '';
+    const parts = addr.split(',').map(p => p.trim()).filter(Boolean);
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const p = parts[i];
+      if (p.length > 2 && !/^\d+$/.test(p) && !isStreetLike(p)) return p;
+    }
+    return '';
+  };
+  const deriveDisplayCity = (
+    rawCity?: string | null,
+    address?: string | null,
+    coords?: { lat?: number; lng?: number } | null
+  ): string => {
+    const base = (rawCity && rawCity.trim()) || extractCityFromAddress(address) || '';
+    const normalized = normalizeCity(base || null);
+    if (normalized !== 'Unknown' && normalized.length > 2) return normalized;
+    if (coords && (coords.lat || coords.lng)) return 'Nearby';
+    return 'Unknown';
+  };
+
   useEffect(() => {
     const loadSavedPlaces = async () => {
       if (!targetUserId) {
@@ -73,28 +101,20 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
           }
         }
 
-        // Group by city (normalized)
+        // Group by city using same logic as search/map
         const groupedByCity: any = {};
         
         savedPlacesData?.forEach((place: any) => {
-          const coords = place.coordinates as any;
-          let rawCity = place.city;
-          
-          // If no city but we have coordinates, mark as Nearby
-          if (!rawCity && coords?.lat && coords?.lng) {
-            rawCity = 'Nearby';
-          } else if (!rawCity) {
-            rawCity = 'Unknown';
-          }
-          
-          const city = normalizeCity(rawCity);
-          if (!groupedByCity[city]) groupedByCity[city] = [];
-          groupedByCity[city].push({
+          const coords = (place.coordinates as any) || {};
+          const displayCity = deriveDisplayCity(place.city, undefined, coords);
+          const cityKey = displayCity;
+          if (!groupedByCity[cityKey]) groupedByCity[cityKey] = [];
+          groupedByCity[cityKey].push({
             id: place.place_id,
             name: place.place_name,
             category: place.place_category || 'place',
-            city,
-            coordinates: coords || { lat: 0, lng: 0 },
+            city: displayCity,
+            coordinates: coords && (coords.lat || coords.lng) ? coords : { lat: 0, lng: 0 },
             savedAt: place.created_at
           });
         });
@@ -103,34 +123,16 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
           const location = item?.location_id ? locationsMap[item.location_id] : null;
           if (!location) return;
           
-          let rawCity = location.city;
-          
-          // Try to extract city from address if city is missing
-          if (!rawCity && location.address) {
-            const addressParts = location.address.split(',').map((p: string) => p.trim());
-            // Usually city is second to last or last part
-            if (addressParts.length >= 2) {
-              rawCity = addressParts[addressParts.length - 2] || addressParts[addressParts.length - 1];
-            } else if (addressParts.length === 1) {
-              rawCity = addressParts[0];
-            }
-          }
-          
-          // If still no city but we have coordinates, mark as Nearby
-          if (!rawCity && (location.latitude || location.longitude)) {
-            rawCity = 'Nearby';
-          } else if (!rawCity) {
-            rawCity = 'Unknown';
-          }
-          
-          const city = normalizeCity(rawCity);
-          if (!groupedByCity[city]) groupedByCity[city] = [];
-          groupedByCity[city].push({
+          const coords = { lat: Number(location.latitude) || 0, lng: Number(location.longitude) || 0 };
+          const displayCity = deriveDisplayCity(location.city, location.address, coords);
+          const cityKey = displayCity;
+          if (!groupedByCity[cityKey]) groupedByCity[cityKey] = [];
+          groupedByCity[cityKey].push({
             id: location.google_place_id || location.id,
             name: location.name,
             category: location.category || 'place',
-            city,
-            coordinates: { lat: location.latitude || 0, lng: location.longitude || 0 },
+            city: displayCity,
+            coordinates: (coords.lat || coords.lng) ? coords : { lat: 0, lng: 0 },
             address: location.address,
             google_place_id: location.google_place_id,
             savedAt: item.created_at
