@@ -870,6 +870,41 @@ export type Database = {
           },
         ]
       }
+      location_rankings: {
+        Row: {
+          created_at: string
+          id: string
+          location_id: string
+          score: number
+          source: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          location_id: string
+          score: number
+          source?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location_id?: string
+          score?: number
+          source?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_rankings_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       location_swipes: {
         Row: {
           created_at: string

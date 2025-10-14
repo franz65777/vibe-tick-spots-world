@@ -17,6 +17,7 @@ import { PostCommentsDrawer } from './PostCommentsDrawer';
 import PostShareModal from './PostShareModal';
 import { ReviewModal } from './ReviewModal';
 import { getPostReviews, type PostReview } from '@/services/reviewService';
+import { getLocationRanking } from '@/services/locationRankingService';
 
 interface PostDetailModalProps {
   postId: string;
@@ -77,6 +78,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
   const [shareOpen, setShareOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviews, setReviews] = useState<PostReview[]>([]);
+  const [locationRanking, setLocationRanking] = useState<number | null>(null);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -89,6 +91,11 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
       setCurrentMediaIndex(0);
     }
   }, [isOpen, postId]);
+
+  const loadLocationRankingData = async (locId: string) => {
+    const ranking = await getLocationRanking(locId);
+    setLocationRanking(ranking);
+  };
 
   const loadReviews = async () => {
     const fetchedReviews = await getPostReviews(postId);
@@ -188,6 +195,11 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
       
       // Update shares count from the loaded data
       setSharesCount(postData.shares_count || 0);
+
+      // Load location ranking if location exists
+      if (postData.location_id) {
+        loadLocationRankingData(postData.location_id);
+      }
     } catch (error) {
       console.error('Error loading post:', error);
       toast.error('Failed to load post');
@@ -285,7 +297,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
         // Reload post data (counts updated by DB trigger)
         await loadPostData();
         await loadPostLikers();
-        toast.success(isCurrentlyLiked ? 'Post unliked' : 'Post liked');
+        // No toast on success - visual feedback is the heart animation
       } else {
         toast.error('Failed to toggle like. Please try again.');
       }
@@ -458,6 +470,14 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
                   </button>
                 )}
               </div>
+
+              {/* Location ranking score (if available) */}
+              {locationRanking !== null && (
+                <div className="flex items-center gap-1 bg-primary/10 px-2 py-1 rounded-full">
+                  <Star className="w-3.5 h-3.5 fill-primary text-primary" />
+                  <span className="text-xs font-bold text-primary">{locationRanking}/10</span>
+                </div>
+              )}
               
               {/* 3-dot menu moved here */}
               {user && (
@@ -569,46 +589,52 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
             <div className="px-4 py-2 bg-background flex-shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  {/* Like button with count */}
-                  <div className="flex items-center gap-1">
+                  {/* Like button with count - always show count */}
+                  <div className="flex items-center gap-1.5">
                     <button
                       onClick={handleLike}
                       disabled={!user || likingPost}
-                      className="flex items-center gap-1.5 hover:opacity-60 transition-opacity disabled:opacity-50"
+                      className="hover:opacity-60 transition-all disabled:opacity-50"
                     >
                       <Heart 
-                        className={`w-6 h-6 transition-colors ${likedPosts.has(postId) ? 'fill-red-500 text-red-500' : ''}`} 
+                        className={`w-6 h-6 transition-all ${
+                          likedPosts.has(postId) 
+                            ? 'fill-red-500 text-red-500 scale-110' 
+                            : 'scale-100'
+                        }`} 
                       />
                     </button>
-                    {post.likes_count > 0 && (
-                      <span className="text-sm text-muted-foreground">{post.likes_count}</span>
-                    )}
+                    <span className={`text-sm font-medium transition-colors ${
+                      likedPosts.has(postId) ? 'text-red-500' : 'text-muted-foreground'
+                    }`}>
+                      {post.likes_count}
+                    </span>
                   </div>
                   
-                  {/* Comment button with count */}
-                  <div className="flex items-center gap-1">
+                  {/* Comment button with count - always show */}
+                  <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => setCommentsDrawerOpen(true)}
-                      className="flex items-center gap-1.5 hover:opacity-60 transition-opacity"
+                      className="hover:opacity-60 transition-opacity"
                     >
                       <MessageCircle className="w-6 h-6" />
                     </button>
-                    {post.comments_count > 0 && (
-                      <span className="text-sm text-muted-foreground">{post.comments_count}</span>
-                    )}
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {post.comments_count}
+                    </span>
                   </div>
                   
-                  {/* Share button with count */}
-                  <div className="flex items-center gap-1">
+                  {/* Share button with count - always show */}
+                  <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => setShareOpen(true)}
-                      className="flex items-center gap-1.5 hover:opacity-60 transition-opacity"
+                      className="hover:opacity-60 transition-opacity"
                     >
                       <Send className="w-6 h-6" />
                     </button>
-                    {sharesCount > 0 && (
-                      <span className="text-sm text-muted-foreground">{sharesCount}</span>
-                    )}
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {sharesCount}
+                    </span>
                   </div>
                 </div>
                 
