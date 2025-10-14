@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getUserFeed, getFeedEventDisplay, FeedItem as FeedItemType } from '@/services/feedService';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MapPin, Sparkles, TrendingUp, MessageSquare } from 'lucide-react';
+import { MapPin, Sparkles, TrendingUp, MessageSquare, Heart, MessageCircle, Send } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import AuthenticatedLayout from '@/components/AuthenticatedLayout';
@@ -16,6 +16,9 @@ const FeedPage = () => {
   const [feedItems, setFeedItems] = useState<FeedItemType[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  const [openCommentsOnLoad, setOpenCommentsOnLoad] = useState(false);
+  const [openShareOnLoad, setOpenShareOnLoad] = useState(false);
+  const { likedPosts, toggleLike } = usePostEngagement();
 
   useEffect(() => {
     if (!user?.id) return;
@@ -134,21 +137,21 @@ const FeedPage = () => {
 
   return (
     <AuthenticatedLayout>
-      <div className="min-h-screen bg-gray-50 pb-20">
-        {/* Modern Header - Reduced padding */}
-        <div className="bg-white border-b border-gray-200 pt-2">
-          <div className="p-4 pb-3">
+      <div className="min-h-screen bg-background pb-20">
+        {/* Header */}
+        <header className="bg-background border-b border-border sticky top-0 z-10">
+          <div className="px-4 pt-3 pb-2 max-w-2xl mx-auto">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-sm">
+                <Sparkles className="w-5 h-5 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Your Feed</h1>
-                <p className="text-xs text-gray-500">See what your friends are discovering</p>
+                <h1 className="text-xl font-bold text-foreground">Your Feed</h1>
+                <p className="text-xs text-muted-foreground">See what your friends are discovering</p>
               </div>
             </div>
           </div>
-        </div>
+        </header>
 
         {/* Feed Content */}
         <div className="max-w-2xl mx-auto px-4 py-4">
@@ -189,13 +192,13 @@ const FeedPage = () => {
         ) : (
           // Feed items
           <div className="space-y-3">
-            {feedItems.map((item) => {
+            {feedItems.map((item, idx) => {
               const display = getFeedEventDisplay(item.event_type);
-              
+              const isPost = !!item.post_id;
               return (
-                <div
+                <article
                   key={item.id}
-                  className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                  className="bg-card rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer"
                   onClick={() => handleItemClick(item)}
                 >
                   <div className="flex flex-col">
@@ -203,51 +206,45 @@ const FeedPage = () => {
                     <div className="flex items-center gap-2 mb-2">
                       <Avatar className="w-8 h-8 flex-shrink-0">
                         <AvatarImage src={item.avatar_url || ''} />
-                        <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white font-semibold text-xs">
+                        <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
                           {item.username?.[0]?.toUpperCase() || 'U'}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm leading-tight">
-                          <span className="font-semibold text-gray-900">
+                          <span className="font-semibold text-foreground">
                             {item.username}
                           </span>
                           {' '}
-                          <span className="text-gray-600">{display.action}</span>
+                          <span className="text-muted-foreground">{display.action}</span>
                           {' '}
                           {item.location_name && (
-                            <span className="font-semibold text-gray-900">
+                            <span className="font-semibold text-foreground">
                               {item.location_name}
                             </span>
                           )}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-muted-foreground">
                           {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {item.rating && item.event_type === 'rated_post' && (
-                          <div className="flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded-full">
-                            <span className="text-lg font-bold text-primary">{item.rating}</span>
-                            <span className="text-xs text-primary">/10</span>
-                          </div>
-                        )}
-                        {display.iconType === 'image' && display.icon ? (
-                          <img src={display.icon} alt="camera" className="w-6 h-6 object-contain" />
-                        ) : (
-                          <span className="text-xl">{display.icon}</span>
-                        )}
-                      </div>
+                      {/* Rating pill if available */}
+                      {item.rating && (
+                        <div className="flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded-full">
+                          <span className="text-lg font-bold text-primary">{item.rating}</span>
+                          <span className="text-xs text-primary">/10</span>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Media preview if available - bigger and centered with horizontal scroll */}
+                    {/* Media preview */}
                     {item.media_urls && item.media_urls.length > 0 && (
                       <div className="mt-1 rounded-xl overflow-x-auto snap-x snap-mandatory scrollbar-hide flex gap-2">
-                        {item.media_urls.map((url, idx) => (
-                          <div key={idx} className="snap-center flex-shrink-0 w-full">
+                        {item.media_urls.map((url, idx2) => (
+                          <div key={idx2} className="snap-center flex-shrink-0 w-full">
                             <img 
                               src={url} 
-                              alt={`${item.location_name || 'Post'} ${idx + 1}`}
+                              alt={`${item.location_name || 'Post'} ${idx2 + 1}`}
                               className="w-full h-64 object-cover rounded-xl"
                             />
                           </div>
@@ -255,49 +252,34 @@ const FeedPage = () => {
                       </div>
                     )}
 
-                       {/* Post content if available */}
-                      {item.content && item.event_type !== 'review' && (
-                        <p className="text-sm text-gray-700 mt-2 line-clamp-2 bg-gray-50 rounded-lg p-2">
-                          {item.content}
-                        </p>
-                      )}
+                    {/* Content */}
+                    {item.content && item.event_type !== 'review' && (
+                      <p className="text-sm text-foreground mt-2 line-clamp-2 bg-muted/40 rounded-lg p-2">
+                        {item.content}
+                      </p>
+                    )}
 
-                      {/* Rating display for reviews */}
-                      {item.event_type === 'review' && item.rating && (
-                        <div className="flex items-center gap-2 mt-2 bg-yellow-50 rounded-lg p-2">
-                          <span className="text-2xl font-bold text-yellow-600">{item.rating}/10</span>
-                          <div className="flex">
-                            {[...Array(Math.ceil(item.rating / 2))].map((_, i) => (
-                              <span key={i} className="text-yellow-400">⭐</span>
-                            ))}
-                          </div>
-                          {item.content && (
-                            <p className="text-sm text-gray-700 mt-1 flex-1">
-                              {item.content}
-                            </p>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Comment display */}
-                      {item.event_type === 'new_comment' && item.content && (
-                        <div className="flex items-start gap-2 mt-2 bg-blue-50 rounded-lg p-2">
-                          <MessageSquare className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
-                          <p className="text-sm text-gray-700 flex-1">
+                    {/* Review block */}
+                    {item.event_type === 'review' && item.rating && (
+                      <div className="flex items-center gap-2 mt-2 bg-primary/5 rounded-lg p-2">
+                        <span className="text-2xl font-bold text-primary">{item.rating}/10</span>
+                        {item.content && (
+                          <p className="text-sm text-foreground mt-1 flex-1">
                             {item.content}
                           </p>
-                        </div>
-                      )}
+                        )}
+                      </div>
+                    )}
 
-                    {/* Location badge if available - clickable */}
+                    {/* Location badge */}
                     {item.location_name && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           if (item.location_id) {
-                            navigate('/', { 
+                            navigate('/explore', { 
                               state: { 
-                                openPinDetail: {
+                                openLocationDetail: {
                                   id: item.location_id,
                                   name: item.location_name
                                 }
@@ -305,14 +287,76 @@ const FeedPage = () => {
                             });
                           }
                         }}
-                        className="flex items-center gap-1.5 mt-2 text-xs text-blue-600 hover:text-blue-700 font-medium bg-blue-50 rounded-lg px-2 py-1 w-fit"
+                        className="flex items-center gap-1.5 mt-2 text-xs text-primary hover:opacity-80 font-medium bg-primary/10 rounded-lg px-2 py-1 w-fit"
                       >
                         <MapPin className="w-3.5 h-3.5" />
                         <span className="truncate">{item.location_name}</span>
                       </button>
                     )}
+
+                    {/* Action row for posts */}
+                    {isPost && (
+                      <div className="mt-3 flex items-center justify-between">
+                        <div className="flex items-center gap-6">
+                          {/* Like */}
+                          <button
+                            className="flex items-center gap-1.5 hover:opacity-75"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!item.post_id) return;
+                              toggleLike(item.post_id);
+                              // optimistic UI
+                              setFeedItems(prev => prev.map(fi => fi.id === item.id ? { ...fi, likes_count: (fi.likes_count || 0) + (likedPosts.has(item.post_id!) ? -1 : 1) } : fi));
+                            }}
+                          >
+                            <Heart className={`w-5 h-5 ${item.post_id && likedPosts.has(item.post_id) ? 'fill-red-500 text-red-500' : ''}`} />
+                            <span className="text-sm text-muted-foreground">{item.likes_count ?? 0}</span>
+                          </button>
+                          {/* Comment */}
+                          <button
+                            className="flex items-center gap-1.5 hover:opacity-75"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!item.post_id) return;
+                              setSelectedPostId(item.post_id);
+                              setOpenCommentsOnLoad(true);
+                              setOpenShareOnLoad(false);
+                            }}
+                          >
+                            <MessageCircle className="w-5 h-5" />
+                            <span className="text-sm text-muted-foreground">{item.comments_count ?? 0}</span>
+                          </button>
+                          {/* Share */}
+                          <button
+                            className="flex items-center gap-1.5 hover:opacity-75"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!item.post_id) return;
+                              setSelectedPostId(item.post_id);
+                              setOpenCommentsOnLoad(false);
+                              setOpenShareOnLoad(true);
+                            }}
+                          >
+                            <Send className="w-5 h-5" />
+                            <span className="text-sm text-muted-foreground">{item.shares_count ?? 0}</span>
+                          </button>
+                        </div>
+                        <button
+                          className="hover:opacity-75"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (item.location_id) {
+                              navigate('/explore', { state: { openLocationDetail: { id: item.location_id, name: item.location_name } } });
+                            }
+                          }}
+                          aria-label="Open location"
+                        >
+                          <MapPin className="w-5 h-5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
-                </div>
+                </article>
               );
             })}
           </div>
@@ -320,12 +364,17 @@ const FeedPage = () => {
         </div>
       </div>
 
-      {/* Post Detail Modal */}
       {selectedPostId && (
         <PostDetailModal
           postId={selectedPostId}
           isOpen={!!selectedPostId}
-          onClose={() => setSelectedPostId(null)}
+          onClose={() => {
+            setSelectedPostId(null);
+            setOpenCommentsOnLoad(false);
+            setOpenShareOnLoad(false);
+          }}
+          openCommentsOnLoad={openCommentsOnLoad}
+          openShareOnLoad={openShareOnLoad}
         />
       )}
     </AuthenticatedLayout>

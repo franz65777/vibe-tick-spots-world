@@ -16,6 +16,10 @@ export interface FeedItem {
   media_urls?: string[]; // Multiple media URLs
   created_at: string;
   rating?: number; // For reviews
+  likes_count?: number;
+  comments_count?: number;
+  shares_count?: number;
+  saves_count?: number;
 }
 
 /**
@@ -40,7 +44,7 @@ export async function getUserFeed(userId: string, limit: number = 50): Promise<F
       // Posts from followed users with rating
       supabase
         .from('posts')
-        .select('id, user_id, caption, media_urls, location_id, rating, created_at')
+        .select('id, user_id, caption, media_urls, location_id, rating, created_at, likes_count, comments_count, shares_count, saves_count')
         .in('user_id', followingIds)
         .order('created_at', { ascending: false })
         .limit(30),
@@ -111,6 +115,10 @@ export async function getUserFeed(userId: string, limit: number = 50): Promise<F
         media_urls: post.media_urls || [],
         created_at: post.created_at,
         rating: post.rating || undefined,
+        likes_count: (post as any).likes_count,
+        comments_count: (post as any).comments_count,
+        shares_count: (post as any).shares_count,
+        saves_count: (post as any).saves_count,
       };
     });
 

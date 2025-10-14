@@ -24,6 +24,8 @@ interface PostDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   source?: 'pin' | 'search' | 'profile';
+  openCommentsOnLoad?: boolean;
+  openShareOnLoad?: boolean;
 }
 
 interface PostLiker {
@@ -58,7 +60,7 @@ interface PostData {
   } | null;
 }
 
-export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: PostDetailModalProps) => {
+export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', openCommentsOnLoad, openShareOnLoad }: PostDetailModalProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { likedPosts, toggleLike, refetch: refetchEngagement } = usePostEngagement();
@@ -81,16 +83,18 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
   const [locationRanking, setLocationRanking] = useState<number | null>(null);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (isOpen && postId) {
-      loadPostData();
-      loadComments();
-      loadPostLikers();
-      loadReviews();
-      refetchEngagement();
-      setCurrentMediaIndex(0);
-    }
-  }, [isOpen, postId]);
+useEffect(() => {
+  if (isOpen && postId) {
+    loadPostData();
+    loadComments();
+    loadPostLikers();
+    loadReviews();
+    refetchEngagement();
+    setCurrentMediaIndex(0);
+    if (openCommentsOnLoad) setCommentsDrawerOpen(true);
+    if (openShareOnLoad) setShareOpen(true);
+  }
+}, [isOpen, postId, openCommentsOnLoad, openShareOnLoad]);
 
   const loadLocationRankingData = async (locId: string) => {
     const ranking = await getLocationRanking(locId);
@@ -614,10 +618,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
                   {/* Comment button with count - always show */}
                   <div className="flex items-center gap-1.5">
                     <button
-                      onClick={() => {
-                        console.log('Comment button clicked');
-                        setCommentsDrawerOpen(true);
-                      }}
+                      onClick={() => setCommentsDrawerOpen(true)}
                       className="hover:opacity-60 transition-opacity"
                     >
                       <MessageCircle className="w-6 h-6" />
@@ -630,10 +631,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
                   {/* Share button with count - always show */}
                   <div className="flex items-center gap-1.5">
                     <button
-                      onClick={() => {
-                        console.log('Share button clicked');
-                        setShareOpen(true);
-                      }}
+                      onClick={() => setShareOpen(true)}
                       className="hover:opacity-60 transition-opacity"
                     >
                       <Send className="w-6 h-6" />
@@ -760,13 +758,9 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Comments Drawer */}
       <PostCommentsDrawer
         isOpen={commentsDrawerOpen}
-        onClose={() => {
-          console.log('Closing comments drawer');
-          setCommentsDrawerOpen(false);
-        }}
+        onClose={() => setCommentsDrawerOpen(false)}
         postId={postId}
         postOwnerId={post?.user_id || ''}
         comments={comments}
@@ -776,10 +770,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
       {/* Share Modal */}
       <PostShareModal
         isOpen={shareOpen}
-        onClose={() => {
-          console.log('Closing share modal');
-          setShareOpen(false);
-        }}
+        onClose={() => setShareOpen(false)}
         post={post ? { id: post.id, caption: post.caption, media_urls: post.media_urls } : null}
         onShared={async () => { await loadPostData(); }}
       />
