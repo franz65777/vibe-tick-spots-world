@@ -46,19 +46,30 @@ export const PostCommentsDrawer = ({
 
         // Create notification for post owner
         if (postOwnerId !== user.id) {
-          supabase.from('notifications').insert({
-            user_id: postOwnerId,
-            type: 'comment',
-            title: 'New comment on your post',
-            message: `${user.user_metadata?.username || 'Someone'} commented: "${commentContent.slice(0, 50)}${commentContent.length > 50 ? '...' : ''}"`,
-            data: {
-              post_id: postId,
-              user_id: user.id,
-              user_name: user.user_metadata?.username,
-              user_avatar: user.user_metadata?.avatar_url,
-              comment: commentContent,
-            },
-          });
+          try {
+            // Fetch current user's profile data
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('username, avatar_url')
+              .eq('id', user.id)
+              .maybeSingle();
+
+            await supabase.from('notifications').insert({
+              user_id: postOwnerId,
+              type: 'comment',
+              title: 'New comment on your post',
+              message: `${profile?.username || 'Someone'} commented: "${commentContent.slice(0, 50)}${commentContent.length > 50 ? '...' : ''}"`,
+              data: {
+                post_id: postId,
+                user_id: user.id,
+                user_name: profile?.username,
+                user_avatar: profile?.avatar_url,
+                comment: commentContent,
+              },
+            });
+          } catch (err) {
+            console.error('Error creating notification:', err);
+          }
         }
 
         toast.success('Comment added');

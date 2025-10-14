@@ -614,7 +614,10 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
                   {/* Comment button with count - always show */}
                   <div className="flex items-center gap-1.5">
                     <button
-                      onClick={() => setCommentsDrawerOpen(true)}
+                      onClick={() => {
+                        console.log('Comment button clicked');
+                        setCommentsDrawerOpen(true);
+                      }}
                       className="hover:opacity-60 transition-opacity"
                     >
                       <MessageCircle className="w-6 h-6" />
@@ -627,7 +630,10 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
                   {/* Share button with count - always show */}
                   <div className="flex items-center gap-1.5">
                     <button
-                      onClick={() => setShareOpen(true)}
+                      onClick={() => {
+                        console.log('Share button clicked');
+                        setShareOpen(true);
+                      }}
                       className="hover:opacity-60 transition-opacity"
                     >
                       <Send className="w-6 h-6" />
@@ -757,7 +763,10 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
       {/* Comments Drawer */}
       <PostCommentsDrawer
         isOpen={commentsDrawerOpen}
-        onClose={() => setCommentsDrawerOpen(false)}
+        onClose={() => {
+          console.log('Closing comments drawer');
+          setCommentsDrawerOpen(false);
+        }}
         postId={postId}
         postOwnerId={post?.user_id || ''}
         comments={comments}
@@ -765,10 +774,12 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search' }: 
       />
 
       {/* Share Modal */}
-      {/* Share Modal */}
       <PostShareModal
         isOpen={shareOpen}
-        onClose={() => setShareOpen(false)}
+        onClose={() => {
+          console.log('Closing share modal');
+          setShareOpen(false);
+        }}
         post={post ? { id: post.id, caption: post.caption, media_urls: post.media_urls } : null}
         onShared={async () => { await loadPostData(); }}
       />
