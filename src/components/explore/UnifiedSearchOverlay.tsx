@@ -142,21 +142,36 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
     );
   };
 
-  const selectCityByName = (name: string) => {
+  const selectCityByName = async (name: string) => {
     const google = (window as any).google;
     if (!placesService || !google) return;
     setLoading(true);
-    placesService.textSearch({ query: name }, (results: any[], status: any) => {
-      if (status === google.maps.places.PlacesServiceStatus.OK && results?.[0]?.geometry) {
+    
+    try {
+      // Use PlacesApiOptimizer for caching
+      const { PlacesApiOptimizer } = await import('@/services/placesApiOptimizer');
+      const results = await PlacesApiOptimizer.textSearch({ query: name });
+      
+      if (results?.[0]?.geometry) {
         const r = results[0];
+        const lat = typeof r.geometry.location.lat === 'function' 
+          ? r.geometry.location.lat() 
+          : r.geometry.location.lat;
+        const lng = typeof r.geometry.location.lng === 'function'
+          ? r.geometry.location.lng()
+          : r.geometry.location.lng;
+          
         handleCitySelect({
           name: r.name || name,
-          lat: r.geometry.location.lat(),
-          lng: r.geometry.location.lng()
+          lat,
+          lng
         } as any);
       }
+    } catch (error) {
+      console.error('Error selecting city:', error);
+    } finally {
       setLoading(false);
-    });
+    }
   };
   
   const handleCitySelect = (city: { name: string; lat: number; lng: number }) => {

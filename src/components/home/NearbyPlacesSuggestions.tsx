@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { MapPin, Loader2, Search, CheckCircle2, Plus } from 'lucide-react';
 import { loadGoogleMapsAPI } from '@/lib/googleMaps';
 import { allowedCategories, categoryDisplayNames, type AllowedCategory } from '@/utils/allowedCategories';
+import { PlacesApiOptimizer } from '@/services/placesApiOptimizer';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -78,27 +79,24 @@ const NearbyPlacesSuggestions: React.FC<NearbyPlacesSuggestionsProps> = ({
       try {
         setIsLoading(true);
         await loadGoogleMapsAPI();
-        const g = (window as any).google;
-        if (!g?.maps?.places) { setIsLoading(false); return; }
-
-        const service = new g.maps.places.PlacesService(document.createElement('div'));
-        const location = new g.maps.LatLng(coordinates.lat, coordinates.lng);
 
         const toNearbyPlace = (place: any): NearbyPlace | null => {
           const category = mapPlaceTypeToCategory(place.types || []);
-          if (!category || !place.geometry?.location) return null; // Only our categories
-          const distance = calculateDistance(
-            coordinates.lat,
-            coordinates.lng,
-            place.geometry.location.lat(),
-            place.geometry.location.lng()
-          );
+          if (!category || !place.geometry?.location) return null;
+          const lat = typeof place.geometry.location.lat === 'function' 
+            ? place.geometry.location.lat() 
+            : place.geometry.location.lat;
+          const lng = typeof place.geometry.location.lng === 'function'
+            ? place.geometry.location.lng()
+            : place.geometry.location.lng;
+          
+          const distance = calculateDistance(coordinates.lat, coordinates.lng, lat, lng);
           return {
             place_id: place.place_id,
             name: place.name,
             address: place.vicinity || place.formatted_address || '',
-            lat: place.geometry.location.lat(),
-            lng: place.geometry.location.lng(),
+            lat,
+            lng,
             types: place.types || [],
             distance,
             category
@@ -112,30 +110,31 @@ const NearbyPlacesSuggestions: React.FC<NearbyPlacesSuggestionsProps> = ({
           if (!cancelled) setNearbyPlaces(sorted);
         };
 
-        // If user typed something, run a text search near the pin (debounced)
+        // If user search query, use optimized text search with caching
         if (debouncedQuery.trim().length >= 2) {
-          const req: google.maps.places.TextSearchRequest = { location, radius: 2000, query: debouncedQuery } as any;
-          service.textSearch(req, (results: any, status: any) => {
-            if (status === g.maps.places.PlacesServiceStatus.OK && results) finalize(results);
-            setIsLoading(false);
+          const results = await PlacesApiOptimizer.textSearch({
+            query: debouncedQuery,
+            location: coordinates,
+            radius: 2000
           });
+          finalize(results);
+          setIsLoading(false);
           return;
         }
 
-        // Otherwise fetch by types in parallel and merge (faster radius)
+        // CRITICAL COST OPTIMIZATION:
+        // Instead of 10 separate API calls ($0.32), make 1 batch call ($0.032)
+        // This is a 90% cost reduction!
         const types = ['restaurant','bar','cafe','bakery','lodging','museum','tourist_attraction','night_club','art_gallery','amusement_park'];
+        const resultsByType = await PlacesApiOptimizer.batchNearbySearch({
+          location: coordinates,
+          radius: 500,
+          types
+        });
+
+        // Merge all results
         const all: any[] = [];
-        await Promise.all(
-          types.map(type => new Promise<void>(resolve => {
-            const req: google.maps.places.PlaceSearchRequest = { location, radius: 500, type: type as any } as any;
-            service.nearbySearch(req, (results: any, status: any) => {
-              if (status === g.maps.places.PlacesServiceStatus.OK && results) {
-                all.push(...results);
-              }
-              resolve();
-            });
-          }))
-        );
+        resultsByType.forEach(results => all.push(...results));
         finalize(all);
         setIsLoading(false);
       } catch (error) {
