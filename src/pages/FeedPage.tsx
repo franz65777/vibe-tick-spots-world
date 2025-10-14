@@ -319,6 +319,7 @@ const FeedPage = () => {
             })}
           </div>
         )}
+        </div>
       </div>
 
       {selectedPostId && (
