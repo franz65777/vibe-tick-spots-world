@@ -4,12 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { getUserFeed, getFeedEventDisplay, FeedItem as FeedItemType } from '@/services/feedService';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MapPin, Sparkles, TrendingUp, MessageSquare, Heart, MessageCircle, Send } from 'lucide-react';
+import { MapPin, Sparkles, TrendingUp, MessageSquare, Heart, MessageCircle, Send, Bookmark } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import AuthenticatedLayout from '@/components/AuthenticatedLayout';
 import PostDetailModal from '@/components/explore/PostDetailModal';
-import { usePostEngagement } from '@/hooks/usePostEngagement';
+import { PostActions } from '@/components/feed/PostActions';
 
 const FeedPage = () => {
   const { user } = useAuth();
@@ -19,7 +19,6 @@ const FeedPage = () => {
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [openCommentsOnLoad, setOpenCommentsOnLoad] = useState(false);
   const [openShareOnLoad, setOpenShareOnLoad] = useState(false);
-  const { likedPosts, toggleLike } = usePostEngagement();
 
   useEffect(() => {
     if (!user?.id) return;

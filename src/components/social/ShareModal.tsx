@@ -6,21 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Send } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { messageService } from '@/services/messageService';
-import { toast } from 'sonner';
 
-interface PostShareModalProps {
+interface ShareModalProps {
   isOpen: boolean;
   onClose: () => void;
-  post: {
-    id: string;
-    caption: string | null;
-    media_urls: string[];
-  } | null;
-  onShared?: () => void;
+  onShare: (recipientIds: string[]) => Promise<boolean>;
 }
 
-const PostShareModal = ({ isOpen, onClose, post, onShared }: PostShareModalProps) => {
+export const ShareModal = ({ isOpen, onClose, onShare }: ShareModalProps) => {
   const { user } = useAuth();
   const [query, setQuery] = useState('');
   const [users, setUsers] = useState<any[]>([]);
@@ -44,16 +37,19 @@ const PostShareModal = ({ isOpen, onClose, post, onShared }: PostShareModalProps
         .from('follows')
         .select('following_id')
         .eq('follower_id', user.id);
+
       const ids = follows?.map((f) => f.following_id) || [];
       if (ids.length === 0) {
         setUsers([]);
         return;
       }
+
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, username, avatar_url')
         .in('id', ids)
         .order('username');
+
       setUsers(profiles || []);
     } catch (e) {
       console.error('Error loading following:', e);
@@ -65,41 +61,31 @@ const PostShareModal = ({ isOpen, onClose, post, onShared }: PostShareModalProps
 
   const toggle = (id: string) => {
     const next = new Set(selected);
-    if (next.has(id)) next.delete(id); else next.add(id);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
     setSelected(next);
   };
 
   const handleSend = async () => {
-    if (!post || selected.size === 0) {
-      toast.error('Select at least one person');
-      return;
-    }
-    if (!user) return;
+    if (selected.size === 0) return;
+    
     setSending(true);
     try {
-      const payload = {
-        id: post.id,
-        caption: post.caption,
-        media_urls: post.media_urls,
-      };
-      // Send to each recipient via DM
-      await Promise.all(
-        Array.from(selected).map((rid) => messageService.sendPostShare(rid, payload))
-      );
-      // Also record a share for count once per action
-      await supabase.from('post_shares').insert({ user_id: user.id, post_id: post.id });
-      toast.success('Post shared');
-      onShared?.();
-      onClose();
-    } catch (e) {
-      console.error('Error sharing post:', e);
-      toast.error('Failed to share');
+      const success = await onShare(Array.from(selected));
+      if (success) {
+        onClose();
+      }
     } finally {
       setSending(false);
     }
   };
 
-  const list = users.filter((u) => u.username?.toLowerCase().includes(query.toLowerCase()));
+  const filteredUsers = users.filter((u) =>
+    u.username?.toLowerCase().includes(query.toLowerCase())
+  );
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -107,18 +93,27 @@ const PostShareModal = ({ isOpen, onClose, post, onShared }: PostShareModalProps
         <DialogHeader>
           <DialogTitle>Share post</DialogTitle>
         </DialogHeader>
+
         <div className="space-y-4">
-          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search people..." />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search people..."
+            className="w-full"
+          />
+
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
           ) : (
             <div className="max-h-[300px] overflow-y-auto space-y-2">
-              {list.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">{query ? 'No users found' : 'Follow people to share with them'}</p>
+              {filteredUsers.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8 text-sm">
+                  {query ? 'No users found' : 'Follow people to share with them'}
+                </p>
               ) : (
-                list.map((u) => (
+                filteredUsers.map((u) => (
                   <button
                     key={u.id}
                     onClick={() => toggle(u.id)}
@@ -128,28 +123,46 @@ const PostShareModal = ({ isOpen, onClose, post, onShared }: PostShareModalProps
                         : 'bg-muted/40 hover:bg-muted border-2 border-transparent'
                     }`}
                   >
-                    <Avatar className="w-10 h-10">
+                    <Avatar className="w-10 h-10 shrink-0">
                       <AvatarImage src={u.avatar_url || ''} />
-                      <AvatarFallback>{u.username?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
+                      <AvatarFallback className="bg-primary/10 text-primary">
+                        {u.username?.[0]?.toUpperCase() || 'U'}
+                      </AvatarFallback>
                     </Avatar>
-                    <div className="flex-1 text-left">
-                      <p className="font-semibold">{u.username}</p>
+                    <div className="flex-1 text-left min-w-0">
+                      <p className="font-semibold truncate">{u.username}</p>
                     </div>
+                    {selected.has(u.id) && (
+                      <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center shrink-0">
+                        <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    )}
                   </button>
                 ))
               )}
             </div>
           )}
+
           <div className="flex gap-2 pt-2">
-            <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
-            <Button onClick={handleSend} disabled={selected.size === 0 || sending} className="flex-1 gap-2">
+            <Button variant="outline" onClick={onClose} className="flex-1">
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSend}
+              disabled={selected.size === 0 || sending}
+              className="flex-1 gap-2"
+            >
               {sending ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Sending...
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Sending...
                 </>
               ) : (
                 <>
-                  <Send className="w-4 h-4" /> Send {selected.size > 0 && `(${selected.size})`}
+                  <Send className="w-4 h-4" />
+                  Send {selected.size > 0 && `(${selected.size})`}
                 </>
               )}
             </Button>
@@ -159,5 +172,3 @@ const PostShareModal = ({ isOpen, onClose, post, onShared }: PostShareModalProps
     </Dialog>
   );
 };
-
-export default PostShareModal;
