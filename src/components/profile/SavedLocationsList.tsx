@@ -49,8 +49,8 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
     const base = (rawCity && rawCity.trim()) || extractCityFromAddress(address) || '';
     const normalized = normalizeCity(base || null);
     if (normalized !== 'Unknown' && normalized.length > 2) return normalized;
-    if (coords && (coords.lat || coords.lng)) return 'Nearby';
-    return 'Unknown';
+    // Don't return "Nearby" - return "Unknown City" to be more clear
+    return 'Unknown City';
   };
 
   useEffect(() => {

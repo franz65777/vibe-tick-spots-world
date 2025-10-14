@@ -83,7 +83,7 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
   };
 
   const getCityName = () => {
-    return cityLabel || 'Nearby';
+    return cityLabel || 'Unknown City';
   };
 
   const getPlaceholderImage = () => {

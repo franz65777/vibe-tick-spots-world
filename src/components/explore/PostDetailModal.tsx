@@ -131,7 +131,8 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', op
 
   const loadPostData = async () => {
     try {
-      const { data, error } = await supabase
+      // First get post data
+      const { data: postData, error: postError } = await supabase
         .from('posts')
         .select(`
           caption,
@@ -144,24 +145,40 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', op
           rating,
           saves_count,
           shares_count,
-          user_id,
-          profiles(username, avatar_url),
-          locations(id, name, category, city, latitude, longitude, google_place_id)
+          user_id
         `)
         .eq('id', postId)
         .maybeSingle();
 
-      if (error) throw error;
-      if (!data) throw new Error('Post not found');
+      if (postError) throw postError;
+      if (!postData) throw new Error('Post not found');
+
+      // Then get user profile
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('username, avatar_url')
+        .eq('id', postData.user_id)
+        .single();
+
+      // Get location if exists
+      let locationData = null;
+      if (postData.location_id) {
+        const { data: locData } = await supabase
+          .from('locations')
+          .select('id, name, category, city, latitude, longitude, google_place_id')
+          .eq('id', postData.location_id)
+          .single();
+        locationData = locData;
+      }
       
       setPost({
-        ...data,
-        profiles: Array.isArray(data.profiles) ? data.profiles[0] : data.profiles,
-        locations: Array.isArray(data.locations) ? data.locations[0] : data.locations,
+        ...postData,
+        profiles: profileData,
+        locations: locationData,
       } as any);
 
-      if (data?.location_id) {
-        loadLocationRankingData(data.location_id);
+      if (postData?.location_id) {
+        loadLocationRankingData(postData.location_id);
       }
     } catch (error) {
       console.error('Error loading post:', error);
@@ -172,30 +189,29 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', op
 
   const loadPostLikers = async () => {
     try {
-      const { data, error } = await supabase
+      // First get post likes
+      const { data: likesData, error: likesError } = await supabase
         .from('post_likes')
-        .select(`
-          user_id,
-          profiles:user_id (
-            id,
-            username,
-            avatar_url
-          )
-        `)
+        .select('user_id')
         .eq('post_id', postId)
         .limit(5);
 
-      if (error) throw error;
+      if (likesError) throw likesError;
+      if (!likesData || likesData.length === 0) {
+        setPostLikers([]);
+        return;
+      }
 
-      const likers = data
-        ?.map((like: any) => ({
-          id: like.profiles.id,
-          username: like.profiles.username,
-          avatar_url: like.profiles.avatar_url
-        }))
-        .filter(Boolean) || [];
+      // Then get profile data for those users
+      const userIds = likesData.map((like: any) => like.user_id);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .in('id', userIds);
 
-      setPostLikers(likers);
+      if (profilesError) throw profilesError;
+
+      setPostLikers(profilesData || []);
     } catch (error) {
       console.error('Error loading post likers:', error);
     }

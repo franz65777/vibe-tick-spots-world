@@ -116,7 +116,7 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
   };
 
   const getCityName = () => {
-    return cityLabel;
+    return cityLabel || 'Unknown City';
   };
 
   const getPlaceholderGradient = () => {
