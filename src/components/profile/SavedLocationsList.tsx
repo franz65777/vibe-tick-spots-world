@@ -25,56 +25,6 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
   const [sortBy, setSortBy] = useState('recent');
   const [selectedPlace, setSelectedPlace] = useState<any>(null);
 
-  // Heuristics aligned with search/map city logic
-  const isStreetLike = (value?: string | null) => {
-    if (!value) return false;
-    const v = value.toLowerCase();
-    if (/\d/.test(v)) return true;
-    return /(street|st\.?|avenue|ave\.?|road|rd\.?|square|sq\.?|piazza|platz|plaza|place|lane|ln\.?|drive|dr\.?|court|ct\.?|alley|way|quay|boulevard|blvd\.?|rue|via|calle|estrada|rua)/i.test(v);
-  };
-  const extractCityFromAddress = (addr?: string | null) => {
-    if (!addr) return '';
-    const parts = addr.split(',').map(p => p.trim()).filter(Boolean);
-    for (let i = parts.length - 1; i >= 0; i--) {
-      const p = parts[i];
-      if (p.length > 2 && !/^\d+$/.test(p) && !isStreetLike(p)) return p;
-    }
-    return '';
-  };
-  const deriveDisplayCity = (
-    rawCity?: string | null,
-    address?: string | null,
-    coords?: { lat?: number; lng?: number } | null
-  ): string => {
-    const base = (rawCity && rawCity.trim()) || extractCityFromAddress(address) || '';
-    const normalized = normalizeCity(base || null);
-    if (normalized !== 'Unknown' && normalized.length > 2) return normalized;
-
-    // If we have an address, try to extract something useful from it
-    if (address) {
-      const parts = address.split(',').map(p => p.trim()).filter(Boolean);
-      // Take the second-to-last part if available (often the city in formatted addresses)
-      if (parts.length >= 2) {
-        const potentialCity = parts[parts.length - 2];
-        if (potentialCity && potentialCity.length > 2 && !isStreetLike(potentialCity)) {
-          const cityNorm = normalizeCity(potentialCity);
-          if (cityNorm !== 'Unknown' && cityNorm.length > 2) return cityNorm;
-        }
-      }
-      setLoading(true);
-
-    }
-        const locations = await UnifiedLocationService.getUserSavedLocations(targetUserId);
-        const grouped = await UnifiedLocationService.groupByCity(locations);
-        setSavedPlaces(grouped);
-        setLoading(false);
-        return;
-
-        /*
-
-    return 'Unknown City';
-  };
-
   useEffect(() => {
     const loadSavedPlaces = async () => {
       if (!targetUserId) {
@@ -83,96 +33,12 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
         return;
       }
 
+      setLoading(true);
+
       try {
-        // Fetch from saved_places table
-        const { data: savedPlacesData, error: savedPlacesError } = await supabase
-          .from('saved_places')
-          .select('*')
-          .eq('user_id', targetUserId)
-          .order('created_at', { ascending: false });
-
-        if (savedPlacesError) console.error('Error fetching saved_places:', savedPlacesError);
-
-        // Fetch from user_saved_locations table (fetch IDs first, then load locations separately)
-        const { data: userSavedRows, error: userSavedError } = await supabase
-          .from('user_saved_locations')
-          .select('location_id, created_at')
-          .eq('user_id', targetUserId)
-          .order('created_at', { ascending: false });
-
-        if (userSavedError) console.error('Error fetching user_saved_locations:', userSavedError);
-
-        // Load related locations in a separate query (no FK required)
-        let locationsMap: Record<string, any> = {};
-        if (userSavedRows && userSavedRows.length > 0) {
-          const locationIds = userSavedRows
-            .map((r: any) => r.location_id)
-            .filter((id: string | null) => Boolean(id));
-
-          if (locationIds.length > 0) {
-            const { data: locationsData, error: locationsError } = await supabase
-              .from('locations')
-              .select('id, name, category, city, latitude, longitude, google_place_id, address')
-              .in('id', locationIds);
-
-            if (locationsError) {
-              console.error('Error fetching locations:', locationsError);
-            }
-
-            if (locationsData && locationsData.length > 0) {
-              locationsMap = Object.fromEntries(
-                locationsData.map((loc: any) => [loc.id, loc])
-              );
-            }
-          }
-        }
-
-        // Group by city using same logic as search/map
-        const groupedByCity: any = {};
-        
-        savedPlacesData?.forEach((place: any) => {
-          const coords = (place.coordinates as any) || {};
-          const displayCity = deriveDisplayCity(place.city, undefined, coords);
-          const cityKey = displayCity;
-          if (!groupedByCity[cityKey]) groupedByCity[cityKey] = [];
-          groupedByCity[cityKey].push({
-            id: place.place_id,
-            name: place.place_name,
-            category: place.place_category || 'place',
-            city: displayCity,
-            coordinates: coords && (coords.lat || coords.lng) ? coords : { lat: 0, lng: 0 },
-            savedAt: place.created_at
-          });
-        });
-
-        (userSavedRows || []).forEach((item: any) => {
-          const location = item?.location_id ? locationsMap[item.location_id] : null;
-          if (!location) {
-            console.warn('Location not found for saved location:', item.location_id);
-            return;
-          }
-
-          const coords = {
-            lat: location.latitude !== null && location.latitude !== undefined ? Number(location.latitude) : undefined,
-            lng: location.longitude !== null && location.longitude !== undefined ? Number(location.longitude) : undefined
-          };
-
-          const displayCity = deriveDisplayCity(location.city, location.address, coords);
-          const cityKey = displayCity;
-          if (!groupedByCity[cityKey]) groupedByCity[cityKey] = [];
-          groupedByCity[cityKey].push({
-            id: location.google_place_id || location.id,
-            name: location.name || 'Unknown Location',
-            category: location.category || 'place',
-            city: displayCity,
-            coordinates: coords,
-            address: location.address,
-            google_place_id: location.google_place_id,
-            savedAt: item.created_at
-          });
-        });
-
-        setSavedPlaces(groupedByCity);
+        const locations = await UnifiedLocationService.getUserSavedLocations(targetUserId);
+        const grouped = await UnifiedLocationService.groupByCity(locations);
+        setSavedPlaces(grouped);
       } catch (error) {
         console.error('Error loading saved places:', error);
       } finally {
@@ -190,7 +56,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
 
     try {
       await supabase.from('saved_places').delete().eq('user_id', currentUser.id).eq('place_id', placeId);
-      
+
       const { data: locationData } = await supabase
         .from('locations')
         .select('id')
@@ -200,6 +66,8 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
       if (locationData?.id) {
         await supabase.from('user_saved_locations').delete().eq('user_id', currentUser.id).eq('location_id', locationData.id);
       }
+
+      UnifiedLocationService.clearCache(currentUser.id);
 
       setSavedPlaces((prev: any) => {
         const updated = { ...prev };

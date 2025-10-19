@@ -317,7 +317,6 @@ const FeedPage = () => {
                         commentsCount={item.comments_count || 0}
                         sharesCount={item.shares_count || 0}
                         onCommentClick={() => {
-                        onCountsUpdate={(updates) => updatePostCounts(item.post_id!, updates)}
                           setSelectedPostId(item.post_id!);
                           setOpenCommentsOnLoad(true);
                           setOpenShareOnLoad(false);
@@ -327,6 +326,7 @@ const FeedPage = () => {
                           setOpenShareOnLoad(true);
                           setOpenCommentsOnLoad(false);
                         }}
+                        onCountsUpdate={(updates) => updatePostCounts(item.post_id!, updates)}
                       />
                     )}
                   </div>
