@@ -1931,6 +1931,96 @@ export type Database = {
           },
         ]
       }
+      trip_locations: {
+        Row: {
+          created_at: string | null
+          google_place_id: string | null
+          id: string
+          location_id: string | null
+          notes: string | null
+          order_index: number
+          trip_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          google_place_id?: string | null
+          id?: string
+          location_id?: string | null
+          notes?: string | null
+          order_index: number
+          trip_id: string
+        }
+        Update: {
+          created_at?: string | null
+          google_place_id?: string | null
+          id?: string
+          location_id?: string | null
+          notes?: string | null
+          order_index?: number
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_locations_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_locations_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trips: {
+        Row: {
+          city: string
+          country: string | null
+          cover_image_url: string | null
+          created_at: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          is_public: boolean | null
+          name: string
+          start_date: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          city: string
+          country?: string | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_public?: boolean | null
+          name: string
+          start_date?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          city?: string
+          country?: string | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_public?: boolean | null
+          name?: string
+          start_date?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_analytics: {
         Row: {
           created_at: string
