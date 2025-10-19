@@ -1,4 +1,4 @@
-import { MapPin, Calendar, Eye, Sparkles, Plus } from 'lucide-react';
+import { MapPin, Eye, Sparkles, Plus } from 'lucide-react';
 import { useState } from 'react';
 import TripDetailModal from './TripDetailModal';
 import CreateTripModal from './CreateTripModal';
@@ -21,14 +21,6 @@ const TripsGrid = () => {
   const handleCreateTrip = async (tripData: any) => {
     await createTrip(tripData);
     setShowCreateModal(false);
-  };
-
-  const formatDateRange = (startDate: string | null, endDate: string | null) => {
-    if (!startDate || !endDate) return 'Flexible dates';
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    return `${days} day${days > 1 ? 's' : ''}`;
   };
 
   const getVisibilityIcon = (isPublic: boolean) => {
@@ -140,24 +132,15 @@ const TripsGrid = () => {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
                 
-                {/* Trip duration and visibility */}
-                <div className="absolute top-3 left-3 flex gap-2">
-                  <div className="bg-white/95 backdrop-blur-md rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-lg">
-                    <Calendar className="w-3.5 h-3.5 text-primary" />
-                    <span className="text-xs font-semibold">
-                      {formatDateRange(trip.start_date, trip.end_date)}
-                    </span>
-                  </div>
+              {/* Visibility badge */}
+              <div className="absolute top-3 left-3">
+                <div className="bg-white/95 backdrop-blur-md rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-lg">
+                  {getVisibilityIcon(trip.is_public)}
+                  <span className="text-xs font-semibold capitalize">
+                    {trip.is_public ? 'Public' : 'Private'}
+                  </span>
                 </div>
-
-                <div className="absolute top-3 right-3">
-                  <div className="bg-white/95 backdrop-blur-md rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-lg">
-                    {getVisibilityIcon(trip.is_public)}
-                    <span className="text-xs font-semibold capitalize">
-                      {trip.is_public ? 'Public' : 'Private'}
-                    </span>
-                  </div>
-                </div>
+              </div>
 
                 {/* City */}
                 <div className="absolute bottom-3 left-3">

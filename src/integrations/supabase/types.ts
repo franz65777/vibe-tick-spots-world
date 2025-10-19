@@ -1983,11 +1983,9 @@ export type Database = {
           cover_image_url: string | null
           created_at: string | null
           description: string | null
-          end_date: string | null
           id: string
           is_public: boolean | null
           name: string
-          start_date: string | null
           updated_at: string | null
           user_id: string
         }
@@ -1997,11 +1995,9 @@ export type Database = {
           cover_image_url?: string | null
           created_at?: string | null
           description?: string | null
-          end_date?: string | null
           id?: string
           is_public?: boolean | null
           name: string
-          start_date?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -2011,11 +2007,9 @@ export type Database = {
           cover_image_url?: string | null
           created_at?: string | null
           description?: string | null
-          end_date?: string | null
           id?: string
           is_public?: boolean | null
           name?: string
-          start_date?: string | null
           updated_at?: string | null
           user_id?: string
         }

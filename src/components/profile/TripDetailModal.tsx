@@ -1,4 +1,4 @@
-import { X, MapPin, Calendar } from 'lucide-react';
+import { X, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Trip } from '@/hooks/useTrips';
 
@@ -14,14 +14,6 @@ const TripDetailModal = ({ trip, isOpen, onClose }: TripDetailModalProps) => {
   const locations = trip.trip_locations || [];
   const coverImage = trip.cover_image_url || locations[0]?.locations?.image_url || 
     'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&h=600&fit=crop';
-
-  const formatDateRange = (startDate: string | null, endDate: string | null) => {
-    if (!startDate || !endDate) return 'Flexible dates';
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
-    return `${start.toLocaleDateString('en-US', options)} - ${end.toLocaleDateString('en-US', options)}`;
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 animate-in fade-in duration-200" onClick={onClose}>
@@ -61,11 +53,6 @@ const TripDetailModal = ({ trip, isOpen, onClose }: TripDetailModalProps) => {
             )}
 
             <div className="flex flex-wrap gap-4">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Calendar className="w-4 h-4" />
-                <span className="text-sm">{formatDateRange(trip.start_date, trip.end_date)}</span>
-              </div>
-
               <div className="flex items-center gap-2 text-muted-foreground">
                 <MapPin className="w-4 h-4" />
                 <span className="text-sm">{trip.city}</span>

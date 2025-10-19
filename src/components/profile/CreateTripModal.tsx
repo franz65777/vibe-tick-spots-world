@@ -23,8 +23,6 @@ const CreateTripModal = ({ isOpen, onClose, onCreateTrip }: CreateTripModalProps
   const [step, setStep] = useState(1);
   const [tripName, setTripName] = useState('');
   const [description, setDescription] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [selectedPlaces, setSelectedPlaces] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
@@ -76,22 +74,12 @@ const CreateTripModal = ({ isOpen, onClose, onCreateTrip }: CreateTripModalProps
     const selectedPlacesList = allPlaces.filter(place => selectedPlaces.has(place.id));
     
     const tripData = {
-      id: Date.now().toString(),
       name: tripName,
       description,
-      startDate,
-      endDate,
-      cities: selectedCity ? [selectedCity] : [...new Set(selectedPlacesList.map(p => p.city))],
-      coverImage: selectedPlacesList[0]?.image || 'https://images.unsplash.com/photo-1551218808-94e220e084d2?w=400&h=300&fit=crop',
-      totalPlaces: selectedPlaces.size,
-      likes: 0,
-      saves: 0,
-      visibility: 'public' as const,
-      categories: selectedPlacesList.reduce((acc, place) => {
-        acc[place.category] = (acc[place.category] || 0) + 1;
-        return acc;
-      }, {} as any),
-      tags: [],
+      city: selectedCity || selectedPlacesList[0]?.city || '',
+      country: 'Unknown',
+      cover_image_url: selectedPlacesList[0]?.image || 'https://images.unsplash.com/photo-1551218808-94e220e084d2?w=400&h=300&fit=crop',
+      is_public: true,
       places: selectedPlacesList
     };
 
@@ -103,8 +91,6 @@ const CreateTripModal = ({ isOpen, onClose, onCreateTrip }: CreateTripModalProps
     setStep(1);
     setTripName('');
     setDescription('');
-    setStartDate('');
-    setEndDate('');
     setSelectedCity('');
     setSelectedPlaces(new Set());
     setSearchQuery('');
@@ -159,27 +145,6 @@ const CreateTripModal = ({ isOpen, onClose, onCreateTrip }: CreateTripModalProps
                   placeholder="Tell us about your trip..."
                   className="w-full p-3 border border-gray-300 rounded-lg resize-none h-20 text-sm"
                 />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
-                  <Input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
-                  <Input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full"
-                  />
-                </div>
               </div>
 
               <div>

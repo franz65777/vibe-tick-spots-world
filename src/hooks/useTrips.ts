@@ -9,8 +9,6 @@ export interface Trip {
   description: string | null;
   city: string;
   country: string | null;
-  start_date: string | null;
-  end_date: string | null;
   cover_image_url: string | null;
   is_public: boolean;
   created_at: string;
@@ -67,10 +65,9 @@ export const useTrips = () => {
     city: string;
     country?: string;
     description?: string;
-    start_date?: string;
-    end_date?: string;
+    cover_image_url?: string;
     is_public?: boolean;
-    location_ids?: string[];
+    places?: any[];
   }) => {
     if (!user) return null;
 
@@ -81,10 +78,9 @@ export const useTrips = () => {
           user_id: user.id,
           name: tripData.name,
           city: tripData.city,
-          country: tripData.country,
+          country: tripData.country || 'Unknown',
           description: tripData.description,
-          start_date: tripData.start_date,
-          end_date: tripData.end_date,
+          cover_image_url: tripData.cover_image_url,
           is_public: tripData.is_public !== false,
         })
         .select()
@@ -92,19 +88,23 @@ export const useTrips = () => {
 
       if (tripError) throw tripError;
 
-      // Add locations if provided
-      if (tripData.location_ids && tripData.location_ids.length > 0) {
-        const tripLocations = tripData.location_ids.map((locationId, index) => ({
+      // Add locations to the trip if provided
+      if (tripData.places && tripData.places.length > 0) {
+        const tripLocations = tripData.places.map((place, index) => ({
           trip_id: newTrip.id,
-          location_id: locationId,
+          location_id: place.id.startsWith('ChIJ') ? null : place.id,
+          google_place_id: place.id.startsWith('ChIJ') ? place.id : null,
           order_index: index,
+          notes: null,
         }));
 
         const { error: locationsError } = await supabase
           .from('trip_locations')
           .insert(tripLocations);
 
-        if (locationsError) throw locationsError;
+        if (locationsError) {
+          console.error('Error adding locations to trip:', locationsError);
+        }
       }
 
       toast.success('Trip created successfully!');
