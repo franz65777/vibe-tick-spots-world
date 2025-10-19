@@ -49,7 +49,20 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
     const base = (rawCity && rawCity.trim()) || extractCityFromAddress(address) || '';
     const normalized = normalizeCity(base || null);
     if (normalized !== 'Unknown' && normalized.length > 2) return normalized;
-    // Don't return "Nearby" - return "Unknown City" to be more clear
+
+    // If we have an address, try to extract something useful from it
+    if (address) {
+      const parts = address.split(',').map(p => p.trim()).filter(Boolean);
+      // Take the second-to-last part if available (often the city in formatted addresses)
+      if (parts.length >= 2) {
+        const potentialCity = parts[parts.length - 2];
+        if (potentialCity && potentialCity.length > 2 && !isStreetLike(potentialCity)) {
+          const cityNorm = normalizeCity(potentialCity);
+          if (cityNorm !== 'Unknown' && cityNorm.length > 2) return cityNorm;
+        }
+      }
+    }
+
     return 'Unknown City';
   };
 
@@ -93,11 +106,15 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
               .select('id, name, category, city, latitude, longitude, google_place_id, address')
               .in('id', locationIds);
 
-            if (locationsError) console.error('Error fetching locations:', locationsError);
+            if (locationsError) {
+              console.error('Error fetching locations:', locationsError);
+            }
 
-            locationsMap = Object.fromEntries(
-              (locationsData || []).map((loc: any) => [loc.id, loc])
-            );
+            if (locationsData && locationsData.length > 0) {
+              locationsMap = Object.fromEntries(
+                locationsData.map((loc: any) => [loc.id, loc])
+              );
+            }
           }
         }
 
@@ -121,18 +138,25 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
 
         (userSavedRows || []).forEach((item: any) => {
           const location = item?.location_id ? locationsMap[item.location_id] : null;
-          if (!location) return;
-          
-          const coords = { lat: Number(location.latitude) || 0, lng: Number(location.longitude) || 0 };
+          if (!location) {
+            console.warn('Location not found for saved location:', item.location_id);
+            return;
+          }
+
+          const coords = {
+            lat: location.latitude !== null && location.latitude !== undefined ? Number(location.latitude) : undefined,
+            lng: location.longitude !== null && location.longitude !== undefined ? Number(location.longitude) : undefined
+          };
+
           const displayCity = deriveDisplayCity(location.city, location.address, coords);
           const cityKey = displayCity;
           if (!groupedByCity[cityKey]) groupedByCity[cityKey] = [];
           groupedByCity[cityKey].push({
             id: location.google_place_id || location.id,
-            name: location.name,
+            name: location.name || 'Unknown Location',
             category: location.category || 'place',
             city: displayCity,
-            coordinates: (coords.lat || coords.lng) ? coords : { lat: 0, lng: 0 },
+            coordinates: coords,
             address: location.address,
             google_place_id: location.google_place_id,
             savedAt: item.created_at
@@ -370,8 +394,8 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
       {!loading && filteredAndSortedPlaces.length > 0 && (
         <div className="flex-1 overflow-y-auto bg-background">
           <div className="grid grid-cols-2 gap-3 px-4 py-4">
-            {filteredAndSortedPlaces.map((p) => (
-              <div key={`${p.city}-${p.id}`} className="relative group">
+            {filteredAndSortedPlaces.map((p, idx) => (
+              <div key={`${p.city}-${p.id}-${idx}`} className="relative group">
                 <MinimalLocationCard
                   place={{
                     id: p.id,
@@ -380,7 +404,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
                     city: p.city,
                     address: p.address,
                     google_place_id: p.google_place_id,
-                    coordinates: p.coordinates || { lat: 0, lng: 0 },
+                    coordinates: p.coordinates,
                     savedCount: p.savedCount || 0,
                     postsCount: p.postsCount || 0
                   }}

@@ -137,13 +137,13 @@ const FeedPage = () => {
 
   return (
     <AuthenticatedLayout>
-      <div className="min-h-screen bg-background pb-20">
+      <div className="min-h-screen bg-muted/30 pb-20">
         {/* Header */}
-        <header className="bg-background border-b border-border sticky top-0 z-10">
-          <div className="px-4 pt-3 pb-2 max-w-2xl mx-auto">
+        <header className="bg-background border-b border-border sticky top-0 z-10 shadow-sm">
+          <div className="px-4 py-4 max-w-2xl mx-auto">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-sm">
-                <Sparkles className="w-5 h-5 text-primary-foreground" />
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
+                <Sparkles className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h1 className="text-xl font-bold text-foreground">Your Feed</h1>
@@ -157,66 +157,69 @@ const FeedPage = () => {
         <div className="max-w-2xl mx-auto px-4 py-4">
         {loading ? (
           // Loading skeletons
-          <div className="space-y-3">
+          <div className="space-y-4">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl p-4 shadow-sm">
-                <div className="flex items-start gap-3">
+              <div key={i} className="bg-background rounded-2xl p-4 shadow-sm border border-border">
+                <div className="flex items-start gap-3 mb-3">
                   <Skeleton className="w-12 h-12 rounded-full flex-shrink-0" />
                   <div className="flex-1 space-y-2">
                     <Skeleton className="h-4 w-3/4" />
                     <Skeleton className="h-3 w-1/2" />
                   </div>
                 </div>
+                <Skeleton className="h-48 w-full rounded-xl" />
               </div>
             ))}
           </div>
         ) : feedItems.length === 0 ? (
           // Empty state
-          <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
-            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
-              <TrendingUp className="w-10 h-10 text-purple-600" />
+          <div className="bg-background rounded-2xl p-8 text-center shadow-sm border border-border">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+              <TrendingUp className="w-10 h-10 text-blue-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <h3 className="text-lg font-semibold text-foreground mb-2">
               Your feed is empty
             </h3>
-            <p className="text-sm text-gray-600 mb-6 max-w-sm mx-auto">
+            <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
               Start following people to see their latest discoveries and activities
             </p>
             <button
               onClick={() => navigate('/explore')}
-              className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:scale-105"
+              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:scale-105"
             >
               Discover People
             </button>
           </div>
         ) : (
           // Feed items
-          <div className="space-y-3">
+          <div className="space-y-4">
             {feedItems.map((item, idx) => {
               const display = getFeedEventDisplay(item.event_type);
               const isPost = !!item.post_id;
               return (
                 <article
                   key={item.id}
-                  className="bg-card rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer"
-                  onClick={() => handleItemClick(item)}
+                  className="bg-background rounded-2xl p-4 shadow-sm border border-border hover:shadow-md transition-all"
                 >
                   <div className="flex flex-col">
                     {/* Header with avatar and user info */}
-                    <div className="flex items-center gap-2 mb-2">
-                      <Avatar className="w-8 h-8 flex-shrink-0">
+                    <div
+                      className="flex items-center gap-2 mb-3 cursor-pointer"
+                      onClick={() => handleItemClick(item)}
+                    >
+                      <Avatar className="w-10 h-10 flex-shrink-0 ring-2 ring-background">
                         <AvatarImage src={item.avatar_url || ''} />
-                        <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
+                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white font-semibold text-sm">
                           {item.username?.[0]?.toUpperCase() || 'U'}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm leading-tight">
-                          <span className="font-semibold text-foreground">
+                          <span className="font-bold text-foreground">
                             {item.username}
                           </span>
                           {' '}
-                          <span className="text-muted-foreground">{display.action}</span>
+                          <span className="text-muted-foreground font-normal">{display.action}</span>
                           {' '}
                           {item.location_name && (
                             <span className="font-semibold text-foreground">
@@ -224,28 +227,31 @@ const FeedPage = () => {
                             </span>
                           )}
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground mt-0.5">
                           {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
                         </p>
                       </div>
                       {/* Rating pill if available */}
                       {item.rating && (
-                        <div className="flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded-full">
-                          <span className="text-lg font-bold text-primary">{item.rating}</span>
-                          <span className="text-xs text-primary">/10</span>
+                        <div className="flex items-center gap-1 bg-yellow-100 px-2.5 py-1 rounded-full">
+                          <span className="text-base font-bold text-yellow-700">{item.rating}</span>
+                          <span className="text-xs text-yellow-600">/10</span>
                         </div>
                       )}
                     </div>
 
                     {/* Media preview */}
                     {item.media_urls && item.media_urls.length > 0 && (
-                      <div className="mt-1 rounded-xl overflow-x-auto snap-x snap-mandatory scrollbar-hide flex gap-2">
+                      <div
+                        className="mt-2 rounded-xl overflow-x-auto snap-x snap-mandatory scrollbar-hide flex gap-2 cursor-pointer"
+                        onClick={() => handleItemClick(item)}
+                      >
                         {item.media_urls.map((url, idx2) => (
                           <div key={idx2} className="snap-center flex-shrink-0 w-full">
-                            <img 
-                              src={url} 
+                            <img
+                              src={url}
                               alt={`${item.location_name || 'Post'} ${idx2 + 1}`}
-                              className="w-full h-64 object-cover rounded-xl"
+                              className="w-full h-72 object-cover rounded-xl"
                             />
                           </div>
                         ))}
@@ -254,17 +260,20 @@ const FeedPage = () => {
 
                     {/* Content */}
                     {item.content && item.event_type !== 'review' && (
-                      <p className="text-sm text-foreground mt-2 line-clamp-2 bg-muted/40 rounded-lg p-2">
+                      <p className="text-sm text-foreground mt-3 line-clamp-3">
                         {item.content}
                       </p>
                     )}
 
                     {/* Review block */}
                     {item.event_type === 'review' && item.rating && (
-                      <div className="flex items-center gap-2 mt-2 bg-primary/5 rounded-lg p-2">
-                        <span className="text-2xl font-bold text-primary">{item.rating}/10</span>
+                      <div className="flex items-start gap-3 mt-3 bg-yellow-50 rounded-lg p-3 border border-yellow-100">
+                        <div className="flex items-center gap-1 bg-yellow-100 px-2.5 py-1.5 rounded-lg">
+                          <span className="text-xl font-bold text-yellow-700">{item.rating}</span>
+                          <span className="text-xs text-yellow-600">/10</span>
+                        </div>
                         {item.content && (
-                          <p className="text-sm text-foreground mt-1 flex-1">
+                          <p className="text-sm text-foreground flex-1">
                             {item.content}
                           </p>
                         )}
@@ -277,17 +286,17 @@ const FeedPage = () => {
                         onClick={(e) => {
                           e.stopPropagation();
                           if (item.location_id) {
-                            navigate('/explore', { 
-                              state: { 
+                            navigate('/explore', {
+                              state: {
                                 openLocationDetail: {
                                   id: item.location_id,
                                   name: item.location_name
                                 }
-                              } 
+                              }
                             });
                           }
                         }}
-                        className="flex items-center gap-1.5 mt-2 text-xs text-primary hover:opacity-80 font-medium bg-primary/10 rounded-lg px-2 py-1 w-fit"
+                        className="flex items-center gap-1.5 mt-3 text-xs text-blue-600 hover:text-blue-700 font-medium bg-blue-50 hover:bg-blue-100 rounded-lg px-2.5 py-1.5 w-fit transition-colors"
                       >
                         <MapPin className="w-3.5 h-3.5" />
                         <span className="truncate">{item.location_name}</span>

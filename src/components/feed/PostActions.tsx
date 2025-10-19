@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Heart, MessageCircle, Send, Bookmark } from 'lucide-react';
 import { useSocialEngagement } from '@/hooks/useSocialEngagement';
 
@@ -19,23 +19,47 @@ export const PostActions = ({
   onCommentClick,
   onShareClick,
 }: PostActionsProps) => {
-  const { isLiked, isSaved, toggleLike, toggleSave } = useSocialEngagement(postId);
+  const { isLiked, isSaved, likeCount, toggleLike, toggleSave } = useSocialEngagement(postId);
+  const [localLikesCount, setLocalLikesCount] = useState(likesCount);
+
+  useEffect(() => {
+    if (likeCount !== undefined) {
+      setLocalLikesCount(likeCount);
+    } else if (likesCount !== undefined) {
+      setLocalLikesCount(likesCount);
+    }
+  }, [likeCount, likesCount]);
+
+  const handleLikeClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await toggleLike();
+    } catch (error) {
+      console.error('Error toggling like:', error);
+    }
+  };
+
+  const handleSaveClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await toggleSave();
+    } catch (error) {
+      console.error('Error toggling save:', error);
+    }
+  };
 
   return (
-    <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border/50">
+    <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-border">
       <button
-        onClick={(e) => {
-          e.stopPropagation();
-          toggleLike();
-        }}
-        className={`flex items-center gap-1 px-3 py-1.5 rounded-full transition-all ${
+        onClick={handleLikeClick}
+        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg transition-all font-medium ${
           isLiked
-            ? 'bg-red-50 text-red-600'
-            : 'hover:bg-muted text-muted-foreground'
+            ? 'bg-red-50 text-red-600 hover:bg-red-100'
+            : 'hover:bg-muted text-muted-foreground hover:text-foreground'
         }`}
       >
-        <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-        <span className="text-xs font-medium">{likesCount}</span>
+        <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
+        <span className="text-sm font-semibold">{localLikesCount || 0}</span>
       </button>
 
       <button
@@ -43,10 +67,10 @@ export const PostActions = ({
           e.stopPropagation();
           onCommentClick();
         }}
-        className="flex items-center gap-1 px-3 py-1.5 rounded-full hover:bg-muted text-muted-foreground transition-all"
+        className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all font-medium"
       >
-        <MessageCircle className="w-4 h-4" />
-        <span className="text-xs font-medium">{commentsCount}</span>
+        <MessageCircle className="w-5 h-5" />
+        <span className="text-sm font-semibold">{commentsCount || 0}</span>
       </button>
 
       <button
@@ -54,24 +78,21 @@ export const PostActions = ({
           e.stopPropagation();
           onShareClick();
         }}
-        className="flex items-center gap-1 px-3 py-1.5 rounded-full hover:bg-muted text-muted-foreground transition-all"
+        className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all font-medium"
       >
-        <Send className="w-4 h-4" />
-        <span className="text-xs font-medium">{sharesCount}</span>
+        <Send className="w-5 h-5" />
+        <span className="text-sm font-semibold">{sharesCount || 0}</span>
       </button>
 
       <button
-        onClick={(e) => {
-          e.stopPropagation();
-          toggleSave();
-        }}
-        className={`flex items-center gap-1 px-3 py-1.5 rounded-full transition-all ml-auto ${
+        onClick={handleSaveClick}
+        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg transition-all ml-auto font-medium ${
           isSaved
-            ? 'bg-blue-50 text-blue-600'
-            : 'hover:bg-muted text-muted-foreground'
+            ? 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+            : 'hover:bg-muted text-muted-foreground hover:text-foreground'
         }`}
       >
-        <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
+        <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
       </button>
     </div>
   );

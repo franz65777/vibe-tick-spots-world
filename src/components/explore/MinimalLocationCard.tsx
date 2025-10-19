@@ -12,8 +12,8 @@ interface MinimalLocationCardProps {
     address?: string;
     google_place_id?: string;
     coordinates?: {
-      lat: number;
-      lng: number;
+      lat?: number;
+      lng?: number;
     };
     savedCount?: number;
     postsCount?: number;
