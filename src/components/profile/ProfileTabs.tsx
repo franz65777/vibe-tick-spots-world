@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Award, MapPin, Grid3X3, Tag } from 'lucide-react';
+import { Award, MapPin, Grid3X3, Tag, Megaphone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
@@ -8,9 +8,19 @@ interface ProfileTabsProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
   hasNewBadges?: boolean;
+  showTrips?: boolean;
+  showLocations?: boolean;
+  showMarketing?: boolean;
 }
 
-const ProfileTabs = ({ activeTab, onTabChange, hasNewBadges = false }: ProfileTabsProps) => {
+const ProfileTabs = ({
+  activeTab,
+  onTabChange,
+  hasNewBadges = false,
+  showTrips = true,
+  showLocations = true,
+  showMarketing = false
+}: ProfileTabsProps) => {
   return (
     <div className="px-4">
       <div className="flex bg-gray-100 rounded-xl p-1 mb-4">
@@ -26,18 +36,34 @@ const ProfileTabs = ({ activeTab, onTabChange, hasNewBadges = false }: ProfileTa
           <Grid3X3 className="w-4 h-4" />
           <span className="hidden sm:inline">Posts</span>
         </button>
-        <button
-          onClick={() => onTabChange('trips')}
-          className={cn(
-            "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5",
-            activeTab === 'trips'
-              ? "bg-blue-600 text-white shadow-sm"
-              : "text-gray-600"
-          )}
-        >
-          <MapPin className="w-4 h-4" />
-          <span className="hidden sm:inline">Trips</span>
-        </button>
+        {showTrips && (
+          <button
+            onClick={() => onTabChange('trips')}
+            className={cn(
+              "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5",
+              activeTab === 'trips'
+                ? "bg-blue-600 text-white shadow-sm"
+                : "text-gray-600"
+            )}
+          >
+            <MapPin className="w-4 h-4" />
+            <span className="hidden sm:inline">Trips</span>
+          </button>
+        )}
+        {showMarketing && (
+          <button
+            onClick={() => onTabChange('marketing')}
+            className={cn(
+              "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5",
+              activeTab === 'marketing'
+                ? "bg-blue-600 text-white shadow-sm"
+                : "text-gray-600"
+            )}
+          >
+            <Megaphone className="w-4 h-4" />
+            <span className="hidden sm:inline">Marketing</span>
+          </button>
+        )}
         <button
           onClick={() => onTabChange('badges')}
           className={cn(

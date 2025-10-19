@@ -89,7 +89,7 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
   }, [onCitySelect, onSearchChange]);
 
   return (
-    <div className="group relative">
+    <div className="group relative" id="city-search-bar">
       <div className="relative">
         {isLoading ? (
           <Loader2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground animate-spin" />

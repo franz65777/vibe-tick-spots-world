@@ -70,8 +70,15 @@ const HomePage = () => {
   const [currentCity, setCurrentCity] = useState('');
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
 
-  // Logo state - show on mount
-  const [showLogo, setShowLogo] = useState(true);
+  // Logo state - show only on first login (this session)
+  const [showLogo, setShowLogo] = useState(() => {
+    const hasShownLogo = sessionStorage.getItem('hasShownSpottLogo');
+    if (!hasShownLogo) {
+      sessionStorage.setItem('hasShownSpottLogo', 'true');
+      return true;
+    }
+    return false;
+  });
 
   // Handle navigation state for opening pin detail from posts
   useEffect(() => {
