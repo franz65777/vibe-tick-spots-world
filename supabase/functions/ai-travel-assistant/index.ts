@@ -32,44 +32,122 @@ serve(async (req) => {
     
     let userContext = "";
     if (user) {
-      // Get user's saved places
-      const { data: savedPlaces } = await supabase
-        .from("saved_places")
-        .select("place_name, place_category, city")
-        .eq("user_id", user.id)
-        .limit(20);
+      console.log("Fetching comprehensive user data...");
 
       // Get user profile
       const { data: profile } = await supabase
         .from("profiles")
-        .select("username, bio, current_city, cities_visited, places_visited")
+        .select("username, current_city, cities_visited, places_visited")
         .eq("id", user.id)
         .single();
 
+      // Get user's saved places (Google Places)
+      const { data: savedPlaces } = await supabase
+        .from("saved_places")
+        .select("place_name, place_category, city")
+        .eq("user_id", user.id)
+        .limit(100);
+
+      // Get user's saved internal locations
+      const { data: savedLocations } = await supabase
+        .from("user_saved_locations")
+        .select(`
+          locations (
+            name,
+            category,
+            city
+          )
+        `)
+        .eq("user_id", user.id)
+        .limit(100);
+
+      // Get liked posts with locations
+      const { data: likedPosts } = await supabase
+        .from("post_likes")
+        .select(`
+          posts (
+            locations (
+              name,
+              category,
+              city
+            )
+          )
+        `)
+        .eq("user_id", user.id)
+        .limit(50);
+
+      // Get following users' saves
+      const { data: followingSaves } = await supabase
+        .from("follows")
+        .select(`
+          profiles!follows_following_id_fkey (
+            username
+          ),
+          saved_places!saved_places_user_id_fkey (
+            place_name,
+            place_category,
+            city
+          )
+        `)
+        .eq("follower_id", user.id)
+        .limit(50);
+
+      // Combine and organize data
+      const allSaves = [
+        ...(savedPlaces || []).map(p => ({ name: p.place_name, category: p.place_category, city: p.city })),
+        ...(savedLocations || []).map(l => ({ name: l.locations?.name, category: l.locations?.category, city: l.locations?.city }))
+      ];
+
+      const likedLocations = likedPosts?.filter(lp => lp.posts?.locations).map(lp => ({
+        name: lp.posts.locations.name,
+        category: lp.posts.locations.category,
+        city: lp.posts.locations.city
+      })) || [];
+
+      // Group by city
+      const placesByCity: Record<string, any[]> = {};
+      allSaves.forEach(place => {
+        const city = place.city || 'Unknown';
+        if (!placesByCity[city]) placesByCity[city] = [];
+        placesByCity[city].push(place);
+      });
+
       userContext = `
-User Context:
+USER PROFILE:
 - Username: ${profile?.username || "Traveler"}
-- Current City: ${profile?.current_city || "Unknown"}
-- Cities Visited: ${profile?.cities_visited || 0}
-- Places Visited: ${profile?.places_visited || 0}
-- Saved Places: ${savedPlaces?.map(p => `${p.place_name} (${p.place_category}) in ${p.city}`).join(", ") || "None yet"}
+- Current City: ${profile?.current_city || "Not set"}
+- Total saved places: ${allSaves.length}
+- Cities with saved places: ${Object.keys(placesByCity).join(", ") || "None"}
+
+SAVED PLACES BY CITY:
+${Object.entries(placesByCity).map(([city, places]) => 
+  `${city} (${places.length} places):\n${places.slice(0, 5).map(p => `  - ${p.name} (${p.category})`).join('\n')}`
+).join('\n\n') || "No saved places yet"}
+
+LIKED POST LOCATIONS:
+${likedLocations.slice(0, 10).map(l => `- ${l.name} (${l.category}) in ${l.city}`).join('\n') || "None"}
+
+RECOMMENDATIONS FROM FOLLOWING:
+${followingSaves?.flatMap(fs => 
+  fs.saved_places?.slice(0, 3).map(sp => 
+    `- ${sp.place_name} (${sp.place_category}) in ${sp.city} (by @${fs.profiles?.username})`
+  )
+).filter(Boolean).slice(0, 15).join('\n') || "None"}
 `;
     }
 
-    const systemPrompt = `You are a friendly AI Travel Assistant for Spott, a location discovery and travel planning app. 
+    const systemPrompt = `You are an expert AI Travel Assistant for Spott, a location discovery and social travel app.
 
 ${userContext}
 
-Your role is to help users:
-- Discover amazing places to visit based on their interests
-- Plan trips and create itineraries
-- Get personalized recommendations based on their saved places and travel history
-- Find hidden gems in cities they're interested in
-- Connect travel experiences with friends
+YOUR CAPABILITIES:
+1. Answer travel questions like "I'm visiting Rome, where should I eat sushi?" using their saved places and following data
+2. Suggest trips based on cities where they have saved places
+3. Recommend similar places based on what they've liked
+4. Help plan multi-day itineraries
+5. Find hidden gems based on their taste
 
-Be conversational, enthusiastic about travel, and provide specific, actionable suggestions. When recommending places, mention the type of place (restaurant, cafe, attraction, etc.) and what makes it special. Keep responses concise but helpful.
-
-If the user hasn't saved many places yet, encourage them to explore and save places they're interested in.`;
+Be conversational, specific, and always reference actual data from their profile when making recommendations. Use place names, not just generic suggestions.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
