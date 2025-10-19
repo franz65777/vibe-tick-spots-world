@@ -27,7 +27,7 @@ export const normalizeCity = (city: string | null | undefined): string => {
   // Map Dublin neighborhoods/suburbs to "Dublin"
   const dublinNeighborhoods = [
     'Rathmines', 'Ranelagh', 'Ballsbridge', 'Donnybrook', 'Sandymount',
-    'Ringsend', 'Irishtown', 'Ballybough', 'Drumcondra', 'Glasnevin',
+    'Sandymount Village', 'Ringsend', 'Irishtown', 'Ballybough', 'Drumcondra', 'Glasnevin',
     'Cabra', 'Phibsborough', 'Stoneybatter', 'Smithfield', 'Arbour Hill',
     'Inchicore', 'Kilmainham', 'Islandbridge', 'Crumlin', 'Kimmage',
     'Terenure', 'Rathgar', 'Milltown', 'Clonskeagh', 'Dundrum',
@@ -61,7 +61,7 @@ export const extractCityFromAddress = (address: string | null | undefined): stri
 
   const parts = address.split(',').map(p => p.trim()).filter(Boolean);
 
-  if (parts.length < 2) return null;
+  if (parts.length < 1) return null;
 
   for (let i = parts.length - 1; i >= 0; i--) {
     const part = parts[i];
@@ -70,9 +70,42 @@ export const extractCityFromAddress = (address: string | null | undefined): stri
 
     if (/(street|st\.|avenue|ave\.|road|rd\.|square|lane|ln\.|drive|dr\.|court|ct\.)/i.test(part)) continue;
 
+    if (/^[A-Z]\d{2}/.test(part)) continue;
+
     const normalized = normalizeCity(part);
     if (normalized !== 'Unknown') {
       return normalized;
+    }
+  }
+
+  return null;
+};
+
+export const extractCityFromName = (name: string | null | undefined): string | null => {
+  if (!name || name.trim() === '') return null;
+
+  const dublinNeighborhoods = [
+    'Rathmines', 'Ranelagh', 'Ballsbridge', 'Donnybrook', 'Sandymount',
+    'Sandymount Village', 'Ringsend', 'Irishtown', 'Ballybough', 'Drumcondra', 'Glasnevin',
+    'Cabra', 'Phibsborough', 'Stoneybatter', 'Smithfield', 'Arbour Hill',
+    'Inchicore', 'Kilmainham', 'Islandbridge', 'Crumlin', 'Kimmage',
+    'Terenure', 'Rathgar', 'Milltown', 'Clonskeagh', 'Dundrum',
+    'Stillorgan', 'Blackrock', 'Dun Laoghaire', 'Dalkey', 'Killiney',
+    'Shankill', 'Bray', 'Greystones', 'Howth', 'Malahide', 'Swords',
+    'Portmarnock', 'Clontarf', 'Raheny', 'Coolock', 'Artane',
+    'Whitehall', 'Santry', 'Ballymun', 'Finglas', 'Blanchardstown',
+    'Castleknock', 'Lucan', 'Clondalkin', 'Tallaght', 'Rathfarnham',
+    'Templeogue', 'Firhouse', 'Ballinteer', 'Churchtown', 'Windy Arbour',
+    'Leopardstown', 'Sandyford', 'Stepaside', 'Foxrock', 'Cabinteely',
+    'Loughlinstown', 'Cherrywood', 'Carrickmines', 'Cornelscourt',
+    'Donabate', 'Rush', 'Skerries', 'Balbriggan', 'Baldoyle',
+    'Saint James', 'St James', 'The Coombe', 'Liberties', 'Thomas Street',
+    'Christchurch', 'Temple Bar', 'Ballyboden', 'Knocklyon', 'Brittas'
+  ];
+
+  for (const neighborhood of dublinNeighborhoods) {
+    if (name.toLowerCase().includes(neighborhood.toLowerCase())) {
+      return 'Dublin';
     }
   }
 

@@ -24,6 +24,7 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
   const { cityLabel } = useNormalizedCity({
     id: place.google_place_id || place.id,
     city: place.city,
+    name: place.name,
     coordinates: place.coordinates,
     address: place.address
   });
@@ -124,8 +125,18 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
         
+        {/* Rating badge (top right) */}
+        {stats.averageRating && (
+          <div className="absolute top-2 right-2">
+            <div className="bg-yellow-500/95 backdrop-blur-sm text-white px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg">
+              <Star className="w-3 h-3 fill-white" />
+              {stats.averageRating.toFixed(1)}
+            </div>
+          </div>
+        )}
+
         {/* Post count badge */}
-        {place.postCount && place.postCount > 0 && (
+        {place.postCount && place.postCount > 0 && !stats.averageRating && (
           <div className="absolute top-2 right-2">
             <div className="bg-black/60 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
               <MessageSquare className="w-3 h-3" />
@@ -145,12 +156,6 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
                 <MapPin className="w-3 h-3" />
                 <span className="text-xs">{cityLabel || 'Unknown location'}</span>
               </div>
-              {stats.averageRating && (
-                <div className="flex items-center gap-1 bg-yellow-50 px-2 py-0.5 rounded-full">
-                  <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                  <span className="text-xs font-semibold text-yellow-700">{stats.averageRating.toFixed(1)}</span>
-                </div>
-              )}
             </div>
           </div>
         </div>

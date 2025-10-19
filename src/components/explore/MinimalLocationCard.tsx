@@ -38,9 +38,10 @@ const MinimalLocationCard = ({
           </h3>
           <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
             <div className="truncate">
-              <CityLabel 
+              <CityLabel
                 id={place.google_place_id || place.id}
                 city={place.city}
+                name={place.name}
                 address={place.address}
                 coordinates={place.coordinates}
               />

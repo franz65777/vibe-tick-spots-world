@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { normalizeCity } from '@/utils/cityNormalization';
+import { normalizeCity, extractCityFromAddress, extractCityFromName } from '@/utils/cityNormalization';
 
 // Simple in-memory cache to avoid repeated lookups per session
 const cityCache = new Map<string, string>();
@@ -13,10 +13,11 @@ const cityCache = new Map<string, string>();
 export function useNormalizedCity(params: {
   id?: string; // stable key for caching (e.g., location id or google place id)
   city?: string | null;
+  name?: string | null;
   coordinates?: { lat?: number; lng?: number } | null;
   address?: string | null;
 }) {
-  const { id, city, coordinates, address } = params;
+  const { id, city, name, coordinates, address } = params;
 
   // Heuristics to detect street-like strings (contain numbers or common street terms)
   const isStreetLike = (value?: string | null) => {
@@ -48,7 +49,7 @@ export function useNormalizedCity(params: {
     return '';
   };
   const [label, setLabel] = useState<string>(() => {
-    const base = (city && city.trim()) || extractCityFromAddress(address) || '';
+    const base = (city && city.trim()) || extractCityFromAddress(address) || extractCityFromName(name) || '';
     const normalized = normalizeCity(base || null);
     return normalized;
   });
@@ -56,13 +57,13 @@ export function useNormalizedCity(params: {
 
   const cacheKey = useMemo(() => {
     const coordKey = coordinates?.lat && coordinates?.lng ? `${coordinates.lat},${coordinates.lng}` : '';
-    return id || coordKey || address || city || '';
-  }, [id, coordinates?.lat, coordinates?.lng, address, city]);
+    return id || coordKey || address || city || name || '';
+  }, [id, coordinates?.lat, coordinates?.lng, address, city, name]);
 
   useEffect(() => {
     let isMounted = true;
 
-    const baseCity = (city && city.trim()) || extractCityFromAddress(address) || '';
+    const baseCity = (city && city.trim()) || extractCityFromAddress(address) || extractCityFromName(name) || '';
     const normalized = normalizeCity(baseCity || null);
 
     // If already good, set and stop (exclude street/business-like strings)
@@ -116,7 +117,7 @@ export function useNormalizedCity(params: {
     return () => {
       isMounted = false;
     };
-  }, [cacheKey, city, address, coordinates?.lat, coordinates?.lng]);
+  }, [cacheKey, city, address, name, coordinates?.lat, coordinates?.lng]);
 
   return { cityLabel: label, cityLoading: loading } as const;
 }

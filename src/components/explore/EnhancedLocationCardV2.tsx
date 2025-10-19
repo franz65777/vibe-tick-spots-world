@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Bookmark, Phone, Globe, Navigation, Camera } from 'lucide-react';
+import { MapPin, Bookmark, Phone, Globe, Navigation, Camera, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { locationInteractionService } from '@/services/locationInteractionService';
 import PlaceActionButtons from './PlaceActionButtons';
 import { useNormalizedCity } from '@/hooks/useNormalizedCity';
+import { useLocationStats } from '@/hooks/useLocationStats';
 
 interface EnhancedLocationCardV2Props {
   place: any;
@@ -19,9 +20,12 @@ const EnhancedLocationCardV2 = ({ place, onCardClick }: EnhancedLocationCardV2Pr
   const { cityLabel } = useNormalizedCity({
     id: place.google_place_id || place.id,
     city: place.city,
+    name: place.name,
     coordinates: place.coordinates,
     address: place.address
   });
+
+  const { stats } = useLocationStats(place.id, place.google_place_id);
 
   useEffect(() => {
     const checkSaved = async () => {
@@ -101,6 +105,14 @@ const EnhancedLocationCardV2 = ({ place, onCardClick }: EnhancedLocationCardV2Pr
             {place.name}
           </h3>
         </div>
+
+        {/* Rating (Top Left) */}
+        {stats.averageRating && (
+          <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-yellow-500/95 backdrop-blur-sm text-white px-2.5 py-1.5 rounded-full shadow-lg">
+            <Star className="w-4 h-4 fill-white" />
+            <span className="text-sm font-bold">{stats.averageRating.toFixed(1)}</span>
+          </div>
+        )}
 
         {/* Save Icon (Top Right) */}
         <button

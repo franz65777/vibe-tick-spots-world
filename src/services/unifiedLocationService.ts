@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { normalizeCity, extractCityFromAddress } from '@/utils/cityNormalization';
+import { normalizeCity, extractCityFromAddress, extractCityFromName } from '@/utils/cityNormalization';
 
 export interface UnifiedLocation {
   id: string;
@@ -78,9 +78,16 @@ export class UnifiedLocationService {
           let cityValue = loc.city && loc.city.trim() !== '' ? normalizeCity(loc.city) : null;
 
           if (!cityValue || cityValue === 'Unknown') {
-            const extractedCity = extractCityFromAddress(loc.address);
-            if (extractedCity && extractedCity !== 'Unknown') {
-              cityValue = extractedCity;
+            const extractedFromAddress = extractCityFromAddress(loc.address);
+            if (extractedFromAddress && extractedFromAddress !== 'Unknown') {
+              cityValue = extractedFromAddress;
+            }
+          }
+
+          if (!cityValue || cityValue === 'Unknown') {
+            const extractedFromName = extractCityFromName(loc.name);
+            if (extractedFromName && extractedFromName !== 'Unknown') {
+              cityValue = extractedFromName;
             }
           }
 
@@ -132,9 +139,16 @@ export class UnifiedLocationService {
           let cityValue = place.city && place.city.trim() !== '' ? normalizeCity(place.city) : null;
 
           if (!cityValue || cityValue === 'Unknown') {
-            const extractedCity = extractCityFromAddress(place.address);
-            if (extractedCity && extractedCity !== 'Unknown') {
-              cityValue = extractedCity;
+            const extractedFromAddress = extractCityFromAddress(place.address);
+            if (extractedFromAddress && extractedFromAddress !== 'Unknown') {
+              cityValue = extractedFromAddress;
+            }
+          }
+
+          if (!cityValue || cityValue === 'Unknown') {
+            const extractedFromName = extractCityFromName(place.place_name);
+            if (extractedFromName && extractedFromName !== 'Unknown') {
+              cityValue = extractedFromName;
             }
           }
 
