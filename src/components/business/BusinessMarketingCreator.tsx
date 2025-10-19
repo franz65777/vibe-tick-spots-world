@@ -95,7 +95,7 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
 
       // Insert marketing content
       const { error } = await supabase
-        .from('business_marketing_content')
+        .from('posts' as any)
         .insert({
           business_id: user.id,
           type,

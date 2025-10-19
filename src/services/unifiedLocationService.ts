@@ -140,12 +140,7 @@ export class UnifiedLocationService {
           const coords = place.coordinates as any;
           let cityValue = place.city && place.city.trim() !== '' ? normalizeCity(place.city) : null;
 
-          if (!cityValue || cityValue === 'Unknown') {
-            const extractedFromAddress = extractCityFromAddress(place.address);
-            if (extractedFromAddress && extractedFromAddress !== 'Unknown') {
-              cityValue = extractedFromAddress;
-            }
-          }
+          // Note: saved_places doesn't have address field, skip address extraction
 
           if (!cityValue || cityValue === 'Unknown') {
             const extractedFromName = extractCityFromName(place.place_name);
@@ -163,7 +158,6 @@ export class UnifiedLocationService {
             name: place.place_name || 'Unknown Location',
             category: place.place_category || 'place',
             city: finalCity,
-            address: place.address,
             google_place_id: placeId,
             latitude: coords?.lat,
             longitude: coords?.lng,

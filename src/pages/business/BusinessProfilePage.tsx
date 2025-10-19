@@ -41,17 +41,15 @@ const BusinessProfilePage = () => {
     if (!user) return;
 
     try {
-      // Get the business profile to find the associated location
+      // Get the business profile
       const { data: businessProfile } = await supabase
         .from('business_profiles')
-        .select('location_id, locations(*)')
+        .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (businessProfile && businessProfile.locations) {
-        setLocation(businessProfile.locations as any);
-      } else {
-        // Fallback: get any location for demo
+      if (businessProfile) {
+        // For now, fetch a demo location - in production this would be linked via business_profiles
         const { data: locationData } = await supabase
           .from('locations')
           .select('*')
@@ -74,11 +72,11 @@ const BusinessProfilePage = () => {
     if (!user) return;
 
     try {
+      // Fetch posts from the business user as marketing content
       const { data } = await supabase
-        .from('business_marketing_content')
+        .from('posts')
         .select('*')
-        .eq('business_id', user.id)
-        .eq('is_active', true)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       setMarketingContent(data || []);
@@ -216,7 +214,7 @@ const BusinessProfilePage = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 Posts from users who tagged this location
               </p>
-              <PostsGrid userId={location.id} isLocationPosts={true} />
+              <PostsGrid userId={user?.id} />
             </div>
           )}
 
@@ -232,32 +230,23 @@ const BusinessProfilePage = () => {
                   <Card key={content.id}>
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between mb-2">
-                        <h3 className="font-semibold">{content.title}</h3>
-                        <Badge variant="outline">{content.type}</Badge>
+                        <h3 className="font-semibold">{content.caption || 'Post'}</h3>
                       </div>
-                      {content.description && (
-                        <p className="text-sm text-muted-foreground mb-3">
-                          {content.description}
-                        </p>
-                      )}
                       {content.media_urls && content.media_urls.length > 0 && (
                         <div className="grid grid-cols-3 gap-2 mb-3">
                           {content.media_urls.slice(0, 3).map((url: string, idx: number) => (
                             <img
                               key={idx}
                               src={url}
-                              alt={`${content.title} ${idx + 1}`}
+                              alt={`Post ${idx + 1}`}
                               className="w-full aspect-square object-cover rounded"
                             />
                           ))}
                         </div>
                       )}
-                      {content.start_date && (
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(content.start_date).toLocaleDateString()}
-                          {content.end_date && ` - ${new Date(content.end_date).toLocaleDateString()}`}
-                        </p>
-                      )}
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(content.created_at).toLocaleDateString()}
+                      </p>
                     </CardContent>
                   </Card>
                 ))
@@ -276,7 +265,7 @@ const BusinessProfilePage = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 Posts where users tagged this location
               </p>
-              <PostsGrid userId={location.id} isLocationPosts={true} />
+              <PostsGrid userId={user?.id} />
             </div>
           )}
         </div>

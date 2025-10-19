@@ -9,6 +9,7 @@ interface PostActionsProps {
   sharesCount: number;
   onCommentClick: () => void;
   onShareClick: () => void;
+  onCountsUpdate?: (updates: any) => void;
 }
 
 export const PostActions = ({
@@ -18,6 +19,7 @@ export const PostActions = ({
   sharesCount,
   onCommentClick,
   onShareClick,
+  onCountsUpdate,
 }: PostActionsProps) => {
   const { isLiked, isSaved, likeCount, toggleLike, toggleSave } = useSocialEngagement(postId);
   const [localLikesCount, setLocalLikesCount] = useState(likesCount);
