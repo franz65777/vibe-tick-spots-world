@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { normalizeCity } from '@/utils/cityNormalization';
+import { normalizeCity, extractCityFromAddress } from '@/utils/cityNormalization';
 
 export interface UnifiedLocation {
   id: string;
@@ -75,11 +75,22 @@ export class UnifiedLocationService {
           if (seenPlaceIds.has(placeId)) continue;
           seenPlaceIds.add(placeId);
 
+          let cityValue = loc.city && loc.city.trim() !== '' ? normalizeCity(loc.city) : null;
+
+          if (!cityValue || cityValue === 'Unknown') {
+            const extractedCity = extractCityFromAddress(loc.address);
+            if (extractedCity && extractedCity !== 'Unknown') {
+              cityValue = extractedCity;
+            }
+          }
+
+          const hasMissingCity = !cityValue || cityValue === 'Unknown';
+
           locations.push({
             id: placeId,
             name: loc.name || 'Unknown Location',
             category: loc.category || 'place',
-            city: normalizeCity(loc.city) || 'Unknown City',
+            city: cityValue || 'Unknown City',
             address: loc.address,
             google_place_id: loc.google_place_id,
             latitude: loc.latitude,
@@ -91,6 +102,23 @@ export class UnifiedLocationService {
             savedAt: item.created_at,
             source: 'locations'
           });
+
+          if (hasMissingCity && loc.latitude && loc.longitude) {
+            this.enrichLocationData({
+              id: loc.id,
+              google_place_id: loc.google_place_id,
+              latitude: loc.latitude,
+              longitude: loc.longitude,
+              city: cityValue
+            } as UnifiedLocation).then(async (enriched) => {
+              if (enriched && enriched.city && enriched.city !== 'Unknown City') {
+                await supabase
+                  .from('locations')
+                  .update({ city: enriched.city })
+                  .eq('id', loc.id);
+              }
+            }).catch(err => console.error('Error enriching location:', err));
+          }
         }
       }
 
@@ -101,11 +129,22 @@ export class UnifiedLocationService {
           seenPlaceIds.add(placeId);
 
           const coords = place.coordinates as any;
+          let cityValue = place.city && place.city.trim() !== '' ? normalizeCity(place.city) : null;
+
+          if (!cityValue || cityValue === 'Unknown') {
+            const extractedCity = extractCityFromAddress(place.address);
+            if (extractedCity && extractedCity !== 'Unknown') {
+              cityValue = extractedCity;
+            }
+          }
+
+          const hasMissingCity = !cityValue || cityValue === 'Unknown';
+
           locations.push({
             id: placeId,
             name: place.place_name || 'Unknown Location',
             category: place.place_category || 'place',
-            city: normalizeCity(place.city) || 'Unknown City',
+            city: cityValue || 'Unknown City',
             address: place.address,
             google_place_id: placeId,
             latitude: coords?.lat,
@@ -114,6 +153,24 @@ export class UnifiedLocationService {
             savedAt: place.created_at,
             source: 'saved_places'
           });
+
+          if (hasMissingCity && coords?.lat && coords?.lng) {
+            this.enrichLocationData({
+              id: placeId,
+              google_place_id: placeId,
+              latitude: coords.lat,
+              longitude: coords.lng,
+              city: cityValue
+            } as UnifiedLocation).then(async (enriched) => {
+              if (enriched && enriched.city && enriched.city !== 'Unknown City') {
+                await supabase
+                  .from('saved_places')
+                  .update({ city: enriched.city })
+                  .eq('place_id', placeId)
+                  .eq('user_id', userId);
+              }
+            }).catch(err => console.error('Error enriching saved place:', err));
+          }
         }
       }
 

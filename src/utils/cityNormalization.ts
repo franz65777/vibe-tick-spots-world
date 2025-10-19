@@ -2,22 +2,26 @@
  * Normalize city names by removing postal codes, counties, and mapping neighborhoods
  */
 export const normalizeCity = (city: string | null | undefined): string => {
-  if (!city) return 'Unknown';
-  
-  let normalized = city;
-  
+  if (!city || city.trim() === '') return 'Unknown';
+
+  let normalized = city.trim();
+
+  if (normalized === 'Unknown' || normalized === 'Unknown City') {
+    return 'Unknown';
+  }
+
   // Remove postal district numbers (e.g., "Dublin 2" -> "Dublin")
   normalized = normalized.replace(/\s+\d+$/, '');
-  
+
   // Remove "County" prefix (e.g., "County Dublin" -> "Dublin")
   normalized = normalized.replace(/^County\s+/i, '');
-  
+
   // Check if it's a numeric postal code or too short
   if (/^\d+$/.test(normalized.trim()) || normalized.trim().length <= 2) {
     return 'Unknown';
   }
-  
-  // Trim whitespace
+
+  // Trim whitespace again
   normalized = normalized.trim();
   
   // Map Dublin neighborhoods/suburbs to "Dublin"
@@ -50,4 +54,27 @@ export const normalizeCity = (city: string | null | undefined): string => {
   }
   
   return normalized;
+};
+
+export const extractCityFromAddress = (address: string | null | undefined): string | null => {
+  if (!address || address.trim() === '') return null;
+
+  const parts = address.split(',').map(p => p.trim()).filter(Boolean);
+
+  if (parts.length < 2) return null;
+
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const part = parts[i];
+
+    if (part.length <= 2 || /^\d+$/.test(part)) continue;
+
+    if (/(street|st\.|avenue|ave\.|road|rd\.|square|lane|ln\.|drive|dr\.|court|ct\.)/i.test(part)) continue;
+
+    const normalized = normalizeCity(part);
+    if (normalized !== 'Unknown') {
+      return normalized;
+    }
+  }
+
+  return null;
 };

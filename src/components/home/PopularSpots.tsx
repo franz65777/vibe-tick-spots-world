@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, MapPin, Users, Flame } from 'lucide-react';
+import { TrendingUp, MapPin, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
+import fireIcon from '@/assets/fire-icon.png';
 
 interface PopularSpot {
   id: string;
@@ -152,7 +153,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen }: Po
           className="w-10 h-10 flex items-center justify-center transition-all hover:scale-110"
           aria-label="Discover places"
         >
-          <Flame className="w-8 h-8 text-orange-500" />
+          <img src={fireIcon} alt="Discover" className="w-8 h-8" />
         </button>
       </div>
 

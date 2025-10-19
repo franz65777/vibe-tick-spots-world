@@ -36,7 +36,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
       setLoading(true);
 
       try {
-        const locations = await UnifiedLocationService.getUserSavedLocations(targetUserId);
+        const locations = await UnifiedLocationService.getUserSavedLocations(targetUserId, true);
         const grouped = await UnifiedLocationService.groupByCity(locations);
         setSavedPlaces(grouped);
       } catch (error) {

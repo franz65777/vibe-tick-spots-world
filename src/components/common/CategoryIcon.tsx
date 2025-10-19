@@ -1,14 +1,11 @@
 import React from 'react';
-import {
-  Hotel,
-  Coffee,
-  Beer,
-  UtensilsCrossed,
-  Music,
-  Cake,
-  Building2,
-  MapPin
-} from 'lucide-react';
+import hotel from '@/assets/category-hotel-upload.png';
+import cafe from '@/assets/category-cafe-upload.png';
+import bar from '@/assets/category-bar-upload.png';
+import restaurant from '@/assets/category-restaurant-upload.png';
+import entertainment from '@/assets/category-entertainment-upload.png';
+import bakery from '@/assets/category-bakery-upload.png';
+import museum from '@/assets/category-museum-upload.png';
 
 interface CategoryIconProps {
   category: string;
@@ -16,36 +13,41 @@ interface CategoryIconProps {
 }
 
 export const CategoryIcon: React.FC<CategoryIconProps> = ({ category, className = 'w-12 h-12' }) => {
-  const getCategoryIcon = () => {
+  const getCategoryImage = () => {
     const categoryLower = category.toLowerCase();
 
     switch (categoryLower) {
       case 'bakery':
-        return { Icon: Cake, color: 'text-amber-600 bg-amber-50' };
+        return { src: bakery, style: { objectFit: 'contain' } };
       case 'bar':
       case 'bar & pub':
-        return { Icon: Beer, color: 'text-orange-600 bg-orange-50' };
+        return { src: bar, style: { objectFit: 'contain' } };
       case 'museum':
-        return { Icon: Building2, color: 'text-purple-600 bg-purple-50' };
+        return { src: museum, style: { objectFit: 'contain' } };
       case 'hotel':
-        return { Icon: Hotel, color: 'text-blue-600 bg-blue-50' };
+        return { src: hotel, style: { objectFit: 'contain' } };
       case 'cafe':
       case 'café':
-        return { Icon: Coffee, color: 'text-brown-600 bg-amber-50' };
+        return { src: cafe, style: { objectFit: 'contain' } };
       case 'restaurant':
-        return { Icon: UtensilsCrossed, color: 'text-red-600 bg-red-50' };
+        return { src: restaurant, style: { objectFit: 'contain' } };
       case 'entertainment':
-        return { Icon: Music, color: 'text-pink-600 bg-pink-50' };
+        return { src: entertainment, style: { objectFit: 'contain' } };
       default:
-        return { Icon: MapPin, color: 'text-gray-600 bg-gray-50' };
+        return { src: restaurant, style: { objectFit: 'contain' } };
     }
   };
 
-  const { Icon, color } = getCategoryIcon();
+  const { src, style } = getCategoryImage();
 
   return (
-    <div className={`${className} rounded-xl ${color} flex items-center justify-center p-2`}>
-      <Icon className="w-full h-full" />
+    <div className={`${className} rounded-xl overflow-hidden flex items-center justify-center`}>
+      <img
+        src={src}
+        alt={category}
+        className="w-full h-full"
+        style={style as any}
+      />
     </div>
   );
 };

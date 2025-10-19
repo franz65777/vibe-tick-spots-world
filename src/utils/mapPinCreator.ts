@@ -1,4 +1,25 @@
-// Map category to emoji for inline SVG rendering inside data URI
+import hotelIcon from '@/assets/category-hotel-upload.png';
+import cafeIcon from '@/assets/category-cafe-upload.png';
+import barIcon from '@/assets/category-bar-upload.png';
+import restaurantIcon from '@/assets/category-restaurant-upload.png';
+import entertainmentIcon from '@/assets/category-entertainment-upload.png';
+import bakeryIcon from '@/assets/category-bakery-upload.png';
+import museumIcon from '@/assets/category-museum-upload.png';
+
+// Map category to asset URL (new 3D icons)
+const getCategoryAsset = (category: string) => {
+  const c = category.toLowerCase();
+  if (c.includes('hotel')) return hotelIcon;
+  if (c.includes('cafe') || c.includes('café') || c.includes('coffee')) return cafeIcon;
+  if (c.includes('bar') || c.includes('pub')) return barIcon;
+  if (c.includes('entertain')) return entertainmentIcon;
+  if (c.includes('restaurant') || c.includes('food') || c.includes('dining')) return restaurantIcon;
+  if (c.includes('bakery')) return bakeryIcon;
+  if (c.includes('museum')) return museumIcon;
+  return restaurantIcon;
+};
+
+// Fallback emoji for inline SVG rendering inside data URI
 const getCategoryEmoji = (category: string): string => {
   const c = category.toLowerCase();
   if (c.includes('hotel')) return '🛏️';
@@ -48,12 +69,9 @@ export const createCustomPin = (options: PinOptions): string => {
 
   // For recommended pins, show score instead of icon
   if (isRecommended && recommendationScore !== undefined) {
-    const score = Math.min(10, Math.max(0, recommendationScore)); // Clamp between 0-10
-    const fillColor = getScoreColor(score);
-    const displayScore = score.toFixed(1);
-
+    const fillColor = getScoreColor(recommendationScore);
     const svg = `
-      <svg width="28" height="38" viewBox="0 0 28 38" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+      <svg width="28" height="38" viewBox="0 0 28 38" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <filter id="shadow-${uid}" x="-50%" y="-50%" width="200%" height="200%">
             <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-opacity="0.2"/>
@@ -61,8 +79,8 @@ export const createCustomPin = (options: PinOptions): string => {
         </defs>
         <g filter="url(#shadow-${uid})">
           <path d="M14 2c6.627 0 12 5.373 12 12 0 8-12 20-12 20S2 22 2 14C2 7.373 7.373 2 14 2z" fill="#FFFFFF" stroke="${stroke}" stroke-width="1.5"/>
-          <circle cx="14" cy="14" r="8" fill="${fillColor}" stroke="${stroke}" stroke-width="1"/>
-          <text x="14" y="17" font-family="Arial, sans-serif" font-size="7" font-weight="bold" fill="#FFFFFF" text-anchor="middle">${displayScore}</text>
+          <circle cx="14" cy="14" r="7" fill="${fillColor}" stroke="${stroke}" stroke-width="1"/>
+          <text x="14" y="14" text-anchor="middle" dominant-baseline="middle" font-family="system-ui, -apple-system, sans-serif" font-size="8" font-weight="bold" fill="#FFFFFF">${recommendationScore.toFixed(1)}</text>
         </g>
       </svg>`;
 
@@ -78,9 +96,9 @@ export const createCustomPin = (options: PinOptions): string => {
         </filter>
       </defs>
       <g filter="url(#shadow-${uid})">
-        <path d=\"M14 2c6.627 0 12 5.373 12 12 0 8-12 20-12 20S2 22 2 14C2 7.373 7.373 2 14 2z\" fill=\"#FFFFFF\" stroke=\"${stroke}\" stroke-width=\"1.5\"/>
-        <circle cx=\"14\" cy=\"14\" r=\"7\" fill=\"#FFFFFF\" stroke=\"${stroke}\" stroke-width=\"1\"/>
-        <text x=\"14\" y=\"16\" font-family=\"Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif\" font-size=\"10\" text-anchor=\"middle\" dominant-baseline=\"middle\">${emoji}</text>
+        <path d="M14 2c6.627 0 12 5.373 12 12 0 8-12 20-12 20S2 22 2 14C2 7.373 7.373 2 14 2z" fill="#FFFFFF" stroke="${stroke}" stroke-width="1.5"/>
+        <circle cx="14" cy="14" r="7" fill="#FFFFFF" stroke="${stroke}" stroke-width="1"/>
+        <text x="14" y="14" text-anchor="middle" dominant-baseline="middle" font-size="12">${emoji}</text>
       </g>
     </svg>`;
 
@@ -109,6 +127,54 @@ export const createCustomMarker = (
     animation: google.maps.Animation.DROP,
   });
 
+  // Then embed the category PNG inside the SVG asynchronously for crisp icons
+  try {
+    const stroke = options.isSaved ? '#2D6CF6' : '#CBD5E1';
+    const assetUrl = getCategoryAsset(options.category);
+    const uid = Math.random().toString(36).slice(2, 8);
+
+    fetch(assetUrl)
+      .then((res) => res.blob())
+      .then((blob) =>
+        new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        })
+      )
+      .then((dataUrl) => {
+        const svg = `
+          <svg width="28" height="38" viewBox="0 0 28 38" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <filter id="shadow-${uid}" x="-50%" y="-50%" width="200%" height="200%">
+                <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-opacity="0.2"/>
+              </filter>
+              <clipPath id="circleClip-${uid}">
+                <circle cx="14" cy="14" r="6" />
+              </clipPath>
+            </defs>
+            <g filter="url(#shadow-${uid})">
+              <path d="M14 2c6.627 0 12 5.373 12 12 0 8-12 20-12 20S2 22 2 14C2 7.373 7.373 2 14 2z" fill="#FFFFFF" stroke="${stroke}" stroke-width="1.5"/>
+              <circle cx="14" cy="14" r="7" fill="#FFFFFF" stroke="${stroke}" stroke-width="1"/>
+              <g clip-path="url(#circleClip-${uid})">
+                <image href="${dataUrl}" x="8" y="8" width="12" height="12" preserveAspectRatio="xMidYMid meet"/>
+              </g>
+            </g>
+          </svg>`;
+
+        const updatedIcon: google.maps.Icon = {
+          url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+          scaledSize: new google.maps.Size(28, 38),
+          anchor: new google.maps.Point(14, 36),
+        };
+        marker.setIcon(updatedIcon);
+      })
+      .catch(() => {
+        // keep placeholder
+      });
+  } catch {
+    // noop
+  }
 
   return marker;
 };
