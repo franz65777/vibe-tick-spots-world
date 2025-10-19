@@ -7,7 +7,7 @@ import MinimalLocationCard from '@/components/explore/MinimalLocationCard';
 import LocationPostLibrary from '@/components/explore/LocationPostLibrary';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { normalizeCity } from '@/utils/cityNormalization';
+import { UnifiedLocationService } from '@/services/unifiedLocationService';
 
 interface SavedLocationsListProps {
   isOpen: boolean;
@@ -61,7 +61,16 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
           if (cityNorm !== 'Unknown' && cityNorm.length > 2) return cityNorm;
         }
       }
+      setLoading(true);
+
     }
+        const locations = await UnifiedLocationService.getUserSavedLocations(targetUserId);
+        const grouped = await UnifiedLocationService.groupByCity(locations);
+        setSavedPlaces(grouped);
+        setLoading(false);
+        return;
+
+        /*
 
     return 'Unknown City';
   };

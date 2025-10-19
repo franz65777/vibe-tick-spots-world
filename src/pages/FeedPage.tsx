@@ -20,6 +20,12 @@ const FeedPage = () => {
   const [openCommentsOnLoad, setOpenCommentsOnLoad] = useState(false);
   const [openShareOnLoad, setOpenShareOnLoad] = useState(false);
 
+  const updatePostCounts = (postId: string, updates: Partial<Pick<FeedItemType, 'likes_count' | 'comments_count' | 'shares_count' | 'saves_count'>>) => {
+    setFeedItems(prev => prev.map(item =>
+      item.post_id === postId ? { ...item, ...updates } : item
+    ));
+  };
+
   useEffect(() => {
     if (!user?.id) return;
 
@@ -311,6 +317,7 @@ const FeedPage = () => {
                         commentsCount={item.comments_count || 0}
                         sharesCount={item.shares_count || 0}
                         onCommentClick={() => {
+                        onCountsUpdate={(updates) => updatePostCounts(item.post_id!, updates)}
                           setSelectedPostId(item.post_id!);
                           setOpenCommentsOnLoad(true);
                           setOpenShareOnLoad(false);

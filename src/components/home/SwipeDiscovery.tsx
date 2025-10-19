@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, MapPin, Search, Users, UserPlus } from 'lucide-react';
+import { ArrowLeft, MapPin, Search, Users, UserPlus, X, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -7,8 +7,6 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import CityLabel from '@/components/common/CityLabel';
-import swipeNo from '@/assets/swipe-no.png';
-import swipePin from '@/assets/swipe-pin.png';
 
 interface SwipeLocation {
   id: string;
@@ -489,7 +487,9 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                       className="w-20 h-20 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
                       aria-label="Pass"
                     >
-                      <img src={swipeNo} alt="Pass" className="w-14 h-14 object-contain" />
+                      <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center">
+                        <X className="w-10 h-10 text-red-600" />
+                      </div>
                     </button>
                     <button
                       onClick={() => handleSwipe('right')}
@@ -497,7 +497,9 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                       className="w-20 h-20 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
                       aria-label="Save"
                     >
-                      <img src={swipePin} alt="Save" className="w-14 h-14 object-contain" />
+                      <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center">
+                        <Check className="w-10 h-10 text-green-600" />
+                      </div>
                     </button>
                   </div>
                 </div>

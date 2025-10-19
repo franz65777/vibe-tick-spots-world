@@ -1,6 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
 import { getCachedData } from './performanceService';
-import cameraIcon from '@/assets/camera-icon.png';
 
 export interface FeedItem {
   id: string;
@@ -174,7 +173,7 @@ export function getFeedEventDisplay(eventType: string): {
     case 'saved_location':
       return { icon: '📌', action: 'saved', color: 'text-blue-500' };
     case 'new_post':
-      return { icon: cameraIcon, action: 'posted about', color: 'text-pink-500', iconType: 'image' };
+      return { icon: '📸', action: 'posted about', color: 'text-pink-500' };
     case 'new_comment':
       return { icon: '💬', action: 'commented on', color: 'text-green-500' };
     case 'like_location':
