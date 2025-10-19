@@ -1,38 +1,94 @@
-import React, { useState } from 'react';
-import { useProfile } from '@/hooks/useProfile';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { Bell, Send, Settings } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { MapPin, Star, Phone, Globe, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import ProfileHeader from '@/components/profile/ProfileHeader';
-import ProfileStats from '@/components/profile/ProfileStats';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import ProfileTabs from '@/components/profile/ProfileTabs';
 import PostsGrid from '@/components/profile/PostsGrid';
-import TaggedPostsGrid from '@/components/profile/TaggedPostsGrid';
-import FollowersModal from '@/components/profile/FollowersModal';
-import { useBusinessProfile } from '@/hooks/useBusinessProfile';
-import { useUserBadges } from '@/hooks/useUserBadges';
-import Achievements from '@/components/profile/Achievements';
+import { getCategoryColor, getCategoryIcon } from '@/utils/categoryIcons';
+import { formatDetailedAddress } from '@/utils/addressFormatter';
+import { toast } from 'sonner';
+
+interface BusinessLocation {
+  id: string;
+  name: string;
+  category: string;
+  city?: string;
+  address?: string;
+  image_url?: string;
+  google_place_id?: string;
+  description?: string;
+  phone?: string;
+  website?: string;
+  hours?: string;
+}
 
 const BusinessProfilePage = () => {
-  const { profile, loading } = useProfile();
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const { businessProfile } = useBusinessProfile();
-  const { badges } = useUserBadges();
-
+  const [location, setLocation] = useState<BusinessLocation | null>(null);
   const [activeTab, setActiveTab] = useState('posts');
-  const [modalState, setModalState] = useState<{ isOpen: boolean; type: 'followers' | 'following' | null }>({
-    isOpen: false,
-    type: null
-  });
+  const [loading, setLoading] = useState(true);
+  const [marketingContent, setMarketingContent] = useState<any[]>([]);
 
-  const openModal = (type: 'followers' | 'following') => {
-    setModalState({ isOpen: true, type });
+  useEffect(() => {
+    fetchBusinessLocation();
+    fetchMarketingContent();
+  }, [user]);
+
+  const fetchBusinessLocation = async () => {
+    if (!user) return;
+
+    try {
+      // Get the business profile to find the associated location
+      const { data: businessProfile } = await supabase
+        .from('business_profiles')
+        .select('location_id, locations(*)')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (businessProfile && businessProfile.locations) {
+        setLocation(businessProfile.locations as any);
+      } else {
+        // Fallback: get any location for demo
+        const { data: locationData } = await supabase
+          .from('locations')
+          .select('*')
+          .limit(1)
+          .maybeSingle();
+
+        if (locationData) {
+          setLocation(locationData);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching business location:', error);
+      toast.error('Failed to load business location');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const closeModal = () => {
-    setModalState({ isOpen: false, type: null });
+  const fetchMarketingContent = async () => {
+    if (!user) return;
+
+    try {
+      const { data } = await supabase
+        .from('business_marketing_content')
+        .select('*')
+        .eq('business_id', user.id)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      setMarketingContent(data || []);
+    } catch (error) {
+      console.error('Error fetching marketing content:', error);
+    }
+  };
+
+  const formatCategory = (category: string) => {
+    return category.charAt(0).toUpperCase() + category.slice(1);
   };
 
   if (loading) {
@@ -43,69 +99,106 @@ const BusinessProfilePage = () => {
     );
   }
 
-  if (!profile || !user) {
-    return null;
+  if (!location) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-background">
+        <div className="text-center">
+          <p className="text-muted-foreground">No business location found</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Please claim a business location first
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-background pb-24">
       <div className="max-w-screen-sm mx-auto">
-        {/* Header with actions */}
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <h1 className="text-xl font-bold">Business Profile</h1>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/notifications')}
-              className="relative"
-            >
-              <Bell className="w-5 h-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/messages')}
-            >
-              <Send className="w-5 h-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/business/settings')}
-            >
-              <Settings className="w-5 h-5" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Profile Header */}
-        <ProfileHeader
-          profile={profile}
-          isOwnProfile={true}
-          onFollowersClick={() => openModal('followers')}
-          onFollowingClick={() => openModal('following')}
-        />
-
-        {/* Stats */}
-        <ProfileStats
-          userId={user.id}
-          onPostsClick={() => setActiveTab('posts')}
-          onLocationsClick={() => {}}
-          hideLocations={true}
-        />
-
-        {/* Badges */}
-        {badges.filter(b => b.earned).length > 0 && (
-          <div className="px-4 py-3">
-            <Achievements
-              badges={badges}
-              isOwnProfile={true}
-              onBadgeClick={(badge) => {}}
-              hasNewBadges={false}
+        {/* Cover Image */}
+        {location.image_url ? (
+          <div className="aspect-[16/9] overflow-hidden bg-muted relative">
+            <img
+              src={location.image_url}
+              alt={location.name}
+              className="w-full h-full object-cover"
             />
+            <div className="absolute top-4 left-4">
+              <Badge className={`${getCategoryColor(location.category)} bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full border-0 font-medium shadow-sm`}>
+                {formatCategory(location.category)}
+              </Badge>
+            </div>
+          </div>
+        ) : (
+          <div className="aspect-[16/9] bg-gradient-to-br from-muted to-muted/50 flex flex-col items-center justify-center relative">
+            {React.createElement(getCategoryIcon(location.category), {
+              className: 'w-16 h-16 text-muted-foreground/40',
+              strokeWidth: 1.5
+            })}
+            <div className="absolute top-4 left-4">
+              <Badge className={`${getCategoryColor(location.category)} px-3 py-1 rounded-full border-0 font-medium`}>
+                {formatCategory(location.category)}
+              </Badge>
+            </div>
           </div>
         )}
+
+        {/* Location Info */}
+        <div className="px-4 py-6 space-y-4">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground mb-2">
+              {location.name}
+            </h1>
+            {location.description && (
+              <p className="text-muted-foreground text-sm mb-3">
+                {location.description}
+              </p>
+            )}
+          </div>
+
+          {/* Contact Info */}
+          <div className="space-y-2">
+            <div className="flex items-start gap-3 text-sm">
+              <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+              <span className="text-foreground">
+                {formatDetailedAddress({
+                  city: location.city,
+                  address: location.address,
+                })}
+              </span>
+            </div>
+
+            {location.phone && (
+              <div className="flex items-center gap-3 text-sm">
+                <Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <a href={`tel:${location.phone}`} className="text-foreground hover:text-primary">
+                  {location.phone}
+                </a>
+              </div>
+            )}
+
+            {location.website && (
+              <div className="flex items-center gap-3 text-sm">
+                <Globe className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <a
+                  href={location.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-foreground hover:text-primary"
+                >
+                  Visit Website
+                </a>
+              </div>
+            )}
+
+            {location.hours && (
+              <div className="flex items-start gap-3 text-sm">
+                <Clock className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                <span className="text-foreground">{location.hours}</span>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Tabs */}
         <ProfileTabs
@@ -118,49 +211,75 @@ const BusinessProfilePage = () => {
 
         {/* Tab Content */}
         <div className="px-4 py-4">
-          {activeTab === 'posts' && <PostsGrid userId={user.id} />}
-          {activeTab === 'marketing' && (
-            <div className="text-center py-12 text-muted-foreground">
-              <p>Marketing content management coming soon</p>
+          {activeTab === 'posts' && location.id && (
+            <div>
+              <p className="text-sm text-muted-foreground mb-4">
+                Posts from users who tagged this location
+              </p>
+              <PostsGrid userId={location.id} isLocationPosts={true} />
             </div>
           )}
-          {activeTab === 'tagged' && <TaggedPostsGrid userId={user.id} />}
-          {activeTab === 'badges' && (
+
+          {activeTab === 'marketing' && (
             <div className="space-y-4">
-              {badges.map((badge) => (
-                <div
-                  key={badge.id}
-                  className={`p-4 rounded-lg border ${
-                    badge.earned
-                      ? 'bg-card border-border'
-                      : 'bg-muted/20 border-muted opacity-60'
-                  }`}
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="text-4xl">{badge.icon}</div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{badge.name}</h3>
-                      <p className="text-sm text-muted-foreground">{badge.description}</p>
-                      {badge.earned && badge.earnedAt && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Earned {new Date(badge.earnedAt).toLocaleDateString()}
+              {marketingContent.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <p>No marketing content yet</p>
+                  <p className="text-sm mt-2">Create events, promotions, and announcements in the Add tab</p>
+                </div>
+              ) : (
+                marketingContent.map((content) => (
+                  <Card key={content.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="font-semibold">{content.title}</h3>
+                        <Badge variant="outline">{content.type}</Badge>
+                      </div>
+                      {content.description && (
+                        <p className="text-sm text-muted-foreground mb-3">
+                          {content.description}
                         </p>
                       )}
-                    </div>
-                  </div>
-                </div>
-              ))}
+                      {content.media_urls && content.media_urls.length > 0 && (
+                        <div className="grid grid-cols-3 gap-2 mb-3">
+                          {content.media_urls.slice(0, 3).map((url: string, idx: number) => (
+                            <img
+                              key={idx}
+                              src={url}
+                              alt={`${content.title} ${idx + 1}`}
+                              className="w-full aspect-square object-cover rounded"
+                            />
+                          ))}
+                        </div>
+                      )}
+                      {content.start_date && (
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(content.start_date).toLocaleDateString()}
+                          {content.end_date && ` - ${new Date(content.end_date).toLocaleDateString()}`}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          )}
+
+          {activeTab === 'badges' && (
+            <div className="text-center py-12 text-muted-foreground">
+              <p>Business badges coming soon</p>
+            </div>
+          )}
+
+          {activeTab === 'tagged' && location.id && (
+            <div>
+              <p className="text-sm text-muted-foreground mb-4">
+                Posts where users tagged this location
+              </p>
+              <PostsGrid userId={location.id} isLocationPosts={true} />
             </div>
           )}
         </div>
-
-        {/* Modals */}
-        <FollowersModal
-          isOpen={modalState.isOpen}
-          onClose={closeModal}
-          type={modalState.type}
-          userId={user.id}
-        />
       </div>
     </div>
   );

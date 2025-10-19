@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, Upload, Image as ImageIcon } from 'lucide-react';
+import { MapPin, Upload, Image as ImageIcon, Bell, Send } from 'lucide-react';
 import BusinessLocationPosts from '@/components/business/BusinessLocationPosts';
 import { getCategoryColor, getCategoryIcon } from '@/utils/categoryIcons';
 import { formatDetailedAddress } from '@/utils/addressFormatter';
 import { toast } from 'sonner';
+import { useNotifications } from '@/hooks/useNotifications';
 
 interface Location {
   id: string;
@@ -36,6 +38,8 @@ interface Post {
 }
 
 const BusinessOverviewPage = () => {
+  const navigate = useNavigate();
+  const { unreadCount } = useNotifications();
   const [location, setLocation] = useState<Location | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -206,6 +210,30 @@ const BusinessOverviewPage = () => {
   return (
     <div className="min-h-screen bg-background pb-24">
       <div className="max-w-screen-sm mx-auto">
+        {/* Action Buttons */}
+        <div className="flex items-center justify-end gap-2 p-4 border-b bg-card">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/notifications')}
+            className="relative"
+          >
+            <Bell className="w-5 h-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full flex items-center justify-center text-xs font-bold text-white">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/messages')}
+          >
+            <Send className="w-5 h-5" />
+          </Button>
+        </div>
+
         {/* Location Header */}
         <div className="p-6 border-b bg-card">
           <h1 className="text-2xl font-bold text-foreground mb-2">
