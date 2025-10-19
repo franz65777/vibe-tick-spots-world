@@ -248,7 +248,26 @@ export class UnifiedLocationService {
     const grouped: Record<string, UnifiedLocation[]> = {};
 
     for (const location of locations) {
-      const city = location.city || 'Unknown City';
+      let cityValue = location.city && location.city.trim() !== '' && location.city !== 'Unknown' && location.city !== 'Unknown City'
+        ? normalizeCity(location.city)
+        : null;
+
+      if (!cityValue || cityValue === 'Unknown') {
+        const extractedFromAddress = extractCityFromAddress(location.address);
+        if (extractedFromAddress && extractedFromAddress !== 'Unknown') {
+          cityValue = extractedFromAddress;
+        }
+      }
+
+      if (!cityValue || cityValue === 'Unknown') {
+        const extractedFromName = extractCityFromName(location.name);
+        if (extractedFromName && extractedFromName !== 'Unknown') {
+          cityValue = extractedFromName;
+        }
+      }
+
+      const city = cityValue || 'Unknown City';
+
       if (!grouped[city]) {
         grouped[city] = [];
       }

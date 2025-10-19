@@ -54,11 +54,42 @@ const LocationReviewModal = ({ isOpen, onClose, location }: LocationReviewModalP
 
     setSubmitting(true);
     try {
+      // Ensure location exists in locations table
+      let internalLocationId = location.id;
+
+      // If we have a google_place_id, make sure we have an internal location record
+      if (location.google_place_id) {
+        const { data: existingLocation } = await supabase
+          .from('locations')
+          .select('id')
+          .eq('google_place_id', location.google_place_id)
+          .maybeSingle();
+
+        if (existingLocation) {
+          internalLocationId = existingLocation.id;
+        } else {
+          // Create a basic location record if it doesn't exist
+          const { data: newLocation, error: locationError } = await supabase
+            .from('locations')
+            .insert({
+              name: location.name,
+              google_place_id: location.google_place_id,
+              category: 'place'
+            })
+            .select('id')
+            .single();
+
+          if (newLocation && !locationError) {
+            internalLocationId = newLocation.id;
+          }
+        }
+      }
+
       // Create an interaction for the location with the rating as weight
-      if (rating) {
+      if (rating && internalLocationId) {
         await supabase.from('interactions').insert({
           user_id: user.id,
-          location_id: location.id,
+          location_id: internalLocationId,
           action_type: 'review',
           weight: rating
         });

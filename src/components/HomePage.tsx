@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ThemeToggle } from './ThemeToggle';
 import { Button } from './ui/button';
 import UnifiedSearchOverlay from './explore/UnifiedSearchOverlay';
+import SpottLogo from './common/SpottLogo';
 
 // Local interface for modal components that expect simpler Place structure
 interface LocalPlace {
@@ -68,6 +69,9 @@ const HomePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentCity, setCurrentCity] = useState('');
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
+
+  // Logo state - show on mount
+  const [showLogo, setShowLogo] = useState(true);
 
   // Handle navigation state for opening pin detail from posts
   useEffect(() => {
@@ -464,6 +468,9 @@ const HomePage = () => {
         onCommentSubmit={() => {}}
         onStoryViewed={() => {}}
       />
+
+      {/* Spott Logo on app launch */}
+      <SpottLogo showOnMount={showLogo} duration={4000} />
       </div>
     </MapFilterProvider>
   );
