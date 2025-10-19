@@ -12,6 +12,7 @@ import PinShareModal from './PinShareModal';
 import LocationPostLibrary from './LocationPostLibrary';
 import { getCategoryColor } from '@/utils/categoryIcons';
 import { useNormalizedCity } from '@/hooks/useNormalizedCity';
+import { useLocationStats } from '@/hooks/useLocationStats';
 
 interface LocationCardProps {
   place: Place;
@@ -30,9 +31,12 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
   const { cityLabel } = useNormalizedCity({
     id: place.google_place_id || place.id,
     city: place.city,
+    name: place.name,
     coordinates: place.coordinates,
     address: place.address
   });
+
+  const { stats } = useLocationStats(place.id, place.google_place_id || null);
 
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -136,6 +140,16 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
               </Badge>
             )}
           </div>
+
+          {/* Rating badge (top right) */}
+          {stats.averageRating && (
+            <div className="absolute top-4 right-4">
+              <div className="bg-yellow-500/95 backdrop-blur-sm text-white px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg">
+                <Star className="w-4 h-4 fill-white" />
+                <span className="text-sm font-bold">{stats.averageRating.toFixed(1)}</span>
+              </div>
+            </div>
+          )}
         </div>
 
         <CardContent className="p-6">

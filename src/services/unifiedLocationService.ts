@@ -93,11 +93,13 @@ export class UnifiedLocationService {
 
           const hasMissingCity = !cityValue || cityValue === 'Unknown';
 
+          const finalCity = cityValue || 'Unknown City';
+
           locations.push({
             id: placeId,
             name: loc.name || 'Unknown Location',
             category: loc.category || 'place',
-            city: cityValue || 'Unknown City',
+            city: finalCity,
             address: loc.address,
             google_place_id: loc.google_place_id,
             latitude: loc.latitude,
@@ -154,11 +156,13 @@ export class UnifiedLocationService {
 
           const hasMissingCity = !cityValue || cityValue === 'Unknown';
 
+          const finalCity = cityValue || 'Unknown City';
+
           locations.push({
             id: placeId,
             name: place.place_name || 'Unknown Location',
             category: place.place_category || 'place',
-            city: cityValue || 'Unknown City',
+            city: finalCity,
             address: place.address,
             google_place_id: placeId,
             latitude: coords?.lat,

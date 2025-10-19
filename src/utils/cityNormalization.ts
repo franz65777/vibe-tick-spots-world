@@ -16,13 +16,13 @@ export const normalizeCity = (city: string | null | undefined): string => {
   // Remove "County" prefix (e.g., "County Dublin" -> "Dublin")
   normalized = normalized.replace(/^County\s+/i, '');
 
-  // Check if it's a numeric postal code or too short
-  if (/^\d+$/.test(normalized.trim()) || normalized.trim().length <= 2) {
-    return 'Unknown';
-  }
-
   // Trim whitespace again
   normalized = normalized.trim();
+
+  // Check if it's a numeric postal code or too short
+  if (/^\d+$/.test(normalized) || normalized.length <= 2) {
+    return 'Unknown';
+  }
   
   // Map Dublin neighborhoods/suburbs to "Dublin"
   const dublinNeighborhoods = [
@@ -72,9 +72,13 @@ export const extractCityFromAddress = (address: string | null | undefined): stri
 
     if (/^[A-Z]\d{2}/.test(part)) continue;
 
-    const normalized = normalizeCity(part);
-    if (normalized !== 'Unknown') {
-      return normalized;
+    const potentialCity = part.trim();
+
+    if (potentialCity.length > 2) {
+      const normalized = normalizeCity(potentialCity);
+      if (normalized !== 'Unknown') {
+        return normalized;
+      }
     }
   }
 

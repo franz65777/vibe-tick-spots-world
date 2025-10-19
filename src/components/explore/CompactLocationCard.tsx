@@ -36,6 +36,7 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
   const { cityLabel } = useNormalizedCity({
     id: place.google_place_id || place.id,
     city: place.city,
+    name: place.name,
     coordinates: place.coordinates,
     address: place.address || null
   });
