@@ -3,9 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, MapPin, Tag, TrendingUp, Copy, Check, Filter } from 'lucide-react';
+import { Calendar, MapPin, TrendingUp, Copy, Check } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
@@ -18,13 +17,13 @@ interface MarketingPost {
   metadata: any;
   created_at: string;
   location_id: string;
+  user_id: string;
   location?: {
     name: string;
     city: string;
     category: string;
     address: string;
   };
-  user_id: string;
 }
 
 const BusinessFeedPage = () => {
@@ -44,20 +43,41 @@ const BusinessFeedPage = () => {
     try {
       setLoading(true);
 
-      const response = await supabase
+      // Use a simple query builder approach
+      const supabaseClient: any = supabase;
+      const query = supabaseClient
         .from('posts')
-        .select('*, locations(*)')
+        .select('id, caption, content_type, media_urls, metadata, created_at, location_id, user_id')
         .not('content_type', 'is', null)
         .in('content_type', ['event', 'discount', 'promotion', 'announcement'])
         .order('created_at', { ascending: false })
         .limit(50);
 
-      if (response.error) throw response.error;
+      const { data: postsData, error: postsError } = await query;
+
+      if (postsError) throw postsError;
+
+      // Fetch locations separately
+      const locationIds = (postsData || []).map((p: any) => p.location_id).filter(Boolean);
+      
+      let locationsData: any[] = [];
+      if (locationIds.length > 0) {
+        const locationQuery = supabaseClient
+          .from('locations')
+          .select('id, name, city, category, address')
+          .in('id', locationIds);
+        
+        const { data: locations } = await locationQuery;
+        locationsData = locations || [];
+      }
+
+      // Create a map of locations by id
+      const locationsMap = new Map(locationsData.map((loc: any) => [loc.id, loc]));
 
       // Transform data
-      const formattedPosts = ((response.data as any) || []).map((post: any) => ({
+      const formattedPosts = (postsData || []).map((post: any) => ({
         ...post,
-        location: Array.isArray(post.locations) ? post.locations[0] : post.locations
+        location: post.location_id ? locationsMap.get(post.location_id) : null
       }));
 
       // Extract unique cities
