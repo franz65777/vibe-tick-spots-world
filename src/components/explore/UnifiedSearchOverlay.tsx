@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, MapPin, Loader2 } from 'lucide-react';
-import { loadGoogleMapsAPI } from '@/lib/googleMaps';
-import { useCityEngagement } from '@/hooks/useCityEngagement'; // keep usage
+import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
+import { useCityEngagement } from '@/hooks/useCityEngagement';
 import CityEngagementCard from './CityEngagementCard';
 interface UnifiedSearchOverlayProps {
   isOpen: boolean;
@@ -14,8 +14,6 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
   const [results, setResults] = useState<CityResult[]>([]);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [autocompleteService, setAutocompleteService] = useState<any>(null);
-  const [placesService, setPlacesService] = useState<any>(null);
   const [trendingCities, setTrendingCities] = useState<{ name: string; count: number }[]>([]);
 
   const popularCities = [
@@ -39,13 +37,6 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
   useEffect(() => {
     if (isOpen && inputRef.current) {
       inputRef.current.focus();
-      loadGoogleMapsAPI().then(() => {
-        const google = (window as any).google;
-        if (google?.maps?.places) {
-          setAutocompleteService(new google.maps.places.AutocompleteService());
-          setPlacesService(new google.maps.places.PlacesService(document.createElement('div')));
-        }
-      });
     }
   }, [isOpen]);
 
@@ -83,7 +74,7 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (query.trim() && autocompleteService && placesService) {
+      if (query.trim()) {
         searchCities();
       } else {
         setResults([]);
@@ -91,80 +82,42 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [query, autocompleteService, placesService]);
+  }, [query]);
 
-  const searchCities = () => {
-    if (!query.trim() || !autocompleteService || !placesService) return;
+  const searchCities = async () => {
+    if (!query.trim()) return;
 
     setLoading(true);
-    autocompleteService.getPlacePredictions(
-      {
-        input: query,
-        types: ['(cities)']
-      },
-      (predictions: any[], status: any) => {
-        const google = (window as any).google;
-        if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
-          const cityPromises = predictions.slice(0, 8).map((prediction: any) => 
-            new Promise<CityResult | null>((resolve) => {
-              placesService.getDetails(
-                { placeId: prediction.place_id },
-                (place: any, detailStatus: any) => {
-                  if (detailStatus === google.maps.places.PlacesServiceStatus.OK && place.geometry) {
-                    resolve({
-                      name: place.name,
-                      address: place.formatted_address,
-                      lat: place.geometry.location.lat(),
-                      lng: place.geometry.location.lng()
-                    });
-                  } else {
-                    resolve(null);
-                  }
-                }
-              );
-            })
-          );
-
-          Promise.all(cityPromises).then((cities) => {
-            const deduped = new Map<string, CityResult>();
-            (cities.filter(Boolean) as CityResult[]).forEach((c) => {
-              const key = c.name.split(',')[0].trim().toLowerCase();
-              if (!deduped.has(key)) deduped.set(key, c);
-            });
-            setResults(Array.from(deduped.values()));
-            setLoading(false);
-          });
-        } else {
-          setResults([]);
-          setLoading(false);
-        }
-      }
-    );
+    try {
+      const nominatimResults = await nominatimGeocoding.searchPlace(query);
+      
+      setResults(nominatimResults.map(result => ({
+        name: result.city || result.displayName.split(',')[0],
+        address: result.displayName,
+        lat: result.lat,
+        lng: result.lng,
+      })));
+    } catch (error) {
+      console.error('City search error:', error);
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const selectCityByName = async (name: string) => {
-    const google = (window as any).google;
-    if (!placesService || !google) return;
+    // Use FREE OpenStreetMap for city selection
     setLoading(true);
     
     try {
-      // Use PlacesApiOptimizer for caching
-      const { PlacesApiOptimizer } = await import('@/services/placesApiOptimizer');
-      const results = await PlacesApiOptimizer.textSearch({ query: name });
+      const results = await nominatimGeocoding.searchPlace(name);
       
-      if (results?.[0]?.geometry) {
+      if (results?.[0]) {
         const r = results[0];
-        const lat = typeof r.geometry.location.lat === 'function' 
-          ? r.geometry.location.lat() 
-          : r.geometry.location.lat;
-        const lng = typeof r.geometry.location.lng === 'function'
-          ? r.geometry.location.lng()
-          : r.geometry.location.lng;
-          
         handleCitySelect({
-          name: r.name || name,
-          lat,
-          lng
+          name: r.city || name,
+          lat: r.lat,
+          lng: r.lng
         } as any);
       }
     } catch (error) {

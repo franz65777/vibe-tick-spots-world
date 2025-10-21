@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { MapPin, Plus, Building2 } from 'lucide-react';
+import { MapPin, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { categoryDisplayNames, type AllowedCategory } from '@/utils/allowedCategories';
 import { supabase } from '@/integrations/supabase/client';
-import NearbyPlacesSuggestions from './NearbyPlacesSuggestions';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import OpenStreetMapAutocomplete from '@/components/OpenStreetMapAutocomplete';
 
 interface QuickAddPinModalProps {
   isOpen: boolean;
@@ -165,16 +164,29 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
     onClose();
   };
 
-  return coordinates ? (
-    <NearbyPlacesSuggestions
-      coordinates={coordinates}
-      onClose={() => {
-        onPinAdded();
-        onClose();
-      }}
-      isOpen={isOpen}
-    />
-  ) : null;
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Quick Add Location</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <OpenStreetMapAutocomplete
+            onPlaceSelect={(place) => {
+              handleSavePin({
+                name: place.name,
+                address: place.address,
+                latitude: place.coordinates.lat,
+                longitude: place.coordinates.lng,
+                category: 'restaurant',
+              });
+            }}
+            placeholder="Search for a place..."
+          />
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 };
 
 export default QuickAddPinModal;
