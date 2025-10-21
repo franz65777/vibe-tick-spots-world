@@ -10,6 +10,7 @@ import PostsGrid from '@/components/profile/PostsGrid';
 import { getCategoryColor, getCategoryIcon } from '@/utils/categoryIcons';
 import { formatDetailedAddress } from '@/utils/addressFormatter';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 interface BusinessLocation {
   id: string;
@@ -27,6 +28,7 @@ interface BusinessLocation {
 
 const BusinessProfilePage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [location, setLocation] = useState<BusinessLocation | null>(null);
   const [activeTab, setActiveTab] = useState('posts');
   const [loading, setLoading] = useState(true);
@@ -72,16 +74,30 @@ const BusinessProfilePage = () => {
     if (!user) return;
 
     try {
-      // Fetch posts from the business user as marketing content
       const { data } = await supabase
         .from('posts')
         .select('*')
         .eq('user_id', user.id)
+        .in('content_type', ['event', 'discount', 'promotion', 'announcement'])
         .order('created_at', { ascending: false });
 
       setMarketingContent(data || []);
     } catch (error) {
       console.error('Error fetching marketing content:', error);
+    }
+  };
+
+  const handleRelaunch = (content: any) => {
+    try {
+      const template = {
+        description: content.caption || '',
+        content_type: content.content_type || 'event',
+        metadata: content.metadata || {}
+      };
+      localStorage.setItem('campaign_template', JSON.stringify(template));
+      navigate('/business/add?mode=marketing');
+    } catch (e) {
+      console.error('Error preparing relaunch template:', e);
     }
   };
 
@@ -113,46 +129,38 @@ const BusinessProfilePage = () => {
   return (
     <div className="min-h-screen bg-background pb-24">
       <div className="max-w-screen-sm mx-auto">
-        {/* Cover Image - Smaller with rounded corners */}
-        {location.image_url ? (
-          <div className="h-48 overflow-hidden bg-muted relative mx-4 mt-4 rounded-2xl">
+        {/* Cover Image with gradient fade and overlay title */}
+        <div className="relative mx-4 mt-4 rounded-2xl overflow-hidden h-40">
+          {location.image_url ? (
             <img
               src={location.image_url}
               alt={location.name}
               className="w-full h-full object-cover"
             />
-            <div className="absolute top-3 left-3">
-              <Badge className={`${getCategoryColor(location.category)} bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full border-0 font-medium shadow-sm`}>
-                {formatCategory(location.category)}
-              </Badge>
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
+              {React.createElement(getCategoryIcon(location.category), {
+                className: 'w-16 h-16 text-muted-foreground/40',
+                strokeWidth: 1.5
+              })}
             </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
+          <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+            <h1 className="text-xl font-bold text-foreground truncate">{location.name}</h1>
+            <Badge className={`${getCategoryColor(location.category)} bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full border-0 font-medium shadow-sm`}>
+              {formatCategory(location.category)}
+            </Badge>
           </div>
-        ) : (
-          <div className="h-48 bg-gradient-to-br from-muted to-muted/50 flex flex-col items-center justify-center relative mx-4 mt-4 rounded-2xl">
-            {React.createElement(getCategoryIcon(location.category), {
-              className: 'w-16 h-16 text-muted-foreground/40',
-              strokeWidth: 1.5
-            })}
-            <div className="absolute top-3 left-3">
-              <Badge className={`${getCategoryColor(location.category)} px-3 py-1 rounded-full border-0 font-medium`}>
-                {formatCategory(location.category)}
-              </Badge>
-            </div>
-          </div>
-        )}
+        </div>
 
         {/* Location Info */}
         <div className="px-4 py-6 space-y-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground mb-2 text-left">
-              {location.name}
-            </h1>
-            {location.description && (
-              <p className="text-muted-foreground text-sm mb-3 text-left">
-                {location.description}
-              </p>
-            )}
-          </div>
+          {location.description && (
+            <p className="text-muted-foreground text-sm mb-3 text-left">
+              {location.description}
+            </p>
+          )}
 
           {/* Contact Info */}
           <div className="space-y-2">
@@ -229,30 +237,30 @@ const BusinessProfilePage = () => {
                   <p className="text-sm mt-2">Create events, promotions, and announcements in the Add tab</p>
                 </div>
               ) : (
-                marketingContent.map((content) => (
-                  <Card key={content.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <h3 className="font-semibold">{content.caption || 'Post'}</h3>
-                      </div>
-                      {content.media_urls && content.media_urls.length > 0 && (
-                        <div className="grid grid-cols-3 gap-2 mb-3">
-                          {content.media_urls.slice(0, 3).map((url: string, idx: number) => (
-                            <img
-                              key={idx}
-                              src={url}
-                              alt={`Post ${idx + 1}`}
-                              className="w-full aspect-square object-cover rounded"
-                            />
-                          ))}
+                <div className="grid grid-cols-2 gap-3">
+                  {marketingContent.map((content) => (
+                    <Card key={content.id} className="overflow-hidden">
+                      <CardContent className="p-0">
+                        {content.media_urls && content.media_urls.length > 0 ? (
+                          <img
+                            src={content.media_urls[0]}
+                            alt={content.caption || 'Campaign'}
+                            className="w-full aspect-square object-cover"
+                          />
+                        ) : (
+                          <div className="w-full aspect-square bg-muted flex items-center justify-center text-muted-foreground">No Image</div>
+                        )}
+                        <div className="p-3 space-y-2">
+                          <h3 className="font-semibold line-clamp-2 text-foreground text-sm">{content.caption || 'Campaign'}</h3>
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs text-muted-foreground">{new Date(content.created_at).toLocaleDateString()}</p>
+                            <Button size="sm" onClick={() => handleRelaunch(content)} className="h-8 px-3 text-xs">Relaunch</Button>
+                          </div>
                         </div>
-                      )}
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(content.created_at).toLocaleDateString()}
-                      </p>
-                    </CardContent>
-                  </Card>
-                ))
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               )}
             </div>
           )}

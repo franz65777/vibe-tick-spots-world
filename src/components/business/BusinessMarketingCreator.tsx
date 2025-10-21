@@ -186,7 +186,7 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
             key={type.value}
             onClick={() => setContentType(type.value)}
             className={cn(
-              "flex items-center gap-2 p-3 rounded-lg border-2 transition-all text-sm",
+              "flex items-center gap-2 p-3 rounded-lg border-2 transition-all text-base",
               contentType === type.value
                 ? "border-primary bg-primary/5"
                 : "border-border hover:border-primary/50"
@@ -202,23 +202,23 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
       <div className="flex-1 min-h-0 space-y-3 overflow-hidden flex flex-col">
         {/* Title */}
         <div className="flex-shrink-0">
-          <label className="text-sm font-medium mb-1 block">Title</label>
+          <label className="text-base font-medium mb-1 block">Title</label>
           <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={`${contentType} title...`}
-            className="h-9 text-sm"
+            className="h-10 text-base"
           />
         </div>
 
         {/* Description */}
         <div className="flex-shrink-0">
-          <label className="text-sm font-medium mb-1 block">Description</label>
+          <label className="text-base font-medium mb-1 block">Description</label>
           <Textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder={`Describe your ${contentType}...`}
-            className="min-h-[50px] text-sm resize-none"
+            className="min-h-[56px] text-base resize-none"
             rows={2}
           />
         </div>
@@ -227,21 +227,21 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
         {contentType === 'event' && (
           <div className="grid grid-cols-2 gap-2 flex-shrink-0">
             <div>
-              <label className="text-sm font-medium mb-1 block">Start</label>
+              <label className="text-base font-medium mb-1 block">Start</label>
               <Input
                 type="datetime-local"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="h-9 text-sm"
+                className="h-10 text-base"
               />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">End</label>
+              <label className="text-base font-medium mb-1 block">End</label>
               <Input
                 type="datetime-local"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="h-9 text-sm"
+                className="h-10 text-base"
               />
             </div>
           </div>
@@ -249,7 +249,7 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
 
         {contentType === 'discount' && (
           <div className="flex-shrink-0">
-            <label className="text-sm font-medium mb-1 block">Discount (%)</label>
+            <label className="text-base font-medium mb-1 block">Discount (%)</label>
             <Input
               type="number"
               min="0"
@@ -257,19 +257,19 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
               value={discountAmount}
               onChange={(e) => setDiscountAmount(e.target.value)}
               placeholder="e.g., 20"
-              className="h-9 text-sm"
+              className="h-10 text-base"
             />
           </div>
         )}
 
         {(contentType === 'discount' || contentType === 'promotion') && (
           <div className="flex-shrink-0">
-            <label className="text-sm font-medium mb-1 block">Terms</label>
+            <label className="text-base font-medium mb-1 block">Terms</label>
             <Textarea
               value={terms}
               onChange={(e) => setTerms(e.target.value)}
               placeholder="Terms & conditions..."
-              className="min-h-[45px] text-sm resize-none"
+              className="min-h-[50px] text-base resize-none"
               rows={2}
             />
           </div>

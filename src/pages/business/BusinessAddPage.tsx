@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Camera, Megaphone } from 'lucide-react';
 import { NewAddPage } from '@/components/add/NewAddPage';
 import BusinessMarketingCreator from '@/components/business/BusinessMarketingCreator';
@@ -6,6 +6,14 @@ import { cn } from '@/lib/utils';
 
 const BusinessAddPage = () => {
   const [activeMode, setActiveMode] = useState<'post' | 'marketing'>('post');
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get('mode');
+    if (mode === 'marketing' || mode === 'post') {
+      setActiveMode(mode as 'post' | 'marketing');
+    }
+  }, []);
 
   return (
     <div className="h-screen bg-gradient-to-b from-background to-muted/20 flex flex-col overflow-hidden">
