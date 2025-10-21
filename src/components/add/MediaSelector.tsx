@@ -28,7 +28,7 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
 
   if (selectedFiles.length === 0) {
     return (
-      <div className="h-full flex flex-col items-center justify-center bg-background p-6 relative overflow-hidden">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6 relative overflow-hidden">
         <div className="text-center space-y-6 max-w-sm relative z-10">
           {/* Floating Category Icons - Arranged in Circle */}
           <div className="relative w-full h-64 flex items-center justify-center mb-4">

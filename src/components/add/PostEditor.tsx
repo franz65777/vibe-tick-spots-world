@@ -92,7 +92,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({
 
       {/* Content */}
       <div className="flex-1 overflow-hidden">
-        <div className="max-w-2xl mx-auto p-2 space-y-3">
+        <div className="max-w-2xl mx-auto p-3 space-y-4">
           {/* Media Preview */}
           <MediaSelector
             selectedFiles={selectedFiles}

@@ -76,83 +76,57 @@ const BusinessOverviewPage = () => {
     try {
       setLoading(true);
 
-      // Resolve business -> verified claimed location
-      const { data: biz } = await (supabase as any)
-        .from('business_profiles')
-        .select('id')
-        .eq('user_id', user?.id)
-        .maybeSingle();
-
-      if (!biz?.id) {
-        setLocation(null);
-        setPosts([]);
-        return;
-      }
-
-      const { data: claim } = await (supabase as any)
-        .from('location_claims')
-        .select('location_id')
-        .eq('business_id', biz.id)
-        .eq('verification_status', 'verified')
-        .maybeSingle();
-
-      if (!claim?.location_id) {
-        setLocation(null);
-        setPosts([]);
-        return;
-      }
-
-      const { data: locationData } = await (supabase as any)
+      // For now, get a random location (we'll add business logic later)
+      const { data: locationData, error: locationError } = await supabase
         .from('locations')
         .select('*')
-        .eq('id', claim.location_id)
+        .limit(1)
         .maybeSingle();
 
-      if (!locationData) {
-        setLocation(null);
-        setPosts([]);
-        return;
+      if (locationError) throw locationError;
+
+      if (locationData) {
+        setLocation(locationData);
+
+        // Fetch posts for this location
+        const { data: postsData, error: postsError } = await supabase
+          .from('posts')
+          .select(`
+            id,
+            user_id,
+            caption,
+            media_urls,
+            likes_count,
+            comments_count,
+            saves_count,
+            created_at,
+            metadata,
+            profiles!posts_user_id_fkey (
+              username,
+              avatar_url
+            )
+          `)
+          .eq('location_id', locationData.id)
+          .order('created_at', { ascending: false });
+
+        if (postsError) throw postsError;
+        
+        // Map the data to match our Post interface and extract is_pinned from metadata
+        const mappedPosts = (postsData || []).map((post: any) => ({
+          id: post.id,
+          user_id: post.user_id,
+          caption: post.caption,
+          media_urls: post.media_urls || [],
+          likes_count: post.likes_count || 0,
+          comments_count: post.comments_count || 0,
+          saves_count: post.saves_count || 0,
+          created_at: post.created_at,
+          is_pinned: post.metadata?.is_pinned || false,
+          profiles: post.profiles
+        }));
+        
+        setPosts(mappedPosts);
       }
-
-      setLocation(locationData);
-
-      // Fetch posts for this location
-      const { data: postsData, error: postsError } = await (supabase as any)
-        .from('posts')
-        .select(`
-          id,
-          user_id,
-          caption,
-          media_urls,
-          likes_count,
-          comments_count,
-          saves_count,
-          created_at,
-          metadata,
-          profiles!posts_user_id_fkey (
-            username,
-            avatar_url
-          )
-        `)
-        .eq('location_id', locationData.id)
-        .order('created_at', { ascending: false });
-
-      if (postsError) throw postsError;
-
-      const mappedPosts = (postsData || []).map((post: any) => ({
-        id: post.id,
-        user_id: post.user_id,
-        caption: post.caption,
-        media_urls: post.media_urls || [],
-        likes_count: post.likes_count || 0,
-        comments_count: post.comments_count || 0,
-        saves_count: post.saves_count || 0,
-        created_at: post.created_at,
-        is_pinned: post.metadata?.is_pinned || false,
-        profiles: post.profiles
-      }));
-
-      setPosts(mappedPosts);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Failed to load location data');
@@ -196,13 +170,13 @@ const BusinessOverviewPage = () => {
       const filePath = `location-covers/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('media')
+        .from('location-images')
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
-        .from('media')
+        .from('location-images')
         .getPublicUrl(filePath);
 
       const { error: updateError } = await supabase
@@ -338,10 +312,10 @@ const BusinessOverviewPage = () => {
                   </Badge>
                 </h1>
               </div>
-            <div className="flex items-center gap-2 text-muted-foreground mb-3">
-              <MapPin className="w-4 h-4 flex-shrink-0" />
-              <span className="text-sm">{formatLocationAddress()}</span>
-            </div>
+              <div className="flex items-center gap-2 text-muted-foreground mb-3">
+                <MapPin className="w-4 h-4 flex-shrink-0" />
+                <span className="text-sm">{formatLocationAddress()}</span>
+              </div>
               
               {/* Quick Stats */}
               <div className="flex items-center gap-4 text-sm">
