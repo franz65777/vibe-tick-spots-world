@@ -1,52 +1,59 @@
 import React, { useState } from 'react';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Camera, Megaphone } from 'lucide-react';
 import { NewAddPage } from '@/components/add/NewAddPage';
 import BusinessMarketingCreator from '@/components/business/BusinessMarketingCreator';
+import { cn } from '@/lib/utils';
 
 const BusinessAddPage = () => {
-  const [activeTab, setActiveTab] = useState('post');
+  const [activeMode, setActiveMode] = useState<'post' | 'marketing'>('post');
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-24">
       <div className="max-w-screen-sm mx-auto">
-        {/* Header with Tabs */}
-        <div className="sticky top-0 z-10 bg-gradient-to-br from-background via-background to-muted/10 backdrop-blur-sm border-b border-border/50 shadow-lg">
-          <div className="px-4 pt-5 pb-4">
-            <h1 className="text-2xl font-bold text-foreground mb-4 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-              Create Content
-            </h1>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="w-full grid grid-cols-2 h-14 bg-muted/30 p-1.5 rounded-2xl">
-                <TabsTrigger
-                  value="post"
-                  className="flex items-center justify-center gap-2.5 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:scale-[1.02] transition-all duration-200 data-[state=active]:text-primary"
-                >
-                  <Camera className="w-5 h-5" />
-                  <span className="font-bold text-sm">Post</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="marketing"
-                  className="flex items-center justify-center gap-2.5 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:scale-[1.02] transition-all duration-200 data-[state=active]:text-primary"
-                >
-                  <Megaphone className="w-5 h-5" />
-                  <span className="font-bold text-sm">Marketing</span>
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+        {/* Header with Mode Toggle */}
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b">
+          <div className="px-4 py-4">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <button
+                onClick={() => setActiveMode('post')}
+                className={cn(
+                  'flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-all duration-300',
+                  activeMode === 'post'
+                    ? 'bg-primary text-primary-foreground shadow-lg scale-105'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                )}
+              >
+                <Camera className="w-5 h-5" />
+                <span>Create Post</span>
+              </button>
+              <button
+                onClick={() => setActiveMode('marketing')}
+                className={cn(
+                  'flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-all duration-300',
+                  activeMode === 'marketing'
+                    ? 'bg-accent text-accent-foreground shadow-lg scale-105'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                )}
+              >
+                <Megaphone className="w-5 h-5" />
+                <span>Marketing</span>
+              </button>
+            </div>
+            <p className="text-sm text-center text-muted-foreground">
+              {activeMode === 'post' 
+                ? 'Share moments and engage with your audience'
+                : 'Create promotional content and campaigns'
+              }
+            </p>
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-4">
-          {activeTab === 'post' && (
-            <div className="bg-background rounded-xl shadow-sm border border-border p-4">
-              <NewAddPage />
-            </div>
-          )}
-
-          {activeTab === 'marketing' && (
-            <div className="bg-background rounded-xl shadow-sm border border-border p-4">
+        <div className="transition-all duration-300">
+          {activeMode === 'post' ? (
+            <NewAddPage />
+          ) : (
+            <div className="p-4">
               <BusinessMarketingCreator />
             </div>
           )}

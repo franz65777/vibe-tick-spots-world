@@ -4,12 +4,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, Upload, Image as ImageIcon, Bell, Send } from 'lucide-react';
+import { MapPin, Upload, Bell, Send, TrendingUp, Award, Sparkles } from 'lucide-react';
 import BusinessLocationPosts from '@/components/business/BusinessLocationPosts';
 import { getCategoryColor, getCategoryIcon } from '@/utils/categoryIcons';
 import { formatDetailedAddress } from '@/utils/addressFormatter';
 import { toast } from 'sonner';
-import { useNotifications } from '@/hooks/useNotifications';
+import { useUserBadges } from '@/hooks/useUserBadges';
+import { useBusinessProfile } from '@/hooks/useBusinessProfile';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Location {
   id: string;
@@ -39,16 +41,36 @@ interface Post {
 
 const BusinessOverviewPage = () => {
   const navigate = useNavigate();
-  const { unreadCount } = useNotifications();
+  const { user } = useAuth();
+  const { businessProfile } = useBusinessProfile();
+  const { badges, userStats, loading: badgesLoading } = useUserBadges(user?.id);
   const [location, setLocation] = useState<Location | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchLocationAndPosts();
+    fetchBusinessNotifications();
   }, []);
+
+  const fetchBusinessNotifications = async () => {
+    if (!user) return;
+    
+    try {
+      const { count } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('is_read', false);
+      
+      setUnreadNotifications(count || 0);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
 
   const fetchLocationAndPosts = async () => {
     try {
@@ -207,41 +229,56 @@ const BusinessOverviewPage = () => {
     );
   }
 
+  const earnedBadges = badges.filter(b => b.earned);
+  const hasContent = posts.length > 0;
+
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-24">
       <div className="max-w-screen-sm mx-auto">
         {/* Action Buttons */}
-        <div className="flex items-center justify-end gap-2 p-4 border-b bg-card">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/notifications')}
-            className="relative"
-          >
-            <Bell className="w-5 h-5" />
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full flex items-center justify-center text-xs font-bold text-white">
-                {unreadCount > 99 ? '99+' : unreadCount}
-              </span>
-            )}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/messages')}
-          >
-            <Send className="w-5 h-5" />
-          </Button>
+        <div className="flex items-center justify-between p-4 border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+          <h1 className="text-lg font-bold text-foreground">Business Overview</h1>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/notifications')}
+              className="relative"
+            >
+              <Bell className="w-5 h-5" />
+              {unreadNotifications > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-destructive rounded-full flex items-center justify-center text-xs font-bold text-destructive-foreground">
+                  {unreadNotifications > 99 ? '99+' : unreadNotifications}
+                </span>
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/messages')}
+            >
+              <Send className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
 
         {/* Location Header */}
-        <div className="p-6 border-b bg-card">
-          <h1 className="text-2xl font-bold text-foreground mb-2">
-            {location.name}
-          </h1>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <MapPin className="w-4 h-4 flex-shrink-0" />
-            <span className="text-sm">{formatLocationAddress()}</span>
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10" />
+          <div className="relative p-6 border-b bg-card/80 backdrop-blur-sm">
+            <h1 className="text-2xl font-bold text-foreground mb-2 flex items-center gap-2">
+              {location.name}
+              {businessProfile?.verification_status === 'verified' && (
+                <Badge className="bg-primary/10 text-primary border-primary/20">
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  Verified
+                </Badge>
+              )}
+            </h1>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <MapPin className="w-4 h-4 flex-shrink-0" />
+              <span className="text-sm">{formatLocationAddress()}</span>
+            </div>
           </div>
         </div>
 
@@ -306,22 +343,72 @@ const BusinessOverviewPage = () => {
           </CardContent>
         </Card>
 
-        {/* Posts Section */}
-        <div className="px-4 pb-4">
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold text-foreground">
-              User Posts ({posts.length})
-            </h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Posts from users who tagged this location
-            </p>
+        {/* Badges Section - Show when no content */}
+        {!hasContent && earnedBadges.length > 0 && (
+          <div className="px-4 pt-6">
+            <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Award className="w-5 h-5 text-primary" />
+                  <h3 className="font-bold text-foreground">Your Achievements</h3>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  {earnedBadges.slice(0, 6).map((badge) => (
+                    <div key={badge.id} className="text-center">
+                      <div className={`w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br ${badge.gradient} flex items-center justify-center text-3xl mb-2 shadow-lg`}>
+                        {badge.icon}
+                      </div>
+                      <p className="text-xs font-medium text-foreground">{badge.name}</p>
+                      <Badge className="mt-1 text-[10px] px-1.5 py-0" variant="secondary">
+                        {badge.level}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
+        )}
 
-          <BusinessLocationPosts 
-            posts={posts}
-            onPinToggle={handlePinToggle}
-          />
-        </div>
+        {/* Empty State */}
+        {!hasContent && (
+          <div className="px-4 pt-6">
+            <Card className="border-dashed border-2">
+              <CardContent className="p-8 text-center">
+                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                  <TrendingUp className="w-10 h-10 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-bold text-foreground mb-2">Start Growing Your Business</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  No user posts yet. Upload a cover image and create content to attract customers.
+                </p>
+                <Button onClick={() => navigate('/business/add')} className="gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  Create Your First Post
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Posts Section */}
+        {hasContent && (
+          <div className="px-4 pb-4 pt-6">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-foreground">
+                User Posts ({posts.length})
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Posts from users who tagged this location
+              </p>
+            </div>
+
+            <BusinessLocationPosts 
+              posts={posts}
+              onPinToggle={handlePinToggle}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
