@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import GoogleMapsSetup from '@/components/GoogleMapsSetup';
+import LeafletMapSetup from '@/components/LeafletMapSetup';
 import AddLocationModal from './AddLocationModal';
 import QuickAddPinModal from './QuickAddPinModal';
 import MapCategoryFilters from './MapCategoryFilters';
@@ -144,7 +144,7 @@ const MapSection = ({
   return (
     <>
       <div className={`${isExpanded ? 'fixed inset-0 w-screen h-screen p-3' : 'flex-1 relative min-h-[500px]'} w-full overflow-hidden`}>
-        <GoogleMapsSetup
+        <LeafletMapSetup
           places={places}
           onPinClick={handlePinClick}
           onPinShare={handlePinShare}
