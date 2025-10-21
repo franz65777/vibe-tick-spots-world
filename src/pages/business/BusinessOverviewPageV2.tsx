@@ -11,6 +11,8 @@ import { formatDetailedAddress } from '@/utils/addressFormatter';
 import { toast } from 'sonner';
 import { useBusinessProfile } from '@/hooks/useBusinessProfile';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLocationStats } from '@/hooks/useLocationStats';
+import { useBusinessLocationStats } from '@/hooks/useBusinessLocationStats';
 
 interface Location {
   id: string;
@@ -48,6 +50,9 @@ const BusinessOverviewPageV2 = () => {
   const [uploading, setUploading] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const { stats } = useLocationStats(location?.id || null, location?.google_place_id || null);
+  const { viewsCount, commentsCount, dailyGrowth, loading: statsLoading } = useBusinessLocationStats(location?.id || null);
 
   useEffect(() => {
     fetchLocationAndPosts();
@@ -195,10 +200,11 @@ const BusinessOverviewPageV2 = () => {
 
   const formatLocationAddress = () => {
     if (!location) return '';
-    return formatDetailedAddress({
+    const formatted = formatDetailedAddress({
       city: location.city,
       address: location.address,
     });
+    return formatted;
   };
 
   if (loading) {
@@ -231,23 +237,20 @@ const BusinessOverviewPageV2 = () => {
         {/* Sticky Header */}
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b">
           <div className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-3">
-              {/* Profile Image */}
-              <div className="relative group">
-                <div className="w-14 h-14 rounded-xl overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center cursor-pointer border-2 border-border">
+            <div className="flex items-center gap-3 flex-1">
+              {/* Profile Image - Smaller Icon */}
+              <div className="relative group flex-shrink-0">
+                <div className="w-12 h-12 rounded-full overflow-hidden bg-muted flex items-center justify-center cursor-pointer border border-border">
                   {location.image_url ? (
                     <img src={location.image_url} alt={location.name} className="w-full h-full object-cover" />
                   ) : (
-                    React.createElement(getCategoryIcon(location.category), {
-                      className: 'w-7 h-7 text-primary',
-                      strokeWidth: 1.5
-                    })
+                    <img src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d" alt="Business" className="w-full h-full object-cover" />
                   )}
                   <div 
                     className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                     onClick={() => fileInputRef.current?.click()}
                   >
-                    <Upload className="w-4 h-4 text-white" />
+                    <Upload className="w-3 h-3 text-white" />
                   </div>
                 </div>
                 <input
@@ -259,21 +262,21 @@ const BusinessOverviewPageV2 = () => {
                 />
               </div>
               
-              <div className="flex-1">
-                <h1 className="text-base font-bold text-foreground flex items-center gap-2">
+              <div className="flex-1 text-left">
+                <h1 className="text-sm font-bold text-foreground flex items-center gap-2">
                   {location.name}
                   {businessProfile?.verification_status === 'verified' && (
-                    <Sparkles className="w-4 h-4 text-primary" />
+                    <Sparkles className="w-3 h-3 text-primary" />
                   )}
                 </h1>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <MapPin className="w-3 h-3" />
-                  <span>{location.city || 'Location'}</span>
+                <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                  <MapPin className="w-3 h-3 flex-shrink-0" />
+                  <span className="truncate">{formatLocationAddress()}</span>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <Button variant="ghost" size="sm" onClick={() => navigate('/business/notifications')} className="relative">
                 <Bell className="w-5 h-5" />
                 {unreadNotifications > 0 && (
@@ -290,35 +293,27 @@ const BusinessOverviewPageV2 = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="p-4 grid grid-cols-4 gap-3">
+        <div className="p-4 grid grid-cols-3 gap-3">
           <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
             <CardContent className="p-3 text-center">
               <Eye className="w-5 h-5 text-primary mx-auto mb-1" />
-              <p className="text-lg font-bold text-foreground">2.8K</p>
+              <p className="text-lg font-bold text-foreground">{statsLoading ? '...' : viewsCount}</p>
               <p className="text-[10px] text-muted-foreground">Views</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-accent/10 to-accent/5 border-accent/20">
-            <CardContent className="p-3 text-center">
-              <Heart className="w-5 h-5 text-accent mx-auto mb-1" />
-              <p className="text-lg font-bold text-foreground">{posts.reduce((sum, p) => sum + p.likes_count, 0)}</p>
-              <p className="text-[10px] text-muted-foreground">Likes</p>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-br from-chart-2/10 to-chart-2/5 border-chart-2/20">
             <CardContent className="p-3 text-center">
               <MessageSquare className="w-5 h-5 text-chart-2 mx-auto mb-1" />
-              <p className="text-lg font-bold text-foreground">{posts.reduce((sum, p) => sum + p.comments_count, 0)}</p>
+              <p className="text-lg font-bold text-foreground">{statsLoading ? '...' : commentsCount}</p>
               <p className="text-[10px] text-muted-foreground">Comments</p>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-br from-chart-3/10 to-chart-3/5 border-chart-3/20">
             <CardContent className="p-3 text-center">
-              <Share2 className="w-5 h-5 text-chart-3 mx-auto mb-1" />
-              <p className="text-lg font-bold text-foreground">{posts.reduce((sum, p) => sum + p.saves_count, 0)}</p>
+              <MapPin className="w-5 h-5 text-chart-3 mx-auto mb-1" />
+              <p className="text-lg font-bold text-foreground">{statsLoading ? '...' : stats.totalSaves}</p>
               <p className="text-[10px] text-muted-foreground">Saves</p>
             </CardContent>
           </Card>
@@ -334,22 +329,26 @@ const BusinessOverviewPageV2 = () => {
                     <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-foreground">+23%</p>
-                    <p className="text-xs text-muted-foreground">Growth</p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {statsLoading ? '...' : dailyGrowth >= 0 ? `+${dailyGrowth}%` : `${dailyGrowth}%`}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Daily Growth</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-l-4 border-l-blue-500 bg-gradient-to-br from-blue-50/50 to-transparent dark:from-blue-950/20">
+            <Card className="border-l-4 border-l-amber-500 bg-gradient-to-br from-amber-50/50 to-transparent dark:from-amber-950/20">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
-                    <Zap className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/30">
+                    <Star className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-foreground">{avgEngagement}</p>
-                    <p className="text-xs text-muted-foreground">Avg/Post</p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {stats.averageRating ? stats.averageRating.toFixed(1) : 'N/A'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Avg Rating</p>
                   </div>
                 </div>
               </CardContent>
