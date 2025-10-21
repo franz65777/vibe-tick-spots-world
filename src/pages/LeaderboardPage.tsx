@@ -30,7 +30,7 @@ const LeaderboardPage = () => {
   };
 
   return (
-    <AuthenticatedLayout>
+    <>
       <div className="min-h-screen bg-background pb-20">
         {/* Header */}
         <div className="bg-gradient-to-br from-primary via-primary to-accent text-primary-foreground p-6">
@@ -184,7 +184,7 @@ const LeaderboardPage = () => {
           </Card>
         </div>
       </div>
-    </AuthenticatedLayout>
+    </>
   );
 };
 
