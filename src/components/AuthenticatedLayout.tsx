@@ -18,7 +18,7 @@ const AuthenticatedLayout: React.FC<AuthenticatedLayoutProps> = ({ children }) =
       <div className={isDiscoverRoute ? "" : "pb-16"}>
         {children}
       </div>
-      {!isDiscoverRoute && (isBusinessRoute ? <BusinessBottomNavigation /> : <NewBottomNavigation />)}
+      {/* Temporarily disable bottom navigation to isolate crash */}
     </div>
   );
 };
