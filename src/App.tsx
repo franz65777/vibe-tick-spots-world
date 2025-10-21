@@ -35,6 +35,7 @@ import { Toaster as Sonner } from '@/components/ui/sonner';
 import { retentionAnalyticsService } from '@/services/retentionAnalyticsService';
 import { useEffect } from 'react';
 import './App.css';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 // Initialize analytics cleanup service for data privacy compliance
 import '@/services/analyticsCleanupService';
@@ -42,7 +43,9 @@ import '@/services/analyticsCleanupService';
 const queryClient = new QueryClient();
 
 function AppContent() {
+  console.log('🔄 AppContent rendering...');
   const { user } = useAuth();
+  console.log('👤 User state:', user?.email || 'No user');
 
   useEffect(() => {
     if (user) {
@@ -94,17 +97,30 @@ function AppContent() {
 }
 
 function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router>
-          <AppContent />
-        </Router>
-        <Toaster />
-        <Sonner />
-      </AuthProvider>
-    </QueryClientProvider>
-  );
+  console.log('🎯 App component rendering...');
+  
+  try {
+    return (
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <Router>
+              <AppContent />
+            </Router>
+            <Toaster />
+            <Sonner />
+          </AuthProvider>
+        </QueryClientProvider>
+      </ErrorBoundary>
+    );
+  } catch (error) {
+    console.error('❌ Error in App component:', error);
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div>Error loading app: {error.message}</div>
+      </div>
+    );
+  }
 }
 
 export default App;

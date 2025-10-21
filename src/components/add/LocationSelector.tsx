@@ -43,7 +43,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
           <div className="p-4 bg-primary/10 rounded-xl space-y-2">
             <div>
               <p className="font-semibold text-foreground">{selectedLocation.name}</p>
-              <p className="text-sm text-muted-foreground">{selectedLocation.formatted_address}</p>
+              <p className="text-sm text-muted-foreground">{selectedLocation.formatted_address || selectedLocation.address}</p>
             </div>
             <button
               onClick={() => {

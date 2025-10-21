@@ -91,19 +91,23 @@ const OpenStreetMapAutocomplete = ({
 
       // 2. If few results, search OpenStreetMap Nominatim (FREE)
       if (combinedResults.length < 3) {
-        const nominatimResults = await nominatimGeocoding.searchPlace(searchQuery);
-        
-        combinedResults.push(
-          ...nominatimResults.map((result, idx) => ({
-            id: `nominatim-${idx}`,
-            name: result.displayName.split(',')[0], // First part of address
-            address: result.displayName,
-            lat: result.lat,
-            lng: result.lng,
-            city: result.city,
-            source: 'nominatim' as const,
-          }))
-        );
+        try {
+          const nominatimResults = await nominatimGeocoding.searchPlace(searchQuery);
+          
+          combinedResults.push(
+            ...nominatimResults.map((result, idx) => ({
+              id: `nominatim-${idx}`,
+              name: result.displayName.split(',')[0], // First part of address
+              address: result.displayName,
+              lat: result.lat,
+              lng: result.lng,
+              city: result.city,
+              source: 'nominatim' as const,
+            }))
+          );
+        } catch (nominatimError) {
+          console.warn('Nominatim search failed:', nominatimError);
+        }
       }
 
       setResults(combinedResults);

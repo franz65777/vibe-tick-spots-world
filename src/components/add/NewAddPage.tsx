@@ -80,7 +80,7 @@ export const NewAddPage = () => {
     setSelectedCategory(category);
 
     setSelectedLocation({
-      place_id: location.place_id,
+      place_id: location.id || `osm_${Date.now()}`,
       name: location.name,
       formatted_address: location.address,
       geometry: {
@@ -89,7 +89,7 @@ export const NewAddPage = () => {
           lng: () => location.lng
         }
       },
-      types: location.types
+      types: location.types || []
     });
   };
 
@@ -134,18 +134,18 @@ export const NewAddPage = () => {
       // Find or create location
       let locationId = null;
       
-      // Check if location exists by google_place_id
-      if (selectedLocation.place_id) {
-        const { data: existing } = await supabase
-          .from('locations')
-          .select('id')
-          .eq('google_place_id', selectedLocation.place_id)
-          .maybeSingle();
-        
-        if (existing) {
-          locationId = existing.id;
-          console.log('✅ Found existing location:', locationId);
-        }
+      // Check if location exists by name and coordinates (since we don't have google_place_id)
+      const { data: existing } = await supabase
+        .from('locations')
+        .select('id')
+        .eq('name', selectedLocation.name)
+        .eq('latitude', selectedLocation.geometry?.location?.lat())
+        .eq('longitude', selectedLocation.geometry?.location?.lng())
+        .maybeSingle();
+      
+      if (existing) {
+        locationId = existing.id;
+        console.log('✅ Found existing location:', locationId);
       }
       
       // Create new location if not found
@@ -155,13 +155,11 @@ export const NewAddPage = () => {
         const { data: newLocation, error: locationError } = await supabase
           .from('locations')
           .insert({
-            google_place_id: selectedLocation.place_id,
             name: selectedLocation.name,
             address: selectedLocation.formatted_address,
             latitude: selectedLocation.geometry?.location?.lat(),
             longitude: selectedLocation.geometry?.location?.lng(),
             category: selectedCategory,
-            place_types: selectedLocation.types || [],
             created_by: user.id,
             pioneer_user_id: user.id
           })
