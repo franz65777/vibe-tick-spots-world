@@ -20,7 +20,7 @@ const BusinessAddPage = () => {
       <div className="max-w-screen-sm mx-auto h-full flex flex-col w-full">
         {/* Header with Mode Toggle */}
         <div className="flex-shrink-0 bg-background/95 backdrop-blur-sm border-b">
-          <div className="px-4 py-2">
+          <div className="px-3 py-2">
             <div className="flex items-center justify-center gap-2">
               <button
                 onClick={() => setActiveMode('post')}
@@ -53,11 +53,11 @@ const BusinessAddPage = () => {
         {/* Content - No vertical scroll */}
         <div className="flex-1 min-h-0 overflow-hidden">
           {activeMode === 'post' ? (
-            <div className="h-full">
+            <div className="h-full overflow-hidden">
               <NewAddPage />
             </div>
           ) : (
-            <div className="h-full p-4 overflow-hidden">
+            <div className="h-full p-3 overflow-hidden">
               <BusinessMarketingCreator />
             </div>
           )}

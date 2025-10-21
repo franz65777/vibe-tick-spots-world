@@ -79,54 +79,69 @@ const BusinessOverviewPageV2 = () => {
     try {
       setLoading(true);
 
-      const { data: locationData, error: locationError } = await supabase
-        .from('locations')
-        .select('*')
-        .limit(1)
+      const { data: biz } = await (supabase as any)
+        .from('business_profiles')
+        .select('id')
+        .eq('user_id', user?.id)
         .maybeSingle();
 
-      if (locationError) throw locationError;
+      if (!biz?.id) { setLocation(null); setPosts([]); return; }
 
-      if (locationData) {
-        setLocation(locationData);
+      const { data: claim } = await (supabase as any)
+        .from('location_claims')
+        .select('location_id')
+        .eq('business_id', biz.id)
+        .eq('verification_status', 'verified')
+        .maybeSingle();
 
-        const { data: postsData, error: postsError } = await supabase
-          .from('posts')
-          .select(`
-            id,
-            user_id,
-            caption,
-            media_urls,
-            likes_count,
-            comments_count,
-            saves_count,
-            created_at,
-            metadata,
-            profiles!posts_user_id_fkey (
-              username,
-              avatar_url
-            )
-          `)
-          .eq('location_id', locationData.id)
-          .order('created_at', { ascending: false });
+      if (!claim?.location_id) { setLocation(null); setPosts([]); return; }
 
-        if (postsError) throw postsError;
-        
-        const mappedPosts = (postsData || []).map((post: any) => ({
-          id: post.id,
-          user_id: post.user_id,
-          caption: post.caption,
-          media_urls: post.media_urls || [],
-          likes_count: post.likes_count || 0,
-          comments_count: post.comments_count || 0,
-          saves_count: post.saves_count || 0,
-          created_at: post.created_at,
-          is_pinned: post.metadata?.is_pinned || false,
-          profiles: post.profiles
-        }));
-        
-        setPosts(mappedPosts);
-      }
+      const { data: locationData } = await (supabase as any)
+        .from('locations')
+        .select('*')
+        .eq('id', claim.location_id)
+        .maybeSingle();
+
+      if (!locationData) { setLocation(null); setPosts([]); return; }
+
+      setLocation(locationData);
+
+      const { data: postsData, error: postsError } = await (supabase as any)
+        .from('posts')
+        .select(`
+          id,
+          user_id,
+          caption,
+          media_urls,
+          likes_count,
+          comments_count,
+          saves_count,
+          created_at,
+          metadata,
+          profiles!posts_user_id_fkey (
+            username,
+            avatar_url
+          )
+        `)
+        .eq('location_id', locationData.id)
+        .order('created_at', { ascending: false });
+
+      if (postsError) throw postsError;
+
+      const mappedPosts = (postsData || []).map((post: any) => ({
+        id: post.id,
+        user_id: post.user_id,
+        caption: post.caption,
+        media_urls: post.media_urls || [],
+        likes_count: post.likes_count || 0,
+        comments_count: post.comments_count || 0,
+        saves_count: post.saves_count || 0,
+        created_at: post.created_at,
+        is_pinned: post.metadata?.is_pinned || false,
+        profiles: post.profiles
+      }));
+
+      setPosts(mappedPosts);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Failed to load location data');
