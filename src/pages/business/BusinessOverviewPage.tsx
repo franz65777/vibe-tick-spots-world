@@ -242,7 +242,7 @@ const BusinessOverviewPage = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate('/notifications')}
+              onClick={() => navigate('/business/notifications')}
               className="relative"
             >
               <Bell className="w-5 h-5" />
@@ -255,7 +255,7 @@ const BusinessOverviewPage = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate('/messages')}
+              onClick={() => navigate('/business/messages')}
             >
               <Send className="w-5 h-5" />
             </Button>
