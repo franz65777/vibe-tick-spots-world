@@ -1,24 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Calendar, Percent, Megaphone, CalendarDays, X, Upload } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar, Percent, Megaphone, CalendarDays, X, ImagePlus, Send, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { cn } from '@/lib/utils';
 
 interface BusinessMarketingCreatorProps {
   onSuccess?: () => void;
   onCancel?: () => void;
 }
 
-type ContentType = 'event' | 'discount' | 'promotion' | 'announcement';
-
 const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onSuccess, onCancel }) => {
+  type ContentType = 'event' | 'discount' | 'promotion' | 'announcement';
+
   const { user } = useAuth();
-  const [type, setType] = useState<ContentType>('event');
+  const [contentType, setContentType] = useState<ContentType>('event');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -29,11 +28,33 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Check for campaign template from feed
+  useEffect(() => {
+    const template = localStorage.getItem('campaign_template');
+    if (template) {
+      try {
+        const data = JSON.parse(template);
+        setDescription(data.description || '');
+        setContentType(data.content_type || 'event');
+        if (data.metadata) {
+          setStartDate(data.metadata.start_date || '');
+          setEndDate(data.metadata.end_date || '');
+          setDiscountAmount(data.metadata.discount_amount || '');
+          setTerms(data.metadata.terms || '');
+        }
+        localStorage.removeItem('campaign_template');
+        toast.success('Campaign template loaded! Customize and publish.');
+      } catch (error) {
+        console.error('Error loading template:', error);
+      }
+    }
+  }, []);
+
   const contentTypes = [
-    { value: 'event', label: 'Event', icon: CalendarDays, description: 'Create an event at your location' },
-    { value: 'discount', label: 'Discount', icon: Percent, description: 'Offer a special discount' },
-    { value: 'promotion', label: 'Promotion', icon: Megaphone, description: 'Promote your business' },
-    { value: 'announcement', label: 'Announcement', icon: Calendar, description: 'Make an announcement' }
+    { value: 'event' as ContentType, label: 'Event', icon: CalendarDays },
+    { value: 'discount' as ContentType, label: 'Discount', icon: Percent },
+    { value: 'promotion' as ContentType, label: 'Promo', icon: Megaphone },
+    { value: 'announcement' as ContentType, label: 'News', icon: Calendar }
   ];
 
   const handleFilesSelect = (files: FileList) => {
@@ -75,10 +96,10 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
       const mediaUrls: string[] = [];
       for (const file of selectedFiles) {
         const fileExt = file.name.split('.').pop();
-        const fileName = `${user.id}/${Date.now()}-${Math.random()}.${fileExt}`;
+        const fileName = `marketing/${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
         const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('business-marketing')
+          .from('media')
           .upload(fileName, file);
 
         if (uploadError) {
@@ -87,31 +108,55 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
         }
 
         const { data: { publicUrl } } = supabase.storage
-          .from('business-marketing')
+          .from('media')
           .getPublicUrl(fileName);
 
         mediaUrls.push(publicUrl);
       }
 
-      // Insert marketing content
+      // Create metadata object
+      const metadata: any = {};
+      if (startDate) metadata.start_date = startDate;
+      if (endDate) metadata.end_date = endDate;
+      if (discountAmount) metadata.discount_amount = discountAmount;
+      if (terms) metadata.terms = terms;
+
+      // Get business profile first to get location_id
+      const { data: businessProfile } = await supabase
+        .from('business_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!businessProfile) {
+        toast.error('Business profile not found');
+        return;
+      }
+
+      // Get claimed location
+      const { data: locationClaim } = await supabase
+        .from('location_claims')
+        .select('location_id')
+        .eq('business_id', businessProfile.id)
+        .eq('verification_status', 'verified')
+        .limit(1)
+        .maybeSingle();
+
+      // Insert marketing post
       const { error } = await supabase
-        .from('posts' as any)
+        .from('posts')
         .insert({
-          business_id: user.id,
-          type,
-          title,
-          description,
+          user_id: user.id,
+          location_id: locationClaim?.location_id || null,
+          caption: `${title}\n\n${description}`,
+          content_type: contentType,
           media_urls: mediaUrls,
-          start_date: startDate || null,
-          end_date: endDate || null,
-          discount_amount: type === 'discount' ? discountAmount : null,
-          terms: terms || null,
-          is_active: true
+          metadata
         });
 
       if (error) throw error;
 
-      toast.success('Marketing content created successfully!');
+      toast.success('Marketing campaign published!');
 
       // Reset form
       setTitle('');
@@ -132,157 +177,168 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
     }
   };
 
-  const selectedContentType = contentTypes.find(ct => ct.value === type);
-
   return (
-    <div className="space-y-3">
-      {/* Content Type Selector */}
-      <div className="grid grid-cols-4 gap-2">
-        {contentTypes.map((ct) => {
-          const Icon = ct.icon;
-          return (
-            <button
-              key={ct.value}
-              onClick={() => setType(ct.value as ContentType)}
-              className={`p-2 rounded-lg border transition-all ${
-                type === ct.value
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-border hover:border-muted-foreground/50'
-              }`}
-            >
-              <Icon className="w-5 h-5 mx-auto mb-1" />
-              <p className="text-xs font-medium">{ct.label}</p>
-            </button>
-          );
-        })}
+    <div className="h-full flex flex-col space-y-2">
+      {/* Content Type Selection - 2 rows */}
+      <div className="grid grid-cols-2 gap-2">
+        {contentTypes.map((type) => (
+          <button
+            key={type.value}
+            onClick={() => setContentType(type.value)}
+            className={cn(
+              "flex items-center gap-2 p-2 rounded-lg border-2 transition-all text-xs",
+              contentType === type.value
+                ? "border-primary bg-primary/5"
+                : "border-border hover:border-primary/50"
+            )}
+          >
+            <type.icon className="w-4 h-4 flex-shrink-0" />
+            <span className="font-medium text-left truncate">{type.label}</span>
+          </button>
+        ))}
       </div>
 
-      <div className="grid gap-3">
+      {/* Form Fields - Compact */}
+      <div className="flex-1 overflow-y-auto space-y-2 pr-1">
         {/* Title */}
-        <div className="space-y-1">
-          <Label htmlFor="title" className="text-xs">Title *</Label>
+        <div>
+          <label className="text-xs font-medium mb-0.5 block">Title</label>
           <Input
-            id="title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder={`${type} title`}
-            maxLength={100}
-            className="h-9 text-sm"
+            placeholder={`${contentType} title...`}
+            className="h-7 text-xs"
           />
         </div>
 
         {/* Description */}
-        <div className="space-y-1">
-          <Label htmlFor="description" className="text-xs">Description</Label>
+        <div>
+          <label className="text-xs font-medium mb-0.5 block">Description</label>
           <Textarea
-            id="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Describe your offering..."
+            placeholder={`Describe your ${contentType}...`}
+            className="min-h-[40px] text-xs resize-none"
             rows={2}
-            maxLength={500}
-            className="text-sm resize-none"
           />
         </div>
 
-        {/* Dates - for events and time-limited promotions */}
-        {(type === 'event' || type === 'promotion' || type === 'discount') && (
-          <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1">
-              <Label htmlFor="startDate" className="text-xs">Start Date</Label>
-              <Input
-                id="startDate"
-                type="datetime-local"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="h-9 text-xs"
-              />
+        {/* Conditional Fields */}
+        {contentType === 'event' && (
+          <>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs font-medium mb-0.5 block">Start</label>
+                <Input
+                  type="datetime-local"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="h-7 text-xs"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-0.5 block">End</label>
+                <Input
+                  type="datetime-local"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="h-7 text-xs"
+                />
+              </div>
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="endDate" className="text-xs">End Date</Label>
-              <Input
-                id="endDate"
-                type="datetime-local"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="h-9 text-xs"
-              />
-            </div>
-          </div>
+          </>
         )}
 
-        {/* Discount Amount - only for discounts */}
-        {type === 'discount' && (
-          <div className="space-y-1">
-            <Label htmlFor="discountAmount" className="text-xs">Discount Amount</Label>
+        {contentType === 'discount' && (
+          <div>
+            <label className="text-xs font-medium mb-0.5 block">Discount (%)</label>
             <Input
-              id="discountAmount"
+              type="number"
+              min="0"
+              max="100"
               value={discountAmount}
               onChange={(e) => setDiscountAmount(e.target.value)}
-              placeholder="e.g., 20% off"
-              className="h-9 text-sm"
+              placeholder="e.g., 20"
+              className="h-7 text-xs"
             />
           </div>
         )}
 
-        {/* Terms */}
-        <div className="space-y-1">
-          <Label htmlFor="terms" className="text-xs">Terms</Label>
-          <Textarea
-            id="terms"
-            value={terms}
-            onChange={(e) => setTerms(e.target.value)}
-            placeholder="Terms..."
-            rows={2}
-            className="text-sm resize-none"
-          />
-        </div>
+        {(contentType === 'discount' || contentType === 'promotion') && (
+          <div>
+            <label className="text-xs font-medium mb-0.5 block">Terms</label>
+            <Textarea
+              value={terms}
+              onChange={(e) => setTerms(e.target.value)}
+              placeholder="Terms & conditions..."
+              className="min-h-[35px] text-xs resize-none"
+              rows={2}
+            />
+          </div>
+        )}
 
-        {/* Media Upload */}
-        <div className="space-y-1">
-          <Label className="text-xs">Images (up to 3)</Label>
-          <div className="space-y-2">
-            {previewUrls.length > 0 && (
-              <div className="grid grid-cols-3 gap-2">
-                {previewUrls.map((url, index) => (
-                  <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
-                    <img src={url} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
-                    <button
-                      onClick={() => handleRemoveFile(index)}
-                      className="absolute top-1 right-1 p-0.5 bg-black/60 rounded-full hover:bg-black/80 transition-colors"
-                    >
-                      <X className="w-3 h-3 text-white" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+        {/* Image Upload */}
+        <div>
+          <label className="text-xs font-medium mb-0.5 block">Images (up to 3)</label>
+          <div className="space-y-1.5">
             {selectedFiles.length < 3 && (
-              <label className="flex flex-col items-center justify-center h-20 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-muted-foreground/50 transition-colors">
-                <Upload className="w-5 h-5 text-muted-foreground mb-1" />
-                <span className="text-xs text-muted-foreground">Click to upload</span>
+              <label className="flex items-center justify-center gap-2 p-2 border-2 border-dashed rounded-lg cursor-pointer hover:border-primary transition-colors">
+                <ImagePlus className="w-3.5 h-3.5" />
+                <span className="text-xs">Add Images</span>
                 <input
                   type="file"
-                  accept="image/*"
                   multiple
+                  accept="image/*"
                   onChange={(e) => e.target.files && handleFilesSelect(e.target.files)}
                   className="hidden"
                 />
               </label>
             )}
+
+            {/* Preview Images */}
+            {previewUrls.length > 0 && (
+              <div className="grid grid-cols-3 gap-1.5">
+                {previewUrls.map((url, index) => (
+                  <div key={index} className="relative aspect-square rounded-lg overflow-hidden group">
+                    <img
+                      src={url}
+                      alt={`Preview ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      onClick={() => handleRemoveFile(index)}
+                      className="absolute top-0.5 right-0.5 p-0.5 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Actions */}
-      <Button
-        onClick={handleSubmit}
-        disabled={isSubmitting || !title.trim()}
-        className="w-full h-9"
-        size="sm"
-      >
-        {isSubmitting ? 'Creating...' : 'Create Content'}
-      </Button>
+      {/* Submit Button */}
+      <div className="flex-shrink-0 pt-2">
+        <Button
+          onClick={handleSubmit}
+          disabled={isSubmitting || !title.trim()}
+          className="w-full h-8 text-xs"
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+              Publishing...
+            </>
+          ) : (
+            <>
+              <Send className="w-3.5 h-3.5 mr-1.5" />
+              Publish Campaign
+            </>
+          )}
+        </Button>
+      </div>
     </div>
   );
 };
