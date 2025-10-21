@@ -34,6 +34,41 @@ const BusinessProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [marketingContent, setMarketingContent] = useState<any[]>([]);
 
+  // Simple business-specific badges derived from marketing activity
+  const businessBadges = [
+    {
+      id: 'first-campaign',
+      name: 'First Campaign',
+      icon: '🚀',
+      gradient: 'from-primary/30 to-accent/40',
+      earned: marketingContent.length >= 1,
+      progress: Math.min(markettingCount(), 1),
+      maxProgress: 1,
+    },
+    {
+      id: 'campaigner',
+      name: 'Active Campaigner',
+      icon: '📣',
+      gradient: 'from-chart-2/30 to-chart-2/40',
+      earned: marketingContent.length >= 5,
+      progress: Math.min(markettingCount(), 5),
+      maxProgress: 5,
+    },
+    {
+      id: 'media-rich',
+      name: 'Media Rich',
+      icon: '🖼️',
+      gradient: 'from-chart-3/30 to-chart-3/40',
+      earned: marketingContent.some(c => (c.media_urls?.length || 0) >= 3),
+      progress: marketingContent.reduce((acc, c) => acc + ((c.media_urls?.length || 0) >= 3 ? 1 : 0), 0),
+      maxProgress: 1,
+    },
+  ];
+
+  function markettingCount() {
+    return marketingContent.length;
+  }
+
   useEffect(() => {
     fetchBusinessLocation();
     fetchMarketingContent();
@@ -44,22 +79,39 @@ const BusinessProfilePage = () => {
 
     try {
       // Get the business profile
-      const { data: businessProfile } = await supabase
+      const { data: businessProfile } = await (supabase as any)
         .from('business_profiles')
-        .select('*')
+        .select('id')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (businessProfile) {
-        // For now, fetch a demo location - in production this would be linked via business_profiles
-        const { data: locationData } = await supabase
-          .from('locations')
-          .select('*')
-          .limit(1)
+      if (businessProfile?.id) {
+        // Find the verified claimed location for this business
+        const { data: claim } = await (supabase as any)
+          .from('location_claims')
+          .select('location_id')
+          .eq('business_id', businessProfile.id)
+          .eq('verification_status', 'verified')
           .maybeSingle();
 
-        if (locationData) {
-          setLocation(locationData);
+        if (claim?.location_id) {
+          const { data: locationData } = await (supabase as any)
+            .from('locations')
+            .select('*')
+            .eq('id', claim.location_id)
+            .maybeSingle();
+
+          if (locationData) {
+            setLocation(locationData);
+          }
+        } else {
+          // Fallback to any location to avoid empty state
+          const { data: locationData } = await (supabase as any)
+            .from('locations')
+            .select('*')
+            .limit(1)
+            .maybeSingle();
+          if (locationData) setLocation(locationData);
         }
       }
     } catch (error) {
@@ -266,8 +318,19 @@ const BusinessProfilePage = () => {
           )}
 
           {activeTab === 'badges' && (
-            <div className="text-center py-12 text-muted-foreground">
-              <p>Business badges coming soon</p>
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-foreground">Business Badges</h3>
+              <div className="grid grid-cols-3 gap-3">
+                {businessBadges.map((badge) => (
+                  <div key={badge.id} className="text-center">
+                    <div className={`w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br ${badge.gradient} flex items-center justify-center text-2xl mb-2 shadow`}>
+                      {badge.icon}
+                    </div>
+                    <p className="text-xs font-medium text-foreground line-clamp-2">{badge.name}</p>
+                    <p className="text-[10px] text-muted-foreground">{badge.earned ? 'Earned' : `${badge.progress || 0}/${badge.maxProgress}`}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

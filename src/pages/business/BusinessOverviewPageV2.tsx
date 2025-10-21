@@ -168,13 +168,13 @@ const BusinessOverviewPageV2 = () => {
       const filePath = `location-covers/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('location-images')
+        .from('media')
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
-        .from('location-images')
+        .from('media')
         .getPublicUrl(filePath);
 
       const { error: updateError } = await supabase

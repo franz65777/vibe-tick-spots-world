@@ -314,29 +314,30 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
               </div>
             )}
           </div>
+
+          {/* Submit Button - placed right below images */}
+          <div className="flex-shrink-0 pt-3">
+            <Button
+              onClick={handleSubmit}
+              disabled={isSubmitting || !title.trim()}
+              className="w-full h-10 text-sm"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Publishing...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Publish Campaign
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Submit Button */}
-      <div className="flex-shrink-0 pt-3">
-        <Button
-          onClick={handleSubmit}
-          disabled={isSubmitting || !title.trim()}
-          className="w-full h-10 text-sm"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Publishing...
-            </>
-          ) : (
-            <>
-              <Send className="w-4 h-4 mr-2" />
-              Publish Campaign
-            </>
-          )}
-        </Button>
-      </div>
     </div>
   );
 };
