@@ -31,21 +31,19 @@ class LocationInteractionService {
           if (existingLocation) {
             existingLocationId = existingLocation.id;
           } else {
-            // OSM doesn't provide detailed place info, skip enrichment
-            console.log('Using provided location data without enrichment');
-          } else {
+            // OSM doesn't provide detailed place info, use provided data directly
 
             // Create new location only if it doesn't exist
             const { data: newLocation, error: locationError } = await supabase
               .from('locations')
               .insert({
                 google_place_id: locationData.google_place_id,
-                name: enrichedName,
-                address: enrichedAddress,
-                latitude: lat,
-                longitude: lng,
+                name: locationData.name,
+                address: locationData.address,
+                latitude: locationData.latitude,
+                longitude: locationData.longitude,
                 category: locationData.category || 'restaurant',
-                place_types: enrichedTypes || [],
+                place_types: locationData.types || [],
                 created_by: user.user.id,
                 pioneer_user_id: user.user.id
               })

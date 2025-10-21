@@ -61,7 +61,7 @@ const MapSection = ({
     }
   }, [initialSelectedPlace, onClearInitialPlace]);
 
-  // Convert locations to Place format for GoogleMapsSetup with creator info
+  // Convert locations to Place format for LeafletMapSetup with creator info
   const places: Place[] = locations.map(location => ({
     id: location.id,
     name: location.name,
