@@ -100,28 +100,19 @@ function AppContent() {
 function App() {
   console.log('🎯 App component rendering...');
   
-  try {
-    return (
-      <ErrorBoundary>
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <Router>
-              <AppContent />
-            </Router>
-            <Toaster />
-            <Sonner />
-          </AuthProvider>
-        </QueryClientProvider>
-      </ErrorBoundary>
-    );
-  } catch (error) {
-    console.error('❌ Error in App component:', error);
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div>Error loading app: {error.message}</div>
-      </div>
-    );
-  }
+  return (
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <Router>
+            <AppContent />
+          </Router>
+          <Toaster />
+          <Sonner />
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
+  );
 }
 
 export default App;
