@@ -572,6 +572,8 @@ export type Database = {
           created_at: string | null
           id: string
           is_read: boolean | null
+          location_id: string | null
+          message_context: string | null
           message_type: string
           read_at: string | null
           receiver_id: string
@@ -583,6 +585,8 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_read?: boolean | null
+          location_id?: string | null
+          message_context?: string | null
           message_type?: string
           read_at?: string | null
           receiver_id: string
@@ -594,13 +598,23 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_read?: boolean | null
+          location_id?: string | null
+          message_context?: string | null
           message_type?: string
           read_at?: string | null
           receiver_id?: string
           sender_id?: string
           shared_content?: Json | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "direct_messages_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       error_logs: {
         Row: {

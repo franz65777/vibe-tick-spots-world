@@ -41,11 +41,13 @@ const BusinessMessagesPage = () => {
     try {
       setLoading(true);
       
-      // Fetch messages where the business user is the receiver
+      // Fetch business-specific messages (messages related to the business location)
       const { data: messagesData, error: messagesError } = await supabase
         .from('direct_messages')
         .select('*')
         .eq('receiver_id', user?.id)
+        .eq('message_context', 'business')
+        .not('location_id', 'is', null)
         .order('created_at', { ascending: false })
         .limit(50);
 
