@@ -8,8 +8,8 @@ const BusinessAddPage = () => {
   const [activeMode, setActiveMode] = useState<'post' | 'marketing'>('post');
 
   return (
-    <div className="h-screen bg-gradient-to-b from-background to-muted/20 overflow-hidden flex flex-col">
-      <div className="max-w-screen-sm mx-auto h-full flex flex-col">
+    <div className="h-screen bg-gradient-to-b from-background to-muted/20 flex flex-col overflow-hidden">
+      <div className="max-w-screen-sm mx-auto h-full flex flex-col w-full">
         {/* Header with Mode Toggle */}
         <div className="flex-shrink-0 bg-background/95 backdrop-blur-sm border-b">
           <div className="px-4 py-2">
@@ -42,16 +42,14 @@ const BusinessAddPage = () => {
           </div>
         </div>
 
-        {/* Content - No scrolling, fits in available space */}
-        <div className="flex-1 overflow-hidden">
+        {/* Content - No vertical scroll */}
+        <div className="flex-1 min-h-0 overflow-hidden">
           {activeMode === 'post' ? (
-            <div className="h-full overflow-y-auto">
-              <div className="p-4">
-                <NewAddPage />
-              </div>
+            <div className="h-full">
+              <NewAddPage />
             </div>
           ) : (
-            <div className="h-full p-4">
+            <div className="h-full p-4 overflow-hidden">
               <BusinessMarketingCreator />
             </div>
           )}

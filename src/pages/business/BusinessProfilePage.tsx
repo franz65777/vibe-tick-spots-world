@@ -113,27 +113,27 @@ const BusinessProfilePage = () => {
   return (
     <div className="min-h-screen bg-background pb-24">
       <div className="max-w-screen-sm mx-auto">
-        {/* Cover Image */}
+        {/* Cover Image - Smaller with rounded corners */}
         {location.image_url ? (
-          <div className="aspect-[16/9] overflow-hidden bg-muted relative">
+          <div className="h-48 overflow-hidden bg-muted relative mx-4 mt-4 rounded-2xl">
             <img
               src={location.image_url}
               alt={location.name}
               className="w-full h-full object-cover"
             />
-            <div className="absolute top-4 left-4">
+            <div className="absolute top-3 left-3">
               <Badge className={`${getCategoryColor(location.category)} bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full border-0 font-medium shadow-sm`}>
                 {formatCategory(location.category)}
               </Badge>
             </div>
           </div>
         ) : (
-          <div className="aspect-[16/9] bg-gradient-to-br from-muted to-muted/50 flex flex-col items-center justify-center relative">
+          <div className="h-48 bg-gradient-to-br from-muted to-muted/50 flex flex-col items-center justify-center relative mx-4 mt-4 rounded-2xl">
             {React.createElement(getCategoryIcon(location.category), {
               className: 'w-16 h-16 text-muted-foreground/40',
               strokeWidth: 1.5
             })}
-            <div className="absolute top-4 left-4">
+            <div className="absolute top-3 left-3">
               <Badge className={`${getCategoryColor(location.category)} px-3 py-1 rounded-full border-0 font-medium`}>
                 {formatCategory(location.category)}
               </Badge>
@@ -144,11 +144,11 @@ const BusinessProfilePage = () => {
         {/* Location Info */}
         <div className="px-4 py-6 space-y-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground mb-2">
+            <h1 className="text-2xl font-bold text-foreground mb-2 text-left">
               {location.name}
             </h1>
             {location.description && (
-              <p className="text-muted-foreground text-sm mb-3">
+              <p className="text-muted-foreground text-sm mb-3 text-left">
                 {location.description}
               </p>
             )}
@@ -158,11 +158,10 @@ const BusinessProfilePage = () => {
           <div className="space-y-2">
             <div className="flex items-start gap-3 text-sm">
               <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-              <span className="text-foreground">
-                {formatDetailedAddress({
-                  city: location.city,
-                  address: location.address,
-                })}
+              <span className="text-foreground text-left">
+                {location.address && location.city 
+                  ? `${location.address}, ${location.city}`
+                  : location.city || location.address || 'No address available'}
               </span>
             </div>
 
@@ -212,9 +211,13 @@ const BusinessProfilePage = () => {
           {activeTab === 'posts' && location.id && (
             <div>
               <p className="text-sm text-muted-foreground mb-4">
-                Posts from users who tagged this location
+                Marketing posts from this business
               </p>
-              <PostsGrid userId={user?.id} />
+              <PostsGrid 
+                userId={user?.id} 
+                locationId={location.id}
+                contentTypes={['event', 'discount', 'promotion', 'announcement']}
+              />
             </div>
           )}
 
@@ -263,9 +266,12 @@ const BusinessProfilePage = () => {
           {activeTab === 'tagged' && location.id && (
             <div>
               <p className="text-sm text-muted-foreground mb-4">
-                Posts where users tagged this location
+                Posts from users who tagged this location
               </p>
-              <PostsGrid userId={user?.id} />
+              <PostsGrid 
+                locationId={location.id}
+                excludeUserId={user?.id}
+              />
             </div>
           )}
         </div>

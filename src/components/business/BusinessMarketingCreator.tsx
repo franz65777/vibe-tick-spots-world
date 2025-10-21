@@ -178,7 +178,7 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
   };
 
   return (
-    <div className="h-full flex flex-col space-y-2">
+    <div className="h-full flex flex-col space-y-3">
       {/* Content Type Selection - 2 rows */}
       <div className="grid grid-cols-2 gap-2">
         {contentTypes.map((type) => (
@@ -186,72 +186,70 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
             key={type.value}
             onClick={() => setContentType(type.value)}
             className={cn(
-              "flex items-center gap-2 p-2 rounded-lg border-2 transition-all text-xs",
+              "flex items-center gap-2 p-3 rounded-lg border-2 transition-all text-sm",
               contentType === type.value
                 ? "border-primary bg-primary/5"
                 : "border-border hover:border-primary/50"
             )}
           >
-            <type.icon className="w-4 h-4 flex-shrink-0" />
+            <type.icon className="w-5 h-5 flex-shrink-0" />
             <span className="font-medium text-left truncate">{type.label}</span>
           </button>
         ))}
       </div>
 
-      {/* Form Fields - Compact */}
-      <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+      {/* Form Fields - No scroll */}
+      <div className="flex-1 min-h-0 space-y-3 overflow-hidden flex flex-col">
         {/* Title */}
-        <div>
-          <label className="text-xs font-medium mb-0.5 block">Title</label>
+        <div className="flex-shrink-0">
+          <label className="text-sm font-medium mb-1 block">Title</label>
           <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={`${contentType} title...`}
-            className="h-7 text-xs"
+            className="h-9 text-sm"
           />
         </div>
 
         {/* Description */}
-        <div>
-          <label className="text-xs font-medium mb-0.5 block">Description</label>
+        <div className="flex-shrink-0">
+          <label className="text-sm font-medium mb-1 block">Description</label>
           <Textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder={`Describe your ${contentType}...`}
-            className="min-h-[40px] text-xs resize-none"
+            className="min-h-[50px] text-sm resize-none"
             rows={2}
           />
         </div>
 
         {/* Conditional Fields */}
         {contentType === 'event' && (
-          <>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-xs font-medium mb-0.5 block">Start</label>
-                <Input
-                  type="datetime-local"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="h-7 text-xs"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-medium mb-0.5 block">End</label>
-                <Input
-                  type="datetime-local"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="h-7 text-xs"
-                />
-              </div>
+          <div className="grid grid-cols-2 gap-2 flex-shrink-0">
+            <div>
+              <label className="text-sm font-medium mb-1 block">Start</label>
+              <Input
+                type="datetime-local"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="h-9 text-sm"
+              />
             </div>
-          </>
+            <div>
+              <label className="text-sm font-medium mb-1 block">End</label>
+              <Input
+                type="datetime-local"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="h-9 text-sm"
+              />
+            </div>
+          </div>
         )}
 
         {contentType === 'discount' && (
-          <div>
-            <label className="text-xs font-medium mb-0.5 block">Discount (%)</label>
+          <div className="flex-shrink-0">
+            <label className="text-sm font-medium mb-1 block">Discount (%)</label>
             <Input
               type="number"
               min="0"
@@ -259,32 +257,32 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
               value={discountAmount}
               onChange={(e) => setDiscountAmount(e.target.value)}
               placeholder="e.g., 20"
-              className="h-7 text-xs"
+              className="h-9 text-sm"
             />
           </div>
         )}
 
         {(contentType === 'discount' || contentType === 'promotion') && (
-          <div>
-            <label className="text-xs font-medium mb-0.5 block">Terms</label>
+          <div className="flex-shrink-0">
+            <label className="text-sm font-medium mb-1 block">Terms</label>
             <Textarea
               value={terms}
               onChange={(e) => setTerms(e.target.value)}
               placeholder="Terms & conditions..."
-              className="min-h-[35px] text-xs resize-none"
+              className="min-h-[45px] text-sm resize-none"
               rows={2}
             />
           </div>
         )}
 
         {/* Image Upload */}
-        <div>
-          <label className="text-xs font-medium mb-0.5 block">Images (up to 3)</label>
-          <div className="space-y-1.5">
+        <div className="flex-1 min-h-0 flex flex-col">
+          <label className="text-sm font-medium mb-1 block">Images (up to 3)</label>
+          <div className="space-y-2 flex-1 min-h-0">
             {selectedFiles.length < 3 && (
-              <label className="flex items-center justify-center gap-2 p-2 border-2 border-dashed rounded-lg cursor-pointer hover:border-primary transition-colors">
-                <ImagePlus className="w-3.5 h-3.5" />
-                <span className="text-xs">Add Images</span>
+              <label className="flex items-center justify-center gap-2 p-3 border-2 border-dashed rounded-lg cursor-pointer hover:border-primary transition-colors">
+                <ImagePlus className="w-4 h-4" />
+                <span className="text-sm">Add Images</span>
                 <input
                   type="file"
                   multiple
@@ -297,7 +295,7 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
 
             {/* Preview Images */}
             {previewUrls.length > 0 && (
-              <div className="grid grid-cols-3 gap-1.5">
+              <div className="grid grid-cols-3 gap-2">
                 {previewUrls.map((url, index) => (
                   <div key={index} className="relative aspect-square rounded-lg overflow-hidden group">
                     <img
@@ -307,9 +305,9 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
                     />
                     <button
                       onClick={() => handleRemoveFile(index)}
-                      className="absolute top-0.5 right-0.5 p-0.5 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-1 right-1 p-1 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <X className="w-3 h-3" />
+                      <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ))}
@@ -320,20 +318,20 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
       </div>
 
       {/* Submit Button */}
-      <div className="flex-shrink-0 pt-2">
+      <div className="flex-shrink-0 pt-3">
         <Button
           onClick={handleSubmit}
           disabled={isSubmitting || !title.trim()}
-          className="w-full h-8 text-xs"
+          className="w-full h-10 text-sm"
         >
           {isSubmitting ? (
             <>
-              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               Publishing...
             </>
           ) : (
             <>
-              <Send className="w-3.5 h-3.5 mr-1.5" />
+              <Send className="w-4 h-4 mr-2" />
               Publish Campaign
             </>
           )}

@@ -20,19 +20,40 @@ interface Post {
   created_at: string;
   updated_at: string;
   metadata: any;
+  content_type?: string;
 }
 
 interface PostsGridProps {
   userId?: string;
+  locationId?: string;
+  contentTypes?: string[];
+  excludeUserId?: string;
 }
 
-const PostsGrid = ({ userId }: PostsGridProps) => {
+const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGridProps) => {
   const { user } = useAuth();
   const { profile } = useProfile();
   const targetUserId = userId || profile?.id;
-  const { posts, loading, refetch } = usePosts(targetUserId);
+  const { posts: allPosts, loading, refetch } = usePosts(targetUserId);
   const { deletePost, deleting } = usePostDeletion();
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+
+  // Filter posts based on locationId, contentTypes, and excludeUserId
+  const posts = allPosts.filter((post: any) => {
+    // Filter by location if specified
+    if (locationId && post.location_id !== locationId) return false;
+    
+    // Filter by content types if specified
+    if (contentTypes && contentTypes.length > 0) {
+      const postContentType = post.content_type;
+      if (!postContentType || !contentTypes.includes(postContentType)) return false;
+    }
+    
+    // Exclude posts from specific user if specified
+    if (excludeUserId && post.user_id === excludeUserId) return false;
+    
+    return true;
+  });
 
   const isOwnProfile = user?.id === targetUserId;
 
