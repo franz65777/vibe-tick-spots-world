@@ -46,6 +46,7 @@ function AppContent() {
   console.log('🔄 AppContent rendering...');
   const { user } = useAuth();
   console.log('👤 User state:', user?.email || 'No user');
+  console.log('🔍 Current pathname:', window.location.pathname);
 
   useEffect(() => {
     if (user) {
