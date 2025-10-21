@@ -74,7 +74,7 @@ const BusinessProfilePage = () => {
     if (!user) return;
 
     try {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from('posts')
         .select('*')
         .eq('user_id', user.id)
