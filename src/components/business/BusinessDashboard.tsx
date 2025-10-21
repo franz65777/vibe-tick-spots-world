@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import NotificationComposer from './NotificationComposer';
-import BusinessAnalyticsInteractive from './BusinessAnalyticsInteractive';
+import BusinessAnalyticsEnhanced from './BusinessAnalyticsEnhanced';
 import ContentManagement from './ContentManagement';
 
 interface BusinessDashboardProps {
@@ -167,7 +167,7 @@ const BusinessDashboard = ({ businessData }: BusinessDashboardProps) => {
           </TabsContent>
 
           <TabsContent value="analytics">
-            <BusinessAnalyticsInteractive businessData={businessData} />
+            <BusinessAnalyticsEnhanced businessData={businessData} />
           </TabsContent>
 
           <TabsContent value="content">

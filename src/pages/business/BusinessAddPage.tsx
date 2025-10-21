@@ -12,39 +12,33 @@ const BusinessAddPage = () => {
       <div className="max-w-screen-sm mx-auto">
         {/* Header with Mode Toggle */}
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b">
-          <div className="px-4 py-4">
-            <div className="flex items-center justify-center gap-2 mb-4">
+          <div className="px-4 py-3">
+            <div className="flex items-center justify-center gap-2">
               <button
                 onClick={() => setActiveMode('post')}
                 className={cn(
-                  'flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-all duration-300',
+                  'flex items-center gap-2 px-6 py-2.5 rounded-full font-semibold transition-all duration-300 text-sm',
                   activeMode === 'post'
                     ? 'bg-primary text-primary-foreground shadow-lg scale-105'
                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 )}
               >
-                <Camera className="w-5 h-5" />
-                <span>Create Post</span>
+                <Camera className="w-4 h-4" />
+                <span>Post</span>
               </button>
               <button
                 onClick={() => setActiveMode('marketing')}
                 className={cn(
-                  'flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-all duration-300',
+                  'flex items-center gap-2 px-6 py-2.5 rounded-full font-semibold transition-all duration-300 text-sm',
                   activeMode === 'marketing'
                     ? 'bg-accent text-accent-foreground shadow-lg scale-105'
                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 )}
               >
-                <Megaphone className="w-5 h-5" />
+                <Megaphone className="w-4 h-4" />
                 <span>Marketing</span>
               </button>
             </div>
-            <p className="text-sm text-center text-muted-foreground">
-              {activeMode === 'post' 
-                ? 'Share moments and engage with your audience'
-                : 'Create promotional content and campaigns'
-              }
-            </p>
           </div>
         </div>
 

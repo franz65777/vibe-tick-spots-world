@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, Upload, Bell, Send, TrendingUp, Award, Sparkles } from 'lucide-react';
+import { MapPin, Upload, Bell, Send, TrendingUp, Award, Sparkles, Users } from 'lucide-react';
 import BusinessLocationPosts from '@/components/business/BusinessLocationPosts';
 import { getCategoryColor, getCategoryIcon } from '@/utils/categoryIcons';
 import { formatDetailedAddress } from '@/utils/addressFormatter';
@@ -262,86 +262,77 @@ const BusinessOverviewPage = () => {
           </div>
         </div>
 
-        {/* Location Header */}
-        <div className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10" />
-          <div className="relative p-6 border-b bg-card/80 backdrop-blur-sm">
-            <h1 className="text-2xl font-bold text-foreground mb-2 flex items-center gap-2">
-              {location.name}
-              {businessProfile?.verification_status === 'verified' && (
-                <Badge className="bg-primary/10 text-primary border-primary/20">
-                  <Sparkles className="w-3 h-3 mr-1" />
-                  Verified
-                </Badge>
-              )}
-            </h1>
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <MapPin className="w-4 h-4 flex-shrink-0" />
-              <span className="text-sm">{formatLocationAddress()}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Cover Image Upload Section */}
-        <Card className="m-4 overflow-hidden">
-          <CardContent className="p-0">
+        {/* Business Profile Header */}
+        <div className="p-4 border-b bg-card">
+          <div className="flex items-start gap-4">
+            {/* Profile Icon */}
             <div className="relative group">
-              {location.image_url ? (
-                <div className="aspect-[16/9] overflow-hidden bg-muted">
+              <div className="w-20 h-20 rounded-2xl overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center cursor-pointer border-2 border-border hover:border-primary transition-colors">
+                {location.image_url ? (
                   <img
                     src={location.image_url}
                     alt={location.name}
                     className="w-full h-full object-cover"
                   />
-                </div>
-              ) : (
-                <div className="aspect-[16/9] bg-gradient-to-br from-muted to-muted/50 flex flex-col items-center justify-center">
-                  {React.createElement(getCategoryIcon(location.category), {
-                    className: 'w-16 h-16 text-muted-foreground/40',
+                ) : (
+                  React.createElement(getCategoryIcon(location.category), {
+                    className: 'w-10 h-10 text-primary',
                     strokeWidth: 1.5
-                  })}
-                  <p className="text-sm text-muted-foreground mt-2">No cover image</p>
-                </div>
-              )}
-
-              {/* Upload Button Overlay */}
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <Button
+                  })
+                )}
+                <div 
+                  className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className="gap-2"
                 >
-                  {uploading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                      Uploading...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-4 h-4" />
-                      Upload Cover Image
-                    </>
-                  )}
-                </Button>
+                  <Upload className="w-5 h-5 text-white" />
+                </div>
               </div>
-
-              {/* Category Badge */}
-              <div className="absolute top-4 left-4">
-                <Badge className={`${getCategoryColor(location.category)} bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full border-0 font-medium shadow-sm`}>
-                  {formatCategory(location.category)}
-                </Badge>
-              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleCoverImageUpload}
+                className="hidden"
+              />
             </div>
 
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleCoverImageUpload}
-              className="hidden"
-            />
-          </CardContent>
-        </Card>
+            {/* Business Info */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <h1 className="text-xl font-bold text-foreground flex items-center gap-2 flex-wrap">
+                  {location.name}
+                  {businessProfile?.verification_status === 'verified' && (
+                    <Badge className="bg-primary/10 text-primary border-primary/20 text-xs">
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      Verified
+                    </Badge>
+                  )}
+                  <Badge className={`${getCategoryColor(location.category)} text-xs`}>
+                    {formatCategory(location.category)}
+                  </Badge>
+                </h1>
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground mb-3">
+                <MapPin className="w-4 h-4 flex-shrink-0" />
+                <span className="text-sm">{formatLocationAddress()}</span>
+              </div>
+              
+              {/* Quick Stats */}
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-1">
+                  <Users className="w-4 h-4 text-primary" />
+                  <span className="font-semibold text-foreground">{posts.length}</span>
+                  <span className="text-muted-foreground">posts</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <TrendingUp className="w-4 h-4 text-accent" />
+                  <span className="font-semibold text-foreground">94%</span>
+                  <span className="text-muted-foreground">engagement</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Badges Section - Show when no content */}
         {!hasContent && earnedBadges.length > 0 && (
