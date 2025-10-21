@@ -135,161 +135,154 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
   const selectedContentType = contentTypes.find(ct => ct.value === type);
 
   return (
-    <div className="max-w-2xl mx-auto p-4 space-y-6">
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold">Create Marketing Content</h2>
-        <p className="text-muted-foreground">
-          Share events, promotions, and announcements with your customers
-        </p>
-      </div>
-
+    <div className="space-y-3">
       {/* Content Type Selector */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-4 gap-2">
         {contentTypes.map((ct) => {
           const Icon = ct.icon;
           return (
             <button
               key={ct.value}
               onClick={() => setType(ct.value as ContentType)}
-              className={`p-4 rounded-xl border-2 transition-all ${
+              className={`p-2 rounded-lg border transition-all ${
                 type === ct.value
-                  ? 'border-blue-600 bg-blue-50'
-                  : 'border-gray-200 hover:border-gray-300'
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border hover:border-muted-foreground/50'
               }`}
             >
-              <Icon className={`w-6 h-6 mx-auto mb-2 ${type === ct.value ? 'text-blue-600' : 'text-gray-600'}`} />
-              <p className={`text-sm font-medium ${type === ct.value ? 'text-blue-600' : 'text-gray-700'}`}>
-                {ct.label}
-              </p>
+              <Icon className="w-5 h-5 mx-auto mb-1" />
+              <p className="text-xs font-medium">{ct.label}</p>
             </button>
           );
         })}
       </div>
 
-      {/* Title */}
-      <div className="space-y-2">
-        <Label htmlFor="title">Title *</Label>
-        <Input
-          id="title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder={`Enter ${type} title...`}
-          maxLength={100}
-        />
-      </div>
-
-      {/* Description */}
-      <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Describe your offering in detail..."
-          rows={4}
-          maxLength={500}
-        />
-      </div>
-
-      {/* Dates - for events and time-limited promotions */}
-      {(type === 'event' || type === 'promotion' || type === 'discount') && (
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="startDate">Start Date</Label>
-            <Input
-              id="startDate"
-              type="datetime-local"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="endDate">End Date</Label>
-            <Input
-              id="endDate"
-              type="datetime-local"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Discount Amount - only for discounts */}
-      {type === 'discount' && (
-        <div className="space-y-2">
-          <Label htmlFor="discountAmount">Discount Amount</Label>
+      <div className="grid gap-3">
+        {/* Title */}
+        <div className="space-y-1">
+          <Label htmlFor="title" className="text-xs">Title *</Label>
           <Input
-            id="discountAmount"
-            value={discountAmount}
-            onChange={(e) => setDiscountAmount(e.target.value)}
-            placeholder="e.g., 20% off or $10 off"
+            id="title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder={`${type} title`}
+            maxLength={100}
+            className="h-9 text-sm"
           />
         </div>
-      )}
 
-      {/* Terms */}
-      <div className="space-y-2">
-        <Label htmlFor="terms">Terms & Conditions</Label>
-        <Textarea
-          id="terms"
-          value={terms}
-          onChange={(e) => setTerms(e.target.value)}
-          placeholder="Enter any terms and conditions..."
-          rows={3}
-        />
-      </div>
+        {/* Description */}
+        <div className="space-y-1">
+          <Label htmlFor="description" className="text-xs">Description</Label>
+          <Textarea
+            id="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Describe your offering..."
+            rows={2}
+            maxLength={500}
+            className="text-sm resize-none"
+          />
+        </div>
 
-      {/* Media Upload */}
-      <div className="space-y-2">
-        <Label>Images (up to 3)</Label>
-        <div className="space-y-3">
-          {previewUrls.length > 0 && (
-            <div className="grid grid-cols-3 gap-3">
-              {previewUrls.map((url, index) => (
-                <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
-                  <img src={url} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
-                  <button
-                    onClick={() => handleRemoveFile(index)}
-                    className="absolute top-2 right-2 p-1 bg-black/50 rounded-full hover:bg-black/70 transition-colors"
-                  >
-                    <X className="w-4 h-4 text-white" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-          {selectedFiles.length < 3 && (
-            <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-colors">
-              <Upload className="w-8 h-8 text-gray-400 mb-2" />
-              <span className="text-sm text-gray-600">Click to upload images</span>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(e) => e.target.files && handleFilesSelect(e.target.files)}
-                className="hidden"
+        {/* Dates - for events and time-limited promotions */}
+        {(type === 'event' || type === 'promotion' || type === 'discount') && (
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label htmlFor="startDate" className="text-xs">Start Date</Label>
+              <Input
+                id="startDate"
+                type="datetime-local"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="h-9 text-xs"
               />
-            </label>
-          )}
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="endDate" className="text-xs">End Date</Label>
+              <Input
+                id="endDate"
+                type="datetime-local"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="h-9 text-xs"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Discount Amount - only for discounts */}
+        {type === 'discount' && (
+          <div className="space-y-1">
+            <Label htmlFor="discountAmount" className="text-xs">Discount Amount</Label>
+            <Input
+              id="discountAmount"
+              value={discountAmount}
+              onChange={(e) => setDiscountAmount(e.target.value)}
+              placeholder="e.g., 20% off"
+              className="h-9 text-sm"
+            />
+          </div>
+        )}
+
+        {/* Terms */}
+        <div className="space-y-1">
+          <Label htmlFor="terms" className="text-xs">Terms</Label>
+          <Textarea
+            id="terms"
+            value={terms}
+            onChange={(e) => setTerms(e.target.value)}
+            placeholder="Terms..."
+            rows={2}
+            className="text-sm resize-none"
+          />
+        </div>
+
+        {/* Media Upload */}
+        <div className="space-y-1">
+          <Label className="text-xs">Images (up to 3)</Label>
+          <div className="space-y-2">
+            {previewUrls.length > 0 && (
+              <div className="grid grid-cols-3 gap-2">
+                {previewUrls.map((url, index) => (
+                  <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
+                    <img src={url} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => handleRemoveFile(index)}
+                      className="absolute top-1 right-1 p-0.5 bg-black/60 rounded-full hover:bg-black/80 transition-colors"
+                    >
+                      <X className="w-3 h-3 text-white" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {selectedFiles.length < 3 && (
+              <label className="flex flex-col items-center justify-center h-20 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-muted-foreground/50 transition-colors">
+                <Upload className="w-5 h-5 text-muted-foreground mb-1" />
+                <span className="text-xs text-muted-foreground">Click to upload</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => e.target.files && handleFilesSelect(e.target.files)}
+                  className="hidden"
+                />
+              </label>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Actions */}
-      <div className="flex gap-3 pt-4">
-        <Button
-          onClick={handleSubmit}
-          disabled={isSubmitting || !title.trim()}
-          className="flex-1"
-        >
-          {isSubmitting ? 'Creating...' : 'Create Content'}
-        </Button>
-        {onCancel && (
-          <Button onClick={onCancel} variant="outline">
-            Cancel
-          </Button>
-        )}
-      </div>
+      <Button
+        onClick={handleSubmit}
+        disabled={isSubmitting || !title.trim()}
+        className="w-full h-9"
+        size="sm"
+      >
+        {isSubmitting ? 'Creating...' : 'Create Content'}
+      </Button>
     </div>
   );
 };

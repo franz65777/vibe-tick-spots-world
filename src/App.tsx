@@ -29,6 +29,7 @@ import BusinessFeedPage from '@/pages/business/BusinessFeedPage';
 import BusinessProfilePage from '@/pages/business/BusinessProfilePage';
 import BusinessNotificationsPage from '@/pages/business/BusinessNotificationsPage';
 import BusinessMessagesPage from '@/pages/business/BusinessMessagesPage';
+import BusinessOverviewPageV2 from '@/pages/business/BusinessOverviewPageV2';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { retentionAnalyticsService } from '@/services/retentionAnalyticsService';
@@ -70,7 +71,7 @@ function AppContent() {
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/messages" element={<MessagesPage />} />
-                <Route path="/business" element={<BusinessOverviewPage />} />
+                <Route path="/business" element={<BusinessOverviewPageV2 />} />
                 <Route path="/business/analytics" element={<BusinessAnalyticsPage />} />
                 <Route path="/business/add" element={<BusinessAddPage />} />
                 <Route path="/business/feed" element={<BusinessFeedPage />} />

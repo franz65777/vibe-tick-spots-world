@@ -8,10 +8,10 @@ const BusinessAddPage = () => {
   const [activeMode, setActiveMode] = useState<'post' | 'marketing'>('post');
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-24">
-      <div className="max-w-screen-sm mx-auto">
+    <div className="h-screen bg-gradient-to-b from-background to-muted/20 pb-24 overflow-hidden flex flex-col">
+      <div className="max-w-screen-sm mx-auto flex-1 flex flex-col overflow-hidden">
         {/* Header with Mode Toggle */}
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b">
+        <div className="flex-shrink-0 bg-background/95 backdrop-blur-sm border-b">
           <div className="px-4 py-3">
             <div className="flex items-center justify-center gap-2">
               <button
@@ -43,14 +43,14 @@ const BusinessAddPage = () => {
         </div>
 
         {/* Content */}
-        <div className="transition-all duration-300">
-          {activeMode === 'post' ? (
-            <NewAddPage />
-          ) : (
-            <div className="p-4">
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-4">
+            {activeMode === 'post' ? (
+              <NewAddPage />
+            ) : (
               <BusinessMarketingCreator />
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>
