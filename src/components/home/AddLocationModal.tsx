@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import OpenStreetMapAutocomplete from '../OpenStreetMapAutocomplete';
+import GooglePlacesAutocomplete from '../GooglePlacesAutocomplete';
 
 interface AddLocationModalProps {
   isOpen: boolean;
@@ -45,18 +45,13 @@ const AddLocationModal = ({ isOpen, onClose, coordinates, onSaveLocation }: AddL
   const [loading, setSaving] = useState(false);
 
   const handleLocationSelect = (place: {
+    place_id: string;
     name: string;
     address: string;
-    coordinates: { lat: number; lng: number };
-    city: string;
+    lat: number;
+    lng: number;
   }) => {
-    setLocation({
-      place_id: `osm-${place.coordinates.lat}-${place.coordinates.lng}`,
-      name: place.name,
-      address: place.address,
-      lat: place.coordinates.lat,
-      lng: place.coordinates.lng,
-    });
+    setLocation(place);
     setLocationName(place.name);
     setStep('details');
   };
@@ -150,7 +145,7 @@ const AddLocationModal = ({ isOpen, onClose, coordinates, onSaveLocation }: AddL
             <div className="p-6 space-y-6">
               <div>
                 <h4 className="font-semibold mb-3">Search for a place</h4>
-                <OpenStreetMapAutocomplete
+                <GooglePlacesAutocomplete
                   onPlaceSelect={handleLocationSelect}
                   placeholder="Search restaurants, cafes, attractions..."
                 />

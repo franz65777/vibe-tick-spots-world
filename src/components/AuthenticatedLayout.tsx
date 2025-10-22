@@ -1,9 +1,14 @@
+
 import React from 'react';
-import { useLocation, Outlet } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import NewBottomNavigation from './NewBottomNavigation';
 import BusinessBottomNavigation from './BusinessBottomNavigation';
 
-const AuthenticatedLayout: React.FC = () => {
+interface AuthenticatedLayoutProps {
+  children: React.ReactNode;
+}
+
+const AuthenticatedLayout: React.FC<AuthenticatedLayoutProps> = ({ children }) => {
   const location = useLocation();
   const isBusinessRoute = location.pathname.startsWith('/business');
   const isDiscoverRoute = location.pathname === '/discover';
@@ -11,9 +16,9 @@ const AuthenticatedLayout: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className={isDiscoverRoute ? "" : "pb-16"}>
-        <Outlet />
+        {children}
       </div>
-      {/* Temporarily disable bottom navigation to isolate crash */}
+      {!isDiscoverRoute && (isBusinessRoute ? <BusinessBottomNavigation /> : <NewBottomNavigation />)}
     </div>
   );
 };

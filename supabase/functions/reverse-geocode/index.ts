@@ -7,6 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Input validation schemas
 const geocodeSchema = z.object({
   latitude: z.number().min(-90).max(90),
   longitude: z.number().min(-180).max(180),
@@ -14,49 +15,19 @@ const geocodeSchema = z.object({
   batchMode: z.boolean().optional().default(false)
 });
 
-/**
- * FREE Reverse Geocoding using OpenStreetMap Nominatim
- * Cost: $0 (was ~$5/1000 with Google Maps Geocoding API)
- */
-async function reverseGeocodeNominatim(lat: number, lng: number): Promise<string> {
-  const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1&accept-language=en`;
-  
-  const response = await fetch(url, {
-    headers: { 'User-Agent': 'SpottApp/1.0' },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Nominatim error: ${response.status}`);
-  }
-
-  const data = await response.json();
-
-  let city = data.address?.city || data.address?.town || data.address?.village || '';
-
-  if (city) {
-    city = city.replace(/\s+\d+$/, '').replace(/^County\s+/i, '').trim();
-    
-    const dublinNeighborhoods = [
-      'rathmines', 'ranelagh', 'ballsbridge', 'donnybrook', 'sandymount',
-      'ringsend', 'drumcondra', 'glasnevin', 'stoneybatter', 'smithfield',
-      'tallaght', 'clondalkin', 'blanchardstown', 'swords', 'malahide',
-      'dun laoghaire', 'blackrock', 'dundrum', 'clontarf', 'howth'
-    ];
-    
-    if (dublinNeighborhoods.includes(city.toLowerCase())) {
-      city = 'Dublin';
-    }
-  }
-
-  return city;
-}
-
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    const googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
+    
+    if (!googleMapsApiKey) {
+      throw new Error('Google Maps API key not configured');
+    }
+
     const body = await req.json();
     const validation = geocodeSchema.safeParse(body);
     
@@ -72,70 +43,266 @@ serve(async (req) => {
 
     const { latitude, longitude, locationId, batchMode } = validation.data;
 
+    // If batch mode, fetch all locations from DB
     if (batchMode) {
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL')!,
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-      );
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabase = createClient(supabaseUrl, supabaseKey);
 
-      const { data: locations } = await supabase
+      // Fetch locations missing city or with invalid coordinates
+      const { data: locations, error } = await supabase
         .from('locations')
         .select('id, latitude, longitude, city, name')
         .not('latitude', 'is', null)
         .not('longitude', 'is', null)
         .limit(50);
 
-      console.log(`💰 FREE: Processing ${locations?.length || 0} locations (saving ~$${((locations?.length || 0) * 5 / 1000).toFixed(2)})`);
+      if (error) throw error;
+
+      console.log(`Processing ${locations?.length || 0} locations`);
 
       let updated = 0;
+      let errors = 0;
 
-      for (const loc of locations || []) {
-        if (loc.city && loc.city.length > 2) continue;
-
+      for (const location of locations || []) {
         try {
-          const city = await reverseGeocodeNominatim(loc.latitude, loc.longitude);
-          
-          if (city) {
-            await supabase.from('locations').update({ city }).eq('id', loc.id);
-            console.log(`✅ ${loc.name} → ${city}`);
-            updated++;
+          // Skip if city already exists and looks valid
+          if (location.city && location.city.length > 2) {
+            console.log(`Skipping ${location.name} - city already set: ${location.city}`);
+            continue;
           }
 
-          await new Promise(r => setTimeout(r, 1000)); // Rate limit
-        } catch (err) {
-          console.error(`Error: ${loc.id}`, err);
+          const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${location.latitude},${location.longitude}&key=${googleMapsApiKey}`;
+          
+          const response = await fetch(geocodeUrl);
+          const data = await response.json();
+
+      if (data.status === 'OK' && data.results.length > 0) {
+        // Extract city from address components
+        const result = data.results[0];
+        let city = '';
+        let locality = '';
+        let sublocality = '';
+        let adminLevel2 = '';
+        let adminLevel3 = '';
+
+        for (const component of result.address_components) {
+          // Prioritize locality (main city) - this is what we want
+          if (component.types.includes('locality')) {
+            locality = component.long_name;
+          } 
+          // sublocality is usually a neighborhood - we'll use this only if no locality
+          else if (component.types.includes('sublocality_level_1') || component.types.includes('sublocality')) {
+            sublocality = component.long_name;
+          }
+          // administrative_area_level_3 is often a suburb/district
+          else if (component.types.includes('administrative_area_level_3')) {
+            adminLevel3 = component.long_name;
+          }
+          // Fallback to administrative_area_level_2 (county/region)
+          else if (component.types.includes('administrative_area_level_2')) {
+            adminLevel2 = component.long_name;
+          }
+        }
+
+        // Prioritize in this order: locality > adminLevel3 > adminLevel2
+        // Skip sublocality entirely as it's usually a neighborhood
+        city = locality || adminLevel3 || adminLevel2;
+
+      // Normalize city name - remove postal districts, "County" prefix, and map neighborhoods
+      if (city) {
+        // Remove postal district numbers (e.g., "Dublin 2" -> "Dublin")
+        city = city.replace(/\s+\d+$/, '');
+        
+        // Remove "County" prefix (e.g., "County Dublin" -> "Dublin")
+        city = city.replace(/^County\s+/i, '');
+        
+        // Trim whitespace
+        city = city.trim();
+        
+        // Map Dublin neighborhoods/suburbs to "Dublin"
+        const dublinNeighborhoods = [
+          'Rathmines', 'Ranelagh', 'Ballsbridge', 'Donnybrook', 'Sandymount',
+          'Ringsend', 'Irishtown', 'Ballybough', 'Drumcondra', 'Glasnevin',
+          'Cabra', 'Phibsborough', 'Stoneybatter', 'Smithfield', 'Arbour Hill',
+          'Inchicore', 'Kilmainham', 'Islandbridge', 'Crumlin', 'Kimmage',
+          'Terenure', 'Rathgar', 'Milltown', 'Clonskeagh', 'Dundrum',
+          'Stillorgan', 'Blackrock', 'Dun Laoghaire', 'Dalkey', 'Killiney',
+          'Shankill', 'Bray', 'Greystones', 'Howth', 'Malahide', 'Swords',
+          'Portmarnock', 'Clontarf', 'Raheny', 'Coolock', 'Artane',
+          'Whitehall', 'Santry', 'Ballymun', 'Finglas', 'Blanchardstown',
+          'Castleknock', 'Lucan', 'Clondalkin', 'Tallaght', 'Rathfarnham',
+          'Templeogue', 'Firhouse', 'Ballinteer', 'Churchtown', 'Windy Arbour',
+          'Leopardstown', 'Sandyford', 'Stepaside', 'Foxrock', 'Cabinteely',
+          'Loughlinstown', 'Cherrywood', 'Carrickmines', 'Cornelscourt',
+          'Donabate', 'Rush', 'Skerries', 'Balbriggan', 'Baldoyle',
+          'Saint James', 'St James', 'The Coombe', 'Liberties', 'Thomas Street',
+          'Christchurch', 'Temple Bar', 'Ballyboden', 'Knocklyon', 'Brittas'
+        ];
+        
+        // Check if city matches any Dublin neighborhood (case insensitive)
+        const isDublinNeighborhood = dublinNeighborhoods.some(
+          neighborhood => city.toLowerCase() === neighborhood.toLowerCase()
+        );
+        
+        if (isDublinNeighborhood) {
+          city = 'Dublin';
+        }
+      }
+
+        if (city) {
+          const { error: updateError } = await supabase
+            .from('locations')
+            .update({ city })
+            .eq('id', location.id);
+
+          if (updateError) {
+            console.error(`Error updating ${location.name}:`, updateError);
+            errors++;
+          } else {
+            console.log(`✅ Updated ${location.name} with city: ${city}`);
+            updated++;
+          }
+        }
+      }
+
+          // Rate limiting - wait 100ms between requests
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+        } catch (error) {
+          console.error(`Error processing location ${location.id}:`, error);
+          errors++;
         }
       }
 
       return new Response(
-        JSON.stringify({ success: true, updated }),
+        JSON.stringify({ 
+          success: true, 
+          message: `Updated ${updated} locations, ${errors} errors` 
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Single mode
-    const city = await reverseGeocodeNominatim(latitude, longitude);
-
-    if (locationId && city) {
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL')!,
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-      );
-
-      await supabase.from('locations').update({ city }).eq('id', locationId);
+    // Single location mode
+    if (!latitude || !longitude) {
+      throw new Error('Latitude and longitude are required');
     }
 
-    return new Response(
-      JSON.stringify({ success: true, city, provider: 'nominatim-free' }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${googleMapsApiKey}`;
+    
+    const response = await fetch(geocodeUrl);
+    const data = await response.json();
+
+    if (data.status === 'OK' && data.results.length > 0) {
+      const result = data.results[0];
+      let city = '';
+      let locality = '';
+      let sublocality = '';
+      let adminLevel2 = '';
+      let adminLevel3 = '';
+
+      // Extract city from address components
+      for (const component of result.address_components) {
+        // Prioritize locality (main city) - this is what we want
+        if (component.types.includes('locality')) {
+          locality = component.long_name;
+        } 
+        // sublocality is usually a neighborhood - we'll use this only if no locality
+        else if (component.types.includes('sublocality_level_1') || component.types.includes('sublocality')) {
+          sublocality = component.long_name;
+        }
+        // administrative_area_level_3 is often a suburb/district
+        else if (component.types.includes('administrative_area_level_3')) {
+          adminLevel3 = component.long_name;
+        }
+        // Fallback to administrative_area_level_2 (county/region)
+        else if (component.types.includes('administrative_area_level_2')) {
+          adminLevel2 = component.long_name;
+        }
+      }
+
+      // Prioritize in this order: locality > adminLevel3 > adminLevel2
+      // Skip sublocality entirely as it's usually a neighborhood
+      city = locality || adminLevel3 || adminLevel2;
+
+      // Normalize city name - remove postal districts, "County" prefix, and map neighborhoods
+      if (city) {
+        // Remove postal district numbers (e.g., "Dublin 2" -> "Dublin")
+        city = city.replace(/\s+\d+$/, '');
+        
+        // Remove "County" prefix (e.g., "County Dublin" -> "Dublin")
+        city = city.replace(/^County\s+/i, '');
+        
+        // Trim whitespace
+        city = city.trim();
+        
+        // Map Dublin neighborhoods/suburbs to "Dublin"
+        const dublinNeighborhoods = [
+          'Rathmines', 'Ranelagh', 'Ballsbridge', 'Donnybrook', 'Sandymount',
+          'Ringsend', 'Irishtown', 'Ballybough', 'Drumcondra', 'Glasnevin',
+          'Cabra', 'Phibsborough', 'Stoneybatter', 'Smithfield', 'Arbour Hill',
+          'Inchicore', 'Kilmainham', 'Islandbridge', 'Crumlin', 'Kimmage',
+          'Terenure', 'Rathgar', 'Milltown', 'Clonskeagh', 'Dundrum',
+          'Stillorgan', 'Blackrock', 'Dun Laoghaire', 'Dalkey', 'Killiney',
+          'Shankill', 'Bray', 'Greystones', 'Howth', 'Malahide', 'Swords',
+          'Portmarnock', 'Clontarf', 'Raheny', 'Coolock', 'Artane',
+          'Whitehall', 'Santry', 'Ballymun', 'Finglas', 'Blanchardstown',
+          'Castleknock', 'Lucan', 'Clondalkin', 'Tallaght', 'Rathfarnham',
+          'Templeogue', 'Firhouse', 'Ballinteer', 'Churchtown', 'Windy Arbour',
+          'Leopardstown', 'Sandyford', 'Stepaside', 'Foxrock', 'Cabinteely',
+          'Loughlinstown', 'Cherrywood', 'Carrickmines', 'Cornelscourt',
+          'Donabate', 'Rush', 'Skerries', 'Balbriggan', 'Baldoyle',
+          'Saint James', 'St James', 'The Coombe', 'Liberties', 'Thomas Street',
+          'Christchurch', 'Temple Bar', 'Ballyboden', 'Knocklyon', 'Brittas'
+        ];
+        
+        // Check if city matches any Dublin neighborhood (case insensitive)
+        const isDublinNeighborhood = dublinNeighborhoods.some(
+          neighborhood => city.toLowerCase() === neighborhood.toLowerCase()
+        );
+        
+        if (isDublinNeighborhood) {
+          city = 'Dublin';
+        }
+      }
+
+      // Update location if locationId provided
+      if (locationId && city) {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        await supabase
+          .from('locations')
+          .update({ city })
+          .eq('id', locationId);
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          city,
+          formatted_address: result.formatted_address 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    throw new Error(`Geocoding failed: ${data.status}`);
 
   } catch (error) {
-    console.error('Reverse geocode error:', error);
+    console.error('Error in reverse-geocode function:', error);
     
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        error: 'Failed to reverse geocode location',
+        message: error.message 
+      }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
     );
   }
 });

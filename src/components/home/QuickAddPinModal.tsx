@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { MapPin, Plus, Loader2 } from 'lucide-react';
+import { MapPin, Plus, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { categoryDisplayNames, type AllowedCategory } from '@/utils/allowedCategories';
 import { supabase } from '@/integrations/supabase/client';
-import OpenStreetMapAutocomplete from '@/components/OpenStreetMapAutocomplete';
+import NearbyPlacesSuggestions from './NearbyPlacesSuggestions';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface QuickAddPinModalProps {
   isOpen: boolean;
@@ -17,56 +18,79 @@ interface QuickAddPinModalProps {
 
 const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCategoriesFilter }: QuickAddPinModalProps) => {
   const [selectedPlace, setSelectedPlace] = useState<{
+    place_id: string;
     name: string;
     address: string;
     lat: number;
     lng: number;
-    city: string;
+    types: string[];
   } | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<AllowedCategory>('restaurant');
   const [isLoading, setIsLoading] = useState(false);
 
-  const categories: AllowedCategory[] = ['restaurant', 'bar', 'cafe', 'bakery', 'hotel', 'museum', 'entertainment'];
-
-  const handlePlaceSelect = (place: {
-    name: string;
-    address: string;
-    coordinates: { lat: number; lng: number };
-    city: string;
-  }) => {
-    setSelectedPlace({
-      name: place.name,
-      address: place.address,
-      lat: place.coordinates.lat,
-      lng: place.coordinates.lng,
-      city: place.city,
-    });
+  // Map Google Places types to our categories
+  const mapPlaceTypeToCategory = (types: string[]): AllowedCategory | null => {
+    if (types.includes('restaurant') || types.includes('meal_takeaway') || types.includes('food')) return 'restaurant';
+    if (types.includes('bar') || types.includes('night_club')) return 'bar';
+    if (types.includes('cafe')) return 'cafe';
+    if (types.includes('bakery')) return 'bakery';
+    if (types.includes('lodging')) return 'hotel';
+    if (types.includes('museum') || types.includes('art_gallery')) return 'museum';
+    if (types.includes('amusement_park') || types.includes('tourist_attraction')) return 'entertainment';
+    return null;
   };
 
+  const handlePlaceSelect = (place: {
+    place_id: string;
+    name: string;
+    address: string;
+    lat: number;
+    lng: number;
+    types: string[];
+  }) => {
+    const category = mapPlaceTypeToCategory(place.types);
+    if (!category) {
+      toast.error('This type of location cannot be saved. Please select a restaurant, bar, café, hotel, bakery, museum, or entertainment venue.');
+      return;
+    }
+    // Enforce current map category filters if any are selected
+    if (allowedCategoriesFilter && allowedCategoriesFilter.length > 0 && !allowedCategoriesFilter.includes(category)) {
+      toast.error('This category is currently filtered out. Switch filters or pick a matching venue.');
+      return;
+    }
+    
+    setSelectedPlace({ ...place });
+  };
   const handleSavePin = async () => {
     if (!selectedPlace) {
       toast.error('Please select a location first');
       return;
     }
 
-    if (allowedCategoriesFilter && allowedCategoriesFilter.length > 0 && !allowedCategoriesFilter.includes(selectedCategory)) {
+    const category = mapPlaceTypeToCategory(selectedPlace.types);
+    if (!category) {
+      toast.error('Invalid location type selected');
+      return;
+    }
+    
+    // Enforce current map category filters if any are selected
+    if (allowedCategoriesFilter && allowedCategoriesFilter.length > 0 && !allowedCategoriesFilter.includes(category)) {
       toast.error('This category is currently filtered out. Switch filters or pick a matching venue.');
       return;
     }
 
     setIsLoading(true);
     try {
+      // Get current user first
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError || !userData.user) {
         throw new Error('User not authenticated');
       }
 
-      // Check if location exists
-      const googlePlaceId = `osm-${selectedPlace.lat}-${selectedPlace.lng}`;
+      // First, check if location already exists
       const { data: existingLocation } = await supabase
         .from('locations')
         .select('id')
-        .eq('google_place_id', googlePlaceId)
+        .eq('google_place_id', selectedPlace.place_id)
         .maybeSingle();
 
       let locationId: string;
@@ -79,12 +103,12 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
           .from('locations')
           .insert({
             name: selectedPlace.name,
-            category: selectedCategory,
+            category: category,
             address: selectedPlace.address,
-            city: selectedPlace.city,
             latitude: selectedPlace.lat,
             longitude: selectedPlace.lng,
-            google_place_id: googlePlaceId,
+            google_place_id: selectedPlace.place_id,
+            place_types: selectedPlace.types,
             created_by: userData.user.id,
           })
           .select('id')
@@ -96,7 +120,7 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
         locationId = newLocation.id;
       }
 
-      // Check if already saved
+      // Check if user already saved this location
       const { data: existingSave } = await supabase
         .from('user_saved_locations')
         .select('id')
@@ -107,11 +131,12 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
       if (existingSave) {
         toast.info(`${selectedPlace.name} is already in your favorites!`);
         onPinAdded();
-        handleClose();
+        onClose();
+        setSelectedPlace(null);
         return;
       }
 
-      // Save location
+      // Save to user's saved locations
       const { error: saveError } = await supabase
         .from('user_saved_locations')
         .insert({
@@ -125,7 +150,8 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
       
       toast.success(`${selectedPlace.name} saved to your favorites!`);
       onPinAdded();
-      handleClose();
+      onClose();
+      setSelectedPlace(null);
     } catch (error: any) {
       console.error('Error saving pin:', error);
       toast.error(error?.message || 'Failed to save location. Please try again.');
@@ -136,83 +162,19 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
 
   const handleClose = () => {
     setSelectedPlace(null);
-    setSelectedCategory('restaurant');
     onClose();
   };
 
-  return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Quick Add Location</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          {/* Search for place */}
-          <div>
-            <label className="text-sm font-medium mb-2 block">Search Place</label>
-            <OpenStreetMapAutocomplete
-              onPlaceSelect={handlePlaceSelect}
-              placeholder="Search for a place..."
-            />
-          </div>
-
-          {/* Show selected place */}
-          {selectedPlace && (
-            <div className="p-3 bg-muted rounded-lg">
-              <div className="flex items-start gap-2">
-                <MapPin className="w-4 h-4 text-primary mt-1" />
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm">{selectedPlace.name}</div>
-                  <div className="text-xs text-muted-foreground truncate">{selectedPlace.address}</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Category selection */}
-          {selectedPlace && (
-            <div>
-              <label className="text-sm font-medium mb-2 block">Category</label>
-              <div className="grid grid-cols-2 gap-2">
-                {categories.map((cat) => (
-                  <Button
-                    key={cat}
-                    variant={selectedCategory === cat ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedCategory(cat)}
-                    className="justify-start"
-                  >
-                    {categoryDisplayNames[cat]}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Save button */}
-          {selectedPlace && (
-            <Button
-              onClick={handleSavePin}
-              disabled={isLoading}
-              className="w-full"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Save to Favorites
-                </>
-              )}
-            </Button>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
+  return coordinates ? (
+    <NearbyPlacesSuggestions
+      coordinates={coordinates}
+      onClose={() => {
+        onPinAdded();
+        onClose();
+      }}
+      isOpen={isOpen}
+    />
+  ) : null;
 };
 
 export default QuickAddPinModal;

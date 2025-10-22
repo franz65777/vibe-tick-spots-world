@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import LeafletMapSetup from '@/components/LeafletMapSetup';
+import GoogleMapsSetup from '@/components/GoogleMapsSetup';
 import AddLocationModal from './AddLocationModal';
 import QuickAddPinModal from './QuickAddPinModal';
 import MapCategoryFilters from './MapCategoryFilters';
@@ -61,7 +61,7 @@ const MapSection = ({
     }
   }, [initialSelectedPlace, onClearInitialPlace]);
 
-  // Convert locations to Place format for LeafletMapSetup with creator info
+  // Convert locations to Place format for GoogleMapsSetup with creator info
   const places: Place[] = locations.map(location => ({
     id: location.id,
     name: location.name,
@@ -144,7 +144,7 @@ const MapSection = ({
   return (
     <>
       <div className={`${isExpanded ? 'fixed inset-0 w-screen h-screen p-3' : 'flex-1 relative min-h-[500px]'} w-full overflow-hidden`}>
-        <LeafletMapSetup
+        <GoogleMapsSetup
           places={places}
           onPinClick={handlePinClick}
           onPinShare={handlePinShare}

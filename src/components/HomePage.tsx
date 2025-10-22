@@ -10,7 +10,7 @@ import StoriesSection from './home/StoriesSection';
 import MapSection from './home/MapSection';
 import ModalsManager from './home/ModalsManager';
 import CommunityHighlights from './home/CommunityHighlights';
-// Google Maps no longer needed - using Leaflet + OSM
+import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '@/lib/googleMaps';
 import { supabase } from '@/integrations/supabase/client';
 import { ThemeToggle } from './ThemeToggle';
 import { Button } from './ui/button';
@@ -171,7 +171,28 @@ const HomePage = () => {
         console.log('✅ City detected instantly:', manualCity);
       }
 
-      // Manual city detection is sufficient now (no Google Geocoder needed)
+      // Then try Google Geocoder if available for more accuracy
+      if (isGoogleMapsLoaded()) {
+        try {
+          const geocoder = new window.google.maps.Geocoder();
+          const result = await geocoder.geocode({ location: userLocation });
+          
+          if (result.results && result.results[0]) {
+            const cityComponent = result.results[0].address_components.find(
+              (c) => c.types.includes('locality') || c.types.includes('administrative_area_level_2')
+            );
+            
+            if (cityComponent) {
+              const city = cityComponent.long_name;
+              setCurrentCity(city);
+              setSearchQuery(city);
+              console.log('✅ City refined with Google:', city);
+            }
+          }
+        } catch (error) {
+          console.error('Error geocoding location:', error);
+        }
+      }
     };
 
     setCityFromLocation();
