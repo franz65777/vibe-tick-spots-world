@@ -97,8 +97,8 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
         <input
           ref={inputRef}
           type="text"
-          placeholder={currentCity || 'Search any city worldwide'}
-          value={searchQuery}
+          placeholder="Search any city worldwide"
+          value={searchQuery || currentCity}
           onChange={(e) => onSearchChange(e.target.value)}
           onKeyPress={onSearchKeyPress}
           onFocus={() => {

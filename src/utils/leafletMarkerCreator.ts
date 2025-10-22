@@ -73,17 +73,17 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
     ringColor = '#FCD34D';
   }
   
-  // Create custom marker HTML - smaller size
+  // Create custom marker HTML - even smaller with category icon inside
   const markerHtml = `
-    <div class="custom-leaflet-marker" style="position: relative; width: 32px; height: 40px;">
+    <div class="custom-leaflet-marker" style="position: relative; width: 28px; height: 35px;">
       <!-- Animated ring for recommended places -->
       ${isRecommended ? `
         <div style="
           position: absolute;
-          top: 6px;
-          left: 6px;
-          width: 20px;
-          height: 20px;
+          top: 5px;
+          left: 5px;
+          width: 18px;
+          height: 18px;
           border: 2px solid ${ringColor};
           border-radius: 50%;
           animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
@@ -91,17 +91,17 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
       ` : ''}
       
       <!-- Main pin -->
-      <svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 2px 3px rgba(0,0,0,0.25));">
-        <path d="M16 0C9.373 0 4 5.373 4 12c0 6.627 12 28 12 28s12-21.373 12-28C28 5.373 22.627 0 16 0z" 
+      <svg width="28" height="35" viewBox="0 0 28 35" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 2px 3px rgba(0,0,0,0.25));">
+        <path d="M14 0C8.477 0 4 4.477 4 10c0 5.523 10 25 10 25s10-19.477 10-25C24 4.477 19.523 0 14 0z" 
               fill="${pinColor}"/>
-        <circle cx="16" cy="12" r="6" fill="white"/>
+        <circle cx="14" cy="10" r="5" fill="white"/>
       </svg>
       
-      <!-- Category icon -->
-      <svg width="12" height="12" viewBox="0 0 24 24" style="
+      <!-- Category icon inside pin -->
+      <svg width="10" height="10" viewBox="0 0 24 24" style="
         position: absolute;
-        top: 6px;
-        left: 10px;
+        top: 5px;
+        left: 9px;
         color: ${pinColor};
       ">
         ${iconSvg}
@@ -111,17 +111,17 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
       ${isRecommended && recommendationScore > 70 ? `
         <div style="
           position: absolute;
-          top: -3px;
-          right: 3px;
+          top: -2px;
+          right: 2px;
           background: #10B981;
           color: white;
           border-radius: 9999px;
-          width: 14px;
-          height: 14px;
+          width: 12px;
+          height: 12px;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 9px;
+          font-size: 8px;
           font-weight: bold;
           box-shadow: 0 1px 2px rgba(0,0,0,0.3);
         ">★</div>
@@ -152,9 +152,9 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
   return L.divIcon({
     html: markerHtml,
     className: 'custom-leaflet-icon',
-    iconSize: [32, 40],
-    iconAnchor: [16, 40],
-    popupAnchor: [0, -40],
+    iconSize: [28, 35],
+    iconAnchor: [14, 35],
+    popupAnchor: [0, -35],
   });
 };
 

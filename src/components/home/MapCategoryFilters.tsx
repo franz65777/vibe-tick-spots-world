@@ -346,39 +346,37 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
         </div>
       )}
 
-      {/* Category Filters */}
-      {selectedCategories.length > 0 || categoryFilters.length > 0 ? (
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-          {categoryFilters.map((category) => {
-            const IconComponent = category.icon;
-            const isSelected = selectedCategories.includes(category.id);
-            
-            return (
-              <button
-                key={category.id}
-                onClick={() => toggleCategory(category.id)}
-                className={cn(
-                  "flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 shadow-sm backdrop-blur-sm",
-                  isSelected 
-                    ? "bg-black/90 text-white" 
-                    : "bg-white/80 text-gray-700 hover:bg-white/90"
-                )}
-              >
-                <IconComponent className="w-4 h-4" />
-                <span className="text-sm">{category.name}</span>
-              </button>
-            );
-          })}
-          {selectedCategories.length > 0 && (
+      {/* Category Filters - Always show horizontally scrollable */}
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+        {categoryFilters.map((category) => {
+          const IconComponent = category.icon;
+          const isSelected = selectedCategories.includes(category.id);
+          
+          return (
             <button
-              onClick={clearCategories}
-              className="flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium bg-white/80 text-gray-500 hover:bg-white/90 transition-all duration-200 shadow-sm backdrop-blur-sm"
+              key={category.id}
+              onClick={() => toggleCategory(category.id)}
+              className={cn(
+                "flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 shadow-sm backdrop-blur-sm",
+                isSelected 
+                  ? "bg-black/90 text-white" 
+                  : "bg-white/80 text-gray-700 hover:bg-white/90"
+              )}
             >
-              Clear All
+              <IconComponent className="w-4 h-4" />
+              <span className="text-sm">{category.name}</span>
             </button>
-          )}
-        </div>
-      ) : null}
+          );
+        })}
+        {selectedCategories.length > 0 && (
+          <button
+            onClick={clearCategories}
+            className="flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium bg-white/80 text-gray-500 hover:bg-white/90 transition-all duration-200 shadow-sm backdrop-blur-sm"
+          >
+            Clear All
+          </button>
+        )}
+      </div>
     </div>
   );
 };
