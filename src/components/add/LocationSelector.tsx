@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { MapPin, AlertCircle } from 'lucide-react';
-import GooglePlacesAutocomplete from '@/components/GooglePlacesAutocomplete';
+import OpenStreetMapAutocomplete from '@/components/OpenStreetMapAutocomplete';
 // Category selection removed per latest UX
 
 interface LocationSelectorProps {
@@ -26,7 +26,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
 
       {!selectedLocation ? (
         <div className="space-y-3">
-          <GooglePlacesAutocomplete
+          <OpenStreetMapAutocomplete
             onPlaceSelect={onLocationSelect}
             placeholder="Search for a place..."
             className="w-full"
@@ -43,7 +43,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
           <div className="p-4 bg-primary/10 rounded-xl space-y-2">
             <div>
               <p className="font-semibold text-foreground">{selectedLocation.name}</p>
-              <p className="text-sm text-muted-foreground">{selectedLocation.formatted_address}</p>
+              <p className="text-sm text-muted-foreground">{selectedLocation.formatted_address || selectedLocation.address}</p>
             </div>
             <button
               onClick={() => {

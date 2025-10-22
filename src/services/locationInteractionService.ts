@@ -31,37 +31,19 @@ class LocationInteractionService {
           if (existingLocation) {
             existingLocationId = existingLocation.id;
           } else {
-            // Enrich with Google Place Details for accurate categorization
-            let enrichedTypes: string[] = Array.isArray(locationData.types) ? locationData.types : [];
-            let enrichedName: string = locationData.name;
-            let enrichedAddress: string | null = locationData.address;
-            let lat = locationData.latitude;
-            let lng = locationData.longitude;
-            try {
-              const { getPlaceDetails } = await import('@/lib/googleMaps');
-              const { mapGooglePlaceTypeToCategory } = await import('@/utils/allowedCategories');
-              const details = await getPlaceDetails(locationData.google_place_id);
-              if (details.types?.length) enrichedTypes = details.types;
-              if (!enrichedName && details.name) enrichedName = details.name;
-              if (!enrichedAddress && details.formatted_address) enrichedAddress = details.formatted_address;
-              if ((!lat || !lng) && details.location) { lat = details.location.lat; lng = details.location.lng; }
-              // Derive category from enriched types
-              locationData.category = mapGooglePlaceTypeToCategory(enrichedTypes);
-            } catch (e) {
-              console.warn('Google Place details fetch failed, using provided data.', e);
-            }
+            // OSM doesn't provide detailed place info, use provided data directly
 
             // Create new location only if it doesn't exist
             const { data: newLocation, error: locationError } = await supabase
               .from('locations')
               .insert({
                 google_place_id: locationData.google_place_id,
-                name: enrichedName,
-                address: enrichedAddress,
-                latitude: lat,
-                longitude: lng,
+                name: locationData.name,
+                address: locationData.address,
+                latitude: locationData.latitude,
+                longitude: locationData.longitude,
                 category: locationData.category || 'restaurant',
-                place_types: enrichedTypes || [],
+                place_types: locationData.types || [],
                 created_by: user.user.id,
                 pioneer_user_id: user.user.id
               })

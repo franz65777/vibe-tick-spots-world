@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import GooglePlacesAutocomplete from './GooglePlacesAutocomplete';
+import OpenStreetMapAutocomplete from './OpenStreetMapAutocomplete';
 import { useStories } from '@/hooks/useStories';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { extractImageMetadata, getLocationFromCoordinates } from '@/utils/imageUtils';
@@ -83,13 +83,18 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
   };
 
   const handleLocationSelect = (place: {
-    place_id: string;
     name: string;
     address: string;
-    lat: number;
-    lng: number;
+    coordinates: { lat: number; lng: number };
+    city: string;
   }) => {
-    setLocation(place);
+    setLocation({
+      place_id: `osm-${place.coordinates.lat}-${place.coordinates.lng}`,
+      name: place.name,
+      address: place.address,
+      lat: place.coordinates.lat,
+      lng: place.coordinates.lng,
+    });
   };
 
   const handleSubmit = async () => {
@@ -312,7 +317,7 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
                     {/* Search New Location */}
                     <div>
                       <span className="text-xs font-medium text-gray-600 block mb-2">Or Search New Location</span>
-                      <GooglePlacesAutocomplete
+                      <OpenStreetMapAutocomplete
                         onPlaceSelect={handleLocationSelect}
                         placeholder="Search for a place..."
                         className="rounded-lg border-gray-200 focus:border-blue-400"
