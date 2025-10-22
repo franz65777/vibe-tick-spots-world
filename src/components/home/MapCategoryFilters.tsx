@@ -66,7 +66,6 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
   const mapFilters = [
     { id: 'following' as const, name: 'Following', icon: Users, description: 'Places from people you follow' },
     { id: 'popular' as const, name: 'Popular', icon: TrendingUp, description: 'Trending locations nearby' },
-    { id: 'recommended' as const, name: 'For You', icon: Star, description: 'Personalized recommendations' },
     { id: 'saved' as const, name: 'Saved', icon: Bookmark, description: 'Your saved places' }
   ];
 
@@ -192,12 +191,12 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
 
   return (
     <div className="absolute top-4 left-4 right-4 z-50">
-      {/* Main Map Filters - Show all or just Following based on state */}
+      {/* Main Map Filters - Show all in 3 columns */}
       <div className={cn(
         "mb-2 transition-all duration-200",
-        showUserSearch && activeFilter === 'following' ? "grid grid-cols-1 gap-1.5" : "grid grid-cols-4 gap-1.5"
+        showUserSearch && activeFilter === 'following' ? "grid grid-cols-1 gap-1.5" : "grid grid-cols-3 gap-1.5"
       )}>
-        {/* Following Filter - Always visible */}
+        {/* Show only Following when search is open, otherwise show all 3 filters */}
         {mapFilters.filter(f => showUserSearch && activeFilter === 'following' ? f.id === 'following' : true).map((filter) => {
           const IconComponent = filter.icon;
           const isActive = activeFilter === filter.id;
@@ -210,9 +209,6 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
             popular: isActive 
               ? "bg-red-600 text-white border-red-600" 
               : "bg-white/90 text-red-600 border-red-200 hover:bg-red-50",
-            recommended: isActive 
-              ? "bg-purple-600 text-white border-purple-600" 
-              : "bg-white/90 text-purple-600 border-purple-200 hover:bg-purple-50",
             saved: isActive 
               ? "bg-green-600 text-white border-green-600" 
               : "bg-white/90 text-green-600 border-green-200 hover:bg-green-50"

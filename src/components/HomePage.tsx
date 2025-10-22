@@ -380,7 +380,8 @@ const HomePage = () => {
         />
       
       <main className="flex-1 flex flex-col overflow-hidden">
-        <div className="h-[90px] flex-shrink-0">
+        {/* Stories Section - 80px */}
+        <div className="h-[80px] flex-shrink-0">
           <StoriesSection
             stories={stories}
             onCreateStory={() => setIsCreateStoryModalOpen(true)}
@@ -391,8 +392,8 @@ const HomePage = () => {
           />
         </div>
         
-        {/* Discover Section - 130px, no white container */}
-        <div className="h-[130px] flex-shrink-0">
+        {/* Discover Section - 110px */}
+        <div className="h-[110px] flex-shrink-0">
           <CommunityHighlights
             currentCity={currentCity}
             userLocation={userLocation}
@@ -409,8 +410,8 @@ const HomePage = () => {
           />
         </div>
         
-        {/* Map Section - reduced by 20%, with expand functionality */}
-        <div className={isMapExpanded ? "fixed inset-0 z-50" : "h-[35vh] flex-shrink-0"}>
+        {/* Map Section - fills remaining space and extends under bottom nav */}
+        <div className={isMapExpanded ? "fixed inset-0 z-50" : "flex-1 relative pb-16"}>
           <MapSection
             mapCenter={mapCenter}
             currentCity={currentCity}

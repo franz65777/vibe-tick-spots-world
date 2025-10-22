@@ -10,11 +10,13 @@ const AuthenticatedLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className={isDiscoverRoute ? "" : "pb-16"}>
+      <div className="h-screen overflow-hidden">
         <Outlet />
       </div>
       {!isDiscoverRoute && (
-        isBusinessRoute ? <BusinessBottomNavigation /> : <NewBottomNavigation />
+        <div className="fixed bottom-0 left-0 right-0 z-[1500]">
+          {isBusinessRoute ? <BusinessBottomNavigation /> : <NewBottomNavigation />}
+        </div>
       )}
     </div>
   );
