@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import MinimalApp from './components/MinimalApp.tsx'
+import 'leaflet/dist/leaflet.css'
 import './index.css'
 
 console.log('🚀 Starting full app with dependencies fixed...');
