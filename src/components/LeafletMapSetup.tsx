@@ -67,13 +67,14 @@ const LeafletMapSetup = ({
 
     mapRef.current = map;
 
+    // Use CartoDB Positron for clean, minimal look
     const url = isDarkMode
-      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-      : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+      ? 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png'
+      : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
 
     const tile = L.tileLayer(url, {
       maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      attribution: '&copy; OpenStreetMap, &copy; CartoDB',
     });
     tile.addTo(map);
     tileLayerRef.current = tile;
@@ -100,15 +101,15 @@ const LeafletMapSetup = ({
     const map = mapRef.current;
     if (!map) return;
     const url = isDarkMode
-      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-      : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+      ? 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png'
+      : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
 
     if (tileLayerRef.current) {
       map.removeLayer(tileLayerRef.current);
     }
     const tile = L.tileLayer(url, {
       maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      attribution: '&copy; OpenStreetMap, &copy; CartoDB',
     });
     tile.addTo(map);
     tileLayerRef.current = tile;
@@ -211,10 +212,25 @@ const LeafletMapSetup = ({
           50% { transform: translateY(-5px); }
           75% { transform: translateY(-8px); }
         }
-        .leaflet-container { background: ${isDarkMode ? '#1a1a1a' : '#f0f0f0'}; }
+        .leaflet-container { 
+          background: ${isDarkMode ? '#1e293b' : '#f8fafc'}; 
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
         .custom-leaflet-icon { background: transparent; border: none; }
-        .leaflet-control-attribution { background: rgba(255,255,255,0.8); padding: 2px 5px; font-size: 10px; }
-        .dark .leaflet-control-attribution { background: rgba(0,0,0,0.8); color: white; }
+        .leaflet-control-attribution { 
+          background: rgba(255,255,255,0.9); 
+          padding: 4px 8px; 
+          font-size: 9px;
+          border-radius: 4px;
+          margin: 8px;
+        }
+        .dark .leaflet-control-attribution { 
+          background: rgba(0,0,0,0.7); 
+          color: rgba(255,255,255,0.8); 
+        }
+        .leaflet-tile { 
+          filter: ${isDarkMode ? 'brightness(0.9) contrast(1.1)' : 'brightness(1.02) contrast(0.98)'}; 
+        }
       `}</style>
 
       {/* Location detail card */}
