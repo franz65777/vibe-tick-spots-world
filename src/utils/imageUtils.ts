@@ -71,31 +71,60 @@ export const extractImageMetadata = async (file: File): Promise<ImageMetadata> =
 
 /**
  * Get location name from coordinates using reverse geocoding
- * Now using FREE OpenStreetMap Nominatim (was costing $5/1000 with Google)
  */
 export const getLocationFromCoordinates = async (
   latitude: number, 
   longitude: number
 ): Promise<string | null> => {
   try {
-    // Use FREE Nominatim reverse geocoding
-    const url = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`;
-    
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'SpottApp/1.0',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Nominatim error: ${response.status}`);
+    // Use Google Maps Geocoding API if available
+    if (window.google && window.google.maps) {
+      const geocoder = new window.google.maps.Geocoder();
+      
+      return new Promise((resolve) => {
+        geocoder.geocode(
+          { location: { lat: latitude, lng: longitude } },
+          (results, status) => {
+            if (status === 'OK' && results?.[0]) {
+              // Get the most relevant result (usually the first one)
+              const result = results[0];
+              const addressComponents = result.address_components;
+              
+              // Try to find a meaningful place name
+              const establishment = addressComponents.find(c => 
+                c.types.includes('establishment') || c.types.includes('point_of_interest')
+              );
+              
+              const locality = addressComponents.find(c => 
+                c.types.includes('locality') || c.types.includes('sublocality')
+              );
+              
+              const neighborhood = addressComponents.find(c => 
+                c.types.includes('neighborhood')
+              );
+              
+              const placeName = establishment?.long_name || 
+                              locality?.long_name || 
+                              neighborhood?.long_name || 
+                              result.formatted_address;
+              
+              resolve(placeName);
+            } else {
+              resolve(null);
+            }
+          }
+        );
+      });
     }
-
-    const data = await response.json();
     
-    if (data.display_name) {
-      // Return the formatted address
-      return data.display_name;
+    // Fallback: use a simple reverse geocoding service
+    const response = await fetch(
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+    );
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.locality || data.city || data.principalSubdivision || 'Unknown Location';
     }
     
     return null;

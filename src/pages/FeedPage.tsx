@@ -142,7 +142,7 @@ const FeedPage = () => {
   }
 
   return (
-    <>
+    <AuthenticatedLayout>
       <div className="min-h-screen bg-muted/30 pb-20">
         {/* Header */}
         <header className="bg-background border-b border-border sticky top-0 z-10 shadow-sm">
@@ -351,7 +351,7 @@ const FeedPage = () => {
           openShareOnLoad={openShareOnLoad}
         />
       )}
-    </>
+    </AuthenticatedLayout>
   );
 };
 

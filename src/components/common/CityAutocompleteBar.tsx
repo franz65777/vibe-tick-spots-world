@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Search, MapPin, Loader2 } from 'lucide-react';
-import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
+import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '@/lib/googleMaps';
 
 interface CityAutocompleteBarProps {
   searchQuery: string;
@@ -9,13 +9,6 @@ interface CityAutocompleteBarProps {
   onSearchKeyPress: (e: React.KeyboardEvent) => void;
   onCitySelect: (city: string, coords?: { lat: number; lng: number }) => void;
   onFocusOpen?: () => void;
-}
-
-interface CityResult {
-  name: string;
-  displayName: string;
-  lat: number;
-  lng: number;
 }
 
 const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
@@ -27,64 +20,73 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
   onFocusOpen,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [results, setResults] = useState<CityResult[]>([]);
-  const [showResults, setShowResults] = useState(false);
-  const debounceTimer = useRef<NodeJS.Timeout>();
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (searchQuery.length < 2) {
-      setResults([]);
-      setShowResults(false);
-      return;
-    }
+    const init = async () => {
+      try {
+        setIsLoading(true);
+        await loadGoogleMapsAPI();
+        if (!isGoogleMapsLoaded() || !inputRef.current) return;
 
-    // Debounce search
-    if (debounceTimer.current) {
-      clearTimeout(debounceTimer.current);
-    }
+        // Restrict to cities only; Google handles multilingual search & typos
+        const options: google.maps.places.AutocompleteOptions = {
+          types: ['(cities)'],
+          fields: ['place_id', 'name', 'geometry', 'formatted_address']
+        };
 
-    debounceTimer.current = setTimeout(() => {
-      performSearch(searchQuery);
-    }, 400);
+        const ac = new window.google.maps.places.Autocomplete(inputRef.current, options);
+        autocompleteRef.current = ac;
 
-    return () => {
-      if (debounceTimer.current) {
-        clearTimeout(debounceTimer.current);
+        // Use callback ref to ensure latest handlers
+        const placeChangedListener = ac.addListener('place_changed', () => {
+          const place = ac.getPlace();
+          if (!place || !place.geometry || !place.geometry.location) return;
+          const lat = place.geometry.location.lat();
+          const lng = place.geometry.location.lng();
+          const label = place.name || place.formatted_address || '';
+          
+          // Immediately call handlers and fill the input
+          onCitySelect(label, { lat, lng });
+          onSearchChange(label);
+          inputRef.current?.blur();
+        });
+
+        // Position dropdown correctly
+        const positionDropdown = () => {
+          const pac = document.querySelector('.pac-container') as HTMLElement;
+          if (pac && inputRef.current) {
+            const rect = inputRef.current.getBoundingClientRect();
+            pac.style.position = 'fixed';
+            pac.style.top = `${rect.bottom + 8}px`;
+            pac.style.left = `${rect.left}px`;
+            pac.style.width = `${rect.width}px`;
+          }
+        };
+
+        // Apply positioning on input focus and typing
+        inputRef.current?.addEventListener('focus', () => {
+          setTimeout(positionDropdown, 50);
+        });
+        
+        inputRef.current?.addEventListener('input', () => {
+          setTimeout(positionDropdown, 50);
+        });
+
+      } finally {
+        setIsLoading(false);
       }
     };
-  }, [searchQuery]);
 
-  const performSearch = async (query: string) => {
-    setIsLoading(true);
-    
-    try {
-      // Use FREE OpenStreetMap Nominatim for city search
-      const nominatimResults = await nominatimGeocoding.searchPlace(query);
-      
-      const cityResults: CityResult[] = nominatimResults.map((result) => ({
-        name: result.city || result.displayName.split(',')[0],
-        displayName: result.displayName,
-        lat: result.lat,
-        lng: result.lng,
-      }));
+    init();
 
-      setResults(cityResults);
-      setShowResults(true);
-    } catch (error) {
-      console.error('City search error:', error);
-      setResults([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSelectCity = (result: CityResult) => {
-    onCitySelect(result.name, { lat: result.lat, lng: result.lng });
-    onSearchChange(result.name);
-    setShowResults(false);
-    inputRef.current?.blur();
-  };
+    return () => {
+      if (autocompleteRef.current && (window as any).google?.maps?.event) {
+        (window as any).google.maps.event.clearInstanceListeners(autocompleteRef.current);
+      }
+    };
+  }, [onCitySelect, onSearchChange]);
 
   return (
     <div className="group relative" id="city-search-bar">
@@ -97,46 +99,14 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
         <input
           ref={inputRef}
           type="text"
-          placeholder="Search any city worldwide"
-          value={searchQuery || currentCity}
+          placeholder={isLoading ? 'Loading…' : currentCity || 'Search any city worldwide'}
+          value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           onKeyPress={onSearchKeyPress}
-          onFocus={() => {
-            onFocusOpen?.();
-            if (searchQuery.length >= 2 && results.length > 0) {
-              setShowResults(true);
-            }
-          }}
-          onBlur={() => {
-            // Delay to allow click on result
-            setTimeout(() => setShowResults(false), 200);
-          }}
+          onFocus={() => onFocusOpen?.()}
           className="w-full h-11 pl-11 pr-4 rounded-full bg-background border border-input shadow-sm focus:outline-none focus:ring-1 focus:ring-ring focus:border-input transition-all placeholder:text-muted-foreground text-sm font-medium text-foreground"
         />
       </div>
-
-      {/* Results dropdown */}
-      {showResults && results.length > 0 && (
-        <div className="absolute z-50 w-full mt-2 bg-background border border-border rounded-lg shadow-lg max-h-[300px] overflow-y-auto">
-          {results.map((result, idx) => (
-            <button
-              key={idx}
-              onClick={() => handleSelectCity(result)}
-              className="w-full px-4 py-3 flex items-start gap-3 hover:bg-muted transition-colors text-left border-b border-border last:border-0"
-            >
-              <MapPin className="w-4 h-4 mt-1 flex-shrink-0 text-primary" />
-              <div className="flex-1 min-w-0">
-                <div className="font-medium text-foreground">
-                  {result.name}
-                </div>
-                <div className="text-xs text-muted-foreground truncate">
-                  {result.displayName}
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 };

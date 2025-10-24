@@ -10,7 +10,7 @@ import StoriesSection from './home/StoriesSection';
 import MapSection from './home/MapSection';
 import ModalsManager from './home/ModalsManager';
 import CommunityHighlights from './home/CommunityHighlights';
-// Google Maps no longer needed - using Leaflet + OSM
+import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '@/lib/googleMaps';
 import { supabase } from '@/integrations/supabase/client';
 import { ThemeToggle } from './ThemeToggle';
 import { Button } from './ui/button';
@@ -171,7 +171,28 @@ const HomePage = () => {
         console.log('✅ City detected instantly:', manualCity);
       }
 
-      // Manual city detection is sufficient now (no Google Geocoder needed)
+      // Then try Google Geocoder if available for more accuracy
+      if (isGoogleMapsLoaded()) {
+        try {
+          const geocoder = new window.google.maps.Geocoder();
+          const result = await geocoder.geocode({ location: userLocation });
+          
+          if (result.results && result.results[0]) {
+            const cityComponent = result.results[0].address_components.find(
+              (c) => c.types.includes('locality') || c.types.includes('administrative_area_level_2')
+            );
+            
+            if (cityComponent) {
+              const city = cityComponent.long_name;
+              setCurrentCity(city);
+              setSearchQuery(city);
+              console.log('✅ City refined with Google:', city);
+            }
+          }
+        } catch (error) {
+          console.error('Error geocoding location:', error);
+        }
+      }
     };
 
     setCityFromLocation();
@@ -380,8 +401,7 @@ const HomePage = () => {
         />
       
       <main className="flex-1 flex flex-col overflow-hidden">
-        {/* Stories Section - 80px */}
-        <div className="h-[80px] flex-shrink-0">
+        <div className="h-[90px] flex-shrink-0">
           <StoriesSection
             stories={stories}
             onCreateStory={() => setIsCreateStoryModalOpen(true)}
@@ -392,8 +412,8 @@ const HomePage = () => {
           />
         </div>
         
-        {/* Discover Section - 110px */}
-        <div className="h-[110px] flex-shrink-0">
+        {/* Discover Section - 130px, no white container */}
+        <div className="h-[130px] flex-shrink-0">
           <CommunityHighlights
             currentCity={currentCity}
             userLocation={userLocation}
@@ -410,8 +430,8 @@ const HomePage = () => {
           />
         </div>
         
-        {/* Map Section - fills remaining space and extends under bottom nav */}
-        <div className={isMapExpanded ? "fixed inset-0 z-50" : "flex-1 relative pb-16"}>
+        {/* Map Section - reduced by 20%, with expand functionality */}
+        <div className={isMapExpanded ? "fixed inset-0 z-50" : "h-[35vh] flex-shrink-0"}>
           <MapSection
             mapCenter={mapCenter}
             currentCity={currentCity}
