@@ -63,6 +63,7 @@ const LeafletMapSetup = ({
       zoom: 15,
       zoomControl: false,
       attributionControl: true,
+      doubleClickZoom: false,
     });
 
     mapRef.current = map;

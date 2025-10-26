@@ -190,10 +190,10 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
   const selectedUsers = users.filter(u => selectedFollowedUserIds.includes(u.id));
 
   return (
-    <div className="absolute top-4 left-4 right-4 z-50">
+    <div className="absolute top-4 left-4 right-4 z-[2000] pointer-events-none">
       {/* Main Map Filters - Show all in 3 columns */}
       <div className={cn(
-        "mb-2 transition-all duration-200",
+        "mb-2 transition-all duration-200 pointer-events-auto",
         showUserSearch && activeFilter === 'following' ? "grid grid-cols-1 gap-1.5" : "grid grid-cols-3 gap-1.5"
       )}>
         {/* Show only Following when search is open, otherwise show all 3 filters */}
@@ -250,7 +250,7 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
 
       {/* User Search Bar - Shown when Following is active and search is enabled */}
       {showUserSearch && activeFilter === 'following' && (
-        <div className="mb-2 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 p-3">
+        <div className="mb-2 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 p-3 pointer-events-auto">
           <div className="flex items-center gap-2">
             <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
             <Input
@@ -347,7 +347,7 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
       )}
 
       {/* Category Filters - Always show horizontally scrollable */}
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide pointer-events-auto">
         {categoryFilters.map((category) => {
           const IconComponent = category.icon;
           const isSelected = selectedCategories.includes(category.id);

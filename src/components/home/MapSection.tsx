@@ -80,8 +80,8 @@ const MapSection = ({
   }));
 
   const handleMapRightClick = (coords: { lat: number; lng: number }) => {
-    // Don't interfere if a place is already selected (user is viewing details)
-    if (selectedPlace) return;
+    // If a place is open, close it and continue
+    if (selectedPlace) setSelectedPlace(null);
     
     setNewLocationCoords(coords);
     // Only allow adding pins in Saved filter
@@ -97,8 +97,8 @@ const MapSection = ({
 
   // Mobile-friendly tap to add a pin (only in Saved)
   const handleMapClick = (coords: { lat: number; lng: number }) => {
-    // Don't interfere if a place is already selected (user is viewing details)
-    if (selectedPlace) return;
+    // If a place is open, close it and continue
+    if (selectedPlace) setSelectedPlace(null);
     
     setNewLocationCoords(coords);
     if (activeFilter === 'saved') {
