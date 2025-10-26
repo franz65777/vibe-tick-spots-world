@@ -60,6 +60,8 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
     
     setIsFetchingSuggestions(true);
     try {
+      console.log('Fetching nearby suggestions for coordinates:', coordinates);
+      
       const { data, error } = await supabase.functions.invoke('foursquare-search', {
         body: { 
           lat: coordinates.lat, 
@@ -69,15 +71,29 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
         }
       });
 
-      if (error) throw error;
+      console.log('Foursquare response:', { data, error });
+
+      if (error) {
+        console.error('Foursquare function error:', error);
+        throw error;
+      }
+      
+      if (data?.error) {
+        console.error('Foursquare API error:', data.error);
+        toast.error(data.error);
+        return;
+      }
       
       if (data?.places) {
         setNearbySuggestions(data.places);
         console.log(`Found ${data.places.length} nearby suggestions`);
+      } else {
+        console.warn('No places returned from Foursquare');
+        setNearbySuggestions([]);
       }
     } catch (error: any) {
       console.error('Error fetching nearby suggestions:', error);
-      toast.error('Failed to fetch nearby locations');
+      toast.error(error?.message || 'Failed to fetch nearby locations. Please try again.');
     } finally {
       setIsFetchingSuggestions(false);
     }
@@ -196,7 +212,7 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="sm:max-w-xl max-h-[85vh] flex flex-col p-0">
+      <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col p-0 rounded-2xl">
         <DialogHeader className="px-6 pt-6 pb-2">
           <div className="flex items-center gap-2">
             <Navigation className="w-5 h-5 text-primary" />
