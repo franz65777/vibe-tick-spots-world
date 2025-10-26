@@ -35,6 +35,7 @@ import { Toaster as Sonner } from '@/components/ui/sonner';
 import { retentionAnalyticsService } from '@/services/retentionAnalyticsService';
 import { useEffect } from 'react';
 import './App.css';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 // Initialize analytics cleanup service for data privacy compliance
 import '@/services/analyticsCleanupService';
@@ -42,7 +43,10 @@ import '@/services/analyticsCleanupService';
 const queryClient = new QueryClient();
 
 function AppContent() {
+  console.log('🔄 AppContent rendering...');
   const { user } = useAuth();
+  console.log('👤 User state:', user?.email || 'No user');
+  console.log('🔍 Current pathname:', window.location.pathname);
 
   useEffect(() => {
     if (user) {
@@ -55,55 +59,57 @@ function AppContent() {
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
+
       <Route
-        path="/*"
         element={
           <ProtectedRoute>
-            <AuthenticatedLayout>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/explore" element={<ExplorePage />} />
-                <Route path="/discover" element={<DiscoverPage />} />
-                <Route path="/add" element={<AddLocationPage />} />
-                <Route path="/feed" element={<FeedPage />} />
-                <Route path="/activity" element={<ActivityFeedPage />} />
-                <Route path="/leaderboard" element={<LeaderboardPage />} />
-                <Route path="/profile" element={<ProfilePage />} />
-                <Route path="/notifications" element={<NotificationsPage />} />
-                <Route path="/messages" element={<MessagesPage />} />
-                <Route path="/business" element={<BusinessOverviewPageV2 />} />
-                <Route path="/business/analytics" element={<BusinessAnalyticsPage />} />
-                <Route path="/business/add" element={<BusinessAddPage />} />
-                <Route path="/business/feed" element={<BusinessFeedPage />} />
-                <Route path="/business/profile" element={<BusinessProfilePage />} />
-                <Route path="/business/notifications" element={<BusinessNotificationsPage />} />
-                <Route path="/business/messages" element={<BusinessMessagesPage />} />
-                <Route path="/business-dashboard" element={<BusinessDashboardPage />} />
-                <Route path="/business-claim" element={<BusinessClaimPage />} />
-                <Route path="/subscription" element={<SubscriptionPage />} />
-                <Route path="/profile/:userId" element={<UserProfilePage />} />
-                <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </AuthenticatedLayout>
+            <AuthenticatedLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route path="/" element={<Index />} />
+        <Route path="/explore" element={<ExplorePage />} />
+        <Route path="/discover" element={<DiscoverPage />} />
+        <Route path="/add" element={<AddLocationPage />} />
+        <Route path="/feed" element={<FeedPage />} />
+        <Route path="/activity" element={<ActivityFeedPage />} />
+        <Route path="/leaderboard" element={<LeaderboardPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/messages" element={<MessagesPage />} />
+        <Route path="/business" element={<BusinessOverviewPageV2 />} />
+        <Route path="/business/analytics" element={<BusinessAnalyticsPage />} />
+        <Route path="/business/add" element={<BusinessAddPage />} />
+        <Route path="/business/feed" element={<BusinessFeedPage />} />
+        <Route path="/business/profile" element={<BusinessProfilePage />} />
+        <Route path="/business/notifications" element={<BusinessNotificationsPage />} />
+        <Route path="/business/messages" element={<BusinessMessagesPage />} />
+        <Route path="/business-dashboard" element={<BusinessDashboardPage />} />
+        <Route path="/business-claim" element={<BusinessClaimPage />} />
+        <Route path="/subscription" element={<SubscriptionPage />} />
+        <Route path="/profile/:userId" element={<UserProfilePage />} />
+        <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
+        <Route path="*" element={<NotFound />} />
+      </Route>
     </Routes>
   );
 }
 
 function App() {
+  console.log('🎯 App component rendering...');
+  
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router>
-          <AppContent />
-        </Router>
-        <Toaster />
-        <Sonner />
-      </AuthProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <Router>
+            <AppContent />
+          </Router>
+          <Toaster />
+          <Sonner />
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

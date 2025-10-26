@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import GoogleMapsSetup from '@/components/GoogleMapsSetup';
+import LeafletMapSetup from '@/components/LeafletMapSetup';
 import AddLocationModal from './AddLocationModal';
 import QuickAddPinModal from './QuickAddPinModal';
 import MapCategoryFilters from './MapCategoryFilters';
@@ -61,7 +61,7 @@ const MapSection = ({
     }
   }, [initialSelectedPlace, onClearInitialPlace]);
 
-  // Convert locations to Place format for GoogleMapsSetup with creator info
+  // Convert locations to Place format for LeafletMapSetup with creator info
   const places: Place[] = locations.map(location => ({
     id: location.id,
     name: location.name,
@@ -144,7 +144,7 @@ const MapSection = ({
   return (
     <>
       <div className={`${isExpanded ? 'fixed inset-0 w-screen h-screen p-3' : 'flex-1 relative min-h-[500px]'} w-full overflow-hidden`}>
-        <GoogleMapsSetup
+        <LeafletMapSetup
           places={places}
           onPinClick={handlePinClick}
           onPinShare={handlePinShare}
@@ -157,8 +157,12 @@ const MapSection = ({
           fullScreen={isExpanded}
         />
 
-        {/* Map Category Filters - Hidden when pin detail is open */}
-        {!selectedPlace && <MapCategoryFilters currentCity={currentCity} />}
+        {/* Map Category Filters - Higher z-index when visible, hidden when pin detail is open */}
+        {!selectedPlace && (
+          <div className="relative z-[1000]">
+            <MapCategoryFilters currentCity={currentCity} />
+          </div>
+        )}
 
         {/* Map Controls - List View and Expand Toggle */}
         <div className="absolute bottom-6 right-3 z-40 flex flex-col gap-2">
