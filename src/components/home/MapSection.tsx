@@ -84,31 +84,25 @@ const MapSection = ({
     if (selectedPlace) setSelectedPlace(null);
     
     setNewLocationCoords(coords);
-    // Only allow adding pins in Saved filter
-    if (activeFilter === 'saved') {
-      setIsQuickAddModalOpen(true);
-    } else {
-      toast.info('Switch to "Saved" to add pins', {
-        description: 'Tap the green "Saved" filter above to add your favorite places',
-        duration: 3000
-      });
+    // Always open quick add; auto-switch to Saved if needed
+    if (activeFilter !== 'saved') {
+      setActiveFilter('saved');
+      toast.info('Switched to "Saved" to add a pin', { duration: 2000 });
     }
+    setIsQuickAddModalOpen(true);
   };
 
-  // Mobile-friendly tap to add a pin (only in Saved)
+  // Mobile-friendly tap to add a pin
   const handleMapClick = (coords: { lat: number; lng: number }) => {
     // If a place is open, close it and continue
     if (selectedPlace) setSelectedPlace(null);
     
     setNewLocationCoords(coords);
-    if (activeFilter === 'saved') {
-      setIsQuickAddModalOpen(true);
-    } else {
-      toast.info('Switch to "Saved" to add pins', {
-        description: 'Tap the green "Saved" filter above to add your favorite places',
-        duration: 3000
-      });
+    if (activeFilter !== 'saved') {
+      setActiveFilter('saved');
+      toast.info('Switched to "Saved" to add a pin', { duration: 2000 });
     }
+    setIsQuickAddModalOpen(true);
   };
   const handleSaveLocation = async (locationData: any) => {
     try {
