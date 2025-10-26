@@ -85,7 +85,8 @@ serve(async (req) => {
       ll: `${lat},${lng}`,
       radius: '1000', // 1km radius
       limit: String(limit),
-      categories: allowedFoursquareCategoryIds.join(','),
+      sort: 'DISTANCE',
+      fields: 'fsq_id,name,location,geocodes,categories,distance'
     });
 
     if (query) {
@@ -116,15 +117,30 @@ serve(async (req) => {
     console.log(`Foursquare returned ${data.results?.length || 0} results`);
 
     // Transform and filter results
+    const mapToAllowedCategory = (categories: any[] | undefined): string | null => {
+      if (!categories || !Array.isArray(categories)) return null;
+      for (const c of categories) {
+        const id = String(c.id ?? '');
+        const name = String(c.name ?? '').toLowerCase();
+        // Prefer name-based matching to avoid taxonomy drift
+        if (name.includes('restaurant') || name.includes('food')) return 'restaurant';
+        if (name.includes('bar') || name.includes('pub') || name.includes('cocktail') || name.includes('wine')) return 'bar';
+        if (name.includes('cafe') || name.includes('coffee')) return 'cafe';
+        if (name.includes('bakery') || name.includes('patisserie') || name.includes('bake')) return 'bakery';
+        if (name.includes('hotel') || name.includes('hostel') || name.includes('bed & breakfast')) return 'hotel';
+        if (name.includes('museum')) return 'museum';
+        if (name.includes('movie') || name.includes('cinema') || name.includes('theater') || name.includes('theatre') || name.includes('concert') || name.includes('stadium') || name.includes('arts & entertainment') || name.includes('arcade')) return 'entertainment';
+        // Fallback to id mapping if name didn't match
+        if (categoryMapping[id]) return categoryMapping[id];
+      }
+      return null;
+    };
+
     const places = (data.results || [])
       .map((place: any) => {
-        // Get the first category and map it to our allowed categories
-        const foursquareCategory = place.categories?.[0]?.id;
-        const mappedCategory = categoryMapping[foursquareCategory];
-
-        // Only include if it maps to one of our 7 categories
+        const mappedCategory = mapToAllowedCategory(place.categories);
         if (!mappedCategory) {
-          console.log(`Skipping place ${place.name} - category ${foursquareCategory} not in allowed list`);
+          console.log(`Skipping place ${place.name} - no allowed category match`);
           return null;
         }
 
