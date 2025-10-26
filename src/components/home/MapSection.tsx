@@ -80,25 +80,33 @@ const MapSection = ({
   }));
 
   const handleMapRightClick = (coords: { lat: number; lng: number }) => {
+    // Don't interfere if a place is already selected (user is viewing details)
+    if (selectedPlace) return;
+    
     setNewLocationCoords(coords);
     // Only allow adding pins in Saved filter
     if (activeFilter === 'saved') {
       setIsQuickAddModalOpen(true);
     } else {
-      toast.error('Switch to "Saved" to add your favorite places', {
-        description: 'You can only add pins when viewing your saved locations'
+      toast.info('Switch to "Saved" to add pins', {
+        description: 'Tap the green "Saved" filter above to add your favorite places',
+        duration: 3000
       });
     }
   };
 
   // Mobile-friendly tap to add a pin (only in Saved)
   const handleMapClick = (coords: { lat: number; lng: number }) => {
+    // Don't interfere if a place is already selected (user is viewing details)
+    if (selectedPlace) return;
+    
     setNewLocationCoords(coords);
     if (activeFilter === 'saved') {
       setIsQuickAddModalOpen(true);
     } else {
-      toast.error('Switch to "Saved" to add your favorite places', {
-        description: 'You can only add pins when viewing your saved locations'
+      toast.info('Switch to "Saved" to add pins', {
+        description: 'Tap the green "Saved" filter above to add your favorite places',
+        duration: 3000
       });
     }
   };
@@ -158,9 +166,7 @@ const MapSection = ({
         />
 
         {/* Map Category Filters - Always visible at top */}
-        {!selectedPlace && (
-          <MapCategoryFilters currentCity={currentCity} />
-        )}
+        <MapCategoryFilters currentCity={currentCity} />
 
         {/* Map Controls - List View and Expand Toggle */}
         <div className="absolute bottom-6 right-3 z-40 flex flex-col gap-2">
