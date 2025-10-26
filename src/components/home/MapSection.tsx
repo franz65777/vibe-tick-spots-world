@@ -83,12 +83,13 @@ const MapSection = ({
     // If a place is open, close it and continue
     if (selectedPlace) setSelectedPlace(null);
     
-    setNewLocationCoords(coords);
-    // Always open quick add; auto-switch to Saved if needed
+    // Only allow quick add when in saved filter
     if (activeFilter !== 'saved') {
-      setActiveFilter('saved');
-      toast.info('Switched to "Saved" to add a pin', { duration: 2000 });
+      toast.info('Switch to "Saved" filter to add pins', { duration: 2000 });
+      return;
     }
+    
+    setNewLocationCoords(coords);
     setIsQuickAddModalOpen(true);
   };
 
@@ -97,11 +98,13 @@ const MapSection = ({
     // If a place is open, close it and continue
     if (selectedPlace) setSelectedPlace(null);
     
-    setNewLocationCoords(coords);
+    // Only allow quick add when in saved filter
     if (activeFilter !== 'saved') {
-      setActiveFilter('saved');
-      toast.info('Switched to "Saved" to add a pin', { duration: 2000 });
+      toast.info('Switch to "Saved" filter to add pins', { duration: 2000 });
+      return;
     }
+    
+    setNewLocationCoords(coords);
     setIsQuickAddModalOpen(true);
   };
   const handleSaveLocation = async (locationData: any) => {

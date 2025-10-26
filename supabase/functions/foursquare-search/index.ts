@@ -102,9 +102,14 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Foursquare API error:', response.status, errorText);
-      throw new Error(`Foursquare API error: ${response.status}`);
+      console.error('Foursquare API error:', response.status, response.statusText);
+      return new Response(
+        JSON.stringify({ 
+          error: `Foursquare API returned ${response.status}: ${response.statusText}. Please check your API key.`,
+          places: []
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const data = await response.json();
