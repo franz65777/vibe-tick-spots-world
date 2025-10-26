@@ -81,8 +81,9 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
 
   const handleSelectCity = (result: CityResult) => {
     onCitySelect(result.name, { lat: result.lat, lng: result.lng });
-    onSearchChange(result.name);
+    onSearchChange('');
     setShowResults(false);
+    setResults([]);
     inputRef.current?.blur();
   };
 
@@ -98,18 +99,18 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
           ref={inputRef}
           type="text"
           placeholder="Search any city worldwide"
-          value={searchQuery || currentCity}
+          value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           onKeyPress={onSearchKeyPress}
           onFocus={() => {
             onFocusOpen?.();
-            if (searchQuery.length >= 2 && results.length > 0) {
-              setShowResults(true);
-            }
           }}
           onBlur={() => {
             // Delay to allow click on result
-            setTimeout(() => setShowResults(false), 200);
+            setTimeout(() => {
+              setShowResults(false);
+              setResults([]);
+            }, 200);
           }}
           className="w-full h-11 pl-11 pr-4 rounded-full bg-white border-2 border-blue-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-all placeholder:text-gray-500 text-sm font-medium text-gray-900"
         />

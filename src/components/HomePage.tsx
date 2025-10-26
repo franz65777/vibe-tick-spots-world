@@ -411,7 +411,7 @@ const HomePage = () => {
         </div>
         
         {/* Map Section - fills remaining space and extends under bottom nav */}
-        <div className={isMapExpanded ? "fixed inset-0 z-50" : "flex-1 relative pb-16"}>
+        <div className={isMapExpanded ? "fixed inset-0 z-50" : isSearchOverlayOpen ? "hidden" : "flex-1 relative pb-16"}>
           <MapSection
             mapCenter={mapCenter}
             currentCity={currentCity}

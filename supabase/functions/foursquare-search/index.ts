@@ -104,64 +104,91 @@ serve(async (req) => {
     if (!response.ok) {
       console.error('Foursquare API error:', response.status, response.statusText);
       // Fallback to OpenStreetMap Nominatim if Foursquare fails
+      console.log('Using OSM fallback for nearby search');
       try {
-        const deltaLat = 0.009; // ~1km
-        const deltaLng = 0.009 / Math.cos((lat * Math.PI) / 180);
-        const left = (lng - deltaLng).toFixed(6);
-        const right = (lng + deltaLng).toFixed(6);
-        const top = (lat + deltaLat).toFixed(6);
-        const bottom = (lat - deltaLat).toFixed(6);
-        const q = query ? encodeURIComponent(query) : encodeURIComponent('restaurant|cafe|bar|bakery|hotel|museum|cinema|theatre');
-        const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=jsonv2&namedetails=1&addressdetails=1&limit=${limit}&viewbox=${left},${top},${right},${bottom}&bounded=1&q=${q}`;
-        const osmRes = await fetch(nominatimUrl, { headers: { 'Accept': 'application/json', 'User-Agent': 'SpottApp/1.0 (contact: support@spott.app)' }});
-        if (osmRes.ok) {
-          const osmData = await osmRes.json();
-          const toCategory = (item: any): string | null => {
-            const cls = String(item.class || '').toLowerCase();
-            const typ = String(item.type || '').toLowerCase();
-            const name = String(item.namedetails?.name || item.display_name || '').toLowerCase();
-            if (typ.includes('restaurant') || name.includes('restaurant') || name.includes('food')) return 'restaurant';
-            if (typ.includes('bar') || typ.includes('pub') || typ.includes('nightclub') || name.includes('bar') || name.includes('pub') || name.includes('cocktail') || name.includes('wine')) return 'bar';
-            if (typ.includes('cafe') || name.includes('cafe') || name.includes('coffee')) return 'cafe';
-            if (typ.includes('bakery') || name.includes('bakery') || name.includes('patisserie') || name.includes('bake')) return 'bakery';
-            if ((cls === 'tourism' && (typ.includes('hotel') || typ.includes('hostel') || typ.includes('guest_house'))) || name.includes('hotel') || name.includes('hostel')) return 'hotel';
-            if ((cls === 'tourism' && typ.includes('museum')) || name.includes('museum')) return 'museum';
-            if (typ.includes('cinema') || typ.includes('theatre') || name.includes('cinema') || name.includes('theater') || name.includes('theatre') || name.includes('concert')) return 'entertainment';
-            return null;
-          };
-          const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-            const R = 6371000;
-            const toRad = (v: number) => v * Math.PI / 180;
-            const dLat = toRad(lat2 - lat1);
-            const dLon = toRad(lon2 - lon1);
-            const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return Math.round(R * c);
-          };
-          const places = (Array.isArray(osmData) ? osmData : []).map((item: any) => {
-            const mapped = toCategory(item);
-            if (!mapped) return null;
-            const plat = parseFloat(item.lat);
-            const plng = parseFloat(item.lon);
-            const addressObj = item.address || {};
-            const city = addressObj.city || addressObj.town || addressObj.village || addressObj.hamlet || addressObj.county || addressObj.state || 'Unknown';
-            return {
-              fsq_id: item.osm_id ? `osm_${item.osm_id}` : item.place_id ? `osm_place_${item.place_id}` : `osm_${plat}_${plng}`,
-              name: item.namedetails?.name || item.display_name?.split(',')[0] || 'Unknown place',
-              category: mapped,
-              address: item.display_name || 'Address not available',
-              city,
-              lat: plat,
-              lng: plng,
-              distance: haversine(lat, lng, plat, plng),
-            };
-          }).filter((p: any) => p !== null);
-          console.log(`OSM fallback returning ${places.length} places`);
-          return new Response(
-            JSON.stringify({ places }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+        // Search in a 2km radius for better results
+        const radiusKm = 2;
+        const queries = query ? [query] : ['restaurant', 'cafe', 'bar', 'bakery', 'hotel', 'museum', 'cinema', 'theatre'];
+        
+        const allResults: any[] = [];
+        
+        for (const searchTerm of queries) {
+          const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=jsonv2&namedetails=1&addressdetails=1&limit=50&q=${encodeURIComponent(searchTerm)}&lat=${lat}&lon=${lng}`;
+          console.log(`Searching OSM for: ${searchTerm}`);
+          const osmRes = await fetch(nominatimUrl, { 
+            headers: { 
+              'Accept': 'application/json', 
+              'User-Agent': 'SpottApp/1.0 (contact: support@spott.app)' 
+            }
+          });
+          if (osmRes.ok) {
+            const osmData = await osmRes.json();
+            if (Array.isArray(osmData)) {
+              allResults.push(...osmData);
+            }
+          }
+          
+          // Rate limit: wait 1 second between requests
+          if (queries.indexOf(searchTerm) < queries.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
         }
+        
+        console.log(`OSM returned ${allResults.length} total results`);
+        
+        const toCategory = (item: any): string | null => {
+          const cls = String(item.class || '').toLowerCase();
+          const typ = String(item.type || '').toLowerCase();
+          const name = String(item.namedetails?.name || item.display_name || '').toLowerCase();
+          if (typ.includes('restaurant') || name.includes('restaurant') || name.includes('food')) return 'restaurant';
+          if (typ.includes('bar') || typ.includes('pub') || typ.includes('nightclub') || name.includes('bar') || name.includes('pub') || name.includes('cocktail') || name.includes('wine')) return 'bar';
+          if (typ.includes('cafe') || name.includes('cafe') || name.includes('coffee')) return 'cafe';
+          if (typ.includes('bakery') || name.includes('bakery') || name.includes('patisserie') || name.includes('bake')) return 'bakery';
+          if ((cls === 'tourism' && (typ.includes('hotel') || typ.includes('hostel') || typ.includes('guest_house'))) || name.includes('hotel') || name.includes('hostel')) return 'hotel';
+          if ((cls === 'tourism' && typ.includes('museum')) || name.includes('museum')) return 'museum';
+          if (typ.includes('cinema') || typ.includes('theatre') || name.includes('cinema') || name.includes('theater') || name.includes('theatre') || name.includes('concert')) return 'entertainment';
+          return null;
+        };
+        
+        const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+          const R = 6371000;
+          const toRad = (v: number) => v * Math.PI / 180;
+          const dLat = toRad(lat2 - lat1);
+          const dLon = toRad(lon2 - lon1);
+          const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          return Math.round(R * c);
+        };
+        
+        const places = allResults.map((item: any) => {
+          const mapped = toCategory(item);
+          if (!mapped) return null;
+          const plat = parseFloat(item.lat);
+          const plng = parseFloat(item.lon);
+          const distance = haversine(lat, lng, plat, plng);
+          
+          // Filter by distance (2km radius)
+          if (distance > 2000) return null;
+          
+          const addressObj = item.address || {};
+          const city = addressObj.city || addressObj.town || addressObj.village || addressObj.hamlet || addressObj.county || addressObj.state || 'Unknown';
+          return {
+            fsq_id: item.osm_id ? `osm_${item.osm_id}` : item.place_id ? `osm_place_${item.place_id}` : `osm_${plat}_${plng}`,
+            name: item.namedetails?.name || item.display_name?.split(',')[0] || 'Unknown place',
+            category: mapped,
+            address: item.display_name || 'Address not available',
+            city,
+            lat: plat,
+            lng: plng,
+            distance,
+          };
+        }).filter((p: any) => p !== null).sort((a: any, b: any) => a.distance - b.distance).slice(0, limit);
+        
+        console.log(`OSM fallback returning ${places.length} places`);
+        return new Response(
+          JSON.stringify({ places }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       } catch (e) {
         console.error('OSM fallback failed:', e);
       }
