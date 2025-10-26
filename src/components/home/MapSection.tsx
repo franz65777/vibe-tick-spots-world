@@ -157,11 +157,9 @@ const MapSection = ({
           fullScreen={isExpanded}
         />
 
-        {/* Map Category Filters - Higher z-index when visible, hidden when pin detail is open */}
+        {/* Map Category Filters - Always visible at top */}
         {!selectedPlace && (
-          <div className="relative z-[1000]">
-            <MapCategoryFilters currentCity={currentCity} />
-          </div>
+          <MapCategoryFilters currentCity={currentCity} />
         )}
 
         {/* Map Controls - List View and Expand Toggle */}

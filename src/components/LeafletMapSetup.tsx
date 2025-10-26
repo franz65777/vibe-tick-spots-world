@@ -60,7 +60,7 @@ const LeafletMapSetup = ({
 
     const map = L.map(containerRef.current, {
       center: [mapCenter.lat, mapCenter.lng],
-      zoom: 13,
+      zoom: 15,
       zoomControl: false,
       attributionControl: true,
     });

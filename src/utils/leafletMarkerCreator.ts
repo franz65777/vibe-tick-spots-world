@@ -106,10 +106,10 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
         alt="${category}"
         style="
           position: absolute;
-          top: 6px;
-          left: 10px;
-          width: 12px;
-          height: 12px;
+          top: 4px;
+          left: 8px;
+          width: 16px;
+          height: 16px;
           object-fit: contain;
         "
       />
