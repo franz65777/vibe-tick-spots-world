@@ -111,7 +111,7 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
             // Delay to allow click on result
             setTimeout(() => setShowResults(false), 200);
           }}
-          className="w-full h-11 pl-11 pr-4 rounded-full bg-background border border-input shadow-sm focus:outline-none focus:ring-1 focus:ring-ring focus:border-input transition-all placeholder:text-muted-foreground text-sm font-medium text-foreground"
+          className="w-full h-11 pl-11 pr-4 rounded-full bg-white border-2 border-blue-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-all placeholder:text-gray-500 text-sm font-medium text-gray-900"
         />
       </div>
 
