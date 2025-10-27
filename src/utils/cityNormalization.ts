@@ -19,6 +19,40 @@ export const normalizeCity = (city: string | null | undefined): string => {
   // Trim whitespace again
   normalized = normalized.trim();
 
+  // Map international aliases to a canonical city name to avoid duplicates (e.g., Torino -> Turin)
+  const aliases: Record<string, string> = {
+    // Italy
+    'torino': 'Turin', 'turin': 'Turin',
+    'roma': 'Rome', 'rome': 'Rome',
+    'milano': 'Milan', 'milan': 'Milan',
+    'napoli': 'Naples', 'naples': 'Naples',
+    'firenze': 'Florence', 'florence': 'Florence',
+    'venezia': 'Venice', 'venice': 'Venice',
+    // Spain/Portugal
+    'sevilla': 'Seville', 'seville': 'Seville',
+    'lisboa': 'Lisbon', 'lisbon': 'Lisbon',
+    'barcelona': 'Barcelona',
+    'madrid': 'Madrid',
+    // Germany/Austria
+    'münchen': 'Munich', 'munchen': 'Munich', 'munich': 'Munich',
+    'köln': 'Cologne', 'koln': 'Cologne', 'cologne': 'Cologne',
+    'wien': 'Vienna', 'vienna': 'Vienna',
+    // Nordics/Central
+    'köbenhavn': 'Copenhagen', 'kobenhavn': 'Copenhagen', 'copenhagen': 'Copenhagen',
+    'praha': 'Prague', 'prague': 'Prague',
+    // Eastern Europe
+    'warszawa': 'Warsaw', 'warsaw': 'Warsaw',
+    'kraków': 'Kraków', 'krakow': 'Kraków',
+    'beograd': 'Belgrade', 'belgrade': 'Belgrade',
+    // Greece/Russia/China
+    'athína': 'Athens', 'athina': 'Athens', 'athens': 'Athens',
+    'москва': 'Moscow', 'moskva': 'Moscow', 'moscow': 'Moscow',
+  };
+  const lower = normalized.toLowerCase();
+  if (aliases[lower]) {
+    return aliases[lower];
+  }
+
   // Check if it's a numeric postal code or too short
   if (/^\d+$/.test(normalized) || normalized.length <= 2) {
     return 'Unknown';

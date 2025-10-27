@@ -76,7 +76,7 @@ serve(async (req) => {
     const fast: boolean = Boolean(reqData?.fast);
     const providedRadiusKm = typeof reqData?.radiusKm === 'number' 
       ? Math.max(0.2, Math.min(2.0, reqData.radiusKm)) 
-      : (fast ? 0.6 : 1.0);
+      : (fast ? 0.5 : 1.0);
 
     if (!lat || !lng) {
       return new Response(
@@ -99,7 +99,7 @@ serve(async (req) => {
         const queries = query ? [query] : ['restaurant', 'cafe', 'bar'];
 
         const fetchPromises = queries.map(async (searchTerm) => {
-          const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=jsonv2&namedetails=1&addressdetails=1&limit=${Math.max(6, limit)}&bounded=1&viewbox=${left},${top},${right},${bottom}&q=${encodeURIComponent(searchTerm)}`;
+          const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=jsonv2&namedetails=1&addressdetails=1&limit=${limit}&bounded=1&viewbox=${left},${top},${right},${bottom}&q=${encodeURIComponent(searchTerm)}`;
           try {
             const osmRes = await fetch(nominatimUrl, {
               headers: {

@@ -89,8 +89,8 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
         body: { 
           lat: coordinates.lat, 
           lng: coordinates.lng,
-          limit: fast ? 6 : 10,
-          radiusKm: fast ? 0.6 : 1.0,
+          limit: fast ? 5 : 10,
+          radiusKm: fast ? 0.5 : 1.0,
           fast: fast ? true : undefined,
           query: searchQuery || undefined
         }
@@ -129,7 +129,7 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
     if (!isOpen || !coordinates || !searchQuery) return;
     const t = setTimeout(() => {
       fetchNearbySuggestions(true);
-    }, 120);
+    }, 80);
     return () => clearTimeout(t);
   }, [searchQuery]);
 
