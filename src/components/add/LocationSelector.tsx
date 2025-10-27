@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { MapPin, AlertCircle } from 'lucide-react';
 import OpenStreetMapAutocomplete from '@/components/OpenStreetMapAutocomplete';
+import { useTranslation } from 'react-i18next';
 // Category selection removed per latest UX
 
 interface LocationSelectorProps {
@@ -16,25 +17,27 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
   selectedCategory,
   onCategoryChange
 }) => {
+  const { t } = useTranslation();
+  
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 text-foreground">
         <MapPin className="w-5 h-5 text-destructive" />
-        <h3 className="font-semibold">Add Location</h3>
-        <span className="text-xs text-destructive">*Required</span>
+        <h3 className="font-semibold">{t('add.addLocation')}</h3>
+        <span className="text-xs text-destructive">{t('common.required')}</span>
       </div>
 
       {!selectedLocation ? (
         <div className="space-y-3">
           <OpenStreetMapAutocomplete
             onPlaceSelect={onLocationSelect}
-            placeholder="Search for a place..."
+            placeholder={t('add.searchForPlace')}
             className="w-full"
           />
           <div className="flex items-start gap-2 p-3 bg-destructive/10 rounded-lg">
             <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
             <p className="text-xs text-muted-foreground">
-              You must tag a location to share your post. This helps others discover great places!
+              {t('add.youMustTagLocation')}
             </p>
           </div>
         </div>
@@ -52,7 +55,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
               }}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              Change location
+              {t('add.changeLocation')}
             </button>
           </div>
         </div>

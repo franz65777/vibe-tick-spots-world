@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 interface UserTagSelectorProps {
   taggedUsers: any[];
@@ -16,6 +17,7 @@ export const UserTagSelector: React.FC<UserTagSelectorProps> = ({
   onUserTagged,
   onUserRemoved
 }) => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -59,14 +61,14 @@ export const UserTagSelector: React.FC<UserTagSelectorProps> = ({
     <div className="space-y-3">
       <div className="flex items-center gap-2 text-foreground">
         <UserPlus className="w-5 h-5 text-muted-foreground" />
-        <h3 className="font-semibold">Tag People</h3>
+        <h3 className="font-semibold">{t('add.tagPeople')}</h3>
       </div>
 
       {/* Search Input */}
       <div className="relative">
         <Input
           type="text"
-          placeholder="Search users to tag..."
+          placeholder={t('add.searchUsersToTag')}
           value={searchQuery}
           onChange={(e) => {
             setSearchQuery(e.target.value);

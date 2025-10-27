@@ -6,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { MapPin, Heart, Bookmark, Users, Clock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 type SortBy = 'proximity' | 'likes' | 'saves' | 'following' | 'recent';
 
@@ -26,19 +27,21 @@ const SearchFiltersModal = ({
   selectedFilters,
   onFiltersChange
 }: SearchFiltersModalProps) => {
+  const { t } = useTranslation();
+  
   const sortOptions = [
-    { value: 'proximity' as const, label: 'Distance', icon: MapPin, description: 'Closest to you' },
-    { value: 'likes' as const, label: 'Most Liked', icon: Heart, description: 'Popular locations' },
-    { value: 'saves' as const, label: 'Most Saved', icon: Bookmark, description: 'Frequently bookmarked' },
-    { value: 'following' as const, label: 'Saved by Friends', icon: Users, description: 'From people you follow' },
-    { value: 'recent' as const, label: 'Recently Added', icon: Clock, description: 'Newest locations' }
+    { value: 'proximity' as const, label: t('explore.distance'), icon: MapPin, description: t('explore.closestToYou') },
+    { value: 'likes' as const, label: t('explore.mostLiked'), icon: Heart, description: t('explore.popularLocations') },
+    { value: 'saves' as const, label: t('explore.mostSaved'), icon: Bookmark, description: t('explore.frequentlyBookmarked') },
+    { value: 'following' as const, label: t('explore.savedByFriends'), icon: Users, description: t('explore.fromPeopleYouFollow') },
+    { value: 'recent' as const, label: t('explore.recentlyAdded'), icon: Clock, description: t('explore.newestLocations') }
   ];
 
   const filterOptions = [
-    { value: 'new', label: 'New Locations', description: 'Added in the last 7 days' },
-    { value: 'trending', label: 'Trending', description: 'Popular this week' },
-    { value: 'verified', label: 'Verified', description: 'Confirmed by multiple users' },
-    { value: 'photos', label: 'Has Photos', description: 'Locations with images' }
+    { value: 'new', label: t('explore.newLocations'), description: t('explore.addedInLast7Days') },
+    { value: 'trending', label: t('explore.trending'), description: t('explore.popularThisWeek') },
+    { value: 'verified', label: t('explore.verified'), description: t('explore.confirmedByMultipleUsers') },
+    { value: 'photos', label: t('explore.hasPhotos'), description: t('explore.locationsWithImages') }
   ];
 
   const handleFilterToggle = (filterValue: string) => {
@@ -61,13 +64,13 @@ const SearchFiltersModal = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Filter & Sort</DialogTitle>
+          <DialogTitle>{t('explore.filterSort')}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
           {/* Sort Options */}
           <div>
-            <h3 className="font-medium text-gray-900 mb-3">Sort by</h3>
+            <h3 className="font-medium text-gray-900 mb-3">{t('explore.sortBy')}</h3>
             <RadioGroup value={selectedSort} onValueChange={onSortChange}>
               <div className="space-y-3">
                 {sortOptions.map((option) => (
@@ -90,7 +93,7 @@ const SearchFiltersModal = ({
 
           {/* Filter Options */}
           <div>
-            <h3 className="font-medium text-gray-900 mb-3">Filters</h3>
+            <h3 className="font-medium text-gray-900 mb-3">{t('explore.filters')}</h3>
             <div className="space-y-3">
               {filterOptions.map((option) => (
                 <div key={option.value} className="flex items-center space-x-3">
@@ -113,10 +116,10 @@ const SearchFiltersModal = ({
           {/* Action Buttons */}
           <div className="flex gap-3 pt-4 border-t">
             <Button variant="outline" onClick={handleReset} className="flex-1">
-              Reset
+              {t('explore.reset')}
             </Button>
             <Button onClick={handleApply} className="flex-1">
-              Apply Filters
+              {t('explore.applyFilters')}
             </Button>
           </div>
         </div>

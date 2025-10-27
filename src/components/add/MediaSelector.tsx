@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { Image as ImageIcon, Video, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
+import { useTranslation } from 'react-i18next';
 
 interface MediaSelectorProps {
   selectedFiles: File[];
@@ -18,6 +19,7 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
   onRemoveFile,
   maxFiles = 5
 }) => {
+  const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleClick = () => {
@@ -64,9 +66,9 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
           </div>
           
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold">Share Your Experience</h2>
+            <h2 className="text-2xl font-bold">{t('add.shareExperience')}</h2>
             <p className="text-muted-foreground">
-              Add photos or videos from your favorite places
+              {t('add.addPhotosVideos')}
             </p>
           </div>
 
@@ -76,7 +78,7 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
             className="w-full h-12"
           >
             <ImageIcon className="w-5 h-5 mr-2" />
-            Choose from Library
+            {t('add.chooseFromLibrary')}
           </Button>
 
           <input
@@ -89,7 +91,7 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
           />
 
           <p className="text-xs text-muted-foreground">
-            Select up to {maxFiles} photos or videos
+            {t('add.selectUpTo')} {maxFiles} {t('add.photosOrVideos')}
           </p>
         </div>
       </div>
@@ -143,7 +145,7 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
             className="aspect-square border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center hover:border-primary hover:bg-primary/5 transition-colors"
           >
             <ImageIcon className="w-8 h-8 text-muted-foreground mb-2" />
-            <span className="text-sm text-muted-foreground">Add more</span>
+            <span className="text-sm text-muted-foreground">{t('add.addMore')}</span>
           </button>
         )}
       </div>

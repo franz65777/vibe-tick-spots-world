@@ -160,8 +160,8 @@ export const PostEditor: React.FC<PostEditorProps> = ({
         </div>
       </div>
 
-      {/* Share Button */}
-      <div className="sticky bottom-0 bg-background border-t border-border p-4">
+      {/* Share Button - positioned above bottom nav */}
+      <div className="sticky bottom-16 bg-background border-t border-border p-4">
         <Button
           onClick={onSubmit}
           disabled={!canSubmit}
