@@ -20,6 +20,7 @@ const AuthPage = () => {
   const [businessName, setBusinessName] = useState('');
   const [businessType, setBusinessType] = useState('');
   const [loginEmail, setLoginEmail] = useState('');
+  const [language, setLanguage] = useState('en');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -85,7 +86,7 @@ const AuthPage = () => {
           metadata.business_type = businessType;
         }
 
-        const { error } = await signUp(email, password, fullName, username);
+        const { error } = await signUp(email, password, fullName, username, language);
         if (error) {
           toast.error(error.message);
         } else {
@@ -183,6 +184,23 @@ const AuthPage = () => {
                   </p>
                 </div>
               )}
+
+              {/* Language selection */}
+              <div>
+                <Label className="text-sm font-medium text-gray-700">Language</Label>
+                <select
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  className="mt-1 h-12 w-full border border-gray-300 rounded-md px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
+                >
+                  <option value="en">English</option>
+                  <option value="it">Italiano</option>
+                  <option value="es">Español</option>
+                  <option value="fr">Français</option>
+                  <option value="de">Deutsch</option>
+                  <option value="pt">Português</option>
+                </select>
+              </div>
             </div>
           )}
 

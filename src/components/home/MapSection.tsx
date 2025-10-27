@@ -191,7 +191,7 @@ const MapSection = ({
         {/* Map Category Filters - Always visible, properly positioned at top of map */}
         <div className={cn(
           "z-[1100] w-full max-w-[95vw] mx-auto px-4",
-          isExpanded ? "absolute top-4 left-0 right-0" : "absolute top-20 left-0 right-0"
+          isExpanded ? "absolute top-4 left-0 right-0" : "absolute top-28 left-0 right-0"
         )}>
           <div className="flex justify-center">
             <MapCategoryFilters currentCity={currentCity} />

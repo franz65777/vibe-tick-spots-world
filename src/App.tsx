@@ -36,6 +36,7 @@ import { retentionAnalyticsService } from '@/services/retentionAnalyticsService'
 import { useEffect } from 'react';
 import './App.css';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import SettingsPage from '@/pages/SettingsPage';
 
 // Initialize analytics cleanup service for data privacy compliance
 import '@/services/analyticsCleanupService';
@@ -89,6 +90,7 @@ function AppContent() {
         <Route path="/subscription" element={<SubscriptionPage />} />
         <Route path="/profile/:userId" element={<UserProfilePage />} />
         <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

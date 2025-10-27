@@ -19,7 +19,7 @@ export type Database = {
           created_at: string
           endpoint: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           method: string
           request_size: number | null
           response_size: number | null
@@ -31,7 +31,7 @@ export type Database = {
           created_at?: string
           endpoint: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           method: string
           request_size?: number | null
           response_size?: number | null
@@ -43,7 +43,7 @@ export type Database = {
           created_at?: string
           endpoint?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           method?: string
           request_size?: number | null
           response_size?: number | null
@@ -1547,6 +1547,7 @@ export type Database = {
           full_name: string | null
           id: string
           is_business_user: boolean | null
+          language: string
           places_visited: number | null
           posts_count: number | null
           subscription_status:
@@ -1569,6 +1570,7 @@ export type Database = {
           full_name?: string | null
           id: string
           is_business_user?: boolean | null
+          language?: string
           places_visited?: number | null
           posts_count?: number | null
           subscription_status?:
@@ -1591,6 +1593,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_business_user?: boolean | null
+          language?: string
           places_visited?: number | null
           posts_count?: number | null
           subscription_status?:
@@ -2035,7 +2038,7 @@ export type Database = {
           event_data: Json | null
           event_type: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           page_url: string | null
           session_id: string | null
           user_agent: string | null
@@ -2046,7 +2049,7 @@ export type Database = {
           event_data?: Json | null
           event_type: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           page_url?: string | null
           session_id?: string | null
           user_agent?: string | null
@@ -2057,7 +2060,7 @@ export type Database = {
           event_data?: Json | null
           event_type?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           page_url?: string | null
           session_id?: string | null
           user_agent?: string | null
@@ -2432,10 +2435,7 @@ export type Database = {
           total_users: number
         }[]
       }
-      check_auth_rate_limit: {
-        Args: { user_ip: unknown }
-        Returns: boolean
-      }
+      check_auth_rate_limit: { Args: { user_ip: unknown }; Returns: boolean }
       check_challenge_completion: {
         Args: {
           action_city?: string
@@ -2444,30 +2444,12 @@ export type Database = {
         }
         Returns: undefined
       }
-      cleanup_expired_cache: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_expired_stories: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_old_analytics: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_sensitive_data: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      enforce_data_retention: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      generate_confirmation_code: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      cleanup_expired_cache: { Args: never; Returns: undefined }
+      cleanup_expired_stories: { Args: never; Returns: undefined }
+      cleanup_old_analytics: { Args: never; Returns: undefined }
+      cleanup_sensitive_data: { Args: never; Returns: undefined }
+      enforce_data_retention: { Args: never; Returns: undefined }
+      generate_confirmation_code: { Args: never; Returns: string }
       get_anonymized_analytics: {
         Args: { target_user_id: string }
         Returns: {
@@ -2486,13 +2468,21 @@ export type Database = {
           website_url: string
         }[]
       }
-      get_city_engagement: {
-        Args: { p_city: string } | { p_city: string; p_user: string }
-        Returns: {
-          followed_users: Json
-          total_pins: number
-        }[]
-      }
+      get_city_engagement:
+        | {
+            Args: { p_city: string; p_user: string }
+            Returns: {
+              followed_users: Json
+              total_pins: number
+            }[]
+          }
+        | {
+            Args: { p_city: string }
+            Returns: {
+              followed_users: Json
+              total_pins: number
+            }[]
+          }
       get_city_engagement_geo: {
         Args: {
           p_lat: number
@@ -2505,10 +2495,7 @@ export type Database = {
           total_pins: number
         }[]
       }
-      get_dau: {
-        Args: { target_date: string }
-        Returns: number
-      }
+      get_dau: { Args: { target_date: string }; Returns: number }
       get_feature_usage: {
         Args: { end_date: string; start_date: string }
         Returns: {
@@ -2518,7 +2505,7 @@ export type Database = {
         }[]
       }
       get_following_saved_locations: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           address: string
           category: string
@@ -2545,10 +2532,7 @@ export type Database = {
           username: string
         }[]
       }
-      get_mau: {
-        Args: { target_month: string }
-        Returns: number
-      }
+      get_mau: { Args: { target_month: string }; Returns: number }
       get_pin_engagement: {
         Args: { p_google_place_id: string; p_location_id: string }
         Returns: {
@@ -2621,7 +2605,7 @@ export type Database = {
         }[]
       }
       get_trending_data: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           last_updated: string
           location_id: string
@@ -2664,10 +2648,7 @@ export type Database = {
         Args: { business_user_id: string }
         Returns: boolean
       }
-      refresh_trending_locations: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      refresh_trending_locations: { Args: never; Returns: undefined }
       search_users_safely: {
         Args: { requesting_user_id: string; search_query: string }
         Returns: {
@@ -2692,14 +2673,7 @@ export type Database = {
           username: string
         }[]
       }
-      unaccent: {
-        Args: { "": string }
-        Returns: string
-      }
-      unaccent_init: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
+      unaccent: { Args: { "": string }; Returns: string }
       update_user_streak: {
         Args: { target_user_id: string }
         Returns: undefined

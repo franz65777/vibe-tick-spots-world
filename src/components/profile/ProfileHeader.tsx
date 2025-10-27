@@ -1,5 +1,5 @@
 
-import { MoreHorizontal, Building2, Edit, LogOut, Camera } from 'lucide-react';
+import { MoreHorizontal, Building2, Edit, LogOut, Camera, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -17,6 +17,7 @@ import EditProfileModal from './EditProfileModal';
 import ProfilePictureEditor from '../ProfilePictureEditor';
 import { useFollowStats } from '@/hooks/useFollowStats';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
+import { useNavigate } from 'react-router-dom';
 
 interface ProfileHeaderProps {
   onFollowersClick: () => void;
@@ -37,6 +38,7 @@ const ProfileHeader = ({
   const [isProfilePictureEditorOpen, setIsProfilePictureEditorOpen] = useState(false);
   const { stats } = useFollowStats();
   const { getStats } = useSavedPlaces();
+  const navigate = useNavigate();
 
   // Real-time updates - refetch on interval
   useEffect(() => {
@@ -176,6 +178,10 @@ const ProfileHeader = ({
                 <DropdownMenuItem onClick={() => setIsEditModalOpen(true)}>
                   <Edit className="w-4 h-4 mr-2" />
                   Edit Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/settings')}>
+                  <Settings className="w-4 h-4 mr-2" />
+                  Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-destructive">
