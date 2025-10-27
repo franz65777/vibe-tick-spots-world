@@ -30,18 +30,18 @@ const SearchFiltersModal = ({
   const { t } = useTranslation();
   
   const sortOptions = [
-    { value: 'proximity' as const, label: t('explore.distance'), icon: MapPin, description: t('explore.closestToYou') },
-    { value: 'likes' as const, label: t('explore.mostLiked'), icon: Heart, description: t('explore.popularLocations') },
-    { value: 'saves' as const, label: t('explore.mostSaved'), icon: Bookmark, description: t('explore.frequentlyBookmarked') },
-    { value: 'following' as const, label: t('explore.savedByFriends'), icon: Users, description: t('explore.fromPeopleYouFollow') },
-    { value: 'recent' as const, label: t('explore.recentlyAdded'), icon: Clock, description: t('explore.newestLocations') }
+    { value: 'proximity' as const, label: t('distance', { ns: 'explore' }), icon: MapPin, description: t('closestToYou', { ns: 'explore' }) },
+    { value: 'likes' as const, label: t('mostLiked', { ns: 'explore' }), icon: Heart, description: t('popularLocations', { ns: 'explore' }) },
+    { value: 'saves' as const, label: t('mostSaved', { ns: 'explore' }), icon: Bookmark, description: t('frequentlyBookmarked', { ns: 'explore' }) },
+    { value: 'following' as const, label: t('savedByFriends', { ns: 'explore' }), icon: Users, description: t('fromPeopleYouFollow', { ns: 'explore' }) },
+    { value: 'recent' as const, label: t('recentlyAdded', { ns: 'explore' }), icon: Clock, description: t('newestLocations', { ns: 'explore' }) }
   ];
 
   const filterOptions = [
-    { value: 'new', label: t('explore.newLocations'), description: t('explore.addedInLast7Days') },
-    { value: 'trending', label: t('explore.trending'), description: t('explore.popularThisWeek') },
-    { value: 'verified', label: t('explore.verified'), description: t('explore.confirmedByMultipleUsers') },
-    { value: 'photos', label: t('explore.hasPhotos'), description: t('explore.locationsWithImages') }
+    { value: 'new', label: t('newLocations', { ns: 'explore' }), description: t('addedInLast7Days', { ns: 'explore' }) },
+    { value: 'trending', label: t('trending', { ns: 'explore' }), description: t('popularThisWeek', { ns: 'explore' }) },
+    { value: 'verified', label: t('verified', { ns: 'explore' }), description: t('confirmedByMultipleUsers', { ns: 'explore' }) },
+    { value: 'photos', label: t('hasPhotos', { ns: 'explore' }), description: t('locationsWithImages', { ns: 'explore' }) }
   ];
 
   const handleFilterToggle = (filterValue: string) => {
@@ -64,13 +64,13 @@ const SearchFiltersModal = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{t('explore.filterSort')}</DialogTitle>
+          <DialogTitle>{t('filterSort', { ns: 'explore' })}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
           {/* Sort Options */}
           <div>
-            <h3 className="font-medium text-gray-900 mb-3">{t('explore.sortBy')}</h3>
+            <h3 className="font-medium text-gray-900 mb-3">{t('sortBy', { ns: 'explore' })}</h3>
             <RadioGroup value={selectedSort} onValueChange={onSortChange}>
               <div className="space-y-3">
                 {sortOptions.map((option) => (
@@ -93,7 +93,7 @@ const SearchFiltersModal = ({
 
           {/* Filter Options */}
           <div>
-            <h3 className="font-medium text-gray-900 mb-3">{t('explore.filters')}</h3>
+            <h3 className="font-medium text-gray-900 mb-3">{t('filters', { ns: 'explore' })}</h3>
             <div className="space-y-3">
               {filterOptions.map((option) => (
                 <div key={option.value} className="flex items-center space-x-3">
@@ -116,10 +116,10 @@ const SearchFiltersModal = ({
           {/* Action Buttons */}
           <div className="flex gap-3 pt-4 border-t">
             <Button variant="outline" onClick={handleReset} className="flex-1">
-              {t('explore.reset')}
+              {t('reset', { ns: 'explore' })}
             </Button>
             <Button onClick={handleApply} className="flex-1">
-              {t('explore.applyFilters')}
+              {t('applyFilters', { ns: 'explore' })}
             </Button>
           </div>
         </div>

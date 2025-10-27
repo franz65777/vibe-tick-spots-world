@@ -88,7 +88,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-lg font-semibold">{t('add.newPost')}</h1>
+        <h1 className="text-lg font-semibold">{t('newPost', { ns: 'add' })}</h1>
         <div className="w-9" /> {/* Spacer for centering */}
       </div>
 
@@ -109,7 +109,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({
             <Textarea
               value={caption}
               onChange={(e) => onCaptionChange(e.target.value)}
-              placeholder={t('add.captionPlaceholder')}
+              placeholder={t('captionPlaceholder', { ns: 'add' })}
               className="min-h-[60px] resize-none border-border text-sm"
               rows={2}
             />
@@ -133,7 +133,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({
           {/* Optional Rating */}
           {onRatingChange && (
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t('add.ratePlace')}</label>
+              <label className="text-sm font-medium">{t('ratePlace', { ns: 'add' })}</label>
               <div className="flex gap-2">
                 {[...Array(10)].map((_, i) => (
                   <button
@@ -152,7 +152,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({
               </div>
               {rating && (
                 <p className="text-xs text-muted-foreground">
-                  {t('add.youRated')} {rating}/10
+                  {t('youRated', { ns: 'add' })} {rating}/10
                 </p>
               )}
             </div>
@@ -172,12 +172,12 @@ export const PostEditor: React.FC<PostEditorProps> = ({
           {isUploading ? (
             <>
               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              {t('add.sharing')}
+              {t('sharing', { ns: 'add' })}
             </>
           ) : (
             <>
               <Send className="w-5 h-5 mr-2" />
-              {t('common.share')}
+              {t('share', { ns: 'common' })}
             </>
           )}
         </Button>

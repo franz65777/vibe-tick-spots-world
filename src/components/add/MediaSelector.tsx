@@ -66,9 +66,9 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
           </div>
           
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold">{t('add.shareExperience')}</h2>
+            <h2 className="text-2xl font-bold">{t('shareExperience', { ns: 'add' })}</h2>
             <p className="text-muted-foreground">
-              {t('add.addPhotosVideos')}
+              {t('addPhotosVideos', { ns: 'add' })}
             </p>
           </div>
 
@@ -78,7 +78,7 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
             className="w-full h-12"
           >
             <ImageIcon className="w-5 h-5 mr-2" />
-            {t('add.chooseFromLibrary')}
+            {t('chooseFromLibrary', { ns: 'add' })}
           </Button>
 
           <input
@@ -91,7 +91,7 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
           />
 
           <p className="text-xs text-muted-foreground">
-            {t('add.selectUpTo')} {maxFiles} {t('add.photosOrVideos')}
+            {t('selectUpTo', { ns: 'add' })} {maxFiles} {t('photosOrVideos', { ns: 'add' })}
           </p>
         </div>
       </div>
@@ -145,7 +145,7 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
             className="aspect-square border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center hover:border-primary hover:bg-primary/5 transition-colors"
           >
             <ImageIcon className="w-8 h-8 text-muted-foreground mb-2" />
-            <span className="text-sm text-muted-foreground">{t('add.addMore')}</span>
+            <span className="text-sm text-muted-foreground">{t('addMore', { ns: 'add' })}</span>
           </button>
         )}
       </div>

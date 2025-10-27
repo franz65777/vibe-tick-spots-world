@@ -23,21 +23,21 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
     <div className="space-y-4">
       <div className="flex items-center gap-2 text-foreground">
         <MapPin className="w-5 h-5 text-destructive" />
-        <h3 className="font-semibold">{t('add.addLocation')}</h3>
-        <span className="text-xs text-destructive">{t('common.required')}</span>
+        <h3 className="font-semibold">{t('addLocation', { ns: 'add' })}</h3>
+        <span className="text-xs text-destructive">{t('required', { ns: 'common' })}</span>
       </div>
 
       {!selectedLocation ? (
         <div className="space-y-3">
           <OpenStreetMapAutocomplete
             onPlaceSelect={onLocationSelect}
-            placeholder={t('add.searchForPlace')}
+            placeholder={t('searchForPlace', { ns: 'add' })}
             className="w-full"
           />
           <div className="flex items-start gap-2 p-3 bg-destructive/10 rounded-lg">
             <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
             <p className="text-xs text-muted-foreground">
-              {t('add.youMustTagLocation')}
+              {t('youMustTagLocation', { ns: 'add' })}
             </p>
           </div>
         </div>
@@ -55,7 +55,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
               }}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              {t('add.changeLocation')}
+              {t('changeLocation', { ns: 'add' })}
             </button>
           </div>
         </div>

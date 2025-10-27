@@ -61,14 +61,14 @@ export const UserTagSelector: React.FC<UserTagSelectorProps> = ({
     <div className="space-y-3">
       <div className="flex items-center gap-2 text-foreground">
         <UserPlus className="w-5 h-5 text-muted-foreground" />
-        <h3 className="font-semibold">{t('add.tagPeople')}</h3>
+        <h3 className="font-semibold">{t('tagPeople', { ns: 'add' })}</h3>
       </div>
 
       {/* Search Input */}
       <div className="relative">
         <Input
           type="text"
-          placeholder={t('add.searchUsersToTag')}
+          placeholder={t('searchUsersToTag', { ns: 'add' })}
           value={searchQuery}
           onChange={(e) => {
             setSearchQuery(e.target.value);

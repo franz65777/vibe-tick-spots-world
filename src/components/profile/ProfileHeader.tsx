@@ -179,16 +179,16 @@ const ProfileHeader = ({
               <DropdownMenuContent align="end" className="w-48 bg-background z-50">
                 <DropdownMenuItem onClick={() => setIsEditModalOpen(true)}>
                   <Edit className="w-4 h-4 mr-2" />
-                  {t('common.edit')} {t('navigation.profile')}
+                  {t('edit', { ns: 'common' })} {t('profile', { ns: 'navigation' })}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/settings')}>
                   <Settings className="w-4 h-4 mr-2" />
-                  {t('settings.title')}
+                  {t('title', { ns: 'settings' })}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-destructive">
                   <LogOut className="w-4 h-4 mr-2" />
-                  {t('common.logout')}
+                  {t('logout', { ns: 'common' })}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -201,7 +201,7 @@ const ProfileHeader = ({
               onClick={onFollowersClick}
             >
               <div className="text-sm font-bold text-foreground">{displayStats.followers}</div>
-              <div className="text-xs text-muted-foreground">{t('common.followers')}</div>
+              <div className="text-xs text-muted-foreground">{t('followers', { ns: 'common' })}</div>
             </button>
             
             <button 
@@ -209,7 +209,7 @@ const ProfileHeader = ({
               onClick={onFollowingClick}
             >
               <div className="text-sm font-bold text-foreground">{displayStats.following}</div>
-              <div className="text-xs text-muted-foreground">{t('common.following')}</div>
+              <div className="text-xs text-muted-foreground">{t('following', { ns: 'common' })}</div>
             </button>
             
             <button 
@@ -217,7 +217,7 @@ const ProfileHeader = ({
               onClick={onLocationsClick}
             >
               <div className="text-sm font-bold text-foreground">{displayStats.locations}</div>
-              <div className="text-xs text-muted-foreground">{t('mapFilters.saved')}</div>
+              <div className="text-xs text-muted-foreground">{t('saved', { ns: 'mapFilters' })}</div>
             </button>
           </div>
 
