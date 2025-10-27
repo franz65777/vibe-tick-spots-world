@@ -106,8 +106,8 @@ serve(async (req) => {
       // Fallback to OpenStreetMap Nominatim if Foursquare fails
       console.log('Using OSM fallback for nearby search');
       try {
-        // Search in a 3km radius for better results and strictly bound to current viewport
-        const radiusKm = 3;
+        // Search in a 1.5km radius for faster, more relevant results
+        const radiusKm = 1.5;
         const dy = radiusKm / 111; // approx degrees latitude per km
         const dx = radiusKm / (111 * Math.cos((lat * Math.PI) / 180));
         const left = lng - dx;
@@ -120,7 +120,7 @@ serve(async (req) => {
         const allResults: any[] = [];
         
         for (const searchTerm of queries) {
-          const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=jsonv2&namedetails=1&addressdetails=1&limit=50&bounded=1&viewbox=${left},${top},${right},${bottom}&q=${encodeURIComponent(searchTerm)}`;
+          const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=jsonv2&namedetails=1&addressdetails=1&limit=20&bounded=1&viewbox=${left},${top},${right},${bottom}&q=${encodeURIComponent(searchTerm)}`;
           console.log(`Searching OSM for: ${searchTerm}`);
           const osmRes = await fetch(nominatimUrl, { 
             headers: { 
@@ -135,9 +135,9 @@ serve(async (req) => {
             }
           }
           
-          // Respect rate limit between sequential requests
+          // Faster requests (500ms between calls)
           if (queries.indexOf(searchTerm) < queries.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 500));
           }
         }
         
@@ -207,8 +207,8 @@ serve(async (req) => {
           const plng = parseFloat(item.lon);
           const distance = haversine(lat, lng, plat, plng);
           
-          // Filter by distance (3km radius)
-          if (isNaN(plat) || isNaN(plng) || distance > 3000) return null;
+          // Filter by distance (1.5km radius for faster results)
+          if (isNaN(plat) || isNaN(plng) || distance > 1500) return null;
           
           const addressObj = item.address || {};
           const city = addressObj.city || addressObj.town || addressObj.village || addressObj.hamlet || addressObj.county || addressObj.state || 'Unknown';

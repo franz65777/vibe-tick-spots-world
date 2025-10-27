@@ -188,22 +188,24 @@ const MapSection = ({
           />
         )}
 
-        {/* Map Category Filters - Only show when map is enlarged */}
-        {isExpanded && <MapCategoryFilters currentCity={currentCity} />}
+        {/* Map Category Filters - Always visible, position changes based on expanded state */}
+        <div className={isExpanded ? 'fixed top-4 left-1/2 -translate-x-1/2 z-[1100]' : 'absolute top-4 left-1/2 -translate-x-1/2 z-[1100]'}>
+          <MapCategoryFilters currentCity={currentCity} />
+        </div>
 
-        {/* Map Controls - List View and Expand Toggle */}
-        <div className="fixed bottom-6 right-3 z-[2100] flex flex-col gap-2">
+        {/* Map Controls - List View and Expand Toggle - Inside map */}
+        <div className={`${isExpanded ? 'fixed' : 'absolute'} bottom-4 right-4 z-[1000] flex flex-col gap-2`}>
           {/* Expand/Collapse Button */}
           {onToggleExpand && (
             <Button
               onClick={onToggleExpand}
               size="icon"
-              className="rounded-full bg-background/95 backdrop-blur-md shadow-md border border-border hover:bg-accent w-10 h-10 transition-all"
+              className="rounded-full bg-background/95 backdrop-blur-md shadow-lg border border-border hover:bg-accent hover:scale-105 w-11 h-11 transition-all"
             >
               {isExpanded ? (
-                <Minimize2 className="w-4 h-4 text-foreground" />
+                <Minimize2 className="w-5 h-5 text-foreground" />
               ) : (
-                <Maximize2 className="w-4 h-4 text-foreground" />
+                <Maximize2 className="w-5 h-5 text-foreground" />
               )}
             </Button>
           )}
@@ -213,9 +215,9 @@ const MapSection = ({
             <SheetTrigger asChild>
               <Button
                 size="icon"
-                className="rounded-full bg-background/95 backdrop-blur-md shadow-md border border-border hover:bg-accent w-10 h-10 transition-all"
+                className="rounded-full bg-background/95 backdrop-blur-md shadow-lg border border-border hover:bg-accent hover:scale-105 w-11 h-11 transition-all"
               >
-                <List className="w-4 h-4 text-foreground" />
+                <List className="w-5 h-5 text-foreground" />
               </Button>
             </SheetTrigger>
             <SheetContent side="bottom" className="h-[80vh] rounded-t-3xl flex flex-col">
