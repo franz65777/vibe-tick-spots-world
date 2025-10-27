@@ -172,11 +172,26 @@ serve(async (req) => {
           
           const addressObj = item.address || {};
           const city = addressObj.city || addressObj.town || addressObj.village || addressObj.hamlet || addressObj.county || addressObj.state || 'Unknown';
+          
+          // Build formatted address: "Street Name Number, City"
+          const addressParts: string[] = [];
+          if (addressObj.road) {
+            let streetPart = addressObj.road;
+            if (addressObj.house_number) {
+              streetPart = `${addressObj.road} ${addressObj.house_number}`;
+            }
+            addressParts.push(streetPart);
+          }
+          if (city && city !== 'Unknown') {
+            addressParts.push(city);
+          }
+          const formattedAddress = addressParts.length > 0 ? addressParts.join(', ') : item.display_name || 'Address not available';
+          
           return {
             fsq_id: item.osm_id ? `osm_${item.osm_id}` : item.place_id ? `osm_place_${item.place_id}` : `osm_${plat}_${plng}`,
             name: item.namedetails?.name || item.display_name?.split(',')[0] || 'Unknown place',
             category: mapped,
-            address: item.display_name || 'Address not available',
+            address: formattedAddress,
             city,
             lat: plat,
             lng: plng,

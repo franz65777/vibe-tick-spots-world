@@ -18,7 +18,10 @@ const geocodeSchema = z.object({
  * FREE Reverse Geocoding using OpenStreetMap Nominatim
  * Cost: $0 (was ~$5/1000 with Google Maps Geocoding API)
  */
-async function reverseGeocodeNominatim(lat: number, lng: number): Promise<string> {
+async function reverseGeocodeNominatim(lat: number, lng: number): Promise<{
+  city: string;
+  formatted_address: string;
+}> {
   const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1&accept-language=en`;
   
   const response = await fetch(url, {
@@ -30,8 +33,9 @@ async function reverseGeocodeNominatim(lat: number, lng: number): Promise<string
   }
 
   const data = await response.json();
+  const addr = data.address || {};
 
-  let city = data.address?.city || data.address?.town || data.address?.village || '';
+  let city = addr.city || addr.town || addr.village || '';
 
   if (city) {
     city = city.replace(/\s+\d+$/, '').replace(/^County\s+/i, '').trim();
@@ -48,7 +52,24 @@ async function reverseGeocodeNominatim(lat: number, lng: number): Promise<string
     }
   }
 
-  return city;
+  // Build formatted address: "Street Name Number, City"
+  const parts: string[] = [];
+  
+  if (addr.road) {
+    let streetPart = addr.road;
+    if (addr.house_number) {
+      streetPart = `${addr.road} ${addr.house_number}`;
+    }
+    parts.push(streetPart);
+  }
+  
+  if (city) {
+    parts.push(city);
+  }
+
+  const formatted_address = parts.join(', ') || data.display_name || '';
+
+  return { city, formatted_address };
 }
 
 serve(async (req) => {
@@ -93,11 +114,16 @@ serve(async (req) => {
         if (loc.city && loc.city.length > 2) continue;
 
         try {
-          const city = await reverseGeocodeNominatim(loc.latitude, loc.longitude);
+          const result = await reverseGeocodeNominatim(loc.latitude, loc.longitude);
           
-          if (city) {
-            await supabase.from('locations').update({ city }).eq('id', loc.id);
-            console.log(`✅ ${loc.name} → ${city}`);
+          if (result.city) {
+            const updates: any = { city: result.city };
+            if (result.formatted_address) {
+              updates.address = result.formatted_address;
+            }
+            
+            await supabase.from('locations').update(updates).eq('id', loc.id);
+            console.log(`✅ ${loc.name} → ${result.city}, ${result.formatted_address}`);
             updated++;
           }
 
@@ -114,19 +140,29 @@ serve(async (req) => {
     }
 
     // Single mode
-    const city = await reverseGeocodeNominatim(latitude, longitude);
+    const result = await reverseGeocodeNominatim(latitude, longitude);
 
-    if (locationId && city) {
+    if (locationId && result.city) {
       const supabase = createClient(
         Deno.env.get('SUPABASE_URL')!,
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
       );
 
-      await supabase.from('locations').update({ city }).eq('id', locationId);
+      const updates: any = { city: result.city };
+      if (result.formatted_address) {
+        updates.address = result.formatted_address;
+      }
+
+      await supabase.from('locations').update(updates).eq('id', locationId);
     }
 
     return new Response(
-      JSON.stringify({ success: true, city, provider: 'nominatim-free' }),
+      JSON.stringify({ 
+        success: true, 
+        city: result.city,
+        formatted_address: result.formatted_address,
+        provider: 'nominatim-free' 
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

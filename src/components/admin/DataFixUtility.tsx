@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { MapPin, Tag, Loader2 } from 'lucide-react';
+import { AddressEnrichmentUtility } from './AddressEnrichmentUtility';
 
 const DataFixUtility = () => {
   const [isFixingCities, setIsFixingCities] = useState(false);
@@ -53,6 +54,9 @@ const DataFixUtility = () => {
 
   return (
     <div className="space-y-4">
+      {/* Address Enrichment Utility */}
+      <AddressEnrichmentUtility />
+      
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

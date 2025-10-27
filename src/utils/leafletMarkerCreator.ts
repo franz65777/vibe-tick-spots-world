@@ -61,97 +61,63 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
   // Get category image
   const categoryImg = getCategoryImage(category);
   
-  // Determine pin color based on state
-  let pinColor = '#EF4444'; // default red
-  let ringColor = '#FCA5A5';
+  // Determine pin color based on state - red for popular, blue for following, green for saved
+  let pinColor = '#EF4444'; // red for popular (default)
+  let ringColor = 'rgba(239, 68, 68, 0.3)';
   
   if (isSaved) {
-    pinColor = '#3B82F6'; // blue for saved
-    ringColor = '#93C5FD';
-  } else if (isRecommended && recommendationScore > 70) {
-    pinColor = '#10B981'; // green for highly recommended
-    ringColor = '#6EE7B7';
+    pinColor = '#10B981'; // green for saved
+    ringColor = 'rgba(16, 185, 129, 0.3)';
   } else if (isRecommended) {
-    pinColor = '#F59E0B'; // amber for recommended
-    ringColor = '#FCD34D';
+    pinColor = '#3B82F6'; // blue for following/recommended
+    ringColor = 'rgba(59, 130, 246, 0.3)';
   }
   
-  // Create custom marker HTML with category image inside
+  // Create custom marker HTML with larger icon and subtle design
   const markerHtml = `
-    <div class="custom-leaflet-marker" style="position: relative; width: 32px; height: 40px;">
-      <!-- Animated ring for recommended places -->
-      ${isRecommended ? `
-        <div style="
-          position: absolute;
-          top: 6px;
-          left: 6px;
-          width: 20px;
-          height: 20px;
-          border: 2px solid ${ringColor};
-          border-radius: 50%;
-          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        "></div>
-      ` : ''}
+    <div class="custom-leaflet-marker" style="position: relative; width: 36px; height: 44px;">
+      <!-- Subtle shadow ring -->
+      <div style="
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        width: 20px;
+        height: 20px;
+        background: ${ringColor};
+        border-radius: 50%;
+        filter: blur(4px);
+      "></div>
       
-      <!-- Main pin -->
-      <svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
-        <path d="M16 0C9.373 0 4 5.373 4 12c0 7.074 12 28 12 28s12-20.926 12-28C28 5.373 22.627 0 16 0z" 
-              fill="${pinColor}"/>
-        <circle cx="16" cy="12" r="7" fill="white"/>
+      <!-- Main pin with minimal design -->
+      <svg width="36" height="44" viewBox="0 0 36 44" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 1px 3px rgba(0,0,0,0.2));">
+        <path d="M18 2C11.373 2 6 7.373 6 14c0 7.074 12 26 12 26s12-18.926 12-26C30 7.373 24.627 2 18 2z" 
+              fill="${pinColor}"
+              opacity="0.95"/>
+        <circle cx="18" cy="14" r="9" fill="white" opacity="0.98"/>
       </svg>
       
-      <!-- Category image inside pin -->
+      <!-- Larger category icon -->
       <img 
         src="${categoryImg}" 
         alt="${category}"
         style="
           position: absolute;
-          top: 4px;
-          left: 8px;
-          width: 16px;
-          height: 16px;
+          top: 5px;
+          left: 9px;
+          width: 18px;
+          height: 18px;
           object-fit: contain;
         "
       />
-      
-      <!-- Recommendation badge -->
-      ${isRecommended && recommendationScore > 70 ? `
-        <div style="
-          position: absolute;
-          top: -2px;
-          right: 3px;
-          background: #10B981;
-          color: white;
-          border-radius: 9999px;
-          width: 14px;
-          height: 14px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 9px;
-          font-weight: bold;
-          box-shadow: 0 1px 2px rgba(0,0,0,0.3);
-        ">★</div>
-      ` : ''}
     </div>
     
     <style>
-      @keyframes pulse {
-        0%, 100% {
-          opacity: 1;
-          transform: scale(1);
-        }
-        50% {
-          opacity: 0.5;
-          transform: scale(1.2);
-        }
-      }
       .custom-leaflet-marker {
         cursor: pointer;
-        transition: transform 0.2s;
+        transition: all 0.2s ease;
       }
       .custom-leaflet-marker:hover {
-        transform: scale(1.15);
+        transform: scale(1.1) translateY(-2px);
       }
     </style>
   `;
@@ -159,9 +125,9 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
   return L.divIcon({
     html: markerHtml,
     className: 'custom-leaflet-icon',
-    iconSize: [32, 40],
-    iconAnchor: [16, 40],
-    popupAnchor: [0, -40],
+    iconSize: [36, 44],
+    iconAnchor: [18, 44],
+    popupAnchor: [0, -44],
   });
 };
 
