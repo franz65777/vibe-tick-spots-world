@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Award, MapPin, Grid3X3, Tag, Megaphone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from 'react-i18next';
 
 interface ProfileTabsProps {
   activeTab: string;
@@ -21,6 +22,7 @@ const ProfileTabs = ({
   showLocations = true,
   showMarketing = false
 }: ProfileTabsProps) => {
+  const { t } = useTranslation();
   return (
     <div className="px-4">
       <div className="flex bg-gray-100 rounded-xl p-1 mb-4">
@@ -34,7 +36,7 @@ const ProfileTabs = ({
           )}
         >
           <Grid3X3 className="w-4 h-4" />
-          <span className="hidden sm:inline">Posts</span>
+          <span className="hidden sm:inline">{t('profile.posts')}</span>
         </button>
         {showTrips && (
           <button
@@ -47,7 +49,7 @@ const ProfileTabs = ({
             )}
           >
             <MapPin className="w-4 h-4" />
-            <span className="hidden sm:inline">Trips</span>
+            <span className="hidden sm:inline">{t('profile.trips')}</span>
           </button>
         )}
         {showMarketing && (
@@ -61,7 +63,7 @@ const ProfileTabs = ({
             )}
           >
             <Megaphone className="w-4 h-4" />
-            <span className="hidden sm:inline">Marketing</span>
+            <span className="hidden sm:inline">{t('profile.marketing')}</span>
           </button>
         )}
         <button
@@ -74,7 +76,7 @@ const ProfileTabs = ({
           )}
         >
           <Award className="w-4 h-4" />
-          <span className="hidden sm:inline">Badges</span>
+          <span className="hidden sm:inline">{t('profile.badges')}</span>
           {hasNewBadges && activeTab !== 'badges' && (
             <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
           )}
@@ -89,7 +91,7 @@ const ProfileTabs = ({
           )}
         >
           <Tag className="w-4 h-4" />
-          <span className="hidden sm:inline">Tagged</span>
+          <span className="hidden sm:inline">{t('profile.tagged')}</span>
         </button>
       </div>
     </div>

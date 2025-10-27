@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Building2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import ProfileHeader from './profile/ProfileHeader';
 import ProfileStats from './profile/ProfileStats';
 import ProfileTabs from './profile/ProfileTabs';
@@ -20,6 +21,7 @@ import { useBusinessProfile } from '@/hooks/useBusinessProfile';
 import { toast } from 'sonner';
 
 const ProfilePage = () => {
+  const { t } = useTranslation();
   const { profile, loading, error } = useProfile();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -36,8 +38,8 @@ const ProfilePage = () => {
 
   const handleSwitchToBusinessView = () => {
     if (!hasValidBusinessAccount) {
-      toast.error('No verified business account', {
-        description: 'You need to claim and verify a business before accessing business features'
+      toast.error(t('profile.noBusinessAccount'), {
+        description: t('profile.needVerification')
       });
       return;
     }
@@ -132,7 +134,7 @@ const ProfilePage = () => {
             className="w-full"
           >
             <Building2 className="w-4 h-4 mr-2" />
-            Switch to Business Account
+            {t('profile.switchToBusiness')}
           </Button>
         </div>
       )}

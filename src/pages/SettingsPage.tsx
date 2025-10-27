@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
+import { useTranslation } from 'react-i18next';
 
 const languages = [
   { code: 'en', label: 'English' },
@@ -19,6 +20,7 @@ const languages = [
 
 const SettingsPage: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [language, setLanguage] = useState('en');
   const [saving, setSaving] = useState(false);
   const [useCustom, setUseCustom] = useState(false);
@@ -56,9 +58,9 @@ const SettingsPage: React.FC = () => {
         .eq('id', user.id);
       if (error) throw error;
       i18n.changeLanguage(langToSave);
-      toast.success('Language preference saved');
+      toast.success(t('settings.languageSaved'));
     } catch (e: any) {
-      toast.error(e?.message || 'Failed to save');
+      toast.error(e?.message || t('settings.failedToSave'));
     } finally {
       setSaving(false);
     }
@@ -68,23 +70,23 @@ const SettingsPage: React.FC = () => {
     <main className="p-4 max-w-2xl mx-auto w-full">
       <Card>
         <CardHeader>
-          <CardTitle>Settings</CardTitle>
+          <CardTitle>{t('settings.title')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <div className="text-sm font-medium mb-2">Language</div>
+            <div className="text-sm font-medium mb-2">{t('settings.language')}</div>
             <Select value={useCustom ? '__custom__' : language} onValueChange={(val) => {
                 if (val === '__custom__') { setUseCustom(true); }
                 else { setUseCustom(false); setLanguage(val); }
               }}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Choose language" />
+                <SelectValue placeholder={t('settings.chooseLanguage')} />
               </SelectTrigger>
               <SelectContent>
                 {languages.map(l => (
                   <SelectItem key={l.code} value={l.code}>{l.label}</SelectItem>
                 ))}
-                <SelectItem value="__custom__">Other / Custom…</SelectItem>
+                <SelectItem value="__custom__">{t('settings.customOther')}</SelectItem>
               </SelectContent>
             </Select>
             {useCustom && (
@@ -92,16 +94,16 @@ const SettingsPage: React.FC = () => {
                 <Input
                   value={customLanguage}
                   onChange={(e) => setCustomLanguage(e.target.value)}
-                  placeholder="Language code, e.g., ar, zh-CN, hi, ru"
+                  placeholder={t('settings.languageCodePlaceholder')}
                 />
-                <p className="text-xs text-muted-foreground">Enter any BCP‑47 language tag.</p>
+                <p className="text-xs text-muted-foreground">{t('settings.bcp47Help')}</p>
               </div>
             )}
           </div>
 
           <div className="flex justify-end">
             <Button onClick={onSave} disabled={saving}>
-              {saving ? 'Saving…' : 'Save Changes'}
+              {saving ? t('settings.saving') : t('settings.saveChanges')}
             </Button>
           </div>
         </CardContent>
