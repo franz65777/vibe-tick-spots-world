@@ -66,9 +66,10 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
 
   const categories: AllowedCategory[] = ['restaurant', 'bar', 'cafe', 'bakery', 'hotel', 'museum', 'entertainment'];
 
-  // Fetch nearby suggestions when modal opens with coordinates
+  // Fetch nearby suggestions when modal opens with coordinates (immediate load)
   useEffect(() => {
     if (isOpen && coordinates) {
+      // Immediate fetch on open
       fetchNearbySuggestions();
     } else {
       setNearbySuggestions([]);
@@ -121,14 +122,14 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
     }
   };
 
-  // Debounced search as-you-type (Google-like)
+  // Debounced search as-you-type (only when user types, not on initial load)
   useEffect(() => {
-    if (!isOpen || !coordinates) return;
+    if (!isOpen || !coordinates || !searchQuery) return;
     const t = setTimeout(() => {
       fetchNearbySuggestions();
-    }, 400);
+    }, 300);
     return () => clearTimeout(t);
-  }, [searchQuery, isOpen, coordinates]);
+  }, [searchQuery]);
 
   const handleSuggestionSelect = (suggestion: NearbyPlace) => {
     setSelectedPlace({
@@ -279,8 +280,8 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
         </div>
 
         {/* Nearby suggestions scrollable list */}
-        <div className="flex-1 min-h-0 px-6 pb-6">
-          <ScrollArea className="h-full">
+        <div className="flex-1 min-h-0 overflow-hidden px-6 pb-6">
+          <ScrollArea className="h-full max-h-full">
             {isFetchingSuggestions ? (
               <div className="flex items-center justify-center py-16">
                 <div className="text-center space-y-3">
@@ -311,14 +312,12 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
                       }`}
                     >
                       <div className="flex items-start gap-4">
-                        {/* Icon */}
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                          isSelected ? 'bg-primary/10' : 'bg-muted'
-                        }`}>
+                        {/* Icon - no background */}
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
                           <img 
                             src={categoryIcon} 
                             alt={suggestion.category}
-                            className="w-8 h-8 object-contain"
+                            className="w-9 h-9 object-contain"
                           />
                         </div>
                         

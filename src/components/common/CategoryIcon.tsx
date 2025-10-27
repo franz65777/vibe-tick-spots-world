@@ -41,11 +41,11 @@ export const CategoryIcon: React.FC<CategoryIconProps> = ({ category, className 
   const { src, style } = getCategoryImage();
 
   return (
-    <div className={`${className} rounded-xl overflow-hidden flex items-center justify-center`}>
+    <div className={`${className} flex items-center justify-center`}>
       <img
         src={src}
         alt={category}
-        className="w-full h-full"
+        className="w-full h-full object-contain"
         style={style as any}
       />
     </div>

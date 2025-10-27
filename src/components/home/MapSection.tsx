@@ -172,21 +172,24 @@ const MapSection = ({
   return (
     <>
       <div className={`${isExpanded ? 'fixed inset-0 w-screen h-screen p-3' : 'flex-1 relative min-h-[500px]'} w-full overflow-hidden`}>
-        <LeafletMapSetup
-          places={places}
-          onPinClick={handlePinClick}
-          onPinShare={handlePinShare}
-          mapCenter={mapCenter}
-          selectedPlace={selectedPlace}
-          onCloseSelectedPlace={() => setSelectedPlace(null)}
-          onMapRightClick={handleMapRightClick}
-          onMapClick={handleMapClick}
-          activeFilter={activeFilter}
-          fullScreen={isExpanded}
-        />
+        {/* Hide map when list view is open */}
+        {!isListViewOpen && (
+          <LeafletMapSetup
+            places={places}
+            onPinClick={handlePinClick}
+            onPinShare={handlePinShare}
+            mapCenter={mapCenter}
+            selectedPlace={selectedPlace}
+            onCloseSelectedPlace={() => setSelectedPlace(null)}
+            onMapRightClick={handleMapRightClick}
+            onMapClick={handleMapClick}
+            activeFilter={activeFilter}
+            fullScreen={isExpanded}
+          />
+        )}
 
-        {/* Map Category Filters - Always visible at top */}
-        <MapCategoryFilters currentCity={currentCity} />
+        {/* Map Category Filters - Only show when map is enlarged */}
+        {isExpanded && <MapCategoryFilters currentCity={currentCity} />}
 
         {/* Map Controls - List View and Expand Toggle */}
         <div className="fixed bottom-6 right-3 z-[2100] flex flex-col gap-2">
@@ -215,8 +218,8 @@ const MapSection = ({
                 <List className="w-4 h-4 text-foreground" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="bottom" className="h-[75vh] rounded-t-3xl">
-              <SheetHeader className="pb-4">
+            <SheetContent side="bottom" className="h-[80vh] rounded-t-3xl flex flex-col">
+              <SheetHeader className="pb-4 flex-shrink-0">
                 <SheetTitle className="text-xl font-semibold">
                   Locations
                   <Badge variant="secondary" className="ml-3 text-sm">
@@ -252,8 +255,8 @@ const MapSection = ({
                   </Button>
                 </div>
               </SheetHeader>
-              <ScrollArea className="h-[calc(75vh-160px)] mt-4">
-                <div className="space-y-3 pr-4">
+              <ScrollArea className="flex-1 -mx-6 px-6">
+                <div className="space-y-3 pr-4 py-2">
                   {places.map((place) => {
                     const categoryIcon = getCategoryIconImage(place.category);
                     return (
@@ -265,7 +268,7 @@ const MapSection = ({
                         }}
                         className="w-full flex items-start gap-4 p-4 bg-card border-2 border-border rounded-2xl hover:border-primary/50 hover:shadow-md transition-all text-left"
                       >
-                        <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center shrink-0">
+                        <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0">
                           <img 
                             src={categoryIcon} 
                             alt={place.category}
