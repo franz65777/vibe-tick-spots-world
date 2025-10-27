@@ -52,7 +52,7 @@ class NominatimGeocoding {
    * Forward geocoding: Search for a place by name
    * FREE - No API key needed
    */
-  async searchPlace(query: string): Promise<GeocodeResult[]> {
+  async searchPlace(query: string, language?: string): Promise<GeocodeResult[]> {
     await this.rateLimit();
 
     try {
@@ -61,7 +61,7 @@ class NominatimGeocoding {
         format: 'json',
         addressdetails: '1',
         limit: '5',
-        'accept-language': 'en',
+        'accept-language': language || 'en',
       });
 
       const response = await fetch(`${this.baseUrl}/search?${params}`, {
@@ -93,7 +93,7 @@ class NominatimGeocoding {
    * Reverse geocoding: Get address from coordinates
    * FREE - No API key needed
    */
-  async reverseGeocode(lat: number, lng: number): Promise<GeocodeResult | null> {
+  async reverseGeocode(lat: number, lng: number, language?: string): Promise<GeocodeResult | null> {
     await this.rateLimit();
 
     try {
@@ -102,7 +102,7 @@ class NominatimGeocoding {
         lon: lng.toString(),
         format: 'json',
         addressdetails: '1',
-        'accept-language': 'en',
+        'accept-language': language || 'en',
       });
 
       const response = await fetch(`${this.baseUrl}/reverse?${params}`, {
@@ -139,8 +139,8 @@ class NominatimGeocoding {
   /**
    * Get city name from coordinates (cached version)
    */
-  async getCityFromCoordinates(lat: number, lng: number): Promise<string> {
-    const result = await this.reverseGeocode(lat, lng);
+  async getCityFromCoordinates(lat: number, lng: number, language?: string): Promise<string> {
+    const result = await this.reverseGeocode(lat, lng, language);
     return result?.city || 'Unknown City';
   }
 }

@@ -19,8 +19,10 @@ import { useFollowSuggestions } from '@/hooks/useFollowSuggestions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import StoriesViewer from './StoriesViewer';
+import { useTranslation } from 'react-i18next';
 
 const ExplorePage = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -240,11 +242,11 @@ const ExplorePage = () => {
           <div className="flex bg-gray-100 rounded-xl p-1 mb-4">
             <button onClick={() => setSearchMode('locations')} className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all ${searchMode === 'locations' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
               <MapPin className="w-4 h-4" />
-              Places
+              {t('explore.places')}
             </button>
             <button onClick={() => setSearchMode('users')} className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all ${searchMode === 'users' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
               <Users className="w-4 h-4" />
-              People
+              {t('explore.people')}
             </button>
           </div>
 
@@ -253,7 +255,7 @@ const ExplorePage = () => {
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <Input 
               type="text" 
-              placeholder={searchMode === 'locations' ? 'Search for cafes, restaurants, attractions...' : 'Search for people...'} 
+              placeholder={searchMode === 'locations' ? t('explore.searchPlaces') : t('explore.searchPeople')} 
               value={searchQuery} 
               onChange={e => handleSearch(e.target.value)} 
               className="pl-12 pr-4 h-12 bg-gray-50 border-gray-200 focus:bg-white rounded-xl text-gray-900 placeholder-gray-500" 
@@ -272,7 +274,7 @@ const ExplorePage = () => {
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
               <span className="text-gray-600 font-medium">
-                {isSearching ? 'Searching...' : 'Loading...'}
+                {isSearching ? t('common.searching') : t('common.loading')}
               </span>
             </div>
           </div>
@@ -304,7 +306,7 @@ const ExplorePage = () => {
                       <div>
                         <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
                           <Search className="w-4 h-4" />
-                          Recent
+                          {t('explore.recent')}
                         </h3>
                         <div className="space-y-2">
                           {searchHistory.map((item) => (
@@ -354,7 +356,7 @@ const ExplorePage = () => {
                       <div>
                         <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
                           <Users className="w-4 h-4" />
-                          Suggested for You
+                          {t('explore.suggestedForYou')}
                         </h3>
                         <div className="space-y-2">
                           {suggestions.slice(0, 5).map((suggestedUser) => (
@@ -376,19 +378,19 @@ const ExplorePage = () => {
                                   <div className="font-semibold text-foreground truncate">
                                     {suggestedUser.username}
                                   </div>
-                                  <div className="text-sm text-muted-foreground">
-                                    {suggestedUser.follower_count || 0} followers
-                                    {suggestedUser.mutual_followers ? ` • ${suggestedUser.mutual_followers} mutual` : ''}
-                                  </div>
+                                   <div className="text-sm text-muted-foreground">
+                                     {suggestedUser.follower_count || 0} {t('common.followers')}
+                                     {suggestedUser.mutual_followers ? ` • ${suggestedUser.mutual_followers} ${t('common.mutual')}` : ''}
+                                   </div>
                                 </div>
                               </div>
-                              <Button
-                                variant={suggestedUser.is_following ? 'outline' : 'default'}
-                                size="sm"
-                                onClick={() => handleFollowUser(suggestedUser.id)}
-                              >
-                                {suggestedUser.is_following ? 'Following' : 'Follow'}
-                              </Button>
+                               <Button
+                                 variant={suggestedUser.is_following ? 'outline' : 'default'}
+                                 size="sm"
+                                 onClick={() => handleFollowUser(suggestedUser.id)}
+                               >
+                                 {suggestedUser.is_following ? t('common.following') : t('common.follow')}
+                               </Button>
                             </div>
                           ))}
                         </div>
@@ -420,7 +422,7 @@ const ExplorePage = () => {
                         className="w-full py-6 bg-gradient-to-r from-blue-500/10 to-purple-500/10 hover:from-blue-500/20 hover:to-purple-500/20 border-blue-200 hover:border-blue-300 transition-all"
                       >
                         <UserPlus className="w-5 h-5 mr-2" />
-                        <span className="font-semibold">Invite Friends</span>
+                        <span className="font-semibold">{t('explore.inviteFriends')}</span>
                       </Button>
                     </div>
                   </div>

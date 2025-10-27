@@ -3,6 +3,7 @@ import { ArrowLeft, MapPin, Loader2 } from 'lucide-react';
 import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
 import { useCityEngagement } from '@/hooks/useCityEngagement';
 import CityEngagementCard from './CityEngagementCard';
+import { useTranslation } from 'react-i18next';
 interface UnifiedSearchOverlayProps {
   isOpen: boolean;
   onClose: () => void;
@@ -10,6 +11,7 @@ interface UnifiedSearchOverlayProps {
 }
 
 const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOverlayProps) => {
+  const { t, i18n } = useTranslation();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<CityResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -89,7 +91,7 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
 
     setLoading(true);
     try {
-      const nominatimResults = await nominatimGeocoding.searchPlace(query);
+      const nominatimResults = await nominatimGeocoding.searchPlace(query, i18n.language);
       
       setResults(nominatimResults.map(result => ({
         name: result.city || result.displayName.split(',')[0],
@@ -110,7 +112,7 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
     setLoading(true);
     
     try {
-      const results = await nominatimGeocoding.searchPlace(name);
+      const results = await nominatimGeocoding.searchPlace(name, i18n.language);
       
       if (results?.[0]) {
         const r = results[0];
@@ -155,7 +157,7 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search cities worldwide..."
+            placeholder={t('explore.searchCities')}
             className="w-full pl-10 pr-4 py-3 text-base bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
           />
         </div>
@@ -180,7 +182,7 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
         {loading && (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
-            <span className="ml-2 text-white">Searching...</span>
+            <span className="ml-2 text-white">{t('common.searching')}</span>
           </div>
         )}
 
@@ -200,8 +202,8 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
         {query.trim() && !loading && results.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-white">
             <MapPin className="w-16 h-16 mb-3 opacity-50" />
-            <p className="text-lg font-medium">No cities found</p>
-            <p className="text-sm opacity-75 mt-1">Try a different search</p>
+            <p className="text-lg font-medium">{t('explore.noCitiesFound')}</p>
+            <p className="text-sm opacity-75 mt-1">{t('explore.tryDifferentSearch')}</p>
           </div>
         )}
       </div>

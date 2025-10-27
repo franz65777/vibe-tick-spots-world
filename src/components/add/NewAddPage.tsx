@@ -4,8 +4,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 export const NewAddPage = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   
@@ -118,7 +120,7 @@ export const NewAddPage = () => {
 
   const handleSubmit = async () => {
     if (!user || !selectedLocation || !selectedCategory) {
-      toast.error('Please select a location and category');
+      toast.error(t('add.selectLocationAndCategory'));
       return;
     }
 
@@ -196,7 +198,7 @@ export const NewAddPage = () => {
       
       console.log('✅ Post created successfully!', post.id);
       
-      toast.success('Post shared successfully!');
+      toast.success(t('add.postShared'));
       
       // Clean up
       previewUrls.forEach(url => URL.revokeObjectURL(url));
@@ -206,7 +208,7 @@ export const NewAddPage = () => {
       
     } catch (error) {
       console.error('❌ Error creating post:', error);
-      toast.error('Failed to share post. Please try again.');
+      toast.error(t('add.errorCreating'));
     } finally {
       setIsUploading(false);
     }

@@ -4,6 +4,7 @@ import { SlidersHorizontal, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import SearchFiltersModal from './SearchFiltersModal';
+import { useTranslation } from 'react-i18next';
 
 type SortBy = 'proximity' | 'likes' | 'saves' | 'following' | 'recent';
 
@@ -22,6 +23,7 @@ const SearchFilters = ({
   onFiltersChange,
   showFilters
 }: SearchFiltersProps) => {
+  const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   if (!showFilters) return null;
@@ -33,10 +35,10 @@ const SearchFilters = ({
     <div className="px-4 py-3 border-b border-gray-100">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-700">Sort & Filter</span>
+          <span className="text-sm font-medium text-gray-700">{t('explore.sortFilter')}</span>
           {hasActiveFilters && (
             <Badge variant="secondary" className="h-5 px-2 text-xs">
-              {activeFiltersCount + (sortBy !== 'proximity' ? 1 : 0)} active
+              {activeFiltersCount + (sortBy !== 'proximity' ? 1 : 0)} {t('explore.active')}
             </Badge>
           )}
         </div>
@@ -48,7 +50,7 @@ const SearchFilters = ({
           className="h-8 px-3 gap-2"
         >
           <SlidersHorizontal className="w-4 h-4" />
-          Filter
+          {t('explore.filter')}
         </Button>
       </div>
 
