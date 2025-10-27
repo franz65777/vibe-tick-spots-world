@@ -115,31 +115,31 @@ serve(async (req) => {
         const top = lat + dy;
         const bottom = lat - dy;
 
-        const queries = query ? [query] : ['restaurant', 'cafe', 'bar', 'bakery', 'hotel', 'museum', 'cinema', 'theatre'];
+        // Build minimal parallel OSM queries for speed
+        const queries = query ? [query] : ['restaurant','cafe','bar','bakery','hotel','museum'];
         
-        const allResults: any[] = [];
-        
-        for (const searchTerm of queries) {
+        const fetchOne = async (searchTerm: string) => {
           const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=jsonv2&namedetails=1&addressdetails=1&limit=20&bounded=1&viewbox=${left},${top},${right},${bottom}&q=${encodeURIComponent(searchTerm)}`;
           console.log(`Searching OSM for: ${searchTerm}`);
-          const osmRes = await fetch(nominatimUrl, { 
-            headers: { 
-              'Accept': 'application/json', 
-              'User-Agent': 'SpottApp/1.0 (contact: support@spott.app)'
+          try {
+            const osmRes = await fetch(nominatimUrl, { 
+              headers: { 
+                'Accept': 'application/json', 
+                'User-Agent': 'SpottApp/1.0 (contact: support@spott.app)'
+              }
+            });
+            if (osmRes.ok) {
+              const osmData = await osmRes.json();
+              if (Array.isArray(osmData)) {
+                return osmData;
+              }
             }
-          });
-          if (osmRes.ok) {
-            const osmData = await osmRes.json();
-            if (Array.isArray(osmData)) {
-              allResults.push(...osmData);
-            }
-          }
-          
-          // Faster requests (500ms between calls)
-          if (queries.indexOf(searchTerm) < queries.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-        }
+          } catch (_) {}
+          return [];
+        };
+        
+        const resultsArrays = await Promise.all(queries.map(fetchOne));
+        const allResults: any[] = resultsArrays.flat();
         
         console.log(`OSM returned ${allResults.length} total results`);
         

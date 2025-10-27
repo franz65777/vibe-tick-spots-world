@@ -89,7 +89,7 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
         body: { 
           lat: coordinates.lat, 
           lng: coordinates.lng,
-          limit: 20,
+          limit: 15,
           query: searchQuery || undefined
         }
       });
@@ -127,7 +127,7 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
     if (!isOpen || !coordinates || !searchQuery) return;
     const t = setTimeout(() => {
       fetchNearbySuggestions();
-    }, 300);
+    }, 150);
     return () => clearTimeout(t);
   }, [searchQuery]);
 
@@ -280,8 +280,8 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
         </div>
 
         {/* Nearby suggestions scrollable list */}
-        <div className="flex-1 min-h-0 overflow-hidden px-6 pb-6">
-          <ScrollArea className="h-full max-h-full">
+        <div className="flex-1 min-h-0 px-6 pb-6">
+          <ScrollArea className="h-full max-h-[60vh]">
             {isFetchingSuggestions ? (
               <div className="flex items-center justify-center py-16">
                 <div className="text-center space-y-3">
