@@ -106,19 +106,26 @@ serve(async (req) => {
       // Fallback to OpenStreetMap Nominatim if Foursquare fails
       console.log('Using OSM fallback for nearby search');
       try {
-        // Search in a 2km radius for better results
-        const radiusKm = 2;
+        // Search in a 3km radius for better results and strictly bound to current viewport
+        const radiusKm = 3;
+        const dy = radiusKm / 111; // approx degrees latitude per km
+        const dx = radiusKm / (111 * Math.cos((lat * Math.PI) / 180));
+        const left = lng - dx;
+        const right = lng + dx;
+        const top = lat + dy;
+        const bottom = lat - dy;
+
         const queries = query ? [query] : ['restaurant', 'cafe', 'bar', 'bakery', 'hotel', 'museum', 'cinema', 'theatre'];
         
         const allResults: any[] = [];
         
         for (const searchTerm of queries) {
-          const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=jsonv2&namedetails=1&addressdetails=1&limit=50&q=${encodeURIComponent(searchTerm)}&lat=${lat}&lon=${lng}`;
+          const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=jsonv2&namedetails=1&addressdetails=1&limit=50&bounded=1&viewbox=${left},${top},${right},${bottom}&q=${encodeURIComponent(searchTerm)}`;
           console.log(`Searching OSM for: ${searchTerm}`);
           const osmRes = await fetch(nominatimUrl, { 
             headers: { 
               'Accept': 'application/json', 
-              'User-Agent': 'SpottApp/1.0 (contact: support@spott.app)' 
+              'User-Agent': 'SpottApp/1.0 (contact: support@spott.app)'
             }
           });
           if (osmRes.ok) {
@@ -128,7 +135,7 @@ serve(async (req) => {
             }
           }
           
-          // Rate limit: wait 1 second between requests
+          // Respect rate limit between sequential requests
           if (queries.indexOf(searchTerm) < queries.length - 1) {
             await new Promise(resolve => setTimeout(resolve, 1000));
           }
@@ -136,7 +143,7 @@ serve(async (req) => {
         
         console.log(`OSM returned ${allResults.length} total results`);
         
-        const toCategory = (item: any): string | null => {
+        const toCategory = (item: any): string => {
           const cls = String(item.class || '').toLowerCase();
           const typ = String(item.type || '').toLowerCase();
           const name = String(item.namedetails?.name || item.display_name || '').toLowerCase();
@@ -147,7 +154,8 @@ serve(async (req) => {
           if ((cls === 'tourism' && (typ.includes('hotel') || typ.includes('hostel') || typ.includes('guest_house'))) || name.includes('hotel') || name.includes('hostel')) return 'hotel';
           if ((cls === 'tourism' && typ.includes('museum')) || name.includes('museum')) return 'museum';
           if (typ.includes('cinema') || typ.includes('theatre') || name.includes('cinema') || name.includes('theater') || name.includes('theatre') || name.includes('concert')) return 'entertainment';
-          return null;
+          // Fallback to restaurant so we never drop otherwise good results
+          return 'restaurant';
         };
         
         const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -160,15 +168,47 @@ serve(async (req) => {
           return Math.round(R * c);
         };
         
-        const places = allResults.map((item: any) => {
+        // Simple typo-tolerant similarity using Levenshtein distance
+        const levenshtein = (a: string, b: string) => {
+          a = a.toLowerCase();
+          b = b.toLowerCase();
+          const m = a.length, n = b.length;
+          const dp: number[] = Array(n + 1).fill(0);
+          for (let j = 0; j <= n; j++) dp[j] = j;
+          for (let i = 1; i <= m; i++) {
+            let prev = i - 1;
+            dp[0] = i;
+            for (let j = 1; j <= n; j++) {
+              const temp = dp[j];
+              dp[j] = Math.min(
+                dp[j] + 1, // deletion
+                dp[j - 1] + 1, // insertion
+                prev + (a[i - 1] === b[j - 1] ? 0 : 1) // substitution
+              );
+              prev = temp;
+            }
+          }
+          return dp[n];
+        };
+        const similarity = (name: string, q: string) => {
+          if (!q) return 0;
+          const dist = levenshtein(name, q);
+          const maxLen = Math.max(name.length, q.length) || 1;
+          const score = 1 - dist / maxLen;
+          // Bonus if query tokens are contained directly
+          const tokens = q.toLowerCase().split(/\s+/).filter(Boolean);
+          const containsBonus = tokens.every(t => name.toLowerCase().includes(t)) ? 0.15 : 0;
+          return Math.max(0, Math.min(1, score + containsBonus));
+        };
+        // Map raw OSM results to our shape and rank by proximity and name similarity (if query provided)
+        let places = allResults.map((item: any) => {
           const mapped = toCategory(item);
-          if (!mapped) return null;
           const plat = parseFloat(item.lat);
           const plng = parseFloat(item.lon);
           const distance = haversine(lat, lng, plat, plng);
           
-          // Filter by distance (2km radius)
-          if (distance > 2000) return null;
+          // Filter by distance (3km radius)
+          if (isNaN(plat) || isNaN(plng) || distance > 3000) return null;
           
           const addressObj = item.address || {};
           const city = addressObj.city || addressObj.town || addressObj.village || addressObj.hamlet || addressObj.county || addressObj.state || 'Unknown';
@@ -187,17 +227,48 @@ serve(async (req) => {
           }
           const formattedAddress = addressParts.length > 0 ? addressParts.join(', ') : item.display_name || 'Address not available';
           
+          const name = item.namedetails?.name || item.display_name?.split(',')[0] || 'Unknown place';
           return {
             fsq_id: item.osm_id ? `osm_${item.osm_id}` : item.place_id ? `osm_place_${item.place_id}` : `osm_${plat}_${plng}`,
-            name: item.namedetails?.name || item.display_name?.split(',')[0] || 'Unknown place',
+            name,
             category: mapped,
             address: formattedAddress,
             city,
             lat: plat,
             lng: plng,
             distance,
-          };
-        }).filter((p: any) => p !== null).sort((a: any, b: any) => a.distance - b.distance).slice(0, limit);
+            _nameScore: query ? similarity(name, query) : 0,
+          } as any;
+        }).filter((p: any) => p !== null);
+        
+        // De-duplicate by name+city
+        const seen = new Set<string>();
+        places = places.filter((p: any) => {
+          const key = `${p.name.toLowerCase()}_${p.city.toLowerCase()}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+        
+        // Sort by similarity (desc) then distance (asc) when searching, otherwise by distance only
+        places.sort((a: any, b: any) => {
+          if (query) {
+            if (b._nameScore !== a._nameScore) return b._nameScore - a._nameScore;
+          }
+          return a.distance - b.distance;
+        });
+        
+        // Trim to requested limit and remove private fields
+        places = places.slice(0, limit).map((p: any) => ({
+          fsq_id: p.fsq_id,
+          name: p.name,
+          category: p.category,
+          address: p.address,
+          city: p.city,
+          lat: p.lat,
+          lng: p.lng,
+          distance: p.distance,
+        }));
         
         console.log(`OSM fallback returning ${places.length} places`);
         return new Response(

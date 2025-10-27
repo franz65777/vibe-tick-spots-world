@@ -189,7 +189,7 @@ const MapSection = ({
         <MapCategoryFilters currentCity={currentCity} />
 
         {/* Map Controls - List View and Expand Toggle */}
-        <div className="absolute bottom-6 right-3 z-40 flex flex-col gap-2">
+        <div className="fixed bottom-6 right-3 z-[2100] flex flex-col gap-2">
           {/* Expand/Collapse Button */}
           {onToggleExpand && (
             <Button

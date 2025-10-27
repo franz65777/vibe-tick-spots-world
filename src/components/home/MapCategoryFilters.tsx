@@ -190,7 +190,7 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
   const selectedUsers = users.filter(u => selectedFollowedUserIds.includes(u.id));
 
   return (
-    <div className="absolute top-4 left-4 right-4 z-[2000] pointer-events-none">
+    <div className="fixed top-4 left-4 right-4 z-[2100] pointer-events-none">
       {/* Main Map Filters - Show all in 3 columns */}
       <div className={cn(
         "mb-2 transition-all duration-200 pointer-events-auto",

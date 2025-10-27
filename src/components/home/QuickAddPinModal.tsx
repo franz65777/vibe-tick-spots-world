@@ -121,6 +121,15 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
     }
   };
 
+  // Debounced search as-you-type (Google-like)
+  useEffect(() => {
+    if (!isOpen || !coordinates) return;
+    const t = setTimeout(() => {
+      fetchNearbySuggestions();
+    }, 400);
+    return () => clearTimeout(t);
+  }, [searchQuery, isOpen, coordinates]);
+
   const handleSuggestionSelect = (suggestion: NearbyPlace) => {
     setSelectedPlace({
       name: suggestion.name,
