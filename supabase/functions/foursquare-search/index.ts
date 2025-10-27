@@ -106,8 +106,8 @@ serve(async (req) => {
       // Fallback to OpenStreetMap Nominatim if Foursquare fails
       console.log('Using OSM fallback for nearby search');
       try {
-        // Search in a 1.5km radius for faster, more relevant results
-        const radiusKm = 1.5;
+        // Search in a 1km radius for faster, more relevant results
+        const radiusKm = 1.0;
         const dy = radiusKm / 111; // approx degrees latitude per km
         const dx = radiusKm / (111 * Math.cos((lat * Math.PI) / 180));
         const left = lng - dx;
@@ -115,31 +115,31 @@ serve(async (req) => {
         const top = lat + dy;
         const bottom = lat - dy;
 
-        const queries = query ? [query] : ['restaurant', 'cafe', 'bar', 'bakery', 'hotel', 'museum', 'cinema', 'theatre'];
+        const queries = query ? [query] : ['restaurant', 'cafe', 'bar', 'bakery', 'hotel', 'museum'];
         
-        const allResults: any[] = [];
-        
-        for (const searchTerm of queries) {
-          const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=jsonv2&namedetails=1&addressdetails=1&limit=20&bounded=1&viewbox=${left},${top},${right},${bottom}&q=${encodeURIComponent(searchTerm)}`;
+        // Fetch all queries in parallel for maximum speed
+        const fetchPromises = queries.map(async (searchTerm) => {
+          const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=jsonv2&namedetails=1&addressdetails=1&limit=12&bounded=1&viewbox=${left},${top},${right},${bottom}&q=${encodeURIComponent(searchTerm)}`;
           console.log(`Searching OSM for: ${searchTerm}`);
-          const osmRes = await fetch(nominatimUrl, { 
-            headers: { 
-              'Accept': 'application/json', 
-              'User-Agent': 'SpottApp/1.0 (contact: support@spott.app)'
+          try {
+            const osmRes = await fetch(nominatimUrl, { 
+              headers: { 
+                'Accept': 'application/json', 
+                'User-Agent': 'SpottApp/1.0 (contact: support@spott.app)'
+              }
+            });
+            if (osmRes.ok) {
+              const osmData = await osmRes.json();
+              return Array.isArray(osmData) ? osmData : [];
             }
-          });
-          if (osmRes.ok) {
-            const osmData = await osmRes.json();
-            if (Array.isArray(osmData)) {
-              allResults.push(...osmData);
-            }
+          } catch (e) {
+            console.error(`OSM fetch failed for ${searchTerm}:`, e);
           }
-          
-          // Faster requests (500ms between calls)
-          if (queries.indexOf(searchTerm) < queries.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-        }
+          return [];
+        });
+        
+        const results = await Promise.all(fetchPromises);
+        const allResults = results.flat();
         
         console.log(`OSM returned ${allResults.length} total results`);
         
@@ -207,8 +207,8 @@ serve(async (req) => {
           const plng = parseFloat(item.lon);
           const distance = haversine(lat, lng, plat, plng);
           
-          // Filter by distance (1.5km radius for faster results)
-          if (isNaN(plat) || isNaN(plng) || distance > 1500) return null;
+          // Filter by distance (1km radius for faster results)
+          if (isNaN(plat) || isNaN(plng) || distance > 1000) return null;
           
           const addressObj = item.address || {};
           const city = addressObj.city || addressObj.town || addressObj.village || addressObj.hamlet || addressObj.county || addressObj.state || 'Unknown';

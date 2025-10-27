@@ -188,9 +188,14 @@ const MapSection = ({
           />
         )}
 
-        {/* Map Category Filters - Always visible, position changes based on expanded state */}
-        <div className={isExpanded ? 'fixed top-4 left-1/2 -translate-x-1/2 z-[1100]' : 'absolute top-4 left-1/2 -translate-x-1/2 z-[1100]'}>
-          <MapCategoryFilters currentCity={currentCity} />
+        {/* Map Category Filters - Always visible, properly positioned */}
+        <div className={cn(
+          "z-[1100] w-full max-w-[95vw] mx-auto px-4",
+          isExpanded ? "fixed top-6 left-0 right-0" : "absolute top-4 left-0 right-0"
+        )}>
+          <div className="flex justify-center">
+            <MapCategoryFilters currentCity={currentCity} />
+          </div>
         </div>
 
         {/* Map Controls - List View and Expand Toggle - Inside map */}

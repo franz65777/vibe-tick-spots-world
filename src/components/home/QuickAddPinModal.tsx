@@ -89,7 +89,7 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
         body: { 
           lat: coordinates.lat, 
           lng: coordinates.lng,
-          limit: 20,
+          limit: 8,
           query: searchQuery || undefined
         }
       });
