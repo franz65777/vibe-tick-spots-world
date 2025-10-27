@@ -18,6 +18,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { categoryDisplayNames, type AllowedCategory } from '@/utils/allowedCategories';
 
+import { useTranslation } from 'react-i18next';
+
 // Import category icons
 import restaurantIcon from '@/assets/category-restaurant-upload.png';
 import barIcon from '@/assets/category-bar-upload.png';
@@ -64,6 +66,8 @@ const MapSection = ({
   const [newLocationCoords, setNewLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [pinToShare, setPinToShare] = useState<PinShareData | null>(null);
+  
+  const { t } = useTranslation();
   
   // Use global filter context - single source of truth
   const { activeFilter, selectedCategories, selectedFollowedUserIds, setActiveFilter, toggleCategory } = useMapFilter();
