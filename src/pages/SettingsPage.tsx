@@ -4,7 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import i18n from '@/i18n';
 
 const languages = [
   { code: 'en', label: 'English' },
@@ -19,6 +21,8 @@ const SettingsPage: React.FC = () => {
   const { user } = useAuth();
   const [language, setLanguage] = useState('en');
   const [saving, setSaving] = useState(false);
+  const [useCustom, setUseCustom] = useState(false);
+  const [customLanguage, setCustomLanguage] = useState('');
 
   useEffect(() => {
     const load = async () => {
@@ -28,20 +32,30 @@ const SettingsPage: React.FC = () => {
         .select('language')
         .eq('id', user.id)
         .single();
-      if (data?.language) setLanguage(data.language);
+      const lang = data?.language || 'en';
+      setLanguage(lang);
+      i18n.changeLanguage(lang);
+      if (!languages.find(l => l.code === lang)) {
+        setUseCustom(true);
+        setCustomLanguage(lang);
+      } else {
+        setUseCustom(false);
+      }
     };
     load();
   }, [user?.id]);
 
   const onSave = async () => {
     if (!user?.id) return;
+    const langToSave = useCustom ? (customLanguage || 'en') : language;
     setSaving(true);
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ language })
+        .update({ language: langToSave })
         .eq('id', user.id);
       if (error) throw error;
+      i18n.changeLanguage(langToSave);
       toast.success('Language preference saved');
     } catch (e: any) {
       toast.error(e?.message || 'Failed to save');
@@ -59,7 +73,10 @@ const SettingsPage: React.FC = () => {
         <CardContent className="space-y-4">
           <div>
             <div className="text-sm font-medium mb-2">Language</div>
-            <Select value={language} onValueChange={setLanguage}>
+            <Select value={useCustom ? '__custom__' : language} onValueChange={(val) => {
+                if (val === '__custom__') { setUseCustom(true); }
+                else { setUseCustom(false); setLanguage(val); }
+              }}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Choose language" />
               </SelectTrigger>
@@ -67,8 +84,19 @@ const SettingsPage: React.FC = () => {
                 {languages.map(l => (
                   <SelectItem key={l.code} value={l.code}>{l.label}</SelectItem>
                 ))}
+                <SelectItem value="__custom__">Other / Custom…</SelectItem>
               </SelectContent>
             </Select>
+            {useCustom && (
+              <div className="mt-2 space-y-1">
+                <Input
+                  value={customLanguage}
+                  onChange={(e) => setCustomLanguage(e.target.value)}
+                  placeholder="Language code, e.g., ar, zh-CN, hi, ru"
+                />
+                <p className="text-xs text-muted-foreground">Enter any BCP‑47 language tag.</p>
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end">

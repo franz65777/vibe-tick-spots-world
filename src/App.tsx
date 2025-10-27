@@ -37,6 +37,8 @@ import { useEffect } from 'react';
 import './App.css';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import SettingsPage from '@/pages/SettingsPage';
+import { supabase } from '@/integrations/supabase/client';
+import i18n from '@/i18n';
 
 // Initialize analytics cleanup service for data privacy compliance
 import '@/services/analyticsCleanupService';
@@ -54,6 +56,20 @@ function AppContent() {
       retentionAnalyticsService.trackSessionStart();
     }
   }, [user]);
+
+  useEffect(() => {
+    const loadLang = async () => {
+      if (!user?.id) return;
+      const { data } = await supabase
+        .from('profiles')
+        .select('language')
+        .eq('id', user.id)
+        .single();
+      const lang = data?.language || 'en';
+      try { i18n.changeLanguage(lang); } catch {}
+    };
+    loadLang();
+  }, [user?.id]);
 
   return (
     <Routes>

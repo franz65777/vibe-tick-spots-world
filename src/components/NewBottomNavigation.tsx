@@ -5,6 +5,7 @@ import { useAnalytics } from '@/hooks/useAnalytics';
 import { Map, Search, Plus, Activity, User } from 'lucide-react';
 import { toast } from 'sonner';
 import AccountSwitchModal from './AccountSwitchModal';
+import { useTranslation } from 'react-i18next';
 
 const NewBottomNavigation = () => {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ const NewBottomNavigation = () => {
   
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
+  const { t } = useTranslation();
 
   const handleNavClick = (path: string, label: string) => {
     navigate(path);
@@ -53,27 +55,27 @@ const NewBottomNavigation = () => {
   const navItems = [
     { 
       icon: <Map size={24} strokeWidth={2} />, 
-      label: 'Explore', 
+      label: t('navigation.explore'), 
       path: '/'
     },
     { 
       icon: <Search size={24} strokeWidth={2} />, 
-      label: 'Search', 
+      label: t('navigation.search'), 
       path: '/explore'
     },
     { 
       icon: <Plus size={24} strokeWidth={2} />, 
-      label: 'Add', 
+      label: t('navigation.add'), 
       path: '/add'
     },
     { 
       icon: <Activity size={24} strokeWidth={2} />, 
-      label: 'Feed', 
+      label: t('navigation.feed'), 
       path: '/feed'
     },
     { 
       icon: <User size={24} strokeWidth={2} />, 
-      label: 'Profile', 
+      label: t('navigation.profile'), 
       path: '/profile'
     },
   ];

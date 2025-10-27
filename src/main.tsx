@@ -3,6 +3,7 @@ import App from './App.tsx'
 import MinimalApp from './components/MinimalApp.tsx'
 import 'leaflet/dist/leaflet.css'
 import './index.css'
+import './i18n'
 
 console.log('🚀 Starting full app with dependencies fixed...');
 
