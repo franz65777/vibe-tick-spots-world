@@ -18,6 +18,7 @@ import ProfilePictureEditor from '../ProfilePictureEditor';
 import { useFollowStats } from '@/hooks/useFollowStats';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 interface ProfileHeaderProps {
   onFollowersClick: () => void;
@@ -32,6 +33,7 @@ const ProfileHeader = ({
   onPostsClick, 
   onLocationsClick 
 }: ProfileHeaderProps) => {
+  const { t } = useTranslation();
   const { profile, refetch } = useProfile();
   const { user } = useAuth();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -174,19 +176,19 @@ const ProfileHeader = ({
                   <MoreHorizontal className="w-5 h-5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuContent align="end" className="w-48 bg-background z-50">
                 <DropdownMenuItem onClick={() => setIsEditModalOpen(true)}>
                   <Edit className="w-4 h-4 mr-2" />
-                  Edit Profile
+                  {t('common.edit')} {t('navigation.profile')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/settings')}>
                   <Settings className="w-4 h-4 mr-2" />
-                  Settings
+                  {t('settings.title')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-destructive">
                   <LogOut className="w-4 h-4 mr-2" />
-                  Logout
+                  {t('common.logout')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -199,7 +201,7 @@ const ProfileHeader = ({
               onClick={onFollowersClick}
             >
               <div className="text-sm font-bold text-foreground">{displayStats.followers}</div>
-              <div className="text-xs text-muted-foreground">Followers</div>
+              <div className="text-xs text-muted-foreground">{t('common.followers')}</div>
             </button>
             
             <button 
@@ -207,7 +209,7 @@ const ProfileHeader = ({
               onClick={onFollowingClick}
             >
               <div className="text-sm font-bold text-foreground">{displayStats.following}</div>
-              <div className="text-xs text-muted-foreground">Following</div>
+              <div className="text-xs text-muted-foreground">{t('common.following')}</div>
             </button>
             
             <button 
@@ -215,7 +217,7 @@ const ProfileHeader = ({
               onClick={onLocationsClick}
             >
               <div className="text-sm font-bold text-foreground">{displayStats.locations}</div>
-              <div className="text-xs text-muted-foreground">Saved</div>
+              <div className="text-xs text-muted-foreground">{t('mapFilters.saved')}</div>
             </button>
           </div>
 

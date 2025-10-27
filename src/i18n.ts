@@ -29,6 +29,7 @@ const resources = {
       locations: 'Locations',
       submit: 'Submit',
       close: 'Close',
+      logout: 'Logout',
     },
     navigation: {
       explore: 'Explore',
@@ -147,6 +148,7 @@ const resources = {
       locations: 'Lugares',
       submit: 'Enviar',
       close: 'Cerrar',
+      logout: 'Cerrar sesión',
     },
     navigation: {
       explore: 'Explorar',
@@ -265,6 +267,7 @@ const resources = {
       locations: 'Lieux',
       submit: 'Soumettre',
       close: 'Fermer',
+      logout: 'Déconnexion',
     },
     navigation: {
       explore: 'Explorer',
@@ -383,6 +386,7 @@ const resources = {
       locations: 'Orte',
       submit: 'Absenden',
       close: 'Schließen',
+      logout: 'Abmelden',
     },
     navigation: {
       explore: 'Entdecken',
@@ -501,6 +505,7 @@ const resources = {
       locations: 'Luoghi',
       submit: 'Invia',
       close: 'Chiudi',
+      logout: 'Esci',
     },
     navigation: {
       explore: 'Esplora',
@@ -619,6 +624,7 @@ const resources = {
       locations: 'Locais',
       submit: 'Enviar',
       close: 'Fechar',
+      logout: 'Sair',
     },
     navigation: {
       explore: 'Explorar',
