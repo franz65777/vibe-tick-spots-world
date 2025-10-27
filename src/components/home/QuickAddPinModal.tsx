@@ -1,13 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { MapPin, Plus, Loader2, Navigation, Star } from 'lucide-react';
+import { MapPin, Loader2, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { categoryDisplayNames, type AllowedCategory } from '@/utils/allowedCategories';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+
+// Import category icons
+import restaurantIcon from '@/assets/category-restaurant-upload.png';
+import barIcon from '@/assets/category-bar-upload.png';
+import cafeIcon from '@/assets/category-cafe-upload.png';
+import bakeryIcon from '@/assets/category-bakery-upload.png';
+import hotelIcon from '@/assets/category-hotel-upload.png';
+import museumIcon from '@/assets/category-museum-upload.png';
+import entertainmentIcon from '@/assets/category-entertainment-upload.png';
+
+const getCategoryIconImage = (category: string): string => {
+  switch (category) {
+    case 'restaurant': return restaurantIcon;
+    case 'bar': return barIcon;
+    case 'cafe': return cafeIcon;
+    case 'bakery': return bakeryIcon;
+    case 'hotel': return hotelIcon;
+    case 'museum': return museumIcon;
+    case 'entertainment': return entertainmentIcon;
+    default: return restaurantIcon;
+  }
+};
 
 interface QuickAddPinModalProps {
   isOpen: boolean;
@@ -212,20 +234,20 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col p-0 rounded-2xl">
-        <DialogHeader className="px-6 pt-6 pb-2">
-          <div className="flex items-center gap-2">
-            <Navigation className="w-5 h-5 text-primary" />
-            <DialogTitle className="text-xl">Quick Add Location</DialogTitle>
+      <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col p-0 rounded-3xl">
+        <DialogHeader className="px-6 pt-6 pb-3 border-b">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <MapPin className="w-5 h-5 text-primary" />
+            </div>
+            <DialogTitle className="text-2xl font-semibold">Save Location to Favorites</DialogTitle>
           </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            Find and save nearby places to your favorites
-          </p>
         </DialogHeader>
 
-        <div className="px-6 space-y-3 flex-shrink-0">
+        <div className="px-6 py-4 flex-shrink-0">
           {/* Search input */}
           <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -234,115 +256,121 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
                   fetchNearbySuggestions();
                 }
               }}
-              placeholder="Search nearby places..."
-              className="pr-10"
+              placeholder="Filter results or type to search..."
+              className="pl-10 h-12 text-base border-2 rounded-xl"
             />
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={fetchNearbySuggestions}
-              disabled={isFetchingSuggestions}
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-7"
-            >
-              {isFetchingSuggestions ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <span className="text-xs">Search</span>
-              )}
-            </Button>
           </div>
-
-          {/* Selected place preview */}
-          {selectedPlace && (
-            <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg animate-in fade-in slide-in-from-top-2">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-start gap-2 flex-1 min-w-0">
-                  <Star className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-sm">{selectedPlace.name}</div>
-                    <div className="text-xs text-muted-foreground truncate">{selectedPlace.address}</div>
-                    <Badge variant="secondary" className="mt-1 text-xs">
-                      {categoryDisplayNames[selectedPlace.category]}
-                    </Badge>
-                  </div>
-                </div>
-                <Button
-                  onClick={handleSavePin}
-                  disabled={isLoading}
-                  size="sm"
-                  className="flex-shrink-0"
-                >
-                  {isLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Plus className="w-4 h-4 mr-1" />
-                      Save
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
+          
+          {/* Helper text */}
+          {!isFetchingSuggestions && nearbySuggestions.length > 0 && (
+            <p className="text-sm text-muted-foreground mt-3">
+              Tap a suggestion below or keep typing to search:
+            </p>
           )}
         </div>
 
-        {/* Nearby suggestions */}
-        <div className="flex-1 min-h-0">
-          <ScrollArea className="h-full px-6 pb-6">
+        {/* Nearby suggestions scrollable list */}
+        <div className="flex-1 min-h-0 px-6 pb-6">
+          <ScrollArea className="h-full">
             {isFetchingSuggestions ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-center space-y-2">
-                  <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+              <div className="flex items-center justify-center py-16">
+                <div className="text-center space-y-3">
+                  <Loader2 className="w-10 h-10 animate-spin mx-auto text-primary" />
                   <p className="text-sm text-muted-foreground">Finding nearby places...</p>
                 </div>
               </div>
             ) : nearbySuggestions.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <MapPin className="w-12 h-12 text-muted-foreground/40 mb-3" />
-                <p className="text-sm font-medium">No locations found nearby</p>
-                <p className="text-xs text-muted-foreground mt-1">Try searching or drop a pin elsewhere</p>
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <MapPin className="w-16 h-16 text-muted-foreground/30 mb-4" />
+                <p className="text-base font-medium text-foreground">No locations found nearby</p>
+                <p className="text-sm text-muted-foreground mt-2">Try searching or drop a pin elsewhere</p>
               </div>
             ) : (
-              <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
-                  Nearby Suggestions ({nearbySuggestions.length})
-                </p>
-                {nearbySuggestions.map((suggestion) => (
-                  <button
-                    key={suggestion.fsq_id}
-                    onClick={() => handleSuggestionSelect(suggestion)}
-                    className={`w-full p-3 rounded-lg border text-left transition-all hover:shadow-md ${
-                      selectedPlace?.name === suggestion.name && selectedPlace?.lat === suggestion.lat
-                        ? 'border-primary bg-primary/5 shadow-sm'
-                        : 'border-border bg-card hover:border-primary/50'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <MapPin className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
-                        selectedPlace?.name === suggestion.name && selectedPlace?.lat === suggestion.lat
-                          ? 'text-primary'
-                          : 'text-muted-foreground'
-                      }`} />
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm">{suggestion.name}</div>
-                        <div className="text-xs text-muted-foreground truncate mt-0.5">
-                          {suggestion.address}
+              <div className="space-y-3 pb-4">
+                {nearbySuggestions.map((suggestion) => {
+                  const categoryIcon = getCategoryIconImage(suggestion.category);
+                  const isSelected = selectedPlace?.name === suggestion.name && selectedPlace?.lat === suggestion.lat;
+                  
+                  return (
+                    <button
+                      key={suggestion.fsq_id}
+                      onClick={() => handleSuggestionSelect(suggestion)}
+                      className={`w-full p-4 rounded-2xl text-left transition-all group relative ${
+                        isSelected
+                          ? 'bg-primary/5 border-2 border-primary shadow-md'
+                          : 'bg-card border-2 border-border hover:border-primary/50 hover:shadow-md'
+                      }`}
+                    >
+                      <div className="flex items-start gap-4">
+                        {/* Icon */}
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                          isSelected ? 'bg-primary/10' : 'bg-muted'
+                        }`}>
+                          <img 
+                            src={categoryIcon} 
+                            alt={suggestion.category}
+                            className="w-8 h-8 object-contain"
+                          />
                         </div>
-                        <div className="flex items-center gap-2 mt-1.5">
-                          <Badge variant="outline" className="text-xs">
-                            {categoryDisplayNames[suggestion.category]}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {suggestion.distance}m away
-                          </span>
+                        
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-base text-foreground mb-1">
+                            {suggestion.name}
+                          </h4>
+                          <p className="text-sm text-muted-foreground line-clamp-1">
+                            {suggestion.address}
+                          </p>
+                          
+                          {/* Category and distance */}
+                          <div className="flex items-center gap-2 mt-2">
+                            <Badge variant="secondary" className="text-xs font-medium">
+                              {categoryDisplayNames[suggestion.category]}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {Math.round(suggestion.distance)}m away
+                            </span>
+                          </div>
                         </div>
+
+                        {/* Save button on hover/selected */}
+                        {isSelected && (
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSavePin();
+                            }}
+                            disabled={isLoading}
+                            size="lg"
+                            className="flex-shrink-0 rounded-xl shadow-md h-12 px-6"
+                          >
+                            {isLoading ? (
+                              <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : (
+                              <span className="font-semibold">Save to Favorites</span>
+                            )}
+                          </Button>
+                        )}
                       </div>
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </ScrollArea>
+        </div>
+
+        {/* Cancel button at bottom */}
+        <div className="px-6 pb-6 pt-2 border-t">
+          <Button
+            onClick={handleClose}
+            variant="outline"
+            size="lg"
+            className="w-full rounded-xl h-12"
+            disabled={isLoading}
+          >
+            Cancel
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

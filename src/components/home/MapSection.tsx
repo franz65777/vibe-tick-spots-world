@@ -16,6 +16,29 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { categoryDisplayNames, type AllowedCategory } from '@/utils/allowedCategories';
+
+// Import category icons
+import restaurantIcon from '@/assets/category-restaurant-upload.png';
+import barIcon from '@/assets/category-bar-upload.png';
+import cafeIcon from '@/assets/category-cafe-upload.png';
+import bakeryIcon from '@/assets/category-bakery-upload.png';
+import hotelIcon from '@/assets/category-hotel-upload.png';
+import museumIcon from '@/assets/category-museum-upload.png';
+import entertainmentIcon from '@/assets/category-entertainment-upload.png';
+
+const getCategoryIconImage = (category: string): string => {
+  switch (category) {
+    case 'restaurant': return restaurantIcon;
+    case 'bar': return barIcon;
+    case 'cafe': return cafeIcon;
+    case 'bakery': return bakeryIcon;
+    case 'hotel': return hotelIcon;
+    case 'museum': return museumIcon;
+    case 'entertainment': return entertainmentIcon;
+    default: return restaurantIcon;
+  }
+};
 
 interface MapSectionProps {
   mapCenter: { lat: number; lng: number };
@@ -192,53 +215,89 @@ const MapSection = ({
                 <List className="w-4 h-4 text-foreground" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="bottom" className="h-[70vh] rounded-t-3xl">
-              <SheetHeader>
-                <SheetTitle className="flex items-center gap-2">
-                  {activeFilter === 'following' && 'Amici'}
-                  {activeFilter === 'popular' && 'Popolari'}
-                  {activeFilter === 'saved' && 'Salvati'} Locations
-                  <Badge variant="secondary" className="ml-auto">
+            <SheetContent side="bottom" className="h-[75vh] rounded-t-3xl">
+              <SheetHeader className="pb-4">
+                <SheetTitle className="text-xl font-semibold">
+                  Locations
+                  <Badge variant="secondary" className="ml-3 text-sm">
                     {places.length}
                   </Badge>
                 </SheetTitle>
+                
+                {/* Filter buttons */}
+                <div className="flex gap-2 mt-4">
+                  <Button
+                    size="sm"
+                    variant={activeFilter === 'following' ? 'default' : 'outline'}
+                    onClick={() => setActiveFilter('following')}
+                    className="rounded-full"
+                  >
+                    Following
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={activeFilter === 'popular' ? 'default' : 'outline'}
+                    onClick={() => setActiveFilter('popular')}
+                    className="rounded-full"
+                  >
+                    Popular
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={activeFilter === 'saved' ? 'default' : 'outline'}
+                    onClick={() => setActiveFilter('saved')}
+                    className="rounded-full"
+                  >
+                    Saved
+                  </Button>
+                </div>
               </SheetHeader>
-              <ScrollArea className="h-[calc(70vh-80px)] mt-4">
+              <ScrollArea className="h-[calc(75vh-160px)] mt-4">
                 <div className="space-y-3 pr-4">
-                  {places.map((place) => (
-                    <button
-                      key={place.id}
-                      onClick={() => {
-                        handlePinClick(place);
-                        setIsListViewOpen(false);
-                      }}
-                      className="w-full flex items-start gap-3 p-3 bg-white border border-gray-200 rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-all text-left"
-                    >
-                      <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-lg shrink-0">
-                        {place.name[0]?.toUpperCase()}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-gray-900 truncate">
-                          {place.name}
-                        </h4>
-                        <p className="text-sm text-gray-500 truncate">
-                          {place.address || place.category}
-                        </p>
-                        <div className="flex items-center gap-2 mt-1">
-                          {place.isFollowing && (
-                            <Badge className="bg-blue-100 text-blue-700 text-xs">
-                              Following
-                            </Badge>
-                          )}
-                          {place.isSaved && (
-                            <Badge className="bg-green-100 text-green-700 text-xs">
-                              Saved
-                            </Badge>
-                          )}
+                  {places.map((place) => {
+                    const categoryIcon = getCategoryIconImage(place.category);
+                    return (
+                      <button
+                        key={place.id}
+                        onClick={() => {
+                          handlePinClick(place);
+                          setIsListViewOpen(false);
+                        }}
+                        className="w-full flex items-start gap-4 p-4 bg-card border-2 border-border rounded-2xl hover:border-primary/50 hover:shadow-md transition-all text-left"
+                      >
+                        <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center shrink-0">
+                          <img 
+                            src={categoryIcon} 
+                            alt={place.category}
+                            className="w-9 h-9 object-contain"
+                          />
                         </div>
-                      </div>
-                    </button>
-                  ))}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-base text-foreground mb-1">
+                            {place.name}
+                          </h4>
+                          <p className="text-sm text-muted-foreground line-clamp-1 mb-2">
+                            {place.address || 'Address not available'}
+                          </p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge variant="secondary" className="text-xs">
+                              {categoryDisplayNames[place.category as AllowedCategory]}
+                            </Badge>
+                            {place.isFollowing && (
+                              <Badge className="bg-blue-100 text-blue-700 text-xs border-blue-200">
+                                Following
+                              </Badge>
+                            )}
+                            {place.isSaved && (
+                              <Badge className="bg-green-100 text-green-700 text-xs border-green-200">
+                                Saved
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
                   
                   {places.length === 0 && (
                     <div className="text-center py-8 text-gray-500">
