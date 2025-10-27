@@ -55,27 +55,27 @@ const NewBottomNavigation = () => {
   const navItems = [
     { 
       icon: <Map size={24} strokeWidth={2} />, 
-      label: t('navigation.explore'), 
+      label: t('navigation:explore'), 
       path: '/'
     },
     { 
       icon: <Search size={24} strokeWidth={2} />, 
-      label: t('navigation.search'), 
+      label: t('navigation:search'), 
       path: '/explore'
     },
     { 
       icon: <Plus size={24} strokeWidth={2} />, 
-      label: t('navigation.add'), 
+      label: t('navigation:add'), 
       path: '/add'
     },
     { 
       icon: <Activity size={24} strokeWidth={2} />, 
-      label: t('navigation.feed'), 
+      label: t('navigation:feed'), 
       path: '/feed'
     },
     { 
       icon: <User size={24} strokeWidth={2} />, 
-      label: t('navigation.profile'), 
+      label: t('navigation:profile'), 
       path: '/profile'
     },
   ];

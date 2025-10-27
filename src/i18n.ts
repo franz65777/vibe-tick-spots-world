@@ -117,7 +117,7 @@ i18n
   .init({
     resources,
     fallbackLng: 'en',
-    supportedLngs: Object.keys(resources),
+    // supportedLngs disabled to allow any BCP-47 language
     defaultNS: 'common',
     interpolation: { escapeValue: false },
     detection: {

@@ -66,9 +66,9 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
   const [loading, setLoading] = useState(false);
 
   const mapFilters = [
-    { id: 'following' as const, name: t('mapFilters.following'), icon: Users, description: t('mapFilters.followingDesc') },
-    { id: 'popular' as const, name: t('mapFilters.popular'), icon: TrendingUp, description: t('mapFilters.popularDesc') },
-    { id: 'saved' as const, name: t('mapFilters.saved'), icon: Bookmark, description: t('mapFilters.savedDesc') }
+    { id: 'following' as const, name: t('mapFilters:following'), icon: Users, description: t('mapFilters:followingDesc') },
+    { id: 'popular' as const, name: t('mapFilters:popular'), icon: TrendingUp, description: t('mapFilters:popularDesc') },
+    { id: 'saved' as const, name: t('mapFilters:saved'), icon: Bookmark, description: t('mapFilters:savedDesc') }
   ];
 
   const handleFollowingClick = () => {
@@ -257,7 +257,7 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
             <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
             <Input
               type="text"
-              placeholder={t('mapFilters.searchPlaceholder')}
+              placeholder={t('mapFilters:searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="flex-1 border-0 focus-visible:ring-0 h-8 text-sm bg-transparent"
@@ -268,14 +268,14 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
             <button
               onClick={() => setShowUserSearch(true)}
               className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex-shrink-0"
-              title={t('mapFilters.addAnother')}
+              title={t('mapFilters:addAnother')}
             >
               <Plus className="w-4 h-4" />
             </button>
             <button
               onClick={handleExitSearch}
               className="p-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors flex-shrink-0"
-              title={t('mapFilters.clearFilter')}
+              title={t('mapFilters:clearFilter')}
             >
               <X className="w-4 h-4" />
             </button>
@@ -313,14 +313,14 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
           
           {users.length === 0 && !loading && (
             <p className="mt-3 text-xs text-gray-500 text-center">
-              {t('mapFilters.noUsersInCity', { city: currentCity || t('common.thisCity') })}
+              {t('mapFilters:noUsersInCity', { city: currentCity || t('common:thisCity') })}
             </p>
           )}
 
           {/* Selected Users */}
           {selectedUsers.length > 0 && (
             <div className="mt-3 pt-3 border-t border-gray-200">
-              <p className="text-xs text-gray-500 mb-2 font-medium">{t('mapFilters.showingPinsFrom')}</p>
+              <p className="text-xs text-gray-500 mb-2 font-medium">{t('mapFilters:showingPinsFrom')}</p>
               <div className="flex flex-wrap gap-1.5">
                 {selectedUsers.map(user => (
                   <div
@@ -366,7 +366,7 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
               )}
             >
               <IconComponent className="w-4 h-4" />
-              <span className="text-sm">{t(`categories.${category.id}`, { defaultValue: category.name })}</span>
+              <span className="text-sm">{t(`categories:${category.id}`, { defaultValue: category.name })}</span>
             </button>
           );
         })}
@@ -375,7 +375,7 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
             onClick={clearCategories}
             className="flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium bg-white/80 text-gray-500 hover:bg-white/90 transition-all duration-200 shadow-sm backdrop-blur-sm"
           >
-            {t('common.clearAll')}
+            {t('common:clearAll')}
           </button>
         )}
       </div>
