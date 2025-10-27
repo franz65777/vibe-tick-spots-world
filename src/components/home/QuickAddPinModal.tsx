@@ -69,8 +69,8 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
   // Fetch nearby suggestions when modal opens with coordinates (immediate load)
   useEffect(() => {
     if (isOpen && coordinates) {
-      // Immediate fetch on open
-      fetchNearbySuggestions();
+      // Immediate fetch on open (fast mode)
+      fetchNearbySuggestions(true);
     } else {
       setNearbySuggestions([]);
       setSelectedPlace(null);
@@ -78,7 +78,7 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
     }
   }, [isOpen, coordinates]);
 
-  const fetchNearbySuggestions = async () => {
+  const fetchNearbySuggestions = async (fast = false) => {
     if (!coordinates) return;
     
     setIsFetchingSuggestions(true);
@@ -89,7 +89,9 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
         body: { 
           lat: coordinates.lat, 
           lng: coordinates.lng,
-          limit: 8,
+          limit: fast ? 6 : 10,
+          radiusKm: fast ? 0.6 : 1.0,
+          fast: fast ? true : undefined,
           query: searchQuery || undefined
         }
       });
@@ -126,8 +128,8 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
   useEffect(() => {
     if (!isOpen || !coordinates || !searchQuery) return;
     const t = setTimeout(() => {
-      fetchNearbySuggestions();
-    }, 300);
+      fetchNearbySuggestions(true);
+    }, 120);
     return () => clearTimeout(t);
   }, [searchQuery]);
 
@@ -263,7 +265,7 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
-                  fetchNearbySuggestions();
+                  fetchNearbySuggestions(true);
                 }
               }}
               placeholder="Filter results or type to search..."
@@ -281,7 +283,7 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
 
         {/* Nearby suggestions scrollable list */}
         <div className="flex-1 min-h-0 overflow-hidden px-6 pb-6">
-          <ScrollArea className="h-full max-h-full">
+          <ScrollArea className="h-[55vh] max-h-[55vh]">
             {isFetchingSuggestions ? (
               <div className="flex items-center justify-center py-16">
                 <div className="text-center space-y-3">
@@ -341,24 +343,6 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
                           </div>
                         </div>
 
-                        {/* Save button on hover/selected */}
-                        {isSelected && (
-                          <Button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSavePin();
-                            }}
-                            disabled={isLoading}
-                            size="lg"
-                            className="flex-shrink-0 rounded-xl shadow-md h-12 px-6"
-                          >
-                            {isLoading ? (
-                              <Loader2 className="w-5 h-5 animate-spin" />
-                            ) : (
-                              <span className="font-semibold">Save to Favorites</span>
-                            )}
-                          </Button>
-                        )}
                       </div>
                     </button>
                   );
@@ -368,17 +352,43 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
           </ScrollArea>
         </div>
 
-        {/* Cancel button at bottom */}
+        {/* Footer actions - dynamic */}
         <div className="px-6 pb-6 pt-2 border-t">
-          <Button
-            onClick={handleClose}
-            variant="outline"
-            size="lg"
-            className="w-full rounded-xl h-12"
-            disabled={isLoading}
-          >
-            Cancel
-          </Button>
+          {selectedPlace ? (
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                onClick={handleClose}
+                variant="outline"
+                size="lg"
+                className="rounded-xl h-12"
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSavePin}
+                size="lg"
+                className="rounded-xl h-12"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <span className="font-semibold">Save Location</span>
+                )}
+              </Button>
+            </div>
+          ) : (
+            <Button
+              onClick={handleClose}
+              variant="outline"
+              size="lg"
+              className="w-full rounded-xl h-12"
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>

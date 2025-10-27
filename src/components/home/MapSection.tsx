@@ -171,7 +171,7 @@ const MapSection = ({
 
   return (
     <>
-      <div className={`${isExpanded ? 'fixed inset-0 w-screen h-screen p-3' : 'flex-1 relative min-h-[500px]'} w-full overflow-hidden`}>
+      <div className={`${isExpanded ? 'fixed inset-0 w-screen h-screen p-3 relative' : 'flex-1 relative min-h-[500px]'} w-full overflow-hidden`}>
         {/* Hide map when list view is open */}
         {!isListViewOpen && (
           <LeafletMapSetup
@@ -188,10 +188,10 @@ const MapSection = ({
           />
         )}
 
-        {/* Map Category Filters - Always visible, properly positioned */}
+        {/* Map Category Filters - Always visible, properly positioned at top of map */}
         <div className={cn(
           "z-[1100] w-full max-w-[95vw] mx-auto px-4",
-          isExpanded ? "fixed top-6 left-0 right-0" : "absolute top-4 left-0 right-0"
+          isExpanded ? "absolute top-4 left-0 right-0" : "absolute top-20 left-0 right-0"
         )}>
           <div className="flex justify-center">
             <MapCategoryFilters currentCity={currentCity} />

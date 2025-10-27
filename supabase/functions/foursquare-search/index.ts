@@ -68,7 +68,15 @@ serve(async (req) => {
     // If the key is missing, do NOT throw. We'll gracefully fallback to OpenStreetMap.
     // We'll still attempt Foursquare when a key is present.
 
-    const { lat, lng, query, limit = 10 } = await req.json();
+    const reqData = await req.json();
+    const lat = reqData?.lat;
+    const lng = reqData?.lng;
+    const query = reqData?.query;
+    let limit = typeof reqData?.limit === 'number' ? reqData.limit : 10;
+    const fast: boolean = Boolean(reqData?.fast);
+    const providedRadiusKm = typeof reqData?.radiusKm === 'number' 
+      ? Math.max(0.2, Math.min(2.0, reqData.radiusKm)) 
+      : (fast ? 0.6 : 1.0);
 
     if (!lat || !lng) {
       return new Response(
@@ -77,12 +85,110 @@ serve(async (req) => {
       );
     }
 
+    // Ultra-fast mode: skip Foursquare and use OSM directly with tight radius
+    if (fast) {
+      try {
+        const radiusKm = providedRadiusKm;
+        const dy = radiusKm / 111;
+        const dx = radiusKm / (111 * Math.cos((lat * Math.PI) / 180));
+        const left = lng - dx;
+        const right = lng + dx;
+        const top = lat + dy;
+        const bottom = lat - dy;
+
+        const queries = query ? [query] : ['restaurant', 'cafe', 'bar'];
+
+        const fetchPromises = queries.map(async (searchTerm) => {
+          const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=jsonv2&namedetails=1&addressdetails=1&limit=${Math.max(6, limit)}&bounded=1&viewbox=${left},${top},${right},${bottom}&q=${encodeURIComponent(searchTerm)}`;
+          try {
+            const osmRes = await fetch(nominatimUrl, {
+              headers: {
+                'Accept': 'application/json',
+                'User-Agent': 'SpottApp/1.0 (contact: support@spott.app)'
+              }
+            });
+            if (osmRes.ok) {
+              const osmData = await osmRes.json();
+              return Array.isArray(osmData) ? osmData : [];
+            }
+          } catch (_) {}
+          return [];
+        });
+
+        const results = await Promise.all(fetchPromises);
+        const allResults = results.flat();
+
+        const toCategory = (item: any): string => {
+          const cls = String(item.class || '').toLowerCase();
+          const typ = String(item.type || '').toLowerCase();
+          const name = String(item.namedetails?.name || item.display_name || '').toLowerCase();
+          if (typ.includes('restaurant') || name.includes('restaurant') || name.includes('food')) return 'restaurant';
+          if (typ.includes('bar') || typ.includes('pub') || typ.includes('nightclub') || name.includes('bar') || name.includes('pub') || name.includes('cocktail') || name.includes('wine')) return 'bar';
+          if (typ.includes('cafe') || name.includes('cafe') || name.includes('coffee')) return 'cafe';
+          if (typ.includes('bakery') || name.includes('bakery') || name.includes('patisserie') || name.includes('bake')) return 'bakery';
+          if ((cls === 'tourism' && (typ.includes('hotel') || typ.includes('hostel') || typ.includes('guest_house'))) || name.includes('hotel') || name.includes('hostel')) return 'hotel';
+          if ((cls === 'tourism' && typ.includes('museum')) || name.includes('museum')) return 'museum';
+          if (typ.includes('cinema') || typ.includes('theatre') || name.includes('cinema') || name.includes('theater') || name.includes('theatre') || name.includes('concert')) return 'entertainment';
+          return 'restaurant';
+        };
+
+        const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+          const R = 6371000; const toRad = (v: number) => v * Math.PI / 180;
+          const dLat = toRad(lat2 - lat1); const dLon = toRad(lon2 - lon1);
+          const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          return Math.round(R * c);
+        };
+
+        const levenshtein = (a: string, b: string) => {
+          a = a.toLowerCase(); b = b.toLowerCase();
+          const m = a.length, n = b.length; const dp: number[] = Array(n + 1).fill(0);
+          for (let j = 0; j <= n; j++) dp[j] = j;
+          for (let i = 1; i <= m; i++) { let prev = i - 1; dp[0] = i; for (let j = 1; j <= n; j++) { const temp = dp[j]; dp[j] = Math.min(dp[j] + 1, dp[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1)); prev = temp; } }
+          return dp[n];
+        };
+        const similarity = (name: string, q: string) => {
+          if (!q) return 0; const dist = levenshtein(name, q);
+          const maxLen = Math.max(name.length, q.length) || 1; const score = 1 - dist / maxLen;
+          const tokens = q.toLowerCase().split(/\s+/).filter(Boolean);
+          const containsBonus = tokens.every(t => name.toLowerCase().includes(t)) ? 0.15 : 0;
+          return Math.max(0, Math.min(1, score + containsBonus));
+        };
+
+        let places = allResults.map((item: any) => {
+          const mapped = toCategory(item);
+          const plat = parseFloat(item.lat); const plng = parseFloat(item.lon);
+          const distance = haversine(lat, lng, plat, plng);
+          if (isNaN(plat) || isNaN(plng) || distance > Math.round(providedRadiusKm * 1000)) return null;
+          const addressObj = item.address || {};
+          const city = addressObj.city || addressObj.town || addressObj.village || addressObj.hamlet || addressObj.county || addressObj.state || 'Unknown';
+          const addressParts: string[] = [];
+          if (addressObj.road) { let streetPart = addressObj.road; if (addressObj.house_number) streetPart = `${addressObj.road} ${addressObj.house_number}`; addressParts.push(streetPart); }
+          if (city && city !== 'Unknown') addressParts.push(city);
+          const formattedAddress = addressParts.length > 0 ? addressParts.join(', ') : item.display_name || 'Address not available';
+          const name = item.namedetails?.name || item.display_name?.split(',')[0] || 'Unknown place';
+          return { fsq_id: item.osm_id ? `osm_${item.osm_id}` : item.place_id ? `osm_place_${item.place_id}` : `osm_${plat}_${plng}`, name, category: mapped, address: formattedAddress, city, lat: plat, lng: plng, distance, _nameScore: query ? similarity(name, query) : 0 } as any;
+        }).filter((p: any) => p !== null);
+
+        const seen = new Set<string>();
+        places = places.filter((p: any) => { const key = `${p.name.toLowerCase()}_${p.city.toLowerCase()}`; if (seen.has(key)) return false; seen.add(key); return true; });
+
+        places.sort((a: any, b: any) => { if (query && b._nameScore !== a._nameScore) return b._nameScore - a._nameScore; return a.distance - b.distance; });
+
+        places = places.slice(0, limit).map((p: any) => ({ fsq_id: p.fsq_id, name: p.name, category: p.category, address: p.address, city: p.city, lat: p.lat, lng: p.lng, distance: p.distance }));
+
+        return new Response(JSON.stringify({ places }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      } catch (e) {
+        console.error('Fast OSM path failed:', e);
+      }
+    }
+
     console.log(`Searching Foursquare: lat=${lat}, lng=${lng}, query=${query}, limit=${limit}`);
 
     // Build Foursquare API request
     const params = new URLSearchParams({
       ll: `${lat},${lng}`,
-      radius: '1000', // 1km radius
+      radius: String(Math.round(providedRadiusKm * 1000)),
       limit: String(limit),
       sort: 'DISTANCE',
       fields: 'fsq_id,name,location,geocodes,categories,distance'
@@ -106,8 +212,8 @@ serve(async (req) => {
       // Fallback to OpenStreetMap Nominatim if Foursquare fails
       console.log('Using OSM fallback for nearby search');
       try {
-        // Search in a 1km radius for faster, more relevant results
-        const radiusKm = 1.0;
+        // Search in a tight radius for faster, more relevant results
+        const radiusKm = providedRadiusKm;
         const dy = radiusKm / 111; // approx degrees latitude per km
         const dx = radiusKm / (111 * Math.cos((lat * Math.PI) / 180));
         const left = lng - dx;
