@@ -139,11 +139,11 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
   return (
     <>
       <Card 
-        className="overflow-hidden cursor-pointer group bg-white mx-2 mb-3 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 h-[340px] flex flex-col"
+        className="overflow-hidden cursor-pointer group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 h-[320px] flex flex-col"
         onClick={handleCardClick}
       >
         {/* Image Section - Fixed Height */}
-        <div className="relative h-[160px] flex-shrink-0">
+        <div className="relative h-[140px] flex-shrink-0">
           {imageLoading ? (
             <div className={`w-full h-full ${getPlaceholderGradient()} animate-pulse`} />
           ) : smartImage ? (
@@ -176,69 +176,69 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
         </div>
 
         {/* Content Section - Fixed Height with flex layout */}
-        <CardContent className="p-3 flex flex-col flex-1">
+        <CardContent className="p-2.5 flex flex-col flex-1">
           {/* Place Name - Single line with ellipsis */}
-          <h3 className="font-bold text-gray-900 text-base leading-tight truncate mb-1.5">
+          <h3 className="font-bold text-gray-900 text-sm leading-tight truncate mb-1">
             {place.name}
           </h3>
 
           {/* City Name - Prominent */}
-          <div className="flex items-center gap-1 mb-2">
-            <MapPin className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-            <span className="text-sm font-semibold text-gray-700 truncate">{getCityName()}</span>
+          <div className="flex items-center gap-1 mb-1.5">
+            <MapPin className="w-3 h-3 text-primary flex-shrink-0" />
+            <span className="text-xs font-semibold text-gray-700 truncate">{getCityName()}</span>
           </div>
 
-          {/* Stats Grid - Prominent display */}
-          <div className="grid grid-cols-3 gap-2 mb-3 flex-shrink-0">
+          {/* Stats Grid - Compact for mobile */}
+          <div className="grid grid-cols-3 gap-1.5 mb-2 flex-shrink-0">
             {/* Posts Count */}
-            <div className="flex flex-col items-center bg-gray-50 rounded-lg py-2">
-              <Camera className="w-4 h-4 text-blue-600 mb-0.5" />
-              <span className="text-sm font-bold text-gray-900">{getPostCount()}</span>
-              <span className="text-[10px] text-gray-500 font-medium">Posts</span>
+            <div className="flex flex-col items-center bg-gray-50 rounded-lg py-1.5">
+              <Camera className="w-3.5 h-3.5 text-blue-600 mb-0.5" />
+              <span className="text-xs font-bold text-gray-900">{getPostCount()}</span>
+              <span className="text-[9px] text-gray-500 font-medium">Posts</span>
             </div>
 
             {/* Saves Count */}
-            <div className="flex flex-col items-center bg-gray-50 rounded-lg py-2">
-              <Bookmark className="w-4 h-4 text-purple-600 mb-0.5" />
-              <span className="text-sm font-bold text-gray-900">{stats.totalSaves || 0}</span>
-              <span className="text-[10px] text-gray-500 font-medium">Saves</span>
+            <div className="flex flex-col items-center bg-gray-50 rounded-lg py-1.5">
+              <Bookmark className="w-3.5 h-3.5 text-purple-600 mb-0.5" />
+              <span className="text-xs font-bold text-gray-900">{stats.totalSaves || 0}</span>
+              <span className="text-[9px] text-gray-500 font-medium">Saves</span>
             </div>
 
             {/* Average Rating */}
-            <div className="flex flex-col items-center bg-yellow-50 rounded-lg py-2">
-              <Star className="w-4 h-4 text-yellow-500 fill-yellow-500 mb-0.5" />
-              <span className="text-sm font-bold text-gray-900">
+            <div className="flex flex-col items-center bg-yellow-50 rounded-lg py-1.5">
+              <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500 mb-0.5" />
+              <span className="text-xs font-bold text-gray-900">
                 {stats.averageRating ? stats.averageRating.toFixed(1) : '-'}
               </span>
-              <span className="text-[10px] text-gray-500 font-medium">Rating</span>
+              <span className="text-[9px] text-gray-500 font-medium">Rating</span>
             </div>
           </div>
 
-          {/* Action Buttons - Spacer pushes to bottom */}
-          <div className="mt-auto grid grid-cols-2 gap-2">
+          {/* Action Buttons - Compact */}
+          <div className="mt-auto grid grid-cols-2 gap-1.5">
             <Button
               variant="ghost"
               size="sm"
               onClick={handleSave}
               disabled={isSaving}
-              className={`h-9 rounded-lg flex items-center justify-center gap-1.5 transition-all ${
+              className={`h-8 rounded-lg flex items-center justify-center gap-1 transition-all text-xs ${
                 isSaved(place.id)
                   ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               } ${isSaving ? 'animate-pulse' : ''}`}
             >
-              <Bookmark className={`w-3.5 h-3.5 ${isSaved(place.id) ? 'fill-current' : ''}`} />
-              <span className="text-xs font-semibold">{isSaved(place.id) ? 'Saved' : 'Save'}</span>
+              <Bookmark className={`w-3 h-3 ${isSaved(place.id) ? 'fill-current' : ''}`} />
+              <span className="font-semibold">{isSaved(place.id) ? 'Saved' : 'Save'}</span>
             </Button>
             
             <Button
               variant="ghost"
               size="sm"
               onClick={handleShare}
-              className="h-9 rounded-lg flex items-center justify-center gap-1.5 bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all"
+              className="h-8 rounded-lg flex items-center justify-center gap-1 bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all text-xs"
             >
-              <Share2 className="w-3.5 h-3.5" />
-              <span className="text-xs font-semibold">Share</span>
+              <Share2 className="w-3 h-3" />
+              <span className="font-semibold">Share</span>
             </Button>
           </div>
         </CardContent>

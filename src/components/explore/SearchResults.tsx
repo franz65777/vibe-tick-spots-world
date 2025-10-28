@@ -66,17 +66,17 @@ const SearchResults = ({
 
   return (
     <div className="pb-4">
-      <div className="flex items-center justify-between mb-4 px-4">
-        <h3 className="font-semibold text-gray-900">
-          {searchMode === 'locations' ? filteredLocations.length : filteredUsers.length} results found
+      <div className="flex items-center justify-between mb-3 px-4">
+        <h3 className="font-semibold text-gray-900 text-sm">
+          {searchMode === 'locations' ? filteredLocations.length : filteredUsers.length} results
         </h3>
         <div className="text-xs text-gray-500 capitalize">
-          Sorted by {sortBy}
+          {sortBy}
         </div>
       </div>
 
       {searchMode === 'locations' ? (
-        <div className="space-y-0">
+        <div className="grid grid-cols-2 gap-2 px-2">
           {filteredLocations.map((place) => (
             <CompactLocationCard
               key={place.id}
