@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 interface Badge {
   id: string;
@@ -31,6 +32,7 @@ interface UserStats {
 
 export const useUserBadges = (userId?: string) => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const targetUserId = userId || user?.id;
   const [badges, setBadges] = useState<Badge[]>([]);
   const [userStats, setUserStats] = useState<UserStats>({
@@ -122,8 +124,8 @@ useEffect(() => {
       // Progressive Explorer Badges (City-based)
       {
         id: 'city-wanderer',
-        name: 'City Wanderer',
-        description: 'Save locations in 3 different cities',
+        name: t('cityWanderer', { ns: 'badges' }),
+        description: t('cityWandererDesc', { ns: 'badges' }),
         icon: '🌍',
         category: 'explorer',
         level: 'bronze',
@@ -136,8 +138,8 @@ useEffect(() => {
       },
       {
         id: 'globe-trotter',
-        name: 'Globe Trotter',
-        description: 'Save locations in 10 different cities',
+        name: t('globeTrotter', { ns: 'badges' }),
+        description: t('globeTrotterDesc', { ns: 'badges' }),
         icon: '🌎',
         category: 'explorer',
         level: 'silver',
@@ -150,8 +152,8 @@ useEffect(() => {
       },
       {
         id: 'world-explorer',
-        name: 'World Explorer',
-        description: 'Save locations in 25 different cities',
+        name: t('worldExplorer', { ns: 'badges' }),
+        description: t('worldExplorerDesc', { ns: 'badges' }),
         icon: '🗺️',
         category: 'explorer',
         level: 'gold',
@@ -165,8 +167,8 @@ useEffect(() => {
       // Progressive Trip Planner Badges
       {
         id: 'trip-planner',
-        name: 'Trip Planner',
-        description: 'Create your first trip plan',
+        name: t('tripPlanner', { ns: 'badges' }),
+        description: t('tripPlannerDesc', { ns: 'badges' }),
         icon: '📋',
         category: 'planner',
         level: 'bronze',
@@ -179,8 +181,8 @@ useEffect(() => {
       },
       {
         id: 'master-planner',
-        name: 'Master Planner',
-        description: 'Create 5 different trip plans',
+        name: t('masterPlanner', { ns: 'badges' }),
+        description: t('masterPlannerDesc', { ns: 'badges' }),
         icon: '🗓️',
         category: 'planner',
         level: 'silver',
@@ -193,8 +195,8 @@ useEffect(() => {
       },
       {
         id: 'travel-architect',
-        name: 'Travel Architect',
-        description: 'Create 15 detailed trip plans',
+        name: t('travelArchitect', { ns: 'badges' }),
+        description: t('travelArchitectDesc', { ns: 'badges' }),
         icon: '🏛️',
         category: 'planner',
         level: 'gold',
@@ -208,8 +210,8 @@ useEffect(() => {
       // Progressive Milestone Badges (Places-based)
       {
         id: 'getting-started',
-        name: 'Getting Started',
-        description: 'Save 10 places total',
+        name: t('gettingStarted', { ns: 'badges' }),
+        description: t('gettingStartedDesc', { ns: 'badges' }),
         icon: '🎯',
         category: 'milestone',
         level: 'bronze',
@@ -222,8 +224,8 @@ useEffect(() => {
       },
       {
         id: 'collector',
-        name: 'Collector',
-        description: 'Save 50 places total',
+        name: t('collector', { ns: 'badges' }),
+        description: t('collectorDesc', { ns: 'badges' }),
         icon: '📍',
         category: 'milestone',
         level: 'silver',
@@ -236,8 +238,8 @@ useEffect(() => {
       },
       {
         id: 'curator',
-        name: 'Curator',
-        description: 'Save 150 places total',
+        name: t('curator', { ns: 'badges' }),
+        description: t('curatorDesc', { ns: 'badges' }),
         icon: '🏆',
         category: 'milestone',
         level: 'gold',
@@ -251,8 +253,8 @@ useEffect(() => {
       // Progressive Social Badges
       {
         id: 'social-starter',
-        name: 'Social Starter',
-        description: 'Get 10+ likes on your posts',
+        name: t('socialStarter', { ns: 'badges' }),
+        description: t('socialStarterDesc', { ns: 'badges' }),
         icon: '⭐',
         category: 'social',
         level: 'bronze',
@@ -265,8 +267,8 @@ useEffect(() => {
       },
       {
         id: 'influencer',
-        name: 'Influencer',
-        description: 'Get 50+ likes on your posts',
+        name: t('influencer', { ns: 'badges' }),
+        description: t('influencerDesc', { ns: 'badges' }),
         icon: '🌟',
         category: 'social',
         level: 'silver',
@@ -279,8 +281,8 @@ useEffect(() => {
       },
       {
         id: 'viral-creator',
-        name: 'Viral Creator',
-        description: 'Get 200+ likes on your posts',
+        name: t('viralCreator', { ns: 'badges' }),
+        description: t('viralCreatorDesc', { ns: 'badges' }),
         icon: '🔥',
         category: 'social',
         level: 'gold',
@@ -294,8 +296,8 @@ useEffect(() => {
       // Progressive Content Badges
       {
         id: 'photographer',
-        name: 'Photographer',
-        description: 'Upload 10 stories with images',
+        name: t('photographer', { ns: 'badges' }),
+        description: t('photographerDesc', { ns: 'badges' }),
         icon: '📸',
         category: 'engagement',
         level: 'bronze',
@@ -308,8 +310,8 @@ useEffect(() => {
       },
       {
         id: 'local-guide',
-        name: 'Local Guide',
-        description: 'Review 20 places',
+        name: t('localGuide', { ns: 'badges' }),
+        description: t('localGuideDesc', { ns: 'badges' }),
         icon: '🗺️',
         category: 'engagement',
         level: 'silver',
@@ -322,8 +324,8 @@ useEffect(() => {
       },
       {
         id: 'content-creator',
-        name: 'Content Creator',
-        description: 'Create 30+ posts',
+        name: t('contentCreator', { ns: 'badges' }),
+        description: t('contentCreatorDesc', { ns: 'badges' }),
         icon: '🎥',
         category: 'engagement',
         level: 'gold',
@@ -336,8 +338,8 @@ useEffect(() => {
       },
       {
         id: 'prolific-poster',
-        name: 'Prolific Poster',
-        description: 'Create 25+ posts',
+        name: t('prolificPoster', { ns: 'badges' }),
+        description: t('prolificPosterDesc', { ns: 'badges' }),
         icon: '🎬',
         category: 'engagement',
         level: 'silver',
@@ -350,8 +352,8 @@ useEffect(() => {
       },
       {
         id: 'content-master',
-        name: 'Content Master',
-        description: 'Create 100+ posts',
+        name: t('contentMaster', { ns: 'badges' }),
+        description: t('contentMasterDesc', { ns: 'badges' }),
         icon: '🎭',
         category: 'engagement',
         level: 'gold',
@@ -376,7 +378,7 @@ useEffect(() => {
         currentEarnedIds.add(badge.id);
         
         if (user?.id === targetUserId && !notified.has(badge.id)) {
-          toast.success(`${badge.icon} New Badge Unlocked: ${badge.name}`, {
+          toast.success(`${badge.icon} ${t('newBadgeUnlocked', { ns: 'badges' })}: ${badge.name}`, {
             duration: 5000,
             description: badge.description
           });

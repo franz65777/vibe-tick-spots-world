@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { useUserBadges } from '@/hooks/useUserBadges';
 import { useBusinessProfile } from '@/hooks/useBusinessProfile';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 interface Location {
   id: string;
@@ -40,6 +41,7 @@ interface Post {
 }
 
 const BusinessOverviewPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { businessProfile } = useBusinessProfile();
