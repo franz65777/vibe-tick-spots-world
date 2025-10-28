@@ -6,6 +6,7 @@ import { AllowedCategory, categoryDisplayNames } from '@/utils/allowedCategories
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import CityLabel from '@/components/common/CityLabel';
 import { getCachedData, clearCache } from '@/services/performanceService';
+import { normalizeCity } from '@/utils/cityNormalization';
 
 interface LocationGridProps {
   searchQuery?: string;
@@ -89,9 +90,12 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
           longitude
         `);
 
-      // Apply search filter
+      // Apply search filter - Search across name, city, and address
+      // Also normalize the search query to match against normalized city names
       if (searchQuery && searchQuery.trim()) {
-        query = query.or(`name.ilike.%${searchQuery}%,city.ilike.%${searchQuery}%,address.ilike.%${searchQuery}%`);
+        const normalizedSearch = normalizeCity(searchQuery.trim());
+        // Search both raw and normalized city names for better matching
+        query = query.or(`name.ilike.%${searchQuery}%,city.ilike.%${searchQuery}%,city.ilike.%${normalizedSearch}%,address.ilike.%${searchQuery}%`);
       }
 
       // Apply category filter
@@ -109,7 +113,8 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
         .select('place_id, place_name, place_category, city, coordinates');
 
       if (searchQuery && searchQuery.trim()) {
-        savedPlacesQuery = savedPlacesQuery.or(`place_name.ilike.%${searchQuery}%,city.ilike.%${searchQuery}%`);
+        const normalizedSearch = normalizeCity(searchQuery.trim());
+        savedPlacesQuery = savedPlacesQuery.or(`place_name.ilike.%${searchQuery}%,city.ilike.%${searchQuery}%,city.ilike.%${normalizedSearch}%`);
       }
 
       if (selectedCategory) {
@@ -119,13 +124,14 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
       const { data: savedPlacesData } = await savedPlacesQuery.limit(100);
 
       // Convert saved_places to location format, filtering out low-quality entries
+      // Normalize city names for consistency
       const savedPlacesAsLocations = (savedPlacesData || [])
         .filter(sp => sp.place_name && sp.place_name !== 'Unknown' && sp.city && sp.city !== 'Unknown')
         .map(sp => ({
           id: sp.place_id,
           name: sp.place_name,
           category: sp.place_category || 'place',
-          city: sp.city || 'Unknown',
+          city: normalizeCity(sp.city) || 'Unknown',
           address: undefined,
           google_place_id: sp.place_id,
           latitude: (sp.coordinates as any)?.lat,

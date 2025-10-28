@@ -139,144 +139,107 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
   return (
     <>
       <Card 
-        className="overflow-hidden cursor-pointer group bg-white mx-2 mb-2 rounded-lg border-0 shadow-sm hover:shadow-md transition-all duration-300"
+        className="overflow-hidden cursor-pointer group bg-white mx-2 mb-3 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 h-[340px] flex flex-col"
         onClick={handleCardClick}
       >
-        <div className="relative">
-          {/* Ultra Compact Image */}
-          <div className="aspect-[2/1] overflow-hidden rounded-t-lg relative">
-            {imageLoading ? (
-              <div className={`w-full h-full ${getPlaceholderGradient()} animate-pulse`} />
-            ) : smartImage ? (
-              <img
-                src={smartImage}
-                alt={place.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                loading="lazy"
-              />
-            ) : (
-              <div className={`w-full h-full ${getPlaceholderGradient()} flex items-center justify-center`}>
-                <MapPin className="w-6 h-6 text-white/80" />
-              </div>
-            )}
-            
-            {/* Post Count Badge */}
-            {getPostCount() > 0 && (
-              <div className="absolute top-1.5 right-1.5 bg-black/70 text-white px-1.5 py-0.5 rounded-full flex items-center gap-1">
-                <Camera className="w-2.5 h-2.5" />
-                <span className="text-xs font-medium">{getPostCount()}</span>
-              </div>
-            )}
-          </div>
+        {/* Image Section - Fixed Height */}
+        <div className="relative h-[160px] flex-shrink-0">
+          {imageLoading ? (
+            <div className={`w-full h-full ${getPlaceholderGradient()} animate-pulse`} />
+          ) : smartImage ? (
+            <img
+              src={smartImage}
+              alt={place.name}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              loading="lazy"
+            />
+          ) : (
+            <div className={`w-full h-full ${getPlaceholderGradient()} flex items-center justify-center`}>
+              <MapPin className="w-8 h-8 text-white/80" />
+            </div>
+          )}
           
           {/* Category Badge */}
-          <div className="absolute top-1.5 left-1.5">
-            <Badge className={`${getCategoryColor(place.category)} bg-white/95 backdrop-blur-sm text-xs px-1.5 py-0.5 rounded-md border-0 font-medium shadow-sm`}>
+          <div className="absolute top-2 left-2">
+            <Badge className={`${getCategoryColor(place.category)} bg-white/95 backdrop-blur-sm text-xs px-2 py-1 rounded-lg border-0 font-semibold shadow-md`}>
               {formatCategory(place.category)}
             </Badge>
           </div>
+
+          {/* Post Count Badge */}
+          {getPostCount() > 0 && (
+            <div className="absolute top-2 right-2 bg-black/80 text-white px-2 py-1 rounded-lg flex items-center gap-1 shadow-md">
+              <Camera className="w-3 h-3" />
+              <span className="text-xs font-bold">{getPostCount()}</span>
+            </div>
+          )}
         </div>
 
-        <CardContent className="p-3">
-          <div className="space-y-1.5">
-            {/* Place Name */}
-            <h3 className="font-bold text-gray-900 text-sm leading-tight line-clamp-1">
-              {place.name}
-            </h3>
+        {/* Content Section - Fixed Height with flex layout */}
+        <CardContent className="p-3 flex flex-col flex-1">
+          {/* Place Name - Single line with ellipsis */}
+          <h3 className="font-bold text-gray-900 text-base leading-tight truncate mb-1.5">
+            {place.name}
+          </h3>
 
-            {/* Location Row */}
-            <div className="flex items-center gap-2 text-xs text-gray-600 flex-wrap">
-              <div className="flex items-center gap-0.5">
-                <MapPin className="w-2.5 h-2.5 text-gray-400" />
-                <span className="font-medium">{getCityName()}</span>
-              </div>
-              {getDistanceText() && (
-                <span className="font-medium">{getDistanceText()}</span>
-              )}
-              {stats.averageRating && (
-                <div className="flex items-center gap-1 bg-yellow-50 px-1.5 py-0.5 rounded-full">
-                  <Star className="w-2.5 h-2.5 fill-yellow-400 text-yellow-400" />
-                  <span className="text-xs font-semibold text-yellow-700">{stats.averageRating.toFixed(1)}</span>
-                </div>
-              )}
+          {/* City Name - Prominent */}
+          <div className="flex items-center gap-1 mb-2">
+            <MapPin className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+            <span className="text-sm font-semibold text-gray-700 truncate">{getCityName()}</span>
+          </div>
+
+          {/* Stats Grid - Prominent display */}
+          <div className="grid grid-cols-3 gap-2 mb-3 flex-shrink-0">
+            {/* Posts Count */}
+            <div className="flex flex-col items-center bg-gray-50 rounded-lg py-2">
+              <Camera className="w-4 h-4 text-blue-600 mb-0.5" />
+              <span className="text-sm font-bold text-gray-900">{getPostCount()}</span>
+              <span className="text-[10px] text-gray-500 font-medium">Posts</span>
             </div>
 
-            {/* Compact Stats Row */}
-            <div className="flex items-center justify-between py-0.5">
-              <div className="flex items-center gap-3 text-xs">
-                <div className="flex items-center gap-0.5">
-                  <Heart className="w-2.5 h-2.5 text-red-500" />
-                  <span className="font-semibold text-gray-700">{place.likes || 0}</span>
-                </div>
-                <div className="flex items-center gap-0.5">
-                  <Users className="w-2.5 h-2.5 text-blue-500" />
-                  <span className="font-semibold text-gray-700">{engagement?.totalSaves || 0}</span>
-                </div>
-                {engagement && engagement.followedUsers.length > 0 && (
-                  <div className="flex items-center -space-x-1.5">
-                    {engagement.followedUsers.slice(0, 3).map((user) => (
-                      <Avatar key={user.id} className="w-4 h-4 border-2 border-white">
-                        <AvatarImage src={user.avatar_url || ''} />
-                        <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white text-[8px]">
-                          {user.username?.[0]?.toUpperCase() || 'U'}
-                        </AvatarFallback>
-                      </Avatar>
-                    ))}
-                  </div>
-                )}
-              </div>
+            {/* Saves Count */}
+            <div className="flex flex-col items-center bg-gray-50 rounded-lg py-2">
+              <Bookmark className="w-4 h-4 text-purple-600 mb-0.5" />
+              <span className="text-sm font-bold text-gray-900">{stats.totalSaves || 0}</span>
+              <span className="text-[10px] text-gray-500 font-medium">Saves</span>
             </div>
 
-            {/* New Action Buttons Style */}
-            <div className="grid grid-cols-4 gap-1 pt-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleSave}
-                disabled={isSaving}
-                className={`h-auto py-2 px-2 rounded-2xl flex flex-col items-center gap-1 transition-all ${
-                  isSaved(place.id)
-                    ? 'bg-blue-50 text-blue-600 hover:bg-blue-100' 
-                    : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                } ${isSaving ? 'animate-pulse' : ''}`}
-              >
-                <Bookmark className={`w-4 h-4 ${isSaved(place.id) ? 'fill-current' : ''}`} />
-                <span className="text-[10px] font-medium">Saved</span>
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setReviewModalOpen(true);
-                }}
-                className="h-auto py-2 px-2 rounded-2xl flex flex-col items-center gap-1 bg-gray-50 text-gray-700 hover:bg-gray-100 transition-all"
-              >
-                <Star className="w-4 h-4" />
-                <span className="text-[10px] font-medium">Review</span>
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleComment}
-                className="h-auto py-2 px-2 rounded-2xl flex flex-col items-center gap-1 bg-gray-50 text-gray-700 hover:bg-gray-100 transition-all"
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span className="text-[10px] font-medium">Directions</span>
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleShare}
-                className="h-auto py-2 px-2 rounded-2xl flex flex-col items-center gap-1 bg-gray-50 text-gray-700 hover:bg-gray-100 transition-all"
-              >
-                <Share2 className="w-4 h-4" />
-                <span className="text-[10px] font-medium">Share</span>
-              </Button>
+            {/* Average Rating */}
+            <div className="flex flex-col items-center bg-yellow-50 rounded-lg py-2">
+              <Star className="w-4 h-4 text-yellow-500 fill-yellow-500 mb-0.5" />
+              <span className="text-sm font-bold text-gray-900">
+                {stats.averageRating ? stats.averageRating.toFixed(1) : '-'}
+              </span>
+              <span className="text-[10px] text-gray-500 font-medium">Rating</span>
             </div>
+          </div>
+
+          {/* Action Buttons - Spacer pushes to bottom */}
+          <div className="mt-auto grid grid-cols-2 gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSave}
+              disabled={isSaving}
+              className={`h-9 rounded-lg flex items-center justify-center gap-1.5 transition-all ${
+                isSaved(place.id)
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              } ${isSaving ? 'animate-pulse' : ''}`}
+            >
+              <Bookmark className={`w-3.5 h-3.5 ${isSaved(place.id) ? 'fill-current' : ''}`} />
+              <span className="text-xs font-semibold">{isSaved(place.id) ? 'Saved' : 'Save'}</span>
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleShare}
+              className="h-9 rounded-lg flex items-center justify-center gap-1.5 bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span className="text-xs font-semibold">Share</span>
+            </Button>
           </div>
         </CardContent>
       </Card>
