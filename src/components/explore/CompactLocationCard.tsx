@@ -139,11 +139,11 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
   return (
     <>
       <Card 
-        className="overflow-hidden cursor-pointer group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 h-[320px] flex flex-col"
+        className="overflow-hidden cursor-pointer group bg-card hover:shadow-lg transition-all duration-300 rounded-2xl border border-border"
         onClick={handleCardClick}
       >
-        {/* Image Section - Fixed Height */}
-        <div className="relative h-[140px] flex-shrink-0">
+        {/* Image Section - Larger and more prominent */}
+        <div className="relative aspect-[4/3] w-full">
           {imageLoading ? (
             <div className={`w-full h-full ${getPlaceholderGradient()} animate-pulse`} />
           ) : smartImage ? (
@@ -155,90 +155,90 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
             />
           ) : (
             <div className={`w-full h-full ${getPlaceholderGradient()} flex items-center justify-center`}>
-              <MapPin className="w-8 h-8 text-white/80" />
+              <MapPin className="w-12 h-12 text-white/80" />
             </div>
           )}
           
-          {/* Category Badge */}
-          <div className="absolute top-2 left-2">
-            <Badge className={`${getCategoryColor(place.category)} bg-white/95 backdrop-blur-sm text-xs px-2 py-1 rounded-lg border-0 font-semibold shadow-md`}>
+          {/* Category Badge - Top Left */}
+          <div className="absolute top-3 left-3">
+            <Badge className={`${getCategoryColor(place.category)} bg-background/95 backdrop-blur-sm text-xs px-3 py-1 rounded-full border-0 font-semibold shadow-lg`}>
               {formatCategory(place.category)}
             </Badge>
           </div>
 
-          {/* Post Count Badge */}
+          {/* Post Count Badge - Top Right */}
           {getPostCount() > 0 && (
-            <div className="absolute top-2 right-2 bg-black/80 text-white px-2 py-1 rounded-lg flex items-center gap-1 shadow-md">
-              <Camera className="w-3 h-3" />
+            <div className="absolute top-3 right-3 bg-background/95 backdrop-blur-sm text-foreground px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border border-border">
+              <Camera className="w-3.5 h-3.5 text-primary" />
               <span className="text-xs font-bold">{getPostCount()}</span>
             </div>
           )}
+
+          {/* Gradient Overlay at Bottom */}
+          <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/60 to-transparent" />
         </div>
 
-        {/* Content Section - Fixed Height with flex layout */}
-        <CardContent className="p-2.5 flex flex-col flex-1">
-          {/* Place Name - Single line with ellipsis */}
-          <h3 className="font-bold text-gray-900 text-sm leading-tight truncate mb-1">
-            {place.name}
-          </h3>
-
-          {/* City Name - Prominent */}
-          <div className="flex items-center gap-1 mb-1.5">
-            <MapPin className="w-3 h-3 text-primary flex-shrink-0" />
-            <span className="text-xs font-semibold text-gray-700 truncate">{getCityName()}</span>
+        {/* Content Section */}
+        <CardContent className="p-4 space-y-3">
+          {/* Place Name */}
+          <div>
+            <h3 className="font-bold text-foreground text-base leading-tight line-clamp-1 mb-1">
+              {place.name}
+            </h3>
+            {/* City Name */}
+            <div className="flex items-center gap-1.5">
+              <MapPin className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+              <span className="text-sm text-muted-foreground truncate">{getCityName()}</span>
+            </div>
           </div>
 
-          {/* Stats Grid - Compact for mobile */}
-          <div className="grid grid-cols-3 gap-1.5 mb-2 flex-shrink-0">
-            {/* Posts Count */}
-            <div className="flex flex-col items-center bg-gray-50 rounded-lg py-1.5">
-              <Camera className="w-3.5 h-3.5 text-blue-600 mb-0.5" />
-              <span className="text-xs font-bold text-gray-900">{getPostCount()}</span>
-              <span className="text-[9px] text-gray-500 font-medium">Posts</span>
+          {/* Stats Row - Inline with icons */}
+          <div className="flex items-center gap-4 text-sm">
+            {/* Saves */}
+            <div className="flex items-center gap-1.5">
+              <Bookmark className="w-4 h-4 text-primary" />
+              <span className="font-semibold text-foreground">{stats.totalSaves || 0}</span>
             </div>
 
-            {/* Saves Count */}
-            <div className="flex flex-col items-center bg-gray-50 rounded-lg py-1.5">
-              <Bookmark className="w-3.5 h-3.5 text-purple-600 mb-0.5" />
-              <span className="text-xs font-bold text-gray-900">{stats.totalSaves || 0}</span>
-              <span className="text-[9px] text-gray-500 font-medium">Saves</span>
-            </div>
-
-            {/* Average Rating */}
-            <div className="flex flex-col items-center bg-yellow-50 rounded-lg py-1.5">
-              <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500 mb-0.5" />
-              <span className="text-xs font-bold text-gray-900">
+            {/* Rating */}
+            <div className="flex items-center gap-1.5">
+              <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+              <span className="font-semibold text-foreground">
                 {stats.averageRating ? stats.averageRating.toFixed(1) : '-'}
               </span>
-              <span className="text-[9px] text-gray-500 font-medium">Rating</span>
+            </div>
+
+            {/* Posts */}
+            <div className="flex items-center gap-1.5 ml-auto">
+              <Camera className="w-4 h-4 text-muted-foreground" />
+              <span className="font-semibold text-muted-foreground">{getPostCount()}</span>
             </div>
           </div>
 
-          {/* Action Buttons - Compact */}
-          <div className="mt-auto grid grid-cols-2 gap-1.5">
+          {/* Action Buttons */}
+          <div className="grid grid-cols-2 gap-2 pt-1">
             <Button
-              variant="ghost"
               size="sm"
               onClick={handleSave}
               disabled={isSaving}
-              className={`h-8 rounded-lg flex items-center justify-center gap-1 transition-all text-xs ${
+              className={`h-9 rounded-xl font-semibold transition-all ${
                 isSaved(place.id)
                   ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
               } ${isSaving ? 'animate-pulse' : ''}`}
             >
-              <Bookmark className={`w-3 h-3 ${isSaved(place.id) ? 'fill-current' : ''}`} />
-              <span className="font-semibold">{isSaved(place.id) ? 'Saved' : 'Save'}</span>
+              <Bookmark className={`w-4 h-4 mr-1.5 ${isSaved(place.id) ? 'fill-current' : ''}`} />
+              {isSaved(place.id) ? 'Saved' : 'Save'}
             </Button>
             
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={handleShare}
-              className="h-8 rounded-lg flex items-center justify-center gap-1 bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all text-xs"
+              className="h-9 rounded-xl font-semibold"
             >
-              <Share2 className="w-3 h-3" />
-              <span className="font-semibold">Share</span>
+              <Share2 className="w-4 h-4 mr-1.5" />
+              Share
             </Button>
           </div>
         </CardContent>
