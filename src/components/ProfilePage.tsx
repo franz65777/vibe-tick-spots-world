@@ -38,8 +38,8 @@ const ProfilePage = () => {
 
   const handleSwitchToBusinessView = () => {
     if (!hasValidBusinessAccount) {
-      toast.error(t('profile.noBusinessAccount'), {
-        description: t('profile.needVerification')
+      toast.error(t('noBusinessAccount', { ns: 'profile' }), {
+        description: t('needVerification', { ns: 'profile' })
       });
       return;
     }

@@ -55,9 +55,9 @@ const SettingsPage: React.FC = () => {
         .eq('id', user.id);
       if (error) throw error;
       i18n.changeLanguage(language);
-      toast.success(t('settings.languageSaved'));
+      toast.success(t('languageSaved', { ns: 'settings' }));
     } catch (e: any) {
-      toast.error(e?.message || t('settings.failedToSave'));
+      toast.error(e?.message || t('failedToSave', { ns: 'settings' }));
     } finally {
       setSaving(false);
     }
@@ -67,11 +67,11 @@ const SettingsPage: React.FC = () => {
     <main className="p-4 max-w-2xl mx-auto w-full">
       <Card>
         <CardHeader>
-          <CardTitle>{t('settings.title')}</CardTitle>
+          <CardTitle>{t('title', { ns: 'settings' })}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
-            <label className="text-sm font-semibold text-foreground mb-3 block">{t('settings.language')}</label>
+            <label className="text-sm font-semibold text-foreground mb-3 block">{t('language', { ns: 'settings' })}</label>
             <div className="grid grid-cols-2 gap-3">
               {languages.map((lang) => (
                 <button
@@ -102,7 +102,7 @@ const SettingsPage: React.FC = () => {
           </div>
 
           <Button onClick={onSave} disabled={saving} className="w-full h-12 text-base font-semibold">
-            {saving ? t('settings.saving') : t('settings.saveChanges')}
+            {saving ? t('saving', { ns: 'settings' }) : t('saveChanges', { ns: 'settings' })}
           </Button>
         </CardContent>
       </Card>
