@@ -1,6 +1,7 @@
 import { Plus } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface Story {
   id: string;
@@ -17,6 +18,8 @@ interface StoriesSectionProps {
 }
 
 const StoriesSection = ({ stories = [], onCreateStory, onStoryClick }: StoriesSectionProps) => {
+  const { t } = useTranslation();
+  
   return (
     <div className="flex gap-4 px-4 py-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory">
       {/* Add Story Button - 52px */}
@@ -30,7 +33,7 @@ const StoriesSection = ({ stories = [], onCreateStory, onStoryClick }: StoriesSe
             <Plus className="w-5 h-5 text-gray-700 dark:text-gray-200" />
           </div>
         </div>
-        <span className="text-[10px] font-medium text-gray-700 dark:text-gray-300">Your Story</span>
+        <span className="text-[10px] font-medium text-gray-700 dark:text-gray-300">{t('yourStory', { ns: 'home' })}</span>
       </button>
 
       {/* User Stories - 52px with NEW badge */}

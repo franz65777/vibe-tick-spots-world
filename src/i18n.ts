@@ -38,7 +38,10 @@ const resources = {
       category: 'Category',
       noResults: 'No Results Found',
       adjustFilters: 'Try adjusting your search or filters to find what you\'re looking for.',
-      remove: 'Remove'
+      remove: 'Remove',
+      thisWeek: 'This Week',
+      in: 'in',
+      thisArea: 'this area'
     },
     navigation: {
       explore: 'Explore',
@@ -96,6 +99,15 @@ const resources = {
       noFollowing: 'No following yet',
       achievements: 'Achievements',
       earned: 'Earned'
+    },
+    home: {
+      topPinned: 'Top Pinned',
+      mostSavedLocations: 'Most saved locations',
+      findingSpots: 'Finding popular spots',
+      noPopularSpots: 'No popular spots found in',
+      topContributors: 'Top Contributors',
+      viewFullLeaderboard: 'View Full Leaderboard',
+      yourStory: 'Your Story'
     },
     explore: {
       places: 'Places',
@@ -210,6 +222,17 @@ const resources = {
       close: 'Cerrar',
       logout: 'Cerrar sesión',
       required: '*Obligatorio',
+      of: 'de',
+      sortBy: 'Ordenar por',
+      nameAZ: 'Nombre A-Z',
+      cityAZ: 'Ciudad A-Z',
+      category: 'Categoría',
+      noResults: 'No se encontraron resultados',
+      adjustFilters: 'Intenta ajustar tu búsqueda o filtros',
+      remove: 'Eliminar',
+      thisWeek: 'Esta Semana',
+      in: 'en',
+      thisArea: 'esta área'
     },
     navigation: {
       explore: 'Explorar',
@@ -256,6 +279,26 @@ const resources = {
       editProfile: 'Editar perfil',
       settings: 'Configuración',
       saved: 'Guardados',
+      savedLocations: 'Ubicaciones Guardadas',
+      searchPlaceholder: 'Buscar ubicaciones, ciudades o categorías...',
+      allCities: 'Todas las Ciudades',
+      recentlySaved: 'Guardados Recientemente',
+      loadingSaved: 'Cargando ubicaciones guardadas...',
+      noSavedLocations: 'Sin Ubicaciones Guardadas',
+      startSaving: 'Comienza a explorar y guarda lugares que te gusten para verlos aquí.',
+      noFollowers: 'Aún sin seguidores',
+      noFollowing: 'Aún no sigues a nadie',
+      achievements: 'Logros',
+      earned: 'Conseguido'
+    },
+    home: {
+      topPinned: 'Más Guardados',
+      mostSavedLocations: 'Ubicaciones más guardadas',
+      findingSpots: 'Buscando lugares populares',
+      noPopularSpots: 'No se encontraron lugares populares en',
+      topContributors: 'Mejores Colaboradores',
+      viewFullLeaderboard: 'Ver Clasificación Completa',
+      yourStory: 'Tu Historia'
     },
     explore: {
       places: 'Lugares',
@@ -334,6 +377,13 @@ const resources = {
       languageSaved: 'Preferencia de idioma guardada',
       failedToSave: 'Error al guardar',
     },
+    feed: {
+      yourFeed: 'Tu Feed',
+      feedSubtitle: 'Ve lo que tus amigos están descubriendo',
+      emptyFeed: 'Tu feed está vacío',
+      emptyFeedDescription: 'Comienza a seguir personas para ver sus últimos descubrimientos',
+      discoverPeople: 'Descubrir Personas'
+    }
   },
 
   fr: {

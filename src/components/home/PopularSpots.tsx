@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import fireIcon from '@/assets/fire-icon.png';
+import { useTranslation } from 'react-i18next';
 
 interface PopularSpot {
   id: string;
@@ -27,6 +28,7 @@ interface PopularSpotsProps {
 }
 
 const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen }: PopularSpotsProps) => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [popularSpots, setPopularSpots] = useState<PopularSpot[]>([]);
   const [loading, setLoading] = useState(true);
@@ -141,10 +143,10 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen }: Po
           </div>
           <div className="flex flex-col">
             <h3 className="text-sm font-semibold text-gray-900">
-              {loading ? 'Loading...' : `Top Pinned${currentCity ? ` in ${currentCity}` : ''}`}
+              {loading ? t('loading', { ns: 'common' }) : `${t('topPinned', { ns: 'home' })}${currentCity ? ` ${t('in', { ns: 'common' })} ${currentCity}` : ''}`}
             </h3>
             <p className="text-xs text-gray-500">
-              {loading ? 'Finding popular spots' : 'Most saved locations'}
+              {loading ? t('findingSpots', { ns: 'home' }) : t('mostSavedLocations', { ns: 'home' })}
             </p>
           </div>
         </div>
@@ -182,7 +184,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen }: Po
         </div>
       ) : (
         <p className="text-xs text-gray-500 text-center py-4">
-          No popular spots found in {currentCity || 'this area'}
+          {t('noPopularSpots', { ns: 'home' })} {currentCity || t('thisArea', { ns: 'common' })}
         </p>
       )}
     </div>

@@ -192,18 +192,20 @@ const MapSection = ({
           />
         )}
 
-        {/* Map Category Filters - Always visible, properly positioned at top of map */}
-        <div className={cn(
-          "z-[1100] w-full max-w-[95vw] mx-auto px-4",
-          "absolute top-4 left-0 right-0"
-        )}>
-          <div className="flex justify-center">
-            <MapCategoryFilters currentCity={currentCity} />
+        {/* Map Category Filters - Hide when list view is open */}
+        {!isListViewOpen && (
+          <div className={cn(
+            "z-[1100] w-full max-w-[95vw] mx-auto px-4",
+            "absolute top-4 left-0 right-0"
+          )}>
+            <div className="flex justify-center">
+              <MapCategoryFilters currentCity={currentCity} />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Map Controls - List View and Expand Toggle - Inside map */}
-        <div className={`${isExpanded ? 'fixed' : 'absolute'} bottom-20 right-3 z-[1000] flex flex-row gap-2`}>
+        <div className={`${isExpanded ? 'fixed' : 'absolute'} bottom-24 right-3 z-[1000] flex flex-row gap-2`}>
           {/* Expand/Collapse Button */}
           {onToggleExpand && (
             <Button
@@ -232,7 +234,7 @@ const MapSection = ({
             <SheetContent side="bottom" className="h-[80vh] rounded-t-3xl flex flex-col">
               <SheetHeader className="pb-4 flex-shrink-0">
                 <SheetTitle className="text-xl font-semibold">
-                  Locations
+                  {t('locationsTitle', { ns: 'mapFilters' })}
                   <Badge variant="secondary" className="ml-3 text-sm">
                     {places.length}
                   </Badge>
@@ -246,7 +248,7 @@ const MapSection = ({
                     onClick={() => setActiveFilter('following')}
                     className="rounded-full"
                   >
-                    Following
+                    {t('following', { ns: 'mapFilters' })}
                   </Button>
                   <Button
                     size="sm"
@@ -254,7 +256,7 @@ const MapSection = ({
                     onClick={() => setActiveFilter('popular')}
                     className="rounded-full"
                   >
-                    Popular
+                    {t('popular', { ns: 'mapFilters' })}
                   </Button>
                   <Button
                     size="sm"
@@ -262,7 +264,7 @@ const MapSection = ({
                     onClick={() => setActiveFilter('saved')}
                     className="rounded-full"
                   >
-                    Saved
+                    {t('saved', { ns: 'mapFilters' })}
                   </Button>
                 </div>
               </SheetHeader>

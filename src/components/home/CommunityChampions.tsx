@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useTranslation } from 'react-i18next';
 interface Champion {
   id: string;
   username: string;
@@ -21,6 +22,7 @@ const CommunityChampions = ({
   champions,
   onUserClick
 }: CommunityChampionsProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const getRankBadge = (rank: number) => {
     const badges = ['🥇', '🥈', '🥉'];
@@ -36,11 +38,11 @@ const CommunityChampions = ({
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
               <Trophy className="w-4 h-4 text-primary" />
             </div>
-            <h3 className="text-base font-bold text-foreground">Top Contributors</h3>
+            <h3 className="text-base font-bold text-foreground">{t('topContributors', { ns: 'home' })}</h3>
           </div>
           <div className="flex items-center gap-1.5 bg-background/80 backdrop-blur-sm px-2.5 py-1 rounded-full border border-border">
             <TrendingUp className="w-3 h-3 text-primary" />
-            <span className="text-xs font-semibold text-foreground">This Week</span>
+            <span className="text-xs font-semibold text-foreground">{t('thisWeek', { ns: 'common' })}</span>
           </div>
         </div>
       </div>
@@ -64,9 +66,9 @@ const CommunityChampions = ({
                 @{champion.username}
               </div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                <span>{champion.follower_count} followers</span>
+                <span>{champion.follower_count} {t('followers', { ns: 'profile' })}</span>
                 <span>•</span>
-                <span>{champion.posts_count} places</span>
+                <span>{champion.posts_count} {t('places', { ns: 'explore' })}</span>
               </div>
             </div>
 
@@ -76,14 +78,14 @@ const CommunityChampions = ({
                 <span>❤️</span>
                 <span>{champion.weekly_likes}</span>
               </div>
-              <div className="text-xs text-muted-foreground">this week</div>
+              <div className="text-xs text-muted-foreground">{t('thisWeek', { ns: 'common' })}</div>
             </div>
           </div>)}
       </div>
 
       <div className="px-3 pb-3">
         <Button onClick={() => navigate('/leaderboard')} variant="outline" size="sm" className="w-full rounded-xl font-semibold hover:bg-primary/5 hover:text-primary hover:border-primary/20">
-          View Full Leaderboard
+          {t('viewFullLeaderboard', { ns: 'home' })}
         </Button>
       </div>
     </Card>;
