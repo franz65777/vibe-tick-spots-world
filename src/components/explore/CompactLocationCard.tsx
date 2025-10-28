@@ -139,11 +139,11 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
   return (
     <>
       <Card 
-        className="overflow-hidden cursor-pointer group bg-card hover:shadow-lg transition-all duration-300 rounded-2xl border border-border"
+        className="overflow-hidden cursor-pointer group bg-card hover:shadow-lg transition-all duration-300 rounded-xl border border-border h-[240px] flex flex-col"
         onClick={handleCardClick}
       >
-        {/* Image Section - More compact */}
-        <div className="relative aspect-video w-full">
+        {/* Image Section with Overlay Content */}
+        <div className="relative flex-1 w-full">
           {imageLoading ? (
             <div className={`w-full h-full ${getPlaceholderGradient()} animate-pulse`} />
           ) : smartImage ? (
@@ -159,89 +159,77 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
             </div>
           )}
           
+          {/* Dark gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+          
           {/* Category Badge - Top Left */}
-          <div className="absolute top-3 left-3">
-            <Badge className={`${getCategoryColor(place.category)} bg-background/95 backdrop-blur-sm text-xs px-3 py-1 rounded-full border-0 font-semibold shadow-lg`}>
+          <div className="absolute top-2 left-2">
+            <Badge className={`${getCategoryColor(place.category)} bg-background/95 backdrop-blur-sm text-xs px-2.5 py-0.5 rounded-full border-0 font-semibold shadow-lg`}>
               {formatCategory(place.category)}
             </Badge>
           </div>
 
-          {/* Post Count Badge - Top Right */}
-          {getPostCount() > 0 && (
-            <div className="absolute top-3 right-3 bg-background/95 backdrop-blur-sm text-foreground px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border border-border">
-              <Camera className="w-3.5 h-3.5 text-primary" />
-              <span className="text-xs font-bold">{getPostCount()}</span>
-            </div>
-          )}
+          {/* Save Button - Top Right */}
+          <Button
+            size="sm"
+            onClick={handleSave}
+            disabled={isSaving}
+            className={`absolute top-2 right-2 h-8 w-8 rounded-full p-0 ${
+              isSaved(place.id)
+                ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                : 'bg-background/95 text-foreground hover:bg-background'
+            } backdrop-blur-sm shadow-lg ${isSaving ? 'animate-pulse' : ''}`}
+          >
+            <Bookmark className={`w-4 h-4 ${isSaved(place.id) ? 'fill-current' : ''}`} />
+          </Button>
 
-          {/* Gradient Overlay at Bottom */}
-          <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/60 to-transparent" />
+          {/* Content Overlay at Bottom */}
+          <div className="absolute bottom-0 left-0 right-0 p-3 space-y-2">
+            {/* Place Name and City */}
+            <div>
+              <h3 className="font-bold text-white text-base leading-tight line-clamp-1 mb-1 drop-shadow-lg">
+                {place.name}
+              </h3>
+              <div className="flex items-center gap-1">
+                <MapPin className="w-3 h-3 text-white/90 flex-shrink-0" />
+                <span className="text-xs text-white/90 truncate drop-shadow">{getCityName()}</span>
+              </div>
+            </div>
+
+            {/* Stats and Action Row */}
+            <div className="flex items-center gap-2">
+              {/* Stats */}
+              <div className="flex items-center gap-2 text-xs flex-1">
+                <div className="flex items-center gap-1 bg-black/40 backdrop-blur-sm px-2 py-1 rounded-full">
+                  <Camera className="w-3 h-3 text-white" />
+                  <span className="font-semibold text-white">{getPostCount()}</span>
+                </div>
+                
+                <div className="flex items-center gap-1 bg-black/40 backdrop-blur-sm px-2 py-1 rounded-full">
+                  <Bookmark className="w-3 h-3 text-white" />
+                  <span className="font-semibold text-white">{stats.totalSaves || 0}</span>
+                </div>
+                
+                <div className="flex items-center gap-1 bg-black/40 backdrop-blur-sm px-2 py-1 rounded-full">
+                  <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                  <span className="font-semibold text-white">
+                    {stats.averageRating ? stats.averageRating.toFixed(1) : '-'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Share Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleShare}
+                className="h-7 w-7 rounded-full p-0 bg-white/95 hover:bg-white backdrop-blur-sm shadow-lg border-0"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          </div>
         </div>
-
-        {/* Content Section */}
-        <CardContent className="p-3 space-y-2">
-          {/* Place Name */}
-          <div>
-            <h3 className="font-bold text-foreground text-sm leading-tight line-clamp-1 mb-0.5">
-              {place.name}
-            </h3>
-            {/* City Name */}
-            <div className="flex items-center gap-1">
-              <MapPin className="w-3 h-3 text-muted-foreground flex-shrink-0" />
-              <span className="text-xs text-muted-foreground truncate">{getCityName()}</span>
-            </div>
-          </div>
-
-          {/* Stats Row - Inline with icons */}
-          <div className="flex items-center gap-3 text-xs">
-            {/* Saves */}
-            <div className="flex items-center gap-1">
-              <Bookmark className="w-3.5 h-3.5 text-primary" />
-              <span className="font-semibold text-foreground">{stats.totalSaves || 0}</span>
-            </div>
-
-            {/* Rating */}
-            <div className="flex items-center gap-1">
-              <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
-              <span className="font-semibold text-foreground">
-                {stats.averageRating ? stats.averageRating.toFixed(1) : '-'}
-              </span>
-            </div>
-
-            {/* Posts */}
-            <div className="flex items-center gap-1 ml-auto">
-              <Camera className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="font-semibold text-muted-foreground">{getPostCount()}</span>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              size="sm"
-              onClick={handleSave}
-              disabled={isSaving}
-              className={`h-8 rounded-xl font-semibold text-xs transition-all ${
-                isSaved(place.id)
-                  ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
-                  : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-              } ${isSaving ? 'animate-pulse' : ''}`}
-            >
-              <Bookmark className={`w-3.5 h-3.5 mr-1 ${isSaved(place.id) ? 'fill-current' : ''}`} />
-              {isSaved(place.id) ? 'Saved' : 'Save'}
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleShare}
-              className="h-8 rounded-xl font-semibold text-xs"
-            >
-              <Share2 className="w-3.5 h-3.5 mr-1" />
-              Share
-            </Button>
-          </div>
-        </CardContent>
       </Card>
 
       <CommentModal
