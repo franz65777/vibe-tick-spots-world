@@ -142,8 +142,8 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
         className="overflow-hidden cursor-pointer group bg-card hover:shadow-lg transition-all duration-300 rounded-2xl border border-border"
         onClick={handleCardClick}
       >
-        {/* Image Section - Larger and more prominent */}
-        <div className="relative aspect-[4/3] w-full">
+        {/* Image Section - More compact */}
+        <div className="relative aspect-video w-full">
           {imageLoading ? (
             <div className={`w-full h-full ${getPlaceholderGradient()} animate-pulse`} />
           ) : smartImage ? (
@@ -179,55 +179,55 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
         </div>
 
         {/* Content Section */}
-        <CardContent className="p-4 space-y-3">
+        <CardContent className="p-3 space-y-2">
           {/* Place Name */}
           <div>
-            <h3 className="font-bold text-foreground text-base leading-tight line-clamp-1 mb-1">
+            <h3 className="font-bold text-foreground text-sm leading-tight line-clamp-1 mb-0.5">
               {place.name}
             </h3>
             {/* City Name */}
-            <div className="flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-              <span className="text-sm text-muted-foreground truncate">{getCityName()}</span>
+            <div className="flex items-center gap-1">
+              <MapPin className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+              <span className="text-xs text-muted-foreground truncate">{getCityName()}</span>
             </div>
           </div>
 
           {/* Stats Row - Inline with icons */}
-          <div className="flex items-center gap-4 text-sm">
+          <div className="flex items-center gap-3 text-xs">
             {/* Saves */}
-            <div className="flex items-center gap-1.5">
-              <Bookmark className="w-4 h-4 text-primary" />
+            <div className="flex items-center gap-1">
+              <Bookmark className="w-3.5 h-3.5 text-primary" />
               <span className="font-semibold text-foreground">{stats.totalSaves || 0}</span>
             </div>
 
             {/* Rating */}
-            <div className="flex items-center gap-1.5">
-              <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+            <div className="flex items-center gap-1">
+              <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
               <span className="font-semibold text-foreground">
                 {stats.averageRating ? stats.averageRating.toFixed(1) : '-'}
               </span>
             </div>
 
             {/* Posts */}
-            <div className="flex items-center gap-1.5 ml-auto">
-              <Camera className="w-4 h-4 text-muted-foreground" />
+            <div className="flex items-center gap-1 ml-auto">
+              <Camera className="w-3.5 h-3.5 text-muted-foreground" />
               <span className="font-semibold text-muted-foreground">{getPostCount()}</span>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="grid grid-cols-2 gap-2 pt-1">
+          <div className="grid grid-cols-2 gap-2">
             <Button
               size="sm"
               onClick={handleSave}
               disabled={isSaving}
-              className={`h-9 rounded-xl font-semibold transition-all ${
+              className={`h-8 rounded-xl font-semibold text-xs transition-all ${
                 isSaved(place.id)
                   ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
                   : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
               } ${isSaving ? 'animate-pulse' : ''}`}
             >
-              <Bookmark className={`w-4 h-4 mr-1.5 ${isSaved(place.id) ? 'fill-current' : ''}`} />
+              <Bookmark className={`w-3.5 h-3.5 mr-1 ${isSaved(place.id) ? 'fill-current' : ''}`} />
               {isSaved(place.id) ? 'Saved' : 'Save'}
             </Button>
             
@@ -235,9 +235,9 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
               variant="outline"
               size="sm"
               onClick={handleShare}
-              className="h-9 rounded-xl font-semibold"
+              className="h-8 rounded-xl font-semibold text-xs"
             >
-              <Share2 className="w-4 h-4 mr-1.5" />
+              <Share2 className="w-3.5 h-3.5 mr-1" />
               Share
             </Button>
           </div>
