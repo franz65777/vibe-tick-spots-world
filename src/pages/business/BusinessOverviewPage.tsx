@@ -215,7 +215,7 @@ const BusinessOverviewPage = () => {
       <div className="min-h-screen bg-background pb-24 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
+          <p className="text-muted-foreground">{t('loading', { ns: 'common' })}...</p>
         </div>
       </div>
     );
@@ -225,7 +225,7 @@ const BusinessOverviewPage = () => {
     return (
       <div className="min-h-screen bg-background pb-24 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-muted-foreground">No location found</p>
+          <p className="text-muted-foreground">{t('noLocationFound', { ns: 'business' })}</p>
         </div>
       </div>
     );
@@ -239,7 +239,7 @@ const BusinessOverviewPage = () => {
       <div className="max-w-screen-sm mx-auto">
         {/* Action Buttons */}
         <div className="flex items-center justify-between p-4 border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-          <h1 className="text-lg font-bold text-foreground">Business Overview</h1>
+          <h1 className="text-lg font-bold text-foreground">{t('businessOverview', { ns: 'business' })}</h1>
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
@@ -306,7 +306,7 @@ const BusinessOverviewPage = () => {
                   {businessProfile?.verification_status === 'verified' && (
                     <Badge className="bg-primary/10 text-primary border-primary/20 text-xs">
                       <Sparkles className="w-3 h-3 mr-1" />
-                      Verified
+                      {t('verified', { ns: 'business' })}
                     </Badge>
                   )}
                   <Badge className={`${getCategoryColor(location.category)} text-xs`}>
@@ -324,12 +324,12 @@ const BusinessOverviewPage = () => {
                 <div className="flex items-center gap-1">
                   <Users className="w-4 h-4 text-primary" />
                   <span className="font-semibold text-foreground">{posts.length}</span>
-                  <span className="text-muted-foreground">posts</span>
+                  <span className="text-muted-foreground">{t('posts', { ns: 'common' })}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <TrendingUp className="w-4 h-4 text-accent" />
                   <span className="font-semibold text-foreground">94%</span>
-                  <span className="text-muted-foreground">engagement</span>
+                  <span className="text-muted-foreground">{t('engagement', { ns: 'business' })}</span>
                 </div>
               </div>
             </div>
@@ -343,7 +343,7 @@ const BusinessOverviewPage = () => {
               <CardContent className="p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Award className="w-5 h-5 text-primary" />
-                  <h3 className="font-bold text-foreground">Your Achievements</h3>
+                  <h3 className="font-bold text-foreground">{t('yourAchievements', { ns: 'business' })}</h3>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   {earnedBadges.slice(0, 6).map((badge) => (
@@ -371,13 +371,13 @@ const BusinessOverviewPage = () => {
                 <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
                   <TrendingUp className="w-10 h-10 text-muted-foreground" />
                 </div>
-                <h3 className="text-lg font-bold text-foreground mb-2">Start Growing Your Business</h3>
+                <h3 className="text-lg font-bold text-foreground mb-2">{t('growYourPresence', { ns: 'business' })}</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  No user posts yet. Upload a cover image and create content to attract customers.
+                  {t('noUserPostsYet', { ns: 'business' })}
                 </p>
                 <Button onClick={() => navigate('/business/add')} className="gap-2">
                   <Sparkles className="w-4 h-4" />
-                  Create Your First Post
+                  {t('createContent', { ns: 'business' })}
                 </Button>
               </CardContent>
             </Card>
@@ -389,10 +389,10 @@ const BusinessOverviewPage = () => {
           <div className="px-4 pb-4 pt-6">
             <div className="mb-4">
               <h2 className="text-lg font-semibold text-foreground">
-                User Posts ({posts.length})
+                {t('userPosts', { ns: 'business' })} ({posts.length})
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Posts from users who tagged this location
+                {t('postsFromUsers', { ns: 'business' })}
               </p>
             </div>
 

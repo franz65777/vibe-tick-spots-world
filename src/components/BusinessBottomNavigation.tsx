@@ -5,8 +5,10 @@ import { useAnalytics } from '@/hooks/useAnalytics';
 import { LayoutGrid, BarChart3, Plus, Activity, User } from 'lucide-react';
 import { toast } from 'sonner';
 import AccountSwitchModal from './AccountSwitchModal';
+import { useTranslation } from 'react-i18next';
 
 const BusinessBottomNavigation = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { trackEvent } = useAnalytics();
@@ -53,27 +55,27 @@ const BusinessBottomNavigation = () => {
   const navItems = [
     { 
       icon: <LayoutGrid size={24} strokeWidth={2} />, 
-      label: 'Overview', 
+      label: t('overview', { ns: 'business' }), 
       path: '/business'
     },
     { 
       icon: <BarChart3 size={24} strokeWidth={2} />, 
-      label: 'Analytics', 
+      label: t('analytics', { ns: 'business' }), 
       path: '/business/analytics'
     },
     { 
       icon: <Plus size={24} strokeWidth={2} />, 
-      label: 'Add', 
+      label: t('add', { ns: 'common' }), 
       path: '/business/add'
     },
     { 
       icon: <Activity size={24} strokeWidth={2} />, 
-      label: 'Feed', 
+      label: t('feed', { ns: 'common' }), 
       path: '/business/feed'
     },
     { 
       icon: <User size={24} strokeWidth={2} />, 
-      label: 'Profile', 
+      label: t('profile', { ns: 'common' }), 
       path: '/business/profile'
     },
   ];

@@ -19,8 +19,8 @@ const BusinessAddPage = () => {
     <div className="h-screen bg-gradient-to-b from-background to-muted/20 flex flex-col overflow-hidden">
       <div className="max-w-screen-sm mx-auto h-full flex flex-col w-full">
         {/* Header with Mode Toggle */}
-        <div className="flex-shrink-0 bg-background/95 backdrop-blur-sm border-b">
-          <div className="px-4 py-2">
+        <div className="flex-shrink-0 bg-background/95 backdrop-blur-sm">
+          <div className="px-4 py-3">
             <div className="flex items-center justify-center gap-2">
               <button
                 onClick={() => setActiveMode('post')}

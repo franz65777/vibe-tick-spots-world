@@ -276,9 +276,9 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
         )}
 
         {/* Image Upload */}
-        <div className="flex-1 min-h-0 flex flex-col">
+        <div className="flex-shrink-0">
           <label className="text-sm font-medium mb-1 block">Images (up to 3)</label>
-          <div className="space-y-2 flex-1 min-h-0">
+          <div className="space-y-2">
             {selectedFiles.length < 3 && (
               <label className="flex items-center justify-center gap-2 p-3 border-2 border-dashed rounded-lg cursor-pointer hover:border-primary transition-colors">
                 <ImagePlus className="w-4 h-4" />
@@ -315,27 +315,27 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
             )}
           </div>
         </div>
-      </div>
 
-      {/* Submit Button */}
-      <div className="flex-shrink-0 pt-3">
-        <Button
-          onClick={handleSubmit}
-          disabled={isSubmitting || !title.trim()}
-          className="w-full h-10 text-sm"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Publishing...
-            </>
-          ) : (
-            <>
-              <Send className="w-4 h-4 mr-2" />
-              Publish Campaign
-            </>
-          )}
-        </Button>
+        {/* Submit Button */}
+        <div className="flex-shrink-0 pt-3">
+          <Button
+            onClick={handleSubmit}
+            disabled={isSubmitting || !title.trim()}
+            className="w-full h-10 text-sm"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Publishing...
+              </>
+            ) : (
+              <>
+                <Send className="w-4 h-4 mr-2" />
+                Publish Campaign
+              </>
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );
