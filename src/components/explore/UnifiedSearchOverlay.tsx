@@ -157,7 +157,7 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={t('explore.searchCities')}
+            placeholder={t('searchCities', { ns: 'explore' })}
             className="w-full pl-10 pr-4 py-3 text-base bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
           />
         </div>
@@ -182,7 +182,7 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
         {loading && (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
-            <span className="ml-2 text-white">{t('common.searching')}</span>
+            <span className="ml-2 text-white">{t('searching', { ns: 'common' })}</span>
           </div>
         )}
 
@@ -202,8 +202,8 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
         {query.trim() && !loading && results.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-white">
             <MapPin className="w-16 h-16 mb-3 opacity-50" />
-            <p className="text-lg font-medium">{t('explore.noCitiesFound')}</p>
-            <p className="text-sm opacity-75 mt-1">{t('explore.tryDifferentSearch')}</p>
+            <p className="text-lg font-medium">{t('noCitiesFound', { ns: 'explore' })}</p>
+            <p className="text-sm opacity-75 mt-1">{t('tryDifferentSearch', { ns: 'explore' })}</p>
           </div>
         )}
       </div>

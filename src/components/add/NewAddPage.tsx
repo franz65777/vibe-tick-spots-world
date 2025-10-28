@@ -20,7 +20,7 @@ export const NewAddPage = () => {
   const [rating, setRating] = useState<number | undefined>();
   const [isUploading, setIsUploading] = useState(false);
 
-  const handleFilesSelect = (files: FileList) => {
+  const handleFilesSelect = async (files: FileList) => {
     const fileArray = Array.from(files);
     const validFiles = fileArray.filter(file => 
       file.type.startsWith('image/') || file.type.startsWith('video/')
@@ -35,6 +35,31 @@ export const NewAddPage = () => {
         const url = URL.createObjectURL(file);
         setPreviewUrls(prev => [...prev, url]);
       });
+
+      // Try to extract location from first image EXIF
+      if (!selectedLocation && newFiles[0]?.type.startsWith('image/')) {
+        try {
+          const exifr = await import('exifr');
+          const gps = await exifr.gps(newFiles[0]);
+          if (gps?.latitude && gps?.longitude) {
+            const { nominatimGeocoding } = await import('@/lib/nominatimGeocoding');
+            const result = await nominatimGeocoding.reverseGeocode(gps.latitude, gps.longitude);
+            if (result) {
+              toast.success('Location detected from photo!');
+              handleLocationSelect({
+                id: `gps_${Date.now()}`,
+                name: result.city || result.address.split(',')[0],
+                address: result.address,
+                lat: result.lat,
+                lng: result.lng,
+                types: ['locality']
+              });
+            }
+          }
+        } catch (err) {
+          console.log('No GPS data in image');
+        }
+      }
     }
   };
 
@@ -120,7 +145,7 @@ export const NewAddPage = () => {
 
   const handleSubmit = async () => {
     if (!user || !selectedLocation || !selectedCategory) {
-      toast.error(t('add.selectLocationAndCategory'));
+      toast.error(t('selectLocationAndCategory', { ns: 'add' }));
       return;
     }
 
@@ -198,7 +223,7 @@ export const NewAddPage = () => {
       
       console.log('✅ Post created successfully!', post.id);
       
-      toast.success(t('add.postShared'));
+      toast.success(t('postShared', { ns: 'add' }));
       
       // Clean up
       previewUrls.forEach(url => URL.revokeObjectURL(url));
@@ -208,7 +233,7 @@ export const NewAddPage = () => {
       
     } catch (error) {
       console.error('❌ Error creating post:', error);
-      toast.error(t('add.errorCreating'));
+      toast.error(t('errorCreating', { ns: 'add' }));
     } finally {
       setIsUploading(false);
     }

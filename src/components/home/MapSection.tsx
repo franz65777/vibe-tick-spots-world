@@ -203,18 +203,18 @@ const MapSection = ({
         </div>
 
         {/* Map Controls - List View and Expand Toggle - Inside map */}
-        <div className={`${isExpanded ? 'fixed' : 'absolute'} bottom-4 right-4 z-[1000] flex flex-col gap-2`}>
+        <div className={`${isExpanded ? 'fixed' : 'absolute'} bottom-20 right-3 z-[1000] flex flex-row gap-2`}>
           {/* Expand/Collapse Button */}
           {onToggleExpand && (
             <Button
               onClick={onToggleExpand}
               size="icon"
-              className="rounded-full bg-background/95 backdrop-blur-md shadow-lg border border-border hover:bg-accent hover:scale-105 w-11 h-11 transition-all"
+              className="rounded-full bg-background/95 backdrop-blur-md shadow-lg border border-border hover:bg-accent hover:scale-105 w-9 h-9 transition-all"
             >
               {isExpanded ? (
-                <Minimize2 className="w-5 h-5 text-foreground" />
+                <Minimize2 className="w-4 h-4 text-foreground" />
               ) : (
-                <Maximize2 className="w-5 h-5 text-foreground" />
+                <Maximize2 className="w-4 h-4 text-foreground" />
               )}
             </Button>
           )}
@@ -224,9 +224,9 @@ const MapSection = ({
             <SheetTrigger asChild>
               <Button
                 size="icon"
-                className="rounded-full bg-background/95 backdrop-blur-md shadow-lg border border-border hover:bg-accent hover:scale-105 w-11 h-11 transition-all"
+                className="rounded-full bg-background/95 backdrop-blur-md shadow-lg border border-border hover:bg-accent hover:scale-105 w-9 h-9 transition-all"
               >
-                <List className="w-5 h-5 text-foreground" />
+                <List className="w-4 h-4 text-foreground" />
               </Button>
             </SheetTrigger>
             <SheetContent side="bottom" className="h-[80vh] rounded-t-3xl flex flex-col">

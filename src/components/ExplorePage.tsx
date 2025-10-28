@@ -242,11 +242,11 @@ const ExplorePage = () => {
           <div className="flex bg-gray-100 rounded-xl p-1 mb-4">
             <button onClick={() => setSearchMode('locations')} className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all ${searchMode === 'locations' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
               <MapPin className="w-4 h-4" />
-              {t('explore.places')}
+              {t('places', { ns: 'explore' })}
             </button>
             <button onClick={() => setSearchMode('users')} className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all ${searchMode === 'users' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
               <Users className="w-4 h-4" />
-              {t('explore.people')}
+              {t('people', { ns: 'explore' })}
             </button>
           </div>
 
@@ -255,7 +255,7 @@ const ExplorePage = () => {
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <Input 
               type="text" 
-              placeholder={searchMode === 'locations' ? t('explore.searchPlaces') : t('explore.searchPeople')} 
+              placeholder={searchMode === 'locations' ? t('searchPlaces', { ns: 'explore' }) : t('searchPeople', { ns: 'explore' })} 
               value={searchQuery} 
               onChange={e => handleSearch(e.target.value)} 
               className="pl-12 pr-4 h-12 bg-gray-50 border-gray-200 focus:bg-white rounded-xl text-gray-900 placeholder-gray-500" 
@@ -274,7 +274,7 @@ const ExplorePage = () => {
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
               <span className="text-gray-600 font-medium">
-                {isSearching ? t('common.searching') : t('common.loading')}
+                {isSearching ? t('searching', { ns: 'common' }) : t('loading', { ns: 'common' })}
               </span>
             </div>
           </div>
@@ -306,7 +306,7 @@ const ExplorePage = () => {
                       <div>
                         <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
                           <Search className="w-4 h-4" />
-                          {t('explore.recent')}
+                          {t('recent', { ns: 'explore' })}
                         </h3>
                         <div className="space-y-2">
                           {searchHistory.map((item) => (
@@ -356,7 +356,7 @@ const ExplorePage = () => {
                       <div>
                         <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
                           <Users className="w-4 h-4" />
-                          {t('explore.suggestedForYou')}
+                          {t('suggestedForYou', { ns: 'explore' })}
                         </h3>
                         <div className="space-y-2">
                           {suggestions.slice(0, 5).map((suggestedUser) => (
@@ -379,8 +379,8 @@ const ExplorePage = () => {
                                     {suggestedUser.username}
                                   </div>
                                    <div className="text-sm text-muted-foreground">
-                                     {suggestedUser.follower_count || 0} {t('common.followers')}
-                                     {suggestedUser.mutual_followers ? ` • ${suggestedUser.mutual_followers} ${t('common.mutual')}` : ''}
+                                     {suggestedUser.follower_count || 0} {t('followers', { ns: 'common' })}
+                                     {suggestedUser.mutual_followers ? ` • ${suggestedUser.mutual_followers} ${t('mutual', { ns: 'common' })}` : ''}
                                    </div>
                                 </div>
                               </div>
@@ -389,7 +389,7 @@ const ExplorePage = () => {
                                  size="sm"
                                  onClick={() => handleFollowUser(suggestedUser.id)}
                                >
-                                 {suggestedUser.is_following ? t('common.following') : t('common.follow')}
+                                 {suggestedUser.is_following ? t('following', { ns: 'common' }) : t('follow', { ns: 'common' })}
                                </Button>
                             </div>
                           ))}
@@ -422,7 +422,7 @@ const ExplorePage = () => {
                         className="w-full py-6 bg-gradient-to-r from-blue-500/10 to-purple-500/10 hover:from-blue-500/20 hover:to-purple-500/20 border-blue-200 hover:border-blue-300 transition-all"
                       >
                         <UserPlus className="w-5 h-5 mr-2" />
-                        <span className="font-semibold">{t('explore.inviteFriends')}</span>
+                        <span className="font-semibold">{t('inviteFriends', { ns: 'explore' })}</span>
                       </Button>
                     </div>
                   </div>
