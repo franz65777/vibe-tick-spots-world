@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, Users, FileText, Share2, Clock, Heart } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { useTranslation } from 'react-i18next';
 
 interface AnalyticsData {
   totalSaves: number;
@@ -20,6 +21,7 @@ interface AnalyticsData {
 }
 
 const BusinessAnalyticsPage = () => {
+  const { t } = useTranslation();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [locationId, setLocationId] = useState<string | null>(null);
@@ -150,9 +152,9 @@ const BusinessAnalyticsPage = () => {
       const totalSeconds = (viewData || []).reduce((sum, view) => sum + view.duration_seconds, 0);
       const minutes = Math.round(totalSeconds / 60);
 
-      const weekLabel = i === 0 ? 'This week' : 
-                       i === 1 ? 'Last week' : 
-                       `${i} weeks ago`;
+      const weekLabel = i === 0 ? t('thisWeek', { ns: 'business' }) : 
+                       i === 1 ? t('lastWeek', { ns: 'business' }) : 
+                       t('weeksAgo', { count: i, ns: 'business' });
 
       result.push({ week: weekLabel, minutes });
     }
@@ -258,7 +260,7 @@ const BusinessAnalyticsPage = () => {
       <div className="min-h-screen bg-background pb-24 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading analytics...</p>
+          <p className="text-muted-foreground">{t('loadingAnalytics', { ns: 'business' })}</p>
         </div>
       </div>
     );
@@ -268,7 +270,7 @@ const BusinessAnalyticsPage = () => {
     return (
       <div className="min-h-screen bg-background pb-24 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-muted-foreground">No analytics data available</p>
+          <p className="text-muted-foreground">{t('noAnalyticsData', { ns: 'business' })}</p>
         </div>
       </div>
     );
@@ -278,8 +280,8 @@ const BusinessAnalyticsPage = () => {
     <div className="min-h-screen bg-background pb-24">
       <div className="max-w-screen-sm mx-auto px-3 py-3 space-y-3">
         <div>
-          <h1 className="text-xl font-bold text-foreground">Business Analytics</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Track your location's performance</p>
+          <h1 className="text-xl font-bold text-foreground">{t('businessAnalytics', { ns: 'business' })}</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">{t('trackPerformance', { ns: 'business' })}</p>
         </div>
 
         {/* Key Metrics Grid */}
@@ -288,12 +290,12 @@ const BusinessAnalyticsPage = () => {
             <CardContent className="pt-5 pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-muted-foreground">Total Saves</p>
+                  <p className="text-xs text-muted-foreground">{t('totalSaves', { ns: 'business' })}</p>
                   <p className="text-xl font-bold text-foreground mt-0.5">{analytics.totalSaves}</p>
                   {analytics.savesChange !== 0 && (
                     <p className={`text-[10px] mt-0.5 flex items-center gap-0.5 ${analytics.savesChange > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                       <TrendingUp className={`w-2.5 h-2.5 ${analytics.savesChange < 0 ? 'rotate-180' : ''}`} />
-                      {analytics.savesChange > 0 ? '+' : ''}{analytics.savesChange}% this week
+                      {analytics.savesChange > 0 ? '+' : ''}{analytics.savesChange}% {t('thisWeekLower', { ns: 'business' })}
                     </p>
                   )}
                 </div>
@@ -306,12 +308,12 @@ const BusinessAnalyticsPage = () => {
             <CardContent className="pt-5 pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-muted-foreground">Total Posts</p>
+                  <p className="text-xs text-muted-foreground">{t('totalPosts', { ns: 'business' })}</p>
                   <p className="text-xl font-bold text-foreground mt-0.5">{analytics.totalPosts}</p>
                   {analytics.postsChange !== 0 && (
                     <p className={`text-[10px] mt-0.5 flex items-center gap-0.5 ${analytics.postsChange > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                       <TrendingUp className={`w-2.5 h-2.5 ${analytics.postsChange < 0 ? 'rotate-180' : ''}`} />
-                      {analytics.postsChange > 0 ? '+' : ''}{analytics.postsChange}% this week
+                      {analytics.postsChange > 0 ? '+' : ''}{analytics.postsChange}% {t('thisWeekLower', { ns: 'business' })}
                     </p>
                   )}
                 </div>
@@ -324,12 +326,12 @@ const BusinessAnalyticsPage = () => {
             <CardContent className="pt-5 pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-muted-foreground">Total Shares</p>
+                  <p className="text-xs text-muted-foreground">{t('totalShares', { ns: 'business' })}</p>
                   <p className="text-xl font-bold text-foreground mt-0.5">{analytics.totalShares}</p>
                   {analytics.sharesChange !== 0 && (
                     <p className={`text-[10px] mt-0.5 flex items-center gap-0.5 ${analytics.sharesChange > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                       <TrendingUp className={`w-2.5 h-2.5 ${analytics.sharesChange < 0 ? 'rotate-180' : ''}`} />
-                      {analytics.sharesChange > 0 ? '+' : ''}{analytics.sharesChange}% this week
+                      {analytics.sharesChange > 0 ? '+' : ''}{analytics.sharesChange}% {t('thisWeekLower', { ns: 'business' })}
                     </p>
                   )}
                 </div>
@@ -342,12 +344,12 @@ const BusinessAnalyticsPage = () => {
             <CardContent className="pt-5 pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-muted-foreground">Avg. Time</p>
+                  <p className="text-xs text-muted-foreground">{t('avgTime', { ns: 'business' })}</p>
                   <p className="text-xl font-bold text-foreground mt-0.5">{analytics.avgTimeSpent}m</p>
                   {analytics.timeChange !== 0 && (
                     <p className={`text-[10px] mt-0.5 flex items-center gap-0.5 ${analytics.timeChange > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                       <TrendingUp className={`w-2.5 h-2.5 ${analytics.timeChange < 0 ? 'rotate-180' : ''}`} />
-                      {analytics.timeChange > 0 ? '+' : ''}{analytics.timeChange}% this week
+                      {analytics.timeChange > 0 ? '+' : ''}{analytics.timeChange}% {t('thisWeekLower', { ns: 'business' })}
                     </p>
                   )}
                 </div>
@@ -360,7 +362,7 @@ const BusinessAnalyticsPage = () => {
         {/* Saves Over Time Chart */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Saves Over Time (Last 7 Days)</CardTitle>
+            <CardTitle className="text-sm">{t('savesOverTime', { ns: 'business' })}</CardTitle>
           </CardHeader>
           <CardContent className="px-2">
             <ChartContainer
@@ -399,7 +401,7 @@ const BusinessAnalyticsPage = () => {
         {/* Posts Over Time Chart */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Posts Growth (Last 7 Days)</CardTitle>
+            <CardTitle className="text-sm">{t('postsGrowth', { ns: 'business' })}</CardTitle>
           </CardHeader>
           <CardContent className="px-2">
             <ChartContainer
@@ -438,7 +440,7 @@ const BusinessAnalyticsPage = () => {
         {/* Weekly Engagement Chart */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Weekly Engagement Time</CardTitle>
+            <CardTitle className="text-sm">{t('weeklyEngagement', { ns: 'business' })}</CardTitle>
           </CardHeader>
           <CardContent className="px-2">
             <ChartContainer

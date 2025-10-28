@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface BusinessAnalyticsProps {
   businessData: {
@@ -16,6 +17,7 @@ interface BusinessAnalyticsProps {
 }
 
 const BusinessAnalyticsEnhanced = ({ businessData }: BusinessAnalyticsProps) => {
+  const { t } = useTranslation();
   const [timeRange, setTimeRange] = useState<'week' | 'month' | 'year'>('week');
 
   const weeklyData = [

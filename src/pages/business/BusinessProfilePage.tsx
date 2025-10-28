@@ -11,6 +11,7 @@ import { getCategoryColor, getCategoryIcon } from '@/utils/categoryIcons';
 import { formatDetailedAddress } from '@/utils/addressFormatter';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 interface BusinessLocation {
   id: string;
@@ -27,6 +28,7 @@ interface BusinessLocation {
 }
 
 const BusinessProfilePage = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [location, setLocation] = useState<BusinessLocation | null>(null);
@@ -64,7 +66,7 @@ const BusinessProfilePage = () => {
       }
     } catch (error) {
       console.error('Error fetching business location:', error);
-      toast.error('Failed to load business location');
+      toast.error(t('failedLoadLocation', { ns: 'business' }));
     } finally {
       setLoading(false);
     }
@@ -117,9 +119,9 @@ const BusinessProfilePage = () => {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
         <div className="text-center">
-          <p className="text-muted-foreground">No business location found</p>
+          <p className="text-muted-foreground">{t('noLocationFound', { ns: 'business' })}</p>
           <p className="text-sm text-muted-foreground mt-2">
-            Please claim a business location first
+            {t('claimLocationFirst', { ns: 'business' })}
           </p>
         </div>
       </div>
@@ -191,7 +193,7 @@ const BusinessProfilePage = () => {
                   rel="noopener noreferrer"
                   className="text-foreground hover:text-primary"
                 >
-                  Visit Website
+                  {t('visitWebsite', { ns: 'business' })}
                 </a>
               </div>
             )}
@@ -219,7 +221,7 @@ const BusinessProfilePage = () => {
           {activeTab === 'posts' && location.id && (
             <div>
               <p className="text-sm text-muted-foreground mb-4">
-                Marketing posts from this business
+                {t('marketingPostsFromBusiness', { ns: 'business' })}
               </p>
               <PostsGrid 
                 userId={user?.id} 
@@ -233,8 +235,8 @@ const BusinessProfilePage = () => {
             <div className="space-y-4">
               {marketingContent.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
-                  <p>No marketing content yet</p>
-                  <p className="text-sm mt-2">Create events, promotions, and announcements in the Add tab</p>
+                  <p>{t('noMarketingContent', { ns: 'business' })}</p>
+                  <p className="text-sm mt-2">{t('createMarketing', { ns: 'business' })}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-3">
@@ -248,13 +250,13 @@ const BusinessProfilePage = () => {
                             className="w-full aspect-square object-cover"
                           />
                         ) : (
-                          <div className="w-full aspect-square bg-muted flex items-center justify-center text-muted-foreground">No Image</div>
+                          <div className="w-full aspect-square bg-muted flex items-center justify-center text-muted-foreground">{t('noImage', { ns: 'business' })}</div>
                         )}
                         <div className="p-3 space-y-2">
-                          <h3 className="font-semibold line-clamp-2 text-foreground text-sm">{content.caption || 'Campaign'}</h3>
+                          <h3 className="font-semibold line-clamp-2 text-foreground text-sm">{content.caption || t('campaign', { ns: 'business' })}</h3>
                           <div className="flex items-center justify-between">
                             <p className="text-xs text-muted-foreground">{new Date(content.created_at).toLocaleDateString()}</p>
-                            <Button size="sm" onClick={() => handleRelaunch(content)} className="h-8 px-3 text-xs">Relaunch</Button>
+                            <Button size="sm" onClick={() => handleRelaunch(content)} className="h-8 px-3 text-xs">{t('relaunch', { ns: 'business' })}</Button>
                           </div>
                         </div>
                       </CardContent>
@@ -267,14 +269,14 @@ const BusinessProfilePage = () => {
 
           {activeTab === 'badges' && (
             <div className="text-center py-12 text-muted-foreground">
-              <p>Business badges coming soon</p>
+              <p>{t('badgesComingSoon', { ns: 'business' })}</p>
             </div>
           )}
 
           {activeTab === 'tagged' && location.id && (
             <div>
               <p className="text-sm text-muted-foreground mb-4">
-                Posts from users who tagged this location
+                {t('postsFromUsers', { ns: 'business' })}
               </p>
               <PostsGrid 
                 locationId={location.id}
