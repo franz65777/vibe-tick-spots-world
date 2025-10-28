@@ -2,12 +2,14 @@
 import { useState } from 'react';
 import { useUserBadges } from '@/hooks/useUserBadges';
 import AchievementDetailModal from './AchievementDetailModal';
+import { useTranslation } from 'react-i18next';
 
 interface AchievementsProps {
   userId?: string;
 }
 
 const Achievements = ({ userId }: AchievementsProps) => {
+  const { t } = useTranslation();
   const { badges, getBadgeStats, loading } = useUserBadges(userId);
   const { earned, total } = getBadgeStats();
   const [selectedBadge, setSelectedBadge] = useState(null);
@@ -25,7 +27,7 @@ const Achievements = ({ userId }: AchievementsProps) => {
     return (
       <div className="px-4 py-4 bg-white border-b border-gray-100">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Achievements</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{t('achievements', { ns: 'profile' })}</h2>
           <div className="w-16 h-4 bg-gray-200 rounded animate-pulse"></div>
         </div>
         
@@ -45,8 +47,8 @@ const Achievements = ({ userId }: AchievementsProps) => {
     <>
       <div className="px-4 py-4 bg-white border-b border-gray-100">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Achievements</h2>
-          <span className="text-sm text-blue-600 font-medium">{earned}/{total} Earned</span>
+          <h2 className="text-lg font-semibold text-gray-900">{t('achievements', { ns: 'profile' })}</h2>
+          <span className="text-sm text-blue-600 font-medium">{earned}/{total} {t('earned', { ns: 'profile' })}</span>
         </div>
         
         <div className="grid grid-cols-2 gap-4">

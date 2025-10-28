@@ -134,7 +134,7 @@ const ProfilePage = () => {
             className="w-full"
           >
             <Building2 className="w-4 h-4 mr-2" />
-            {t('profile.switchToBusiness')}
+            {t('switchToBusiness', { ns: 'profile' })}
           </Button>
         </div>
       )}

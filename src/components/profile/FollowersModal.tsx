@@ -4,6 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface FollowersModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ interface FollowersModalProps {
 }
 
 const FollowersModal = ({ isOpen, onClose, type, userId }: FollowersModalProps) => {
+  const { t } = useTranslation();
   const { user: currentUser } = useAuth();
   const targetUserId = userId || currentUser?.id;
   const [users, setUsers] = useState<any[]>([]);
@@ -115,7 +117,7 @@ const FollowersModal = ({ isOpen, onClose, type, userId }: FollowersModalProps) 
       <div className="bg-background w-full h-[80vh] rounded-t-xl">
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h2 className="text-lg font-semibold text-foreground">
-            {type === 'followers' ? 'Followers' : 'Following'}
+            {type === 'followers' ? t('followers', { ns: 'common' }) : t('following', { ns: 'common' })}
           </h2>
           <button onClick={onClose}>
             <X className="w-6 h-6 text-muted-foreground" />
@@ -130,7 +132,7 @@ const FollowersModal = ({ isOpen, onClose, type, userId }: FollowersModalProps) 
               </div>
             ) : users.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                No {type === 'followers' ? 'followers' : 'following'} yet
+                {type === 'followers' ? t('noFollowers', { ns: 'profile' }) : t('noFollowing', { ns: 'profile' })}
               </div>
             ) : (
               users.map((user) => (
@@ -164,7 +166,7 @@ const FollowersModal = ({ isOpen, onClose, type, userId }: FollowersModalProps) 
                         className="flex items-center gap-2"
                       >
                         <UserCheck className="w-4 h-4" />
-                        Following
+                        {t('following', { ns: 'common' })}
                       </Button>
                     ) : (
                       <Button
@@ -174,7 +176,7 @@ const FollowersModal = ({ isOpen, onClose, type, userId }: FollowersModalProps) 
                         className="flex items-center gap-2 text-destructive hover:bg-destructive/10"
                       >
                         <UserMinus className="w-4 h-4" />
-                        Remove
+                        {t('remove', { ns: 'common' })}
                       </Button>
                     )
                   )}

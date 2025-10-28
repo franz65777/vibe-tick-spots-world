@@ -10,8 +10,10 @@ import { useNavigate } from 'react-router-dom';
 import AuthenticatedLayout from '@/components/AuthenticatedLayout';
 import PostDetailModal from '@/components/explore/PostDetailModal';
 import { PostActions } from '@/components/feed/PostActions';
+import { useTranslation } from 'react-i18next';
 
 const FeedPage = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [feedItems, setFeedItems] = useState<FeedItemType[]>([]);
@@ -152,8 +154,8 @@ const FeedPage = () => {
                 <Sparkles className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-foreground">Your Feed</h1>
-                <p className="text-xs text-muted-foreground">See what your friends are discovering</p>
+                <h1 className="text-xl font-bold text-foreground">{t('yourFeed', { ns: 'feed' })}</h1>
+                <p className="text-xs text-muted-foreground">{t('feedSubtitle', { ns: 'feed' })}</p>
               </div>
             </div>
           </div>
@@ -184,16 +186,16 @@ const FeedPage = () => {
               <TrendingUp className="w-10 h-10 text-blue-600" />
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-2">
-              Your feed is empty
+              {t('emptyFeed', { ns: 'feed' })}
             </h3>
             <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
-              Start following people to see their latest discoveries and activities
+              {t('emptyFeedDescription', { ns: 'feed' })}
             </p>
             <button
               onClick={() => navigate('/explore')}
               className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:scale-105"
             >
-              Discover People
+              {t('discoverPeople', { ns: 'feed' })}
             </button>
           </div>
         ) : (

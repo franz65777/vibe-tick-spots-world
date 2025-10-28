@@ -15,7 +15,7 @@ const resources = {
       searching: 'Searching...',
       follow: 'Follow',
       following: 'Following',
-      followers: 'followers',
+      followers: 'Followers',
       mutual: 'mutual',
       save: 'Save',
       cancel: 'Cancel',
@@ -26,11 +26,19 @@ const resources = {
       like: 'Like',
       likes: 'Likes',
       posts: 'Posts',
-      locations: 'Locations',
+      locations: 'locations',
       submit: 'Submit',
       close: 'Close',
       logout: 'Logout',
       required: '*Required',
+      of: 'of',
+      sortBy: 'Sort by',
+      nameAZ: 'Name A-Z',
+      cityAZ: 'City A-Z',
+      category: 'Category',
+      noResults: 'No Results Found',
+      adjustFilters: 'Try adjusting your search or filters to find what you\'re looking for.',
+      remove: 'Remove'
     },
     navigation: {
       explore: 'Explore',
@@ -71,12 +79,23 @@ const resources = {
       badges: 'Badges',
       tagged: 'Tagged',
       marketing: 'Marketing',
-      switchToBusiness: 'Switch to Business Account',
+      switchToBusiness: 'Switch to Business',
       noBusinessAccount: 'No verified business account',
       needVerification: 'You need to claim and verify a business before accessing business features',
       editProfile: 'Edit Profile',
       settings: 'Settings',
       saved: 'Saved',
+      savedLocations: 'Saved Locations',
+      searchPlaceholder: 'Search locations, cities, or categories...',
+      allCities: 'All Cities',
+      recentlySaved: 'Recently Saved',
+      loadingSaved: 'Loading saved locations...',
+      noSavedLocations: 'No Saved Locations',
+      startSaving: 'Start exploring and save places you love to see them here.',
+      noFollowers: 'No followers yet',
+      noFollowing: 'No following yet',
+      achievements: 'Achievements',
+      earned: 'Earned'
     },
     explore: {
       places: 'Places',
@@ -155,6 +174,13 @@ const resources = {
       languageSaved: 'Language preference saved',
       failedToSave: 'Failed to save',
     },
+    feed: {
+      yourFeed: 'Your Feed',
+      feedSubtitle: 'See what your friends are discovering',
+      emptyFeed: 'Your feed is empty',
+      emptyFeedDescription: 'Start following people to see their latest discoveries and activities',
+      discoverPeople: 'Discover People'
+    }
   },
 
   es: {

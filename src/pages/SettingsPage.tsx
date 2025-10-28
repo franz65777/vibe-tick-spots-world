@@ -45,16 +45,22 @@ const SettingsPage: React.FC = () => {
     load();
   }, [user?.id]);
 
-  const onSave = async () => {
-    if (!user?.id) return;
+  const handleLanguageChange = async (newLanguage: string) => {
+    setLanguage(newLanguage);
+    
+    if (!user?.id) {
+      i18n.changeLanguage(newLanguage);
+      return;
+    }
+
     setSaving(true);
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ language })
+        .update({ language: newLanguage })
         .eq('id', user.id);
       if (error) throw error;
-      i18n.changeLanguage(language);
+      i18n.changeLanguage(newLanguage);
       toast.success(t('languageSaved', { ns: 'settings' }));
     } catch (e: any) {
       toast.error(e?.message || t('failedToSave', { ns: 'settings' }));
@@ -64,28 +70,29 @@ const SettingsPage: React.FC = () => {
   };
 
   return (
-    <main className="p-4 max-w-2xl mx-auto w-full">
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('title', { ns: 'settings' })}</CardTitle>
+    <main className="p-4 max-w-2xl mx-auto w-full pb-24">
+      <Card className="border-0 shadow-lg">
+        <CardHeader className="border-b">
+          <CardTitle className="text-2xl">{t('title', { ns: 'settings' })}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div>
-            <label className="text-sm font-semibold text-foreground mb-3 block">{t('language', { ns: 'settings' })}</label>
-            <div className="grid grid-cols-2 gap-3">
+        <CardContent className="p-0">
+          <div className="p-6">
+            <label className="text-base font-semibold text-foreground mb-4 block">{t('language', { ns: 'settings' })}</label>
+            <div className="grid grid-cols-2 gap-2.5">
               {languages.map((lang) => (
                 <button
                   key={lang.code}
-                  onClick={() => setLanguage(lang.code)}
-                  className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all hover:border-primary/50 ${
+                  onClick={() => handleLanguageChange(lang.code)}
+                  disabled={saving}
+                  className={`flex items-center gap-2.5 p-3 rounded-xl border-2 transition-all ${
                     language === lang.code
-                      ? 'border-primary bg-primary/5 shadow-sm'
-                      : 'border-border bg-background'
-                  }`}
+                      ? 'border-primary bg-primary/10 shadow-sm'
+                      : 'border-border bg-background hover:border-primary/30'
+                  } ${saving ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <span className="text-2xl">{lang.flag}</span>
                   <div className="flex-1 text-left">
-                    <div className={`font-medium ${language === lang.code ? 'text-primary' : 'text-foreground'}`}>
+                    <div className={`font-medium text-sm ${language === lang.code ? 'text-primary' : 'text-foreground'}`}>
                       {lang.label}
                     </div>
                   </div>
@@ -100,10 +107,6 @@ const SettingsPage: React.FC = () => {
               ))}
             </div>
           </div>
-
-          <Button onClick={onSave} disabled={saving} className="w-full h-12 text-base font-semibold">
-            {saving ? t('saving', { ns: 'settings' }) : t('saveChanges', { ns: 'settings' })}
-          </Button>
         </CardContent>
       </Card>
     </main>

@@ -8,6 +8,7 @@ import LocationPostLibrary from '@/components/explore/LocationPostLibrary';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { UnifiedLocationService } from '@/services/unifiedLocationService';
+import { useTranslation } from 'react-i18next';
 
 interface SavedLocationsListProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ interface SavedLocationsListProps {
 }
 
 const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps) => {
+  const { t } = useTranslation();
   const { user: currentUser } = useAuth();
   const targetUserId = userId || currentUser?.id;
   const [savedPlaces, setSavedPlaces] = useState<any>({});
@@ -178,9 +180,9 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-lg font-semibold">Saved Locations</h1>
+            <h1 className="text-lg font-semibold">{t('savedLocations', { ns: 'profile' })}</h1>
             <p className="text-sm text-muted-foreground">
-              {filteredAndSortedPlaces.length} of {allPlaces.length} locations
+              {filteredAndSortedPlaces.length} {t('of', { ns: 'common' })} {allPlaces.length} {t('locations', { ns: 'common' })}
             </p>
           </div>
         </div>
@@ -191,7 +193,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <Input
-            placeholder="Search locations, cities, or categories..."
+            placeholder={t('searchPlaceholder', { ns: 'profile' })}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -201,10 +203,10 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
         <div className="flex gap-2">
           <Select value={selectedCity} onValueChange={setSelectedCity}>
             <SelectTrigger className="flex-1 bg-background">
-              <SelectValue placeholder="All Cities" />
+              <SelectValue placeholder={t('allCities', { ns: 'profile' })} />
             </SelectTrigger>
             <SelectContent className="bg-background z-50">
-              <SelectItem value="all">All Cities</SelectItem>
+              <SelectItem value="all">{t('allCities', { ns: 'profile' })}</SelectItem>
               {cities.map(city => (
                 <SelectItem key={city} value={city}>
                   {city} ({savedPlaces[city]?.length || 0})
@@ -215,13 +217,13 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
 
           <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger className="flex-1 bg-background">
-              <SelectValue placeholder="Sort by" />
+              <SelectValue placeholder={t('sortBy', { ns: 'common' })} />
             </SelectTrigger>
             <SelectContent className="bg-background z-50">
-              <SelectItem value="recent">Recently Saved</SelectItem>
-              <SelectItem value="name">Name A-Z</SelectItem>
-              <SelectItem value="city">City A-Z</SelectItem>
-              <SelectItem value="category">Category</SelectItem>
+              <SelectItem value="recent">{t('recentlySaved', { ns: 'profile' })}</SelectItem>
+              <SelectItem value="name">{t('nameAZ', { ns: 'common' })}</SelectItem>
+              <SelectItem value="city">{t('cityAZ', { ns: 'common' })}</SelectItem>
+              <SelectItem value="category">{t('category', { ns: 'common' })}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -232,7 +234,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-3"></div>
-            <p className="text-muted-foreground">Loading saved locations...</p>
+            <p className="text-muted-foreground">{t('loadingSaved', { ns: 'profile' })}</p>
           </div>
         </div>
       )}
@@ -244,9 +246,9 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
             <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
               <MapPin className="w-8 h-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">No Saved Locations</h3>
+            <h3 className="text-lg font-semibold mb-2">{t('noSavedLocations', { ns: 'profile' })}</h3>
             <p className="text-muted-foreground text-sm">
-              Start exploring and save places you love to see them here.
+              {t('startSaving', { ns: 'profile' })}
             </p>
           </div>
         </div>
@@ -259,9 +261,9 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
             <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="w-8 h-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">No Results Found</h3>
+            <h3 className="text-lg font-semibold mb-2">{t('noResults', { ns: 'common' })}</h3>
             <p className="text-muted-foreground text-sm">
-              Try adjusting your search or filters to find what you're looking for.
+              {t('adjustFilters', { ns: 'common' })}
             </p>
           </div>
         </div>
