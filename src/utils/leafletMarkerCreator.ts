@@ -96,7 +96,6 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
         <path d="M18 2C11.373 2 6 7.373 6 14c0 7.074 12 26 12 26s12-18.926 12-26C30 7.373 24.627 2 18 2z" 
               fill="${pinColor}"
               opacity="0.95"/>
-        <circle cx="18" cy="14" r="9" fill="white" opacity="0.98"/>
       </svg>
       
       <!-- Category icon -->
