@@ -99,7 +99,7 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
         <circle cx="18" cy="14" r="9" fill="white" opacity="0.98"/>
       </svg>
       
-      <!-- Larger category icon with color filter -->
+      <!-- Category icon -->
       <img 
         src="${categoryImg}" 
         alt="${category}"
@@ -110,7 +110,6 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
           width: 18px;
           height: 18px;
           object-fit: contain;
-          filter: brightness(0) saturate(100%) invert(0%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%);
         "
       />
     </div>
