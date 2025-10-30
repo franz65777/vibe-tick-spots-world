@@ -1,8 +1,11 @@
-
-import React from 'react';
-import { formatDistanceToNow } from 'date-fns';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Heart, MessageCircle, UserPlus, MapPin, Gift, ChevronRight } from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 interface MobileNotificationItemProps {
   notification: {
@@ -10,91 +13,192 @@ interface MobileNotificationItemProps {
     type: string;
     title: string;
     message: string;
+    data?: {
+      user_id?: string;
+      username?: string;
+      avatar_url?: string;
+      post_id?: string;
+      post_image?: string;
+    };
     created_at: string;
     is_read: boolean;
-    data?: any;
   };
   onMarkAsRead: (id: string) => void;
-  onAction?: (notification: any) => void;
+  onAction: (notification: any) => void;
 }
 
-const MobileNotificationItem = ({ notification, onMarkAsRead, onAction }: MobileNotificationItemProps) => {
-  const getIcon = () => {
-    const iconProps = "w-4 h-4";
-    switch (notification.type) {
-      case 'like':
-        return <Heart className={`${iconProps} text-red-500`} />;
-      case 'comment':
-        return <MessageCircle className={`${iconProps} text-blue-500`} />;
-      case 'follow':
-      case 'friend_request':
-      case 'friend_accepted':
-        return <UserPlus className={`${iconProps} text-green-500`} />;
-      case 'place_recommendation':
-        return <MapPin className={`${iconProps} text-purple-500`} />;
-      case 'achievement':
-        return <Gift className={`${iconProps} text-yellow-500`} />;
-      default:
-        return <div className={`${iconProps} bg-gray-400 rounded-full`} />;
-    }
-  };
-
-  const getIconBackground = () => {
-    switch (notification.type) {
-      case 'like':
-        return 'bg-red-50 border-red-100';
-      case 'comment':
-        return 'bg-blue-50 border-blue-100';
-      case 'follow':
-      case 'friend_request':
-      case 'friend_accepted':
-        return 'bg-green-50 border-green-100';
-      case 'place_recommendation':
-        return 'bg-purple-50 border-purple-100';
-      case 'achievement':
-        return 'bg-yellow-50 border-yellow-100';
-      default:
-        return 'bg-gray-50 border-gray-100';
-    }
-  };
+const MobileNotificationItem = ({ 
+  notification, 
+  onMarkAsRead, 
+  onAction 
+}: MobileNotificationItemProps) => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleClick = () => {
-    if (!notification.is_read) {
-      onMarkAsRead(notification.id);
+    onAction(notification);
+  };
+
+  const handleFollowClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!user || !notification.data?.user_id) return;
+    
+    setIsLoading(true);
+    try {
+      if (isFollowing) {
+        // Unfollow
+        const { error } = await supabase
+          .from('user_follows')
+          .delete()
+          .eq('follower_id', user.id)
+          .eq('following_id', notification.data.user_id);
+          
+        if (error) throw error;
+        
+        setIsFollowing(false);
+        toast.success(t('common.unfollowed'));
+      } else {
+        // Follow
+        const { error } = await supabase
+          .from('user_follows')
+          .insert({
+            follower_id: user.id,
+            following_id: notification.data.user_id
+          });
+          
+        if (error) throw error;
+        
+        setIsFollowing(true);
+        toast.success(t('common.following'));
+      }
+    } catch (error) {
+      console.error('Error toggling follow:', error);
+      toast.error('Failed to update follow status');
+    } finally {
+      setIsLoading(false);
     }
-    if (onAction) {
-      onAction(notification);
+  };
+
+  const getRelativeTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return t('notifications.justNow');
+    if (diffInMinutes < 60) return t('notifications.minutesAgo', { count: diffInMinutes });
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return t('notifications.hoursAgo', { count: diffInHours });
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return t('notifications.daysAgo', { count: diffInDays });
+    
+    const diffInWeeks = Math.floor(diffInDays / 7);
+    return t('notifications.weeksAgo', { count: diffInWeeks });
+  };
+
+  const getNotificationText = () => {
+    const username = notification.data?.username || 'Someone';
+    
+    switch (notification.type) {
+      case 'like':
+        return (
+          <span className="text-foreground text-[15px]">
+            <span className="font-semibold">{username}</span>
+            {' '}{t('notifications.likedYourPost')}
+          </span>
+        );
+      case 'follow':
+        return (
+          <span className="text-foreground text-[15px]">
+            <span className="font-semibold">{username}</span>
+            {' '}{t('notifications.startedFollowing')}
+          </span>
+        );
+      case 'comment':
+        return (
+          <span className="text-foreground text-[15px]">
+            <span className="font-semibold">{username}</span>
+            {' '}{t('notifications.commentedOnYourPost')}
+          </span>
+        );
+      default:
+        return <span className="text-foreground text-[15px]">{notification.message}</span>;
     }
   };
 
   return (
-    <div 
-      className={`flex items-start gap-3 p-4 cursor-pointer active:bg-accent/50 transition-colors ${
-        !notification.is_read ? 'bg-muted/30' : 'bg-background'
-      }`}
+    <div
       onClick={handleClick}
+      className={`flex items-center gap-3 px-4 py-3 cursor-pointer active:bg-accent/50 transition-colors ${
+        !notification.is_read ? 'bg-accent/20' : 'bg-background'
+      }`}
     >
-      {/* Icon */}
-      <div className={`flex-shrink-0 w-11 h-11 rounded-full border flex items-center justify-center ${getIconBackground()}`}>
-        {getIcon()}
-      </div>
-      
-      {/* Content */}
-      <div className="flex-1 min-w-0 pt-0.5">
-        <div className="flex items-start gap-2 mb-0.5">
-          <h4 className="font-semibold text-foreground text-[15px] leading-tight flex-1">{notification.title}</h4>
-          {!notification.is_read && (
-            <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-1.5"></div>
-          )}
+      {/* User Avatar */}
+      <Avatar 
+        className="w-11 h-11 border-2 border-background cursor-pointer"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (notification.data?.user_id) {
+            navigate(`/profile/${notification.data.user_id}`);
+          }
+        }}
+      >
+        <AvatarImage 
+          src={notification.data?.avatar_url || ''} 
+          alt={notification.data?.username || 'User'} 
+        />
+        <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+          {(notification.data?.username || 'U')[0].toUpperCase()}
+        </AvatarFallback>
+      </Avatar>
+
+      {/* Notification Text and Time */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-baseline gap-1">
+          {getNotificationText()}
         </div>
-        <p className="text-muted-foreground text-[13px] leading-relaxed line-clamp-2 mb-1.5">{notification.message}</p>
-        <p className="text-muted-foreground/60 text-xs">
-          {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
-        </p>
+        <div className="text-muted-foreground text-sm mt-0.5">
+          {getRelativeTime(notification.created_at)}
+        </div>
       </div>
-      
-      {/* Arrow */}
-      <ChevronRight className="w-4 h-4 text-muted-foreground/40 flex-shrink-0 mt-3" />
+
+      {/* Right Side - Follow Button or Post Thumbnail */}
+      {notification.type === 'follow' ? (
+        <Button
+          onClick={handleFollowClick}
+          disabled={isLoading}
+          size="sm"
+          variant={isFollowing ? 'outline' : 'default'}
+          className={`px-6 h-8 text-sm font-semibold rounded-lg ${
+            isFollowing 
+              ? 'border-border hover:bg-accent' 
+              : 'bg-primary hover:bg-primary/90'
+          }`}
+        >
+          {isFollowing ? t('common.following') : t('common.follow')}
+        </Button>
+      ) : notification.data?.post_image ? (
+        <div 
+          className="w-11 h-11 rounded-md overflow-hidden flex-shrink-0 border border-border"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <img
+            src={notification.data.post_image}
+            alt="Post"
+            className="w-full h-full object-cover"
+          />
+        </div>
+      ) : null}
+
+      {/* Unread Indicator */}
+      {!notification.is_read && (
+        <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+      )}
     </div>
   );
 };
