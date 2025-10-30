@@ -5,7 +5,7 @@ import bar from '@/assets/category-bar-transparent.png';
 import restaurant from '@/assets/category-restaurant-transparent.png';
 import entertainment from '@/assets/category-entertainment-transparent.png';
 import bakery from '@/assets/category-bakery-bar-museum.png';
-import museum from '@/assets/category-museum-transparent.png';
+import museum from '@/assets/category-bakery-bar-museum.png';
 
 interface MarkerOptions {
   category: string;
