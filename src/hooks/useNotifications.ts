@@ -74,10 +74,24 @@ export const useNotifications = () => {
         console.log('Notifications fetched successfully:', data?.length || 0);
         // Transform and filter out notifications from muted users
         const transformedData = (data || [])
-          .map(item => ({
-            ...item,
-            data: typeof item.data === 'string' ? JSON.parse(item.data) : (item.data || {})
-          }))
+          .map(item => {
+            // Parse data if it's a string, otherwise use as-is
+            let parsedData: Record<string, any> = {};
+            if (typeof item.data === 'string') {
+              try {
+                parsedData = JSON.parse(item.data);
+              } catch (e) {
+                console.error('Error parsing notification data:', e);
+              }
+            } else if (item.data && typeof item.data === 'object') {
+              parsedData = item.data as Record<string, any>;
+            }
+            
+            return {
+              ...item,
+              data: parsedData
+            } as Notification;
+          })
           .filter(notification => {
             // Filter out notifications from muted users
             const notifUserId = notification.data?.user_id;
@@ -110,8 +124,20 @@ export const useNotifications = () => {
           async (payload) => {
             console.log('New notification received:', payload);
             
+            // Parse data properly
+            let parsedData: Record<string, any> = {};
+            if (typeof payload.new.data === 'string') {
+              try {
+                parsedData = JSON.parse(payload.new.data);
+              } catch (e) {
+                console.error('Error parsing realtime notification data:', e);
+              }
+            } else if (payload.new.data && typeof payload.new.data === 'object') {
+              parsedData = payload.new.data as Record<string, any>;
+            }
+            
             // Check if the notification is from a muted user
-            const notifUserId = payload.new.data?.user_id;
+            const notifUserId = parsedData?.user_id;
             if (notifUserId) {
               const { data: mutedSetting } = await supabase
                 .from('user_mutes')
@@ -128,7 +154,7 @@ export const useNotifications = () => {
             
             const newNotification = {
               ...payload.new,
-              data: typeof payload.new.data === 'string' ? JSON.parse(payload.new.data) : (payload.new.data || {})
+              data: parsedData
             } as Notification;
             setNotifications(prev => [newNotification, ...prev]);
           }
@@ -143,9 +169,22 @@ export const useNotifications = () => {
           },
           (payload) => {
             console.log('Notification updated:', payload);
+            
+            // Parse data properly
+            let parsedData: Record<string, any> = {};
+            if (typeof payload.new.data === 'string') {
+              try {
+                parsedData = JSON.parse(payload.new.data);
+              } catch (e) {
+                console.error('Error parsing updated notification data:', e);
+              }
+            } else if (payload.new.data && typeof payload.new.data === 'object') {
+              parsedData = payload.new.data as Record<string, any>;
+            }
+            
             const updatedNotification = {
               ...payload.new,
-              data: typeof payload.new.data === 'string' ? JSON.parse(payload.new.data) : (payload.new.data || {})
+              data: parsedData
             } as Notification;
             setNotifications(prev => 
               prev.map(n => n.id === updatedNotification.id ? updatedNotification : n)
