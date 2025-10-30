@@ -1,11 +1,11 @@
 import L from 'leaflet';
-import hotel from '@/assets/category-hotel-upload.png';
-import cafe from '@/assets/category-cafe-upload.png';
-import bar from '@/assets/category-bar-upload.png';
-import restaurant from '@/assets/category-restaurant-upload.png';
-import entertainment from '@/assets/category-entertainment-upload.png';
-import bakery from '@/assets/category-bakery-upload.png';
+import hotel from '@/assets/category-hotel-transparent.png';
+import cafe from '@/assets/category-cafe-transparent.png';
+import bar from '@/assets/category-bar-transparent.png';
+import restaurant from '@/assets/category-restaurant-transparent.png';
+import entertainment from '@/assets/category-entertainment-transparent.png';
 import museum from '@/assets/category-museum-upload.png';
+import bakery from '@/assets/category-bakery-bar-museum.png';
 
 interface MarkerOptions {
   category: string;
@@ -61,16 +61,19 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
   // Get category image
   const categoryImg = getCategoryImage(category);
   
-  // Determine pin color based on state - red for popular, blue for following, green for saved
+  // Determine pin color based on filter/state
   let pinColor = '#EF4444'; // red for popular (default)
   let ringColor = 'rgba(239, 68, 68, 0.3)';
+  let iconColor = '#EF4444'; // Match icon color to pin
   
   if (isSaved) {
     pinColor = '#10B981'; // green for saved
     ringColor = 'rgba(16, 185, 129, 0.3)';
+    iconColor = '#10B981';
   } else if (isRecommended) {
     pinColor = '#3B82F6'; // blue for following/recommended
     ringColor = 'rgba(59, 130, 246, 0.3)';
+    iconColor = '#3B82F6';
   }
   
   // Create custom marker HTML with larger icon and subtle design
@@ -96,7 +99,7 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
         <circle cx="18" cy="14" r="9" fill="white" opacity="0.98"/>
       </svg>
       
-      <!-- Larger category icon -->
+      <!-- Larger category icon with color filter -->
       <img 
         src="${categoryImg}" 
         alt="${category}"
@@ -107,6 +110,7 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
           width: 18px;
           height: 18px;
           object-fit: contain;
+          filter: brightness(0) saturate(100%) invert(0%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%);
         "
       />
     </div>
