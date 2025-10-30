@@ -11,65 +11,108 @@ const geocodeSchema = z.object({
   latitude: z.number().min(-90).max(90),
   longitude: z.number().min(-180).max(180),
   locationId: z.string().uuid().optional(),
-  batchMode: z.boolean().optional().default(false)
+  batchMode: z.boolean().optional().default(false),
+  language: z.string().min(2).max(10).optional()
 });
 
 /**
- * FREE Reverse Geocoding using OpenStreetMap Nominatim
- * Cost: $0 (was ~$5/1000 with Google Maps Geocoding API)
+ * FREE Reverse Geocoding with resilient networking
+ * Primary: OpenStreetMap Nominatim (free)
+ * Fallback: BigDataCloud (free, no key)
  */
-async function reverseGeocodeNominatim(lat: number, lng: number): Promise<{
+
+type GeocodeResponse = {
   city: string;
   formatted_address: string;
-}> {
-  const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1&accept-language=en`;
-  
-  const response = await fetch(url, {
-    headers: { 'User-Agent': 'SpottApp/1.0' },
-  });
+  provider: 'nominatim-free' | 'bigdatacloud-free';
+};
 
-  if (!response.ok) {
-    throw new Error(`Nominatim error: ${response.status}`);
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+async function fetchWithRetry(url: string, init: RequestInit, attempts = 3, backoffMs = 700) {
+  let lastErr: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const res = await fetch(url, init);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res;
+    } catch (err) {
+      lastErr = err;
+      // Backoff then retry (helps with transient network failures)
+      await sleep(backoffMs * (i + 1));
+    }
   }
+  throw lastErr instanceof Error ? lastErr : new Error('Network error');
+}
+
+async function reverseGeocodeNominatim(lat: number, lng: number, language = 'en'): Promise<{ city: string; formatted_address: string; }> {
+  const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1&accept-language=${encodeURIComponent(language)}`;
+
+  const response = await fetchWithRetry(url, {
+    headers: {
+      'User-Agent': 'SpottApp/1.0 (+https://spott.app) contact: support@spott.app',
+      'Accept': 'application/json',
+      'Referer': 'https://spott.app',
+    },
+  });
 
   const data = await response.json();
   const addr = data.address || {};
 
-  let city = addr.city || addr.town || addr.village || '';
-
+  let city: string = addr.city || addr.town || addr.village || '';
   if (city) {
     city = city.replace(/\s+\d+$/, '').replace(/^County\s+/i, '').trim();
-    
+
     const dublinNeighborhoods = [
       'rathmines', 'ranelagh', 'ballsbridge', 'donnybrook', 'sandymount',
       'ringsend', 'drumcondra', 'glasnevin', 'stoneybatter', 'smithfield',
       'tallaght', 'clondalkin', 'blanchardstown', 'swords', 'malahide',
       'dun laoghaire', 'blackrock', 'dundrum', 'clontarf', 'howth'
     ];
-    
-    if (dublinNeighborhoods.includes(city.toLowerCase())) {
-      city = 'Dublin';
-    }
+    if (dublinNeighborhoods.includes(city.toLowerCase())) city = 'Dublin';
   }
 
-  // Build formatted address: "Street Name Number, City"
   const parts: string[] = [];
-  
   if (addr.road) {
     let streetPart = addr.road;
-    if (addr.house_number) {
-      streetPart = `${addr.road} ${addr.house_number}`;
-    }
+    if (addr.house_number) streetPart = `${addr.road} ${addr.house_number}`;
     parts.push(streetPart);
   }
-  
-  if (city) {
-    parts.push(city);
-  }
+  if (city) parts.push(city);
 
   const formatted_address = parts.join(', ') || data.display_name || '';
-
   return { city, formatted_address };
+}
+
+async function reverseGeocodeBigDataCloud(lat: number, lng: number, language = 'en'): Promise<{ city: string; formatted_address: string; }> {
+  const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=${encodeURIComponent(language)}`;
+  const res = await fetchWithRetry(url, { headers: { 'Accept': 'application/json' } });
+  const data = await res.json();
+  const city: string = data.city || data.locality || data.principalSubdivision || '';
+  const parts: string[] = [];
+  if (data.locality || data.city) parts.push(data.locality || data.city);
+  if (city && !parts.includes(city)) parts.push(city);
+  const formatted_address = parts.join(', ').trim();
+  return { city, formatted_address };
+}
+
+async function reverseGeocodeWithFallback(lat: number, lng: number, language = 'en'): Promise<GeocodeResponse> {
+  // Try Nominatim first
+  try {
+    const { city, formatted_address } = await reverseGeocodeNominatim(lat, lng, language);
+    if (city || formatted_address) return { city, formatted_address, provider: 'nominatim-free' };
+  } catch (err) {
+    console.error('Nominatim failed, attempting fallback:', err);
+  }
+
+  // Fallback: BigDataCloud
+  try {
+    const { city, formatted_address } = await reverseGeocodeBigDataCloud(lat, lng, language);
+    return { city, formatted_address, provider: 'bigdatacloud-free' };
+  } catch (err) {
+    console.error('BigDataCloud fallback failed:', err);
+    throw err;
+  }
 }
 
 serve(async (req) => {
@@ -91,7 +134,8 @@ serve(async (req) => {
       });
     }
 
-    const { latitude, longitude, locationId, batchMode } = validation.data;
+const { latitude, longitude, locationId, batchMode, language } = validation.data;
+const lang = language || 'en';
 
     if (batchMode) {
       const supabase = createClient(
@@ -114,7 +158,7 @@ serve(async (req) => {
         if (loc.city && loc.city.length > 2) continue;
 
         try {
-          const result = await reverseGeocodeNominatim(loc.latitude, loc.longitude);
+          const result = await reverseGeocodeWithFallback(loc.latitude, loc.longitude, lang);
           
           if (result.city) {
             const updates: any = { city: result.city };
@@ -140,7 +184,7 @@ serve(async (req) => {
     }
 
     // Single mode
-    const result = await reverseGeocodeNominatim(latitude, longitude);
+    const result = await reverseGeocodeWithFallback(latitude, longitude, lang);
 
     if (locationId && result.city) {
       const supabase = createClient(
@@ -161,7 +205,7 @@ serve(async (req) => {
         success: true, 
         city: result.city,
         formatted_address: result.formatted_address,
-        provider: 'nominatim-free' 
+        provider: result.provider 
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
