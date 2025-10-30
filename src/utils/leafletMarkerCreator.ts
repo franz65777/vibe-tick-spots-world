@@ -1,11 +1,11 @@
 import L from 'leaflet';
-import hotel from '@/assets/category-hotel-transparent.png';
-import cafe from '@/assets/category-cafe-transparent.png';
-import bar from '@/assets/category-bar-transparent.png';
-import restaurant from '@/assets/category-restaurant-transparent.png';
-import entertainment from '@/assets/category-entertainment-transparent.png';
+import hotel from '@/assets/category-hotel-upload.png';
+import cafe from '@/assets/category-cafe-upload.png';
+import bar from '@/assets/category-bar-upload.png';
+import restaurant from '@/assets/category-restaurant-upload.png';
+import entertainment from '@/assets/category-entertainment-upload.png';
+import bakery from '@/assets/category-bakery-upload.png';
 import museum from '@/assets/category-museum-upload.png';
-import bakery from '@/assets/category-bakery-bar-museum.png';
 
 interface MarkerOptions {
   category: string;
@@ -61,19 +61,16 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
   // Get category image
   const categoryImg = getCategoryImage(category);
   
-  // Determine pin color based on filter/state
+  // Determine pin color based on state - red for popular, blue for following, green for saved
   let pinColor = '#EF4444'; // red for popular (default)
   let ringColor = 'rgba(239, 68, 68, 0.3)';
-  let iconColor = '#EF4444'; // Match icon color to pin
   
   if (isSaved) {
     pinColor = '#10B981'; // green for saved
     ringColor = 'rgba(16, 185, 129, 0.3)';
-    iconColor = '#10B981';
   } else if (isRecommended) {
     pinColor = '#3B82F6'; // blue for following/recommended
     ringColor = 'rgba(59, 130, 246, 0.3)';
-    iconColor = '#3B82F6';
   }
   
   // Create custom marker HTML with larger icon and subtle design
@@ -96,9 +93,10 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
         <path d="M18 2C11.373 2 6 7.373 6 14c0 7.074 12 26 12 26s12-18.926 12-26C30 7.373 24.627 2 18 2z" 
               fill="${pinColor}"
               opacity="0.95"/>
+        <circle cx="18" cy="14" r="9" fill="white" opacity="0.98"/>
       </svg>
       
-      <!-- Category icon -->
+      <!-- Larger category icon -->
       <img 
         src="${categoryImg}" 
         alt="${category}"
