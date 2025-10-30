@@ -7,6 +7,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const VALID_LANGUAGES = ['en', 'es', 'it', 'fr', 'de', 'ja', 'ko', 'ar', 'hi', 'ru', 'zh', 'pt'];
+
 const geocodeSchema = z.object({
   latitude: z.number().min(-90).max(90),
   longitude: z.number().min(-180).max(180),
@@ -34,12 +36,14 @@ async function fetchWithRetry(url: string, init: RequestInit, attempts = 3, back
   for (let i = 0; i < attempts; i++) {
     try {
       const res = await fetch(url, init);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const errText = await res.text().catch(() => 'unknown');
+        throw new Error(`HTTP ${res.status}: ${errText}`);
+      }
       return res;
     } catch (err) {
       lastErr = err;
-      // Backoff then retry (helps with transient network failures)
-      await sleep(backoffMs * (i + 1));
+      if (i < attempts - 1) await sleep(backoffMs * (i + 1));
     }
   }
   throw lastErr instanceof Error ? lastErr : new Error('Network error');
@@ -135,7 +139,7 @@ serve(async (req) => {
     }
 
 const { latitude, longitude, locationId, batchMode, language } = validation.data;
-const lang = language || 'en';
+const lang = (language && VALID_LANGUAGES.includes(language.toLowerCase())) ? language.toLowerCase() : 'en';
 
     if (batchMode) {
       const supabase = createClient(
