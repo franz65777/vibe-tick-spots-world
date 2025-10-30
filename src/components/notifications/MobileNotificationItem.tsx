@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -15,7 +15,9 @@ interface MobileNotificationItemProps {
     message: string;
     data?: {
       user_id?: string;
+      user_name?: string;
       username?: string;
+      user_avatar?: string;
       avatar_url?: string;
       post_id?: string;
       post_image?: string;
@@ -38,6 +40,24 @@ const MobileNotificationItem = ({
   const [isFollowing, setIsFollowing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Check if already following this user
+  useEffect(() => {
+    const checkFollowStatus = async () => {
+      if (!user || !notification.data?.user_id || notification.type !== 'follow') return;
+      
+      const { data } = await supabase
+        .from('follows')
+        .select('id')
+        .eq('follower_id', user.id)
+        .eq('following_id', notification.data.user_id)
+        .maybeSingle();
+      
+      setIsFollowing(!!data);
+    };
+    
+    checkFollowStatus();
+  }, [user, notification.data?.user_id, notification.type]);
+
   const handleClick = () => {
     onAction(notification);
   };
@@ -52,7 +72,7 @@ const MobileNotificationItem = ({
       if (isFollowing) {
         // Unfollow
         const { error } = await supabase
-          .from('user_follows')
+          .from('follows')
           .delete()
           .eq('follower_id', user.id)
           .eq('following_id', notification.data.user_id);
@@ -64,7 +84,7 @@ const MobileNotificationItem = ({
       } else {
         // Follow
         const { error } = await supabase
-          .from('user_follows')
+          .from('follows')
           .insert({
             follower_id: user.id,
             following_id: notification.data.user_id
@@ -102,34 +122,39 @@ const MobileNotificationItem = ({
   };
 
   const getNotificationText = () => {
-    const username = notification.data?.username || 'Someone';
+    // Support both field name formats from database
+    const username = notification.data?.user_name || notification.data?.username || notification.title || 'Someone';
     
     switch (notification.type) {
       case 'like':
         return (
-          <span className="text-foreground text-[15px]">
+          <span className="text-foreground text-[15px] leading-snug">
             <span className="font-semibold">{username}</span>
             {' '}{t('notifications.likedYourPost')}
           </span>
         );
       case 'follow':
         return (
-          <span className="text-foreground text-[15px]">
+          <span className="text-foreground text-[15px] leading-snug">
             <span className="font-semibold">{username}</span>
             {' '}{t('notifications.startedFollowing')}
           </span>
         );
       case 'comment':
         return (
-          <span className="text-foreground text-[15px]">
+          <span className="text-foreground text-[15px] leading-snug">
             <span className="font-semibold">{username}</span>
             {' '}{t('notifications.commentedOnYourPost')}
           </span>
         );
       default:
-        return <span className="text-foreground text-[15px]">{notification.message}</span>;
+        return <span className="text-foreground text-[15px] leading-snug">{notification.message}</span>;
     }
   };
+
+  // Get avatar URL - support both field name formats
+  const avatarUrl = notification.data?.user_avatar || notification.data?.avatar_url || '';
+  const username = notification.data?.user_name || notification.data?.username || 'User';
 
   return (
     <div
@@ -149,11 +174,11 @@ const MobileNotificationItem = ({
         }}
       >
         <AvatarImage 
-          src={notification.data?.avatar_url || ''} 
-          alt={notification.data?.username || 'User'} 
+          src={avatarUrl} 
+          alt={username} 
         />
         <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-          {(notification.data?.username || 'U')[0].toUpperCase()}
+          {username[0].toUpperCase()}
         </AvatarFallback>
       </Avatar>
 
