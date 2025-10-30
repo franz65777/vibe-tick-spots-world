@@ -20,13 +20,13 @@ const geocodeSchema = z.object({
 /**
  * FREE Reverse Geocoding with resilient networking
  * Primary: OpenStreetMap Nominatim (free)
- * Fallback: BigDataCloud (free, no key)
+ * Fallback: Photon by Komoot (free)
  */
 
 type GeocodeResponse = {
   city: string;
   formatted_address: string;
-  provider: 'nominatim-free' | 'bigdatacloud-free';
+  provider: 'nominatim-free' | 'photon-free';
 };
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -88,15 +88,21 @@ async function reverseGeocodeNominatim(lat: number, lng: number, language = 'en'
   return { city, formatted_address };
 }
 
-async function reverseGeocodeBigDataCloud(lat: number, lng: number, language = 'en'): Promise<{ city: string; formatted_address: string; }> {
-  const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=${encodeURIComponent(language)}`;
-  const res = await fetchWithRetry(url, { headers: { 'Accept': 'application/json' } });
+async function reverseGeocodePhoton(lat: number, lng: number, language = 'en'): Promise<{ city: string; formatted_address: string; }> {
+  const url = `https://photon.komoot.io/reverse?lat=${lat}&lon=${lng}&lang=${encodeURIComponent(language)}`;
+  const res = await fetchWithRetry(url, { headers: { 'Accept': 'application/json', 'User-Agent': 'SpottApp/1.0 (+https://spott.app)' } });
   const data = await res.json();
-  const city: string = data.city || data.locality || data.principalSubdivision || '';
+  const feature = data?.features?.[0];
+  const props = feature?.properties || {};
+  const city: string = props.city || props.town || props.village || props.county || '';
   const parts: string[] = [];
-  if (data.locality || data.city) parts.push(data.locality || data.city);
-  if (city && !parts.includes(city)) parts.push(city);
-  const formatted_address = parts.join(', ').trim();
+  if (props.street) {
+    let street = props.street;
+    if (props.housenumber) street = `${street} ${props.housenumber}`;
+    parts.push(street);
+  }
+  if (city) parts.push(city);
+  const formatted_address = parts.join(', ') || props.name || '';
   return { city, formatted_address };
 }
 
@@ -109,12 +115,12 @@ async function reverseGeocodeWithFallback(lat: number, lng: number, language = '
     console.error('Nominatim failed, attempting fallback:', err);
   }
 
-  // Fallback: BigDataCloud
+  // Fallback: Photon by Komoot
   try {
-    const { city, formatted_address } = await reverseGeocodeBigDataCloud(lat, lng, language);
-    return { city, formatted_address, provider: 'bigdatacloud-free' };
+    const { city, formatted_address } = await reverseGeocodePhoton(lat, lng, language);
+    return { city, formatted_address, provider: 'photon-free' };
   } catch (err) {
-    console.error('BigDataCloud fallback failed:', err);
+    console.error('Photon fallback failed:', err);
     throw err;
   }
 }
