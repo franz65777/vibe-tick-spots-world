@@ -107,29 +107,7 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
     }
   };
 
-  const selectCityByName = async (name: string) => {
-    // Use FREE OpenStreetMap for city selection
-    setLoading(true);
-    
-    try {
-      const results = await nominatimGeocoding.searchPlace(name, i18n.language);
-      
-      if (results?.[0]) {
-        const r = results[0];
-        handleCitySelect({
-          name: r.city || name,
-          lat: r.lat,
-          lng: r.lng
-        } as any);
-      }
-    } catch (error) {
-      console.error('Error selecting city:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  const handleCitySelect = (city: { name: string; lat: number; lng: number }) => {
+  const handleCitySelect = (city: { name: string; lat: number; lng: number; address?: string }) => {
     if (onCitySelect) {
       onCitySelect(city.name, { lat: city.lat, lng: city.lng });
     }
@@ -172,7 +150,16 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
                 key={item.name}
                 cityName={item.name}
                 coords={'lat' in item && 'lng' in item ? { lat: (item as any).lat, lng: (item as any).lng } : undefined}
-                onClick={() => selectCityByName(item.name)}
+                onClick={() => {
+                  if ('lat' in item && 'lng' in item) {
+                    // Direct selection with coordinates
+                    handleCitySelect({
+                      name: item.name,
+                      lat: (item as any).lat,
+                      lng: (item as any).lng
+                    });
+                  }
+                }}
                 baseCount={'count' in item ? (item as any).count : 0}
               />
             ))}

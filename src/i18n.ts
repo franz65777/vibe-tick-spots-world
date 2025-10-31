@@ -47,6 +47,8 @@ const resources = {
       feed: 'Feed',
       profile: 'Profile',
       search: 'Search',
+      currentLocation: 'Current location',
+      gettingLocation: 'Getting your location...'
     },
     navigation: {
       explore: 'Explore',
@@ -356,6 +358,8 @@ const resources = {
       feed: 'Feed',
       profile: 'Perfil',
       search: 'Buscar',
+      currentLocation: 'Ubicación actual',
+      gettingLocation: 'Obteniendo tu ubicación...'
     },
     navigation: {
       explore: 'Explorar',
@@ -660,7 +664,13 @@ const resources = {
       remove: 'Rimuovi',
       thisWeek: 'Questa Settimana',
       in: 'in',
-      thisArea: 'questa zona'
+      thisArea: 'questa zona',
+      add: 'Aggiungi',
+      feed: 'Feed',
+      profile: 'Profilo',
+      search: 'Cerca',
+      currentLocation: 'Posizione attuale',
+      gettingLocation: 'Ottenendo la tua posizione...'
     },
     navigation: {
       explore: 'Esplora',

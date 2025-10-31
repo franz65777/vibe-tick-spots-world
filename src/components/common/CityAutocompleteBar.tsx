@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Search, MapPin, Loader2 } from 'lucide-react';
+import { Search, MapPin, Loader2, Locate } from 'lucide-react';
 import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
 import { useTranslation } from 'react-i18next';
+import { useGeolocation } from '@/hooks/useGeolocation';
+import { toast } from 'sonner';
 
 interface CityAutocompleteBarProps {
   searchQuery: string;
@@ -28,11 +30,22 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
   onFocusOpen,
 }) => {
   const { t, i18n } = useTranslation();
+  const { location, loading: geoLoading, getCurrentLocation } = useGeolocation();
   const inputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<CityResult[]>([]);
   const [showResults, setShowResults] = useState(false);
   const debounceTimer = useRef<NodeJS.Timeout>();
+
+  // Handle geolocation success
+  useEffect(() => {
+    if (location && location.city && location.city !== 'Unknown City') {
+      onCitySelect(location.city, { 
+        lat: location.latitude, 
+        lng: location.longitude 
+      });
+    }
+  }, [location]);
 
   useEffect(() => {
     if (searchQuery.length < 2) {
@@ -89,10 +102,15 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
     inputRef.current?.blur();
   };
 
+  const handleCurrentLocation = () => {
+    getCurrentLocation();
+    toast.info(t('gettingLocation', { ns: 'common' }));
+  };
+
   return (
     <div className="group relative" id="city-search-bar">
       <div className="relative">
-        {isLoading ? (
+        {isLoading || geoLoading ? (
           <Loader2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground animate-spin" />
         ) : (
           <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -114,8 +132,16 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
               setResults([]);
             }, 200);
           }}
-          className="w-full h-11 pl-11 pr-4 rounded-full bg-white border-2 border-blue-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-all placeholder:text-gray-500 text-sm font-medium text-gray-900"
+          className="w-full h-11 pl-11 pr-12 rounded-full bg-white border-2 border-blue-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-all placeholder:text-gray-500 text-sm font-medium text-gray-900"
         />
+        <button
+          onClick={handleCurrentLocation}
+          disabled={geoLoading}
+          className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50"
+          aria-label={t('currentLocation', { ns: 'common' })}
+        >
+          <Locate className="w-4 h-4 text-blue-600" />
+        </button>
       </div>
 
       {/* Results dropdown */}
