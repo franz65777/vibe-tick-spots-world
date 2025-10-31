@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Search, MapPin, Loader2 } from 'lucide-react';
 import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
+import { useTranslation } from 'react-i18next';
 
 interface CityAutocompleteBarProps {
   searchQuery: string;
@@ -26,6 +27,7 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
   onCitySelect,
   onFocusOpen,
 }) => {
+  const { t, i18n } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<CityResult[]>([]);
@@ -59,8 +61,8 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
     setIsLoading(true);
     
     try {
-      // Use FREE OpenStreetMap Nominatim for city search
-      const nominatimResults = await nominatimGeocoding.searchPlace(query);
+      // Use FREE OpenStreetMap Nominatim for city search with language support
+      const nominatimResults = await nominatimGeocoding.searchPlace(query, i18n.language);
       
       const cityResults: CityResult[] = nominatimResults.map((result) => ({
         name: result.city || result.displayName.split(',')[0],
@@ -98,7 +100,7 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
         <input
           ref={inputRef}
           type="text"
-          placeholder="Search any city worldwide"
+          placeholder={t('searchCities', { ns: 'home' })}
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           onKeyPress={onSearchKeyPress}

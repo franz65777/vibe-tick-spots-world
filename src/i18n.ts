@@ -112,7 +112,8 @@ const resources = {
       noPopularSpots: 'No popular spots found in',
       topContributors: 'Top Contributors',
       viewFullLeaderboard: 'View Full Leaderboard',
-      yourStory: 'Your Story'
+      yourStory: 'Your Story',
+      searchCities: 'Search any city worldwide'
     },
     explore: {
       places: 'Places',
@@ -420,7 +421,8 @@ const resources = {
       noPopularSpots: 'No se encontraron lugares populares en',
       topContributors: 'Mejores Colaboradores',
       viewFullLeaderboard: 'Ver Clasificación Completa',
-      yourStory: 'Tu Historia'
+      yourStory: 'Tu Historia',
+      searchCities: 'Buscar cualquier ciudad del mundo'
     },
     explore: {
       places: 'Lugares',
@@ -724,7 +726,8 @@ const resources = {
       noPopularSpots: 'Nessun luogo popolare trovato in',
       topContributors: 'Top Contributori',
       viewFullLeaderboard: 'Vedi Classifica Completa',
-      yourStory: 'La Tua Storia'
+      yourStory: 'La Tua Storia',
+      searchCities: 'Cerca qualsiasi città nel mondo'
     },
     explore: {
       places: 'Luoghi',
