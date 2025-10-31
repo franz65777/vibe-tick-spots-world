@@ -48,7 +48,8 @@ const resources = {
       profile: 'Profile',
       search: 'Search',
       currentLocation: 'Current location',
-      gettingLocation: 'Getting your location...'
+      gettingLocation: 'Getting your location...',
+      locationDetected: 'Location detected'
     },
     navigation: {
       explore: 'Explore',
@@ -359,7 +360,8 @@ const resources = {
       profile: 'Perfil',
       search: 'Buscar',
       currentLocation: 'Ubicación actual',
-      gettingLocation: 'Obteniendo tu ubicación...'
+      gettingLocation: 'Obteniendo tu ubicación...',
+      locationDetected: 'Ubicación detectada'
     },
     navigation: {
       explore: 'Explorar',
@@ -670,7 +672,8 @@ const resources = {
       profile: 'Profilo',
       search: 'Cerca',
       currentLocation: 'Posizione attuale',
-      gettingLocation: 'Ottenendo la tua posizione...'
+      gettingLocation: 'Ottenendo la tua posizione...',
+      locationDetected: 'Posizione rilevata'
     },
     navigation: {
       explore: 'Esplora',

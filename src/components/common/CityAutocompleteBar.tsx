@@ -37,15 +37,17 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
   const [showResults, setShowResults] = useState(false);
   const debounceTimer = useRef<NodeJS.Timeout>();
 
-  // Handle geolocation success
+  // Handle geolocation success - only when location changes
   useEffect(() => {
     if (location && location.city && location.city !== 'Unknown City') {
+      console.log('📍 Location detected:', location.city);
       onCitySelect(location.city, { 
         lat: location.latitude, 
         lng: location.longitude 
       });
+      toast.success(`${t('locationDetected', { ns: 'common' })}: ${location.city}`);
     }
-  }, [location]);
+  }, [location?.latitude, location?.longitude, location?.city]);
 
   useEffect(() => {
     if (searchQuery.length < 2) {
@@ -68,7 +70,7 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
         clearTimeout(debounceTimer.current);
       }
     };
-  }, [searchQuery]);
+  }, [searchQuery, i18n.language]);
 
   const performSearch = async (query: string) => {
     setIsLoading(true);
@@ -95,16 +97,34 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
   };
 
   const handleSelectCity = (result: CityResult) => {
-    onCitySelect(result.name, { lat: result.lat, lng: result.lng });
-    onSearchChange('');
+    // Cancel any pending search
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+    
+    // Immediately close dropdown and clear results
     setShowResults(false);
     setResults([]);
+    
+    // Call parent callbacks
+    onCitySelect(result.name, { lat: result.lat, lng: result.lng });
+    onSearchChange('');
+    
+    // Blur input
     inputRef.current?.blur();
   };
 
-  const handleCurrentLocation = () => {
-    getCurrentLocation();
-    toast.info(t('gettingLocation', { ns: 'common' }));
+  const handleCurrentLocation = async () => {
+    try {
+      toast.info(t('gettingLocation', { ns: 'common' }));
+      getCurrentLocation();
+      
+      // Wait for location to be updated
+      // The useEffect will handle the city selection
+    } catch (error) {
+      console.error('Error getting current location:', error);
+      toast.error('Failed to get location');
+    }
   };
 
   return (

@@ -173,8 +173,8 @@ export const useGeolocation = (): UseGeolocationReturn => {
   };
 
   useEffect(() => {
-    // Auto-detect location on mount
-    getCurrentLocation();
+    // Don't auto-detect location on mount
+    // Only call getCurrentLocation when user explicitly requests it
   }, []);
 
   return {
