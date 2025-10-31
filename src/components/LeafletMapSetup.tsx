@@ -120,7 +120,9 @@ const LeafletMapSetup = ({
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    map.setView([mapCenter.lat, mapCenter.lng], map.getZoom());
+    
+    console.log('🗺️ Updating map center to:', mapCenter);
+    map.setView([mapCenter.lat, mapCenter.lng], 15);
   }, [mapCenter.lat, mapCenter.lng]);
 
   // Current location marker
@@ -129,6 +131,7 @@ const LeafletMapSetup = ({
     if (!map) return;
 
     if (location?.latitude && location?.longitude) {
+      console.log('📍 Updating current location marker:', location);
       const icon = createCurrentLocationMarker();
       if (currentLocationMarkerRef.current) {
         currentLocationMarkerRef.current.setLatLng([location.latitude, location.longitude]);

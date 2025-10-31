@@ -44,13 +44,19 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
     console.log('🔄 CityAutocompleteBar - Location changed:', location);
     if (location && location.city && location.city !== 'Unknown City') {
       console.log('📍 Location detected, calling onCitySelect:', location.city);
+      
+      // Update the search query to show the city name
+      onSearchChange(location.city);
+      
+      // Call city select to update map and state
       onCitySelect(location.city, { 
         lat: location.latitude, 
         lng: location.longitude 
       });
+      
       toast({ description: `${t('locationDetected', { ns: 'common' })}: ${location.city}` });
     }
-  }, [location?.latitude, location?.longitude, location?.city, onCitySelect]);
+  }, [location?.latitude, location?.longitude, location?.city, onCitySelect, onSearchChange, t]);
 
   useEffect(() => {
     if (searchQuery.length < 2) {
@@ -158,7 +164,7 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
         <input
           ref={inputRef}
           type="text"
-          placeholder={t('searchCities', { ns: 'home' })}
+          placeholder={searchQuery ? '' : currentCity || t('searchCities', { ns: 'home' })}
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           onKeyPress={onSearchKeyPress}
