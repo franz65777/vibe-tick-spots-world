@@ -80,7 +80,7 @@ const MobileNotificationItem = ({
         if (error) throw error;
         
         setIsFollowing(false);
-        toast.success(t('common.unfollowed'));
+        toast.success(t('unfollowed', { ns: 'common' }));
       } else {
         // Follow
         const { error } = await supabase
@@ -93,7 +93,7 @@ const MobileNotificationItem = ({
         if (error) throw error;
         
         setIsFollowing(true);
-        toast.success(t('common.following'));
+        toast.success(t('following', { ns: 'common' }));
       }
     } catch (error) {
       console.error('Error toggling follow:', error);
@@ -108,17 +108,17 @@ const MobileNotificationItem = ({
     const now = new Date();
     const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
     
-    if (diffInMinutes < 1) return t('notifications.justNow');
-    if (diffInMinutes < 60) return t('notifications.minutesAgo', { count: diffInMinutes });
+    if (diffInMinutes < 1) return t('justNow', { ns: 'notifications' });
+    if (diffInMinutes < 60) return t('minutesAgo', { ns: 'notifications', count: diffInMinutes });
     
     const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return t('notifications.hoursAgo', { count: diffInHours });
+    if (diffInHours < 24) return t('hoursAgo', { ns: 'notifications', count: diffInHours });
     
     const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) return t('notifications.daysAgo', { count: diffInDays });
+    if (diffInDays < 7) return t('daysAgo', { ns: 'notifications', count: diffInDays });
     
     const diffInWeeks = Math.floor(diffInDays / 7);
-    return t('notifications.weeksAgo', { count: diffInWeeks });
+    return t('weeksAgo', { ns: 'notifications', count: diffInWeeks });
   };
 
   const getNotificationText = () => {
@@ -130,21 +130,21 @@ const MobileNotificationItem = ({
         return (
           <span className="text-foreground text-[15px] leading-snug">
             <span className="font-semibold">{username}</span>
-            {' '}{t('notifications.likedYourPost')}
+            {' '}{t('likedYourPost', { ns: 'notifications' })}
           </span>
         );
       case 'follow':
         return (
           <span className="text-foreground text-[15px] leading-snug">
             <span className="font-semibold">{username}</span>
-            {' '}{t('notifications.startedFollowing')}
+            {' '}{t('startedFollowing', { ns: 'notifications' })}
           </span>
         );
       case 'comment':
         return (
           <span className="text-foreground text-[15px] leading-snug">
             <span className="font-semibold">{username}</span>
-            {' '}{t('notifications.commentedOnYourPost')}
+            {' '}{t('commentedOnYourPost', { ns: 'notifications' })}
           </span>
         );
       default:
@@ -205,7 +205,7 @@ const MobileNotificationItem = ({
               : 'bg-primary hover:bg-primary/90'
           }`}
         >
-          {isFollowing ? t('common.following') : t('common.follow')}
+          {isFollowing ? t('following', { ns: 'common' }) : t('follow', { ns: 'common' })}
         </Button>
       ) : notification.data?.post_image ? (
         <div 

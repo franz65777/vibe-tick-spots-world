@@ -3277,8 +3277,15 @@ i18n
   .init({
     resources,
     fallbackLng: 'en',
+    ns: ['common', 'notifications', 'categories', 'profile', 'mapFilters', 'navigation', 'business', 'search', 'badges', 'gamification', 'messages', 'settings'],
+    defaultNS: 'common',
     interpolation: {
       escapeValue: false,
+    },
+    detection: {
+      order: ['localStorage', 'navigator'],
+      caches: ['localStorage'],
+      lookupLocalStorage: 'i18nextLng',
     },
   });
 

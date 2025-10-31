@@ -132,6 +132,26 @@ export const useUserProfile = (userId?: string) => {
 
       if (error) throw error;
 
+      // Get current user's profile for notification
+      const { data: followerProfile } = await supabase
+        .from('profiles')
+        .select('username, avatar_url')
+        .eq('id', currentUser.id)
+        .single();
+
+      // Create notification
+      await supabase.from('notifications').insert({
+        user_id: userId,
+        type: 'follow',
+        title: 'New follower',
+        message: `${followerProfile?.username || 'Someone'} started following you`,
+        data: {
+          user_id: currentUser.id,
+          user_name: followerProfile?.username,
+          avatar_url: followerProfile?.avatar_url,
+        },
+      });
+
       setProfile(prev => prev ? {
         ...prev,
         is_following: true,
