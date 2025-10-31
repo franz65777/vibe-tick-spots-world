@@ -1,7 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useNotifications } from '@/hooks/useNotifications';
 import MobileNotificationItem from '@/components/notifications/MobileNotificationItem';
 import { useTranslation } from 'react-i18next';
@@ -44,7 +43,7 @@ const NotificationsPage = () => {
   };
 
   return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden">
+    <div className="h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="shrink-0 bg-background border-b border-border">
         <div className="px-4 py-3 flex items-center justify-between">
@@ -82,9 +81,8 @@ const NotificationsPage = () => {
       </header>
 
       {/* Content */}
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <ScrollArea className="h-full">
-          {loading ? (
+      <div className="flex-1 overflow-y-auto">
+        {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="flex flex-col items-center gap-3">
               <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -111,7 +109,6 @@ const NotificationsPage = () => {
             ))}
           </div>
         )}
-        </ScrollArea>
       </div>
     </div>
   );
