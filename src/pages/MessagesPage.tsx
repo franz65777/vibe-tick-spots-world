@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import PlaceMessageCard from '@/components/messages/PlaceMessageCard';
 import PostMessageCard from '@/components/messages/PostMessageCard';
 import ProfileMessageCard from '@/components/messages/ProfileMessageCard';
+import { useTranslation } from 'react-i18next';
 
 type ViewMode = 'threads' | 'chat' | 'search';
 
@@ -18,6 +19,7 @@ const MessagesPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [threads, setThreads] = useState<MessageThread[]>([]);
   const [selectedThread, setSelectedThread] = useState<MessageThread | null>(null);
   const [messages, setMessages] = useState<DirectMessage[]>([]);
@@ -235,10 +237,10 @@ const MessagesPage = () => {
             </Button>
             <h1 className="font-bold text-lg text-foreground">
               {view === 'chat'
-                ? getOtherParticipant(selectedThread!)?.username || 'Chat'
+                ? getOtherParticipant(selectedThread!)?.username || t('chat', { ns: 'messages' })
                 : view === 'search'
-                ? 'New Message'
-                : 'Messages'}
+                ? t('newMessage', { ns: 'messages' })
+                : t('messages', { ns: 'messages' })}
             </h1>
           </div>
 
@@ -249,7 +251,7 @@ const MessagesPage = () => {
               size="sm"
               className="font-medium"
             >
-              New
+              {t('new', { ns: 'messages' })}
             </Button>
           )}
         </div>
@@ -263,7 +265,7 @@ const MessagesPage = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Search users..."
+                placeholder={t('searchUsers', { ns: 'messages' })}
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
                 className="pl-10"
@@ -299,7 +301,7 @@ const MessagesPage = () => {
               </div>
             ) : searchQuery.length >= 2 ? (
               <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-                <p className="text-muted-foreground">No users found</p>
+                <p className="text-muted-foreground">{t('noUsersFound', { ns: 'messages' })}</p>
               </div>
             ) : null}
           </ScrollArea>
@@ -318,10 +320,10 @@ const MessagesPage = () => {
               <div className="w-14 h-14 bg-muted rounded-full flex items-center justify-center mb-3">
                 <MessageSquare className="w-7 h-7 text-muted-foreground" />
               </div>
-              <h3 className="font-semibold text-foreground mb-1">No messages yet</h3>
-              <p className="text-muted-foreground text-sm mb-4">Start a conversation with someone</p>
+              <h3 className="font-semibold text-foreground mb-1">{t('noMessages', { ns: 'messages' })}</h3>
+              <p className="text-muted-foreground text-sm mb-4">{t('startConversation', { ns: 'messages' })}</p>
               <Button onClick={() => setView('search')} size="sm">
-                New Message
+                {t('newMessage', { ns: 'messages' })}
               </Button>
             </div>
           ) : (
@@ -349,8 +351,8 @@ const MessagesPage = () => {
                           {thread.last_message_at && formatMessageTime(thread.last_message_at)}
                         </span>
                       </div>
-                      <p className="text-sm text-muted-foreground truncate">
-                        {thread.last_message?.content || 'Start a conversation'}
+                       <p className="text-sm text-muted-foreground truncate">
+                        {thread.last_message?.content || t('startConversation', { ns: 'messages' })}
                       </p>
                     </div>
                   </button>
@@ -363,14 +365,14 @@ const MessagesPage = () => {
 
       {/* Chat View */}
       {view === 'chat' && (
-        <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-1 overflow-y-auto p-4 bg-muted/30">
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <ScrollArea className="flex-1 p-4 bg-muted/30">
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3 pb-4">
                 {messages.map((message) => {
                   const isOwn = message.sender_id === user?.id;
                   return (
@@ -447,14 +449,14 @@ const MessagesPage = () => {
                 <div ref={messagesEndRef} />
               </div>
             )}
-          </div>
+          </ScrollArea>
 
           {/* Message Input */}
           <div className="p-4 bg-background border-t border-border">
             <div className="flex gap-2">
               <Input
                 type="text"
-                placeholder="Type a message..."
+                placeholder={t('typeMessage', { ns: 'messages' })}
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyPress={(e) => {
