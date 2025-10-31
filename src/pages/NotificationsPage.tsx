@@ -43,7 +43,7 @@ const NotificationsPage = () => {
   };
 
   return (
-    <div className="h-screen bg-background flex flex-col">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* Header */}
       <header className="shrink-0 bg-background border-b border-border">
         <div className="px-4 py-3 flex items-center justify-between">
@@ -81,7 +81,7 @@ const NotificationsPage = () => {
       </header>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="flex flex-col items-center gap-3">
