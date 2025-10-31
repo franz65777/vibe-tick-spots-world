@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface MobileNotificationItemProps {
@@ -44,32 +44,37 @@ const MobileNotificationItem = ({
 
   // Resolve target user (id and avatar) and check follow status
   useEffect(() => {
-    if (notification.type !== 'follow') return;
-
     const resolveAndCheck = async () => {
       try {
         let uid = notification.data?.user_id ?? null;
+        const uname = notification.data?.user_name || notification.data?.username || null;
         let avatar = notification.data?.user_avatar || notification.data?.avatar_url || null;
 
-        if (!uid) {
-          const uname = notification.data?.user_name || notification.data?.username || null;
-          if (uname) {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('id, avatar_url')
-              .eq('username', uname)
-              .maybeSingle();
-            if (profile) {
-              uid = profile.id;
-              if (!avatar) avatar = profile.avatar_url;
-            }
+        // Resolve missing id or avatar from profiles
+        if (!uid && uname) {
+          const { data: profileByUsername } = await supabase
+            .from('profiles')
+            .select('id, avatar_url')
+            .eq('username', uname)
+            .maybeSingle();
+          if (profileByUsername) {
+            uid = profileByUsername.id;
+            if (!avatar) avatar = profileByUsername.avatar_url ?? null;
           }
+        } else if (uid && !avatar) {
+          const { data: profileById } = await supabase
+            .from('profiles')
+            .select('avatar_url')
+            .eq('id', uid)
+            .maybeSingle();
+          if (profileById?.avatar_url) avatar = profileById.avatar_url;
         }
 
         setTargetUserId(uid);
         if (avatar) setAvatarOverride(avatar);
 
-        if (user && uid) {
+        // Check follow status when we have both current user and target
+        if (user?.id && uid) {
           const { data } = await supabase
             .from('follows')
             .select('id')
@@ -79,12 +84,12 @@ const MobileNotificationItem = ({
           setIsFollowing(!!data);
         }
       } catch (e) {
-        console.warn('Failed to resolve follow target', e);
+        console.warn('Failed to resolve notification target', e);
       }
     };
 
     resolveAndCheck();
-  }, [user?.id, notification.id, notification.type]);
+  }, [user?.id, notification.id]);
 
   const handleClick = () => {
     onAction(notification);
