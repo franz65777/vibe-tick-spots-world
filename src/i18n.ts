@@ -608,7 +608,7 @@ const resources = {
       loading: 'Caricamento...',
       searching: 'Ricerca...',
       follow: 'Segui',
-      following: 'Seguiti',
+      following: 'Segui già',
       unfollowed: 'Non segui più',
       followers: 'Follower',
       mutual: 'reciproci',

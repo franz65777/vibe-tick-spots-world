@@ -190,13 +190,13 @@ const MobileNotificationItem = ({
   return (
     <div
       onClick={handleClick}
-      className={`flex items-center gap-3 px-4 py-3 cursor-pointer active:bg-accent/50 transition-colors ${
+      className={`flex items-start gap-3 px-4 py-3.5 cursor-pointer active:bg-accent/50 transition-colors ${
         !notification.is_read ? 'bg-accent/20' : 'bg-background'
       }`}
     >
       {/* User Avatar */}
       <Avatar 
-        className="w-11 h-11 border-2 border-background cursor-pointer"
+        className="w-12 h-12 border-2 border-background cursor-pointer flex-shrink-0 mt-0.5"
         onClick={(e) => {
           e.stopPropagation();
           if (targetUserId) {
@@ -214,47 +214,49 @@ const MobileNotificationItem = ({
       </Avatar>
 
       {/* Notification Text and Time */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-baseline gap-1">
+      <div className="flex-1 min-w-0 flex flex-col gap-1">
+        <div className="text-left">
           {getNotificationText()}
         </div>
-        <div className="text-muted-foreground text-sm mt-0.5">
+        <div className="text-muted-foreground text-[13px]">
           {getRelativeTime(notification.created_at)}
         </div>
       </div>
 
       {/* Right Side - Follow Button or Post Thumbnail */}
-      {notification.type === 'follow' ? (
-        <Button
-          onClick={handleFollowClick}
-          disabled={isLoading}
-          size="sm"
-          variant={isFollowing ? 'outline' : 'default'}
-          className={`px-6 h-8 text-sm font-semibold rounded-lg ${
-            isFollowing 
-              ? 'border-border hover:bg-accent' 
-              : 'bg-primary hover:bg-primary/90'
-          }`}
-        >
-          {isFollowing ? t('following', { ns: 'common' }) : t('follow', { ns: 'common' })}
-        </Button>
-      ) : notification.data?.post_image ? (
-        <div 
-          className="w-11 h-11 rounded-md overflow-hidden flex-shrink-0 border border-border"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <img
-            src={notification.data.post_image}
-            alt="Post"
-            className="w-full h-full object-cover"
-          />
-        </div>
-      ) : null}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {notification.type === 'follow' ? (
+          <Button
+            onClick={handleFollowClick}
+            disabled={isLoading}
+            size="sm"
+            variant={isFollowing ? 'outline' : 'default'}
+            className={`px-5 h-8 text-[13px] font-semibold rounded-lg ${
+              isFollowing 
+                ? 'border-border hover:bg-accent' 
+                : 'bg-primary hover:bg-primary/90'
+            }`}
+          >
+            {isFollowing ? t('following', { ns: 'common' }) : t('follow', { ns: 'common' })}
+          </Button>
+        ) : notification.data?.post_image ? (
+          <div 
+            className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 border border-border"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={notification.data.post_image}
+              alt="Post"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        ) : null}
 
-      {/* Unread Indicator */}
-      {!notification.is_read && (
-        <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
-      )}
+        {/* Unread Indicator */}
+        {!notification.is_read && (
+          <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+        )}
+      </div>
     </div>
   );
 };
