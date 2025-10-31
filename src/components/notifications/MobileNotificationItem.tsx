@@ -158,27 +158,27 @@ const MobileNotificationItem = ({
     switch (notification.type) {
       case 'like':
         return (
-          <span className="text-foreground text-[15px] leading-snug">
+          <span className="text-foreground text-[13px] leading-tight">
             <span className="font-semibold">{username}</span>
             {' '}{t('likedYourPost', { ns: 'notifications' })}
           </span>
         );
       case 'follow':
         return (
-          <span className="text-foreground text-[15px] leading-snug">
+          <span className="text-foreground text-[13px] leading-tight">
             <span className="font-semibold">{username}</span>
             {' '}{t('startedFollowing', { ns: 'notifications' })}
           </span>
         );
       case 'comment':
         return (
-          <span className="text-foreground text-[15px] leading-snug">
+          <span className="text-foreground text-[13px] leading-tight">
             <span className="font-semibold">{username}</span>
             {' '}{t('commentedOnYourPost', { ns: 'notifications' })}
           </span>
         );
       default:
-        return <span className="text-foreground text-[15px] leading-snug">{notification.message}</span>;
+        return <span className="text-foreground text-[13px] leading-tight">{notification.message}</span>;
     }
   };
 
@@ -190,13 +190,13 @@ const MobileNotificationItem = ({
   return (
     <div
       onClick={handleClick}
-      className={`flex items-start gap-3 px-4 py-3.5 cursor-pointer active:bg-accent/50 transition-colors ${
+      className={`flex items-start gap-2.5 px-4 py-3 cursor-pointer active:bg-accent/50 transition-colors ${
         !notification.is_read ? 'bg-accent/20' : 'bg-background'
       }`}
     >
       {/* User Avatar */}
       <Avatar 
-        className="w-12 h-12 border-2 border-background cursor-pointer flex-shrink-0 mt-0.5"
+        className="w-11 h-11 border-2 border-background cursor-pointer flex-shrink-0"
         onClick={(e) => {
           e.stopPropagation();
           if (targetUserId) {
@@ -208,30 +208,30 @@ const MobileNotificationItem = ({
           src={computedAvatar || undefined} 
           alt={username} 
         />
-        <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+        <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
           {username[0].toUpperCase()}
         </AvatarFallback>
       </Avatar>
 
       {/* Notification Text and Time */}
-      <div className="flex-1 min-w-0 flex flex-col gap-1">
+      <div className="flex-1 min-w-0 flex flex-col gap-0.5">
         <div className="text-left">
           {getNotificationText()}
         </div>
-        <div className="text-muted-foreground text-[13px]">
+        <div className="text-muted-foreground text-[12px]">
           {getRelativeTime(notification.created_at)}
         </div>
       </div>
 
       {/* Right Side - Follow Button or Post Thumbnail */}
-      <div className="flex items-center gap-2 flex-shrink-0">
+      <div className="flex items-center gap-1.5 flex-shrink-0">
         {notification.type === 'follow' ? (
           <Button
             onClick={handleFollowClick}
             disabled={isLoading}
             size="sm"
             variant={isFollowing ? 'outline' : 'default'}
-            className={`px-5 h-8 text-[13px] font-semibold rounded-lg ${
+            className={`px-4 h-7 text-[12px] font-semibold rounded-lg ${
               isFollowing 
                 ? 'border-border hover:bg-accent' 
                 : 'bg-primary hover:bg-primary/90'
@@ -241,7 +241,7 @@ const MobileNotificationItem = ({
           </Button>
         ) : notification.data?.post_image ? (
           <div 
-            className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 border border-border"
+            className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 border border-border"
             onClick={(e) => e.stopPropagation()}
           >
             <img
