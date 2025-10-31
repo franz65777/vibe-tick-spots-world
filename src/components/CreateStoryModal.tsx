@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { X, Camera, Image, MapPin, Loader2, Upload, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,8 @@ import OpenStreetMapAutocomplete from './OpenStreetMapAutocomplete';
 import { useStories } from '@/hooks/useStories';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { extractImageMetadata, getLocationFromCoordinates } from '@/utils/imageUtils';
+import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 
 interface CreateStoryModalProps {
   isOpen: boolean;
@@ -18,6 +20,8 @@ interface CreateStoryModalProps {
 const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalProps) => {
   const { uploadStory, uploading } = useStories();
   const { savedPlaces } = useSavedPlaces();
+  const { toast } = useToast();
+  const { t } = useTranslation();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [caption, setCaption] = useState('');
@@ -33,6 +37,17 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [locationSearch, setLocationSearch] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-open file picker when modal opens
+  useEffect(() => {
+    if (isOpen && step === 'upload') {
+      // Small delay to ensure the modal is fully rendered
+      const timer = setTimeout(() => {
+        fileInputRef.current?.click();
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, step]);
 
   // Flatten saved places for selection
   const allSavedPlaces = Object.values(savedPlaces).flat();
@@ -99,11 +114,18 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
 
   const handleSubmit = async () => {
     if (!selectedFile || !location) {
-      alert('Please select a location for your story');
+      toast({
+        variant: "destructive",
+        description: t('mustTagLocation', { ns: 'common' }) || 'Please select a location for your story',
+      });
       return;
     }
 
     try {
+      toast({
+        description: t('publishing', { ns: 'common' }) || 'Publishing your story...',
+      });
+      
       await uploadStory(
         selectedFile,
         caption,
@@ -112,10 +134,18 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
         location?.address
       );
       
+      toast({
+        description: t('storyShared', { ns: 'common' }) || 'Story shared successfully!',
+      });
+      
       onStoryCreated();
       handleClose();
     } catch (error) {
       console.error('Error creating story:', error);
+      toast({
+        variant: "destructive",
+        description: 'Failed to create story. Please try again.',
+      });
     }
   };
 
@@ -137,18 +167,18 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-xl">
+    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-md overflow-hidden shadow-xl">
         {/* Header */}
-        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-          <h3 className="font-semibold text-lg text-gray-900">
-            Create Story
+        <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500">
+          <h3 className="font-semibold text-lg text-white">
+            {t('createStory', { ns: 'common' }) || 'Create Story'}
           </h3>
           <Button
             onClick={handleClose}
             variant="ghost"
             size="icon"
-            className="rounded-full hover:bg-gray-100 h-8 w-8"
+            className="rounded-full hover:bg-white/20 h-8 w-8 text-white"
             disabled={uploading}
           >
             <X className="w-4 h-4" />
@@ -164,11 +194,11 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
                 </div>
               </div>
               
-              <h4 className="text-lg font-semibold text-gray-900 mb-2">
-                Add Photo or Video
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                {t('shareLocationMoments', { ns: 'common' }) || 'Share Location Moments'}
               </h4>
-              <p className="text-gray-500 text-sm mb-6">
-                Share moments from your location adventures
+              <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
+                {t('mediaFormats', { ns: 'common' }) || 'Photos and videos from your adventures'}
               </p>
               
               <div className="space-y-3">
@@ -197,8 +227,8 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
                 className="hidden"
               />
               
-              <div className="mt-4 text-xs text-gray-400">
-                JPG, PNG, MP4, MOV up to 100MB
+              <div className="mt-4 text-xs text-gray-400 dark:text-gray-500">
+                {t('mediaFormats', { ns: 'common' }) || 'JPG, PNG, MP4, MOV up to 100MB'}
               </div>
             </div>
           </div>

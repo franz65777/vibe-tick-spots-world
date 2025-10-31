@@ -374,58 +374,66 @@ const HomePage = () => {
     <MapFilterProvider>
       <div className="h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex flex-col overflow-hidden">
         {/* Fixed Header - ~60px */}
-        <Header
-          searchQuery={searchQuery}
-          currentCity={currentCity}
-          onSearchChange={setSearchQuery}
-          onSearchKeyPress={() => {}}
-          onCreateStoryClick={() => setIsCreateStoryModalOpen(true)}
-          onCitySelect={handleCityChange}
-          onOpenSearchOverlay={() => setIsSearchOverlayOpen(true)}
-        />
+        {!isCreateStoryModalOpen && (
+          <Header
+            searchQuery={searchQuery}
+            currentCity={currentCity}
+            onSearchChange={setSearchQuery}
+            onSearchKeyPress={() => {}}
+            onCreateStoryClick={() => setIsCreateStoryModalOpen(true)}
+            onCitySelect={handleCityChange}
+            onOpenSearchOverlay={() => setIsSearchOverlayOpen(true)}
+          />
+        )}
       
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Stories Section - 80px */}
-        <div className="h-[80px] flex-shrink-0">
-          <StoriesSection
-            stories={stories}
-            onCreateStory={() => setIsCreateStoryModalOpen(true)}
-            onStoryClick={(index) => {
-              setCurrentStoryIndex(index);
-              setIsStoriesViewerOpen(true);
-            }}
-          />
-        </div>
+        {!isCreateStoryModalOpen && (
+          <div className="h-[80px] flex-shrink-0">
+            <StoriesSection
+              stories={stories}
+              onCreateStory={() => setIsCreateStoryModalOpen(true)}
+              onStoryClick={(index) => {
+                setCurrentStoryIndex(index);
+                setIsStoriesViewerOpen(true);
+              }}
+            />
+          </div>
+        )}
         
         {/* Discover Section - 110px */}
-        <div className="h-[110px] flex-shrink-0">
-          <CommunityHighlights
-            currentCity={currentCity}
-            userLocation={userLocation}
-            onLocationClick={(locationId: string, coordinates?: { lat: number; lng: number }) => {
-              if (coordinates) {
-                setMapCenter(coordinates);
-              }
-            }}
-            onUserClick={(userId: string) => {
-              navigate('/explore');
-            }}
-            onMapLocationClick={(coords: { lat: number; lng: number }) => setMapCenter(coords)}
-            onSwipeDiscoveryOpen={() => navigate('/discover')}
-          />
-        </div>
+        {!isCreateStoryModalOpen && (
+          <div className="h-[110px] flex-shrink-0">
+            <CommunityHighlights
+              currentCity={currentCity}
+              userLocation={userLocation}
+              onLocationClick={(locationId: string, coordinates?: { lat: number; lng: number }) => {
+                if (coordinates) {
+                  setMapCenter(coordinates);
+                }
+              }}
+              onUserClick={(userId: string) => {
+                navigate('/explore');
+              }}
+              onMapLocationClick={(coords: { lat: number; lng: number }) => setMapCenter(coords)}
+              onSwipeDiscoveryOpen={() => navigate('/discover')}
+            />
+          </div>
+        )}
         
         {/* Map Section - fills remaining space and extends under bottom nav */}
-        <div className={isMapExpanded ? "fixed inset-0 z-50" : isSearchOverlayOpen ? "hidden" : "flex-1 relative pb-16"}>
-          <MapSection
-            mapCenter={mapCenter}
-            currentCity={currentCity}
-            isExpanded={isMapExpanded}
-            onToggleExpand={() => setIsMapExpanded(!isMapExpanded)}
-            initialSelectedPlace={initialPinToShow}
-            onClearInitialPlace={() => setInitialPinToShow(null)}
-          />
-        </div>
+        {!isCreateStoryModalOpen && (
+          <div className={isMapExpanded ? "fixed inset-0 z-50" : isSearchOverlayOpen ? "hidden" : "flex-1 relative pb-16"}>
+            <MapSection
+              mapCenter={mapCenter}
+              currentCity={currentCity}
+              isExpanded={isMapExpanded}
+              onToggleExpand={() => setIsMapExpanded(!isMapExpanded)}
+              initialSelectedPlace={initialPinToShow}
+              onClearInitialPlace={() => setInitialPinToShow(null)}
+            />
+          </div>
+        )}
       </main>
 
       {/* Full-screen Search Overlay (fades background) */}
