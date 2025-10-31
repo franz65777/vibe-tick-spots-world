@@ -39,24 +39,52 @@ const MobileNotificationItem = ({
   const { user } = useAuth();
   const [isFollowing, setIsFollowing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [targetUserId, setTargetUserId] = useState<string | null>(notification.data?.user_id ?? null);
+  const [avatarOverride, setAvatarOverride] = useState<string | null>(null);
 
-  // Check if already following this user
+  // Resolve target user (id and avatar) and check follow status
   useEffect(() => {
-    const checkFollowStatus = async () => {
-      if (!user || !notification.data?.user_id || notification.type !== 'follow') return;
-      
-      const { data } = await supabase
-        .from('follows')
-        .select('id')
-        .eq('follower_id', user.id)
-        .eq('following_id', notification.data.user_id)
-        .maybeSingle();
-      
-      setIsFollowing(!!data);
+    if (notification.type !== 'follow') return;
+
+    const resolveAndCheck = async () => {
+      try {
+        let uid = notification.data?.user_id ?? null;
+        let avatar = notification.data?.user_avatar || notification.data?.avatar_url || null;
+
+        if (!uid) {
+          const uname = notification.data?.user_name || notification.data?.username || null;
+          if (uname) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('id, avatar_url')
+              .eq('username', uname)
+              .maybeSingle();
+            if (profile) {
+              uid = profile.id;
+              if (!avatar) avatar = profile.avatar_url;
+            }
+          }
+        }
+
+        setTargetUserId(uid);
+        if (avatar) setAvatarOverride(avatar);
+
+        if (user && uid) {
+          const { data } = await supabase
+            .from('follows')
+            .select('id')
+            .eq('follower_id', user.id)
+            .eq('following_id', uid)
+            .maybeSingle();
+          setIsFollowing(!!data);
+        }
+      } catch (e) {
+        console.warn('Failed to resolve follow target', e);
+      }
     };
-    
-    checkFollowStatus();
-  }, [user, notification.data?.user_id, notification.type]);
+
+    resolveAndCheck();
+  }, [user?.id, notification.id, notification.type]);
 
   const handleClick = () => {
     onAction(notification);
@@ -64,9 +92,8 @@ const MobileNotificationItem = ({
 
   const handleFollowClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    
-    if (!user || !notification.data?.user_id) return;
-    
+    if (!user || !targetUserId) return;
+
     setIsLoading(true);
     try {
       if (isFollowing) {
@@ -75,10 +102,9 @@ const MobileNotificationItem = ({
           .from('follows')
           .delete()
           .eq('follower_id', user.id)
-          .eq('following_id', notification.data.user_id);
-          
+          .eq('following_id', targetUserId);
         if (error) throw error;
-        
+
         setIsFollowing(false);
         toast.success(t('unfollowed', { ns: 'common' }));
       } else {
@@ -87,11 +113,10 @@ const MobileNotificationItem = ({
           .from('follows')
           .insert({
             follower_id: user.id,
-            following_id: notification.data.user_id
+            following_id: targetUserId,
           });
-          
         if (error) throw error;
-        
+
         setIsFollowing(true);
         toast.success(t('following', { ns: 'common' }));
       }
@@ -155,6 +180,7 @@ const MobileNotificationItem = ({
   // Get avatar URL - support both field name formats
   const avatarUrl = notification.data?.user_avatar || notification.data?.avatar_url || '';
   const username = notification.data?.user_name || notification.data?.username || 'User';
+  const computedAvatar = avatarOverride || avatarUrl;
 
   return (
     <div
@@ -168,13 +194,13 @@ const MobileNotificationItem = ({
         className="w-11 h-11 border-2 border-background cursor-pointer"
         onClick={(e) => {
           e.stopPropagation();
-          if (notification.data?.user_id) {
-            navigate(`/profile/${notification.data.user_id}`);
+          if (targetUserId) {
+            navigate(`/profile/${targetUserId}`);
           }
         }}
       >
         <AvatarImage 
-          src={avatarUrl} 
+          src={computedAvatar || undefined} 
           alt={username} 
         />
         <AvatarFallback className="bg-primary/10 text-primary font-semibold">

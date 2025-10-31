@@ -236,6 +236,7 @@ const resources = {
       newBadgeUnlocked: 'New Badge Unlocked'
     },
     notifications: {
+      title: 'Notifications',
       likedYourPost: 'liked your post',
       startedFollowing: 'started following you',
       commentedOnYourPost: 'commented on your post',
@@ -532,6 +533,7 @@ const resources = {
       newBadgeUnlocked: 'Nueva Insignia Desbloqueada'
     },
     notifications: {
+      title: 'Notificaciones',
       likedYourPost: 'le gustó tu publicación',
       startedFollowing: 'empezó a seguirte',
       commentedOnYourPost: 'comentó tu publicación',
@@ -824,6 +826,7 @@ const resources = {
       newBadgeUnlocked: 'Nuovo Badge Sbloccato'
     },
     notifications: {
+      title: 'Notifiche',
       likedYourPost: 'ha messo mi piace al tuo post',
       startedFollowing: 'ha iniziato a seguirti',
       commentedOnYourPost: 'ha commentato il tuo post',
@@ -1116,6 +1119,7 @@ const resources = {
       newBadgeUnlocked: 'Nouveau badge débloqué'
     },
     notifications: {
+      title: 'Notifications',
       likedYourPost: 'a aimé votre publication',
       startedFollowing: 'a commencé à vous suivre',
       commentedOnYourPost: 'a commenté votre publication',
@@ -1381,6 +1385,7 @@ const resources = {
       newBadgeUnlocked: 'Neues Abzeichen freigeschaltet'
     },
     notifications: {
+      title: 'Benachrichtigungen',
       likedYourPost: 'gefällt dein Beitrag',
       startedFollowing: 'folgt dir jetzt',
       commentedOnYourPost: 'hat deinen Beitrag kommentiert',

@@ -4,9 +4,11 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useNotifications } from '@/hooks/useNotifications';
 import MobileNotificationItem from '@/components/notifications/MobileNotificationItem';
+import { useTranslation } from 'react-i18next';
 
 const NotificationsPage = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { notifications, unreadCount, loading, markAsRead, markAllAsRead } = useNotifications();
 
   const handleMarkAsRead = async (notificationId: string) => {
@@ -57,7 +59,7 @@ const NotificationsPage = () => {
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div className="flex items-center gap-2">
-              <h1 className="font-bold text-xl text-foreground">Notifications</h1>
+              <h1 className="font-bold text-xl text-foreground">{t('title', { ns: 'notifications' })}</h1>
               {unreadCount > 0 && (
                 <div className="px-2 py-0.5 bg-primary text-primary-foreground text-xs font-bold rounded-full min-w-[20px] text-center">
                   {unreadCount}
