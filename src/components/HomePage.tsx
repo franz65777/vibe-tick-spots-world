@@ -200,15 +200,20 @@ const HomePage = () => {
   };
 
   const handleCityChange = (city: string, coords?: { lat: number; lng: number }) => {
-    console.log('HomePage - City changed to:', city, coords);
+    console.log('🗺️ HomePage - handleCityChange called:', city, coords);
     setSelectedCity(city);
     setCurrentCity(city);
 
     // Always update map center if coordinates are provided
     if (coords) {
       const newCenter = { lat: coords.lat, lng: coords.lng };
+      console.log('🗺️ Updating map center and user location to:', newCenter);
       setMapCenter(newCenter);
-      console.log('Map center updated from coordinates:', newCenter);
+      setUserLocation(newCenter);
+      
+      // Store in localStorage for persistence
+      localStorage.setItem('lastMapCenter', JSON.stringify(newCenter));
+      localStorage.setItem('lastSelectedCity', city);
       return;
     }
 
@@ -242,11 +247,11 @@ const HomePage = () => {
     if (cityCoordinates[cityKey]) {
       const newCenter = cityCoordinates[cityKey];
       setMapCenter(newCenter);
-      console.log('Map center updated from predefined list:', newCenter);
+      console.log('🗺️ Map center updated from predefined list:', newCenter);
     } else if (userLocation) {
       // Last resort: use user's current location
       setMapCenter(userLocation);
-      console.log('Map center fallback to user location:', userLocation);
+      console.log('🗺️ Map center fallback to user location:', userLocation);
     }
   };
 

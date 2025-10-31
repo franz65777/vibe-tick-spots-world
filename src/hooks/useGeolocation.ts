@@ -24,10 +24,16 @@ export const useGeolocation = (): UseGeolocationReturn => {
 
   const getCityFromCoordinates = async (lat: number, lng: number): Promise<string> => {
     try {
-      // Fallback to manual city detection to avoid network issues
+      // First try the Nominatim reverse geocoding
+      const result = await nominatimGeocoding.reverseGeocode(lat, lng);
+      if (result && result.city && result.city !== 'Unknown City') {
+        return result.city;
+      }
+      
+      // Fallback to manual city detection
       return getCityFromCoordinatesManual(lat, lng);
     } catch (error) {
-      console.error('Error getting city from coordinates:', error);
+      console.error('Error with Nominatim reverse geocoding:', error);
       return getCityFromCoordinatesManual(lat, lng);
     }
   };
