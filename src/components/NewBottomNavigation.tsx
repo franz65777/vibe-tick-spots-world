@@ -16,6 +16,11 @@ const NewBottomNavigation = () => {
   const [showSwitchModal, setShowSwitchModal] = useState(false);
   const { t } = useTranslation();
 
+  // Hide navigation on messages and notifications pages
+  if (location.pathname === '/messages' || location.pathname === '/notifications') {
+    return null;
+  }
+
   const handleNavClick = (path: string, label: string) => {
     navigate(path);
     trackEvent('nav_tab_clicked', { tab: label.toLowerCase() });

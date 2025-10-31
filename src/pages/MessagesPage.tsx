@@ -222,9 +222,9 @@ const MessagesPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-background border-b border-border">
+      <header className="shrink-0 bg-background border-b border-border">
         <div className="px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button
@@ -259,8 +259,8 @@ const MessagesPage = () => {
 
       {/* Search View */}
       {view === 'search' && (
-        <div className="flex-1 flex flex-col">
-          <div className="p-4 border-b border-border">
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+          <div className="shrink-0 p-4 border-b border-border">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
@@ -273,8 +273,9 @@ const MessagesPage = () => {
             </div>
           </div>
 
-          <ScrollArea className="flex-1">
-            {searchLoading ? (
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <ScrollArea className="h-full">
+              {searchLoading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
               </div>
@@ -304,14 +305,16 @@ const MessagesPage = () => {
                 <p className="text-muted-foreground">{t('noUsersFound', { ns: 'messages' })}</p>
               </div>
             ) : null}
-          </ScrollArea>
+            </ScrollArea>
+          </div>
         </div>
       )}
 
       {/* Threads View */}
       {view === 'threads' && (
-        <ScrollArea className="flex-1">
-          {loading ? (
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <ScrollArea className="h-full">
+            {loading ? (
             <div className="flex items-center justify-center py-8">
               <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
             </div>
@@ -360,13 +363,15 @@ const MessagesPage = () => {
               })}
             </div>
           )}
-        </ScrollArea>
+          </ScrollArea>
+        </div>
       )}
 
       {/* Chat View */}
       {view === 'chat' && (
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          <ScrollArea className="flex-1 p-4 bg-muted/30">
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <ScrollArea className="h-full p-4 bg-muted/30">
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -449,10 +454,11 @@ const MessagesPage = () => {
                 <div ref={messagesEndRef} />
               </div>
             )}
-          </ScrollArea>
+            </ScrollArea>
+          </div>
 
           {/* Message Input */}
-          <div className="p-4 bg-background border-t border-border">
+          <div className="shrink-0 p-4 bg-background border-t border-border">
             <div className="flex gap-2">
               <Input
                 type="text"

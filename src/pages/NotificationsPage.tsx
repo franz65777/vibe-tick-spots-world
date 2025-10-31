@@ -44,9 +44,9 @@ const NotificationsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-background border-b border-border">
+      <header className="shrink-0 bg-background border-b border-border">
         <div className="px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button
@@ -82,8 +82,9 @@ const NotificationsPage = () => {
       </header>
 
       {/* Content */}
-      <ScrollArea className="h-[calc(100vh-64px)]">
-        {loading ? (
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <ScrollArea className="h-full">
+          {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="flex flex-col items-center gap-3">
               <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -110,7 +111,8 @@ const NotificationsPage = () => {
             ))}
           </div>
         )}
-      </ScrollArea>
+        </ScrollArea>
+      </div>
     </div>
   );
 };
