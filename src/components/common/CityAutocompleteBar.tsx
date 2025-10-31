@@ -3,7 +3,7 @@ import { Search, MapPin, Loader2, Locate } from 'lucide-react';
 import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
 import { useTranslation } from 'react-i18next';
 import { useGeolocation } from '@/hooks/useGeolocation';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 
 interface CityAutocompleteBarProps {
   searchQuery: string;
@@ -36,23 +36,27 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
   const [results, setResults] = useState<CityResult[]>([]);
   const [showResults, setShowResults] = useState(false);
   const debounceTimer = useRef<NodeJS.Timeout>();
+  const latestQueryRef = useRef<string>('');
+  const selectionRef = useRef<boolean>(false);
 
   // Handle geolocation success - only when location changes
   useEffect(() => {
+    console.log('🔄 CityAutocompleteBar - Location changed:', location);
     if (location && location.city && location.city !== 'Unknown City') {
-      console.log('📍 Location detected:', location.city);
+      console.log('📍 Location detected, calling onCitySelect:', location.city);
       onCitySelect(location.city, { 
         lat: location.latitude, 
         lng: location.longitude 
       });
-      toast.success(`${t('locationDetected', { ns: 'common' })}: ${location.city}`);
+      toast({ description: `${t('locationDetected', { ns: 'common' })}: ${location.city}` });
     }
-  }, [location?.latitude, location?.longitude, location?.city]);
+  }, [location?.latitude, location?.longitude, location?.city, onCitySelect]);
 
   useEffect(() => {
     if (searchQuery.length < 2) {
       setResults([]);
       setShowResults(false);
+      selectionRef.current = false;
       return;
     }
 
@@ -73,11 +77,18 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
   }, [searchQuery, i18n.language]);
 
   const performSearch = async (query: string) => {
+    latestQueryRef.current = query;
     setIsLoading(true);
     
     try {
       // Use FREE OpenStreetMap Nominatim for city search with language support
       const nominatimResults = await nominatimGeocoding.searchPlace(query, i18n.language);
+      
+      // If another selection happened or input lost focus, ignore this response
+      if (selectionRef.current || !inputRef.current || document.activeElement !== inputRef.current || latestQueryRef.current !== query) {
+        setIsLoading(false);
+        return;
+      }
       
       const cityResults: CityResult[] = nominatimResults.map((result) => ({
         name: result.city || result.displayName.split(',')[0],
@@ -97,6 +108,9 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
   };
 
   const handleSelectCity = (result: CityResult) => {
+    console.log('🏙️ City selected from dropdown:', result.name, result);
+    selectionRef.current = true;
+    latestQueryRef.current = '';
     // Cancel any pending search
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
@@ -112,18 +126,24 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
     
     // Blur input
     inputRef.current?.blur();
+
+    // Reset selection flag shortly after to allow new searches
+    setTimeout(() => {
+      selectionRef.current = false;
+    }, 300);
   };
 
   const handleCurrentLocation = async () => {
     try {
-      toast.info(t('gettingLocation', { ns: 'common' }));
+      console.log('🌍 Geolocation button clicked');
+      toast({ description: t('gettingLocation', { ns: 'common' }) });
       getCurrentLocation();
       
       // Wait for location to be updated
       // The useEffect will handle the city selection
     } catch (error) {
       console.error('Error getting current location:', error);
-      toast.error('Failed to get location');
+      toast({ description: 'Failed to get location', variant: 'destructive' });
     }
   };
 

@@ -1,5 +1,5 @@
-
 import { useState, useEffect } from 'react';
+import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
 
 interface GeolocationData {
   latitude: number;
@@ -113,7 +113,7 @@ export const useGeolocation = (): UseGeolocationReturn => {
       return;
     }
 
-    console.log('🌍 Getting current location...');
+    console.log('🌍 Starting geolocation request...');
     setLoading(true);
     setError(null);
 
@@ -124,16 +124,17 @@ export const useGeolocation = (): UseGeolocationReturn => {
         
         try {
           const city = await getCityFromCoordinates(latitude, longitude);
-          console.log('🏙️ City detected:', city);
+          console.log('🏙️ City detected from coordinates:', city);
           
-          setLocation({
+          const newLocation = {
             latitude,
             longitude,
             city,
             accuracy
-          });
+          };
           
-          console.log('✅ Location set:', { latitude, longitude, city });
+          setLocation(newLocation);
+          console.log('✅ Location state updated:', newLocation);
         } catch (err) {
           console.error('Error getting city name:', err);
           setLocation({
