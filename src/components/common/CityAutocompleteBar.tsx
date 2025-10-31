@@ -38,25 +38,36 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
   const debounceTimer = useRef<NodeJS.Timeout>();
   const latestQueryRef = useRef<string>('');
   const selectionRef = useRef<boolean>(false);
+  const processedLocationRef = useRef<string>('');
 
-  // Handle geolocation success - only when location changes
+  // Handle geolocation success - only when location changes and hasn't been processed yet
   useEffect(() => {
-    console.log('🔄 CityAutocompleteBar - Location changed:', location);
-    if (location && location.city && location.city !== 'Unknown City') {
-      console.log('📍 Location detected, calling onCitySelect:', location.city);
-      
-      // Update the search query to show the city name
-      onSearchChange(location.city);
-      
-      // Call city select to update map and state
-      onCitySelect(location.city, { 
-        lat: location.latitude, 
-        lng: location.longitude 
-      });
-      
-      toast({ description: `${t('locationDetected', { ns: 'common' })}: ${location.city}` });
+    if (!location || !location.city || location.city === 'Unknown City') {
+      return;
     }
-  }, [location?.latitude, location?.longitude, location?.city, onCitySelect, onSearchChange, t]);
+    
+    // Create a unique key for this location
+    const locationKey = `${location.latitude}-${location.longitude}-${location.city}`;
+    
+    // Skip if we've already processed this location
+    if (processedLocationRef.current === locationKey) {
+      return;
+    }
+    
+    console.log('📍 New location detected:', location.city);
+    processedLocationRef.current = locationKey;
+    
+    // Update the search query to show the city name
+    onSearchChange(location.city);
+    
+    // Call city select to update map and state
+    onCitySelect(location.city, { 
+      lat: location.latitude, 
+      lng: location.longitude 
+    });
+    
+    toast({ description: `${t('locationDetected', { ns: 'common' })}: ${location.city}` });
+  }, [location?.latitude, location?.longitude, location?.city]);
 
   useEffect(() => {
     if (searchQuery.length < 2) {
