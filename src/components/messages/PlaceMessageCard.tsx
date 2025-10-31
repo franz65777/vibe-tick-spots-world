@@ -27,39 +27,52 @@ const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => 
   return (
     <div 
       onClick={() => onViewPlace(placeData)}
-      className="bg-background/80 backdrop-blur-sm border rounded-lg p-3 cursor-pointer hover:bg-accent/50 transition-colors"
+      className="bg-card border border-border rounded-2xl overflow-hidden cursor-pointer hover:bg-accent/30 transition-all shadow-sm hover:shadow-md active:scale-[0.98]"
     >
-      <div className="flex items-center gap-3">
-        <div className={`w-10 h-10 rounded-lg ${categoryColor.replace('text-', 'bg-').replace('-500', '-100').replace('-600', '-100')} flex items-center justify-center shrink-0`}>
-          <CategoryIconComponent className={`w-5 h-5 ${categoryColor}`} />
+      {placeData.image && (
+        <div className="w-full h-32 overflow-hidden bg-muted">
+          <img 
+            src={placeData.image} 
+            alt={placeData.name}
+            className="w-full h-full object-cover"
+          />
         </div>
-        <div className="flex-1 min-w-0">
-          <h4 className="font-semibold text-sm text-foreground truncate">{placeData.name}</h4>
-          {(placeData.city || placeData.address || placeData.coordinates) && (
-            <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
-              <MapPin className="w-3 h-3" />
-              <CityLabel 
-                id={placeData.google_place_id || placeData.id}
-                city={placeData.city}
-                address={placeData.address}
-                coordinates={placeData.coordinates}
-              />
-            </p>
-          )}
+      )}
+      
+      <div className="p-3">
+        <div className="flex items-start gap-2.5">
+          <div className={`w-9 h-9 rounded-xl ${categoryColor.replace('text-', 'bg-').replace('-500', '-100').replace('-600', '-100')} flex items-center justify-center shrink-0`}>
+            <CategoryIconComponent className={`w-4 h-4 ${categoryColor}`} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="font-semibold text-[13px] text-foreground leading-tight mb-1">{placeData.name}</h4>
+            {(placeData.city || placeData.address || placeData.coordinates) && (
+              <p className="text-[11px] text-muted-foreground truncate flex items-center gap-1">
+                <MapPin className="w-3 h-3 flex-shrink-0" />
+                <CityLabel 
+                  id={placeData.google_place_id || placeData.id}
+                  city={placeData.city}
+                  address={placeData.address}
+                  coordinates={placeData.coordinates}
+                />
+              </p>
+            )}
+          </div>
         </div>
+        
+        <Button
+          size="sm"
+          variant="ghost"
+          className="w-full mt-2.5 h-8 text-[12px] font-medium text-primary hover:bg-primary/10"
+          onClick={(e) => {
+            e.stopPropagation();
+            onViewPlace(placeData);
+          }}
+        >
+          <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+          View Location
+        </Button>
       </div>
-      <Button
-        size="sm"
-        variant="outline"
-        className="w-full mt-2 h-8 text-xs"
-        onClick={(e) => {
-          e.stopPropagation();
-          onViewPlace(placeData);
-        }}
-      >
-        <ExternalLink className="w-3 h-3 mr-1" />
-        Open in Search
-      </Button>
     </div>
   );
 };
