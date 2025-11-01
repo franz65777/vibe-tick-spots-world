@@ -289,6 +289,9 @@ const resources = {
       daysShort: '{{count}}d',
       deleteMessage: 'Delete Message',
       deleteMessageConfirm: 'Are you sure you want to delete this message? This action cannot be undone.',
+      messageOptions: 'Message Options',
+      addReaction: 'Add Reaction',
+      selectEmoji: 'Select Emoji',
     },
     business: {
       overview: 'Overview',
@@ -626,6 +629,9 @@ const resources = {
       daysShort: '{{count}}d',
       deleteMessage: 'Eliminar Mensaje',
       deleteMessageConfirm: '¿Estás seguro de que quieres eliminar este mensaje? Esta acción no se puede deshacer.',
+      messageOptions: 'Opciones de Mensaje',
+      addReaction: 'Añadir Reacción',
+      selectEmoji: 'Seleccionar Emoji',
     },
     business: {
       overview: 'Resumen',
@@ -958,6 +964,9 @@ const resources = {
       daysShort: '{{count}}d',
       deleteMessage: 'Elimina Messaggio',
       deleteMessageConfirm: 'Sei sicuro di voler eliminare questo messaggio? Questa azione non può essere annullata.',
+      messageOptions: 'Opzioni Messaggio',
+      addReaction: 'Aggiungi Reazione',
+      selectEmoji: 'Seleziona Emoji',
     },
     business: {
       overview: 'Panoramica',

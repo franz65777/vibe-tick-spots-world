@@ -1,20 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Search, Send, X, MessageSquare, Image, Mic, Trash2 } from 'lucide-react';
+import { ArrowLeft, Search, Send, X, MessageSquare, Image, Mic, Trash2, Smile } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { useAuth } from '@/contexts/AuthContext';
 import { messageService, MessageThread, DirectMessage } from '@/services/messageService';
 import { supabase } from '@/integrations/supabase/client';
@@ -47,6 +43,10 @@ const MessagesPage = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [messageReactions, setMessageReactions] = useState<Record<string, { emoji: string; user_id: string; }[]>>({});
+  const [isDoubleTapping, setIsDoubleTapping] = useState(false);
+  const lastTapRef = useRef<number>(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<any>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -281,6 +281,60 @@ const MessagesPage = () => {
       console.error('Error deleting message:', error);
     }
   };
+
+  const handleDoubleTap = async (messageId: string) => {
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300;
+    
+    if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
+      // Double tap detected
+      setIsDoubleTapping(true);
+      await toggleReaction(messageId, '❤️');
+      setTimeout(() => setIsDoubleTapping(false), 300);
+    }
+    lastTapRef.current = now;
+  };
+
+  const toggleReaction = async (messageId: string, emoji: string) => {
+    try {
+      const reactions = messageReactions[messageId] || [];
+      const userReaction = reactions.find(r => r.user_id === user?.id);
+      
+      if (userReaction && userReaction.emoji === emoji) {
+        // Remove reaction
+        await messageService.removeReaction(messageId);
+        setMessageReactions(prev => ({
+          ...prev,
+          [messageId]: reactions.filter(r => r.user_id !== user?.id)
+        }));
+      } else {
+        // Add/update reaction
+        await messageService.addReaction(messageId, emoji);
+        await loadMessageReactions(messageId);
+      }
+    } catch (error) {
+      console.error('Error toggling reaction:', error);
+    }
+  };
+
+  const loadMessageReactions = async (messageId: string) => {
+    try {
+      const reactions = await messageService.getMessageReactions(messageId);
+      setMessageReactions(prev => ({
+        ...prev,
+        [messageId]: reactions
+      }));
+    } catch (error) {
+      console.error('Error loading reactions:', error);
+    }
+  };
+
+  useEffect(() => {
+    // Load reactions for all messages
+    messages.forEach(message => {
+      loadMessageReactions(message.id);
+    });
+  }, [messages.length]);
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
@@ -561,106 +615,156 @@ const MessagesPage = () => {
                  {messages.map((message) => {
                    const isOwn = message.sender_id === user?.id;
                    return (
-                     <div
-                       key={message.id}
-                       className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
-                       onTouchStart={() => handleLongPressStart(message.id, isOwn)}
-                       onTouchEnd={handleLongPressEnd}
-                       onMouseDown={() => handleLongPressStart(message.id, isOwn)}
-                       onMouseUp={handleLongPressEnd}
-                       onMouseLeave={handleLongPressEnd}
-                     >
-                      {message.message_type === 'audio' && message.shared_content?.audio_url ? (
-                        <div className={`max-w-[70%] ${isOwn ? 'ml-16' : 'mr-16'}`}>
-                          <div
-                            className={`rounded-2xl px-4 py-3 ${
-                              isOwn
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-card text-card-foreground border border-border'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2">
-                              <Mic className="w-4 h-4" />
-                              <audio 
-                                controls 
-                                className="max-w-full"
-                                style={{ height: '32px' }}
-                              >
-                                <source src={message.shared_content.audio_url} type="audio/webm" />
-                              </audio>
-                            </div>
-                          </div>
-                          <p
-                            className={`text-xs mt-1 px-1 ${
-                              isOwn ? 'text-muted-foreground text-right' : 'text-muted-foreground'
-                            }`}
-                          >
-                            {formatMessageTime(message.created_at)}
-                          </p>
-                        </div>
-                      ) : ['place_share', 'post_share', 'profile_share'].includes(message.message_type) &&
-                      message.shared_content ? (
-                        <div className={`max-w-[85%] ${isOwn ? 'ml-8' : 'mr-8'}`}>
-                          {message.content && (
-                            <div
-                              className={`rounded-2xl px-4 py-3 mb-2 ${
-                                isOwn
-                                  ? 'bg-primary text-primary-foreground ml-auto max-w-fit'
-                                  : 'bg-card text-card-foreground border border-border'
-                              }`}
-                            >
-                              <p className="text-sm">{message.content}</p>
-                            </div>
-                          )}
-                          <div className="bg-card rounded-2xl border border-border overflow-hidden">
-                            {message.message_type === 'place_share' && (
-                              <PlaceMessageCard
-                                placeData={message.shared_content}
-                                onViewPlace={(placeData) => {
-                                  navigate('/explore', { 
-                                    state: { 
-                                      sharedPlace: {
-                                        id: placeData.place_id || placeData.google_place_id || '',
-                                        google_place_id: placeData.google_place_id || placeData.place_id || '',
-                                        name: placeData.name || '',
-                                        category: placeData.category || 'place',
-                                        address: placeData.address || '',
-                                        city: placeData.city || '',
-                                        coordinates: placeData.coordinates || { lat: 0, lng: 0 }
-                                      }
-                                    }
-                                  });
-                                }}
-                              />
-                            )}
-                            {message.message_type === 'post_share' && (
-                              <PostMessageCard postData={message.shared_content} />
-                            )}
-                            {message.message_type === 'profile_share' && (
-                              <ProfileMessageCard profileData={message.shared_content} />
-                            )}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className={`max-w-[70%] ${isOwn ? 'ml-16' : 'mr-16'}`}>
-                          <div
-                            className={`rounded-2xl px-4 py-3 ${
-                              isOwn
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-card text-card-foreground border border-border'
-                            }`}
-                          >
-                            <p className="text-sm">{message.content}</p>
-                          </div>
-                          <p
-                            className={`text-xs mt-1 px-1 ${
-                              isOwn ? 'text-muted-foreground text-right' : 'text-muted-foreground'
-                            }`}
-                          >
-                            {formatMessageTime(message.created_at)}
-                          </p>
-                        </div>
-                      )}
+                      <div
+                        key={message.id}
+                        className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}
+                        onTouchStart={() => handleLongPressStart(message.id, isOwn)}
+                        onTouchEnd={handleLongPressEnd}
+                        onMouseDown={() => handleLongPressStart(message.id, isOwn)}
+                        onMouseUp={handleLongPressEnd}
+                        onMouseLeave={handleLongPressEnd}
+                        onClick={() => handleDoubleTap(message.id)}
+                      >
+                       {message.message_type === 'audio' && message.shared_content?.audio_url ? (
+                         <div className={`max-w-[70%] ${isOwn ? 'ml-16' : 'mr-16'}`}>
+                           <div
+                             className={`rounded-2xl px-4 py-3 ${
+                               isOwn
+                                 ? 'bg-primary text-primary-foreground'
+                                 : 'bg-card text-card-foreground border border-border'
+                             }`}
+                           >
+                             <div className="flex items-center gap-2">
+                               <Mic className="w-4 h-4" />
+                               <audio 
+                                 controls 
+                                 className="max-w-full"
+                                 style={{ height: '32px' }}
+                               >
+                                 <source src={message.shared_content.audio_url} type="audio/webm" />
+                               </audio>
+                             </div>
+                           </div>
+                           <div className="flex items-center gap-2">
+                             {messageReactions[message.id]?.length > 0 && (
+                               <div className="flex gap-1 bg-background border border-border rounded-full px-2 py-0.5 mt-1">
+                                 {messageReactions[message.id].map((reaction, idx) => (
+                                   <button
+                                     key={idx}
+                                     onClick={() => toggleReaction(message.id, reaction.emoji)}
+                                     className="text-sm hover:scale-110 transition-transform"
+                                   >
+                                     {reaction.emoji}
+                                   </button>
+                                 ))}
+                               </div>
+                             )}
+                             <p
+                               className={`text-xs px-1 ${
+                                 isOwn ? 'text-muted-foreground text-right' : 'text-muted-foreground'
+                               }`}
+                             >
+                               {formatMessageTime(message.created_at)}
+                             </p>
+                           </div>
+                         </div>
+                       ) : ['place_share', 'post_share', 'profile_share'].includes(message.message_type) &&
+                       message.shared_content ? (
+                         <div className={`max-w-[85%] ${isOwn ? 'ml-8' : 'mr-8'}`}>
+                           {message.content && (
+                             <div
+                               className={`rounded-2xl px-4 py-3 mb-2 ${
+                                 isOwn
+                                   ? 'bg-primary text-primary-foreground ml-auto max-w-fit'
+                                   : 'bg-card text-card-foreground border border-border'
+                               }`}
+                             >
+                               <p className="text-sm">{message.content}</p>
+                             </div>
+                           )}
+                           <div className="bg-card rounded-2xl border border-border overflow-hidden">
+                             {message.message_type === 'place_share' && (
+                               <PlaceMessageCard
+                                 placeData={message.shared_content}
+                                 onViewPlace={(placeData) => {
+                                   navigate('/explore', { 
+                                     state: { 
+                                       sharedPlace: {
+                                         id: placeData.place_id || placeData.google_place_id || '',
+                                         google_place_id: placeData.google_place_id || placeData.place_id || '',
+                                         name: placeData.name || '',
+                                         category: placeData.category || 'place',
+                                         address: placeData.address || '',
+                                         city: placeData.city || '',
+                                         coordinates: placeData.coordinates || { lat: 0, lng: 0 }
+                                       }
+                                     }
+                                   });
+                                 }}
+                               />
+                             )}
+                             {message.message_type === 'post_share' && (
+                               <PostMessageCard postData={message.shared_content} />
+                             )}
+                             {message.message_type === 'profile_share' && (
+                               <ProfileMessageCard profileData={message.shared_content} />
+                             )}
+                           </div>
+                           {messageReactions[message.id]?.length > 0 && (
+                             <div className="flex gap-1 bg-background border border-border rounded-full px-2 py-0.5 mt-1 w-fit">
+                               {messageReactions[message.id].map((reaction, idx) => (
+                                 <button
+                                   key={idx}
+                                   onClick={(e) => {
+                                     e.stopPropagation();
+                                     toggleReaction(message.id, reaction.emoji);
+                                   }}
+                                   className="text-sm hover:scale-110 transition-transform"
+                                 >
+                                   {reaction.emoji}
+                                 </button>
+                               ))}
+                             </div>
+                           )}
+                         </div>
+                       ) : (
+                         <div className={`max-w-[70%] ${isOwn ? 'ml-16' : 'mr-16'}`}>
+                           <div
+                             className={`rounded-2xl px-4 py-3 ${
+                               isOwn
+                                 ? 'bg-primary text-primary-foreground'
+                                 : 'bg-card text-card-foreground border border-border'
+                             }`}
+                           >
+                             <p className="text-sm">{message.content}</p>
+                           </div>
+                           <div className="flex items-center gap-2">
+                             {messageReactions[message.id]?.length > 0 && (
+                               <div className="flex gap-1 bg-background border border-border rounded-full px-2 py-0.5 mt-1">
+                                 {messageReactions[message.id].map((reaction, idx) => (
+                                   <button
+                                     key={idx}
+                                     onClick={(e) => {
+                                       e.stopPropagation();
+                                       toggleReaction(message.id, reaction.emoji);
+                                     }}
+                                     className="text-sm hover:scale-110 transition-transform"
+                                   >
+                                     {reaction.emoji}
+                                   </button>
+                                 ))}
+                               </div>
+                             )}
+                             <p
+                               className={`text-xs px-1 ${
+                                 isOwn ? 'text-muted-foreground text-right' : 'text-muted-foreground'
+                               }`}
+                             >
+                               {formatMessageTime(message.created_at)}
+                             </p>
+                           </div>
+                         </div>
+                       )}
                     </div>
                   );
                 })}
@@ -742,23 +846,60 @@ const MessagesPage = () => {
         />
       )}
 
-      {/* Delete Message Dialog */}
-      <AlertDialog open={!!selectedMessageId} onOpenChange={(open) => !open && setSelectedMessageId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('deleteMessage', { ns: 'messages', defaultValue: 'Delete Message' })}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('deleteMessageConfirm', { ns: 'messages', defaultValue: 'Are you sure you want to delete this message? This action cannot be undone.' })}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('cancel', { ns: 'common' })}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteMessage} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              {t('delete', { ns: 'common' })}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Delete Message Bottom Sheet */}
+      <Sheet open={!!selectedMessageId} onOpenChange={(open) => !open && setSelectedMessageId(null)}>
+        <SheetContent side="bottom" className="rounded-t-[20px]">
+          <SheetHeader>
+            <SheetTitle className="text-center">{t('messageOptions', { ns: 'messages', defaultValue: 'Message Options' })}</SheetTitle>
+          </SheetHeader>
+          <div className="flex flex-col gap-2 pt-4">
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-left h-12 text-base"
+              onClick={() => {
+                setShowEmojiPicker(true);
+              }}
+            >
+              <Smile className="w-5 h-5 mr-3" />
+              {t('addReaction', { ns: 'messages', defaultValue: 'Add Reaction' })}
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-left h-12 text-base text-destructive hover:text-destructive"
+              onClick={handleDeleteMessage}
+            >
+              <Trash2 className="w-5 h-5 mr-3" />
+              {t('deleteMessage', { ns: 'messages', defaultValue: 'Delete Message' })}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Emoji Picker Bottom Sheet */}
+      <Sheet open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
+        <SheetContent side="bottom" className="rounded-t-[20px]">
+          <SheetHeader>
+            <SheetTitle className="text-center">{t('selectEmoji', { ns: 'messages', defaultValue: 'Select Emoji' })}</SheetTitle>
+          </SheetHeader>
+          <div className="grid grid-cols-8 gap-2 pt-4 max-h-[300px] overflow-y-auto">
+            {['❤️', '👍', '😂', '😮', '😢', '🙏', '👏', '🔥', '🎉', '💯', '😍', '🤔', '😎', '🥳', '💪', '✨'].map(emoji => (
+              <button
+                key={emoji}
+                className="text-3xl p-2 hover:bg-accent rounded-lg transition-colors"
+                onClick={() => {
+                  if (selectedMessageId) {
+                    toggleReaction(selectedMessageId, emoji);
+                    setShowEmojiPicker(false);
+                    setSelectedMessageId(null);
+                  }
+                }}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };

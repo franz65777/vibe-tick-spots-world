@@ -383,6 +383,63 @@ class MessageService {
       return false;
     }
   }
+
+  async addReaction(messageId: string, emoji: string): Promise<boolean> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('message_reactions')
+        .upsert({
+          message_id: messageId,
+          user_id: user.id,
+          emoji
+        }, {
+          onConflict: 'message_id,user_id'
+        });
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error adding reaction:', error);
+      return false;
+    }
+  }
+
+  async removeReaction(messageId: string): Promise<boolean> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('message_reactions')
+        .delete()
+        .eq('message_id', messageId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error removing reaction:', error);
+      return false;
+    }
+  }
+
+  async getMessageReactions(messageId: string): Promise<{ emoji: string; user_id: string; }[]> {
+    try {
+      const { data, error } = await supabase
+        .from('message_reactions')
+        .select('emoji, user_id')
+        .eq('message_id', messageId);
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching reactions:', error);
+      return [];
+    }
+  }
 }
 
 export const messageService = new MessageService();
