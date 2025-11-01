@@ -1480,6 +1480,7 @@ export type Database = {
           comments_count: number | null
           created_at: string
           id: string
+          is_business_post: boolean | null
           likes_count: number | null
           location_id: string | null
           media_urls: string[]
@@ -1496,6 +1497,7 @@ export type Database = {
           comments_count?: number | null
           created_at?: string
           id?: string
+          is_business_post?: boolean | null
           likes_count?: number | null
           location_id?: string | null
           media_urls: string[]
@@ -1512,6 +1514,7 @@ export type Database = {
           comments_count?: number | null
           created_at?: string
           id?: string
+          is_business_post?: boolean | null
           likes_count?: number | null
           location_id?: string | null
           media_urls?: string[]
@@ -1853,7 +1856,7 @@ export type Database = {
           id: string
           location_address: string | null
           location_id: string | null
-          location_name: string | null
+          location_name: string
           media_type: string
           media_url: string
           metadata: Json | null
@@ -1866,7 +1869,7 @@ export type Database = {
           id?: string
           location_address?: string | null
           location_id?: string | null
-          location_name?: string | null
+          location_name: string
           media_type: string
           media_url: string
           metadata?: Json | null
@@ -1879,7 +1882,7 @@ export type Database = {
           id?: string
           location_address?: string | null
           location_id?: string | null
-          location_name?: string | null
+          location_name?: string
           media_type?: string
           media_url?: string
           metadata?: Json | null
