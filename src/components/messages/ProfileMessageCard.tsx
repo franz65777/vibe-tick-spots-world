@@ -67,7 +67,7 @@ const ProfileMessageCard = ({ profileData }: ProfileMessageCardProps) => {
         className="w-full rounded-lg font-semibold"
         size="sm"
       >
-        {t('viewProfile', { ns: 'messages', defaultValue: 'View Profile' })}
+        {t('viewProfile', { ns: 'messages' })}
       </Button>
     </div>
   );

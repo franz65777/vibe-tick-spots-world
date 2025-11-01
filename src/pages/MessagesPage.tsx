@@ -641,7 +641,7 @@ const MessagesPage = () => {
               
               <Input
                 type="text"
-                placeholder={isRecording ? t('recording', { ns: 'messages', defaultValue: 'Recording audio...' }) : t('typeMessage', { ns: 'messages' })}
+                placeholder={isRecording ? t('recordingAudio', { ns: 'messages' }) : t('typeMessage', { ns: 'messages' })}
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyPress={(e) => {

@@ -72,7 +72,7 @@ const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => 
           }}
         >
           <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
-          {t('viewLocation', { ns: 'messages', defaultValue: 'View Location' })}
+          {t('viewLocation', { ns: 'messages' })}
         </Button>
       </div>
     </div>
