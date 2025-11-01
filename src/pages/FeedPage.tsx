@@ -253,36 +253,6 @@ const FeedPage = () => {
     const isExpanded = expandedCaptions.has(postId);
     const needsTruncate = caption.length > 100;
 
-    if (!isExpanded) {
-      return (
-        <div className="text-sm text-left">
-          <div className="flex items-baseline">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/profile/${userId}`);
-              }}
-              className="font-semibold mr-1 hover:opacity-70 shrink-0"
-            >
-              {username}
-            </button>
-            <span className="flex-1 min-w-0 truncate text-foreground">{caption}</span>
-            {needsTruncate && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleCaption(postId);
-                }}
-                className="ml-1 text-muted-foreground hover:text-foreground text-sm whitespace-nowrap shrink-0"
-              >
-                {t('more', { defaultValue: 'more' })}
-              </button>
-            )}
-          </div>
-        </div>
-      );
-    }
-
     return (
       <div className="text-sm text-left">
         <button
@@ -290,22 +260,25 @@ const FeedPage = () => {
             e.stopPropagation();
             navigate(`/profile/${userId}`);
           }}
-          className="font-semibold mr-1 hover:opacity-70"
+          className="font-semibold hover:opacity-70 inline"
         >
           {username}
         </button>
-        <span className="text-foreground">{caption}</span>
-        {needsTruncate && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleCaption(postId);
-            }}
-            className="ml-1 text-muted-foreground hover:text-foreground text-sm"
-          >
-            {t('less', { defaultValue: 'less' })}
-          </button>
-        )}
+        <span className="text-foreground">
+          {' '}
+          {isExpanded ? caption : caption.length > 100 ? `${caption.slice(0, 100)}...` : caption}
+          {needsTruncate && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleCaption(postId);
+              }}
+              className="ml-1 text-muted-foreground hover:text-foreground"
+            >
+              {isExpanded ? t('common.less') : t('common.more')}
+            </button>
+          )}
+        </span>
       </div>
     );
   };
