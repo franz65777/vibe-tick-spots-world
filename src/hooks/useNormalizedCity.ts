@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { normalizeCity, extractCityFromAddress, extractCityFromName } from '@/utils/cityNormalization';
 import { useTranslation } from 'react-i18next';
+import { translateCityName } from '@/utils/cityTranslations';
 
 // Simple in-memory cache to avoid repeated lookups per session
 const cityCache = new Map<string, string>();
@@ -68,19 +69,29 @@ export function useNormalizedCity(params: {
     const baseCity = (city && city.trim()) || extractCityFromAddress(address) || extractCityFromName(name) || '';
     const normalized = normalizeCity(baseCity || null);
 
-    // If already good, set and stop (exclude street/business-like strings)
+    // Try to translate with static list first (fast path)
+    const staticTranslation = translateCityName(normalized, i18n.language);
+    
+    // If we have a valid city AND it was successfully translated (different from original), use it
     if (normalized !== 'Unknown' && normalized.length > 2 && !isNonCityLike(normalized)) {
-      setLabel(normalized);
-      return;
+      if (staticTranslation !== normalized || i18n.language === 'en') {
+        // We have a translation or we're in English, use it directly
+        setLabel(staticTranslation);
+        return;
+      }
+      
+      // No static translation available and not in English - need to get dynamic translation
+      // Fall through to reverse geocode if we have coordinates
     }
 
     // Try cache
-    if (cacheKey && cityCache.has(cacheKey)) {
-      setLabel(cityCache.get(cacheKey)!);
+    const cacheKeyWithLang = `${cacheKey}-${i18n.language}`;
+    if (cacheKeyWithLang && cityCache.has(cacheKeyWithLang)) {
+      setLabel(cityCache.get(cacheKeyWithLang)!);
       return;
     }
 
-    // If we have coordinates, reverse geocode
+    // If we have coordinates, reverse geocode with language parameter for dynamic translation
     const lat = coordinates?.lat !== undefined ? Number(coordinates.lat) : undefined;
     const lng = coordinates?.lng !== undefined ? Number(coordinates.lng) : undefined;
     if (
@@ -88,7 +99,8 @@ export function useNormalizedCity(params: {
       lat === null || lng === null ||
       Number.isNaN(lat) || Number.isNaN(lng)
     ) {
-      setLabel(normalized || 'Unknown');
+      // No coordinates, use what we have (normalized or translated)
+      setLabel(staticTranslation || normalized || 'Unknown');
       return;
     }
 
@@ -99,17 +111,18 @@ export function useNormalizedCity(params: {
         if (!isMounted) return;
         if (error) {
           console.warn('Reverse geocode error:', error);
-          setLabel(normalized || 'Unknown');
+          setLabel(staticTranslation || normalized || 'Unknown');
           return;
         }
-        const rcCity = normalizeCity(data?.city || null);
-        const finalCity = rcCity && rcCity !== 'Unknown' ? rcCity : normalized || 'Unknown';
+        // Reverse geocode should return city name in the requested language
+        const rcCity = data?.city?.trim() || '';
+        const finalCity = rcCity && rcCity !== 'Unknown' ? rcCity : (staticTranslation || normalized || 'Unknown');
         setLabel(finalCity);
-        if (cacheKey) cityCache.set(cacheKey, finalCity);
+        if (cacheKeyWithLang) cityCache.set(cacheKeyWithLang, finalCity);
       })
       .catch(() => {
         if (!isMounted) return;
-        setLabel(normalized || 'Unknown');
+        setLabel(staticTranslation || normalized || 'Unknown');
       })
       .finally(() => {
         if (!isMounted) return;
