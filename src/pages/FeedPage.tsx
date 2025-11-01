@@ -274,11 +274,9 @@ const FeedPage = () => {
       ? firstLine.substring(0, MAX_FIRST_LINE_LENGTH)
       : firstLine;
 
-    // Safe fallback labels to avoid showing "common.more/less" on screen
-    const moreT = t('common.more');
-    const lessT = t('common.less');
-    const moreLabel = moreT === 'common.more' ? 'altro' : moreT;
-    const lessLabel = lessT === 'common.less' ? 'meno' : lessT;
+    // Use translated labels for more/less
+    const moreLabel = t('common.more');
+    const lessLabel = t('common.less');
 
     return (
       <div className="text-sm text-left">
