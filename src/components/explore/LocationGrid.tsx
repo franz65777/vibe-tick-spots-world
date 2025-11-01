@@ -425,22 +425,22 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
             <div
               key={location.id}
               onClick={() => handleLocationClick(location)}
-              className="relative bg-white rounded-xl overflow-hidden cursor-pointer hover:shadow-lg transition-all border border-gray-200 flex flex-col h-[180px]"
+              className="relative bg-white dark:bg-card rounded-2xl overflow-hidden cursor-pointer hover:shadow-xl transition-all border border-border flex flex-col h-[140px]"
             >
               {/* Top section with category and save */}
               <div className="relative p-2.5 flex items-start justify-between">
-                <CategoryIcon category={location.category} className="w-8 h-8" />
+                <CategoryIcon category={location.category} className="w-7 h-7" />
                 
                 <button
                   onClick={(e) => handleSaveToggle(e, location.id)}
-                  className={`rounded-full p-1.5 transition-colors ${
+                  className={`rounded-full p-1.5 transition-all ${
                     isSaved 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'bg-gray-200 hover:bg-gray-300 text-gray-600'
+                      ? 'bg-primary text-primary-foreground shadow-sm' 
+                      : 'bg-muted hover:bg-muted/80 text-muted-foreground'
                   }`}
                   aria-label={isSaved ? 'Unsave location' : 'Save location'}
                 >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
                   </svg>
                 </button>
@@ -448,48 +448,45 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
 
               {/* Content */}
               <div className="px-2.5 flex-1 flex flex-col justify-between pb-2.5">
-                <div>
-                  <h4 className="font-bold text-sm text-gray-900 line-clamp-2 mb-1.5 leading-tight">
+                <div className="space-y-0.5">
+                  <h4 className="font-bold text-sm text-foreground line-clamp-2 leading-tight">
                     {location.name}
                   </h4>
                   
                   {/* City */}
                   <div className="flex items-center gap-1">
-                    <svg className="w-3 h-3 text-primary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <svg className="w-2.5 h-2.5 text-primary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                    <span className="text-xs text-gray-600 truncate">
+                    <span className="text-[11px] text-muted-foreground truncate">
                       <CityLabel id={location.google_place_id || location.id} city={location.city} address={location.address} coordinates={location.coordinates} />
                     </span>
                   </div>
                 </div>
 
-                {/* Minimal Stats - Single Row */}
-                <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                  <div className="flex items-center gap-1 text-gray-600">
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span className="text-xs font-semibold text-gray-900">{location.postsCount || 0}</span>
+                {/* Ultra Minimal Stats - Compact Row */}
+                <div className="flex items-center gap-3 pt-1.5">
+                  <div className="flex items-center gap-0.5">
+                    <span className="text-[11px] font-semibold text-foreground">{location.postsCount || 0}</span>
+                    <span className="text-[10px] text-muted-foreground">posts</span>
                   </div>
                   
-                  <div className="flex items-center gap-1 text-gray-600">
-                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
-                    </svg>
-                    <span className="text-xs font-semibold text-gray-900">{location.savesCount || 0}</span>
+                  <div className="flex items-center gap-0.5">
+                    <span className="text-[11px] font-semibold text-foreground">{location.savesCount || 0}</span>
+                    <span className="text-[10px] text-muted-foreground">saved</span>
                   </div>
                   
-                  <div className="flex items-center gap-1 text-yellow-500">
-                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                    <span className="text-xs font-semibold text-gray-900">
-                      {location.rankingScore ? Math.min(10, Math.max(1, Math.round(location.rankingScore))).toFixed(1) : '-'}
-                    </span>
-                  </div>
+                  {location.rankingScore && (
+                    <div className="flex items-center gap-0.5">
+                      <svg className="w-3 h-3 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                      <span className="text-[11px] font-semibold text-foreground">
+                        {Math.min(10, Math.max(1, Math.round(location.rankingScore))).toFixed(1)}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
