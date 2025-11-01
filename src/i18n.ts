@@ -280,6 +280,9 @@ const resources = {
       noMessages: 'No messages yet',
       startConversation: 'Start a conversation',
       typeMessage: 'Type a message...',
+      recordingAudio: 'Recording audio...',
+      viewLocation: 'View Location',
+      viewProfile: 'View Profile',
     },
     business: {
       overview: 'Overview',
@@ -608,6 +611,9 @@ const resources = {
       noMessages: 'Aún no hay mensajes',
       startConversation: 'Inicia una conversación',
       typeMessage: 'Escribe un mensaje...',
+      recordingAudio: 'Grabando audio...',
+      viewLocation: 'Ver Ubicación',
+      viewProfile: 'Ver Perfil',
     },
     business: {
       overview: 'Resumen',
@@ -931,6 +937,9 @@ const resources = {
       noMessages: 'Ancora nessun messaggio',
       startConversation: 'Inizia una conversazione',
       typeMessage: 'Scrivi un messaggio...',
+      recordingAudio: 'Registrazione audio...',
+      viewLocation: 'Vedi Posizione',
+      viewProfile: 'Vedi Profilo',
     },
     business: {
       overview: 'Panoramica',
