@@ -43,6 +43,10 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
   const [touchOffset, setTouchOffset] = useState({ x: 0, y: 0 });
+  
+  // Process swipe icons to remove white backgrounds
+  const processedSwipeNo = useTransparentImage(swipeNo);
+  const processedSwipePin = useTransparentImage(swipePin);
 
   useEffect(() => {
     fetchDailyLocations();
@@ -490,7 +494,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                       className="w-24 h-24 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
                       aria-label="Pass"
                     >
-                      <img src={swipeNo} alt="Pass" className="w-20 h-20 object-contain" />
+                      <img src={processedSwipeNo || swipeNo} alt="Pass" className="w-20 h-20 object-contain" />
                     </button>
                     <button
                       onClick={() => handleSwipe('right')}
@@ -498,7 +502,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                       className="w-24 h-24 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
                       aria-label="Save"
                     >
-                      <img src={swipePin} alt="Save" className="w-20 h-20 object-contain" />
+                      <img src={processedSwipePin || swipePin} alt="Save" className="w-20 h-20 object-contain" />
                     </button>
                   </div>
                 </div>
