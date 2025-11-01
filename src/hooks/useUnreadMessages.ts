@@ -14,14 +14,18 @@ export const useUnreadMessages = () => {
 
     const fetchUnreadCount = async () => {
       try {
-        const { count, error } = await supabase
+        // Count distinct users who sent unread messages
+        const { data, error } = await supabase
           .from('direct_messages')
-          .select('*', { count: 'exact', head: true })
+          .select('sender_id')
           .eq('receiver_id', user.id)
           .eq('is_read', false);
 
         if (error) throw error;
-        setUnreadCount(count || 0);
+        
+        // Count unique sender IDs
+        const uniqueSenders = new Set(data?.map(msg => msg.sender_id) || []);
+        setUnreadCount(uniqueSenders.size);
       } catch (error) {
         console.error('Error fetching unread messages:', error);
       }

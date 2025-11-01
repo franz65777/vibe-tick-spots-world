@@ -50,13 +50,13 @@ const Header = ({
             {/* Notifications Button */}
             <button 
               onClick={() => navigate('/notifications')} 
-              className="relative p-2.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all duration-200 active:scale-95"
+              className="relative p-3 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all duration-200 active:scale-95"
             >
               <div className="relative">
-                <Bell className="w-5 h-5" />
+                <Bell className="w-6 h-6" />
                 {unreadCount > 0 && (
-                  <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-primary rounded-full flex items-center justify-center">
-                    <span className="text-primary-foreground text-xs font-bold leading-none">
+                  <div className="absolute -top-1.5 -right-1.5 min-w-[20px] h-[20px] bg-white border-2 border-primary rounded-full flex items-center justify-center">
+                    <span className="text-primary text-[10px] font-bold leading-none">
                       {unreadCount > 99 ? '99+' : unreadCount}
                     </span>
                   </div>
@@ -67,14 +67,14 @@ const Header = ({
             {/* Messages Button */}
             <button 
               onClick={() => navigate('/messages')} 
-              className="relative p-2.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all duration-200 active:scale-95"
+              className="relative p-3 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all duration-200 active:scale-95"
               aria-label="Open messages"
             >
               <div className="relative">
-                <Send className="w-5 h-5" />
+                <Send className="w-6 h-6" />
                 {unreadMessagesCount > 0 && (
-                  <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-primary rounded-full flex items-center justify-center">
-                    <span className="text-primary-foreground text-xs font-bold leading-none">
+                  <div className="absolute -top-1.5 -right-1.5 min-w-[20px] h-[20px] bg-white border-2 border-primary rounded-full flex items-center justify-center">
+                    <span className="text-primary text-[10px] font-bold leading-none">
                       {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
                     </span>
                   </div>
