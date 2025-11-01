@@ -265,13 +265,13 @@ const MessagesPage = () => {
               onClick={handleBack}
               variant="ghost"
               size="icon"
-              className="rounded-full flex-shrink-0"
+              className="rounded-full flex-shrink-0 h-8 w-8"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-4 h-4" />
             </Button>
             
             {view === 'chat' && otherParticipant ? (
-              <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
                 <button
                   onClick={() => {
                     if (convertedStories && convertedStories.length > 0) {
@@ -281,7 +281,7 @@ const MessagesPage = () => {
                   }}
                   className="flex-shrink-0 relative"
                 >
-                  <Avatar className={`w-10 h-10 ${convertedStories && convertedStories.length > 0 ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}>
+                  <Avatar className={`w-8 h-8 ${convertedStories && convertedStories.length > 0 ? 'ring-2 ring-primary ring-offset-1 ring-offset-background' : ''}`}>
                     <AvatarImage src={otherParticipant.avatar_url} />
                     <AvatarFallback>{otherParticipant.username?.[0]?.toUpperCase()}</AvatarFallback>
                   </Avatar>
@@ -290,7 +290,7 @@ const MessagesPage = () => {
                   onClick={() => navigate(`/profile/${otherParticipant.id}`)}
                   className="min-w-0 text-left hover:opacity-80 transition-opacity"
                 >
-                  <h1 className="font-bold text-lg text-foreground truncate">
+                  <h1 className="font-semibold text-base text-foreground truncate">
                     {otherParticipant.username}
                   </h1>
                 </button>
@@ -518,29 +518,93 @@ const MessagesPage = () => {
           </div>
 
           {/* Message Input */}
-          <div className="shrink-0 p-4 bg-background border-t border-border">
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                placeholder={t('typeMessage', { ns: 'messages' })}
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }
+          <div className="shrink-0 p-3 bg-background border-t border-border">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="flex-shrink-0 h-9 w-9"
+                onClick={() => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = 'image/*';
+                  input.onchange = (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file) {
+                      console.log('Image selected:', file);
+                      // TODO: Implement image upload
+                    }
+                  };
+                  input.click();
                 }}
-                disabled={sending}
-                className="flex-1"
-              />
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+              </Button>
+              
+              <div className="flex-1 relative">
+                <Input
+                  type="text"
+                  placeholder={t('typeMessage', { ns: 'messages' })}
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                  disabled={sending}
+                  className="pr-20 rounded-full"
+                />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => console.log('Emoji picker')}
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                      <line x1="9" y1="9" x2="9.01" y2="9"/>
+                      <line x1="15" y1="9" x2="15.01" y2="9"/>
+                    </svg>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => console.log('More options')}
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="12" y1="8" x2="12" y2="12"/>
+                      <line x1="8" y1="12" x2="16" y2="12"/>
+                    </svg>
+                  </Button>
+                </div>
+              </div>
+
               <Button
                 onClick={handleSendMessage}
                 disabled={!newMessage.trim() || sending}
                 size="icon"
-                className="flex-shrink-0"
+                className="flex-shrink-0 h-9 w-9"
               >
-                <Send className="w-4 h-4" />
+                {newMessage.trim() ? (
+                  <Send className="w-4 h-4" />
+                ) : (
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                    <line x1="12" y1="19" x2="12" y2="23"/>
+                    <line x1="8" y1="23" x2="16" y2="23"/>
+                  </svg>
+                )}
               </Button>
             </div>
           </div>
