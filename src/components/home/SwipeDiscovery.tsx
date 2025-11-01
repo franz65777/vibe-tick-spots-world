@@ -7,8 +7,8 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import CityLabel from '@/components/common/CityLabel';
-import swipeNo from '@/assets/swipe-no.png';
-import swipePin from '@/assets/swipe-pin.png';
+import swipeNo from '@/assets/swipe-no-clean.png';
+import swipePin from '@/assets/swipe-pin-clean.png';
 
 interface SwipeLocation {
   id: string;
