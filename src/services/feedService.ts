@@ -21,6 +21,7 @@ export interface FeedItem {
   comments_count?: number;
   shares_count?: number;
   saves_count?: number;
+  is_business_post?: boolean; // Marketing post from business account
 }
 
 /**
@@ -45,7 +46,7 @@ export async function getUserFeed(userId: string, limit: number = 50): Promise<F
       // Posts from followed users with rating
       supabase
         .from('posts')
-        .select('id, user_id, caption, media_urls, location_id, rating, created_at, likes_count, comments_count, shares_count, saves_count')
+        .select('id, user_id, caption, media_urls, location_id, rating, created_at, likes_count, comments_count, shares_count, saves_count, is_business_post')
         .in('user_id', followingIds)
         .order('created_at', { ascending: false })
         .limit(30),
@@ -122,6 +123,7 @@ export async function getUserFeed(userId: string, limit: number = 50): Promise<F
         comments_count: (post as any).comments_count,
         shares_count: (post as any).shares_count,
         saves_count: (post as any).saves_count,
+        is_business_post: (post as any).is_business_post || false,
       };
     });
 

@@ -33,7 +33,7 @@ const FeedPage = () => {
   const [storiesViewerOpen, setStoriesViewerOpen] = useState(false);
   const [selectedUserStoryIndex, setSelectedUserStoryIndex] = useState(0);
   const [postLikes, setPostLikes] = useState<Map<string, PostLikeUser[]>>(new Map());
-  const [feedType, setFeedType] = useState<'forYou' | 'all'>('forYou');
+  const [feedType, setFeedType] = useState<'forYou' | 'promotions'>('forYou');
   
   // Comment drawer state
   const [commentDrawerOpen, setCommentDrawerOpen] = useState(false);
@@ -59,7 +59,13 @@ const FeedPage = () => {
     if (!user?.id) return;
     try {
       setLoading(true);
-      const items = await getUserFeed(user.id);
+      const allItems = await getUserFeed(user.id);
+      
+      // Filter based on feed type
+      const items = feedType === 'promotions' 
+        ? allItems.filter(item => item.is_business_post === true)
+        : allItems.filter(item => !item.is_business_post);
+      
       setFeedItems(items);
       
       // Load likes for each post
@@ -109,7 +115,7 @@ const FeedPage = () => {
         channel.unsubscribe();
       };
     }
-  }, [user?.id]);
+  }, [user?.id, feedType]);
 
   const handleAvatarClick = (userId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -369,9 +375,39 @@ const FeedPage = () => {
     <div className="min-h-screen bg-background pb-24">
       <div className="max-w-screen-sm mx-auto">
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-background border-b">
-          <div className="px-4 py-4 flex items-center justify-between">
-            <h1 className="text-2xl font-bold">{t('common.forYou')}</h1>
+        <div className="sticky top-0 z-10 bg-background">
+          <div className="px-4 py-3">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  className="h-auto p-0 hover:bg-transparent font-bold text-2xl gap-2"
+                >
+                  {feedType === 'forYou' ? t('common.forYou') : t('common.promotions')}
+                  <ChevronDown className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-48">
+                <DropdownMenuItem 
+                  onClick={() => setFeedType('forYou')}
+                  className="cursor-pointer"
+                >
+                  <div className="flex flex-col">
+                    <span className="font-semibold">{t('common.forYou')}</span>
+                    <span className="text-xs text-muted-foreground">Post da chi segui</span>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setFeedType('promotions')}
+                  className="cursor-pointer"
+                >
+                  <div className="flex flex-col">
+                    <span className="font-semibold">{t('common.promotions')}</span>
+                    <span className="text-xs text-muted-foreground">Post marketing business</span>
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
