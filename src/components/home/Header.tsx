@@ -55,8 +55,8 @@ const Header = ({
               <div className="relative">
                 <Bell className="w-6 h-6" />
                 {unreadCount > 0 && (
-                  <div className="absolute -top-1.5 -right-1.5 min-w-[20px] h-[20px] bg-white border-2 border-primary rounded-full flex items-center justify-center">
-                    <span className="text-primary text-[10px] font-bold leading-none">
+                  <div className="absolute -top-1.5 -right-1.5 min-w-[20px] h-[20px] bg-primary rounded-full flex items-center justify-center">
+                    <span className="text-white text-[10px] font-bold leading-none">
                       {unreadCount > 99 ? '99+' : unreadCount}
                     </span>
                   </div>
@@ -73,8 +73,8 @@ const Header = ({
               <div className="relative">
                 <Send className="w-6 h-6" />
                 {unreadMessagesCount > 0 && (
-                  <div className="absolute -top-1.5 -right-1.5 min-w-[20px] h-[20px] bg-white border-2 border-primary rounded-full flex items-center justify-center">
-                    <span className="text-primary text-[10px] font-bold leading-none">
+                  <div className="absolute -top-1.5 -right-1.5 min-w-[20px] h-[20px] bg-primary rounded-full flex items-center justify-center">
+                    <span className="text-white text-[10px] font-bold leading-none">
                       {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
                     </span>
                   </div>
