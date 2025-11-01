@@ -375,35 +375,43 @@ const FeedPage = () => {
     <div className="min-h-screen bg-background pb-24">
       <div className="max-w-screen-sm mx-auto">
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-background">
+        <div className="sticky top-0 z-20 bg-background border-b border-border">
           <div className="px-4 py-3">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button 
                   variant="ghost" 
-                  className="h-auto p-0 hover:bg-transparent font-bold text-2xl gap-2"
+                  className="h-auto p-0 hover:bg-transparent font-bold text-2xl gap-2 -ml-2"
                 >
                   {feedType === 'forYou' ? t('common.forYou') : t('common.promotions')}
                   <ChevronDown className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuContent align="start" className="w-56 bg-background z-50">
                 <DropdownMenuItem 
                   onClick={() => setFeedType('forYou')}
-                  className="cursor-pointer"
+                  className="cursor-pointer focus:bg-accent"
                 >
-                  <div className="flex flex-col">
+                  <div className="flex flex-col py-1">
                     <span className="font-semibold">{t('common.forYou')}</span>
-                    <span className="text-xs text-muted-foreground">Post da chi segui</span>
+                    <span className="text-xs text-muted-foreground">
+                      {i18n.language.startsWith('it') ? 'Post da chi segui' : 
+                       i18n.language.startsWith('es') ? 'Posts de quien sigues' : 
+                       'Posts from people you follow'}
+                    </span>
                   </div>
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={() => setFeedType('promotions')}
-                  className="cursor-pointer"
+                  className="cursor-pointer focus:bg-accent"
                 >
-                  <div className="flex flex-col">
+                  <div className="flex flex-col py-1">
                     <span className="font-semibold">{t('common.promotions')}</span>
-                    <span className="text-xs text-muted-foreground">Post marketing business</span>
+                    <span className="text-xs text-muted-foreground">
+                      {i18n.language.startsWith('it') ? 'Post marketing business' : 
+                       i18n.language.startsWith('es') ? 'Posts de marketing' : 
+                       'Business marketing posts'}
+                    </span>
                   </div>
                 </DropdownMenuItem>
               </DropdownMenuContent>
