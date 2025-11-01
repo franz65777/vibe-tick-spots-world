@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Search, Send, X, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Search, Send, X, MessageSquare, Image, Mic } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -34,8 +34,11 @@ const MessagesPage = () => {
   const [searchLoading, setSearchLoading] = useState(false);
   const [showStories, setShowStories] = useState(false);
   const [initialStoryIndex, setInitialStoryIndex] = useState(0);
+  const [isRecording, setIsRecording] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<any>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   const { stories: allStories } = useStories();
 
@@ -152,6 +155,73 @@ const MessagesPage = () => {
       await loadMessages(otherParticipant.id);
     } catch (error) {
       console.error('Error sending message:', error);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        await sendAudioMessage(audioBlob);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (error) {
+      console.error('Error starting recording:', error);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const sendAudioMessage = async (audioBlob: Blob) => {
+    if (!selectedThread || !user) return;
+
+    const otherParticipant = getOtherParticipant(selectedThread);
+    if (!otherParticipant) return;
+
+    try {
+      setSending(true);
+      
+      // Convert blob to base64
+      const reader = new FileReader();
+      reader.readAsDataURL(audioBlob);
+      reader.onloadend = async () => {
+        const base64Audio = reader.result as string;
+        const base64Data = base64Audio.split(',')[1];
+
+        const { data, error } = await supabase.functions.invoke('upload-audio-message', {
+          body: {
+            receiverId: otherParticipant.id,
+            audioData: base64Data,
+          },
+        });
+
+        if (error) throw error;
+
+        await loadMessages(otherParticipant.id);
+      };
+    } catch (error) {
+      console.error('Error sending audio message:', error);
     } finally {
       setSending(false);
     }
@@ -445,7 +515,35 @@ const MessagesPage = () => {
                       key={message.id}
                       className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
                     >
-                      {['place_share', 'post_share', 'profile_share'].includes(message.message_type) &&
+                      {message.message_type === 'audio' && message.shared_content?.audio_url ? (
+                        <div className={`max-w-[70%] ${isOwn ? 'ml-16' : 'mr-16'}`}>
+                          <div
+                            className={`rounded-2xl px-4 py-3 ${
+                              isOwn
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-card text-card-foreground border border-border'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <Mic className="w-4 h-4" />
+                              <audio 
+                                controls 
+                                className="max-w-full"
+                                style={{ height: '32px' }}
+                              >
+                                <source src={message.shared_content.audio_url} type="audio/webm" />
+                              </audio>
+                            </div>
+                          </div>
+                          <p
+                            className={`text-xs mt-1 px-1 ${
+                              isOwn ? 'text-muted-foreground text-right' : 'text-muted-foreground'
+                            }`}
+                          >
+                            {formatMessageTime(message.created_at)}
+                          </p>
+                        </div>
+                      ) : ['place_share', 'post_share', 'profile_share'].includes(message.message_type) &&
                       message.shared_content ? (
                         <div className={`max-w-[85%] ${isOwn ? 'ml-8' : 'mr-8'}`}>
                           {message.content && (
@@ -523,7 +621,7 @@ const MessagesPage = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="flex-shrink-0 h-9 w-9"
+                className="flex-shrink-0 h-9 w-9 text-muted-foreground hover:text-foreground"
                 onClick={() => {
                   const input = document.createElement('input');
                   input.type = 'file';
@@ -538,72 +636,34 @@ const MessagesPage = () => {
                   input.click();
                 }}
               >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                  <circle cx="8.5" cy="8.5" r="1.5"/>
-                  <polyline points="21 15 16 10 5 21"/>
-                </svg>
+                <Image className="w-5 h-5" />
               </Button>
               
-              <div className="flex-1 relative">
-                <Input
-                  type="text"
-                  placeholder={t('typeMessage', { ns: 'messages' })}
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage();
-                    }
-                  }}
-                  disabled={sending}
-                  className="pr-20 rounded-full"
-                />
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => console.log('Emoji picker')}
-                  >
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10"/>
-                      <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
-                      <line x1="9" y1="9" x2="9.01" y2="9"/>
-                      <line x1="15" y1="9" x2="15.01" y2="9"/>
-                    </svg>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => console.log('More options')}
-                  >
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10"/>
-                      <line x1="12" y1="8" x2="12" y2="12"/>
-                      <line x1="8" y1="12" x2="16" y2="12"/>
-                    </svg>
-                  </Button>
-                </div>
-              </div>
+              <Input
+                type="text"
+                placeholder={t('typeMessage', { ns: 'messages' })}
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                disabled={sending || isRecording}
+                className="flex-1 rounded-full"
+              />
 
               <Button
-                onClick={handleSendMessage}
-                disabled={!newMessage.trim() || sending}
+                onClick={newMessage.trim() ? handleSendMessage : isRecording ? stopRecording : startRecording}
+                disabled={sending}
                 size="icon"
-                className="flex-shrink-0 h-9 w-9"
+                className={`flex-shrink-0 h-9 w-9 ${isRecording ? 'bg-destructive hover:bg-destructive/90' : ''}`}
               >
                 {newMessage.trim() ? (
                   <Send className="w-4 h-4" />
                 ) : (
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                    <line x1="12" y1="19" x2="12" y2="23"/>
-                    <line x1="8" y1="23" x2="16" y2="23"/>
-                  </svg>
+                  <Mic className="w-5 h-5" />
                 )}
               </Button>
             </div>

@@ -6,7 +6,7 @@ export interface DirectMessage {
   sender_id: string;
   receiver_id: string;
   content?: string;
-  message_type: 'text' | 'place_share' | 'trip_share' | 'post_share' | 'profile_share';
+  message_type: 'text' | 'place_share' | 'trip_share' | 'post_share' | 'profile_share' | 'audio';
   shared_content?: any;
   created_at: string;
   read_at?: string;
@@ -293,7 +293,7 @@ class MessageService {
           sender_id: message.sender_id,
           receiver_id: message.receiver_id,
           content: message.content || undefined,
-          message_type: message.message_type as 'text' | 'place_share' | 'trip_share' | 'post_share' | 'profile_share',
+          message_type: message.message_type as 'text' | 'place_share' | 'trip_share' | 'post_share' | 'profile_share' | 'audio',
           shared_content: message.shared_content || undefined,
           created_at: message.created_at,
           read_at: message.read_at || undefined,
