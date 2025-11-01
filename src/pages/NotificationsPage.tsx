@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,16 @@ const NotificationsPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { notifications, unreadCount, loading, markAsRead, markAllAsRead } = useNotifications();
+
+  // Mark all as read when page loads
+  useEffect(() => {
+    if (notifications.length > 0 && unreadCount > 0) {
+      const timer = setTimeout(() => {
+        markAllAsRead();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   const handleMarkAsRead = async (notificationId: string) => {
     await markAsRead([notificationId]);

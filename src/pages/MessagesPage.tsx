@@ -87,6 +87,11 @@ const MessagesPage = () => {
       setLoading(true);
       const data = await messageService.getMessagesInThread(otherUserId);
       setMessages(data || []);
+      
+      // Mark messages as read
+      if (user && data && data.length > 0) {
+        await messageService.markMessagesAsRead(otherUserId);
+      }
     } catch (error) {
       console.error('Error loading messages:', error);
     } finally {

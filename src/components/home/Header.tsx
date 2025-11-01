@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Bell, Send } from 'lucide-react';
 import CityAutocompleteBar from '../common/CityAutocompleteBar';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 
 interface HeaderProps {
   searchQuery: string;
@@ -26,6 +27,7 @@ const Header = ({
 }: HeaderProps) => {
   const navigate = useNavigate();
   const { unreadCount } = useNotifications();
+  const { unreadCount: unreadMessagesCount } = useUnreadMessages();
 
   return (
     <>
@@ -53,8 +55,8 @@ const Header = ({
               <div className="relative">
                 <Bell className="w-5 h-5" />
                 {unreadCount > 0 && (
-                  <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xs font-bold leading-none">
+                  <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-primary rounded-full flex items-center justify-center">
+                    <span className="text-primary-foreground text-xs font-bold leading-none">
                       {unreadCount > 99 ? '99+' : unreadCount}
                     </span>
                   </div>
@@ -70,6 +72,13 @@ const Header = ({
             >
               <div className="relative">
                 <Send className="w-5 h-5" />
+                {unreadMessagesCount > 0 && (
+                  <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-primary rounded-full flex items-center justify-center">
+                    <span className="text-primary-foreground text-xs font-bold leading-none">
+                      {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
+                    </span>
+                  </div>
+                )}
               </div>
             </button>
           </div>
