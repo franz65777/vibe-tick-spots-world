@@ -21,15 +21,15 @@ const StoriesSection = ({ stories = [], onCreateStory, onStoryClick }: StoriesSe
   const { t } = useTranslation();
   
   return (
-    <div className="flex gap-4 px-4 py-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory">
+    <div className="flex gap-4 px-4 py-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory bg-transparent">
       {/* Add Story Button - 52px */}
       <button
         onClick={onCreateStory}
-        className="flex flex-col items-center gap-1.5 flex-shrink-0 snap-start"
+        className="flex flex-col items-center gap-1.5 flex-shrink-0 snap-start bg-transparent"
         aria-label="Create new story"
       >
-        <div className="relative">
-          <div className="w-[52px] h-[52px] rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center">
+        <div className="relative bg-transparent">
+          <div className="w-[52px] h-[52px] rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center bg-white dark:bg-gray-800">
             <Plus className="w-5 h-5 text-gray-700 dark:text-gray-200" />
           </div>
         </div>
