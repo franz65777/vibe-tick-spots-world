@@ -12,6 +12,8 @@ import PlaceMessageCard from '@/components/messages/PlaceMessageCard';
 import PostMessageCard from '@/components/messages/PostMessageCard';
 import ProfileMessageCard from '@/components/messages/ProfileMessageCard';
 import { useTranslation } from 'react-i18next';
+import { useStories } from '@/hooks/useStories';
+import StoriesViewer from '@/components/StoriesViewer';
 
 type ViewMode = 'threads' | 'chat' | 'search';
 
@@ -30,8 +32,12 @@ const MessagesPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [showStories, setShowStories] = useState(false);
+  const [initialStoryIndex, setInitialStoryIndex] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<any>(null);
+
+  const { stories: allStories } = useStories();
 
   useEffect(() => {
     if (user) {
@@ -214,6 +220,29 @@ const MessagesPage = () => {
     return thread.other_user;
   };
 
+  // Get other participant and their stories
+  const otherParticipant = selectedThread ? getOtherParticipant(selectedThread) : null;
+  const userStories = otherParticipant 
+    ? allStories.filter(story => story.user_id === otherParticipant.id)
+    : [];
+
+  // Convert stories to StoriesViewer format
+  const convertedStories = userStories.map(story => ({
+    id: story.id,
+    userId: story.user_id,
+    userName: otherParticipant?.username || '',
+    userAvatar: otherParticipant?.avatar_url || '',
+    mediaUrl: story.media_url,
+    mediaType: story.media_type as 'image' | 'video',
+    locationId: story.location_id || '',
+    locationName: story.location_name || '',
+    locationAddress: story.location_address || '',
+    locationCategory: undefined,
+    timestamp: story.created_at,
+    isViewed: false,
+    bookingUrl: undefined
+  }));
+
   const formatMessageTime = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -231,22 +260,48 @@ const MessagesPage = () => {
       {/* Header */}
       <header className="shrink-0 bg-background border-b border-border">
         <div className="px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
             <Button
               onClick={handleBack}
               variant="ghost"
               size="icon"
-              className="rounded-full"
+              className="rounded-full flex-shrink-0"
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <h1 className="font-bold text-lg text-foreground">
-              {view === 'chat'
-                ? getOtherParticipant(selectedThread!)?.username || t('chat', { ns: 'messages' })
-                : view === 'search'
-                ? t('newMessage', { ns: 'messages' })
-                : t('messages', { ns: 'messages' })}
-            </h1>
+            
+            {view === 'chat' && otherParticipant ? (
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <button
+                  onClick={() => {
+                    if (convertedStories && convertedStories.length > 0) {
+                      setInitialStoryIndex(0);
+                      setShowStories(true);
+                    }
+                  }}
+                  className="flex-shrink-0 relative"
+                >
+                  <Avatar className={`w-10 h-10 ${convertedStories && convertedStories.length > 0 ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}>
+                    <AvatarImage src={otherParticipant.avatar_url} />
+                    <AvatarFallback>{otherParticipant.username?.[0]?.toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                </button>
+                <button
+                  onClick={() => navigate(`/profile/${otherParticipant.id}`)}
+                  className="min-w-0 text-left hover:opacity-80 transition-opacity"
+                >
+                  <h1 className="font-bold text-lg text-foreground truncate">
+                    {otherParticipant.username}
+                  </h1>
+                </button>
+              </div>
+            ) : (
+              <h1 className="font-bold text-lg text-foreground">
+                {view === 'search'
+                  ? t('newMessage', { ns: 'messages' })
+                  : t('messages', { ns: 'messages' })}
+              </h1>
+            )}
           </div>
 
           {view === 'threads' && (
@@ -254,7 +309,7 @@ const MessagesPage = () => {
               onClick={() => setView('search')}
               variant="ghost"
               size="sm"
-              className="font-medium"
+              className="font-medium flex-shrink-0"
             >
               {t('new', { ns: 'messages' })}
             </Button>
@@ -490,6 +545,22 @@ const MessagesPage = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Stories Viewer */}
+      {showStories && convertedStories && convertedStories.length > 0 && (
+        <StoriesViewer
+          stories={convertedStories}
+          initialStoryIndex={initialStoryIndex}
+          onClose={() => setShowStories(false)}
+          onStoryViewed={(storyId) => {
+            console.log('Story viewed:', storyId);
+          }}
+          onLocationClick={(locationId) => {
+            setShowStories(false);
+            navigate('/explore', { state: { locationId } });
+          }}
+        />
       )}
     </div>
   );
