@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import PostDetailModal from '@/components/explore/PostDetailModal';
 import { PostActions } from '@/components/feed/PostActions';
 import { formatDistanceToNow } from 'date-fns';
+import { it as itLocale, es as esLocale, enUS } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
@@ -26,6 +27,7 @@ const FeedPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
+  const dfnsLocale = i18n.language.startsWith('it') ? itLocale : i18n.language.startsWith('es') ? esLocale : enUS;
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
@@ -595,7 +597,7 @@ const FeedPage = () => {
 
                     {/* Timestamp */}
                     <p className="text-xs text-muted-foreground uppercase text-left">
-                      {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
+                      {formatDistanceToNow(new Date(createdAt), { addSuffix: true, locale: dfnsLocale })}
                     </p>
                   </div>
                 </article>
