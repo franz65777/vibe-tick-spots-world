@@ -283,6 +283,10 @@ const resources = {
       recordingAudio: 'Recording audio...',
       viewLocation: 'View Location',
       viewProfile: 'View Profile',
+      justNow: 'Just now',
+      minutesShort: '{{count}}m',
+      hoursShort: '{{count}}h',
+      daysShort: '{{count}}d',
     },
     business: {
       overview: 'Overview',
@@ -614,6 +618,10 @@ const resources = {
       recordingAudio: 'Grabando audio...',
       viewLocation: 'Ver Ubicación',
       viewProfile: 'Ver Perfil',
+      justNow: 'Ahora',
+      minutesShort: '{{count}}m',
+      hoursShort: '{{count}}h',
+      daysShort: '{{count}}d',
     },
     business: {
       overview: 'Resumen',
@@ -940,6 +948,10 @@ const resources = {
       recordingAudio: 'Registrazione audio...',
       viewLocation: 'Vedi Posizione',
       viewProfile: 'Vedi Profilo',
+      justNow: 'Ora',
+      minutesShort: '{{count}}m',
+      hoursShort: '{{count}}h',
+      daysShort: '{{count}}d',
     },
     business: {
       overview: 'Panoramica',

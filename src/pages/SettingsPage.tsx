@@ -40,6 +40,7 @@ const SettingsPage: React.FC = () => {
         .single();
       const lang = data?.language || 'en';
       setLanguage(lang);
+      localStorage.setItem('i18nextLng', lang);
       i18n.changeLanguage(lang);
     };
     load();
@@ -49,6 +50,7 @@ const SettingsPage: React.FC = () => {
     setLanguage(newLanguage);
     
     if (!user?.id) {
+      localStorage.setItem('i18nextLng', newLanguage);
       i18n.changeLanguage(newLanguage);
       return;
     }
@@ -60,6 +62,7 @@ const SettingsPage: React.FC = () => {
         .update({ language: newLanguage })
         .eq('id', user.id);
       if (error) throw error;
+      localStorage.setItem('i18nextLng', newLanguage);
       i18n.changeLanguage(newLanguage);
       toast.success(t('languageSaved', { ns: 'settings' }));
     } catch (e: any) {

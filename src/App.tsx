@@ -67,6 +67,7 @@ function AppContent() {
         .single();
       const lang = data?.language || 'en';
       localStorage.setItem('userLanguage', lang);
+      localStorage.setItem('i18nextLng', lang);
       try { i18n.changeLanguage(lang); } catch {}
     };
     loadLang();

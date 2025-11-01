@@ -319,10 +319,10 @@ const MessagesPage = () => {
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
 
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m`;
-    if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h`;
-    return `${Math.floor(diffMins / 1440)}d`;
+    if (diffMins < 1) return t('justNow', { ns: 'messages' });
+    if (diffMins < 60) return t('minutesShort', { ns: 'messages', count: diffMins });
+    if (diffMins < 1440) return t('hoursShort', { ns: 'messages', count: Math.floor(diffMins / 60) });
+    return t('daysShort', { ns: 'messages', count: Math.floor(diffMins / 1440) });
   };
 
   return (
