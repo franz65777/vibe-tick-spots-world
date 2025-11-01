@@ -48,10 +48,16 @@ export const CommentDrawer = ({
   };
 
   return (
-    <Drawer.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Drawer.Root 
+      open={isOpen} 
+      onOpenChange={(open) => !open && onClose()}
+      snapPoints={[0.4, 1]}
+      fadeFromIndex={0}
+      modal={true}
+    >
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 bg-black/50 z-[70]" />
-        <Drawer.Content className="fixed inset-x-0 bottom-0 z-[71] bg-background rounded-t-3xl flex flex-col h-[95vh] outline-none">
+        <Drawer.Content className="fixed inset-x-0 bottom-0 z-[71] bg-background rounded-t-3xl flex flex-col max-h-[95vh] outline-none">
           {/* Handle bar */}
           <div className="flex justify-center pt-3 pb-2">
             <div className="w-10 h-1.5 bg-muted-foreground/30 rounded-full" />

@@ -142,7 +142,8 @@ const FeedPage = () => {
         centerMap: {
           lat: latitude,
           lng: longitude,
-          locationId: locationId
+          locationId: locationId,
+          shouldFocus: true
         }
       }
     });
@@ -253,44 +254,37 @@ const FeedPage = () => {
     const isExpanded = expandedCaptions.has(postId);
     
     // Find first line break or truncate at reasonable length
-    const lines = caption.split('\n');
-    const firstLine = lines[0];
-    const hasMoreLines = lines.length > 1;
-    const needsTruncate = hasMoreLines || firstLine.length > 80;
+    const firstLine = caption.split('\n')[0];
+    const hasMoreContent = caption.length > 100; // Limit for first line display
     
-    // Show first line only when collapsed
-    const displayText = isExpanded ? caption : firstLine;
-    const shouldTruncate = !isExpanded && firstLine.length > 80;
-    const truncatedText = shouldTruncate ? firstLine.slice(0, 80) : displayText;
-
     return (
       <div className="text-sm text-left">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate(`/profile/${userId}`);
-          }}
-          className="font-semibold hover:opacity-70"
-        >
-          {username}
-        </button>
-        <span className="text-foreground ml-1 whitespace-pre-wrap">
-          {isExpanded ? caption : truncatedText}
+        <span className="text-foreground whitespace-pre-wrap">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/profile/${userId}`);
+            }}
+            className="font-semibold hover:opacity-70"
+          >
+            {username}
+          </button>
+          <span className="ml-1">
+            {isExpanded ? caption : firstLine.slice(0, 100)}
+            {hasMoreContent && !isExpanded && '... '}
+            {hasMoreContent && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleCaption(postId);
+                }}
+                className="text-muted-foreground hover:text-foreground ml-1"
+              >
+                {isExpanded ? t('common.less') : t('common.more')}
+              </button>
+            )}
+          </span>
         </span>
-        {needsTruncate && (
-          <>
-            {!isExpanded && '... '}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleCaption(postId);
-              }}
-              className="text-muted-foreground hover:text-foreground ml-1"
-            >
-              {isExpanded ? t('common.less') : t('common.more')}
-            </button>
-          </>
-        )}
       </div>
     );
   };

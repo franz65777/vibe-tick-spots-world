@@ -318,7 +318,6 @@ const resources = {
       campaign: 'Campaign'
     }
   },
-
   es: {
     common: {
       clearAll: 'Borrar Todo',
