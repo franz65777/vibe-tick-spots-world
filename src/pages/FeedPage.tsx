@@ -14,8 +14,12 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { cn } from '@/lib/utils';
 import { useStories } from '@/hooks/useStories';
 import StoriesViewer from '@/components/StoriesViewer';
-import { getPostLikesWithUsers, PostLikeUser } from '@/services/socialEngagementService';
+import { getPostLikesWithUsers, PostLikeUser, getPostComments, addPostComment, deletePostComment, Comment } from '@/services/socialEngagementService';
 import { useTranslation } from 'react-i18next';
+import { CommentDrawer } from '@/components/social/CommentDrawer';
+import { ShareModal } from '@/components/social/ShareModal';
+import { messageService } from '@/services/messageService';
+import { toast } from '@/hooks/use-toast';
 
 const FeedPage = () => {
   const { user } = useAuth();
@@ -24,12 +28,20 @@ const FeedPage = () => {
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
-  const [openCommentsOnLoad, setOpenCommentsOnLoad] = useState(false);
-  const [openShareOnLoad, setOpenShareOnLoad] = useState(false);
   const [expandedCaptions, setExpandedCaptions] = useState<Set<string>>(new Set());
   const [storiesViewerOpen, setStoriesViewerOpen] = useState(false);
   const [selectedUserStoryIndex, setSelectedUserStoryIndex] = useState(0);
   const [postLikes, setPostLikes] = useState<Map<string, PostLikeUser[]>>(new Map());
+  
+  // Comment drawer state
+  const [commentDrawerOpen, setCommentDrawerOpen] = useState(false);
+  const [commentPostId, setCommentPostId] = useState<string | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  
+  // Share modal state
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [sharePostId, setSharePostId] = useState<string | null>(null);
+  
   const { stories } = useStories();
 
   const loadFeed = async () => {
@@ -137,6 +149,94 @@ const FeedPage = () => {
       }
       return newSet;
     });
+  };
+
+  const handleCommentClick = async (postId: string) => {
+    setCommentPostId(postId);
+    setCommentDrawerOpen(true);
+    
+    // Load comments
+    const postComments = await getPostComments(postId);
+    setComments(postComments);
+  };
+
+  const handleAddComment = async (content: string) => {
+    if (!user?.id || !commentPostId) return;
+    
+    const newComment = await addPostComment(commentPostId, user.id, content);
+    if (newComment) {
+      setComments(prev => [...prev, newComment]);
+      
+      // Update comment count in feed
+      setFeedItems(prev => prev.map(item => {
+        const itemPostId = item.post_id || item.id;
+        if (itemPostId === commentPostId) {
+          return { ...item, comments_count: (item.comments_count || 0) + 1 };
+        }
+        return item;
+      }));
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!user?.id) return;
+    
+    const success = await deletePostComment(commentId, user.id);
+    if (success) {
+      setComments(prev => prev.filter(c => c.id !== commentId));
+      
+      // Update comment count in feed
+      if (commentPostId) {
+        setFeedItems(prev => prev.map(item => {
+          const itemPostId = item.post_id || item.id;
+          if (itemPostId === commentPostId) {
+            return { ...item, comments_count: Math.max(0, (item.comments_count || 0) - 1) };
+          }
+          return item;
+        }));
+      }
+    }
+  };
+
+  const handleShareClick = (postId: string) => {
+    setSharePostId(postId);
+    setShareModalOpen(true);
+  };
+
+  const handleShare = async (recipientIds: string[]) => {
+    if (!sharePostId) return false;
+    
+    const postItem = feedItems.find(item => (item.post_id || item.id) === sharePostId);
+    if (!postItem) return false;
+
+    try {
+      const postData = {
+        id: sharePostId,
+        caption: postItem.content,
+        media_urls: postItem.media_urls || (postItem.media_url ? [postItem.media_url] : [])
+      };
+
+      await Promise.all(
+        recipientIds.map(recipientId => 
+          messageService.sendPostShare(recipientId, postData)
+        )
+      );
+
+      toast({
+        title: "Post shared",
+        description: `Shared with ${recipientIds.length} ${recipientIds.length === 1 ? 'person' : 'people'}`,
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error sharing post:', error);
+      toast({
+        title: "Error",
+        description: "Failed to share post",
+        variant: "destructive",
+      });
+      return false;
+    }
   };
 
   const renderCaption = (caption: string | null, postId: string, username: string, userId: string) => {
@@ -339,16 +439,8 @@ const FeedPage = () => {
                       likesCount={item.likes_count || 0}
                       commentsCount={item.comments_count || 0}
                       sharesCount={item.shares_count || 0}
-                      onCommentClick={() => {
-                        setSelectedPostId(postId);
-                        setOpenCommentsOnLoad(true);
-                        setOpenShareOnLoad(false);
-                      }}
-                      onShareClick={() => {
-                        setSelectedPostId(postId);
-                        setOpenShareOnLoad(true);
-                        setOpenCommentsOnLoad(false);
-                      }}
+                      onCommentClick={() => handleCommentClick(postId)}
+                      onShareClick={() => handleShareClick(postId)}
                     />
 
                     {/* Likes Section */}
@@ -411,20 +503,37 @@ const FeedPage = () => {
           </div>
         )}
 
-        {/* Post Detail Modal */}
+        {/* Post Detail Modal (for image click only) */}
         {selectedPostId && (
           <PostDetailModal
             postId={selectedPostId}
             isOpen={!!selectedPostId}
-            onClose={() => {
-              setSelectedPostId(null);
-              setOpenCommentsOnLoad(false);
-              setOpenShareOnLoad(false);
-            }}
-            openCommentsOnLoad={openCommentsOnLoad}
-            openShareOnLoad={openShareOnLoad}
+            onClose={() => setSelectedPostId(null)}
           />
         )}
+
+        {/* Comment Drawer */}
+        <CommentDrawer
+          isOpen={commentDrawerOpen}
+          onClose={() => {
+            setCommentDrawerOpen(false);
+            setCommentPostId(null);
+            setComments([]);
+          }}
+          comments={comments}
+          onAddComment={handleAddComment}
+          onDeleteComment={handleDeleteComment}
+        />
+
+        {/* Share Modal */}
+        <ShareModal
+          isOpen={shareModalOpen}
+          onClose={() => {
+            setShareModalOpen(false);
+            setSharePostId(null);
+          }}
+          onShare={handleShare}
+        />
 
         {/* Stories Viewer */}
         {storiesViewerOpen && stories.length > 0 && (
