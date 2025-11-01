@@ -44,6 +44,15 @@ const FeedPage = () => {
   
   const { stories } = useStories();
 
+  // Hide bottom navigation when overlays (comments/share) are open
+  useEffect(() => {
+    const isOpen = commentDrawerOpen || shareModalOpen;
+    window.dispatchEvent(new CustomEvent(isOpen ? 'ui:overlay-open' : 'ui:overlay-close'));
+    return () => {
+      window.dispatchEvent(new CustomEvent('ui:overlay-close'));
+    };
+  }, [commentDrawerOpen, shareModalOpen]);
+
   const loadFeed = async () => {
     if (!user?.id) return;
     try {
@@ -244,6 +253,36 @@ const FeedPage = () => {
     const isExpanded = expandedCaptions.has(postId);
     const needsTruncate = caption.length > 100;
 
+    if (!isExpanded) {
+      return (
+        <div className="text-sm text-left">
+          <div className="flex items-baseline">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/profile/${userId}`);
+              }}
+              className="font-semibold mr-1 hover:opacity-70 shrink-0"
+            >
+              {username}
+            </button>
+            <span className="flex-1 min-w-0 truncate text-foreground">{caption}</span>
+            {needsTruncate && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleCaption(postId);
+                }}
+                className="ml-1 text-muted-foreground hover:text-foreground text-sm whitespace-nowrap shrink-0"
+              >
+                {t('more', { defaultValue: 'more' })}
+              </button>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="text-sm text-left">
         <button
@@ -255,18 +294,16 @@ const FeedPage = () => {
         >
           {username}
         </button>
-        <span className={`text-foreground ${!isExpanded && needsTruncate ? 'line-clamp-1' : ''}`}>
-          {caption}
-        </span>
+        <span className="text-foreground">{caption}</span>
         {needsTruncate && (
-          <button 
+          <button
             onClick={(e) => {
               e.stopPropagation();
               toggleCaption(postId);
             }}
             className="ml-1 text-muted-foreground hover:text-foreground text-sm"
           >
-            {isExpanded ? 'less' : 'more'}
+            {t('less', { defaultValue: 'less' })}
           </button>
         )}
       </div>

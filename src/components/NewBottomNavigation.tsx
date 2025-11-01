@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAnalytics } from '@/hooks/useAnalytics';
@@ -15,9 +15,21 @@ const NewBottomNavigation = () => {
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
   const { t } = useTranslation();
+  const [hideNav, setHideNav] = useState(false);
 
-  // Hide navigation on messages and notifications pages
-  if (location.pathname === '/messages' || location.pathname === '/notifications') {
+  useEffect(() => {
+    const handleOpen = () => setHideNav(true);
+    const handleClose = () => setHideNav(false);
+    window.addEventListener('ui:overlay-open', handleOpen as EventListener);
+    window.addEventListener('ui:overlay-close', handleClose as EventListener);
+    return () => {
+      window.removeEventListener('ui:overlay-open', handleOpen as EventListener);
+      window.removeEventListener('ui:overlay-close', handleClose as EventListener);
+    };
+  }, []);
+
+  // Hide navigation on messages and notifications pages, or when overlays are open
+  if (hideNav || location.pathname === '/messages' || location.pathname === '/notifications') {
     return null;
   }
 

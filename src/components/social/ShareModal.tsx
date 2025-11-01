@@ -89,12 +89,12 @@ export const ShareModal = ({ isOpen, onClose, onShare }: ShareModalProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Share post</DialogTitle>
+      <DialogContent className="fixed bottom-0 left-0 right-0 z-[200] max-w-screen-sm mx-auto rounded-t-2xl p-0 data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom">
+        <DialogHeader className="px-4 pt-3 pb-2 border-b">
+          <DialogTitle>Share</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-4 px-4 py-3">
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -145,14 +145,14 @@ export const ShareModal = ({ isOpen, onClose, onShare }: ShareModalProps) => {
             </div>
           )}
 
-          <div className="flex gap-2 pt-2">
-            <Button variant="outline" onClick={onClose} className="flex-1">
+          <div className="flex gap-2 p-4 border-t">
+            <Button variant="outline" onClick={onClose} className="flex-1 rounded-full">
               Cancel
             </Button>
             <Button
               onClick={handleSend}
               disabled={selected.size === 0 || sending}
-              className="flex-1 gap-2"
+              className="flex-1 gap-2 rounded-full"
             >
               {sending ? (
                 <>

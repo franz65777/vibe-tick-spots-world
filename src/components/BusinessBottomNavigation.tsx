@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAnalytics } from '@/hooks/useAnalytics';
@@ -15,6 +15,22 @@ const BusinessBottomNavigation = () => {
   
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
+  const [hideNav, setHideNav] = useState(false);
+
+  useEffect(() => {
+    const handleOpen = () => setHideNav(true);
+    const handleClose = () => setHideNav(false);
+    window.addEventListener('ui:overlay-open', handleOpen as EventListener);
+    window.addEventListener('ui:overlay-close', handleClose as EventListener);
+    return () => {
+      window.removeEventListener('ui:overlay-open', handleOpen as EventListener);
+      window.removeEventListener('ui:overlay-close', handleClose as EventListener);
+    };
+  }, []);
+
+  if (hideNav) {
+    return null;
+  }
 
   const handleNavClick = (path: string, label: string) => {
     navigate(path);
