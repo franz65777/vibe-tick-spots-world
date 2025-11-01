@@ -357,12 +357,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
         >
           <ArrowLeft className="w-5 h-5 text-gray-700" />
         </button>
-        <div className="flex-1">
-          <h1 className="text-lg font-semibold text-gray-900">{t('discoverPlaces')}</h1>
-          <p className="text-xs text-gray-500">
-            {locations.length > 0 ? `${currentIndex + 1} ${t('of')} ${locations.length}` : t('loading')}
-          </p>
-        </div>
+        <h1 className="text-lg font-semibold text-gray-900">{t('discoverPlaces')}</h1>
       </div>
 
       {/* Content */}
