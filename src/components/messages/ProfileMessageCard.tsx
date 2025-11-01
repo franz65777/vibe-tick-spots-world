@@ -1,6 +1,7 @@
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 interface ProfileMessageCardProps {
   profileData: {
@@ -16,6 +17,7 @@ interface ProfileMessageCardProps {
 
 const ProfileMessageCard = ({ profileData }: ProfileMessageCardProps) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleViewProfile = () => {
     navigate(`/profile/${profileData.id}`);
@@ -43,19 +45,19 @@ const ProfileMessageCard = ({ profileData }: ProfileMessageCardProps) => {
         {profileData.posts_count !== undefined && (
           <div>
             <span className="font-bold text-foreground">{profileData.posts_count}</span>{' '}
-            <span className="text-muted-foreground">posts</span>
+            <span className="text-muted-foreground">{t('posts', { ns: 'common', defaultValue: 'posts' })}</span>
           </div>
         )}
         {profileData.follower_count !== undefined && (
           <div>
             <span className="font-bold text-foreground">{profileData.follower_count}</span>{' '}
-            <span className="text-muted-foreground">followers</span>
+            <span className="text-muted-foreground">{t('followers', { ns: 'common', defaultValue: 'followers' })}</span>
           </div>
         )}
         {profileData.following_count !== undefined && (
           <div>
             <span className="font-bold text-foreground">{profileData.following_count}</span>{' '}
-            <span className="text-muted-foreground">following</span>
+            <span className="text-muted-foreground">{t('following', { ns: 'common', defaultValue: 'following' })}</span>
           </div>
         )}
       </div>
@@ -65,7 +67,7 @@ const ProfileMessageCard = ({ profileData }: ProfileMessageCardProps) => {
         className="w-full rounded-lg font-semibold"
         size="sm"
       >
-        View Profile
+        {t('viewProfile', { ns: 'messages', defaultValue: 'View Profile' })}
       </Button>
     </div>
   );

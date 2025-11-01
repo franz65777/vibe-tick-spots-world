@@ -47,7 +47,7 @@ class MessageService {
           receiver_id: receiverId,
           message_type: 'place_share' as const,
           shared_content: placeData,
-          content: `Check out this place: ${placeData.name}`
+          content: null  // Will be displayed in card, no duplicate text needed
         })
         .select('*')
         .single();
@@ -134,7 +134,7 @@ class MessageService {
           receiver_id: receiverId,
           message_type: 'profile_share' as const,
           shared_content: profileData,
-          content: `Check out @${profileData.username}'s profile`
+          content: null  // Will be displayed in card, no duplicate text needed
         })
         .select('*')
         .single();

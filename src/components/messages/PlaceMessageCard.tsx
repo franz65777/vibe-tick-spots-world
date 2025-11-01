@@ -4,6 +4,7 @@ import { MapPin, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getCategoryIcon, getCategoryColor } from '@/utils/categoryIcons';
 import CityLabel from '@/components/common/CityLabel';
+import { useTranslation } from 'react-i18next';
 
 interface PlaceMessageCardProps {
   placeData: {
@@ -21,6 +22,7 @@ interface PlaceMessageCardProps {
 }
 
 const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => {
+  const { t } = useTranslation();
   const CategoryIconComponent = getCategoryIcon(placeData.category);
   const categoryColor = getCategoryColor(placeData.category);
 
@@ -70,7 +72,7 @@ const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => 
           }}
         >
           <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
-          View Location
+          {t('viewLocation', { ns: 'messages', defaultValue: 'View Location' })}
         </Button>
       </div>
     </div>

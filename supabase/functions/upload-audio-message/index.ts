@@ -69,7 +69,7 @@ serve(async (req) => {
       .insert({
         sender_id: user.id,
         receiver_id: receiverId,
-        content: '[Audio Message]',
+        content: null,  // Audio player shows the content visually
         message_type: 'audio',
         shared_content: { audio_url: publicUrl },
       })
