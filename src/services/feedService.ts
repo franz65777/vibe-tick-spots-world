@@ -9,6 +9,8 @@ export interface FeedItem {
   avatar_url: string | null;
   location_id: string | null;
   location_name: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   post_id: string | null;
   content: string | null;
   media_url: string | null;
@@ -82,7 +84,7 @@ export async function getUserFeed(userId: string, limit: number = 50): Promise<F
       allLocationIds.length > 0
         ? supabase
             .from('locations')
-            .select('id, name')
+            .select('id, name, latitude, longitude')
             .in('id', allLocationIds)
         : Promise.resolve({ data: [] })
     ]);
@@ -108,6 +110,8 @@ export async function getUserFeed(userId: string, limit: number = 50): Promise<F
         avatar_url: profile?.avatar_url || null,
         location_id: post.location_id,
         location_name: location?.name || null,
+        latitude: location?.latitude || null,
+        longitude: location?.longitude || null,
         post_id: post.id,
         content: post.caption,
         media_url: post.media_urls?.[0] || null,
@@ -134,6 +138,8 @@ export async function getUserFeed(userId: string, limit: number = 50): Promise<F
         avatar_url: profile?.avatar_url || null,
         location_id: review.location_id,
         location_name: location?.name || null,
+        latitude: location?.latitude || null,
+        longitude: location?.longitude || null,
         post_id: review.post_id,
         content: review.comment,
         media_url: null,

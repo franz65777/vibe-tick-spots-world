@@ -114,9 +114,17 @@ const FeedPage = () => {
     }
   };
 
-  const handleLocationClick = (locationId: string, e: React.MouseEvent) => {
+  const handleLocationClick = (locationId: string, latitude: number, longitude: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    navigate(`/explore?location=${locationId}`);
+    navigate('/', {
+      state: {
+        centerMap: {
+          lat: latitude,
+          lng: longitude,
+          locationId: locationId
+        }
+      }
+    });
   };
 
   const toggleCaption = (postId: string) => {
@@ -131,16 +139,25 @@ const FeedPage = () => {
     });
   };
 
-  const renderCaption = (caption: string | null, postId: string, username: string) => {
+  const renderCaption = (caption: string | null, postId: string, username: string, userId: string) => {
     if (!caption) return null;
     const isExpanded = expandedCaptions.has(postId);
     const needsTruncate = caption.length > 100;
-    const displayText = isExpanded || !needsTruncate ? caption : `${caption.slice(0, 100)}...`;
 
     return (
       <div className="text-sm text-left">
-        <span className="font-semibold mr-1">{username}</span>
-        <span className="text-foreground">{displayText}</span>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/profile/${userId}`);
+          }}
+          className="font-semibold mr-1 hover:opacity-70"
+        >
+          {username}
+        </button>
+        <span className={`text-foreground ${!isExpanded && needsTruncate ? 'line-clamp-1' : ''}`}>
+          {caption}
+        </span>
         {needsTruncate && (
           <button 
             onClick={(e) => {
@@ -149,7 +166,7 @@ const FeedPage = () => {
             }}
             className="ml-1 text-muted-foreground hover:text-foreground text-sm"
           >
-            {isExpanded ? t('common.less') : t('common.more')}
+            {isExpanded ? 'less' : 'more'}
           </button>
         )}
       </div>
@@ -228,11 +245,11 @@ const FeedPage = () => {
                         className="shrink-0"
                       >
                         <Avatar className={cn(
-                          "h-10 w-10",
+                          "h-8 w-8",
                           userHasStory && "ring-2 ring-primary ring-offset-2 ring-offset-background"
                         )}>
                           <AvatarImage src={avatarUrl || undefined} />
-                          <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                          <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
                             {username.slice(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
@@ -247,9 +264,9 @@ const FeedPage = () => {
                         >
                           {username}
                         </button>
-                        {locationName && locationId && (
+                        {locationName && locationId && item.latitude && item.longitude && (
                           <button
-                            onClick={(e) => handleLocationClick(locationId, e)}
+                            onClick={(e) => handleLocationClick(locationId, item.latitude, item.longitude, e)}
                             className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 truncate"
                           >
                             <MapPin className="w-3 h-3 shrink-0" />
@@ -381,7 +398,7 @@ const FeedPage = () => {
                     )}
 
                     {/* Caption */}
-                    {caption && renderCaption(caption, item.id, username)}
+                    {caption && renderCaption(caption, item.id, username, userId)}
 
                     {/* Timestamp */}
                     <p className="text-xs text-muted-foreground uppercase text-left">
