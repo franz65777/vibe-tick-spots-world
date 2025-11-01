@@ -54,7 +54,13 @@ const resources = {
       less: 'less',
       likedBy: 'Liked by',
       forYou: 'For You',
-      promotions: 'Promotions'
+      promotions: 'Promotions',
+      discoverPlaces: 'Discover Places',
+      findingAmazingPlaces: 'Finding amazing places...',
+      noPlacesToDiscover: 'No Places to Discover',
+      followMorePeople: 'Follow more people to see their saved locations and discover amazing new places to explore',
+      findPeopleToFollow: 'Find People to Follow',
+      tryAgain: 'Try Again'
     },
     navigation: {
       explore: 'Explore',
@@ -81,12 +87,12 @@ const resources = {
       tapToAdd: 'Tap on the map to add your first location',
     },
     categories: {
-      restaurant: 'Restaurants',
-      bar: 'Bars & Pubs',
-      cafe: 'Cafés',
-      bakery: 'Bakeries',
-      hotel: 'Hotels',
-      museum: 'Museums',
+      restaurant: 'Restaurant',
+      bar: 'Bar',
+      cafe: 'Café',
+      bakery: 'Bakery',
+      hotel: 'Hotel',
+      museum: 'Museum',
       entertainment: 'Entertainment',
     },
     profile: {
@@ -376,7 +382,13 @@ const resources = {
       less: 'menos',
       likedBy: 'Le gusta a',
       forYou: 'Para ti',
-      promotions: 'Promociones'
+      promotions: 'Promociones',
+      discoverPlaces: 'Descubre Lugares',
+      findingAmazingPlaces: 'Buscando lugares increíbles...',
+      noPlacesToDiscover: 'No hay lugares para descubrir',
+      followMorePeople: 'Sigue a más personas para ver sus lugares guardados y descubrir nuevos lugares increíbles para explorar',
+      findPeopleToFollow: 'Buscar Personas para Seguir',
+      tryAgain: 'Intentar de nuevo'
     },
     navigation: {
       explore: 'Explorar',
@@ -403,12 +415,12 @@ const resources = {
       tapToAdd: 'Toca el mapa para añadir tu primer lugar',
     },
     categories: {
-      restaurant: 'Restaurantes',
-      bar: 'Bares y Pubs',
-      cafe: 'Cafés',
-      bakery: 'Panaderías',
-      hotel: 'Hoteles',
-      museum: 'Museos',
+      restaurant: 'Restaurante',
+      bar: 'Bar',
+      cafe: 'Café',
+      bakery: 'Panadería',
+      hotel: 'Hotel',
+      museum: 'Museo',
       entertainment: 'Entretenimiento',
     },
     profile: {
@@ -699,7 +711,13 @@ const resources = {
       less: 'meno',
       likedBy: 'Piace a',
       forYou: 'Per te',
-      promotions: 'Promozioni'
+      promotions: 'Promozioni',
+      discoverPlaces: 'Scopri Luoghi',
+      findingAmazingPlaces: 'Cercando luoghi fantastici...',
+      noPlacesToDiscover: 'Nessun luogo da scoprire',
+      followMorePeople: 'Segui più persone per vedere i loro luoghi salvati e scoprire nuovi posti fantastici da esplorare',
+      findPeopleToFollow: 'Trova Persone da Seguire',
+      tryAgain: 'Riprova'
     },
     navigation: {
       explore: 'Esplora',
@@ -726,12 +744,12 @@ const resources = {
       tapToAdd: 'Tocca sulla mappa per aggiungere la tua prima posizione',
     },
     categories: {
-      restaurant: 'Ristoranti',
-      bar: 'Bar & Pub',
+      restaurant: 'Ristorante',
+      bar: 'Bar',
       cafe: 'Caffè',
-      bakery: 'Panetterie',
+      bakery: 'Panificio',
       hotel: 'Hotel',
-      museum: 'Musei',
+      museum: 'Museo',
       entertainment: 'Intrattenimento',
     },
     profile: {
