@@ -69,6 +69,13 @@ export async function togglePostLike(postId: string, userId: string): Promise<bo
   }
 }
 
+export interface PostLikeUser {
+  user_id: string;
+  username: string;
+  avatar_url: string | null;
+  is_followed: boolean;
+}
+
 export async function getPostLikes(postId: string): Promise<{ count: number; isLiked: boolean; userId: string | null }> {
   try {
     const { data: session } = await supabase.auth.getSession();
@@ -94,6 +101,59 @@ export async function getPostLikes(postId: string): Promise<{ count: number; isL
   } catch (error) {
     console.error('Error getting likes:', error);
     return { count: 0, isLiked: false, userId: null };
+  }
+}
+
+export async function getPostLikesWithUsers(postId: string, currentUserId: string, limit: number = 3): Promise<PostLikeUser[]> {
+  try {
+    // Get all likes for this post with user profiles
+    const { data: likes } = await supabase
+      .from('post_likes')
+      .select(`
+        user_id,
+        profiles:user_id (
+          id,
+          username,
+          avatar_url
+        )
+      `)
+      .eq('post_id', postId)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (!likes || likes.length === 0) return [];
+
+    // Get current user's follows
+    const { data: follows } = await supabase
+      .from('follows')
+      .select('following_id')
+      .eq('follower_id', currentUserId);
+
+    const followingIds = new Set(follows?.map(f => f.following_id) || []);
+
+    // Map likes to PostLikeUser format
+    const likeUsers = likes
+      .map(like => {
+        const profile = like.profiles as any;
+        if (!profile) return null;
+        
+        return {
+          user_id: like.user_id,
+          username: profile.username || 'User',
+          avatar_url: profile.avatar_url || null,
+          is_followed: followingIds.has(like.user_id)
+        };
+      })
+      .filter((u): u is PostLikeUser => u !== null);
+
+    // Prioritize followed users, then others
+    const followedUsers = likeUsers.filter(u => u.is_followed);
+    const otherUsers = likeUsers.filter(u => !u.is_followed);
+
+    return [...followedUsers, ...otherUsers].slice(0, limit);
+  } catch (error) {
+    console.error('Error getting post likes with users:', error);
+    return [];
   }
 }
 

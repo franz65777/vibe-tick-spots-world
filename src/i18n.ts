@@ -49,7 +49,10 @@ const resources = {
       search: 'Search',
       currentLocation: 'Current location',
       gettingLocation: 'Getting your location...',
-      locationDetected: 'Location detected'
+      locationDetected: 'Location detected',
+      more: 'more',
+      less: 'less',
+      likedBy: 'Liked by'
     },
     navigation: {
       explore: 'Explore',
@@ -361,7 +364,10 @@ const resources = {
       search: 'Buscar',
       currentLocation: 'Ubicación actual',
       gettingLocation: 'Obteniendo tu ubicación...',
-      locationDetected: 'Ubicación detectada'
+      locationDetected: 'Ubicación detectada',
+      more: 'más',
+      less: 'menos',
+      likedBy: 'Le gusta a'
     },
     navigation: {
       explore: 'Explorar',
@@ -673,7 +679,10 @@ const resources = {
       search: 'Cerca',
       currentLocation: 'Posizione attuale',
       gettingLocation: 'Ottenendo la tua posizione...',
-      locationDetected: 'Posizione rilevata'
+      locationDetected: 'Posizione rilevata',
+      more: 'altro',
+      less: 'meno',
+      likedBy: 'Piace a'
     },
     navigation: {
       explore: 'Esplora',

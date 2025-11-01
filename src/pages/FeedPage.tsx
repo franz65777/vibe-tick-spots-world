@@ -14,16 +14,20 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { cn } from '@/lib/utils';
 import { useStories } from '@/hooks/useStories';
 import StoriesViewer from '@/components/StoriesViewer';
+import { getPostLikesWithUsers, PostLikeUser } from '@/services/socialEngagementService';
+import { useTranslation } from 'react-i18next';
 
 const FeedPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [expandedCaptions, setExpandedCaptions] = useState<Set<string>>(new Set());
   const [storiesViewerOpen, setStoriesViewerOpen] = useState(false);
   const [selectedUserStoryIndex, setSelectedUserStoryIndex] = useState(0);
+  const [postLikes, setPostLikes] = useState<Map<string, PostLikeUser[]>>(new Map());
   const { stories } = useStories();
 
   const loadFeed = async () => {
@@ -32,6 +36,17 @@ const FeedPage = () => {
       setLoading(true);
       const items = await getUserFeed(user.id);
       setFeedItems(items);
+      
+      // Load likes for each post
+      const likesMap = new Map<string, PostLikeUser[]>();
+      await Promise.all(
+        items.map(async (item) => {
+          const postId = item.post_id || item.id;
+          const likes = await getPostLikesWithUsers(postId, user.id, 3);
+          likesMap.set(postId, likes);
+        })
+      );
+      setPostLikes(likesMap);
     } catch (error) {
       console.error('Error loading feed:', error);
     } finally {
@@ -122,18 +137,29 @@ const FeedPage = () => {
     return (
       <div className="text-sm">
         <span className="font-semibold mr-1">{username}</span>
-        <span className="text-foreground">
-          {isExpanded || !needsTruncate ? caption : `${caption.slice(0, 100)}...`}
+        <span className="text-foreground line-clamp-1">
+          {isExpanded || !needsTruncate ? caption : caption}
         </span>
-        {needsTruncate && (
+        {needsTruncate && !isExpanded && (
           <button 
             onClick={(e) => {
               e.stopPropagation();
               toggleCaption(postId);
             }}
-            className="ml-1 text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground text-sm"
           >
-            {isExpanded ? 'meno' : 'altro'}
+            {t('common.more')}
+          </button>
+        )}
+        {isExpanded && needsTruncate && (
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleCaption(postId);
+            }}
+            className="ml-1 text-muted-foreground hover:text-foreground text-sm"
+          >
+            {t('common.less')}
           </button>
         )}
       </div>
@@ -300,7 +326,7 @@ const FeedPage = () => {
                   )}
 
                   {/* Post Actions */}
-                  <div className="px-3 py-2">
+                  <div className="px-3 py-2 space-y-2">
                     <PostActions
                       postId={postId}
                       likesCount={item.likes_count || 0}
@@ -310,15 +336,61 @@ const FeedPage = () => {
                       onShareClick={() => setSelectedPostId(postId)}
                     />
 
+                    {/* Likes Section */}
+                    {item.likes_count > 0 && (
+                      <div className="flex items-center gap-2">
+                        {postLikes.get(postId) && postLikes.get(postId)!.length > 0 && (
+                          <>
+                            <div className="flex -space-x-2">
+                              {postLikes.get(postId)!.slice(0, 3).map((like) => (
+                                <button
+                                  key={like.user_id}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/profile/${like.user_id}`);
+                                  }}
+                                  className="relative"
+                                >
+                                  <Avatar className="h-6 w-6 border-2 border-background">
+                                    <AvatarImage src={like.avatar_url || undefined} />
+                                    <AvatarFallback className="text-xs bg-primary/10">
+                                      {like.username.slice(0, 2).toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                </button>
+                              ))}
+                            </div>
+                            <div className="text-sm">
+                              <span className="text-foreground">{t('common.likedBy')} </span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/profile/${postLikes.get(postId)![0].user_id}`);
+                                }}
+                                className="font-semibold hover:opacity-70"
+                              >
+                                {postLikes.get(postId)![0].username}
+                              </button>
+                              {item.likes_count > 1 && (
+                                <span className="text-foreground">
+                                  {' '}{t('notifications.andOthers', { count: item.likes_count - 1 })}
+                                </span>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+
                     {/* Caption */}
                     {caption && (
-                      <div className="mt-2">
+                      <div className={expandedCaptions.has(item.id) ? '' : 'line-clamp-1'}>
                         {renderCaption(caption, item.id, username)}
                       </div>
                     )}
 
                     {/* Timestamp */}
-                    <p className="text-xs text-muted-foreground mt-2 uppercase">
+                    <p className="text-xs text-muted-foreground uppercase">
                       {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
                     </p>
                   </div>
