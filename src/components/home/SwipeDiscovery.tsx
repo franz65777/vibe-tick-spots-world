@@ -484,7 +484,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       <CategoryIcon category={currentLocation.category} className="w-5 h-5 text-white" />
-                      <span className="text-white/80 text-sm capitalize">{t(`categories.${currentLocation.category}`)}</span>
+                      <span className="text-white/80 text-sm">{t(`categories.${currentLocation.category.toLowerCase()}`)}</span>
                     </div>
                   </div>
 
