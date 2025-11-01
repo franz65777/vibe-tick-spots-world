@@ -75,6 +75,21 @@ async function reverseGeocodeNominatim(lat: number, lng: number, language = 'en'
     ];
     if (dublinNeighborhoods.includes(city.toLowerCase())) city = 'Dublin';
   }
+  
+  // Normalize Arabic city names to English equivalents
+  const arabicCityMap: Record<string, string> = {
+    'الحديريات': 'Abu Dhabi',
+    'أبو ظبي': 'Abu Dhabi',
+    'دبي': 'Dubai',
+    'الشارقة': 'Sharjah',
+    'العين': 'Al Ain',
+    'عجمان': 'Ajman',
+  };
+  
+  // Check if city is in Arabic and convert to English
+  if (city && arabicCityMap[city]) {
+    city = arabicCityMap[city];
+  }
 
   const parts: string[] = [];
   if (addr.road) {

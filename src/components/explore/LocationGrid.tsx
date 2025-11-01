@@ -98,8 +98,25 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
       if (searchQuery && searchQuery.trim()) {
         const normalizedSearch = normalizeCity(searchQuery.trim());
         const englishCityName = reverseTranslateCityName(searchQuery.trim());
-        // Search: original query, normalized query, reverse-translated to English, and address
-        query = query.or(`name.ilike.%${searchQuery}%,city.ilike.%${searchQuery}%,city.ilike.%${normalizedSearch}%,city.ilike.%${englishCityName}%,address.ilike.%${searchQuery}%`);
+        
+        // For cities with known coordinates, also search geographically
+        const cityCoordinates: Record<string, { lat: number; lng: number; radius: number }> = {
+          'abu dhabi': { lat: 24.4539, lng: 54.3773, radius: 0.5 },
+          'dubai': { lat: 25.2048, lng: 55.2708, radius: 0.5 },
+          'a coruña': { lat: 43.3713, lng: -8.3960, radius: 0.3 },
+          'la coruña': { lat: 43.3713, lng: -8.3960, radius: 0.3 },
+        };
+        
+        const searchLower = searchQuery.toLowerCase().trim();
+        const coordSearch = cityCoordinates[searchLower] || cityCoordinates[englishCityName.toLowerCase()];
+        
+        if (coordSearch) {
+          // Geographic search: include locations within radius of city center
+          query = query.or(`name.ilike.%${searchQuery}%,city.ilike.%${searchQuery}%,city.ilike.%${normalizedSearch}%,city.ilike.%${englishCityName}%,address.ilike.%${searchQuery}%,and(latitude.gte.${coordSearch.lat - coordSearch.radius},latitude.lte.${coordSearch.lat + coordSearch.radius},longitude.gte.${coordSearch.lng - coordSearch.radius},longitude.lte.${coordSearch.lng + coordSearch.radius})`);
+        } else {
+          // Text search only
+          query = query.or(`name.ilike.%${searchQuery}%,city.ilike.%${searchQuery}%,city.ilike.%${normalizedSearch}%,city.ilike.%${englishCityName}%,address.ilike.%${searchQuery}%`);
+        }
       }
 
       // Apply category filter
