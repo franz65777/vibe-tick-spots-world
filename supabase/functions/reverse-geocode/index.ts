@@ -104,7 +104,23 @@ async function reverseGeocodeNominatim(lat: number, lng: number, language = 'en'
 }
 
 async function reverseGeocodePhoton(lat: number, lng: number, language = 'en'): Promise<{ city: string; formatted_address: string; }> {
-  const url = `https://photon.komoot.io/reverse?lat=${lat}&lon=${lng}&lang=${encodeURIComponent(language)}`;
+  // Photon only supports: default, en, de, fr - map unsupported languages
+  const photonLangMap: Record<string, string> = {
+    'en': 'en',
+    'de': 'de',
+    'fr': 'fr',
+    'it': 'en',
+    'es': 'en',
+    'pt': 'en',
+    'ja': 'en',
+    'ko': 'en',
+    'ar': 'en',
+    'hi': 'en',
+    'ru': 'en',
+    'zh': 'en'
+  };
+  const photonLang = photonLangMap[language.toLowerCase()] || 'en';
+  const url = `https://photon.komoot.io/reverse?lat=${lat}&lon=${lng}&lang=${encodeURIComponent(photonLang)}`;
   const res = await fetchWithRetry(url, { headers: { 'Accept': 'application/json', 'User-Agent': 'SpottApp/1.0 (+https://spott.app)' } });
   const data = await res.json();
   const feature = data?.features?.[0];
