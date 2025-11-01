@@ -19,7 +19,7 @@ const CommunityHighlights: React.FC<CommunityHighlightsProps> = ({
   onSwipeDiscoveryOpen,
 }) => {
   return (
-    <div className="h-full bg-white/50 backdrop-blur-sm border-y border-gray-100">
+    <div className="h-full">
       <PopularSpots
         currentCity={currentCity}
         onLocationClick={onMapLocationClick}
