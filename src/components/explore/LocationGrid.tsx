@@ -7,6 +7,7 @@ import { CategoryIcon } from '@/components/common/CategoryIcon';
 import CityLabel from '@/components/common/CityLabel';
 import { getCachedData, clearCache } from '@/services/performanceService';
 import { normalizeCity } from '@/utils/cityNormalization';
+import { reverseTranslateCityName } from '@/utils/cityTranslations';
 
 interface LocationGridProps {
   searchQuery?: string;
@@ -93,10 +94,12 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
 
       // Apply search filter - Search across name, city, and address
       // Also normalize the search query to match against normalized city names
+      // Support reverse translation for searching (e.g., searching "Milano" finds "Milan")
       if (searchQuery && searchQuery.trim()) {
         const normalizedSearch = normalizeCity(searchQuery.trim());
-        // Search both raw and normalized city names for better matching
-        query = query.or(`name.ilike.%${searchQuery}%,city.ilike.%${searchQuery}%,city.ilike.%${normalizedSearch}%,address.ilike.%${searchQuery}%`);
+        const englishCityName = reverseTranslateCityName(searchQuery.trim());
+        // Search: original query, normalized query, reverse-translated to English, and address
+        query = query.or(`name.ilike.%${searchQuery}%,city.ilike.%${searchQuery}%,city.ilike.%${normalizedSearch}%,city.ilike.%${englishCityName}%,address.ilike.%${searchQuery}%`);
       }
 
       // Apply category filter

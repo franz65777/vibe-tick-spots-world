@@ -430,7 +430,119 @@ export const cityTranslations: Record<string, Record<string, string>> = {
     hi: 'इस्तांबुल',
     ru: 'Стамбул',
   },
+  'Dubai': {
+    it: 'Dubai',
+    es: 'Dubái',
+    fr: 'Dubaï',
+    de: 'Dubai',
+    pt: 'Dubai',
+    'zh-CN': '迪拜',
+    ja: 'ドバイ',
+    ko: '두바이',
+    ar: 'دبي',
+    hi: 'दुबई',
+    ru: 'Дубай',
+  },
+  'Abu Dhabi': {
+    it: 'Abu Dhabi',
+    es: 'Abu Dabi',
+    fr: 'Abou Dabi',
+    de: 'Abu Dhabi',
+    pt: 'Abu Dhabi',
+    'zh-CN': '阿布扎比',
+    ja: 'アブダビ',
+    ko: '아부다비',
+    ar: 'أبو ظبي',
+    hi: 'अबू धाबी',
+    ru: 'Абу-Даби',
+  },
+  'A Coruña': {
+    it: 'La Coruña',
+    es: 'A Coruña',
+    fr: 'La Corogne',
+    de: 'A Coruña',
+    pt: 'A Corunha',
+    'zh-CN': '拉科鲁尼亚',
+    ja: 'ア・コルーニャ',
+    ko: '아코루냐',
+    ar: 'لا كورونيا',
+    hi: 'ला कोरुना',
+    ru: 'Ла-Корунья',
+  },
+  'Seville': {
+    it: 'Siviglia',
+    es: 'Sevilla',
+    fr: 'Séville',
+    de: 'Sevilla',
+    pt: 'Sevilha',
+    'zh-CN': '塞维利亚',
+    ja: 'セビリア',
+    ko: '세비야',
+    ar: 'إشبيلية',
+    hi: 'सेविला',
+    ru: 'Севилья',
+  },
+  'Valencia': {
+    it: 'Valencia',
+    es: 'Valencia',
+    fr: 'Valence',
+    de: 'Valencia',
+    pt: 'Valência',
+    'zh-CN': '瓦伦西亚',
+    ja: 'バレンシア',
+    ko: '발렌시아',
+    ar: 'بلنسية',
+    hi: 'वालेंसिया',
+    ru: 'Валенсия',
+  },
+  'Marseille': {
+    it: 'Marsiglia',
+    es: 'Marsella',
+    fr: 'Marseille',
+    de: 'Marseille',
+    pt: 'Marselha',
+    'zh-CN': '马赛',
+    ja: 'マルセイユ',
+    ko: '마르세유',
+    ar: 'مرسيليا',
+    hi: 'मार्सेल',
+    ru: 'Марсель',
+  },
+  'Lyon': {
+    it: 'Lione',
+    es: 'Lyon',
+    fr: 'Lyon',
+    de: 'Lyon',
+    pt: 'Lyon',
+    'zh-CN': '里昂',
+    ja: 'リヨン',
+    ko: '리옹',
+    ar: 'ليون',
+    hi: 'ल्यों',
+    ru: 'Лион',
+  },
+  'Nice': {
+    it: 'Nizza',
+    es: 'Niza',
+    fr: 'Nice',
+    de: 'Nizza',
+    pt: 'Nice',
+    'zh-CN': '尼斯',
+    ja: 'ニース',
+    ko: '니스',
+    ar: 'نيس',
+    hi: 'नीस',
+    ru: 'Ницца',
+  },
 };
+
+// Create a reverse mapping for searching: translatedName -> englishName
+const reverseTranslations: Record<string, string> = {};
+Object.entries(cityTranslations).forEach(([englishName, translations]) => {
+  Object.values(translations).forEach((translatedName) => {
+    reverseTranslations[translatedName.toLowerCase()] = englishName;
+  });
+});
 
 /**
  * Translates a city name to the specified language
@@ -452,4 +564,17 @@ export function translateCityName(cityName: string, language: string): string {
   
   // Return original if no translation found
   return cityName;
+}
+
+/**
+ * Reverse translates a city name back to English
+ * Useful for search functionality when users search in their language
+ * @param cityName - The city name in any language
+ * @returns The English city name, or the original if no reverse translation exists
+ */
+export function reverseTranslateCityName(cityName: string): string {
+  if (!cityName) return cityName;
+  
+  const normalizedCity = cityName.trim().toLowerCase();
+  return reverseTranslations[normalizedCity] || cityName;
 }
