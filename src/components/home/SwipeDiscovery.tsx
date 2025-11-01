@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, MapPin, Search, Users, UserPlus } from 'lucide-react';
+import { ArrowLeft, MapPin, Search, Users, UserPlus, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -7,8 +7,6 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import CityLabel from '@/components/common/CityLabel';
-import swipeNo from '@/assets/swipe-no-clean.png';
-import swipePin from '@/assets/swipe-pin-clean.png';
 
 interface SwipeLocation {
   id: string;
@@ -489,7 +487,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                       className="w-24 h-24 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
                       aria-label="Pass"
                     >
-                      <img src={swipeNo} alt="Pass" className="w-20 h-20 object-contain" />
+                      <X className="w-20 h-20 text-destructive" strokeWidth={3} />
                     </button>
                     <button
                       onClick={() => handleSwipe('right')}
@@ -497,7 +495,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                       className="w-24 h-24 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
                       aria-label="Save"
                     >
-                      <img src={swipePin} alt="Save" className="w-20 h-20 object-contain" />
+                      <MapPin className="w-20 h-20 text-primary" strokeWidth={3} />
                     </button>
                   </div>
                 </div>
