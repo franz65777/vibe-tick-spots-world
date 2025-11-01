@@ -287,6 +287,8 @@ const resources = {
       minutesShort: '{{count}}m',
       hoursShort: '{{count}}h',
       daysShort: '{{count}}d',
+      deleteMessage: 'Delete Message',
+      deleteMessageConfirm: 'Are you sure you want to delete this message? This action cannot be undone.',
     },
     business: {
       overview: 'Overview',
@@ -622,6 +624,8 @@ const resources = {
       minutesShort: '{{count}}m',
       hoursShort: '{{count}}h',
       daysShort: '{{count}}d',
+      deleteMessage: 'Eliminar Mensaje',
+      deleteMessageConfirm: '¿Estás seguro de que quieres eliminar este mensaje? Esta acción no se puede deshacer.',
     },
     business: {
       overview: 'Resumen',
@@ -952,6 +956,8 @@ const resources = {
       minutesShort: '{{count}}m',
       hoursShort: '{{count}}h',
       daysShort: '{{count}}d',
+      deleteMessage: 'Elimina Messaggio',
+      deleteMessageConfirm: 'Sei sicuro di voler eliminare questo messaggio? Questa azione non può essere annullata.',
     },
     business: {
       overview: 'Panoramica',

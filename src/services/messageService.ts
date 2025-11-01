@@ -364,6 +364,25 @@ class MessageService {
       return null;
     }
   }
+
+  async deleteMessage(messageId: string): Promise<boolean> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('direct_messages')
+        .delete()
+        .eq('id', messageId)
+        .eq('sender_id', user.id); // Only allow deleting own messages
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      return false;
+    }
+  }
 }
 
 export const messageService = new MessageService();

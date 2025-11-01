@@ -1,10 +1,20 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Search, Send, X, MessageSquare, Image, Mic } from 'lucide-react';
+import { ArrowLeft, Search, Send, X, MessageSquare, Image, Mic, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { messageService, MessageThread, DirectMessage } from '@/services/messageService';
 import { supabase } from '@/integrations/supabase/client';
@@ -35,6 +45,8 @@ const MessagesPage = () => {
   const [showStories, setShowStories] = useState(false);
   const [initialStoryIndex, setInitialStoryIndex] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
+  const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<any>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -228,8 +240,46 @@ const MessagesPage = () => {
   };
 
   const handleBack = () => {
-    // Always return to previous page as requested
-    navigate(-1);
+    if (view === 'chat') {
+      setView('threads');
+      setSelectedThread(null);
+      setMessages([]);
+    } else if (view === 'search') {
+      setView('threads');
+      setSearchQuery('');
+      setSearchResults([]);
+    } else {
+      navigate(-1);
+    }
+  };
+
+  const handleLongPressStart = (messageId: string, isOwn: boolean) => {
+    if (!isOwn) return; // Only allow deleting own messages
+    const timer = setTimeout(() => {
+      setSelectedMessageId(messageId);
+    }, 500); // 500ms long press
+    setLongPressTimer(timer);
+  };
+
+  const handleLongPressEnd = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+  };
+
+  const handleDeleteMessage = async () => {
+    if (!selectedMessageId) return;
+    
+    try {
+      const success = await messageService.deleteMessage(selectedMessageId);
+      if (success) {
+        setMessages(prev => prev.filter(m => m.id !== selectedMessageId));
+        setSelectedMessageId(null);
+      }
+    } catch (error) {
+      console.error('Error deleting message:', error);
+    }
   };
 
   const handleSearch = async (query: string) => {
@@ -508,13 +558,18 @@ const MessagesPage = () => {
               </div>
             ) : (
               <div className="space-y-3 pb-4">
-                {messages.map((message) => {
-                  const isOwn = message.sender_id === user?.id;
-                  return (
-                    <div
-                      key={message.id}
-                      className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
-                    >
+                 {messages.map((message) => {
+                   const isOwn = message.sender_id === user?.id;
+                   return (
+                     <div
+                       key={message.id}
+                       className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
+                       onTouchStart={() => handleLongPressStart(message.id, isOwn)}
+                       onTouchEnd={handleLongPressEnd}
+                       onMouseDown={() => handleLongPressStart(message.id, isOwn)}
+                       onMouseUp={handleLongPressEnd}
+                       onMouseLeave={handleLongPressEnd}
+                     >
                       {message.message_type === 'audio' && message.shared_content?.audio_url ? (
                         <div className={`max-w-[70%] ${isOwn ? 'ml-16' : 'mr-16'}`}>
                           <div
@@ -686,6 +741,24 @@ const MessagesPage = () => {
           }}
         />
       )}
+
+      {/* Delete Message Dialog */}
+      <AlertDialog open={!!selectedMessageId} onOpenChange={(open) => !open && setSelectedMessageId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('deleteMessage', { ns: 'messages', defaultValue: 'Delete Message' })}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('deleteMessageConfirm', { ns: 'messages', defaultValue: 'Are you sure you want to delete this message? This action cannot be undone.' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('cancel', { ns: 'common' })}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteMessage} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {t('delete', { ns: 'common' })}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
