@@ -372,7 +372,7 @@ const HomePage = () => {
 
   return (
     <MapFilterProvider>
-      <div className="h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex flex-col overflow-hidden">
+      <div className="h-screen bg-white dark:bg-gray-900 flex flex-col overflow-hidden">
         {/* Fixed Header - ~60px */}
         {!isCreateStoryModalOpen && (
           <Header
