@@ -363,7 +363,7 @@ const FeedPage = () => {
     <div className="min-h-screen bg-background pb-24">
       <div className="max-w-screen-sm mx-auto">
         {/* Header */}
-        <div className="sticky top-0 z-20 bg-background">
+        <div className="sticky top-0 z-30 bg-background shadow-sm">
           <div className="px-4 py-3 flex justify-start">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -371,7 +371,7 @@ const FeedPage = () => {
                   variant="ghost" 
                   className="h-auto p-0 hover:bg-transparent font-bold text-lg gap-1.5 -ml-2 justify-start text-left"
                 >
-                  {feedType === 'forYou' ? t('forYou') : t('promotions')}
+                  {feedType === 'forYou' ? t('promotions') : t('forYou')}
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -381,11 +381,11 @@ const FeedPage = () => {
                   className="cursor-pointer focus:bg-accent"
                 >
                   <div className="flex flex-col py-1">
-                    <span className="font-semibold">{t('forYou')}</span>
+                    <span className="font-semibold">{t('promotions')}</span>
                     <span className="text-xs text-muted-foreground">
-                      {i18n.language.startsWith('it') ? 'Post da chi segui' : 
-                       i18n.language.startsWith('es') ? 'Posts de quien sigues' : 
-                       'Posts from people you follow'}
+                      {i18n.language.startsWith('it') ? 'Post marketing business' : 
+                       i18n.language.startsWith('es') ? 'Posts de marketing' : 
+                       'Business marketing posts'}
                     </span>
                   </div>
                 </DropdownMenuItem>
@@ -394,11 +394,11 @@ const FeedPage = () => {
                   className="cursor-pointer focus:bg-accent"
                 >
                   <div className="flex flex-col py-1">
-                    <span className="font-semibold">{t('promotions')}</span>
+                    <span className="font-semibold">{t('forYou')}</span>
                     <span className="text-xs text-muted-foreground">
-                      {i18n.language.startsWith('it') ? 'Post marketing business' : 
-                       i18n.language.startsWith('es') ? 'Posts de marketing' : 
-                       'Business marketing posts'}
+                      {i18n.language.startsWith('it') ? 'Post da chi segui' : 
+                       i18n.language.startsWith('es') ? 'Posts de quien sigues' : 
+                       'Posts from people you follow'}
                     </span>
                   </div>
                 </DropdownMenuItem>
