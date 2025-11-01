@@ -9,6 +9,7 @@ import { CategoryIcon } from '@/components/common/CategoryIcon';
 import CityLabel from '@/components/common/CityLabel';
 import swipeNo from '@/assets/swipe-no-alpha.png';
 import swipePin from '@/assets/swipe-pin-alpha.png';
+import { useTransparentImage } from '@/hooks/useTransparentImage';
 
 interface SwipeLocation {
   id: string;

@@ -6,6 +6,7 @@ import restaurant from '@/assets/category-restaurant-transparent.png';
 import entertainment from '@/assets/category-entertainment-transparent.png';
 import bakery from '@/assets/category-bakery-transparent.png';
 import museum from '@/assets/category-museum-transparent.png';
+import { useTransparentImage } from '@/hooks/useTransparentImage';
 
 interface CategoryIconProps {
   category: string;
@@ -40,11 +41,12 @@ export const CategoryIcon: React.FC<CategoryIconProps> = ({ category, className 
   };
 
   const { src, style } = getCategoryImage();
+  const processed = useTransparentImage(src);
 
   return (
     <div className={`${className} flex items-center justify-center`}>
       <img
-        src={src}
+        src={processed || src}
         alt={category}
         className="w-full h-full object-contain"
         style={style as any}
