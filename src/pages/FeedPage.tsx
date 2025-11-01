@@ -1,359 +1,367 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { getUserFeed, getFeedEventDisplay, FeedItem as FeedItemType } from '@/services/feedService';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { getUserFeed, FeedItem } from '@/services/feedService';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MapPin, Sparkles, TrendingUp, MessageSquare, Heart, MessageCircle, Send, Bookmark } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { MapPin, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import AuthenticatedLayout from '@/components/AuthenticatedLayout';
 import PostDetailModal from '@/components/explore/PostDetailModal';
 import { PostActions } from '@/components/feed/PostActions';
-import { useTranslation } from 'react-i18next';
+import { formatDistanceToNow } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { cn } from '@/lib/utils';
+import { useStories } from '@/hooks/useStories';
+import StoriesViewer from '@/components/StoriesViewer';
 
 const FeedPage = () => {
-  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [feedItems, setFeedItems] = useState<FeedItemType[]>([]);
+  const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
-  const [openCommentsOnLoad, setOpenCommentsOnLoad] = useState(false);
-  const [openShareOnLoad, setOpenShareOnLoad] = useState(false);
+  const [expandedCaptions, setExpandedCaptions] = useState<Set<string>>(new Set());
+  const [storiesViewerOpen, setStoriesViewerOpen] = useState(false);
+  const [selectedUserStoryIndex, setSelectedUserStoryIndex] = useState(0);
+  const { stories } = useStories();
 
-  const updatePostCounts = (postId: string, updates: Partial<Pick<FeedItemType, 'likes_count' | 'comments_count' | 'shares_count' | 'saves_count'>>) => {
-    setFeedItems(prev => prev.map(item =>
-      item.post_id === postId ? { ...item, ...updates } : item
-    ));
-  };
-
-  useEffect(() => {
+  const loadFeed = async () => {
     if (!user?.id) return;
-
-    let interval: any;
-    let channels: any[] = [];
-
-    const loadFeed = async () => {
+    try {
       setLoading(true);
       const items = await getUserFeed(user.id);
       setFeedItems(items);
+    } catch (error) {
+      console.error('Error loading feed:', error);
+    } finally {
       setLoading(false);
-    };
-
-    loadFeed();
-    interval = setInterval(loadFeed, 30000);
-
-    // Realtime subscriptions for instant feed updates
-    const setupRealtime = async () => {
-      // Listen to posts from followed users
-      const postsChannel = supabase
-        .channel('feed-posts')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, () => {
-          loadFeed();
-        })
-        .subscribe();
-
-      // Listen to comments from followed users
-      const commentsChannel = supabase
-        .channel('feed-comments')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'post_comments' }, () => {
-          loadFeed();
-        })
-        .subscribe();
-
-      // Listen to saved places from followed users
-      const savedPlacesChannel = supabase
-        .channel('feed-saved-places')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'saved_places' }, () => {
-          loadFeed();
-        })
-        .subscribe();
-
-      // Listen to user saved locations from followed users
-      const savedLocationsChannel = supabase
-        .channel('feed-saved-locations')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'user_saved_locations' }, () => {
-          loadFeed();
-        })
-        .subscribe();
-
-      // Listen to interactions from followed users
-      const interactionsChannel = supabase
-        .channel('feed-interactions')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'interactions' }, () => {
-          loadFeed();
-        })
-        .subscribe();
-
-      // Listen to reviews from followed users
-      const reviewsChannel = supabase
-        .channel('feed-reviews')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'post_reviews' }, () => {
-          loadFeed();
-        })
-        .subscribe();
-
-      channels = [postsChannel, commentsChannel, savedPlacesChannel, savedLocationsChannel, interactionsChannel, reviewsChannel];
-    };
-
-    setupRealtime();
-
-    return () => {
-      if (interval) clearInterval(interval);
-      channels.forEach(channel => supabase.removeChannel(channel));
-    };
-  }, [user?.id]);
-
-  const handleItemClick = (item: FeedItemType) => {
-    // If it's a post with images/content, open post detail modal
-    if (item.post_id && item.event_type === 'new_post' && item.media_url) {
-      setSelectedPostId(item.post_id);
-    } 
-    // If it's a review/comment or interaction with a location, open location detail
-    else if (item.location_id && (item.event_type === 'review' || item.event_type === 'new_comment' || item.event_type.includes('_location'))) {
-      navigate('/explore', { 
-        state: { 
-          openLocationDetail: {
-            id: item.location_id,
-            name: item.location_name || 'Location',
-            google_place_id: item.location_id
-          }
-        } 
-      });
-    }
-    // Default: navigate to location if available
-    else if (item.location_id) {
-      navigate('/explore', { 
-        state: { 
-          openLocationDetail: {
-            id: item.location_id,
-            name: item.location_name || 'Location'
-          }
-        } 
-      });
     }
   };
 
-  if (!user) {
+  useEffect(() => {
+    if (user?.id) {
+      loadFeed();
+
+      // Set up polling for new content
+      const pollInterval = setInterval(() => {
+        loadFeed();
+      }, 30000);
+
+      // Set up realtime subscription
+      const channel = supabase
+        .channel('feed_updates')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'posts'
+          },
+          () => {
+            loadFeed();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        clearInterval(pollInterval);
+        channel.unsubscribe();
+      };
+    }
+  }, [user?.id]);
+
+  const handleAvatarClick = (userId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const userStories = stories
+      .filter(s => s.user_id === userId)
+      .map((s, idx) => ({
+        id: s.id,
+        userId: s.user_id,
+        userName: 'User', // Will be populated from profile
+        userAvatar: '',
+        mediaUrl: s.media_url,
+        mediaType: s.media_type as 'image' | 'video',
+        locationId: s.location_id || '',
+        locationName: s.location_name || '',
+        locationAddress: s.location_address || '',
+        timestamp: s.created_at,
+        isViewed: false
+      }));
+    
+    if (userStories.length > 0) {
+      setSelectedUserStoryIndex(0);
+      setStoriesViewerOpen(true);
+    } else {
+      navigate(`/profile/${userId}`);
+    }
+  };
+
+  const handleLocationClick = (locationId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/explore?location=${locationId}`);
+  };
+
+  const toggleCaption = (postId: string) => {
+    setExpandedCaptions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(postId)) {
+        newSet.delete(postId);
+      } else {
+        newSet.add(postId);
+      }
+      return newSet;
+    });
+  };
+
+  const renderCaption = (caption: string | null, postId: string, username: string) => {
+    if (!caption) return null;
+    const isExpanded = expandedCaptions.has(postId);
+    const needsTruncate = caption.length > 100;
+
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-cyan-50">
-        <p className="text-gray-500">Please sign in to view your feed</p>
+      <div className="text-sm">
+        <span className="font-semibold mr-1">{username}</span>
+        <span className="text-foreground">
+          {isExpanded || !needsTruncate ? caption : `${caption.slice(0, 100)}...`}
+        </span>
+        {needsTruncate && (
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleCaption(postId);
+            }}
+            className="ml-1 text-muted-foreground hover:text-foreground"
+          >
+            {isExpanded ? 'meno' : 'altro'}
+          </button>
+        )}
+      </div>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="max-w-screen-sm mx-auto space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="space-y-3">
+              <div className="flex items-center gap-3 p-3">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              </div>
+              <Skeleton className="aspect-square w-full" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <>
-      <div className="min-h-screen bg-muted/30 pb-20">
+    <div className="min-h-screen bg-background pb-24">
+      <div className="max-w-screen-sm mx-auto">
         {/* Header */}
-        <header className="bg-background border-b border-border sticky top-0 z-10 shadow-sm">
-          <div className="px-4 py-4 max-w-2xl mx-auto">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
-                <Sparkles className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-foreground">{t('yourFeed', { ns: 'feed' })}</h1>
-                <p className="text-xs text-muted-foreground">{t('feedSubtitle', { ns: 'feed' })}</p>
-              </div>
-            </div>
+        <div className="sticky top-0 z-10 bg-background border-b">
+          <div className="px-4 py-4">
+            <h1 className="text-2xl font-bold">Feed</h1>
           </div>
-        </header>
+        </div>
 
         {/* Feed Content */}
-        <div className="max-w-2xl mx-auto px-4 py-4">
-        {loading ? (
-          // Loading skeletons
-          <div className="space-y-4">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="bg-background rounded-2xl p-4 shadow-sm border border-border">
-                <div className="flex items-start gap-3 mb-3">
-                  <Skeleton className="w-12 h-12 rounded-full flex-shrink-0" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-1/2" />
-                  </div>
-                </div>
-                <Skeleton className="h-48 w-full rounded-xl" />
-              </div>
-            ))}
-          </div>
-        ) : feedItems.length === 0 ? (
-          // Empty state
-          <div className="bg-background rounded-2xl p-8 text-center shadow-sm border border-border">
-            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-              <TrendingUp className="w-10 h-10 text-blue-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              {t('emptyFeed', { ns: 'feed' })}
-            </h3>
-            <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
-              {t('emptyFeedDescription', { ns: 'feed' })}
-            </p>
-            <button
+        {feedItems.length === 0 ? (
+          <div className="text-center py-12 px-4 text-muted-foreground">
+            <p className="mb-2">Il tuo feed è vuoto.</p>
+            <p className="text-sm">Inizia a seguire altri utenti per vedere i loro aggiornamenti!</p>
+            <Button
               onClick={() => navigate('/explore')}
-              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all hover:scale-105"
+              variant="link"
+              className="mt-4"
             >
-              {t('discoverPeople', { ns: 'feed' })}
-            </button>
+              Esplora gli utenti
+            </Button>
           </div>
         ) : (
-          // Feed items
-          <div className="space-y-4">
-            {feedItems.map((item, idx) => {
-              const display = getFeedEventDisplay(item.event_type);
-              const isPost = !!item.post_id;
+          <div className="divide-y">
+            {feedItems.map((item) => {
+              const username = item.username;
+              const avatarUrl = item.avatar_url;
+              const userId = item.user_id;
+              const postId = item.post_id || item.id;
+              const mediaUrls = item.media_urls && item.media_urls.length > 0
+                ? item.media_urls 
+                : item.media_url ? [item.media_url] : [];
+              const hasMultipleMedia = mediaUrls.length > 1;
+              const userHasStory = stories.some(s => s.user_id === userId);
+              const locationName = item.location_name;
+              const locationId = item.location_id;
+              const caption = item.content;
+              const rating = item.rating;
+              const createdAt = item.created_at;
+
               return (
-                <article
-                  key={item.id}
-                  className="bg-background rounded-2xl p-4 shadow-sm border border-border hover:shadow-md transition-all"
-                >
-                  <div className="flex flex-col">
-                    {/* Header with avatar and user info */}
-                    <div
-                      className="flex items-center gap-2 mb-3 cursor-pointer"
-                      onClick={() => handleItemClick(item)}
-                    >
-                      <Avatar className="w-10 h-10 flex-shrink-0 ring-2 ring-background">
-                        <AvatarImage src={item.avatar_url || ''} />
-                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white font-semibold text-sm">
-                          {item.username?.[0]?.toUpperCase() || 'U'}
-                        </AvatarFallback>
-                      </Avatar>
+                <article key={item.id} className="bg-background">
+                  {/* Post Header */}
+                  <div className="flex items-center justify-between px-3 py-2">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <button 
+                        onClick={(e) => handleAvatarClick(userId, e)}
+                        className="shrink-0"
+                      >
+                        <Avatar className={cn(
+                          "h-10 w-10",
+                          userHasStory && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                        )}>
+                          <AvatarImage src={avatarUrl || undefined} />
+                          <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                            {username.slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      </button>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm leading-tight">
-                          <span className="font-bold text-foreground">
-                            {item.username}
-                          </span>
-                          {' '}
-                          <span className="text-muted-foreground font-normal">{display.action}</span>
-                          {' '}
-                          {item.location_name && (
-                            <span className="font-semibold text-foreground">
-                              {item.location_name}
-                            </span>
-                          )}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
-                        </p>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/profile/${userId}`);
+                          }}
+                          className="font-semibold text-sm hover:opacity-70 block truncate text-left"
+                        >
+                          {username}
+                        </button>
+                        {locationName && locationId && (
+                          <button
+                            onClick={(e) => handleLocationClick(locationId, e)}
+                            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 truncate"
+                          >
+                            <MapPin className="w-3 h-3 shrink-0" />
+                            <span className="truncate">{locationName}</span>
+                          </button>
+                        )}
                       </div>
-                      {/* Rating pill if available */}
-                      {item.rating && (
-                        <div className="flex items-center gap-1 bg-yellow-100 px-2.5 py-1 rounded-full">
-                          <span className="text-base font-bold text-yellow-700">{item.rating}</span>
-                          <span className="text-xs text-yellow-600">/10</span>
+                    </div>
+                    {rating && rating > 0 && (
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+                        <span className="text-sm font-semibold">{rating}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Post Media */}
+                  {mediaUrls.length > 0 && (
+                    <div className="relative">
+                      {hasMultipleMedia ? (
+                        <Carousel className="w-full">
+                          <CarouselContent>
+                            {mediaUrls.map((url, idx) => (
+                              <CarouselItem key={idx}>
+                                <div 
+                                  className="aspect-square bg-muted cursor-pointer"
+                                  onClick={() => setSelectedPostId(postId)}
+                                >
+                                  <img
+                                    src={url}
+                                    alt={`Post ${idx + 1}`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              </CarouselItem>
+                            ))}
+                          </CarouselContent>
+                          <CarouselPrevious className="left-2" />
+                          <CarouselNext className="right-2" />
+                        </Carousel>
+                      ) : (
+                        <div 
+                          className="aspect-square bg-muted cursor-pointer"
+                          onClick={() => setSelectedPostId(postId)}
+                        >
+                          <img
+                            src={mediaUrls[0]}
+                            alt="Post"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      {hasMultipleMedia && (
+                        <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1">
+                          {mediaUrls.map((_, idx) => (
+                            <div 
+                              key={idx} 
+                              className="w-1.5 h-1.5 rounded-full bg-white/80"
+                            />
+                          ))}
                         </div>
                       )}
                     </div>
+                  )}
 
-                    {/* Media preview */}
-                    {item.media_urls && item.media_urls.length > 0 && (
-                      <div
-                        className="mt-2 rounded-xl overflow-x-auto snap-x snap-mandatory scrollbar-hide flex gap-2 cursor-pointer"
-                        onClick={() => handleItemClick(item)}
-                      >
-                        {item.media_urls.map((url, idx2) => (
-                          <div key={idx2} className="snap-center flex-shrink-0 w-full">
-                            <img
-                              src={url}
-                              alt={`${item.location_name || 'Post'} ${idx2 + 1}`}
-                              className="w-full h-72 object-cover rounded-xl"
-                            />
-                          </div>
-                        ))}
+                  {/* Post Actions */}
+                  <div className="px-3 py-2">
+                    <PostActions
+                      postId={postId}
+                      likesCount={item.likes_count || 0}
+                      commentsCount={item.comments_count || 0}
+                      sharesCount={item.shares_count || 0}
+                      onCommentClick={() => setSelectedPostId(postId)}
+                      onShareClick={() => setSelectedPostId(postId)}
+                    />
+
+                    {/* Caption */}
+                    {caption && (
+                      <div className="mt-2">
+                        {renderCaption(caption, item.id, username)}
                       </div>
                     )}
 
-                    {/* Content */}
-                    {item.content && item.event_type !== 'review' && (
-                      <p className="text-sm text-foreground mt-3 line-clamp-3">
-                        {item.content}
-                      </p>
-                    )}
-
-                    {/* Review block */}
-                    {item.event_type === 'review' && item.rating && (
-                      <div className="flex items-start gap-3 mt-3 bg-yellow-50 rounded-lg p-3 border border-yellow-100">
-                        <div className="flex items-center gap-1 bg-yellow-100 px-2.5 py-1.5 rounded-lg">
-                          <span className="text-xl font-bold text-yellow-700">{item.rating}</span>
-                          <span className="text-xs text-yellow-600">/10</span>
-                        </div>
-                        {item.content && (
-                          <p className="text-sm text-foreground flex-1">
-                            {item.content}
-                          </p>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Location badge */}
-                    {item.location_name && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (item.location_id) {
-                            navigate('/explore', {
-                              state: {
-                                openLocationDetail: {
-                                  id: item.location_id,
-                                  name: item.location_name
-                                }
-                              }
-                            });
-                          }
-                        }}
-                        className="flex items-center gap-1.5 mt-3 text-xs text-blue-600 hover:text-blue-700 font-medium bg-blue-50 hover:bg-blue-100 rounded-lg px-2.5 py-1.5 w-fit transition-colors"
-                      >
-                        <MapPin className="w-3.5 h-3.5" />
-                        <span className="truncate">{item.location_name}</span>
-                      </button>
-                    )}
-
-                    {/* Action row for posts */}
-                    {isPost && (
-                      <PostActions
-                        postId={item.post_id!}
-                        likesCount={item.likes_count || 0}
-                        commentsCount={item.comments_count || 0}
-                        sharesCount={item.shares_count || 0}
-                        onCommentClick={() => {
-                          setSelectedPostId(item.post_id!);
-                          setOpenCommentsOnLoad(true);
-                          setOpenShareOnLoad(false);
-                        }}
-                        onShareClick={() => {
-                          setSelectedPostId(item.post_id!);
-                          setOpenShareOnLoad(true);
-                          setOpenCommentsOnLoad(false);
-                        }}
-                        onCountsUpdate={(updates) => updatePostCounts(item.post_id!, updates)}
-                      />
-                    )}
+                    {/* Timestamp */}
+                    <p className="text-xs text-muted-foreground mt-2 uppercase">
+                      {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
+                    </p>
                   </div>
                 </article>
               );
             })}
           </div>
         )}
-        </div>
-      </div>
 
-      {selectedPostId && (
-        <PostDetailModal
-          postId={selectedPostId}
-          isOpen={!!selectedPostId}
-          onClose={() => {
-            setSelectedPostId(null);
-            setOpenCommentsOnLoad(false);
-            setOpenShareOnLoad(false);
-          }}
-          openCommentsOnLoad={openCommentsOnLoad}
-          openShareOnLoad={openShareOnLoad}
-        />
-      )}
-    </>
+        {/* Post Detail Modal */}
+        {selectedPostId && (
+          <PostDetailModal
+            postId={selectedPostId}
+            isOpen={!!selectedPostId}
+            onClose={() => setSelectedPostId(null)}
+          />
+        )}
+
+        {/* Stories Viewer */}
+        {storiesViewerOpen && stories.length > 0 && (
+          <StoriesViewer
+            stories={stories.map((s) => ({
+              id: s.id,
+              userId: s.user_id,
+              userName: 'User',
+              userAvatar: '',
+              mediaUrl: s.media_url,
+              mediaType: s.media_type as 'image' | 'video',
+              locationId: s.location_id || '',
+              locationName: s.location_name || '',
+              locationAddress: s.location_address || '',
+              timestamp: s.created_at,
+              isViewed: false
+            }))}
+            initialStoryIndex={selectedUserStoryIndex}
+            onClose={() => {
+              setStoriesViewerOpen(false);
+            }}
+            onStoryViewed={() => {}}
+          />
+        )}
+      </div>
+    </div>
   );
 };
 
