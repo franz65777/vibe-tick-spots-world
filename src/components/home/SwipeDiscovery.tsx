@@ -35,6 +35,13 @@ interface SwipeDiscoveryProps {
   userLocation: { lat: number; lng: number } | null;
 }
 
+interface FollowedUser {
+  id: string;
+  username: string;
+  avatar_url: string;
+  new_saves_count: number;
+}
+
 const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -45,14 +52,20 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
   const [touchOffset, setTouchOffset] = useState({ x: 0, y: 0 });
+  const [followedUsers, setFollowedUsers] = useState<FollowedUser[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   
   // Process swipe icons to remove white backgrounds
   const processedSwipeNo = useTransparentImage(swipeNo);
   const processedSwipePin = useTransparentImage(swipePin);
 
   useEffect(() => {
+    fetchFollowedUsers();
+  }, [user]);
+
+  useEffect(() => {
     fetchDailyLocations();
-  }, [userLocation, user]);
+  }, [userLocation, user, selectedUserId]);
 
   // Auto-load more when reaching near the end
   useEffect(() => {
@@ -62,6 +75,59 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       fetchDailyLocations();
     }
   }, [currentIndex, locations.length]);
+
+  const fetchFollowedUsers = async () => {
+    if (!user) return;
+
+    try {
+      const { data: followsData } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', user.id);
+
+      if (!followsData || followsData.length === 0) {
+        setFollowedUsers([]);
+        return;
+      }
+
+      const followingIds = followsData.map(f => f.following_id);
+
+      // Get profiles and count of recent saves (last 7 days)
+      const { data: usersWithSaves } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .in('id', followingIds);
+
+      if (!usersWithSaves) return;
+
+      // Count recent saves for each user
+      const usersWithCounts = await Promise.all(
+        usersWithSaves.map(async (profile) => {
+          const { count } = await supabase
+            .from('saved_places')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', profile.id)
+            .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+
+          return {
+            id: profile.id,
+            username: profile.username || 'User',
+            avatar_url: profile.avatar_url || '',
+            new_saves_count: count || 0
+          };
+        })
+      );
+
+      // Filter and sort users with new saves
+      const usersWithNewSaves = usersWithCounts
+        .filter(u => u.new_saves_count > 0)
+        .sort((a, b) => b.new_saves_count - a.new_saves_count);
+
+      setFollowedUsers(usersWithNewSaves);
+    } catch (error) {
+      console.error('Error fetching followed users:', error);
+    }
+  };
 
   const fetchDailyLocations = async () => {
     if (!user) return;
@@ -73,7 +139,9 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       const [swipedData, mySavedPlaces, friendsSaves] = await Promise.all([
         supabase.from('location_swipes').select('location_id').eq('user_id', user.id),
         supabase.from('saved_places').select('place_id').eq('user_id', user.id),
-        supabase.rpc('get_following_saved_places', { limit_count: 50 })
+        selectedUserId
+          ? supabase.rpc('get_following_saved_places', { limit_count: 50 })
+          : supabase.rpc('get_following_saved_places', { limit_count: 50 })
       ]);
 
       const swipedLocationIds = (swipedData.data || []).map((s) => s.location_id);
@@ -89,7 +157,13 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
         swipedPlaceIds = new Set((data || []).map(l => l.google_place_id).filter(Boolean) as string[]);
       }
 
-      let candidates: SwipeLocation[] = (friendsSaves.data || []).map((s: any) => {
+      // Filter by selected user if one is selected
+      let rawCandidates = friendsSaves.data || [];
+      if (selectedUserId) {
+        rawCandidates = rawCandidates.filter((s: any) => s.user_id === selectedUserId);
+      }
+
+      let candidates: SwipeLocation[] = rawCandidates.map((s: any) => {
         let coords: any = { lat: 0, lng: 0 };
         try {
           coords = typeof s.coordinates === 'string' 
@@ -359,6 +433,76 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
         </button>
         <h1 className="text-lg font-semibold text-gray-900">{t('discoverPlaces')}</h1>
       </div>
+
+      {/* Followed Users Row */}
+      {followedUsers.length > 0 && (
+        <div className="bg-white border-b border-gray-100 px-4 py-3">
+          <div className="flex gap-3 overflow-x-auto scrollbar-hide">
+            {/* All button */}
+            <button
+              onClick={() => {
+                setSelectedUserId(null);
+                setCurrentIndex(0);
+                fetchDailyLocations();
+              }}
+              className={`flex-shrink-0 flex flex-col items-center gap-1 ${
+                selectedUserId === null ? 'opacity-100' : 'opacity-60'
+              }`}
+            >
+              <div className={`w-14 h-14 rounded-full flex items-center justify-center ${
+                selectedUserId === null 
+                  ? 'bg-gradient-to-br from-primary to-purple-500' 
+                  : 'bg-gray-200'
+              }`}>
+                <Users className="w-6 h-6 text-white" />
+              </div>
+              <span className="text-xs font-medium text-gray-700">Tutti</span>
+            </button>
+
+            {followedUsers.map((followedUser) => (
+              <button
+                key={followedUser.id}
+                onClick={() => {
+                  setSelectedUserId(followedUser.id);
+                  setCurrentIndex(0);
+                  fetchDailyLocations();
+                }}
+                className={`flex-shrink-0 flex flex-col items-center gap-1 ${
+                  selectedUserId === followedUser.id ? 'opacity-100' : 'opacity-60'
+                }`}
+              >
+                <div className="relative">
+                  {followedUser.avatar_url ? (
+                    <img
+                      src={followedUser.avatar_url}
+                      alt={followedUser.username}
+                      className={`w-14 h-14 rounded-full object-cover ${
+                        selectedUserId === followedUser.id ? 'ring-2 ring-primary ring-offset-2' : ''
+                      }`}
+                    />
+                  ) : (
+                    <div className={`w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center ${
+                      selectedUserId === followedUser.id ? 'ring-2 ring-primary ring-offset-2' : ''
+                    }`}>
+                      <span className="text-white text-lg font-bold">
+                        {followedUser.username[0]?.toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  {followedUser.new_saves_count > 0 && (
+                    <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {followedUser.new_saves_count > 9 ? '9+' : followedUser.new_saves_count}
+                    </div>
+                  )}
+                </div>
+                <span className="text-xs font-medium text-gray-700 max-w-[60px] truncate">
+                  {followedUser.username}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       <div className="flex-1 overflow-hidden">
