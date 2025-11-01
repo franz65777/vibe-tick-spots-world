@@ -135,7 +135,7 @@ const FeedPage = () => {
     }
   };
 
-  const handleLocationClick = (locationId: string, latitude: number, longitude: number, e: React.MouseEvent) => {
+  const handleLocationClick = (locationId: string, latitude: number, longitude: number, locationName: string | null, e: React.MouseEvent) => {
     e.stopPropagation();
     navigate('/', {
       state: {
@@ -144,6 +144,12 @@ const FeedPage = () => {
           lng: longitude,
           locationId: locationId,
           shouldFocus: true
+        },
+        openPinDetail: {
+          id: locationId,
+          name: locationName || '',
+          lat: latitude,
+          lng: longitude
         }
       }
     });
@@ -252,14 +258,19 @@ const FeedPage = () => {
   const renderCaption = (caption: string | null, postId: string, username: string, userId: string) => {
     if (!caption) return null;
     const isExpanded = expandedCaptions.has(postId);
-    
-    // Find first line break or truncate at reasonable length
+
     const firstLine = caption.split('\n')[0];
-    const hasMoreContent = caption.length > 100; // Limit for first line display
-    
+    const hasMoreContent = caption.trim().length > firstLine.trim().length;
+
+    // Safe fallback labels to avoid showing "common.more/less" on screen
+    const moreT = t('common.more');
+    const lessT = t('common.less');
+    const moreLabel = moreT === 'common.more' ? 'altro' : moreT;
+    const lessLabel = lessT === 'common.less' ? 'meno' : lessT;
+
     return (
       <div className="text-sm text-left">
-        <span className="text-foreground whitespace-pre-wrap">
+        <span className="text-foreground">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -269,19 +280,39 @@ const FeedPage = () => {
           >
             {username}
           </button>
-          <span className="ml-1">
-            {isExpanded ? caption : firstLine.slice(0, 100)}
-            {hasMoreContent && !isExpanded && '... '}
-            {hasMoreContent && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleCaption(postId);
-                }}
-                className="text-muted-foreground hover:text-foreground ml-1"
-              >
-                {isExpanded ? t('common.less') : t('common.more')}
-              </button>
+          <span className="ml-1 inline-flex items-baseline w-full">
+            {isExpanded ? (
+              <>
+                <span className="whitespace-pre-wrap">{caption}</span>
+                {hasMoreContent && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleCaption(postId);
+                    }}
+                    className="text-muted-foreground hover:text-foreground ml-1"
+                  >
+                    {lessLabel}
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                <span className="overflow-hidden text-ellipsis whitespace-nowrap inline-block max-w-[calc(100%-56px)]">
+                  {firstLine}
+                </span>
+                {hasMoreContent && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleCaption(postId);
+                    }}
+                    className="text-muted-foreground hover:text-foreground ml-1 shrink-0"
+                  >
+                    {moreLabel}
+                  </button>
+                )}
+              </>
             )}
           </span>
         </span>
@@ -382,7 +413,7 @@ const FeedPage = () => {
                         </button>
                         {locationName && locationId && item.latitude && item.longitude && (
                           <button
-                            onClick={(e) => handleLocationClick(locationId, item.latitude, item.longitude, e)}
+                            onClick={(e) => handleLocationClick(locationId, item.latitude, item.longitude, locationName, e)}
                             className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 truncate"
                           >
                             <MapPin className="w-3 h-3 shrink-0" />
