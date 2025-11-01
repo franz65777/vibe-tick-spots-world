@@ -239,8 +239,8 @@ const FeedPage = () => {
       );
 
       toast({
-        title: "Post shared",
-        description: `Shared with ${recipientIds.length} ${recipientIds.length === 1 ? 'person' : 'people'}`,
+        title: "✅ Post condiviso!",
+        description: `Condiviso con ${recipientIds.length} ${recipientIds.length === 1 ? 'persona' : 'persone'}`,
       });
 
       return true;
@@ -260,7 +260,17 @@ const FeedPage = () => {
     const isExpanded = expandedCaptions.has(postId);
 
     const firstLine = caption.split('\n')[0];
-    const hasMoreContent = caption.trim().length > firstLine.trim().length;
+    const MAX_FIRST_LINE_LENGTH = 80;
+    
+    // Show "altro/meno" if there are multiple lines OR if first line is too long
+    const hasMultipleLines = caption.trim().length > firstLine.trim().length;
+    const firstLineIsTooLong = firstLine.length > MAX_FIRST_LINE_LENGTH;
+    const hasMoreContent = hasMultipleLines || firstLineIsTooLong;
+    
+    // Truncate first line for display
+    const displayFirstLine = firstLineIsTooLong && !isExpanded 
+      ? firstLine.substring(0, MAX_FIRST_LINE_LENGTH)
+      : firstLine;
 
     // Safe fallback labels to avoid showing "common.more/less" on screen
     const moreT = t('common.more');
@@ -280,17 +290,19 @@ const FeedPage = () => {
           >
             {username}
           </button>
-          <span className="ml-1 inline-flex items-baseline w-full">
+          {' '}
+          <span className="inline">
             {isExpanded ? (
               <>
                 <span className="whitespace-pre-wrap">{caption}</span>
+                {' '}
                 {hasMoreContent && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleCaption(postId);
                     }}
-                    className="text-muted-foreground hover:text-foreground ml-1"
+                    className="text-muted-foreground hover:text-foreground font-medium"
                   >
                     {lessLabel}
                   </button>
@@ -298,16 +310,15 @@ const FeedPage = () => {
               </>
             ) : (
               <>
-                <span className="overflow-hidden text-ellipsis whitespace-nowrap inline-block max-w-[calc(100%-56px)]">
-                  {firstLine}
-                </span>
+                <span>{displayFirstLine}</span>
+                {hasMoreContent && '... '}
                 {hasMoreContent && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleCaption(postId);
                     }}
-                    className="text-muted-foreground hover:text-foreground ml-1 shrink-0"
+                    className="text-muted-foreground hover:text-foreground font-medium"
                   >
                     {moreLabel}
                   </button>
