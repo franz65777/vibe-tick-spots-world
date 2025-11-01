@@ -850,7 +850,7 @@ const MessagesPage = () => {
       <Sheet open={!!selectedMessageId} onOpenChange={(open) => !open && setSelectedMessageId(null)}>
         <SheetContent side="bottom" className="rounded-t-[20px]">
           <SheetHeader>
-            <SheetTitle className="text-center">{t('messageOptions', { ns: 'messages', defaultValue: 'Message Options' })}</SheetTitle>
+            <SheetTitle className="text-center">{t('messageOptions', { ns: 'messages' })}</SheetTitle>
           </SheetHeader>
           <div className="flex flex-col gap-2 pt-4">
             <Button
@@ -861,7 +861,7 @@ const MessagesPage = () => {
               }}
             >
               <Smile className="w-5 h-5 mr-3" />
-              {t('addReaction', { ns: 'messages', defaultValue: 'Add Reaction' })}
+              {t('addReaction', { ns: 'messages' })}
             </Button>
             <Button
               variant="ghost"
@@ -869,7 +869,7 @@ const MessagesPage = () => {
               onClick={handleDeleteMessage}
             >
               <Trash2 className="w-5 h-5 mr-3" />
-              {t('deleteMessage', { ns: 'messages', defaultValue: 'Delete Message' })}
+              {t('deleteMessage', { ns: 'messages' })}
             </Button>
           </div>
         </SheetContent>
@@ -879,7 +879,7 @@ const MessagesPage = () => {
       <Sheet open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
         <SheetContent side="bottom" className="rounded-t-[20px]">
           <SheetHeader>
-            <SheetTitle className="text-center">{t('selectEmoji', { ns: 'messages', defaultValue: 'Select Emoji' })}</SheetTitle>
+            <SheetTitle className="text-center">{t('selectEmoji', { ns: 'messages' })}</SheetTitle>
           </SheetHeader>
           <div className="grid grid-cols-8 gap-2 pt-4 max-h-[300px] overflow-y-auto">
             {['❤️', '👍', '😂', '😮', '😢', '🙏', '👏', '🔥', '🎉', '💯', '😍', '🤔', '😎', '🥳', '💪', '✨'].map(emoji => (
