@@ -5,7 +5,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MapPin, Star, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import PostDetailModal from '@/components/explore/PostDetailModal';
 import { PostActions } from '@/components/feed/PostActions';
 import { formatDistanceToNow } from 'date-fns';
 import { it as itLocale, es as esLocale, enUS } from 'date-fns/locale';
@@ -30,7 +29,6 @@ const FeedPage = () => {
   const dfnsLocale = i18n.language.startsWith('it') ? itLocale : i18n.language.startsWith('es') ? esLocale : enUS;
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [expandedCaptions, setExpandedCaptions] = useState<Set<string>>(new Set());
   const [storiesViewerOpen, setStoriesViewerOpen] = useState(false);
   const [selectedUserStoryIndex, setSelectedUserStoryIndex] = useState(0);
@@ -492,36 +490,58 @@ const FeedPage = () => {
                       {hasMultipleMedia ? (
                         <Carousel className="w-full">
                           <CarouselContent>
-                            {mediaUrls.map((url, idx) => (
-                              <CarouselItem key={idx}>
-                                <div 
-                                  className="aspect-square bg-muted cursor-pointer"
-                                  onClick={() => setSelectedPostId(postId)}
-                                >
-                                  <img
-                                    src={url}
-                                    alt={`Post ${idx + 1}`}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                              </CarouselItem>
-                            ))}
+                            {mediaUrls.map((url, idx) => {
+                              const isVideo = url.includes('.mp4') || url.includes('.mov') || url.includes('.webm');
+                              return (
+                                <CarouselItem key={idx}>
+                                  <div className="aspect-square bg-muted">
+                                    {isVideo ? (
+                                      <video
+                                        src={url}
+                                        className="w-full h-full object-cover touch-pinch-zoom"
+                                        controls
+                                        playsInline
+                                        loop
+                                      />
+                                    ) : (
+                                      <img
+                                        src={url}
+                                        alt={`Post ${idx + 1}`}
+                                        className="w-full h-full object-cover touch-pinch-zoom"
+                                        style={{ touchAction: 'pinch-zoom' }}
+                                      />
+                                    )}
+                                  </div>
+                                </CarouselItem>
+                              );
+                            })}
                           </CarouselContent>
                           <CarouselPrevious className="left-2" />
                           <CarouselNext className="right-2" />
                         </Carousel>
-                      ) : (
-                        <div 
-                          className="aspect-square bg-muted cursor-pointer"
-                          onClick={() => setSelectedPostId(postId)}
-                        >
-                          <img
-                            src={mediaUrls[0]}
-                            alt="Post"
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
+                      ) : (() => {
+                        const isVideo = mediaUrls[0].includes('.mp4') || mediaUrls[0].includes('.mov') || mediaUrls[0].includes('.webm');
+                        return (
+                          <div className="aspect-square bg-muted">
+                            {isVideo ? (
+                              <video
+                                src={mediaUrls[0]}
+                                className="w-full h-full object-cover touch-pinch-zoom"
+                                controls
+                                playsInline
+                                loop
+                              />
+                            ) : (
+                              <img
+                                src={mediaUrls[0]}
+                                alt="Post"
+                                className="w-full h-full object-cover touch-pinch-zoom"
+                                style={{ touchAction: 'pinch-zoom' }}
+                              />
+                            )}
+                          </div>
+                        );
+                      })()}
                       {hasMultipleMedia && (
                         <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1">
                           {mediaUrls.map((_, idx) => (
@@ -606,14 +626,6 @@ const FeedPage = () => {
           </div>
         )}
 
-        {/* Post Detail Modal (for image click only) */}
-        {selectedPostId && (
-          <PostDetailModal
-            postId={selectedPostId}
-            isOpen={!!selectedPostId}
-            onClose={() => setSelectedPostId(null)}
-          />
-        )}
 
         {/* Comment Drawer */}
         <CommentDrawer
