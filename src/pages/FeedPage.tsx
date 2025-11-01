@@ -280,22 +280,8 @@ const FeedPage = () => {
       ? firstLine.substring(0, MAX_FIRST_LINE_LENGTH)
       : firstLine;
 
-    // Translated labels with robust fallback by language
-    const rawMore = t('common.more');
-    const rawLess = t('common.less');
-    const lang = (i18n?.language || 'en').split('-')[0];
-    const fallbacks: Record<string, { more: string; less: string }> = {
-      it: { more: 'altro', less: 'meno' },
-      en: { more: 'more', less: 'less' },
-      es: { more: 'más', less: 'menos' },
-      fr: { more: 'plus', less: 'moins' },
-      de: { more: 'mehr', less: 'weniger' },
-      pt: { more: 'mais', less: 'menos' },
-      nl: { more: 'meer', less: 'minder' },
-    };
-    const defaultFallback = fallbacks[lang] || fallbacks.en;
-    const moreLabel = rawMore === 'common.more' ? defaultFallback.more : rawMore;
-    const lessLabel = rawLess === 'common.less' ? defaultFallback.less : rawLess;
+    const moreLabel = t('more');
+    const lessLabel = t('less');
 
     return (
       <div className="text-sm text-left">
@@ -375,7 +361,7 @@ const FeedPage = () => {
     <div className="min-h-screen bg-background pb-24">
       <div className="max-w-screen-sm mx-auto">
         {/* Header */}
-        <div className="sticky top-0 z-20 bg-background border-b border-border">
+        <div className="sticky top-0 z-20 bg-background">
           <div className="px-4 py-3">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -383,7 +369,7 @@ const FeedPage = () => {
                   variant="ghost" 
                   className="h-auto p-0 hover:bg-transparent font-bold text-2xl gap-2 -ml-2"
                 >
-                  {feedType === 'forYou' ? t('common.forYou') : t('common.promotions')}
+                  {feedType === 'forYou' ? t('forYou') : t('promotions')}
                   <ChevronDown className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
@@ -393,7 +379,7 @@ const FeedPage = () => {
                   className="cursor-pointer focus:bg-accent"
                 >
                   <div className="flex flex-col py-1">
-                    <span className="font-semibold">{t('common.forYou')}</span>
+                    <span className="font-semibold">{t('forYou')}</span>
                     <span className="text-xs text-muted-foreground">
                       {i18n.language.startsWith('it') ? 'Post da chi segui' : 
                        i18n.language.startsWith('es') ? 'Posts de quien sigues' : 
@@ -406,7 +392,7 @@ const FeedPage = () => {
                   className="cursor-pointer focus:bg-accent"
                 >
                   <div className="flex flex-col py-1">
-                    <span className="font-semibold">{t('common.promotions')}</span>
+                    <span className="font-semibold">{t('promotions')}</span>
                     <span className="text-xs text-muted-foreground">
                       {i18n.language.startsWith('it') ? 'Post marketing business' : 
                        i18n.language.startsWith('es') ? 'Posts de marketing' : 
@@ -583,7 +569,7 @@ const FeedPage = () => {
                               ))}
                             </div>
                             <div className="text-sm">
-                              <span className="text-foreground">{t('common.likedBy')} </span>
+                              <span className="text-foreground">{t('likedBy')} </span>
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -595,7 +581,7 @@ const FeedPage = () => {
                               </button>
                               {item.likes_count > 1 && (
                                 <span className="text-foreground">
-                                  {' '}{t('notifications.andOthers', { count: item.likes_count - 1 })}
+                                  {' '}{t('notifications:andOthers', { count: item.likes_count - 1 })}
                                 </span>
                               )}
                             </div>

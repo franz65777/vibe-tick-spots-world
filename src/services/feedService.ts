@@ -46,7 +46,7 @@ export async function getUserFeed(userId: string, limit: number = 50): Promise<F
       // Posts from followed users with rating
       supabase
         .from('posts')
-        .select('id, user_id, caption, media_urls, location_id, rating, created_at, likes_count, comments_count, shares_count, saves_count, is_business_post')
+        .select('id, user_id, caption, media_urls, location_id, rating, created_at, likes_count, comments_count, shares_count, saves_count')
         .in('user_id', followingIds)
         .order('created_at', { ascending: false })
         .limit(30),
@@ -98,6 +98,18 @@ export async function getUserFeed(userId: string, limit: number = 50): Promise<F
       (locationsResult.data || []).map(l => [l.id, l])
     );
 
+    // Determine business accounts for promotions
+    const { data: businessProfiles } = await supabase
+      .from('business_profiles')
+      .select('user_id, verification_status')
+      .in('user_id', allUserIds);
+
+    const businessUserIds = new Set(
+      (businessProfiles || [])
+        .filter((bp: any) => bp.verification_status === 'verified')
+        .map((bp: any) => bp.user_id)
+    );
+
     // Convert posts to feed items
     const postFeedItems: FeedItem[] = posts.map(post => {
       const profile = profilesMap.get(post.user_id);
@@ -123,7 +135,7 @@ export async function getUserFeed(userId: string, limit: number = 50): Promise<F
         comments_count: (post as any).comments_count,
         shares_count: (post as any).shares_count,
         saves_count: (post as any).saves_count,
-        is_business_post: (post as any).is_business_post || false,
+        is_business_post: businessUserIds.has(post.user_id),
       };
     });
 
