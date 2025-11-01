@@ -52,7 +52,9 @@ const resources = {
       locationDetected: 'Location detected',
       more: 'more',
       less: 'less',
-      likedBy: 'Liked by'
+      likedBy: 'Liked by',
+      forYou: 'For You',
+      promotions: 'Promotions'
     },
     navigation: {
       explore: 'Explore',
@@ -366,7 +368,9 @@ const resources = {
       locationDetected: 'Ubicación detectada',
       more: 'más',
       less: 'menos',
-      likedBy: 'Le gusta a'
+      likedBy: 'Le gusta a',
+      forYou: 'Para ti',
+      promotions: 'Promociones'
     },
     navigation: {
       explore: 'Explorar',
@@ -677,11 +681,13 @@ const resources = {
       profile: 'Profilo',
       search: 'Cerca',
       currentLocation: 'Posizione attuale',
-      gettingLocation: 'Ottenendo la tua posizione...',
+      gettingLocation: 'Ottenimento della tua posizione...',
       locationDetected: 'Posizione rilevata',
       more: 'altro',
       less: 'meno',
-      likedBy: 'Piace a'
+      likedBy: 'Piace a',
+      forYou: 'Per te',
+      promotions: 'Promozioni'
     },
     navigation: {
       explore: 'Esplora',

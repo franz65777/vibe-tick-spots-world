@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getUserFeed, FeedItem } from '@/services/feedService';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MapPin, Star } from 'lucide-react';
+import { MapPin, Star, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import PostDetailModal from '@/components/explore/PostDetailModal';
 import { PostActions } from '@/components/feed/PostActions';
@@ -20,6 +20,7 @@ import { CommentDrawer } from '@/components/social/CommentDrawer';
 import { ShareModal } from '@/components/social/ShareModal';
 import { messageService } from '@/services/messageService';
 import { toast } from '@/hooks/use-toast';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const FeedPage = () => {
   const { user } = useAuth();
@@ -32,6 +33,7 @@ const FeedPage = () => {
   const [storiesViewerOpen, setStoriesViewerOpen] = useState(false);
   const [selectedUserStoryIndex, setSelectedUserStoryIndex] = useState(0);
   const [postLikes, setPostLikes] = useState<Map<string, PostLikeUser[]>>(new Map());
+  const [feedType, setFeedType] = useState<'forYou' | 'all'>('forYou');
   
   // Comment drawer state
   const [commentDrawerOpen, setCommentDrawerOpen] = useState(false);
@@ -357,8 +359,8 @@ const FeedPage = () => {
       <div className="max-w-screen-sm mx-auto">
         {/* Header */}
         <div className="sticky top-0 z-10 bg-background border-b">
-          <div className="px-4 py-4">
-            <h1 className="text-2xl font-bold">Feed</h1>
+          <div className="px-4 py-4 flex items-center justify-between">
+            <h1 className="text-2xl font-bold">{t('common.forYou')}</h1>
           </div>
         </div>
 
@@ -376,7 +378,7 @@ const FeedPage = () => {
             </Button>
           </div>
         ) : (
-          <div className="divide-y">
+          <div>
             {feedItems.map((item) => {
               const username = item.username;
               const avatarUrl = item.avatar_url;
