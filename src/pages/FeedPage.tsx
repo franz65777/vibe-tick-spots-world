@@ -61,10 +61,10 @@ const FeedPage = () => {
       setLoading(true);
       const allItems = await getUserFeed(user.id);
       
-      // Filter based on feed type
+      // Filter based on feed type - inversed logic
       const items = feedType === 'promotions' 
         ? allItems.filter(item => item.is_business_post === true)
-        : allItems.filter(item => item.is_business_post !== true);
+        : allItems.filter(item => item.is_business_post === false || item.is_business_post == null);
       
       setFeedItems(items);
       
@@ -362,7 +362,7 @@ const FeedPage = () => {
       <div className="max-w-screen-sm mx-auto">
         {/* Header */}
         <div className="sticky top-0 z-20 bg-background">
-          <div className="px-4 py-3">
+          <div className="px-4 py-3 flex justify-start">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button 
@@ -534,7 +534,7 @@ const FeedPage = () => {
                   )}
 
                   {/* Post Actions */}
-                  <div className="px-3 py-2 space-y-2">
+                  <div className="px-3 py-1 space-y-2">
                     <PostActions
                       postId={postId}
                       likesCount={item.likes_count || 0}
