@@ -251,8 +251,17 @@ const FeedPage = () => {
   const renderCaption = (caption: string | null, postId: string, username: string, userId: string) => {
     if (!caption) return null;
     const isExpanded = expandedCaptions.has(postId);
-    const needsTruncate = caption.length > 100;
-    const displayText = isExpanded ? caption : (needsTruncate ? caption.slice(0, 100) : caption);
+    
+    // Find first line break or truncate at reasonable length
+    const lines = caption.split('\n');
+    const firstLine = lines[0];
+    const hasMoreLines = lines.length > 1;
+    const needsTruncate = hasMoreLines || firstLine.length > 80;
+    
+    // Show first line only when collapsed
+    const displayText = isExpanded ? caption : firstLine;
+    const shouldTruncate = !isExpanded && firstLine.length > 80;
+    const truncatedText = shouldTruncate ? firstLine.slice(0, 80) : displayText;
 
     return (
       <div className="text-sm text-left">
@@ -265,8 +274,8 @@ const FeedPage = () => {
         >
           {username}
         </button>
-        <span className="text-foreground ml-1">
-          {displayText}
+        <span className="text-foreground ml-1 whitespace-pre-wrap">
+          {isExpanded ? caption : truncatedText}
         </span>
         {needsTruncate && (
           <>
@@ -276,7 +285,7 @@ const FeedPage = () => {
                 e.stopPropagation();
                 toggleCaption(postId);
               }}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground ml-1"
             >
               {isExpanded ? t('common.less') : t('common.more')}
             </button>
