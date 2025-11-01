@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,16 +17,6 @@ const NotificationsPage = () => {
   const handleMarkAllAsRead = async () => {
     await markAllAsRead();
   };
-
-  useEffect(() => {
-    // Mark all as read when entering the page
-    if (notifications.length > 0 && unreadCount > 0) {
-      const timer = setTimeout(() => {
-        handleMarkAllAsRead();
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [notifications.length, unreadCount]);
 
   const handleNotificationClick = (notification: any) => {
     // Mark as read
