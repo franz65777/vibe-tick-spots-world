@@ -46,7 +46,7 @@ const Header = ({
           </div>
 
           {/* Right: Action Buttons */}
-          <div className="flex items-center gap-1 flex-shrink-0">
+          <div className="flex items-center gap-0 flex-shrink-0">
             {/* Notifications Button */}
             <button 
               onClick={() => navigate('/notifications')} 
