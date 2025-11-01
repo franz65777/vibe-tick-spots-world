@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { normalizeCity, extractCityFromAddress, extractCityFromName } from '@/utils/cityNormalization';
+import { useTranslation } from 'react-i18next';
 
 // Simple in-memory cache to avoid repeated lookups per session
 const cityCache = new Map<string, string>();
@@ -18,6 +19,7 @@ export function useNormalizedCity(params: {
   address?: string | null;
 }) {
   const { id, city, name, coordinates, address } = params;
+  const { i18n } = useTranslation();
 
   // Heuristics to detect street-like strings (contain numbers or common street terms)
   const isStreetLike = (value?: string | null) => {
@@ -92,7 +94,7 @@ export function useNormalizedCity(params: {
 
     setLoading(true);
     supabase.functions
-      .invoke('reverse-geocode', { body: { latitude: lat, longitude: lng } })
+      .invoke('reverse-geocode', { body: { latitude: lat, longitude: lng, language: i18n.language } })
       .then(({ data, error }) => {
         if (!isMounted) return;
         if (error) {
@@ -117,7 +119,7 @@ export function useNormalizedCity(params: {
     return () => {
       isMounted = false;
     };
-  }, [cacheKey, city, address, name, coordinates?.lat, coordinates?.lng]);
+  }, [cacheKey, city, address, name, coordinates?.lat, coordinates?.lng, i18n.language]);
 
   return { cityLabel: label, cityLoading: loading } as const;
 }
