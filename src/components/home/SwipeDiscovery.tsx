@@ -486,18 +486,18 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                     <button
                       onClick={() => handleSwipe('left')}
                       disabled={swipeDirection !== null}
-                      className="w-20 h-20 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
+                      className="w-24 h-24 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
                       aria-label="Pass"
                     >
-                      <img src={swipeNo} alt="Pass" className="w-14 h-14 object-contain" />
+                      <img src={swipeNo} alt="Pass" className="w-20 h-20 object-contain" />
                     </button>
                     <button
                       onClick={() => handleSwipe('right')}
                       disabled={swipeDirection !== null}
-                      className="w-20 h-20 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
+                      className="w-24 h-24 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
                       aria-label="Save"
                     >
-                      <img src={swipePin} alt="Save" className="w-14 h-14 object-contain" />
+                      <img src={swipePin} alt="Save" className="w-20 h-20 object-contain" />
                     </button>
                   </div>
                 </div>

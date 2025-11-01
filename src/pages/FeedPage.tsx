@@ -33,7 +33,7 @@ const FeedPage = () => {
   const [storiesViewerOpen, setStoriesViewerOpen] = useState(false);
   const [selectedUserStoryIndex, setSelectedUserStoryIndex] = useState(0);
   const [postLikes, setPostLikes] = useState<Map<string, PostLikeUser[]>>(new Map());
-  const [feedType, setFeedType] = useState<'forYou' | 'promotions'>('forYou');
+  const [feedType, setFeedType] = useState<'forYou' | 'promotions'>('promotions');
   
   // Comment drawer state
   const [commentDrawerOpen, setCommentDrawerOpen] = useState(false);
