@@ -358,9 +358,9 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
           <ArrowLeft className="w-5 h-5 text-gray-700" />
         </button>
         <div className="flex-1">
-          <h1 className="text-lg font-semibold text-gray-900">{t('common.discoverPlaces')}</h1>
+          <h1 className="text-lg font-semibold text-gray-900">{t('discoverPlaces')}</h1>
           <p className="text-xs text-gray-500">
-            {locations.length > 0 ? `${currentIndex + 1} ${t('common.of')} ${locations.length}` : t('common.loading')}
+            {locations.length > 0 ? `${currentIndex + 1} ${t('of')} ${locations.length}` : t('loading')}
           </p>
         </div>
       </div>
@@ -370,7 +370,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
         {loading ? (
           <div className="h-full flex flex-col items-center justify-center p-8">
             <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-            <p className="text-gray-600 font-medium">{t('common.findingAmazingPlaces')}</p>
+            <p className="text-gray-600 font-medium">{t('findingAmazingPlaces')}</p>
           </div>
         ) : !currentLocation ? (
           <div className="h-full flex items-center justify-center p-8 text-center">
@@ -383,9 +383,9 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
               </div>
               
               <div className="space-y-3">
-                <h3 className="text-2xl font-bold text-gray-900">{t('common.noPlacesToDiscover')}</h3>
+                <h3 className="text-2xl font-bold text-gray-900">{t('noPlacesToDiscover')}</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  {t('common.followMorePeople')}
+                  {t('followMorePeople')}
                 </p>
               </div>
               
@@ -396,14 +396,14 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                   size="lg"
                 >
                   <UserPlus className="w-5 h-5 mr-2" />
-                  {t('common.findPeopleToFollow')}
+                  {t('findPeopleToFollow')}
                 </Button>
                 <Button 
                   onClick={fetchDailyLocations} 
                   variant="outline" 
                   className="rounded-full h-12 text-base"
                 >
-                  {t('common.tryAgain')}
+                  {t('tryAgain')}
                 </Button>
               </div>
             </div>
@@ -484,7 +484,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       <CategoryIcon category={currentLocation.category} className="w-5 h-5 text-white" />
-                      <span className="text-white/80 text-sm">{t(`categories.${currentLocation.category.toLowerCase()}`)}</span>
+                      <span className="text-white/80 text-sm">{t(`categories:${currentLocation.category.toLowerCase()}`)}</span>
                     </div>
                   </div>
 
