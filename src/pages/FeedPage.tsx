@@ -64,7 +64,7 @@ const FeedPage = () => {
       // Filter based on feed type
       const items = feedType === 'promotions' 
         ? allItems.filter(item => item.is_business_post === true)
-        : allItems.filter(item => !item.is_business_post);
+        : allItems.filter(item => item.is_business_post !== true);
       
       setFeedItems(items);
       
@@ -367,10 +367,10 @@ const FeedPage = () => {
               <DropdownMenuTrigger asChild>
                 <Button 
                   variant="ghost" 
-                  className="h-auto p-0 hover:bg-transparent font-bold text-2xl gap-2 -ml-2"
+                  className="h-auto p-0 hover:bg-transparent font-bold text-xl gap-1.5 -ml-2"
                 >
                   {feedType === 'forYou' ? t('forYou') : t('promotions')}
-                  <ChevronDown className="h-5 w-5" />
+                  <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56 bg-background z-50">
