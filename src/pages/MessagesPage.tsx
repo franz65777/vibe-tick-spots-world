@@ -641,7 +641,7 @@ const MessagesPage = () => {
               
               <Input
                 type="text"
-                placeholder={t('typeMessage', { ns: 'messages' })}
+                placeholder={isRecording ? t('recording', { ns: 'messages', defaultValue: 'Recording audio...' }) : t('typeMessage', { ns: 'messages' })}
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyPress={(e) => {
@@ -651,7 +651,7 @@ const MessagesPage = () => {
                   }
                 }}
                 disabled={sending || isRecording}
-                className="flex-1 rounded-full"
+                className={`flex-1 rounded-full ${isRecording ? 'bg-destructive/10 border-destructive animate-pulse' : ''}`}
               />
 
               <Button
