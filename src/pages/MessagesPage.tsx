@@ -12,6 +12,7 @@ import PlaceMessageCard from '@/components/messages/PlaceMessageCard';
 import PostMessageCard from '@/components/messages/PostMessageCard';
 import ProfileMessageCard from '@/components/messages/ProfileMessageCard';
 import { useTranslation } from 'react-i18next';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 
 type ViewMode = 'threads' | 'chat' | 'search';
 
@@ -32,6 +33,7 @@ const MessagesPage = () => {
   const [searchLoading, setSearchLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<any>(null);
+  const { markThreadAsRead } = useUnreadMessages();
 
   useEffect(() => {
     if (user) {
@@ -126,6 +128,10 @@ const MessagesPage = () => {
   const handleThreadSelect = (thread: MessageThread) => {
     setSelectedThread(thread);
     setView('chat');
+    const otherParticipant = getOtherParticipant(thread);
+    if (otherParticipant) {
+      markThreadAsRead(otherParticipant.id);
+    }
   };
 
   const handleSendMessage = async () => {

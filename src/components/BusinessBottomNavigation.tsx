@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAnalytics } from '@/hooks/useAnalytics';
-import { LayoutGrid, BarChart3, Plus, Activity, User } from 'lucide-react';
+import { LayoutGrid, BarChart3, Plus, Activity, User, Bell, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import AccountSwitchModal from './AccountSwitchModal';
 import { useTranslation } from 'react-i18next';
+import { useNotifications } from '@/hooks/useNotifications';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 
 const BusinessBottomNavigation = () => {
   const { t } = useTranslation();
@@ -16,6 +18,8 @@ const BusinessBottomNavigation = () => {
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
   const [hideNav, setHideNav] = useState(false);
+  const { unreadCount: notificationsCount } = useNotifications();
+  const { unreadCount: messagesCount } = useUnreadMessages();
 
   useEffect(() => {
     const handleOpen = () => setHideNav(true);
@@ -72,27 +76,32 @@ const BusinessBottomNavigation = () => {
     { 
       icon: <LayoutGrid size={24} strokeWidth={2} />, 
       label: t('overview', { ns: 'business' }), 
-      path: '/business'
+      path: '/business',
+      badge: 0
     },
     { 
-      icon: <BarChart3 size={24} strokeWidth={2} />, 
-      label: t('analytics', { ns: 'business' }), 
-      path: '/business/analytics'
+      icon: <Bell size={24} strokeWidth={2} />, 
+      label: t('navigation:notifications') || 'Notifications', 
+      path: '/business/notifications',
+      badge: notificationsCount
     },
     { 
       icon: <Plus size={24} strokeWidth={2} />, 
       label: t('add', { ns: 'common' }), 
-      path: '/business/add'
+      path: '/business/add',
+      badge: 0
     },
     { 
-      icon: <Activity size={24} strokeWidth={2} />, 
-      label: t('feed', { ns: 'common' }), 
-      path: '/business/feed'
+      icon: <MessageCircle size={24} strokeWidth={2} />, 
+      label: t('navigation:messages') || 'Messages', 
+      path: '/business/messages',
+      badge: messagesCount
     },
     { 
       icon: <User size={24} strokeWidth={2} />, 
       label: t('profile', { ns: 'common' }), 
-      path: '/business/profile'
+      path: '/business/profile',
+      badge: 0
     },
   ];
 
@@ -116,6 +125,7 @@ const BusinessBottomNavigation = () => {
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
               const isProfileTab = item.path === '/business/profile';
+              const showBadge = item.badge && item.badge > 0;
               
               return (
                 <button
@@ -126,15 +136,22 @@ const BusinessBottomNavigation = () => {
                   onMouseLeave={isProfileTab ? handleProfileLongPressEnd : undefined}
                   onTouchStart={isProfileTab ? handleProfileLongPressStart : undefined}
                   onTouchEnd={isProfileTab ? handleProfileLongPressEnd : undefined}
-                  className="flex flex-col items-center justify-center gap-1 min-w-[64px] py-2 transition-colors duration-200"
+                  className="flex flex-col items-center justify-center gap-1 min-w-[64px] py-2 transition-colors duration-200 relative"
                   aria-label={item.label}
                   aria-current={isActive ? 'page' : undefined}
                 >
                   <div className={cn(
-                    "transition-colors duration-200",
+                    "transition-colors duration-200 relative",
                     isActive ? 'text-primary' : 'text-muted-foreground'
                   )}>
                     {item.icon}
+                    {showBadge && (
+                      <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-primary rounded-full flex items-center justify-center">
+                        <span className="text-[10px] font-bold text-primary-foreground leading-none">
+                          {item.badge > 99 ? '99+' : item.badge}
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <span className={cn(
                     "text-[11px] font-medium transition-colors duration-200",
