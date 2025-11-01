@@ -24,6 +24,8 @@ const FeedPage = () => {
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  const [openCommentsOnLoad, setOpenCommentsOnLoad] = useState(false);
+  const [openShareOnLoad, setOpenShareOnLoad] = useState(false);
   const [expandedCaptions, setExpandedCaptions] = useState<Set<string>>(new Set());
   const [storiesViewerOpen, setStoriesViewerOpen] = useState(false);
   const [selectedUserStoryIndex, setSelectedUserStoryIndex] = useState(0);
@@ -133,25 +135,13 @@ const FeedPage = () => {
     if (!caption) return null;
     const isExpanded = expandedCaptions.has(postId);
     const needsTruncate = caption.length > 100;
+    const displayText = isExpanded || !needsTruncate ? caption : `${caption.slice(0, 100)}...`;
 
     return (
-      <div className="text-sm">
+      <div className="text-sm text-left">
         <span className="font-semibold mr-1">{username}</span>
-        <span className="text-foreground line-clamp-1">
-          {isExpanded || !needsTruncate ? caption : caption}
-        </span>
-        {needsTruncate && !isExpanded && (
-          <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleCaption(postId);
-            }}
-            className="text-muted-foreground hover:text-foreground text-sm"
-          >
-            {t('common.more')}
-          </button>
-        )}
-        {isExpanded && needsTruncate && (
+        <span className="text-foreground">{displayText}</span>
+        {needsTruncate && (
           <button 
             onClick={(e) => {
               e.stopPropagation();
@@ -159,7 +149,7 @@ const FeedPage = () => {
             }}
             className="ml-1 text-muted-foreground hover:text-foreground text-sm"
           >
-            {t('common.less')}
+            {isExpanded ? t('common.less') : t('common.more')}
           </button>
         )}
       </div>
@@ -332,13 +322,21 @@ const FeedPage = () => {
                       likesCount={item.likes_count || 0}
                       commentsCount={item.comments_count || 0}
                       sharesCount={item.shares_count || 0}
-                      onCommentClick={() => setSelectedPostId(postId)}
-                      onShareClick={() => setSelectedPostId(postId)}
+                      onCommentClick={() => {
+                        setSelectedPostId(postId);
+                        setOpenCommentsOnLoad(true);
+                        setOpenShareOnLoad(false);
+                      }}
+                      onShareClick={() => {
+                        setSelectedPostId(postId);
+                        setOpenShareOnLoad(true);
+                        setOpenCommentsOnLoad(false);
+                      }}
                     />
 
                     {/* Likes Section */}
                     {item.likes_count > 0 && (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 text-left">
                         {postLikes.get(postId) && postLikes.get(postId)!.length > 0 && (
                           <>
                             <div className="flex -space-x-2">
@@ -383,14 +381,10 @@ const FeedPage = () => {
                     )}
 
                     {/* Caption */}
-                    {caption && (
-                      <div className={expandedCaptions.has(item.id) ? '' : 'line-clamp-1'}>
-                        {renderCaption(caption, item.id, username)}
-                      </div>
-                    )}
+                    {caption && renderCaption(caption, item.id, username)}
 
                     {/* Timestamp */}
-                    <p className="text-xs text-muted-foreground uppercase">
+                    <p className="text-xs text-muted-foreground uppercase text-left">
                       {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
                     </p>
                   </div>
@@ -405,7 +399,13 @@ const FeedPage = () => {
           <PostDetailModal
             postId={selectedPostId}
             isOpen={!!selectedPostId}
-            onClose={() => setSelectedPostId(null)}
+            onClose={() => {
+              setSelectedPostId(null);
+              setOpenCommentsOnLoad(false);
+              setOpenShareOnLoad(false);
+            }}
+            openCommentsOnLoad={openCommentsOnLoad}
+            openShareOnLoad={openShareOnLoad}
           />
         )}
 
