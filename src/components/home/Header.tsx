@@ -32,7 +32,7 @@ const Header = ({
   return (
     <>
       <header className="bg-white border-b border-gray-100 sticky top-0 z-40 shadow-sm">
-        <div className="flex items-center justify-between px-4 py-3 gap-3">
+        <div className="flex items-center justify-between px-3 py-3 gap-2">
           {/* Left: City Selection - Now with more space */}
           <div className="flex-1 min-w-0">
             <CityAutocompleteBar 
@@ -50,7 +50,7 @@ const Header = ({
             {/* Notifications Button */}
             <button 
               onClick={() => navigate('/notifications')} 
-              className="relative p-3 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all duration-200 active:scale-95"
+              className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all duration-200 active:scale-95"
             >
               <div className="relative">
                 <Bell className="w-6 h-6" />
@@ -67,7 +67,7 @@ const Header = ({
             {/* Messages Button */}
             <button 
               onClick={() => navigate('/messages')} 
-              className="relative p-3 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all duration-200 active:scale-95"
+              className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all duration-200 active:scale-95"
               aria-label="Open messages"
             >
               <div className="relative">
