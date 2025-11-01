@@ -51,7 +51,7 @@ export const PostActions = ({
   };
 
   return (
-    <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-border">
+    <div className="flex items-center gap-1.5 mt-1 pt-0">
       <button
         onClick={handleLikeClick}
         className={`flex items-center gap-1.5 px-3 py-2 rounded-lg transition-all font-medium ${

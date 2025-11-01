@@ -369,7 +369,7 @@ const FeedPage = () => {
               <DropdownMenuTrigger asChild>
                 <Button 
                   variant="ghost" 
-                  className="h-auto p-0 hover:bg-transparent font-bold text-xl gap-1.5 -ml-2"
+                  className="h-auto p-0 hover:bg-transparent font-bold text-lg gap-1.5 -ml-2 justify-start text-left"
                 >
                   {feedType === 'forYou' ? t('forYou') : t('promotions')}
                   <ChevronDown className="h-4 w-4" />

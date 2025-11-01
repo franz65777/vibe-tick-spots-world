@@ -135,7 +135,7 @@ export async function getUserFeed(userId: string, limit: number = 50): Promise<F
         comments_count: (post as any).comments_count,
         shares_count: (post as any).shares_count,
         saves_count: (post as any).saves_count,
-        is_business_post: !!(post as any).is_business_post,
+        is_business_post: businessUserIds.has(post.user_id),
       };
     });
 
