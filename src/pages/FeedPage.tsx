@@ -252,6 +252,7 @@ const FeedPage = () => {
     if (!caption) return null;
     const isExpanded = expandedCaptions.has(postId);
     const needsTruncate = caption.length > 100;
+    const displayText = isExpanded ? caption : (needsTruncate ? caption.slice(0, 100) : caption);
 
     return (
       <div className="text-sm text-left">
@@ -260,25 +261,27 @@ const FeedPage = () => {
             e.stopPropagation();
             navigate(`/profile/${userId}`);
           }}
-          className="font-semibold hover:opacity-70 inline"
+          className="font-semibold hover:opacity-70"
         >
           {username}
         </button>
-        <span className="text-foreground">
-          {' '}
-          {isExpanded ? caption : caption.length > 100 ? `${caption.slice(0, 100)}...` : caption}
-          {needsTruncate && (
+        <span className="text-foreground ml-1">
+          {displayText}
+        </span>
+        {needsTruncate && (
+          <>
+            {!isExpanded && '... '}
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 toggleCaption(postId);
               }}
-              className="ml-1 text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground"
             >
               {isExpanded ? t('common.less') : t('common.more')}
             </button>
-          )}
-        </span>
+          </>
+        )}
       </div>
     );
   };
@@ -543,6 +546,7 @@ const FeedPage = () => {
             setSharePostId(null);
           }}
           onShare={handleShare}
+          postId={sharePostId || undefined}
         />
 
         {/* Stories Viewer */}
