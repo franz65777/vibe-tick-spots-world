@@ -121,7 +121,13 @@ const resources = {
       topContributors: 'Top Contributors',
       viewFullLeaderboard: 'View Full Leaderboard',
       yourStory: 'Your Story',
-      searchCities: 'Search any city worldwide'
+      searchCities: 'Search any city worldwide',
+      discoverPlaces: 'Discover Places',
+      findingAmazingPlaces: 'Finding amazing places...',
+      noPlacesToDiscover: 'No Places to Discover',
+      followMorePeople: 'Follow more people to see their saved locations and discover amazing new places to explore',
+      findPeopleToFollow: 'Find People to Follow',
+      tryAgain: 'Try Again'
     },
     explore: {
       places: 'Places',
@@ -437,7 +443,13 @@ const resources = {
       topContributors: 'Mejores Colaboradores',
       viewFullLeaderboard: 'Ver Clasificación Completa',
       yourStory: 'Tu Historia',
-      searchCities: 'Buscar cualquier ciudad del mundo'
+      searchCities: 'Buscar cualquier ciudad del mundo',
+      discoverPlaces: 'Descubre Lugares',
+      findingAmazingPlaces: 'Buscando lugares increíbles...',
+      noPlacesToDiscover: 'No hay lugares para descubrir',
+      followMorePeople: 'Sigue a más personas para ver sus lugares guardados y descubrir nuevos lugares increíbles para explorar',
+      findPeopleToFollow: 'Buscar Personas para Seguir',
+      tryAgain: 'Intentar de nuevo'
     },
     explore: {
       places: 'Lugares',

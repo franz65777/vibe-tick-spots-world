@@ -10,6 +10,7 @@ import CityLabel from '@/components/common/CityLabel';
 import swipeNo from '@/assets/swipe-no-alpha.png';
 import swipePin from '@/assets/swipe-pin-alpha.png';
 import { useTransparentImage } from '@/hooks/useTransparentImage';
+import { useTranslation } from 'react-i18next';
 
 interface SwipeLocation {
   id: string;
@@ -37,6 +38,7 @@ interface SwipeDiscoveryProps {
 const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [locations, setLocations] = useState<SwipeLocation[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -349,16 +351,16 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       {/* Header with back button */}
       <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3 shadow-sm">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/')}
           className="p-2 hover:bg-gray-100 rounded-full transition-colors"
           aria-label="Go back"
         >
           <ArrowLeft className="w-5 h-5 text-gray-700" />
         </button>
         <div className="flex-1">
-          <h1 className="text-lg font-semibold text-gray-900">Discover Places</h1>
+          <h1 className="text-lg font-semibold text-gray-900">{t('home.discoverPlaces')}</h1>
           <p className="text-xs text-gray-500">
-            {locations.length > 0 ? `${currentIndex + 1} of ${locations.length}` : 'Loading...'}
+            {locations.length > 0 ? `${currentIndex + 1} ${t('common.of')} ${locations.length}` : t('common.loading')}
           </p>
         </div>
       </div>
@@ -368,7 +370,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
         {loading ? (
           <div className="h-full flex flex-col items-center justify-center p-8">
             <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-            <p className="text-gray-600 font-medium">Finding amazing places...</p>
+            <p className="text-gray-600 font-medium">{t('home.findingAmazingPlaces')}</p>
           </div>
         ) : !currentLocation ? (
           <div className="h-full flex items-center justify-center p-8 text-center">
@@ -381,9 +383,9 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
               </div>
               
               <div className="space-y-3">
-                <h3 className="text-2xl font-bold text-gray-900">No Places to Discover</h3>
+                <h3 className="text-2xl font-bold text-gray-900">{t('home.noPlacesToDiscover')}</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  Follow more people to see their saved locations and discover amazing new places to explore
+                  {t('home.followMorePeople')}
                 </p>
               </div>
               
@@ -394,14 +396,14 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                   size="lg"
                 >
                   <UserPlus className="w-5 h-5 mr-2" />
-                  Find People to Follow
+                  {t('home.findPeopleToFollow')}
                 </Button>
                 <Button 
                   onClick={fetchDailyLocations} 
                   variant="outline" 
                   className="rounded-full h-12 text-base"
                 >
-                  Try Again
+                  {t('home.tryAgain')}
                 </Button>
               </div>
             </div>
@@ -482,7 +484,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       <CategoryIcon category={currentLocation.category} className="w-5 h-5 text-white" />
-                      <span className="text-white/80 text-sm capitalize">{currentLocation.category}</span>
+                      <span className="text-white/80 text-sm capitalize">{t(`categories.${currentLocation.category}`)}</span>
                     </div>
                   </div>
 
