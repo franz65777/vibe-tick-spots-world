@@ -84,20 +84,20 @@ const SettingsPage: React.FC = () => {
                   key={lang.code}
                   onClick={() => handleLanguageChange(lang.code)}
                   disabled={saving}
-                  className={`flex items-center gap-2.5 p-3 rounded-xl border-2 transition-all ${
+                  className={`flex items-center gap-2.5 p-3 rounded-xl border-2 transition-all min-h-[60px] ${
                     language === lang.code
                       ? 'border-primary bg-primary/10 shadow-sm'
                       : 'border-border bg-background hover:border-primary/30'
                   } ${saving ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  <span className="text-2xl">{lang.flag}</span>
-                  <div className="flex-1 text-left">
-                    <div className={`font-medium text-sm ${language === lang.code ? 'text-primary' : 'text-foreground'}`}>
+                  <span className="text-2xl flex-shrink-0">{lang.flag}</span>
+                  <div className="flex-1 text-left min-w-0">
+                    <div className={`font-medium text-sm truncate ${language === lang.code ? 'text-primary' : 'text-foreground'}`}>
                       {lang.label}
                     </div>
                   </div>
                   {language === lang.code && (
-                    <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                    <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
                       <svg className="w-3 h-3 text-primary-foreground" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
