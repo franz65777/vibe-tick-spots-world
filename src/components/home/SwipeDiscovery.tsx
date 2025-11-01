@@ -85,6 +85,8 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
         .select('following_id')
         .eq('follower_id', user.id);
 
+      console.log('📊 Follows data:', followsData);
+
       if (!followsData || followsData.length === 0) {
         setFollowedUsers([]);
         return;
@@ -97,6 +99,8 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
         .from('profiles')
         .select('id, username, avatar_url')
         .in('id', followingIds);
+
+      console.log('👥 Users with saves:', usersWithSaves);
 
       if (!usersWithSaves) return;
 
@@ -118,14 +122,14 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
         })
       );
 
-      // Filter and sort users with new saves
-      const usersWithNewSaves = usersWithCounts
-        .filter(u => u.new_saves_count > 0)
-        .sort((a, b) => b.new_saves_count - a.new_saves_count);
+      console.log('✨ Users with counts:', usersWithCounts);
 
-      setFollowedUsers(usersWithNewSaves);
+      // Sort users by new saves count (show users with saves first)
+      const sortedUsers = usersWithCounts.sort((a, b) => b.new_saves_count - a.new_saves_count);
+
+      setFollowedUsers(sortedUsers);
     } catch (error) {
-      console.error('Error fetching followed users:', error);
+      console.error('❌ Error fetching followed users:', error);
     }
   };
 
@@ -435,74 +439,74 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       </div>
 
       {/* Followed Users Row */}
-      {followedUsers.length > 0 && (
-        <div className="bg-white border-b border-gray-100 px-4 py-3">
-          <div className="flex gap-3 overflow-x-auto scrollbar-hide">
-            {/* All button */}
+      <div className="bg-white border-b border-gray-100 px-4 py-3 overflow-hidden">
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1" style={{ scrollSnapType: 'x mandatory' }}>
+          {/* All button */}
+          <button
+            onClick={() => {
+              setSelectedUserId(null);
+              setCurrentIndex(0);
+              fetchDailyLocations();
+            }}
+            className={`flex-shrink-0 flex flex-col items-center gap-1 transition-opacity ${
+              selectedUserId === null ? 'opacity-100' : 'opacity-60'
+            }`}
+            style={{ scrollSnapAlign: 'start' }}
+          >
+            <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
+              selectedUserId === null 
+                ? 'bg-gradient-to-br from-primary to-purple-500 ring-2 ring-primary ring-offset-2' 
+                : 'bg-gray-200'
+            }`}>
+              <Users className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-xs font-medium text-gray-700">Tutti</span>
+          </button>
+
+          {followedUsers.map((followedUser) => (
             <button
+              key={followedUser.id}
               onClick={() => {
-                setSelectedUserId(null);
+                setSelectedUserId(followedUser.id);
                 setCurrentIndex(0);
                 fetchDailyLocations();
               }}
-              className={`flex-shrink-0 flex flex-col items-center gap-1 ${
-                selectedUserId === null ? 'opacity-100' : 'opacity-60'
+              className={`flex-shrink-0 flex flex-col items-center gap-1 transition-opacity ${
+                selectedUserId === followedUser.id ? 'opacity-100' : 'opacity-60'
               }`}
+              style={{ scrollSnapAlign: 'start' }}
             >
-              <div className={`w-14 h-14 rounded-full flex items-center justify-center ${
-                selectedUserId === null 
-                  ? 'bg-gradient-to-br from-primary to-purple-500' 
-                  : 'bg-gray-200'
-              }`}>
-                <Users className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-xs font-medium text-gray-700">Tutti</span>
-            </button>
-
-            {followedUsers.map((followedUser) => (
-              <button
-                key={followedUser.id}
-                onClick={() => {
-                  setSelectedUserId(followedUser.id);
-                  setCurrentIndex(0);
-                  fetchDailyLocations();
-                }}
-                className={`flex-shrink-0 flex flex-col items-center gap-1 ${
-                  selectedUserId === followedUser.id ? 'opacity-100' : 'opacity-60'
-                }`}
-              >
-                <div className="relative">
-                  {followedUser.avatar_url ? (
-                    <img
-                      src={followedUser.avatar_url}
-                      alt={followedUser.username}
-                      className={`w-14 h-14 rounded-full object-cover ${
-                        selectedUserId === followedUser.id ? 'ring-2 ring-primary ring-offset-2' : ''
-                      }`}
-                    />
-                  ) : (
-                    <div className={`w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center ${
+              <div className="relative">
+                {followedUser.avatar_url ? (
+                  <img
+                    src={followedUser.avatar_url}
+                    alt={followedUser.username}
+                    className={`w-14 h-14 rounded-full object-cover transition-all ${
                       selectedUserId === followedUser.id ? 'ring-2 ring-primary ring-offset-2' : ''
-                    }`}>
-                      <span className="text-white text-lg font-bold">
-                        {followedUser.username[0]?.toUpperCase()}
-                      </span>
-                    </div>
-                  )}
-                  {followedUser.new_saves_count > 0 && (
-                    <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                      {followedUser.new_saves_count > 9 ? '9+' : followedUser.new_saves_count}
-                    </div>
-                  )}
-                </div>
-                <span className="text-xs font-medium text-gray-700 max-w-[60px] truncate">
-                  {followedUser.username}
-                </span>
-              </button>
-            ))}
-          </div>
+                    }`}
+                  />
+                ) : (
+                  <div className={`w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center transition-all ${
+                    selectedUserId === followedUser.id ? 'ring-2 ring-primary ring-offset-2' : ''
+                  }`}>
+                    <span className="text-white text-lg font-bold">
+                      {followedUser.username[0]?.toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                {followedUser.new_saves_count > 0 && (
+                  <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-md">
+                    {followedUser.new_saves_count > 9 ? '9+' : followedUser.new_saves_count}
+                  </div>
+                )}
+              </div>
+              <span className="text-xs font-medium text-gray-700 max-w-[60px] truncate">
+                {followedUser.username}
+              </span>
+            </button>
+          ))}
         </div>
-      )}
+      </div>
 
       {/* Content */}
       <div className="flex-1 overflow-hidden">
