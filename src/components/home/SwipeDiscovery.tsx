@@ -163,8 +163,18 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
 
       // Filter by selected user if one is selected
       let rawCandidates = friendsSaves.data || [];
+      console.log('📦 Raw candidates before filter:', rawCandidates.length);
+      
       if (selectedUserId) {
-        rawCandidates = rawCandidates.filter((s: any) => s.user_id === selectedUserId);
+        console.log('🔍 Filtering for user:', selectedUserId);
+        rawCandidates = rawCandidates.filter((s: any) => {
+          const matches = s.user_id === selectedUserId;
+          if (matches) {
+            console.log('✅ Match found:', s.place_name, 'from', s.username);
+          }
+          return matches;
+        });
+        console.log('📊 Filtered candidates:', rawCandidates.length);
       }
 
       let candidates: SwipeLocation[] = rawCandidates.map((s: any) => {
@@ -439,8 +449,8 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       </div>
 
       {/* Followed Users Row */}
-      <div className="bg-white border-b border-gray-100 px-4 py-3 overflow-hidden">
-        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1" style={{ scrollSnapType: 'x mandatory' }}>
+      <div className="bg-white border-b border-gray-100 px-4 py-4 overflow-hidden">
+        <div className="flex gap-4 overflow-x-auto scrollbar-hide" style={{ scrollSnapType: 'x mandatory' }}>
           {/* All button */}
           <button
             onClick={() => {
@@ -448,17 +458,17 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
               setCurrentIndex(0);
               fetchDailyLocations();
             }}
-            className={`flex-shrink-0 flex flex-col items-center gap-1 transition-opacity ${
+            className={`flex-shrink-0 flex flex-col items-center gap-2 transition-opacity ${
               selectedUserId === null ? 'opacity-100' : 'opacity-60'
             }`}
             style={{ scrollSnapAlign: 'start' }}
           >
-            <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-all ${
               selectedUserId === null 
                 ? 'bg-gradient-to-br from-primary to-purple-500 ring-2 ring-primary ring-offset-2' 
                 : 'bg-gray-200'
             }`}>
-              <Users className="w-6 h-6 text-white" />
+              <Users className="w-7 h-7 text-white" />
             </div>
             <span className="text-xs font-medium text-gray-700">Tutti</span>
           </button>
@@ -467,11 +477,12 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
             <button
               key={followedUser.id}
               onClick={() => {
+                console.log('🎯 Selected user:', followedUser.username, followedUser.id);
                 setSelectedUserId(followedUser.id);
                 setCurrentIndex(0);
                 fetchDailyLocations();
               }}
-              className={`flex-shrink-0 flex flex-col items-center gap-1 transition-opacity ${
+              className={`flex-shrink-0 flex flex-col items-center gap-2 transition-opacity ${
                 selectedUserId === followedUser.id ? 'opacity-100' : 'opacity-60'
               }`}
               style={{ scrollSnapAlign: 'start' }}
@@ -481,26 +492,26 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                   <img
                     src={followedUser.avatar_url}
                     alt={followedUser.username}
-                    className={`w-14 h-14 rounded-full object-cover transition-all ${
+                    className={`w-16 h-16 rounded-full object-cover transition-all ${
                       selectedUserId === followedUser.id ? 'ring-2 ring-primary ring-offset-2' : ''
                     }`}
                   />
                 ) : (
-                  <div className={`w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center transition-all ${
+                  <div className={`w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center transition-all ${
                     selectedUserId === followedUser.id ? 'ring-2 ring-primary ring-offset-2' : ''
                   }`}>
-                    <span className="text-white text-lg font-bold">
+                    <span className="text-white text-xl font-bold">
                       {followedUser.username[0]?.toUpperCase()}
                     </span>
                   </div>
                 )}
                 {followedUser.new_saves_count > 0 && (
-                  <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-md">
+                  <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center shadow-md">
                     {followedUser.new_saves_count > 9 ? '9+' : followedUser.new_saves_count}
                   </div>
                 )}
               </div>
-              <span className="text-xs font-medium text-gray-700 max-w-[60px] truncate">
+              <span className="text-xs font-medium text-gray-700 max-w-[70px] truncate">
                 {followedUser.username}
               </span>
             </button>
