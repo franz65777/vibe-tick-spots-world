@@ -25,7 +25,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 const FeedPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
@@ -274,9 +274,22 @@ const FeedPage = () => {
       ? firstLine.substring(0, MAX_FIRST_LINE_LENGTH)
       : firstLine;
 
-    // Use translated labels for more/less
-    const moreLabel = t('common.more');
-    const lessLabel = t('common.less');
+    // Translated labels with robust fallback by language
+    const rawMore = t('common.more');
+    const rawLess = t('common.less');
+    const lang = (i18n?.language || 'en').split('-')[0];
+    const fallbacks: Record<string, { more: string; less: string }> = {
+      it: { more: 'altro', less: 'meno' },
+      en: { more: 'more', less: 'less' },
+      es: { more: 'más', less: 'menos' },
+      fr: { more: 'plus', less: 'moins' },
+      de: { more: 'mehr', less: 'weniger' },
+      pt: { more: 'mais', less: 'menos' },
+      nl: { more: 'meer', less: 'minder' },
+    };
+    const defaultFallback = fallbacks[lang] || fallbacks.en;
+    const moreLabel = rawMore === 'common.more' ? defaultFallback.more : rawMore;
+    const lessLabel = rawLess === 'common.less' ? defaultFallback.less : rawLess;
 
     return (
       <div className="text-sm text-left">
