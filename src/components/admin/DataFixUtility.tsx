@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { MapPin, Tag, Loader2 } from 'lucide-react';
 import { AddressEnrichmentUtility } from './AddressEnrichmentUtility';
+import { LocationDataFix } from './LocationDataFix';
 
 const DataFixUtility = () => {
   const [isFixingCities, setIsFixingCities] = useState(false);
@@ -54,6 +55,9 @@ const DataFixUtility = () => {
 
   return (
     <div className="space-y-4">
+      {/* Location Data Fix Utility */}
+      <LocationDataFix />
+      
       {/* Address Enrichment Utility */}
       <AddressEnrichmentUtility />
       

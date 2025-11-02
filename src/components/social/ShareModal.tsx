@@ -3,11 +3,12 @@ import { Drawer } from 'vaul';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2, X, Search, Link as LinkIcon, Plus, Share2 } from 'lucide-react';
+import { Loader2, X, Search, Link as LinkIcon, Plus, Share2, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useFrequentContacts } from '@/hooks/useFrequentContacts';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [showUserList, setShowUserList] = useState(false);
+  const { frequentContacts } = useFrequentContacts();
 
   useEffect(() => {
     if (isOpen) {
@@ -160,7 +162,48 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
                   </div>
-                ) : filteredUsers.length === 0 ? (
+                ) : (
+                  <>
+                    {/* Frequent Contacts Section */}
+                    {!query && frequentContacts.length > 0 && (
+                      <div className="mb-6">
+                        <div className="flex items-center gap-2 mb-3 px-1">
+                          <MessageCircle className="w-4 h-4 text-muted-foreground" />
+                          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                            Contatti frequenti
+                          </h4>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4 pb-4 border-b border-border">
+                          {frequentContacts.slice(0, 6).map((contact) => (
+                            <button
+                              key={contact.id}
+                              onClick={() => toggle(contact.id)}
+                              className="flex flex-col items-center gap-2"
+                            >
+                              <div className="relative">
+                                <Avatar className="w-16 h-16 ring-2 ring-background">
+                                  <AvatarImage src={contact.avatar_url || ''} />
+                                  <AvatarFallback className="bg-primary/10 text-primary text-lg">
+                                    {contact.username?.[0]?.toUpperCase() || 'U'}
+                                  </AvatarFallback>
+                                </Avatar>
+                                {selected.has(contact.id) && (
+                                  <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary border-2 border-background flex items-center justify-center">
+                                    <svg className="w-3.5 h-3.5 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  </div>
+                                )}
+                              </div>
+                              <p className="text-xs font-medium truncate w-full text-center">{contact.username}</p>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* All Users or Search Results */}
+                    {filteredUsers.length === 0 ? (
                   <div className="text-center py-16 px-4">
                     <p className="text-muted-foreground text-sm mb-6">
                       {query ? 'Nessun utente trovato' : 'Segui persone per condividere con loro'}
@@ -189,9 +232,15 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
                       </button>
                     </div>
                   </div>
-                ) : (
-                  <div className="grid grid-cols-3 gap-4 py-4">
-                    {filteredUsers.map((u) => (
+                    ) : (
+                      <>
+                        {!query && frequentContacts.length > 0 && (
+                          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 px-1 mt-6">
+                            Tutti i contatti
+                          </h4>
+                        )}
+                        <div className="grid grid-cols-3 gap-4 py-4">
+                          {filteredUsers.map((u) => (
                       <button
                         key={u.id}
                         onClick={() => toggle(u.id)}
@@ -216,6 +265,9 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
                       </button>
                     ))}
                   </div>
+                      </>
+                    )}
+                  </>
                 )}
               </ScrollArea>
 
