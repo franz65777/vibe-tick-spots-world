@@ -21,6 +21,7 @@ import ProfileMessageCard from '@/components/messages/ProfileMessageCard';
 import { useTranslation } from 'react-i18next';
 import { useStories } from '@/hooks/useStories';
 import StoriesViewer from '@/components/StoriesViewer';
+import { useFrequentContacts } from '@/hooks/useFrequentContacts';
 
 type ViewMode = 'threads' | 'chat' | 'search';
 
@@ -62,6 +63,7 @@ const MessagesPage = () => {
   const audioChunksRef = useRef<Blob[]>([]);
 
   const { stories: allStories } = useStories();
+  const { frequentContacts, loading: frequentLoading } = useFrequentContacts();
 
   useEffect(() => {
     if (user) {
@@ -707,51 +709,81 @@ const MessagesPage = () => {
       {/* Search View */}
       {view === 'search' && (
         <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-          <div className="shrink-0 p-4 border-b border-border">
+          <div className="shrink-0 p-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder={t('searchUsers', { ns: 'messages' })}
+                placeholder="Cerca ..."
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="pl-10"
+                className="pl-10 rounded-full"
+                autoFocus
               />
             </div>
           </div>
 
           <div className="flex-1 min-h-0 overflow-hidden">
             <ScrollArea className="h-full">
-              {searchLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-              </div>
-            ) : searchResults.length > 0 ? (
-              <div className="divide-y divide-border">
-                {searchResults.map((result) => (
-                  <button
-                    key={result.id}
-                    onClick={() => handleUserSelect(result)}
-                    className="w-full flex items-center gap-3 p-4 hover:bg-accent transition-colors"
-                  >
-                    <Avatar className="w-12 h-12">
-                      <AvatarImage src={result.avatar_url} />
-                      <AvatarFallback>{result.username?.[0]?.toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 text-left">
-                      <p className="font-semibold text-foreground">{result.username}</p>
-                      {result.full_name && (
-                        <p className="text-sm text-muted-foreground">{result.full_name}</p>
-                      )}
+              {searchQuery.length === 0 && (
+                <div className="px-4 pb-4">
+                  <h3 className="text-sm font-semibold text-muted-foreground mb-3">Contatti frequenti</h3>
+                  {frequentLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                     </div>
-                  </button>
-                ))}
-              </div>
-            ) : searchQuery.length >= 2 ? (
-              <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-                <p className="text-muted-foreground">{t('noUsersFound', { ns: 'messages' })}</p>
-              </div>
-            ) : null}
+                  ) : frequentContacts.length > 0 ? (
+                    <div className="flex flex-wrap gap-4">
+                      {frequentContacts.map((contact) => (
+                        <button
+                          key={contact.id}
+                          onClick={() => handleUserSelect(contact)}
+                          className="flex flex-col items-center gap-2 group"
+                        >
+                          <Avatar className="w-16 h-16 border-2 border-transparent group-hover:border-primary transition-colors">
+                            <AvatarImage src={contact.avatar_url} />
+                            <AvatarFallback>{contact.username?.[0]?.toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <span className="text-xs text-center font-medium truncate max-w-[64px]">
+                            {contact.username}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              )}
+              
+              {searchLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : searchQuery.length >= 2 && searchResults.length > 0 ? (
+                <div className="divide-y divide-border">
+                  {searchResults.map((result) => (
+                    <button
+                      key={result.id}
+                      onClick={() => handleUserSelect(result)}
+                      className="w-full flex items-center gap-3 p-4 hover:bg-accent transition-colors"
+                    >
+                      <Avatar className="w-12 h-12">
+                        <AvatarImage src={result.avatar_url} />
+                        <AvatarFallback>{result.username?.[0]?.toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 text-left">
+                        <p className="font-semibold text-foreground">{result.username}</p>
+                        {result.full_name && (
+                          <p className="text-sm text-muted-foreground">{result.full_name}</p>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : searchQuery.length >= 2 ? (
+                <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+                  <p className="text-muted-foreground">{t('noUsersFound', { ns: 'messages' })}</p>
+                </div>
+              ) : null}
             </ScrollArea>
           </div>
         </div>
@@ -838,9 +870,11 @@ const MessagesPage = () => {
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                       <div className="flex items-center gap-2">
                         <p className="text-sm text-muted-foreground truncate">
                           {isStoryReply ? (
+                            <span className="font-semibold">{messagePreview}</span>
+                          ) : lastMessage?.message_type === 'audio' ? (
                             <span className="font-semibold">{messagePreview}</span>
                           ) : (
                             <>
