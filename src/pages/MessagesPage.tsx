@@ -22,6 +22,7 @@ import { useTranslation } from 'react-i18next';
 import { useStories } from '@/hooks/useStories';
 import StoriesViewer from '@/components/StoriesViewer';
 import { useFrequentContacts } from '@/hooks/useFrequentContacts';
+import { useSuggestedContacts } from '@/hooks/useSuggestedContacts';
 
 type ViewMode = 'threads' | 'chat' | 'search';
 
@@ -63,7 +64,8 @@ const MessagesPage = () => {
   const audioChunksRef = useRef<Blob[]>([]);
 
   const { stories: allStories } = useStories();
-  const { frequentContacts, loading: frequentLoading } = useFrequentContacts();
+  const { frequentContacts, loading: frequentLoading, refresh: refreshFrequent } = useFrequentContacts();
+  const { suggestedContacts, loading: suggestedLoading, refresh: refreshSuggested } = useSuggestedContacts();
 
   useEffect(() => {
     if (user) {
@@ -98,6 +100,14 @@ const MessagesPage = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    if (view === 'search') {
+      // Refresh contacts when entering search view
+      refreshFrequent();
+      refreshSuggested();
+    }
+  }, [view]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -635,7 +645,7 @@ const MessagesPage = () => {
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* Header */}
-      <header className={`shrink-0 bg-background ${view !== 'threads' ? 'border-b border-border' : ''}`}>
+      <header className={`shrink-0 bg-background ${view === 'chat' ? 'border-b border-border' : ''}`}>
         <div className="px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <Button
@@ -720,31 +730,66 @@ const MessagesPage = () => {
           <div className="flex-1 min-h-0 overflow-hidden">
             <ScrollArea className="h-full">
               {searchQuery.length === 0 && (
-                <div className="py-6">
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-4 text-center">Contatti frequenti</h3>
-                  {frequentLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                    </div>
-                  ) : frequentContacts.length > 0 ? (
-                    <div className="flex flex-wrap gap-4 justify-center px-4">
-                      {frequentContacts.map((contact) => (
-                        <button
-                          key={contact.id}
-                          onClick={() => handleUserSelect(contact)}
-                          className="flex flex-col items-center gap-2 group"
-                        >
-                          <Avatar className="w-16 h-16 border-2 border-transparent group-hover:border-primary transition-colors">
-                            <AvatarImage src={contact.avatar_url} />
-                            <AvatarFallback>{contact.username?.[0]?.toUpperCase()}</AvatarFallback>
-                          </Avatar>
-                          <span className="text-xs text-center font-medium truncate max-w-[64px]">
-                            {contact.username}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
+                <div className="py-6 space-y-8">
+                  {/* Frequent Contacts */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-4 text-center">Contatti frequenti</h3>
+                    {frequentLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                      </div>
+                    ) : frequentContacts.length > 0 ? (
+                      <div className="flex flex-wrap gap-4 justify-center px-4">
+                        {frequentContacts.map((contact) => (
+                          <button
+                            key={contact.id}
+                            onClick={() => handleUserSelect(contact)}
+                            className="flex flex-col items-center gap-2 group"
+                          >
+                            <Avatar className="w-16 h-16 border-2 border-transparent group-hover:border-primary transition-colors">
+                              <AvatarImage src={contact.avatar_url} />
+                              <AvatarFallback>{contact.username?.[0]?.toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <span className="text-xs text-center font-medium truncate max-w-[64px]">
+                              {contact.username}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-center text-sm text-muted-foreground">Nessun contatto frequente</p>
+                    )}
+                  </div>
+
+                  {/* Suggested Contacts */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-4 text-center">Contatti suggeriti</h3>
+                    {suggestedLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                      </div>
+                    ) : suggestedContacts.length > 0 ? (
+                      <div className="flex flex-wrap gap-4 justify-center px-4">
+                        {suggestedContacts.map((contact) => (
+                          <button
+                            key={contact.id}
+                            onClick={() => handleUserSelect(contact)}
+                            className="flex flex-col items-center gap-2 group"
+                          >
+                            <Avatar className="w-16 h-16 border-2 border-transparent group-hover:border-primary transition-colors">
+                              <AvatarImage src={contact.avatar_url} />
+                              <AvatarFallback>{contact.username?.[0]?.toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <span className="text-xs text-center font-medium truncate max-w-[64px]">
+                              {contact.username}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-center text-sm text-muted-foreground">Nessun contatto suggerito</p>
+                    )}
+                  </div>
                 </div>
               )}
               
