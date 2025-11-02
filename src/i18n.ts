@@ -296,6 +296,8 @@ const resources = {
       newMessages: '{{count}} new messages',
       sent: 'Sent',
       viewed: 'Viewed',
+      shareSavedPlace: 'Share Saved Place',
+      noSavedPlaces: 'No saved places yet. Start exploring and save places to share them!',
     },
     business: {
       overview: 'Overview',
@@ -640,6 +642,8 @@ const resources = {
       newMessages: '{{count}} mensajes nuevos',
       sent: 'Enviado',
       viewed: 'Visto',
+      shareSavedPlace: 'Compartir Lugar Guardado',
+      noSavedPlaces: 'Aún no hay lugares guardados. ¡Explora y guarda lugares para compartirlos!',
     },
     business: {
       overview: 'Resumen',
@@ -979,6 +983,8 @@ const resources = {
       newMessages: '{{count}} nuovi messaggi',
       sent: 'Inviato',
       viewed: 'Visualizzato',
+      shareSavedPlace: 'Condividi Luogo Salvato',
+      noSavedPlaces: 'Ancora nessun luogo salvato. Inizia ad esplorare e salva luoghi per condividerli!',
     },
     business: {
       overview: 'Panoramica',

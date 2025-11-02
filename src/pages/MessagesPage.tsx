@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Search, Send, X, MessageSquare, Image, Mic, Trash2, Smile } from 'lucide-react';
+import { ArrowLeft, Search, Send, X, MessageSquare, Image, Mic, Trash2, Smile, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -48,6 +48,8 @@ const MessagesPage = () => {
   const [isDoubleTapping, setIsDoubleTapping] = useState(false);
   const [hiddenMessageIds, setHiddenMessageIds] = useState<string[]>([]);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  const [showSavedPlacesModal, setShowSavedPlacesModal] = useState(false);
+  const [savedPlaces, setSavedPlaces] = useState<any[]>([]);
   const lastTapRef = useRef<number>(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<any>(null);
@@ -179,6 +181,7 @@ const MessagesPage = () => {
       await messageService.sendTextMessage(otherParticipant.id, newMessage.trim());
       setNewMessage('');
       await loadMessages(otherParticipant.id);
+      await loadThreads(); // Reload threads to update the list
     } catch (error) {
       console.error('Error sending message:', error);
     } finally {
@@ -461,6 +464,70 @@ const MessagesPage = () => {
     }
   };
 
+  const loadSavedPlaces = async () => {
+    if (!user) return;
+    try {
+      // Load user's saved places
+      const { data: userSavedLocations, error: uslError } = await supabase
+        .from('user_saved_locations')
+        .select(`
+          location_id,
+          locations (
+            id,
+            name,
+            category,
+            city,
+            address,
+            image_url,
+            google_place_id,
+            latitude,
+            longitude
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (uslError) throw uslError;
+
+      const places = (userSavedLocations || [])
+        .filter(usl => usl.locations)
+        .map(usl => usl.locations);
+
+      setSavedPlaces(places);
+    } catch (error) {
+      console.error('Error loading saved places:', error);
+    }
+  };
+
+  const handleSharePlace = async (place: any) => {
+    if (!selectedThread || !user) return;
+
+    const otherParticipant = getOtherParticipant(selectedThread);
+    if (!otherParticipant) return;
+
+    try {
+      await messageService.sendPlaceShare(otherParticipant.id, {
+        name: place.name,
+        category: place.category,
+        address: place.address,
+        city: place.city,
+        google_place_id: place.google_place_id,
+        place_id: place.google_place_id,
+        coordinates: {
+          lat: place.latitude,
+          lng: place.longitude
+        }
+      });
+      
+      setShowSavedPlacesModal(false);
+      await loadMessages(otherParticipant.id);
+      await loadThreads();
+    } catch (error) {
+      console.error('Error sharing place:', error);
+    }
+  };
+
   const formatMessageTime = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -523,14 +590,27 @@ const MessagesPage = () => {
           </div>
 
           {view === 'threads' && (
-            <Button
-              onClick={() => setView('search')}
-              variant="ghost"
-              size="sm"
-              className="font-medium flex-shrink-0"
-            >
-              {t('new', { ns: 'messages' })}
-            </Button>
+            <>
+              <Button
+                onClick={() => setView('search')}
+                variant="ghost"
+                size="sm"
+                className="font-medium flex-shrink-0"
+              >
+                {t('new', { ns: 'messages' })}
+              </Button>
+              <Button
+                onClick={() => {
+                  loadSavedPlaces();
+                  setShowSavedPlacesModal(true);
+                }}
+                variant="ghost"
+                size="icon"
+                className="flex-shrink-0 h-8 w-8"
+              >
+                <MapPin className="w-5 h-5" />
+              </Button>
+            </>
           )}
         </div>
       </header>
@@ -713,9 +793,9 @@ const MessagesPage = () => {
                  {messages.filter(m => !hiddenMessageIds.includes(m.id)).map((message) => {
                    const isOwn = message.sender_id === user?.id;
                    return (
-                      <div
+                       <div
                         key={message.id}
-                        className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}
+                        className={`flex flex-col gap-1 ${isOwn ? 'items-end' : 'items-start'}`}
                         onTouchStart={() => handleLongPressStart(message.id)}
                         onTouchEnd={handleLongPressEnd}
                         onMouseDown={() => handleLongPressStart(message.id)}
@@ -723,162 +803,152 @@ const MessagesPage = () => {
                         onMouseLeave={handleLongPressEnd}
                         onClick={() => handleDoubleTap(message.id)}
                       >
-                       {message.message_type === 'audio' && message.shared_content?.audio_url ? (
-                         <div className={`max-w-[70%] ${isOwn ? 'ml-16' : 'mr-16'}`}>
-                           <div
-                             className={`rounded-2xl px-4 py-3 ${
-                               isOwn
-                                 ? 'bg-primary text-primary-foreground'
-                                 : 'bg-card text-card-foreground border border-border'
-                             }`}
-                           >
-                             <div className="flex items-center gap-2 mb-2">
-                               <Mic className="w-4 h-4" />
-                               <audio 
-                                 controls 
-                                 className="max-w-full"
-                                 style={{ height: '32px' }}
-                               >
-                                 <source src={message.shared_content.audio_url} type="audio/webm" />
-                               </audio>
-                             </div>
-                             <div className="flex items-center justify-between gap-2">
-                               <p className={`text-xs ${isOwn ? 'opacity-70' : 'text-muted-foreground'}`}>
-                                 {formatMessageTime(message.created_at)}
-                               </p>
-                               {messageReactions[message.id]?.length > 0 && (
-                                 <div className="flex gap-1">
-                                   {messageReactions[message.id].map((reaction, idx) => (
-                                     <button
-                                       key={idx}
-                                       onClick={(e) => {
-                                         e.stopPropagation();
-                                         toggleReaction(message.id, reaction.emoji);
-                                       }}
-                                       className={`text-xs rounded-full px-1.5 py-0.5 hover:scale-110 transition-transform ${
-                                         isOwn 
-                                           ? 'bg-primary-foreground/20' 
-                                           : 'bg-background/80'
-                                       }`}
-                                     >
-                                       {reaction.emoji}
-                                     </button>
-                                   ))}
-                                 </div>
-                               )}
-                             </div>
-                           </div>
-                         </div>
-                       ) : ['place_share', 'post_share', 'profile_share'].includes(message.message_type) &&
-                       message.shared_content ? (
-                         <div className={`max-w-[85%] ${isOwn ? 'ml-8' : 'mr-8'}`}>
-                           {message.content && (
-                             <div
-                               className={`rounded-2xl px-4 py-3 mb-2 ${
-                                 isOwn
-                                   ? 'bg-primary text-primary-foreground ml-auto max-w-fit'
-                                   : 'bg-card text-card-foreground border border-border'
-                               }`}
-                             >
-                               <p className="text-sm">{message.content}</p>
-                             </div>
-                           )}
-                           <div className="bg-card rounded-2xl border border-border overflow-hidden">
-                             {message.message_type === 'place_share' && (
-                               <PlaceMessageCard
-                                 placeData={message.shared_content}
-                                 onViewPlace={(placeData) => {
-                                   navigate('/explore', { 
-                                     state: { 
-                                       sharedPlace: {
-                                         id: placeData.place_id || placeData.google_place_id || '',
-                                         google_place_id: placeData.google_place_id || placeData.place_id || '',
-                                         name: placeData.name || '',
-                                         category: placeData.category || 'place',
-                                         address: placeData.address || '',
-                                         city: placeData.city || '',
-                                         coordinates: placeData.coordinates || { lat: 0, lng: 0 }
-                                       }
-                                     }
-                                   });
-                                 }}
-                               />
-                             )}
-                             {message.message_type === 'post_share' && (
-                               <PostMessageCard postData={message.shared_content} />
-                             )}
-                             {message.message_type === 'profile_share' && (
-                               <ProfileMessageCard profileData={message.shared_content} />
-                             )}
-                             <div className="flex items-center justify-between gap-2 px-3 pb-2">
-                               <p className="text-xs text-muted-foreground">
-                                 {formatMessageTime(message.created_at)}
-                               </p>
-                               {messageReactions[message.id]?.length > 0 && (
-                                 <div className="flex gap-1">
-                                   {messageReactions[message.id].map((reaction, idx) => (
-                                     <button
-                                       key={idx}
-                                       onClick={(e) => {
-                                         e.stopPropagation();
-                                         toggleReaction(message.id, reaction.emoji);
-                                       }}
-                                       className="text-xs bg-background/80 rounded-full px-1.5 py-0.5 hover:scale-110 transition-transform"
-                                     >
-                                       {reaction.emoji}
-                                     </button>
-                                   ))}
-                                 </div>
-                               )}
-                             </div>
-                           </div>
-                         </div>
-                       ) : (
-                         <div className={`max-w-[70%] ${isOwn ? 'ml-16' : 'mr-16'}`}>
-                           <div
-                             className={`rounded-2xl px-4 py-3 ${
-                               isOwn
-                                 ? 'bg-primary text-primary-foreground'
-                                 : 'bg-card text-card-foreground border border-border'
-                             }`}
-                           >
-                             <p className="text-sm mb-2">{message.content}</p>
-                             <div className="flex items-center justify-between gap-2">
-                               <p className={`text-xs ${isOwn ? 'opacity-70' : 'text-muted-foreground'}`}>
-                                 {formatMessageTime(message.created_at)}
-                               </p>
-                               {messageReactions[message.id]?.length > 0 && (
-                                 <div className="flex gap-1">
-                                   {messageReactions[message.id].map((reaction, idx) => (
-                                     <button
-                                       key={idx}
-                                       onClick={(e) => {
-                                         e.stopPropagation();
-                                         toggleReaction(message.id, reaction.emoji);
-                                       }}
-                                       className={`text-xs rounded-full px-1.5 py-0.5 hover:scale-110 transition-transform ${
-                                         isOwn 
-                                           ? 'bg-primary-foreground/20' 
-                                           : 'bg-background/80'
-                                       }`}
-                                     >
-                                       {reaction.emoji}
-                                     </button>
-                                   ))}
-                                 </div>
-                               )}
-                             </div>
-                           </div>
-                         </div>
-                       )}
-                    </div>
-                  );
-                })}
-                <div ref={messagesEndRef} />
-              </div>
-            )}
-            </ScrollArea>
-          </div>
+                        {/* Timestamp outside bubble */}
+                        <p className={`text-xs text-muted-foreground px-2 ${isOwn ? 'text-right' : 'text-left'}`}>
+                          {formatMessageTime(message.created_at)}
+                        </p>
+                        
+                        {message.message_type === 'audio' && message.shared_content?.audio_url ? (
+                          <div className={`max-w-[70%] ${isOwn ? 'ml-16' : 'mr-16'}`}>
+                            <div
+                              className={`rounded-2xl px-4 py-3 ${
+                                isOwn
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-card text-card-foreground border border-border'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 mb-2">
+                                <Mic className="w-4 h-4" />
+                                <audio 
+                                  controls 
+                                  className="max-w-full"
+                                  style={{ height: '32px' }}
+                                >
+                                  <source src={message.shared_content.audio_url} type="audio/webm" />
+                                </audio>
+                              </div>
+                              {messageReactions[message.id]?.length > 0 && (
+                                <div className="flex gap-1 flex-wrap">
+                                  {messageReactions[message.id].map((reaction, idx) => (
+                                    <button
+                                      key={idx}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleReaction(message.id, reaction.emoji);
+                                      }}
+                                      className={`text-xs rounded-full px-1.5 py-0.5 hover:scale-110 transition-transform ${
+                                        isOwn 
+                                          ? 'bg-primary-foreground/20' 
+                                          : 'bg-background/80'
+                                      }`}
+                                    >
+                                      {reaction.emoji}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ) : ['place_share', 'post_share', 'profile_share'].includes(message.message_type) &&
+                        message.shared_content ? (
+                          <div className={`max-w-[85%] ${isOwn ? 'ml-8' : 'mr-8'}`}>
+                            {message.content && (
+                              <div
+                                className={`rounded-2xl px-4 py-3 mb-2 ${
+                                  isOwn
+                                    ? 'bg-primary text-primary-foreground ml-auto max-w-fit'
+                                    : 'bg-card text-card-foreground border border-border'
+                                }`}
+                              >
+                                <p className="text-sm">{message.content}</p>
+                              </div>
+                            )}
+                            <div className="bg-card rounded-2xl border border-border overflow-hidden">
+                              {message.message_type === 'place_share' && (
+                                <PlaceMessageCard
+                                  placeData={message.shared_content}
+                                  onViewPlace={(placeData) => {
+                                    navigate('/explore', { 
+                                      state: { 
+                                        sharedPlace: {
+                                          id: placeData.place_id || placeData.google_place_id || '',
+                                          google_place_id: placeData.google_place_id || placeData.place_id || '',
+                                          name: placeData.name || '',
+                                          category: placeData.category || 'place',
+                                          address: placeData.address || '',
+                                          city: placeData.city || '',
+                                          coordinates: placeData.coordinates || { lat: 0, lng: 0 }
+                                        }
+                                      }
+                                    });
+                                  }}
+                                />
+                              )}
+                              {message.message_type === 'post_share' && (
+                                <PostMessageCard postData={message.shared_content} />
+                              )}
+                              {message.message_type === 'profile_share' && (
+                                <ProfileMessageCard profileData={message.shared_content} />
+                              )}
+                              {messageReactions[message.id]?.length > 0 && (
+                                <div className="flex gap-1 flex-wrap px-3 pb-2">
+                                  {messageReactions[message.id].map((reaction, idx) => (
+                                    <button
+                                      key={idx}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleReaction(message.id, reaction.emoji);
+                                      }}
+                                      className="text-xs bg-background/80 rounded-full px-1.5 py-0.5 hover:scale-110 transition-transform"
+                                    >
+                                      {reaction.emoji}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className={`max-w-[70%] ${isOwn ? 'ml-16' : 'mr-16'}`}>
+                            <div
+                              className={`rounded-2xl px-4 py-3 ${
+                                isOwn
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-card text-card-foreground border border-border'
+                              }`}
+                            >
+                              <p className="text-sm">{message.content}</p>
+                              {messageReactions[message.id]?.length > 0 && (
+                                <div className="flex gap-1 flex-wrap mt-2">
+                                  {messageReactions[message.id].map((reaction, idx) => (
+                                    <button
+                                      key={idx}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleReaction(message.id, reaction.emoji);
+                                      }}
+                                      className={`text-xs rounded-full px-1.5 py-0.5 hover:scale-110 transition-transform ${
+                                        isOwn 
+                                          ? 'bg-primary-foreground/20' 
+                                          : 'bg-background/80'
+                                      }`}
+                                    >
+                                      {reaction.emoji}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                       </div>
+                   );
+                 })}
+                 <div ref={messagesEndRef} />
+               </div>
+             )}
+             </ScrollArea>
+           </div>
 
           {/* Message Input */}
           <div className="shrink-0 p-3 bg-background border-t border-border">
@@ -1006,6 +1076,61 @@ const MessagesPage = () => {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Saved Places Modal */}
+      <Sheet open={showSavedPlacesModal} onOpenChange={setShowSavedPlacesModal}>
+        <SheetContent side="bottom" className="h-[80vh] rounded-t-[20px]">
+          <SheetHeader>
+            <SheetTitle className="text-center">{t('shareSavedPlace', { ns: 'messages' })}</SheetTitle>
+          </SheetHeader>
+          <ScrollArea className="h-full pt-4">
+            {savedPlaces.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+                <MapPin className="w-12 h-12 text-muted-foreground mb-3" />
+                <p className="text-muted-foreground">{t('noSavedPlaces', { ns: 'messages' })}</p>
+              </div>
+            ) : (
+              <div className="space-y-2 pb-4">
+                {savedPlaces.map((place) => (
+                  <button
+                    key={place.id}
+                    onClick={() => handleSharePlace(place)}
+                    className="w-full flex items-center gap-3 p-3 hover:bg-accent transition-colors rounded-lg"
+                  >
+                    {place.image_url ? (
+                      <img
+                        src={place.image_url}
+                        alt={place.name}
+                        className="w-14 h-14 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center">
+                        <MapPin className="w-6 h-6 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="flex-1 text-left min-w-0">
+                      <p className="font-semibold text-foreground truncate">{place.name}</p>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {place.city} • {place.category}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
+
+      {showStories && convertedStories && convertedStories.length > 0 && (
+        <StoriesViewer
+          stories={convertedStories}
+          initialStoryIndex={initialStoryIndex}
+          onClose={() => setShowStories(false)}
+          onStoryViewed={() => {}}
+          onReplyToStory={handleReplyToStory}
+        />
+      )}
     </div>
   );
 };
