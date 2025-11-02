@@ -29,7 +29,7 @@ const MinimalLocationCard = ({
   return <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-all duration-200" onClick={onCardClick}>
       <div className="flex items-center gap-3">
         <div className="shrink-0 bg-gray-50 rounded-xl p-2">
-          <CategoryIcon category={place.category} className="w-14 h-14" />
+          <CategoryIcon category={place.category} className="w-12 h-12" />
         </div>
         
         <div className="flex-1 min-w-0">

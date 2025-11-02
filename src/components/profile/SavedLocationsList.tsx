@@ -217,7 +217,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
 
         <div className="flex gap-2">
           <Select value={selectedCity} onValueChange={setSelectedCity}>
-            <SelectTrigger className="flex-1 bg-background">
+            <SelectTrigger className="flex-1 bg-background rounded-full">
               <SelectValue placeholder={t('allCities', { ns: 'profile' })} />
             </SelectTrigger>
             <SelectContent className="bg-background z-50">
@@ -231,7 +231,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
           </Select>
 
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="flex-1 bg-background">
+            <SelectTrigger className="flex-1 bg-background rounded-full">
               <SelectValue placeholder={t('sortBy', { ns: 'common' })} />
             </SelectTrigger>
             <SelectContent className="bg-background z-50">
