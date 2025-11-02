@@ -672,6 +672,18 @@ const MessagesPage = () => {
                   </h1>
                 </button>
               </div>
+            ) : view === 'search' ? (
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Cerca ..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="pl-9 h-9 bg-muted/50 rounded-full"
+                  autoFocus
+                />
+              </div>
             ) : view === 'threads' ? (
               <div className="flex-1 flex items-center gap-2">
                 <div className="relative flex-1">
@@ -697,11 +709,7 @@ const MessagesPage = () => {
                   <img src={pinIcon} alt="Pin" className="w-7 h-7" />
                 </Button>
               </div>
-            ) : (
-              <h1 className="font-bold text-lg text-foreground">
-                {t('newMessage', { ns: 'messages' })}
-              </h1>
-            )}
+            ) : null}
           </div>
         </div>
       </header>
@@ -709,31 +717,17 @@ const MessagesPage = () => {
       {/* Search View */}
       {view === 'search' && (
         <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-          <div className="shrink-0 p-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Cerca ..."
-                value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="pl-10 rounded-full"
-                autoFocus
-              />
-            </div>
-          </div>
-
           <div className="flex-1 min-h-0 overflow-hidden">
             <ScrollArea className="h-full">
               {searchQuery.length === 0 && (
-                <div className="px-4 pb-4">
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-3">Contatti frequenti</h3>
+                <div className="py-6">
+                  <h3 className="text-sm font-semibold text-muted-foreground mb-4 text-center">Contatti frequenti</h3>
                   {frequentLoading ? (
                     <div className="flex items-center justify-center py-8">
                       <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                     </div>
                   ) : frequentContacts.length > 0 ? (
-                    <div className="flex flex-wrap gap-4">
+                    <div className="flex flex-wrap gap-4 justify-center px-4">
                       {frequentContacts.map((contact) => (
                         <button
                           key={contact.id}
