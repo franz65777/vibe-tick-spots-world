@@ -68,12 +68,39 @@ serve(async (req) => {
       .from('media')
       .getPublicUrl(uploadData.path);
 
+    // Find or create location in database if locationId is provided
+    let finalLocationId = null;
+    
+    if (locationId) {
+      // Check if this is already a UUID (existing location in our database)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      
+      if (uuidRegex.test(locationId)) {
+        // Already a valid UUID from our database
+        finalLocationId = locationId;
+      } else {
+        // It's a google_place_id or OSM id - try to find existing location
+        const { data: existingLocation } = await supabase
+          .from('locations')
+          .select('id')
+          .eq('google_place_id', locationId)
+          .maybeSingle();
+        
+        if (existingLocation) {
+          finalLocationId = existingLocation.id;
+        } else {
+          console.log('Location not found in database, story will be created without location_id');
+          // We'll just store the location name and address without the UUID reference
+        }
+      }
+    }
+
     // Create story record
     const { data: story, error: storyError } = await supabase
       .from('stories')
       .insert({
         user_id: user.id,
-        location_id: locationId || null,
+        location_id: finalLocationId,
         media_url: publicUrl,
         media_type: file.type.startsWith('image/') ? 'image' : 'video',
         caption: caption || null,
