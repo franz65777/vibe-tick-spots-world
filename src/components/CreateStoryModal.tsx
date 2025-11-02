@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X, Camera, Image, MapPin, Loader2, Upload, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import OpenStreetMapAutocomplete from './OpenStreetMapAutocomplete';
 import { useStories } from '@/hooks/useStories';
@@ -17,6 +16,20 @@ interface CreateStoryModalProps {
   onStoryCreated: () => void;
 }
 
+// Image filters similar to Instagram
+const imageFilters = [
+  { id: 'normal', name: 'Normal', filter: 'none' },
+  { id: 'clarendon', name: 'Clarendon', filter: 'contrast(1.2) saturate(1.35)' },
+  { id: 'gingham', name: 'Gingham', filter: 'brightness(1.05) hue-rotate(-10deg)' },
+  { id: 'moon', name: 'Moon', filter: 'grayscale(1) contrast(1.1) brightness(1.1)' },
+  { id: 'lark', name: 'Lark', filter: 'contrast(0.9) saturate(1.5)' },
+  { id: 'reyes', name: 'Reyes', filter: 'sepia(0.22) brightness(1.1) contrast(0.85) saturate(0.75)' },
+  { id: 'juno', name: 'Juno', filter: 'contrast(1.2) brightness(1.1) saturate(1.4) sepia(0.2)' },
+  { id: 'slumber', name: 'Slumber', filter: 'saturate(0.66) brightness(1.05)' },
+  { id: 'crema', name: 'Crema', filter: 'sepia(0.5) contrast(1.25) brightness(1.15) saturate(0.9) hue-rotate(-2deg)' },
+  { id: 'ludwig', name: 'Ludwig', filter: 'brightness(1.05) saturate(2)' },
+];
+
 const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalProps) => {
   const { uploadStory, uploading } = useStories();
   const { savedPlaces } = useSavedPlaces();
@@ -24,6 +37,7 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
   const { t } = useTranslation();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [selectedFilter, setSelectedFilter] = useState('normal');
   const [location, setLocation] = useState<{
     place_id: string;
     name: string;
@@ -40,10 +54,9 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
   // Auto-open file picker when modal opens
   useEffect(() => {
     if (isOpen && step === 'upload') {
-      // Small delay to ensure the modal is fully rendered
       const timer = setTimeout(() => {
         fileInputRef.current?.click();
-      }, 300);
+      }, 100);
       return () => clearTimeout(timer);
     }
   }, [isOpen, step]);
@@ -109,6 +122,7 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
       lat: place.coordinates.lat,
       lng: place.coordinates.lng,
     });
+    setShowLocationPicker(false);
   };
 
   const handleSubmit = async () => {
@@ -153,6 +167,7 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
     setPreviewUrl(null);
     setLocation(null);
     setStep('upload');
+    setSelectedFilter('normal');
     setAutoDetectingLocation(false);
     setShowLocationPicker(false);
     setLocationSearch('');
@@ -163,6 +178,8 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
   };
 
   if (!isOpen) return null;
+
+  const currentFilter = imageFilters.find(f => f.id === selectedFilter)?.filter || 'none';
 
   return (
     <div className="fixed inset-0 bg-background z-[9999] flex flex-col">
@@ -220,6 +237,7 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
               ref={fileInputRef}
               type="file"
               accept="image/*,video/*"
+              capture="environment"
               onChange={handleFileSelect}
               className="hidden"
             />
@@ -231,14 +249,15 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
         </div>
       ) : (
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Preview */}
+          {/* Preview with Filter */}
           <div className="relative bg-black flex-shrink-0" style={{ height: '50vh' }}>
             {previewUrl && (
               selectedFile?.type.startsWith('image/') ? (
                 <img
                   src={previewUrl}
                   alt="Story preview"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover transition-all duration-300"
+                  style={{ filter: currentFilter }}
                 />
               ) : (
                 <video
@@ -247,6 +266,41 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
                   className="w-full h-full object-cover"
                 />
               )
+            )}
+
+            {/* Filter selector - only for images */}
+            {selectedFile?.type.startsWith('image/') && (
+              <div className="absolute bottom-4 left-0 right-0 px-4">
+                <ScrollArea className="w-full">
+                  <div className="flex gap-3 pb-2">
+                    {imageFilters.map((filter) => (
+                      <button
+                        key={filter.id}
+                        onClick={() => setSelectedFilter(filter.id)}
+                        className="flex-shrink-0"
+                      >
+                        <div className={`relative w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                          selectedFilter === filter.id 
+                            ? 'border-white scale-110 shadow-lg' 
+                            : 'border-white/30'
+                        }`}>
+                          <img
+                            src={previewUrl}
+                            alt={filter.name}
+                            className="w-full h-full object-cover"
+                            style={{ filter: filter.filter }}
+                          />
+                        </div>
+                        <p className={`text-xs mt-1 text-center font-medium ${
+                          selectedFilter === filter.id ? 'text-white' : 'text-white/70'
+                        }`}>
+                          {filter.name}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
             )}
           </div>
 

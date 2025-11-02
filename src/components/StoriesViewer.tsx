@@ -6,6 +6,7 @@ import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import pinIcon from '@/assets/pin-icon.png';
 
 interface Story {
@@ -49,6 +50,7 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
   const [liked, setLiked] = useState(false);
   const [saving, setSaving] = useState(false);
   
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { savedPlaces, savePlace } = useSavedPlaces();
   const currentStory = stories[currentStoryIndex];
@@ -219,27 +221,31 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
         <X className="w-6 h-6" />
       </Button>
 
-      {/* User info - Enhanced with better visibility */}
-      <div className="absolute top-16 left-4 right-4 flex items-center gap-3 z-10 bg-black/40 backdrop-blur-sm rounded-2xl px-3 py-2 shadow-xl">
-        <div className="w-11 h-11 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
+      {/* User info - Instagram style aligned left */}
+      <div className="absolute top-16 left-4 flex items-center gap-2.5 z-10">
+        <div className="w-9 h-9 rounded-full border-2 border-white overflow-hidden shadow-lg">
           {currentStory.userAvatar ? (
             <img 
               src={currentStory.userAvatar} 
               alt={currentStory.userName}
-              className="w-full h-full rounded-full object-cover"
+              className="w-full h-full object-cover"
             />
           ) : (
-            <span className="text-sm font-bold text-gray-700">{getInitials(currentStory.userName)}</span>
+            <div className="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
+              <span className="text-xs font-bold text-gray-700">{getInitials(currentStory.userName)}</span>
+            </div>
           )}
         </div>
-        <div className="flex-1">
-          <p className="text-white font-bold text-sm drop-shadow-lg">{currentStory.userName}</p>
-          <p className="text-white/90 text-xs drop-shadow font-medium">
-            {new Date(currentStory.timestamp).toLocaleTimeString('en-US', { 
-              hour: 'numeric', 
-              minute: '2-digit',
-              hour12: true 
-            })}
+        <div>
+          <p className="text-white font-semibold text-sm drop-shadow-lg">{currentStory.userName}</p>
+          <p className="text-white/90 text-xs drop-shadow-md font-medium">
+            {(() => {
+              const now = new Date();
+              const storyTime = new Date(currentStory.timestamp);
+              const diffMs = now.getTime() - storyTime.getTime();
+              const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+              return diffHours < 1 ? t('now', { ns: 'common' }) : `${diffHours} ${t('hoursAgo', { ns: 'common' })}`;
+            })()}
           </p>
         </div>
       </div>
