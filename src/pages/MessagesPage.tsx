@@ -547,16 +547,19 @@ const MessagesPage = () => {
       if (spResult.data) {
         spResult.data.forEach((sp: any) => {
           if (!places.has(sp.place_id)) {
+            const lat = sp.coordinates?.lat;
+            const lng = sp.coordinates?.lng;
             places.set(sp.place_id, {
               id: sp.place_id,
-              name: sp.name,
-              category: sp.category || 'place',
+              name: sp.place_name,
+              category: sp.place_category || 'restaurant',
               city: sp.city,
-              address: sp.address,
-              image_url: sp.image_url,
-              google_place_id: sp.google_place_id || sp.place_id,
-              latitude: sp.latitude,
-              longitude: sp.longitude
+              address: null,
+              image_url: null,
+              google_place_id: sp.place_id,
+              coordinates: sp.coordinates,
+              latitude: lat,
+              longitude: lng
             });
           }
         });

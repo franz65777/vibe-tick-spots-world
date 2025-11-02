@@ -2518,6 +2518,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      clean_city_name: { Args: { city_input: string }; Returns: string }
       cleanup_expired_cache: { Args: never; Returns: undefined }
       cleanup_expired_stories: { Args: never; Returns: undefined }
       cleanup_old_analytics: { Args: never; Returns: undefined }
