@@ -23,6 +23,16 @@ function isBackgroundColor(r: number, g: number, b: number) {
     return true;
   }
   
+  // Detect dark blue/teal backgrounds (common in bar icons)
+  if (b > r && b > g && b > 80 && (b - r) > 30) {
+    return true;
+  }
+  
+  // Detect darker grey/slate backgrounds
+  if (diff < 20 && max < 80) {
+    return true;
+  }
+  
   return false;
 }
 
