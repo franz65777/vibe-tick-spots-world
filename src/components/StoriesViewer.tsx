@@ -1,8 +1,9 @@
 
 import { useState, useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight, MapPin, ExternalLink, Navigation } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, MapPin, ExternalLink, Navigation, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 
 interface Story {
   id: string;
@@ -26,6 +27,7 @@ interface StoriesViewerProps {
   onClose: () => void;
   onStoryViewed: (storyId: string) => void;
   onLocationClick?: (locationId: string) => void;
+  onReplyToStory?: (storyId: string, userId: string, message: string) => void;
 }
 
 const getInitials = (name: string) => {
@@ -37,10 +39,11 @@ const getInitials = (name: string) => {
   return name[0]?.toUpperCase() || 'U';
 };
 
-const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onLocationClick }: StoriesViewerProps) => {
+const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onLocationClick, onReplyToStory }: StoriesViewerProps) => {
   const [currentStoryIndex, setCurrentStoryIndex] = useState(initialStoryIndex);
   const [progress, setProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [replyText, setReplyText] = useState('');
 
   const currentStory = stories[currentStoryIndex];
 
@@ -85,6 +88,14 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
 
   const handlePause = () => setIsPaused(true);
   const handleResume = () => setIsPaused(false);
+
+  const handleSendReply = () => {
+    if (replyText.trim() && onReplyToStory && currentStory) {
+      onReplyToStory(currentStory.id, currentStory.userId, replyText.trim());
+      setReplyText('');
+      onClose();
+    }
+  };
 
   if (!currentStory) return null;
 
@@ -185,7 +196,7 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
           </div>
         </div>
         
-        <div className="flex gap-3">
+        <div className="flex gap-3 mb-4">
           {onLocationClick && currentStory.locationId && (
             <Button
               className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl font-semibold shadow-lg transition-all active:scale-95"
@@ -206,6 +217,33 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
             </Button>
           )}
         </div>
+
+        {/* Reply to story */}
+        {onReplyToStory && (
+          <div className="flex gap-2">
+            <Input
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              onFocus={handlePause}
+              onBlur={handleResume}
+              placeholder="Reply to story..."
+              className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:bg-white/20"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendReply();
+                }
+              }}
+            />
+            <Button
+              onClick={handleSendReply}
+              disabled={!replyText.trim()}
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+            >
+              <Send className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Navigation arrows */}

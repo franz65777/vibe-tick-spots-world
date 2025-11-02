@@ -579,6 +579,7 @@ export type Database = {
           receiver_id: string
           sender_id: string
           shared_content: Json | null
+          story_id: string | null
         }
         Insert: {
           content?: string | null
@@ -592,6 +593,7 @@ export type Database = {
           receiver_id: string
           sender_id: string
           shared_content?: Json | null
+          story_id?: string | null
         }
         Update: {
           content?: string | null
@@ -605,6 +607,7 @@ export type Database = {
           receiver_id?: string
           sender_id?: string
           shared_content?: Json | null
+          story_id?: string | null
         }
         Relationships: [
           {
@@ -612,6 +615,13 @@ export type Database = {
             columns: ["location_id"]
             isOneToOne: false
             referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_messages_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
             referencedColumns: ["id"]
           },
         ]

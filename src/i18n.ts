@@ -292,6 +292,10 @@ const resources = {
       messageOptions: 'Message Options',
       addReaction: 'Add Reaction',
       selectEmoji: 'Select Emoji',
+      repliedToYourStory: 'Replied to your story',
+      newMessages: '{{count}} new messages',
+      sent: 'Sent',
+      viewed: 'Viewed',
     },
     business: {
       overview: 'Overview',
@@ -632,6 +636,10 @@ const resources = {
       messageOptions: 'Opciones de Mensaje',
       addReaction: 'Añadir Reacción',
       selectEmoji: 'Seleccionar Emoji',
+      repliedToYourStory: 'Ha respondido a tu historia',
+      newMessages: '{{count}} mensajes nuevos',
+      sent: 'Enviado',
+      viewed: 'Visto',
     },
     business: {
       overview: 'Resumen',
@@ -967,6 +975,10 @@ const resources = {
       messageOptions: 'Opzioni Messaggio',
       addReaction: 'Aggiungi Reazione',
       selectEmoji: 'Seleziona Emoji',
+      repliedToYourStory: 'Ha risposto alla tua storia',
+      newMessages: '{{count}} nuovi messaggi',
+      sent: 'Inviato',
+      viewed: 'Visualizzato',
     },
     business: {
       overview: 'Panoramica',

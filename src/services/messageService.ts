@@ -6,11 +6,12 @@ export interface DirectMessage {
   sender_id: string;
   receiver_id: string;
   content?: string;
-  message_type: 'text' | 'place_share' | 'trip_share' | 'post_share' | 'profile_share' | 'audio';
+  message_type: 'text' | 'place_share' | 'trip_share' | 'post_share' | 'profile_share' | 'audio' | 'story_reply';
   shared_content?: any;
   created_at: string;
   read_at?: string;
   is_read: boolean;
+  story_id?: string;
   sender?: {
     username: string;
     full_name: string;
@@ -476,6 +477,69 @@ class MessageService {
     } catch (error) {
       console.error('Error fetching hidden messages:', error);
       return [];
+    }
+  }
+
+  async sendStoryReply(receiverId: string, storyId: string, content: string): Promise<DirectMessage | null> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('direct_messages')
+        .insert({
+          sender_id: user.id,
+          receiver_id: receiverId,
+          message_type: 'story_reply' as const,
+          content,
+          story_id: storyId
+        })
+        .select('*')
+        .single();
+
+      if (error) throw error;
+
+      const { data: senderProfile } = await supabase
+        .from('profiles')
+        .select('username, full_name, avatar_url')
+        .eq('id', user.id)
+        .single();
+      
+      return {
+        ...data,
+        sender: senderProfile ? {
+          username: senderProfile.username || 'Unknown',
+          full_name: senderProfile.full_name || 'Unknown User',
+          avatar_url: senderProfile.avatar_url || ''
+        } : {
+          username: 'Unknown',
+          full_name: 'Unknown User',
+          avatar_url: ''
+        }
+      } as DirectMessage;
+    } catch (error) {
+      console.error('Error sending story reply:', error);
+      return null;
+    }
+  }
+
+  async getUnreadCount(otherUserId: string): Promise<number> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { count, error } = await supabase
+        .from('direct_messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('sender_id', otherUserId)
+        .eq('receiver_id', user.id)
+        .eq('is_read', false);
+
+      if (error) throw error;
+      return count || 0;
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+      return 0;
     }
   }
 }

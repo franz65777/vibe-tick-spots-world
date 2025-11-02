@@ -47,6 +47,7 @@ const MessagesPage = () => {
   const [messageReactions, setMessageReactions] = useState<Record<string, { emoji: string; user_id: string; }[]>>({});
   const [isDoubleTapping, setIsDoubleTapping] = useState(false);
   const [hiddenMessageIds, setHiddenMessageIds] = useState<string[]>([]);
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const lastTapRef = useRef<number>(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<any>(null);
@@ -98,6 +99,17 @@ const MessagesPage = () => {
       setLoading(true);
       const data = await messageService.getMessageThreads();
       setThreads(data || []);
+      
+      // Load unread counts for each thread
+      const counts: Record<string, number> = {};
+      for (const thread of data || []) {
+        const otherUser = getOtherParticipant(thread);
+        if (otherUser) {
+          const count = await messageService.getUnreadCount(otherUser.id);
+          counts[otherUser.id] = count;
+        }
+      }
+      setUnreadCounts(counts);
     } catch (error) {
       console.error('Error loading threads:', error);
     } finally {
@@ -431,6 +443,24 @@ const MessagesPage = () => {
     bookingUrl: undefined
   }));
 
+  const handleReplyToStory = async (storyId: string, userId: string, message: string) => {
+    try {
+      await messageService.sendStoryReply(userId, storyId, message);
+      await loadThreads();
+      setShowStories(false);
+      // Navigate to the conversation
+      const thread = threads.find(t => 
+        (t.participant_1_id === user?.id && t.participant_2_id === userId) ||
+        (t.participant_2_id === user?.id && t.participant_1_id === userId)
+      );
+      if (thread) {
+        handleThreadSelect(thread);
+      }
+    } catch (error) {
+      console.error('Error replying to story:', error);
+    }
+  };
+
   const formatMessageTime = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -578,10 +608,36 @@ const MessagesPage = () => {
               </Button>
             </div>
           ) : (
-            <div className="divide-y divide-border">
+            <div className="space-y-0">
               {threads.map((thread) => {
                 const otherParticipant = getOtherParticipant(thread);
                 if (!otherParticipant) return null;
+
+                const unreadCount = unreadCounts[otherParticipant.id] || 0;
+                const lastMessage = thread.last_message;
+                const isMyMessage = lastMessage?.sender_id === user?.id;
+                const isStoryReply = lastMessage?.message_type === 'story_reply';
+
+                // Format message preview
+                let messagePreview = '';
+                if (isStoryReply) {
+                  messagePreview = t('repliedToYourStory', { ns: 'messages' });
+                } else if (unreadCount > 1) {
+                  messagePreview = t('newMessages', { ns: 'messages', count: unreadCount });
+                } else if (lastMessage?.content) {
+                  const content = lastMessage.content;
+                  messagePreview = content.length > 30 ? `${content.substring(0, 30)}...` : content;
+                } else {
+                  messagePreview = t('startConversation', { ns: 'messages' });
+                }
+
+                // Message status for sent messages
+                let statusText = '';
+                if (isMyMessage && !isStoryReply) {
+                  statusText = lastMessage?.is_read 
+                    ? t('viewed', { ns: 'messages' })
+                    : t('sent', { ns: 'messages' });
+                }
 
                 return (
                   <button
@@ -589,22 +645,50 @@ const MessagesPage = () => {
                     onClick={() => handleThreadSelect(thread)}
                     className="w-full flex items-center gap-3 p-4 hover:bg-accent transition-colors"
                   >
-                    <Avatar className="w-12 h-12">
+                    <Avatar className="w-14 h-14">
                       <AvatarImage src={otherParticipant.avatar_url} />
                       <AvatarFallback>{otherParticipant.username?.[0]?.toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0 text-left">
                       <div className="flex justify-between items-start mb-1">
-                        <p className="font-semibold text-foreground truncate">
+                        <p className="font-semibold text-base text-foreground truncate">
                           {otherParticipant.username}
                         </p>
-                        <span className="text-xs text-muted-foreground ml-2">
-                          {thread.last_message_at && formatMessageTime(thread.last_message_at)}
-                        </span>
+                        <div className="flex items-center gap-2 ml-2 flex-shrink-0">
+                          <span className="text-xs text-muted-foreground">
+                            {thread.last_message_at && formatMessageTime(thread.last_message_at)}
+                          </span>
+                          {unreadCount > 0 && (
+                            <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                              <span className="text-xs text-primary-foreground font-bold">
+                                {unreadCount}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                       <p className="text-sm text-muted-foreground truncate">
-                        {thread.last_message?.content || t('startConversation', { ns: 'messages' })}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm text-muted-foreground truncate">
+                          {isStoryReply ? (
+                            <span className="font-semibold">{messagePreview}</span>
+                          ) : (
+                            <>
+                              {lastMessage?.content && (
+                                <>
+                                  <span className="font-semibold">
+                                    {lastMessage.content.substring(0, Math.min(20, lastMessage.content.length))}
+                                  </span>
+                                  {lastMessage.content.length > 20 && '...'}
+                                </>
+                              )}
+                              {!lastMessage?.content && messagePreview}
+                            </>
+                          )}
+                        </p>
+                        {statusText && (
+                          <span className="text-xs text-muted-foreground">· {statusText}</span>
+                        )}
+                      </div>
                     </div>
                   </button>
                 );
