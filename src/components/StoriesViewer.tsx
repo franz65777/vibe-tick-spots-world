@@ -1,9 +1,12 @@
 
 import { useState, useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight, MapPin, ExternalLink, Navigation, Send } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, MapPin, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+import { useSavedPlaces } from '@/hooks/useSavedPlaces';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import pinIcon from '@/assets/pin-icon.png';
 
 interface Story {
   id: string;
@@ -43,9 +46,18 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
   const [currentStoryIndex, setCurrentStoryIndex] = useState(initialStoryIndex);
   const [progress, setProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  const [replyText, setReplyText] = useState('');
-
+  const [liked, setLiked] = useState(false);
+  const [saving, setSaving] = useState(false);
+  
+  const { user } = useAuth();
+  const { savedPlaces, savePlace } = useSavedPlaces();
   const currentStory = stories[currentStoryIndex];
+  
+  // Check if location is already saved
+  const allSavedPlaces = Object.values(savedPlaces).flat();
+  const isLocationSaved = currentStory?.locationId ? 
+    allSavedPlaces.some(place => place.id === currentStory.locationId) : 
+    false;
 
   useEffect(() => {
     if (!currentStory) return;
@@ -89,13 +101,73 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
   const handlePause = () => setIsPaused(true);
   const handleResume = () => setIsPaused(false);
 
-  const handleSendReply = () => {
-    if (replyText.trim() && onReplyToStory && currentStory) {
-      onReplyToStory(currentStory.id, currentStory.userId, replyText.trim());
-      setReplyText('');
-      onClose();
+  const handleLike = async () => {
+    if (!user || !currentStory) return;
+    
+    try {
+      if (liked) {
+        // Unlike
+        await supabase
+          .from('story_likes')
+          .delete()
+          .eq('story_id', currentStory.id)
+          .eq('user_id', user.id);
+        setLiked(false);
+      } else {
+        // Like
+        await supabase
+          .from('story_likes')
+          .insert({
+            story_id: currentStory.id,
+            user_id: user.id
+          });
+        setLiked(true);
+        toast.success('Story liked!');
+      }
+    } catch (error) {
+      console.error('Error liking story:', error);
     }
   };
+
+  const handleSaveLocation = async () => {
+    if (!user || !currentStory || !currentStory.locationId || saving) return;
+    
+    setSaving(true);
+    try {
+      await savePlace({
+        id: currentStory.locationId,
+        name: currentStory.locationName,
+        address: currentStory.locationAddress,
+        category: currentStory.locationCategory || 'restaurant',
+        coordinates: { lat: 0, lng: 0 }, // These would need to be included in story data
+        city: currentStory.locationAddress.split(',').pop()?.trim() || ''
+      });
+      toast.success('Location saved to your favorites!');
+    } catch (error) {
+      console.error('Error saving location:', error);
+      toast.error('Failed to save location');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Check if user has liked this story
+  useEffect(() => {
+    const checkLiked = async () => {
+      if (!user || !currentStory) return;
+      
+      const { data } = await supabase
+        .from('story_likes')
+        .select('id')
+        .eq('story_id', currentStory.id)
+        .eq('user_id', user.id)
+        .single();
+      
+      setLiked(!!data);
+    };
+    
+    checkLiked();
+  }, [currentStory?.id, user]);
 
   if (!currentStory) return null;
 
@@ -179,71 +251,54 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
         />
       </div>
 
-      {/* Location info - Enhanced card */}
-      <div className="absolute bottom-6 left-4 right-4 bg-black/80 backdrop-blur-lg rounded-3xl p-5 shadow-2xl border border-white/20">
-        <div className="flex items-start gap-4 mb-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shrink-0 shadow-lg">
-            <MapPin className="w-6 h-6 text-white" />
+      {/* Location overlay on media - clickable */}
+      {onLocationClick && currentStory.locationId && (
+        <button
+          onClick={() => onLocationClick(currentStory.locationId)}
+          className="absolute bottom-24 left-4 bg-black/70 backdrop-blur-md rounded-2xl px-4 py-3 shadow-xl border border-white/20 hover:bg-black/80 transition-all z-10 flex items-center gap-3"
+        >
+          <MapPin className="w-5 h-5 text-white shrink-0" />
+          <div className="text-left">
+            <p className="text-white font-bold text-sm leading-tight">{currentStory.locationName}</p>
+            <p className="text-white/70 text-xs">{currentStory.locationAddress}</p>
           </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="text-white font-bold text-lg mb-1.5 leading-tight">{currentStory.locationName}</h3>
-            <p className="text-white/80 text-sm mb-2.5 leading-snug">{currentStory.locationAddress}</p>
-            {currentStory.locationCategory && (
-              <Badge className="bg-gradient-to-r from-blue-500/30 to-purple-500/30 text-white border-white/40 text-xs font-semibold px-3 py-1 backdrop-blur">
-                {currentStory.locationCategory}
-              </Badge>
-            )}
-          </div>
-        </div>
-        
-        <div className="flex gap-3 mb-4">
-          {onLocationClick && currentStory.locationId && (
-            <Button
-              className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl font-semibold shadow-lg transition-all active:scale-95"
-              onClick={() => onLocationClick(currentStory.locationId)}
-            >
-              <Navigation className="w-4 h-4 mr-2" />
-              View on Map
-            </Button>
-          )}
-          
-          {currentStory.bookingUrl && (
-            <Button
-              className="flex-1 bg-white/20 hover:bg-white/30 text-white rounded-xl font-semibold backdrop-blur border border-white/30 transition-all active:scale-95"
-              onClick={() => window.open(currentStory.bookingUrl, '_blank')}
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Details
-            </Button>
-          )}
-        </div>
+        </button>
+      )}
 
-        {/* Reply to story */}
-        {onReplyToStory && (
-          <div className="flex gap-2">
-            <Input
-              value={replyText}
-              onChange={(e) => setReplyText(e.target.value)}
-              onFocus={handlePause}
-              onBlur={handleResume}
-              placeholder="Reply to story..."
-              className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:bg-white/20"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendReply();
-                }
-              }}
-            />
-            <Button
-              onClick={handleSendReply}
-              disabled={!replyText.trim()}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
-            >
-              <Send className="w-4 h-4" />
-            </Button>
-          </div>
-        )}
+      {/* Action buttons - Like and Save */}
+      <div className="absolute bottom-6 right-4 flex flex-col gap-3 z-10">
+        {/* Like button */}
+        <button
+          onClick={handleLike}
+          className={`w-14 h-14 rounded-full backdrop-blur-md shadow-xl border-2 flex items-center justify-center transition-all active:scale-90 ${
+            liked 
+              ? 'bg-red-500 border-red-400' 
+              : 'bg-black/50 border-white/30 hover:bg-black/70'
+          }`}
+        >
+          <Heart 
+            className={`w-7 h-7 transition-all ${
+              liked ? 'fill-white text-white' : 'text-white'
+            }`} 
+          />
+        </button>
+
+        {/* Save location button */}
+        <button
+          onClick={handleSaveLocation}
+          disabled={isLocationSaved || saving}
+          className={`w-14 h-14 rounded-full backdrop-blur-md shadow-xl border-2 flex items-center justify-center transition-all active:scale-90 ${
+            isLocationSaved
+              ? 'bg-green-500 border-green-400'
+              : 'bg-black/50 border-white/30 hover:bg-black/70'
+          }`}
+        >
+          <img 
+            src={pinIcon} 
+            alt="Save" 
+            className={`w-7 h-7 ${isLocationSaved ? 'opacity-100' : 'opacity-90'}`}
+          />
+        </button>
       </div>
 
       {/* Navigation arrows */}

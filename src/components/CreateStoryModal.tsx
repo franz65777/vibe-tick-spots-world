@@ -24,7 +24,6 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
   const { t } = useTranslation();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [caption, setCaption] = useState('');
   const [location, setLocation] = useState<{
     place_id: string;
     name: string;
@@ -128,7 +127,7 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
       
       await uploadStory(
         selectedFile,
-        caption,
+        '',
         location?.place_id,
         location?.name,
         location?.address
@@ -152,7 +151,6 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
   const handleClose = () => {
     setSelectedFile(null);
     setPreviewUrl(null);
-    setCaption('');
     setLocation(null);
     setStep('upload');
     setAutoDetectingLocation(false);
@@ -254,20 +252,7 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
             </div>
 
             {/* Details Form */}
-            <div className="p-4 space-y-4 flex-1 overflow-y-auto">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Caption
-                </label>
-                <Textarea
-                  value={caption}
-                  onChange={(e) => setCaption(e.target.value)}
-                  placeholder="Share your thoughts about this moment..."
-                  className="resize-none border-gray-200 rounded-lg focus:border-blue-400 focus:ring-blue-400 bg-white"
-                  rows={2}
-                />
-              </div>
-
+            <div className="p-6 space-y-4 flex-1 overflow-y-auto">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-red-600" />
@@ -379,14 +364,14 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
               <Button
                 variant="outline"
                 onClick={() => setStep('upload')}
-                className="flex-1 rounded-lg"
+                className="flex-1 rounded-full border-2"
                 disabled={uploading}
               >
                 Back
               </Button>
               <Button
                 onClick={handleSubmit}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50"
+                className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-full shadow-lg disabled:opacity-50"
                 disabled={uploading || !location}
               >
                 {uploading ? (
