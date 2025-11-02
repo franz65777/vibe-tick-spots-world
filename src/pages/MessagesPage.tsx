@@ -1280,41 +1280,40 @@ const MessagesPage = () => {
               </div>
             ) : (
               <div className="space-y-2 pb-4">
-                {savedPlaces.map((place) => {
-                  const CategoryIcon = getCategoryIcon(place.category);
-                  const categoryColor = getCategoryColor(place.category);
-                  
-                  return (
-                    <button
-                      key={place.id}
-                      onClick={() => handlePlaceClick(place)}
-                      className="w-full flex items-center gap-3 p-3 hover:bg-accent transition-colors rounded-lg"
-                    >
-                      {place.image_url ? (
-                        <img
-                          src={place.image_url}
-                          alt={place.name}
-                          className="w-14 h-14 rounded-lg object-cover"
+                {savedPlaces.map((place) => (
+                  <button
+                    key={place.id}
+                    onClick={() => handlePlaceClick(place)}
+                    className="w-full flex items-center gap-3 p-3 hover:bg-accent transition-colors rounded-lg"
+                  >
+                    {place.image_url ? (
+                      <img
+                        src={place.image_url}
+                        alt={place.name}
+                        className="w-14 h-14 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center">
+                        <img 
+                          src={getCategoryImage(place.category)} 
+                          alt={place.category}
+                          className="w-10 h-10 object-contain"
                         />
-                      ) : (
-                        <div className={`w-14 h-14 rounded-lg ${categoryColor.replace('text-', 'bg-').replace('-500', '-100').replace('-600', '-100')} flex items-center justify-center`}>
-                          <CategoryIcon className={`w-7 h-7 ${categoryColor}`} />
-                        </div>
-                      )}
-                      <div className="flex-1 text-left min-w-0">
-                        <p className="font-semibold text-foreground truncate">{place.name}</p>
-                        <p className="text-sm text-muted-foreground truncate">
-                          <CityLabel 
-                            id={place.google_place_id || place.id}
-                            city={place.city}
-                            address={place.address}
-                            coordinates={place.coordinates}
-                          /> • {place.category}
-                        </p>
                       </div>
-                    </button>
-                  );
-                })}
+                    )}
+                    <div className="flex-1 text-left min-w-0">
+                      <p className="font-semibold text-foreground truncate">{place.name}</p>
+                      <p className="text-sm text-muted-foreground truncate">
+                        <CityLabel 
+                          id={place.google_place_id || place.id}
+                          city={place.city}
+                          address={place.address}
+                          coordinates={place.coordinates}
+                        /> • {place.category}
+                      </p>
+                    </div>
+                  </button>
+                ))}
               </div>
             )}
           </ScrollArea>
