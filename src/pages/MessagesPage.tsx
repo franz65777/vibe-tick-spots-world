@@ -870,37 +870,33 @@ const MessagesPage = () => {
                  {messages.filter(m => !hiddenMessageIds.includes(m.id)).map((message) => {
                    const isOwn = message.sender_id === user?.id;
                    return (
-                       <div
-                        key={message.id}
-                        className={`flex flex-col gap-1 ${isOwn ? 'items-end' : 'items-start'}`}
-                        onTouchStart={() => handleLongPressStart(message.id)}
-                        onTouchEnd={handleLongPressEnd}
-                        onMouseDown={() => handleLongPressStart(message.id)}
-                        onMouseUp={handleLongPressEnd}
-                        onMouseLeave={handleLongPressEnd}
-                        onClick={() => handleDoubleTap(message.id)}
-                      >
-                        <div className={`flex items-start gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
-                          {/* Avatar */}
-                          <Avatar className="w-8 h-8 flex-shrink-0">
-                            <AvatarImage src={isOwn ? user?.user_metadata?.avatar_url : otherUserProfile?.avatar_url} />
-                            <AvatarFallback>
-                              {isOwn 
-                                ? user?.user_metadata?.username?.[0]?.toUpperCase() 
-                                : otherUserProfile?.username?.[0]?.toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
+                        <div
+                         key={message.id}
+                         className={`flex flex-col gap-1 ${isOwn ? 'items-end' : 'items-start'}`}
+                         onTouchStart={() => handleLongPressStart(message.id)}
+                         onTouchEnd={handleLongPressEnd}
+                         onMouseDown={() => handleLongPressStart(message.id)}
+                         onMouseUp={handleLongPressEnd}
+                         onMouseLeave={handleLongPressEnd}
+                         onClick={() => handleDoubleTap(message.id)}
+                       >
+                         <div className={`flex items-end gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
+                           {/* Avatar - only for received messages */}
+                           {!isOwn && (
+                             <Avatar className="w-6 h-6 flex-shrink-0">
+                               <AvatarImage src={otherUserProfile?.avatar_url} />
+                               <AvatarFallback className="text-xs">
+                                 {otherUserProfile?.username?.[0]?.toUpperCase()}
+                               </AvatarFallback>
+                             </Avatar>
+                           )}
 
-                          <div className="flex-1 min-w-0">
-                            {/* Timestamp outside bubble */}
-                            <p className={`text-xs text-muted-foreground px-2 mb-1 ${isOwn ? 'text-right' : 'text-left'}`}>
-                              {formatMessageTime(message.created_at)}
-                            </p>
+                           <div className="flex-1 min-w-0">
                         
                         {message.message_type === 'audio' && message.shared_content?.audio_url ? (
-                          <div className={`max-w-[70%] ${isOwn ? 'ml-16' : 'mr-16'}`}>
+                          <div className={`max-w-[70%] ${isOwn ? 'ml-auto' : ''}`}>
                             <div
-                              className={`rounded-2xl px-4 py-3 ${
+                              className={`rounded-2xl px-4 py-3 relative ${
                                 isOwn
                                   ? 'bg-primary text-primary-foreground'
                                   : 'bg-card text-card-foreground border border-border'
@@ -917,7 +913,7 @@ const MessagesPage = () => {
                                 </audio>
                               </div>
                               {messageReactions[message.id]?.length > 0 && (
-                                <div className="flex gap-1 flex-wrap">
+                                <div className="absolute -bottom-2 left-2 flex gap-0.5 bg-background/95 rounded-full px-1.5 py-0.5 shadow-sm border border-border">
                                   {messageReactions[message.id].map((reaction, idx) => (
                                     <button
                                       key={idx}
@@ -925,11 +921,7 @@ const MessagesPage = () => {
                                         e.stopPropagation();
                                         toggleReaction(message.id, reaction.emoji);
                                       }}
-                                      className={`text-xs rounded-full px-1.5 py-0.5 hover:scale-110 transition-transform ${
-                                        isOwn 
-                                          ? 'bg-primary-foreground/20' 
-                                          : 'bg-background/80'
-                                      }`}
+                                      className="text-sm leading-none hover:scale-110 transition-transform"
                                     >
                                       {reaction.emoji}
                                     </button>
@@ -937,13 +929,17 @@ const MessagesPage = () => {
                                 </div>
                               )}
                             </div>
+                            {/* Timestamp below message */}
+                            <p className={`text-xs text-muted-foreground px-2 mt-1 ${isOwn ? 'text-right' : 'text-left'}`}>
+                              {formatMessageTime(message.created_at)}
+                            </p>
                           </div>
                         ) : ['place_share', 'post_share', 'profile_share'].includes(message.message_type) &&
                         message.shared_content ? (
-                          <div className={`max-w-[85%] ${isOwn ? 'ml-8' : 'mr-8'}`}>
+                          <div className={`max-w-[85%] ${isOwn ? 'ml-auto' : ''}`}>
                             {message.content && (
                               <div
-                                className={`rounded-2xl px-4 py-3 mb-2 ${
+                                className={`rounded-2xl px-4 py-3 mb-2 relative ${
                                   isOwn
                                     ? 'bg-primary text-primary-foreground ml-auto max-w-fit'
                                     : 'bg-card text-card-foreground border border-border'
@@ -952,7 +948,7 @@ const MessagesPage = () => {
                                 <p className="text-sm">{message.content}</p>
                               </div>
                             )}
-                            <div className="bg-card rounded-2xl border border-border overflow-hidden">
+                            <div className="bg-card rounded-2xl border border-border overflow-hidden relative">
                               {message.message_type === 'place_share' && (
                                 <PlaceMessageCard
                                   placeData={message.shared_content}
@@ -980,7 +976,7 @@ const MessagesPage = () => {
                                 <ProfileMessageCard profileData={message.shared_content} />
                               )}
                               {messageReactions[message.id]?.length > 0 && (
-                                <div className="flex gap-1 flex-wrap px-3 pb-2">
+                                <div className="absolute -bottom-2 left-2 flex gap-0.5 bg-background/95 rounded-full px-1.5 py-0.5 shadow-sm border border-border">
                                   {messageReactions[message.id].map((reaction, idx) => (
                                     <button
                                       key={idx}
@@ -988,7 +984,7 @@ const MessagesPage = () => {
                                         e.stopPropagation();
                                         toggleReaction(message.id, reaction.emoji);
                                       }}
-                                      className="text-xs bg-background/80 rounded-full px-1.5 py-0.5 hover:scale-110 transition-transform"
+                                      className="text-sm leading-none hover:scale-110 transition-transform"
                                     >
                                       {reaction.emoji}
                                     </button>
@@ -996,19 +992,23 @@ const MessagesPage = () => {
                                 </div>
                               )}
                             </div>
+                            {/* Timestamp below message */}
+                            <p className={`text-xs text-muted-foreground px-2 mt-1 ${isOwn ? 'text-right' : 'text-left'}`}>
+                              {formatMessageTime(message.created_at)}
+                            </p>
                           </div>
                         ) : (
-                          <div className={`max-w-[70%] ${isOwn ? 'ml-16' : 'mr-16'}`}>
+                          <div className={`max-w-[70%] ${isOwn ? 'ml-auto' : ''}`}>
                             <div
-                              className={`rounded-2xl px-4 py-3 ${
+                              className={`rounded-2xl px-4 py-3 relative ${
                                 isOwn
                                   ? 'bg-primary text-primary-foreground'
                                   : 'bg-card text-card-foreground border border-border'
                               }`}
                             >
-                              <p className="text-sm">{message.content}</p>
+                              <p className="text-sm break-words">{message.content}</p>
                               {messageReactions[message.id]?.length > 0 && (
-                                <div className="flex gap-1 flex-wrap mt-2">
+                                <div className="absolute -bottom-2 left-2 flex gap-0.5 bg-background/95 rounded-full px-1.5 py-0.5 shadow-sm border border-border">
                                   {messageReactions[message.id].map((reaction, idx) => (
                                     <button
                                       key={idx}
@@ -1016,11 +1016,7 @@ const MessagesPage = () => {
                                         e.stopPropagation();
                                         toggleReaction(message.id, reaction.emoji);
                                       }}
-                                      className={`text-xs rounded-full px-1.5 py-0.5 hover:scale-110 transition-transform ${
-                                        isOwn 
-                                          ? 'bg-primary-foreground/20' 
-                                          : 'bg-background/80'
-                                      }`}
+                                      className="text-sm leading-none hover:scale-110 transition-transform"
                                     >
                                       {reaction.emoji}
                                     </button>
@@ -1028,6 +1024,10 @@ const MessagesPage = () => {
                                 </div>
                               )}
                             </div>
+                            {/* Timestamp below message */}
+                            <p className={`text-xs text-muted-foreground px-2 mt-1 ${isOwn ? 'text-right' : 'text-left'}`}>
+                              {formatMessageTime(message.created_at)}
+                            </p>
                           </div>
                         )}
                           </div>
