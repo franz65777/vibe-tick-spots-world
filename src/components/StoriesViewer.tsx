@@ -60,11 +60,27 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
     false;
 
   useEffect(() => {
-    if (!currentStory) return;
+    if (!currentStory || !user) return;
 
     // Mark story as viewed when it starts
-    onStoryViewed(currentStory.id);
-  }, [currentStory?.id, onStoryViewed]);
+    const markAsViewed = async () => {
+      try {
+        await supabase
+          .from('story_views' as any)
+          .insert({
+            story_id: currentStory.id,
+            user_id: user.id
+          })
+          .then(() => {
+            onStoryViewed(currentStory.id);
+          });
+      } catch (error) {
+        console.error('Error marking story as viewed:', error);
+      }
+    };
+
+    markAsViewed();
+  }, [currentStory?.id, user, onStoryViewed]);
 
   useEffect(() => {
     if (isPaused) return;
@@ -107,22 +123,24 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
     try {
       if (liked) {
         // Unlike
-        await supabase
-          .from('story_likes')
+        const { error } = await supabase
+          .from('story_likes' as any)
           .delete()
           .eq('story_id', currentStory.id)
           .eq('user_id', user.id);
-        setLiked(false);
+        if (!error) setLiked(false);
       } else {
         // Like
-        await supabase
-          .from('story_likes')
+        const { error } = await supabase
+          .from('story_likes' as any)
           .insert({
             story_id: currentStory.id,
             user_id: user.id
           });
-        setLiked(true);
-        toast.success('Story liked!');
+        if (!error) {
+          setLiked(true);
+          toast.success('Story liked!');
+        }
       }
     } catch (error) {
       console.error('Error liking story:', error);
@@ -156,14 +174,18 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
     const checkLiked = async () => {
       if (!user || !currentStory) return;
       
-      const { data } = await supabase
-        .from('story_likes')
-        .select('id')
-        .eq('story_id', currentStory.id)
-        .eq('user_id', user.id)
-        .single();
-      
-      setLiked(!!data);
+      try {
+        const { data } = await supabase
+          .from('story_likes' as any)
+          .select('id')
+          .eq('story_id', currentStory.id)
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        setLiked(!!data);
+      } catch (error) {
+        console.error('Error checking liked status:', error);
+      }
     };
     
     checkLiked();
