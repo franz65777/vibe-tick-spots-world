@@ -3,13 +3,27 @@ import { useEffect, useRef, useState } from 'react';
 // Simple cache to avoid reprocessing the same image multiple times
 const cache = new Map<string, string>();
 
-function isLightNeutral(r: number, g: number, b: number) {
+function isBackgroundColor(r: number, g: number, b: number) {
   // Detect near-grey/white pixels (checkerboard and white bg)
   const max = Math.max(r, g, b);
   const min = Math.min(r, g, b);
   const diff = max - min;
-  // Neutral (low chroma) and fairly light
-  return diff < 16 && max > 160; // removes light greys and whites without touching colored pixels
+  
+  // Neutral (low chroma) and fairly light - removes light greys and whites
+  if (diff < 16 && max > 160) return true;
+  
+  // Detect green/lime backgrounds specifically
+  // Green has high G value compared to R and B
+  if (g > r && g > b && g > 120 && (g - r) > 30 && (g - b) > 30) {
+    return true;
+  }
+  
+  // Detect light green/lime backgrounds
+  if (g > 180 && r > 140 && b < 120 && (g - b) > 60) {
+    return true;
+  }
+  
+  return false;
 }
 
 export function useTransparentImage(src?: string) {
@@ -41,7 +55,7 @@ export function useTransparentImage(src?: string) {
           const r = data[i];
           const g = data[i + 1];
           const b = data[i + 2];
-          if (isLightNeutral(r, g, b)) {
+          if (isBackgroundColor(r, g, b)) {
             data[i + 3] = 0; // transparent
           }
         }

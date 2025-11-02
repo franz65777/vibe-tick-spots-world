@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { UnifiedLocationService } from '@/services/unifiedLocationService';
 import { useTranslation } from 'react-i18next';
+import { translateCityName } from '@/utils/cityTranslations';
 
 interface SavedLocationsListProps {
   isOpen: boolean;
@@ -17,7 +18,7 @@ interface SavedLocationsListProps {
 }
 
 const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user: currentUser } = useAuth();
   const targetUserId = userId || currentUser?.id;
   const [savedPlaces, setSavedPlaces] = useState<any>({});
@@ -86,10 +87,15 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
 
   const isOwnProfile = currentUser?.id === targetUserId;
 
-  // Get all unique cities
+  // Get all unique cities with translations
   const cities = useMemo(() => {
-    return Object.keys(savedPlaces).sort();
-  }, [savedPlaces]);
+    return Object.keys(savedPlaces)
+      .map(city => ({
+        original: city,
+        translated: translateCityName(city, i18n.language)
+      }))
+      .sort((a, b) => a.translated.localeCompare(b.translated));
+  }, [savedPlaces, i18n.language]);
 
   // Flatten all places
   const allPlaces = useMemo(() => {
@@ -208,8 +214,8 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
             <SelectContent className="bg-background z-50">
               <SelectItem value="all">{t('allCities', { ns: 'profile' })}</SelectItem>
               {cities.map(city => (
-                <SelectItem key={city} value={city}>
-                  {city} ({savedPlaces[city]?.length || 0})
+                <SelectItem key={city.original} value={city.original}>
+                  {city.translated} ({savedPlaces[city.original]?.length || 0})
                 </SelectItem>
               ))}
             </SelectContent>
