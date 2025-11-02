@@ -165,132 +165,131 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-md overflow-hidden shadow-xl">
-        {/* Header */}
-        <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500">
-          <h3 className="font-semibold text-lg text-white">
-            {t('createStory', { ns: 'common' }) || 'Create Story'}
-          </h3>
-          <Button
-            onClick={handleClose}
-            variant="ghost"
-            size="icon"
-            className="rounded-full hover:bg-white/20 h-8 w-8 text-white"
-            disabled={uploading}
-          >
-            <X className="w-4 h-4" />
-          </Button>
-        </div>
+    <div className="fixed inset-0 bg-background z-[9999] flex flex-col">
+      {/* Header */}
+      <div className="p-4 flex items-center justify-between bg-gradient-to-r from-primary via-purple-600 to-blue-600 shadow-lg">
+        <h3 className="font-bold text-xl text-white">
+          {t('createStory', { ns: 'common' })}
+        </h3>
+        <Button
+          onClick={handleClose}
+          variant="ghost"
+          size="icon"
+          className="rounded-full hover:bg-white/20 h-10 w-10 text-white"
+          disabled={uploading}
+        >
+          <X className="w-5 h-5" />
+        </Button>
+      </div>
 
-        {step === 'upload' ? (
-          <div className="p-6">
-            <div className="text-center">
-              <div className="mb-6">
-                <div className="w-20 h-20 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto border-2 border-dashed border-gray-200">
-                  <Upload className="w-8 h-8 text-gray-400" />
-                </div>
+      {step === 'upload' ? (
+        <div className="flex-1 flex flex-col items-center justify-center p-8">
+          <div className="text-center max-w-sm">
+            <div className="mb-8">
+              <div className="w-24 h-24 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto">
+                <Upload className="w-12 h-12 text-primary" />
               </div>
+            </div>
+            
+            <h4 className="text-2xl font-bold text-foreground mb-3">
+              {t('shareLocationMoments', { ns: 'common' })}
+            </h4>
+            <p className="text-muted-foreground text-base mb-8">
+              {t('photosVideosAdventures', { ns: 'common' })}
+            </p>
+            
+            <div className="space-y-4">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white py-4 px-6 rounded-2xl font-semibold transition-all shadow-lg flex items-center justify-center gap-3"
+              >
+                <Image className="w-5 h-5" />
+                {t('chooseFromGallery', { ns: 'common' })}
+              </button>
               
-              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                {t('shareLocationMoments', { ns: 'common' }) || 'Share Location Moments'}
-              </h4>
-              <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
-                {t('mediaFormats', { ns: 'common' }) || 'Photos and videos from your adventures'}
-              </p>
-              
-              <div className="space-y-3">
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-xl font-medium transition-colors flex items-center justify-center gap-2"
-                >
-                  <Image className="w-4 h-4" />
-                  Choose from Gallery
-                </button>
-                
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-4 rounded-xl font-medium transition-colors flex items-center justify-center gap-2"
-                >
-                  <Camera className="w-4 h-4" />
-                  Take Photo
-                </button>
-              </div>
-              
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*,video/*"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-              
-              <div className="mt-4 text-xs text-gray-400 dark:text-gray-500">
-                {t('mediaFormats', { ns: 'common' }) || 'JPG, PNG, MP4, MOV up to 100MB'}
-              </div>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full bg-card hover:bg-accent text-foreground py-4 px-6 rounded-2xl font-semibold transition-all border-2 border-border flex items-center justify-center gap-3"
+              >
+                <Camera className="w-5 h-5" />
+                {t('takePhoto', { ns: 'common' })}
+              </button>
+            </div>
+            
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,video/*"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+            
+            <div className="mt-6 text-sm text-muted-foreground">
+              {t('supportedFormats', { ns: 'common' })}
             </div>
           </div>
-        ) : (
-          <div className="flex flex-col max-h-[70vh]">
-            {/* Preview */}
-            <div className="relative bg-gray-100 aspect-[4/3] max-h-64">
-              {previewUrl && (
-                selectedFile?.type.startsWith('image/') ? (
-                  <img
-                    src={previewUrl}
-                    alt="Story preview"
-                    className="w-full h-full object-cover rounded-t-2xl"
-                  />
-                ) : (
-                  <video
-                    src={previewUrl}
-                    controls
-                    className="w-full h-full object-cover rounded-t-2xl"
-                  />
-                )
-              )}
-            </div>
+        </div>
+      ) : (
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Preview */}
+          <div className="relative bg-black flex-shrink-0" style={{ height: '50vh' }}>
+            {previewUrl && (
+              selectedFile?.type.startsWith('image/') ? (
+                <img
+                  src={previewUrl}
+                  alt="Story preview"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <video
+                  src={previewUrl}
+                  controls
+                  className="w-full h-full object-cover"
+                />
+              )
+            )}
+          </div>
 
-            {/* Details Form */}
-            <div className="p-6 space-y-4 flex-1 overflow-y-auto">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-red-600" />
-                  Location <span className="text-red-600">*</span>
+          {/* Details Form */}
+          <div className="flex-1 p-6 space-y-5 overflow-y-auto bg-background">
+            <div>
+                <label className="block text-base font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-primary" />
+                  {t('location', { ns: 'common' })} <span className="text-destructive">*</span>
                   {autoDetectingLocation && (
-                    <Loader2 className="w-3 h-3 animate-spin text-blue-600" />
+                    <Loader2 className="w-4 h-4 animate-spin text-primary" />
                   )}
                 </label>
                 
                 {!location ? (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {/* Saved Places */}
                     {allSavedPlaces.length > 0 && (
                       <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-medium text-gray-600">Your Saved Places</span>
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-sm font-semibold text-foreground">{t('yourSavedPlaces', { ns: 'common' })}</span>
                           <button
                             onClick={() => setShowLocationPicker(!showLocationPicker)}
-                            className="text-xs text-blue-600 hover:text-blue-700"
+                            className="text-sm text-primary hover:text-primary/80 font-medium"
                           >
-                            {showLocationPicker ? 'Hide' : 'Show All'}
+                            {showLocationPicker ? t('hide', { ns: 'common' }) : t('showAll', { ns: 'common' })}
                           </button>
                         </div>
                         
                         {showLocationPicker && (
-                          <div className="mb-3">
+                          <div className="mb-4">
                             <div className="relative">
                               <Input
                                 value={locationSearch}
                                 onChange={(e) => setLocationSearch(e.target.value)}
-                                placeholder="Search your places..."
-                                className="pl-8 text-sm"
+                                placeholder={t('searchYourPlaces', { ns: 'common' })}
+                                className="pl-10 h-12 rounded-xl border-2 text-base"
                               />
-                              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                             </div>
-                            <ScrollArea className="h-40 mt-2 border rounded-lg">
+                            <ScrollArea className="h-48 mt-3 border-2 rounded-xl">
                               {filteredSavedPlaces.length > 0 ? (
-                                <div className="p-2 space-y-1">
+                                <div className="p-3 space-y-2">
                                   {filteredSavedPlaces.slice(0, 10).map((place) => (
                                     <button
                                       key={place.id}
@@ -304,14 +303,14 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
                                         });
                                         setShowLocationPicker(false);
                                       }}
-                                      className="w-full text-left px-3 py-2 hover:bg-blue-50 rounded-lg transition-colors"
+                                      className="w-full text-left px-4 py-3 hover:bg-accent rounded-xl transition-colors"
                                     >
-                                      <div className="flex items-start gap-2">
-                                        <MapPin className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
+                                      <div className="flex items-start gap-3">
+                                        <MapPin className="w-5 h-5 text-primary mt-0.5 shrink-0" />
                                         <div className="flex-1 min-w-0">
-                                          <p className="font-medium text-sm text-gray-900 truncate">{place.name}</p>
+                                          <p className="font-semibold text-base text-foreground truncate">{place.name}</p>
                                           {place.category && (
-                                            <p className="text-xs text-gray-500 truncate">{place.category}</p>
+                                            <p className="text-sm text-muted-foreground truncate">{place.category}</p>
                                           )}
                                         </div>
                                       </div>
@@ -319,8 +318,8 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
                                   ))}
                                 </div>
                               ) : (
-                                <div className="p-4 text-center text-sm text-gray-500">
-                                  No saved places found
+                                <div className="p-6 text-center text-base text-muted-foreground">
+                                  {t('noSavedPlacesFound', { ns: 'common' })}
                                 </div>
                               )}
                             </ScrollArea>
@@ -331,27 +330,27 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
                     
                     {/* Search New Location */}
                     <div>
-                      <span className="text-xs font-medium text-gray-600 block mb-2">Or Search New Location</span>
+                      <span className="text-sm font-semibold text-foreground block mb-3">{t('orSearchNewLocation', { ns: 'common' })}</span>
                       <OpenStreetMapAutocomplete
                         onPlaceSelect={handleLocationSelect}
-                        placeholder="Search for a place..."
-                        className="rounded-lg border-gray-200 focus:border-blue-400"
+                        placeholder={t('searchForPlace', { ns: 'common' })}
+                        className="rounded-xl border-2 h-12 text-base"
                       />
                     </div>
                   </div>
                 ) : (
-                  <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                    <div className="flex items-start gap-2">
-                      <MapPin className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
+                  <div className="p-4 bg-primary/10 rounded-2xl border-2 border-primary/20">
+                    <div className="flex items-start gap-3">
+                      <MapPin className="w-5 h-5 text-primary mt-0.5 shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-green-900 text-sm truncate">{location.name}</p>
-                        <p className="text-green-600 text-xs truncate">{location.address}</p>
+                        <p className="font-semibold text-foreground text-base truncate">{location.name}</p>
+                        <p className="text-muted-foreground text-sm truncate">{location.address}</p>
                       </div>
                       <button
                         onClick={() => setLocation(null)}
-                        className="text-green-600 hover:text-green-700"
+                        className="text-primary hover:text-primary/80"
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-5 h-5" />
                       </button>
                     </div>
                   </div>
@@ -360,33 +359,32 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }: CreateStoryModalP
             </div>
 
             {/* Actions */}
-            <div className="p-4 border-t border-gray-100 flex gap-3 bg-white">
+            <div className="p-6 border-t-2 border-border flex gap-4 bg-background">
               <Button
                 variant="outline"
                 onClick={() => setStep('upload')}
-                className="flex-1 rounded-full border-2"
+                className="flex-1 rounded-2xl border-2 h-14 text-base font-semibold"
                 disabled={uploading}
               >
-                Back
+                {t('back', { ns: 'common' })}
               </Button>
               <Button
                 onClick={handleSubmit}
-                className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-full shadow-lg disabled:opacity-50"
+                className="flex-1 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white rounded-2xl shadow-lg h-14 text-base font-semibold disabled:opacity-50"
                 disabled={uploading || !location}
               >
                 {uploading ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Publishing...
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    {t('publishing', { ns: 'common' })}
                   </>
                 ) : (
-                  'Share Story'
+                  t('shareStory', { ns: 'common' })
                 )}
               </Button>
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 };
