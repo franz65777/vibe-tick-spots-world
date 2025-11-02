@@ -27,7 +27,7 @@ const MessagesPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [threads, setThreads] = useState<MessageThread[]>([]);
   const [selectedThread, setSelectedThread] = useState<MessageThread | null>(null);
   const [messages, setMessages] = useState<DirectMessage[]>([]);
@@ -610,11 +610,23 @@ const MessagesPage = () => {
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    // Get the current language from i18n
+    const currentLang = i18n.language || 'en';
 
     if (diffMins < 1) return t('justNow', { ns: 'messages' });
-    if (diffMins < 60) return t('minutesShort', { ns: 'messages', count: diffMins });
-    if (diffMins < 1440) return t('hoursShort', { ns: 'messages', count: Math.floor(diffMins / 60) });
-    return t('daysShort', { ns: 'messages', count: Math.floor(diffMins / 1440) });
+    
+    // Use short formats based on language
+    if (diffMins < 60) {
+      return `${diffMins}${currentLang === 'it' ? 'min' : 'm'}`;
+    }
+    if (diffHours < 24) {
+      return `${diffHours}${currentLang === 'it' ? 'h' : 'h'}`;
+    }
+    // Days
+    return `${diffDays}${currentLang === 'it' ? 'g' : currentLang === 'es' ? 'd' : 'd'}`;
   };
 
   return (
@@ -880,18 +892,18 @@ const MessagesPage = () => {
                          onMouseLeave={handleLongPressEnd}
                          onClick={() => handleDoubleTap(message.id)}
                        >
-                         <div className={`flex items-end gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
-                           {/* Avatar - only for received messages */}
-                           {!isOwn && (
-                             <Avatar className="w-6 h-6 flex-shrink-0">
-                               <AvatarImage src={otherUserProfile?.avatar_url} />
-                               <AvatarFallback className="text-xs">
-                                 {otherUserProfile?.username?.[0]?.toUpperCase()}
-                               </AvatarFallback>
-                             </Avatar>
-                           )}
+                          <div className={`flex items-end gap-2 w-full ${isOwn ? 'flex-row-reverse justify-start' : 'flex-row'}`}>
+                            {/* Avatar - only for received messages */}
+                            {!isOwn && (
+                              <Avatar className="w-6 h-6 flex-shrink-0">
+                                <AvatarImage src={otherUserProfile?.avatar_url} />
+                                <AvatarFallback className="text-xs">
+                                  {otherUserProfile?.username?.[0]?.toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                            )}
 
-                           <div className="flex-1 min-w-0">
+                            <div className="flex-shrink-0 max-w-[calc(100%-40px)]">
                         
                         {message.message_type === 'audio' && message.shared_content?.audio_url ? (
                           <div className={`max-w-[70%] ${isOwn ? 'ml-auto' : ''}`}>
@@ -998,16 +1010,16 @@ const MessagesPage = () => {
                             </p>
                           </div>
                         ) : (
-                          <div className={`max-w-[70%] ${isOwn ? 'ml-auto' : ''}`}>
+                          <div className="w-full">
                             <div
-                              className={`rounded-2xl px-4 py-3 relative inline-block ${
+                              className={`rounded-2xl px-4 py-3 relative inline-block max-w-full ${
                                 isOwn
                                   ? 'bg-primary text-primary-foreground'
                                   : 'bg-card text-card-foreground border border-border'
                               }`}
                               style={{ wordBreak: 'normal', whiteSpace: 'pre-wrap', overflowWrap: 'break-word' }}
                             >
-                              <p className="text-sm whitespace-normal">{message.content}</p>
+                              <p className="text-sm whitespace-normal break-words">{message.content}</p>
                               {messageReactions[message.id]?.length > 0 && (
                                 <div className="absolute -bottom-2 left-2 flex gap-0.5 bg-background/95 rounded-full px-1.5 py-0.5 shadow-sm border border-border">
                                   {messageReactions[message.id].map((reaction, idx) => (
