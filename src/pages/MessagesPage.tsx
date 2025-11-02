@@ -25,6 +25,7 @@ import { useFrequentContacts } from '@/hooks/useFrequentContacts';
 import { useSuggestedContacts } from '@/hooks/useSuggestedContacts';
 import { getCategoryImage } from '@/utils/categoryIcons';
 import CityLabel from '@/components/common/CityLabel';
+import { categoryDisplayNames, type AllowedCategory } from '@/utils/allowedCategories';
 
 type ViewMode = 'threads' | 'chat' | 'search';
 
@@ -1293,23 +1294,26 @@ const MessagesPage = () => {
                         className="w-14 h-14 rounded-lg object-cover"
                       />
                     ) : (
-                      <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center">
+                      <div className="w-14 h-14 flex items-center justify-center">
                         <img 
                           src={getCategoryImage(place.category)} 
                           alt={place.category}
-                          className="w-10 h-10 object-contain"
+                          className="w-14 h-14 object-contain"
                         />
                       </div>
                     )}
                     <div className="flex-1 text-left min-w-0">
-                      <p className="font-semibold text-foreground truncate">{place.name}</p>
+                      <p className="font-semibold text-foreground truncate">
+                        {place.name || 'Location'}
+                      </p>
                       <p className="text-sm text-muted-foreground truncate">
                         <CityLabel 
                           id={place.google_place_id || place.id}
                           city={place.city}
+                          name={place.name}
                           address={place.address}
                           coordinates={place.coordinates}
-                        /> • {place.category}
+                        /> • {categoryDisplayNames[place.category as AllowedCategory] || place.category || 'Place'}
                       </p>
                     </div>
                   </button>
