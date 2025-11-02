@@ -202,7 +202,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
             placeholder={t('searchPlaceholder', { ns: 'profile' })}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 rounded-lg"
+            className="pl-10 rounded-full"
           />
         </div>
 

@@ -16,12 +16,12 @@ const SimpleCategoryFilter = ({ selectedCategory, onCategorySelect }: SimpleCate
           <button
             key={category}
             onClick={() => onCategorySelect(isSelected ? null : category)}
-            className={`flex items-center justify-center rounded-md transition-transform ${isSelected ? 'ring-2 ring-primary' : ''}`}
+            className={`flex items-center justify-center rounded-md transition-transform p-1 ${isSelected ? 'ring-2 ring-primary bg-primary/10' : ''}`}
             aria-label={categoryDisplayNames[category]}
           >
             <CategoryIcon
               category={category}
-              className={`w-7 h-7 ${isSelected ? 'opacity-100' : 'opacity-80'}`}
+              className={`w-10 h-10 ${isSelected ? 'opacity-100' : 'opacity-80'}`}
             />
           </button>
         );

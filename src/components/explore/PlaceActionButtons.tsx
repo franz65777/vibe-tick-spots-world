@@ -53,45 +53,45 @@ const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
 
   return (
     <>
-      <div className="flex gap-2">
+      <div className="grid grid-cols-4 gap-2">
         <Button
           variant="outline"
           size="sm"
           onClick={handleWebsite}
-          className="flex-1 gap-2"
+          className="flex flex-col gap-1 h-16 px-2"
         >
-          <Globe className="w-4 h-4" />
-          Website
+          <Globe className="w-5 h-5" />
+          <span className="text-xs">Website</span>
         </Button>
 
         <Button
           variant="outline"
           size="sm"
           onClick={handleCall}
-          className="flex-1 gap-2"
+          className="flex flex-col gap-1 h-16 px-2"
         >
-          <Phone className="w-4 h-4" />
-          Call
+          <Phone className="w-5 h-5" />
+          <span className="text-xs">Call</span>
         </Button>
 
         <Button
           variant="outline"
           size="sm"
           onClick={() => setDirectionsModalOpen(true)}
-          className="flex-1 gap-2"
+          className="flex flex-col gap-1 h-16 px-2"
         >
-          <Navigation className="w-4 h-4" />
-          Directions
+          <Navigation className="w-5 h-5" />
+          <span className="text-xs">Directions</span>
         </Button>
 
         <Button
           variant="outline"
           size="sm"
           onClick={() => setShareOpen(true)}
-          className="flex-1 gap-2"
+          className="flex flex-col gap-1 h-16 px-2"
         >
-          <Share2 className="w-4 h-4" />
-          Share
+          <Share2 className="w-5 h-5" />
+          <span className="text-xs">Share</span>
         </Button>
       </div>
 
