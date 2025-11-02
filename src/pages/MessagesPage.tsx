@@ -1000,13 +1000,14 @@ const MessagesPage = () => {
                         ) : (
                           <div className={`max-w-[70%] ${isOwn ? 'ml-auto' : ''}`}>
                             <div
-                              className={`rounded-2xl px-4 py-3 relative ${
+                              className={`rounded-2xl px-4 py-3 relative inline-block ${
                                 isOwn
                                   ? 'bg-primary text-primary-foreground'
                                   : 'bg-card text-card-foreground border border-border'
                               }`}
+                              style={{ wordBreak: 'normal', whiteSpace: 'pre-wrap', overflowWrap: 'break-word' }}
                             >
-                              <p className="text-sm break-words">{message.content}</p>
+                              <p className="text-sm whitespace-normal">{message.content}</p>
                               {messageReactions[message.id]?.length > 0 && (
                                 <div className="absolute -bottom-2 left-2 flex gap-0.5 bg-background/95 rounded-full px-1.5 py-0.5 shadow-sm border border-border">
                                   {messageReactions[message.id].map((reaction, idx) => (
