@@ -50,6 +50,10 @@ const MessagesPage = () => {
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [showSavedPlacesModal, setShowSavedPlacesModal] = useState(false);
   const [savedPlaces, setSavedPlaces] = useState<any[]>([]);
+  const [showUserSelectModal, setShowUserSelectModal] = useState(false);
+  const [selectedPlaceToShare, setSelectedPlaceToShare] = useState<any>(null);
+  const [userSelectLoading, setUserSelectLoading] = useState(false);
+  const [otherUserProfile, setOtherUserProfile] = useState<any>(null);
   const lastTapRef = useRef<number>(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<any>(null);
@@ -83,6 +87,7 @@ const MessagesPage = () => {
         loadMessages(otherParticipant.id);
         loadHiddenMessages();
         setupRealtimeSubscription();
+        loadOtherUserProfile(otherParticipant.id);
       }
     }
   }, [selectedThread, view]);
@@ -464,67 +469,139 @@ const MessagesPage = () => {
     }
   };
 
+  const loadOtherUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url, full_name')
+        .eq('id', userId)
+        .single();
+
+      if (error) throw error;
+      setOtherUserProfile(data);
+    } catch (error) {
+      console.error('Error loading other user profile:', error);
+    }
+  };
+
   const loadSavedPlaces = async () => {
     if (!user) return;
     try {
-      // Load user's saved places
-      const { data: userSavedLocations, error: uslError } = await supabase
-        .from('user_saved_locations')
-        .select(`
-          location_id,
-          locations (
-            id,
-            name,
-            category,
-            city,
-            address,
-            image_url,
-            google_place_id,
-            latitude,
-            longitude
-          )
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(50);
+      // Load from both tables to ensure complete list
+      const [uslResult, spResult] = await Promise.all([
+        supabase
+          .from('user_saved_locations')
+          .select(`
+            location_id,
+            locations (
+              id,
+              name,
+              category,
+              city,
+              address,
+              image_url,
+              google_place_id,
+              latitude,
+              longitude
+            )
+          `)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('saved_places')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+      ]);
 
-      if (uslError) throw uslError;
+      const places = new Map();
 
-      const places = (userSavedLocations || [])
-        .filter(usl => usl.locations)
-        .map(usl => usl.locations);
+      // Add from user_saved_locations
+      if (uslResult.data) {
+        uslResult.data.forEach((usl: any) => {
+          if (usl.locations) {
+            places.set(usl.locations.id, usl.locations);
+          }
+        });
+      }
 
-      setSavedPlaces(places);
+      // Add from saved_places
+      if (spResult.data) {
+        spResult.data.forEach((sp: any) => {
+          if (!places.has(sp.place_id)) {
+            places.set(sp.place_id, {
+              id: sp.place_id,
+              name: sp.name,
+              category: sp.category || 'place',
+              city: sp.city,
+              address: sp.address,
+              image_url: sp.image_url,
+              google_place_id: sp.google_place_id || sp.place_id,
+              latitude: sp.latitude,
+              longitude: sp.longitude
+            });
+          }
+        });
+      }
+
+      setSavedPlaces(Array.from(places.values()));
     } catch (error) {
       console.error('Error loading saved places:', error);
     }
   };
 
-  const handleSharePlace = async (place: any) => {
-    if (!selectedThread || !user) return;
+  const handlePlaceClick = (place: any) => {
+    setSelectedPlaceToShare(place);
+    setShowSavedPlacesModal(false);
+    setShowUserSelectModal(true);
+  };
 
-    const otherParticipant = getOtherParticipant(selectedThread);
-    if (!otherParticipant) return;
+  const handleSharePlaceToUser = async (recipientId: string) => {
+    if (!selectedPlaceToShare || !user) return;
 
     try {
-      await messageService.sendPlaceShare(otherParticipant.id, {
-        name: place.name,
-        category: place.category,
-        address: place.address,
-        city: place.city,
-        google_place_id: place.google_place_id,
-        place_id: place.google_place_id,
+      await messageService.sendPlaceShare(recipientId, {
+        name: selectedPlaceToShare.name,
+        category: selectedPlaceToShare.category,
+        address: selectedPlaceToShare.address,
+        city: selectedPlaceToShare.city,
+        google_place_id: selectedPlaceToShare.google_place_id,
+        place_id: selectedPlaceToShare.google_place_id,
         coordinates: {
-          lat: place.latitude,
-          lng: place.longitude
+          lat: selectedPlaceToShare.latitude,
+          lng: selectedPlaceToShare.longitude
         }
       });
       
-      setShowSavedPlacesModal(false);
-      await loadMessages(otherParticipant.id);
+      setShowUserSelectModal(false);
+      setSelectedPlaceToShare(null);
       await loadThreads();
     } catch (error) {
       console.error('Error sharing place:', error);
+    }
+  };
+
+  const handleSearchUsersForSharing = async (query: string) => {
+    if (query.trim().length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    try {
+      setUserSelectLoading(true);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url, full_name')
+        .ilike('username', `%${query}%`)
+        .neq('id', user?.id)
+        .limit(20);
+
+      if (error) throw error;
+      setSearchResults(data || []);
+    } catch (error) {
+      console.error('Error searching users:', error);
+    } finally {
+      setUserSelectLoading(false);
     }
   };
 
@@ -803,10 +880,22 @@ const MessagesPage = () => {
                         onMouseLeave={handleLongPressEnd}
                         onClick={() => handleDoubleTap(message.id)}
                       >
-                        {/* Timestamp outside bubble */}
-                        <p className={`text-xs text-muted-foreground px-2 ${isOwn ? 'text-right' : 'text-left'}`}>
-                          {formatMessageTime(message.created_at)}
-                        </p>
+                        <div className={`flex items-start gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
+                          {/* Avatar */}
+                          <Avatar className="w-8 h-8 flex-shrink-0">
+                            <AvatarImage src={isOwn ? user?.user_metadata?.avatar_url : otherUserProfile?.avatar_url} />
+                            <AvatarFallback>
+                              {isOwn 
+                                ? user?.user_metadata?.username?.[0]?.toUpperCase() 
+                                : otherUserProfile?.username?.[0]?.toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+
+                          <div className="flex-1 min-w-0">
+                            {/* Timestamp outside bubble */}
+                            <p className={`text-xs text-muted-foreground px-2 mb-1 ${isOwn ? 'text-right' : 'text-left'}`}>
+                              {formatMessageTime(message.created_at)}
+                            </p>
                         
                         {message.message_type === 'audio' && message.shared_content?.audio_url ? (
                           <div className={`max-w-[70%] ${isOwn ? 'ml-16' : 'mr-16'}`}>
@@ -941,6 +1030,8 @@ const MessagesPage = () => {
                             </div>
                           </div>
                         )}
+                          </div>
+                        </div>
                        </div>
                    );
                  })}
@@ -1094,7 +1185,7 @@ const MessagesPage = () => {
                 {savedPlaces.map((place) => (
                   <button
                     key={place.id}
-                    onClick={() => handleSharePlace(place)}
+                    onClick={() => handlePlaceClick(place)}
                     className="w-full flex items-center gap-3 p-3 hover:bg-accent transition-colors rounded-lg"
                   >
                     {place.image_url ? (
@@ -1119,6 +1210,56 @@ const MessagesPage = () => {
               </div>
             )}
           </ScrollArea>
+        </SheetContent>
+      </Sheet>
+
+      {/* User Selection Modal for Sharing */}
+      <Sheet open={showUserSelectModal} onOpenChange={setShowUserSelectModal}>
+        <SheetContent side="bottom" className="h-[80vh] rounded-t-[20px]">
+          <SheetHeader>
+            <SheetTitle className="text-center">{t('selectRecipient', { ns: 'messages' })}</SheetTitle>
+          </SheetHeader>
+          <div className="pt-4">
+              <div className="px-4 pb-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder={t('search', { ns: 'common' })}
+                  className="pl-10 rounded-full bg-muted border-0"
+                  onChange={(e) => handleSearchUsersForSharing(e.target.value)}
+                />
+              </div>
+            </div>
+            <ScrollArea className="h-[calc(80vh-120px)]">
+              <div className="px-4 space-y-1">
+                {userSelectLoading ? (
+                  <div className="text-center py-8 text-muted-foreground">{t('loading', { ns: 'common' })}</div>
+                ) : searchResults.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">{t('searchUsersToShare', { ns: 'messages' })}</div>
+                ) : (
+                  searchResults.map((user) => (
+                    <button
+                      key={user.id}
+                      onClick={() => handleSharePlaceToUser(user.id)}
+                      className="w-full flex items-center gap-3 p-3 hover:bg-accent transition-colors rounded-lg"
+                    >
+                      <Avatar className="w-12 h-12 flex-shrink-0">
+                        <AvatarImage src={user.avatar_url} />
+                        <AvatarFallback>{user.username?.[0]?.toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 text-left min-w-0">
+                        <p className="font-semibold text-foreground truncate">{user.username}</p>
+                        {user.full_name && (
+                          <p className="text-sm text-muted-foreground truncate">{user.full_name}</p>
+                        )}
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+          </div>
         </SheetContent>
       </Sheet>
 

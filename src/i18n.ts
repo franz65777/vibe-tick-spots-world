@@ -298,6 +298,8 @@ const resources = {
       viewed: 'Viewed',
       shareSavedPlace: 'Share Saved Place',
       noSavedPlaces: 'No saved places yet. Start exploring and save places to share them!',
+      selectRecipient: 'Select Recipient',
+      searchUsersToShare: 'Search for users to share with',
     },
     business: {
       overview: 'Overview',
@@ -644,6 +646,8 @@ const resources = {
       viewed: 'Visto',
       shareSavedPlace: 'Compartir Lugar Guardado',
       noSavedPlaces: 'Aún no hay lugares guardados. ¡Explora y guarda lugares para compartirlos!',
+      selectRecipient: 'Seleccionar Destinatario',
+      searchUsersToShare: 'Buscar usuarios para compartir',
     },
     business: {
       overview: 'Resumen',
@@ -985,6 +989,8 @@ const resources = {
       viewed: 'Visualizzato',
       shareSavedPlace: 'Condividi Luogo Salvato',
       noSavedPlaces: 'Ancora nessun luogo salvato. Inizia ad esplorare e salva luoghi per condividerli!',
+      selectRecipient: 'Seleziona Destinatario',
+      searchUsersToShare: 'Cerca utenti con cui condividere',
     },
     business: {
       overview: 'Panoramica',
