@@ -55,9 +55,6 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
   const [followedUsers, setFollowedUsers] = useState<FollowedUser[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   
-  // Process swipe icons to remove white backgrounds
-  const processedSwipeNo = useTransparentImage(swipeNo);
-  const processedSwipePin = useTransparentImage(swipePin);
 
   useEffect(() => {
     fetchFollowedUsers();
@@ -124,8 +121,10 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
 
       console.log('✨ Users with counts:', usersWithCounts);
 
-      // Sort users by new saves count (show users with saves first)
-      const sortedUsers = usersWithCounts.sort((a, b) => b.new_saves_count - a.new_saves_count);
+      // Sort users by new saves count and filter to only show users with new saves
+      const sortedUsers = usersWithCounts
+        .filter(u => u.new_saves_count > 0)
+        .sort((a, b) => b.new_saves_count - a.new_saves_count);
 
       setFollowedUsers(sortedUsers);
     } catch (error) {
@@ -650,7 +649,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                       className="w-24 h-24 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
                       aria-label="Pass"
                     >
-                      <img src={processedSwipeNo || swipeNo} alt="Pass" className="w-20 h-20 object-contain" />
+                      <img src={swipeNo} alt="Pass" className="w-20 h-20 object-contain" />
                     </button>
                     <button
                       onClick={() => handleSwipe('right')}
@@ -658,7 +657,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                       className="w-24 h-24 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
                       aria-label="Save"
                     >
-                      <img src={processedSwipePin || swipePin} alt="Save" className="w-20 h-20 object-contain" />
+                      <img src={swipePin} alt="Save" className="w-20 h-20 object-contain" />
                     </button>
                   </div>
                 </div>
