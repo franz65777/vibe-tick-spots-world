@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Send, Loader2 } from 'lucide-react';
+import { X, Share2, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -186,7 +186,7 @@ const PinShareModal = ({ isOpen, onClose, place }: PinShareModalProps) => {
                 </>
               ) : (
                 <>
-                  <Send className="w-4 h-4" />
+                  <Share2 className="w-4 h-4" />
                   Send {selectedUsers.size > 0 && `(${selectedUsers.size})`}
                 </>
               )}

@@ -123,7 +123,11 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
     <Drawer.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 bg-black/50 z-[70]" />
-        <Drawer.Content className="fixed inset-x-0 bottom-0 z-[71] bg-background rounded-t-3xl flex flex-col max-h-[90vh] outline-none">
+        <Drawer.Content className="fixed inset-x-0 bottom-0 z-[71] bg-background rounded-t-3xl flex flex-col max-h-[50vh] outline-none">
+          <style>{`
+            [data-vaul-drawer-wrapper] { z-index: 71 !important; }
+            body:has([data-vaul-drawer][data-state="open"]) .bottom-navigation { display: none !important; }
+          `}</style>
           {/* Handle bar */}
           <div className="flex justify-center pt-3 pb-2">
             <div className="w-10 h-1.5 bg-muted-foreground/30 rounded-full" />
@@ -173,15 +177,15 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
                             Contatti frequenti
                           </h4>
                         </div>
-                        <div className="grid grid-cols-3 gap-4 pb-4 border-b border-border">
-                          {frequentContacts.slice(0, 6).map((contact) => (
+                         <div className="grid grid-cols-4 gap-4 pb-4 border-b border-border">
+                           {frequentContacts.slice(0, 4).map((contact) => (
                             <button
                               key={contact.id}
                               onClick={() => toggle(contact.id)}
                               className="flex flex-col items-center gap-2"
                             >
-                              <div className="relative">
-                                <Avatar className="w-16 h-16 ring-2 ring-background">
+                               <div className="relative">
+                                 <Avatar className="w-14 h-14 ring-2 ring-background">
                                   <AvatarImage src={contact.avatar_url || ''} />
                                   <AvatarFallback className="bg-primary/10 text-primary text-lg">
                                     {contact.username?.[0]?.toUpperCase() || 'U'}
@@ -235,19 +239,19 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
                     ) : (
                       <>
                         {!query && frequentContacts.length > 0 && (
-                          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 px-1 mt-6">
-                            Tutti i contatti
-                          </h4>
-                        )}
-                        <div className="grid grid-cols-3 gap-4 py-4">
+                           <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 px-1 mt-6">
+                             Tutti i contatti
+                           </h4>
+                         )}
+                         <div className="grid grid-cols-4 gap-4 py-4">
                           {filteredUsers.map((u) => (
                       <button
                         key={u.id}
                         onClick={() => toggle(u.id)}
                         className="flex flex-col items-center gap-2"
                       >
-                        <div className="relative">
-                          <Avatar className="w-16 h-16 ring-2 ring-background">
+                         <div className="relative">
+                           <Avatar className="w-14 h-14 ring-2 ring-background">
                             <AvatarImage src={u.avatar_url || ''} />
                             <AvatarFallback className="bg-primary/10 text-primary text-lg">
                               {u.username?.[0]?.toUpperCase() || 'U'}

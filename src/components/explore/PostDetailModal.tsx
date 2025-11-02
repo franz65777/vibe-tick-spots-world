@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, MessageCircle, Send, ChevronLeft, ChevronRight, MapPin, MoreHorizontal, Trash2, EyeOff, X, Star, Bookmark } from 'lucide-react';
+import { Heart, MessageCircle, Share2, ChevronLeft, ChevronRight, MapPin, MoreHorizontal, Trash2, EyeOff, X, Star, Bookmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -482,7 +482,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', op
                   </div>
                   <div className="flex items-center gap-1.5">
                     <button onClick={() => setShareOpen(true)}>
-                      <Send className="w-5 h-5" />
+                      <Share2 className="w-5 h-5" />
                     </button>
                   </div>
                   <button onClick={() => engagement.toggleSave()} className="ml-auto">

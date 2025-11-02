@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, MessageCircle, Send, Pin } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Pin } from 'lucide-react';
 import { useSocialEngagement } from '@/hooks/useSocialEngagement';
 import { toast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
@@ -160,7 +160,7 @@ export const PostActions = ({
         }}
         className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all font-medium"
       >
-        <Send className="w-5 h-5" />
+        <Share2 className="w-5 h-5" />
         <span className="text-sm font-semibold">{sharesCount || 0}</span>
       </button>
 
