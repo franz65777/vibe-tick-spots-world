@@ -33,7 +33,7 @@ const MinimalLocationCard = ({
         </div>
         
         <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-gray-900 text-sm truncate mb-0.5">
+          <h3 className="font-bold text-gray-900 text-sm truncate mb-0.5 text-left">
             {place.name}
           </h3>
           <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">

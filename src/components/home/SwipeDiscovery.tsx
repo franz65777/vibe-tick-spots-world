@@ -448,8 +448,8 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       </div>
 
       {/* Followed Users Row */}
-      <div className="bg-white border-b border-gray-100 px-4 py-4 overflow-hidden">
-        <div className="flex gap-4 overflow-x-auto scrollbar-hide" style={{ scrollSnapType: 'x mandatory' }}>
+      <div className="bg-white border-b border-gray-100 px-4 py-3 overflow-hidden">
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1" style={{ scrollSnapType: 'x mandatory' }}>
           {/* All button */}
           <button
             onClick={() => {
@@ -457,17 +457,17 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
               setCurrentIndex(0);
               fetchDailyLocations();
             }}
-            className={`flex-shrink-0 flex flex-col items-center gap-2 transition-opacity ${
+            className={`flex-shrink-0 flex flex-col items-center gap-1.5 transition-opacity ${
               selectedUserId === null ? 'opacity-100' : 'opacity-60'
             }`}
             style={{ scrollSnapAlign: 'start' }}
           >
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-all ${
+            <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
               selectedUserId === null 
                 ? 'bg-gradient-to-br from-primary to-purple-500 ring-2 ring-primary ring-offset-2' 
                 : 'bg-gray-200'
             }`}>
-              <Users className="w-7 h-7 text-white" />
+              <Users className="w-6 h-6 text-white" />
             </div>
             <span className="text-xs font-medium text-gray-700">Tutti</span>
           </button>
@@ -481,7 +481,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                 setCurrentIndex(0);
                 fetchDailyLocations();
               }}
-              className={`flex-shrink-0 flex flex-col items-center gap-2 transition-opacity ${
+              className={`flex-shrink-0 flex flex-col items-center gap-1.5 transition-opacity ${
                 selectedUserId === followedUser.id ? 'opacity-100' : 'opacity-60'
               }`}
               style={{ scrollSnapAlign: 'start' }}
@@ -491,26 +491,26 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                   <img
                     src={followedUser.avatar_url}
                     alt={followedUser.username}
-                    className={`w-16 h-16 rounded-full object-cover transition-all ${
+                    className={`w-14 h-14 rounded-full object-cover transition-all ${
                       selectedUserId === followedUser.id ? 'ring-2 ring-primary ring-offset-2' : ''
                     }`}
                   />
                 ) : (
-                  <div className={`w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center transition-all ${
+                  <div className={`w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center transition-all ${
                     selectedUserId === followedUser.id ? 'ring-2 ring-primary ring-offset-2' : ''
                   }`}>
-                    <span className="text-white text-xl font-bold">
+                    <span className="text-white text-lg font-bold">
                       {followedUser.username[0]?.toUpperCase()}
                     </span>
                   </div>
                 )}
                 {followedUser.new_saves_count > 0 && (
-                  <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center shadow-md">
+                  <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center shadow-md">
                     {followedUser.new_saves_count > 9 ? '9+' : followedUser.new_saves_count}
                   </div>
                 )}
               </div>
-              <span className="text-xs font-medium text-gray-700 max-w-[70px] truncate">
+              <span className="text-[10px] font-medium text-gray-700 max-w-[60px] truncate">
                 {followedUser.username}
               </span>
             </button>
@@ -599,16 +599,16 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
 
                 {/* Top - Saved by avatar */}
                 {currentLocation.saved_by && (
-                  <div className="absolute top-6 left-6 flex items-center gap-2 bg-black/70 backdrop-blur-md rounded-full px-4 py-2.5 shadow-lg">
+                  <div className="absolute top-4 left-4 flex items-center gap-2 bg-black/60 backdrop-blur-sm rounded-full px-3 py-2 shadow-lg">
                     {currentLocation.saved_by.avatar_url ? (
                       <img 
                         src={currentLocation.saved_by.avatar_url} 
                         alt={currentLocation.saved_by.username}
-                        className="w-8 h-8 rounded-full object-cover ring-2 ring-white/30"
+                        className="w-7 h-7 rounded-full object-cover ring-2 ring-white/30"
                       />
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center ring-2 ring-white/30">
-                        <span className="text-white text-sm font-bold">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center ring-2 ring-white/30">
+                        <span className="text-white text-xs font-bold">
                           {currentLocation.saved_by.username[0]?.toUpperCase()}
                         </span>
                       </div>
@@ -646,18 +646,18 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                     <button
                       onClick={() => handleSwipe('left')}
                       disabled={swipeDirection !== null}
-                      className="w-24 h-24 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
+                      className="w-20 h-20 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
                       aria-label="Pass"
                     >
-                      <img src={swipeNo} alt="Pass" className="w-20 h-20 object-contain" />
+                      <img src={swipeNo} alt="Pass" className="w-full h-full object-contain drop-shadow-lg" />
                     </button>
                     <button
                       onClick={() => handleSwipe('right')}
                       disabled={swipeDirection !== null}
-                      className="w-24 h-24 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
+                      className="w-20 h-20 rounded-full hover:scale-110 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
                       aria-label="Save"
                     >
-                      <img src={swipePin} alt="Save" className="w-20 h-20 object-contain" />
+                      <img src={swipePin} alt="Save" className="w-full h-full object-contain drop-shadow-lg" />
                     </button>
                   </div>
                 </div>

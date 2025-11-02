@@ -1,11 +1,11 @@
 import React from 'react';
-import hotel from '@/assets/category-hotel-3d.png';
-import cafe from '@/assets/category-cafe-transparent.png';
-import bar from '@/assets/category-bar-3d.png';
-import restaurant from '@/assets/category-restaurant-transparent.png';
-import entertainment from '@/assets/category-entertainment-3d.png';
-import bakery from '@/assets/category-bakery-transparent.png';
-import museum from '@/assets/category-museum-transparent.png';
+import hotel from '@/assets/category-hotel-new.png';
+import cafe from '@/assets/category-cafe-new.png';
+import bar from '@/assets/category-bar-new.png';
+import restaurant from '@/assets/category-restaurant-new.png';
+import entertainment from '@/assets/category-entertainment-new.png';
+import bakery from '@/assets/category-bakery-new.png';
+import museum from '@/assets/category-museum-new.png';
 
 interface CategoryIconProps {
   category: string;
