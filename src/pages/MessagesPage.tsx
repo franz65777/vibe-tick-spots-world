@@ -689,7 +689,7 @@ const MessagesPage = () => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   type="text"
-                  placeholder={t('messages.searchPlaceholder')}
+                  placeholder={t('searchPlaceholder', { ns: 'messages' })}
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
                   className="pl-9 h-9 bg-muted/50 rounded-full"
@@ -702,7 +702,7 @@ const MessagesPage = () => {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     type="text"
-                    placeholder={t('messages.searchPlaceholder')}
+                    placeholder={t('searchPlaceholder', { ns: 'messages' })}
                     value={searchQuery}
                     onChange={(e) => handleSearch(e.target.value)}
                     onFocus={() => setView('search')}
@@ -735,7 +735,7 @@ const MessagesPage = () => {
                 <div className="py-6 space-y-8">
                   {/* Frequent Contacts */}
                   <div>
-                    <h3 className="text-sm font-semibold text-muted-foreground mb-4 text-center">{t('messages.frequentContacts')}</h3>
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-4 text-center">{t('frequentContacts', { ns: 'messages' })}</h3>
                     {frequentLoading ? (
                       <div className="flex items-center justify-center py-8">
                         <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -759,13 +759,13 @@ const MessagesPage = () => {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-center text-sm text-muted-foreground">{t('messages.noFrequentContacts')}</p>
+                      <p className="text-center text-sm text-muted-foreground">{t('noFrequentContacts', { ns: 'messages' })}</p>
                     )}
                   </div>
 
                   {/* Suggested Contacts */}
                   <div>
-                    <h3 className="text-sm font-semibold text-muted-foreground mb-4 text-center">{t('messages.suggestedContacts')}</h3>
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-4 text-center">{t('suggestedContacts', { ns: 'messages' })}</h3>
                     {suggestedLoading ? (
                       <div className="flex items-center justify-center py-8">
                         <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -789,9 +789,9 @@ const MessagesPage = () => {
                         ))}
                       </div>
                     ) : frequentContacts.length === 0 ? (
-                      <p className="text-center text-sm text-muted-foreground px-6">{t('messages.followPeoplePrompt')}</p>
+                      <p className="text-center text-sm text-muted-foreground px-6">{t('followPeoplePrompt', { ns: 'messages' })}</p>
                     ) : (
-                      <p className="text-center text-sm text-muted-foreground">{t('messages.noSuggestedContacts')}</p>
+                      <p className="text-center text-sm text-muted-foreground">{t('noSuggestedContacts', { ns: 'messages' })}</p>
                     )}
                   </div>
                 </div>

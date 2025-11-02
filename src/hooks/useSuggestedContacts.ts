@@ -17,7 +17,7 @@ export const useSuggestedContacts = (excludeIds: string[] = []) => {
     if (user) {
       loadSuggestedContacts();
     }
-  }, [user, excludeIds]);
+  }, [user, excludeIds.join(',')]);
 
   const loadSuggestedContacts = async () => {
     if (!user) return;
@@ -33,11 +33,13 @@ export const useSuggestedContacts = (excludeIds: string[] = []) => {
       if (followError) {
         console.error('Error loading following:', followError);
         setSuggestedContacts([]);
+        setLoading(false);
         return;
       }
 
       if (!following || following.length === 0) {
         setSuggestedContacts([]);
+        setLoading(false);
         return;
       }
 
@@ -66,6 +68,7 @@ export const useSuggestedContacts = (excludeIds: string[] = []) => {
 
       if (suggestedIds.length === 0) {
         setSuggestedContacts([]);
+        setLoading(false);
         return;
       }
 
@@ -77,6 +80,7 @@ export const useSuggestedContacts = (excludeIds: string[] = []) => {
 
       if (!profiles) {
         setSuggestedContacts([]);
+        setLoading(false);
         return;
       }
 
