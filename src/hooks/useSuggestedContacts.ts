@@ -8,7 +8,7 @@ interface SuggestedContact {
   avatar_url: string;
 }
 
-export const useSuggestedContacts = () => {
+export const useSuggestedContacts = (excludeIds: string[] = []) => {
   const { user } = useAuth();
   const [suggestedContacts, setSuggestedContacts] = useState<SuggestedContact[]>([]);
   const [loading, setLoading] = useState(false);
@@ -17,7 +17,7 @@ export const useSuggestedContacts = () => {
     if (user) {
       loadSuggestedContacts();
     }
-  }, [user]);
+  }, [user, excludeIds]);
 
   const loadSuggestedContacts = async () => {
     if (!user) return;
@@ -58,8 +58,9 @@ export const useSuggestedContacts = () => {
         }
       });
 
-      // Get users with few or no messages (suggested contacts)
+      // Get users with few or no messages (suggested contacts), excluding frequent contacts
       const suggestedIds = followingIds
+        .filter(id => !excludeIds.includes(id)) // Exclude already frequent contacts
         .filter(id => (messageCounts.get(id) || 0) < 5) // Less than 5 messages
         .slice(0, 12); // Limit to 12 suggestions
 

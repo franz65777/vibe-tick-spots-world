@@ -65,7 +65,9 @@ const MessagesPage = () => {
 
   const { stories: allStories } = useStories();
   const { frequentContacts, loading: frequentLoading, refresh: refreshFrequent } = useFrequentContacts();
-  const { suggestedContacts, loading: suggestedLoading, refresh: refreshSuggested } = useSuggestedContacts();
+  const { suggestedContacts, loading: suggestedLoading, refresh: refreshSuggested } = useSuggestedContacts(
+    frequentContacts.map(c => c.id)
+  );
 
   useEffect(() => {
     if (user) {
