@@ -380,11 +380,7 @@ const FeedPage = () => {
                 >
                   <div className="flex flex-col py-1">
                     <span className="font-semibold">{t('promotions')}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {i18n.language.startsWith('it') ? 'Post marketing business' : 
-                       i18n.language.startsWith('es') ? 'Posts de marketing' : 
-                       'Business marketing posts'}
-                    </span>
+                    <span className="text-xs text-muted-foreground">{t('promotionsDesc')}</span>
                   </div>
                 </DropdownMenuItem>
                 <DropdownMenuItem 
@@ -393,11 +389,7 @@ const FeedPage = () => {
                 >
                   <div className="flex flex-col py-1">
                     <span className="font-semibold">{t('forYou')}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {i18n.language.startsWith('it') ? 'Post da chi segui' : 
-                       i18n.language.startsWith('es') ? 'Posts de quien sigues' : 
-                       'Posts from people you follow'}
-                    </span>
+                    <span className="text-xs text-muted-foreground">{t('forYouDesc')}</span>
                   </div>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -408,14 +400,14 @@ const FeedPage = () => {
         {/* Feed Content */}
         {feedItems.length === 0 ? (
           <div className="text-center py-12 px-4 text-muted-foreground">
-            <p className="mb-2">Il tuo feed è vuoto.</p>
-            <p className="text-sm">Inizia a seguire altri utenti per vedere i loro aggiornamenti!</p>
+            <p className="mb-2">{t('feedEmpty')}</p>
+            <p className="text-sm">{t('startFollowing')}</p>
             <Button
               onClick={() => navigate('/explore')}
               variant="link"
               className="mt-4"
             >
-              Esplora gli utenti
+              {t('exploreUsers')}
             </Button>
           </div>
         ) : (
@@ -562,6 +554,8 @@ const FeedPage = () => {
                       likesCount={item.likes_count || 0}
                       commentsCount={item.comments_count || 0}
                       sharesCount={item.shares_count || 0}
+                      locationId={locationId}
+                      locationName={locationName}
                       onCommentClick={() => handleCommentClick(postId)}
                       onShareClick={() => handleShareClick(postId)}
                     />
