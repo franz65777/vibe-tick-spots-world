@@ -46,6 +46,7 @@ const MessagesPage = () => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [messageReactions, setMessageReactions] = useState<Record<string, { emoji: string; user_id: string; }[]>>({});
   const [isDoubleTapping, setIsDoubleTapping] = useState(false);
+  const [hiddenMessageIds, setHiddenMessageIds] = useState<string[]>([]);
   const lastTapRef = useRef<number>(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<any>(null);
@@ -77,6 +78,7 @@ const MessagesPage = () => {
       const otherParticipant = getOtherParticipant(selectedThread);
       if (otherParticipant) {
         loadMessages(otherParticipant.id);
+        loadHiddenMessages();
         setupRealtimeSubscription();
       }
     }
@@ -253,8 +255,7 @@ const MessagesPage = () => {
     }
   };
 
-  const handleLongPressStart = (messageId: string, isOwn: boolean) => {
-    if (!isOwn) return; // Only allow deleting own messages
+  const handleLongPressStart = (messageId: string) => {
     const timer = setTimeout(() => {
       setSelectedMessageId(messageId);
     }, 500); // 500ms long press
@@ -268,18 +269,31 @@ const MessagesPage = () => {
     }
   };
 
+  const loadHiddenMessages = async () => {
+    try {
+      const hiddenIds = await messageService.getHiddenMessages();
+      setHiddenMessageIds(hiddenIds);
+    } catch (error) {
+      console.error('Error loading hidden messages:', error);
+    }
+  };
+
   const handleDeleteMessage = async () => {
     if (!selectedMessageId) return;
     
     try {
-      const success = await messageService.deleteMessage(selectedMessageId);
+      const success = await messageService.hideMessage(selectedMessageId);
       if (success) {
-        setMessages(prev => prev.filter(m => m.id !== selectedMessageId));
+        setHiddenMessageIds(prev => [...prev, selectedMessageId]);
         setSelectedMessageId(null);
       }
     } catch (error) {
-      console.error('Error deleting message:', error);
+      console.error('Error hiding message:', error);
     }
+  };
+
+  const handleMessageLongPress = (messageId: string) => {
+    setSelectedMessageId(messageId);
   };
 
   const handleDoubleTap = async (messageId: string) => {
@@ -612,15 +626,15 @@ const MessagesPage = () => {
               </div>
             ) : (
               <div className="space-y-3 pb-4">
-                 {messages.map((message) => {
+                 {messages.filter(m => !hiddenMessageIds.includes(m.id)).map((message) => {
                    const isOwn = message.sender_id === user?.id;
                    return (
                       <div
                         key={message.id}
                         className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}
-                        onTouchStart={() => handleLongPressStart(message.id, isOwn)}
+                        onTouchStart={() => handleLongPressStart(message.id)}
                         onTouchEnd={handleLongPressEnd}
-                        onMouseDown={() => handleLongPressStart(message.id, isOwn)}
+                        onMouseDown={() => handleLongPressStart(message.id)}
                         onMouseUp={handleLongPressEnd}
                         onMouseLeave={handleLongPressEnd}
                         onClick={() => handleDoubleTap(message.id)}
@@ -634,7 +648,7 @@ const MessagesPage = () => {
                                  : 'bg-card text-card-foreground border border-border'
                              }`}
                            >
-                             <div className="flex items-center gap-2">
+                             <div className="flex items-center gap-2 mb-2">
                                <Mic className="w-4 h-4" />
                                <audio 
                                  controls 
@@ -644,28 +658,31 @@ const MessagesPage = () => {
                                  <source src={message.shared_content.audio_url} type="audio/webm" />
                                </audio>
                              </div>
-                           </div>
-                           <div className="flex items-center gap-2">
-                             {messageReactions[message.id]?.length > 0 && (
-                               <div className="flex gap-1 bg-background border border-border rounded-full px-2 py-0.5 mt-1">
-                                 {messageReactions[message.id].map((reaction, idx) => (
-                                   <button
-                                     key={idx}
-                                     onClick={() => toggleReaction(message.id, reaction.emoji)}
-                                     className="text-sm hover:scale-110 transition-transform"
-                                   >
-                                     {reaction.emoji}
-                                   </button>
-                                 ))}
-                               </div>
-                             )}
-                             <p
-                               className={`text-xs px-1 ${
-                                 isOwn ? 'text-muted-foreground text-right' : 'text-muted-foreground'
-                               }`}
-                             >
-                               {formatMessageTime(message.created_at)}
-                             </p>
+                             <div className="flex items-center justify-between gap-2">
+                               <p className={`text-xs ${isOwn ? 'opacity-70' : 'text-muted-foreground'}`}>
+                                 {formatMessageTime(message.created_at)}
+                               </p>
+                               {messageReactions[message.id]?.length > 0 && (
+                                 <div className="flex gap-1">
+                                   {messageReactions[message.id].map((reaction, idx) => (
+                                     <button
+                                       key={idx}
+                                       onClick={(e) => {
+                                         e.stopPropagation();
+                                         toggleReaction(message.id, reaction.emoji);
+                                       }}
+                                       className={`text-xs rounded-full px-1.5 py-0.5 hover:scale-110 transition-transform ${
+                                         isOwn 
+                                           ? 'bg-primary-foreground/20' 
+                                           : 'bg-background/80'
+                                       }`}
+                                     >
+                                       {reaction.emoji}
+                                     </button>
+                                   ))}
+                                 </div>
+                               )}
+                             </div>
                            </div>
                          </div>
                        ) : ['place_share', 'post_share', 'profile_share'].includes(message.message_type) &&
@@ -709,23 +726,28 @@ const MessagesPage = () => {
                              {message.message_type === 'profile_share' && (
                                <ProfileMessageCard profileData={message.shared_content} />
                              )}
-                           </div>
-                           {messageReactions[message.id]?.length > 0 && (
-                             <div className="flex gap-1 bg-background border border-border rounded-full px-2 py-0.5 mt-1 w-fit">
-                               {messageReactions[message.id].map((reaction, idx) => (
-                                 <button
-                                   key={idx}
-                                   onClick={(e) => {
-                                     e.stopPropagation();
-                                     toggleReaction(message.id, reaction.emoji);
-                                   }}
-                                   className="text-sm hover:scale-110 transition-transform"
-                                 >
-                                   {reaction.emoji}
-                                 </button>
-                               ))}
+                             <div className="flex items-center justify-between gap-2 px-3 pb-2">
+                               <p className="text-xs text-muted-foreground">
+                                 {formatMessageTime(message.created_at)}
+                               </p>
+                               {messageReactions[message.id]?.length > 0 && (
+                                 <div className="flex gap-1">
+                                   {messageReactions[message.id].map((reaction, idx) => (
+                                     <button
+                                       key={idx}
+                                       onClick={(e) => {
+                                         e.stopPropagation();
+                                         toggleReaction(message.id, reaction.emoji);
+                                       }}
+                                       className="text-xs bg-background/80 rounded-full px-1.5 py-0.5 hover:scale-110 transition-transform"
+                                     >
+                                       {reaction.emoji}
+                                     </button>
+                                   ))}
+                                 </div>
+                               )}
                              </div>
-                           )}
+                           </div>
                          </div>
                        ) : (
                          <div className={`max-w-[70%] ${isOwn ? 'ml-16' : 'mr-16'}`}>
@@ -736,32 +758,32 @@ const MessagesPage = () => {
                                  : 'bg-card text-card-foreground border border-border'
                              }`}
                            >
-                             <p className="text-sm">{message.content}</p>
-                           </div>
-                           <div className="flex items-center gap-2">
-                             {messageReactions[message.id]?.length > 0 && (
-                               <div className="flex gap-1 bg-background border border-border rounded-full px-2 py-0.5 mt-1">
-                                 {messageReactions[message.id].map((reaction, idx) => (
-                                   <button
-                                     key={idx}
-                                     onClick={(e) => {
-                                       e.stopPropagation();
-                                       toggleReaction(message.id, reaction.emoji);
-                                     }}
-                                     className="text-sm hover:scale-110 transition-transform"
-                                   >
-                                     {reaction.emoji}
-                                   </button>
-                                 ))}
-                               </div>
-                             )}
-                             <p
-                               className={`text-xs px-1 ${
-                                 isOwn ? 'text-muted-foreground text-right' : 'text-muted-foreground'
-                               }`}
-                             >
-                               {formatMessageTime(message.created_at)}
-                             </p>
+                             <p className="text-sm mb-2">{message.content}</p>
+                             <div className="flex items-center justify-between gap-2">
+                               <p className={`text-xs ${isOwn ? 'opacity-70' : 'text-muted-foreground'}`}>
+                                 {formatMessageTime(message.created_at)}
+                               </p>
+                               {messageReactions[message.id]?.length > 0 && (
+                                 <div className="flex gap-1">
+                                   {messageReactions[message.id].map((reaction, idx) => (
+                                     <button
+                                       key={idx}
+                                       onClick={(e) => {
+                                         e.stopPropagation();
+                                         toggleReaction(message.id, reaction.emoji);
+                                       }}
+                                       className={`text-xs rounded-full px-1.5 py-0.5 hover:scale-110 transition-transform ${
+                                         isOwn 
+                                           ? 'bg-primary-foreground/20' 
+                                           : 'bg-background/80'
+                                       }`}
+                                     >
+                                       {reaction.emoji}
+                                     </button>
+                                   ))}
+                                 </div>
+                               )}
+                             </div>
                            </div>
                          </div>
                        )}

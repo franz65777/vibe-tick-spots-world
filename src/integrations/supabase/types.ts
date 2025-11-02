@@ -736,6 +736,35 @@ export type Database = {
           },
         ]
       }
+      hidden_messages: {
+        Row: {
+          hidden_at: string
+          id: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          hidden_at?: string
+          id?: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          hidden_at?: string
+          id?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hidden_messages_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "direct_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hidden_posts: {
         Row: {
           hidden_at: string

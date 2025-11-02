@@ -440,6 +440,44 @@ class MessageService {
       return [];
     }
   }
+
+  async hideMessage(messageId: string): Promise<boolean> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('hidden_messages')
+        .insert({
+          message_id: messageId,
+          user_id: user.id
+        });
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error hiding message:', error);
+      return false;
+    }
+  }
+
+  async getHiddenMessages(): Promise<string[]> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('hidden_messages')
+        .select('message_id')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      return (data || []).map(h => h.message_id);
+    } catch (error) {
+      console.error('Error fetching hidden messages:', error);
+      return [];
+    }
+  }
 }
 
 export const messageService = new MessageService();
