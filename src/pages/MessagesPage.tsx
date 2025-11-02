@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Search, Send, X, MessageSquare, Image, Mic, Trash2, Smile, MapPin } from 'lucide-react';
+import { ArrowLeft, Search, Send, X, MessageSquare, Image, Mic, Trash2, Smile } from 'lucide-react';
+import pinIcon from '@/assets/pin-icon.png';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -633,7 +634,7 @@ const MessagesPage = () => {
     <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* Header */}
       <header className="shrink-0 bg-background border-b border-border">
-        <div className="px-4 py-3 flex items-center justify-between">
+        <div className="px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <Button
               onClick={handleBack}
@@ -669,38 +670,37 @@ const MessagesPage = () => {
                   </h1>
                 </button>
               </div>
+            ) : view === 'threads' ? (
+              <div className="flex-1 flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder={t('searchUsers', { ns: 'messages' })}
+                    value={searchQuery}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    onFocus={() => setView('search')}
+                    className="pl-9 h-9 bg-muted/50"
+                  />
+                </div>
+                <Button
+                  onClick={() => {
+                    loadSavedPlaces();
+                    setShowSavedPlacesModal(true);
+                  }}
+                  variant="ghost"
+                  size="icon"
+                  className="flex-shrink-0 h-9 w-9"
+                >
+                  <img src={pinIcon} alt="Pin" className="w-6 h-6" />
+                </Button>
+              </div>
             ) : (
               <h1 className="font-bold text-lg text-foreground">
-                {view === 'search'
-                  ? t('newMessage', { ns: 'messages' })
-                  : t('messages', { ns: 'messages' })}
+                {t('newMessage', { ns: 'messages' })}
               </h1>
             )}
           </div>
-
-          {view === 'threads' && (
-            <>
-              <Button
-                onClick={() => setView('search')}
-                variant="ghost"
-                size="sm"
-                className="font-medium flex-shrink-0"
-              >
-                {t('new', { ns: 'messages' })}
-              </Button>
-              <Button
-                onClick={() => {
-                  loadSavedPlaces();
-                  setShowSavedPlacesModal(true);
-                }}
-                variant="ghost"
-                size="icon"
-                className="flex-shrink-0 h-8 w-8"
-              >
-                <MapPin className="w-5 h-5" />
-              </Button>
-            </>
-          )}
         </div>
       </header>
 
@@ -1194,7 +1194,7 @@ const MessagesPage = () => {
           <ScrollArea className="h-full pt-4">
             {savedPlaces.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-                <MapPin className="w-12 h-12 text-muted-foreground mb-3" />
+                <img src={pinIcon} alt="Pin" className="w-12 h-12 mb-3 opacity-50" />
                 <p className="text-muted-foreground">{t('noSavedPlaces', { ns: 'messages' })}</p>
               </div>
             ) : (
@@ -1213,7 +1213,7 @@ const MessagesPage = () => {
                       />
                     ) : (
                       <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center">
-                        <MapPin className="w-6 h-6 text-muted-foreground" />
+                        <img src={pinIcon} alt="Pin" className="w-7 h-7" />
                       </div>
                     )}
                     <div className="flex-1 text-left min-w-0">
