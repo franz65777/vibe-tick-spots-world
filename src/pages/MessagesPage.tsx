@@ -633,7 +633,7 @@ const MessagesPage = () => {
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="shrink-0 bg-background border-b border-border">
+      <header className={`shrink-0 bg-background ${view !== 'threads' ? 'border-b border-border' : ''}`}>
         <div className="px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <Button
@@ -676,11 +676,11 @@ const MessagesPage = () => {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     type="text"
-                    placeholder={t('searchUsers', { ns: 'messages' })}
+                    placeholder="Cerca ..."
                     value={searchQuery}
                     onChange={(e) => handleSearch(e.target.value)}
                     onFocus={() => setView('search')}
-                    className="pl-9 h-9 bg-muted/50"
+                    className="pl-9 h-9 bg-muted/50 rounded-full"
                   />
                 </div>
                 <Button
@@ -692,7 +692,7 @@ const MessagesPage = () => {
                   size="icon"
                   className="flex-shrink-0 h-9 w-9"
                 >
-                  <img src={pinIcon} alt="Pin" className="w-6 h-6" />
+                  <img src={pinIcon} alt="Pin" className="w-7 h-7" />
                 </Button>
               </div>
             ) : (
@@ -793,6 +793,8 @@ const MessagesPage = () => {
                   messagePreview = t('repliedToYourStory', { ns: 'messages' });
                 } else if (unreadCount > 1) {
                   messagePreview = t('newMessages', { ns: 'messages', count: unreadCount });
+                } else if (lastMessage?.message_type === 'audio') {
+                  messagePreview = t('audioMessage', { ns: 'messages' });
                 } else if (lastMessage?.content) {
                   const content = lastMessage.content;
                   messagePreview = content.length > 30 ? `${content.substring(0, 30)}...` : content;
