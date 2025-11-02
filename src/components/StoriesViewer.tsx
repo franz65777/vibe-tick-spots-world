@@ -196,7 +196,7 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
   if (!currentStory) return null;
 
   return (
-    <div className="fixed inset-0 bg-black z-50 flex items-center justify-center">
+    <div className="fixed inset-0 bg-black z-[2000] flex items-center justify-center">
       {/* Progress bars - Enhanced horizontal indicator */}
       <div className="absolute top-4 left-4 right-4 flex gap-1.5 z-10">
         {stories.map((_, index) => (
@@ -243,8 +243,16 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
               const now = new Date();
               const storyTime = new Date(currentStory.timestamp);
               const diffMs = now.getTime() - storyTime.getTime();
+              const diffMinutes = Math.floor(diffMs / (1000 * 60));
               const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-              return diffHours < 1 ? t('now', { ns: 'common' }) : `${diffHours} ${t('hoursAgo', { ns: 'common' })}`;
+              
+              if (diffMinutes < 1) {
+                return t('now', { ns: 'common' });
+              } else if (diffMinutes < 60) {
+                return `${diffMinutes}${t('minutesShort', { ns: 'common' })}`;
+              } else {
+                return `${diffHours}${t('hoursShort', { ns: 'common' })}`;
+              }
             })()}
           </p>
         </div>

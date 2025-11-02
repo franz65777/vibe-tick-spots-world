@@ -267,7 +267,7 @@ const HomePage = () => {
   const [stories, setStories] = useState<any[]>([]);
   const [storiesLoading, setStoriesLoading] = useState(true);
 
-  // Fetch stories from followed users
+  // Fetch stories from followed users AND current user's own stories
   useEffect(() => {
     const fetchFollowedStories = async () => {
       if (!user) return;
@@ -282,13 +282,11 @@ const HomePage = () => {
           .eq('follower_id', user.id);
 
         const followingIds = followData?.map(f => f.following_id) || [];
+        
+        // Include current user's own stories by adding their ID
+        const userIdsToFetch = [...followingIds, user.id];
 
-        if (followingIds.length === 0) {
-          setStories([]);
-          return;
-        }
-
-        // Fetch stories from followed users (not expired)
+        // Fetch stories from followed users AND current user (not expired)
         const { data: storiesData, error } = await supabase
           .from('stories')
           .select(`
@@ -305,7 +303,7 @@ const HomePage = () => {
               category
             )
           `)
-          .in('user_id', followingIds)
+          .in('user_id', userIdsToFetch)
           .gt('expires_at', new Date().toISOString())
           .order('created_at', { ascending: false });
 
@@ -341,7 +339,14 @@ const HomePage = () => {
           };
         }) || [];
 
-        setStories(formattedStories);
+        // Sort stories: current user's stories first, then by most recent
+        const sortedStories = formattedStories.sort((a, b) => {
+          if (a.userId === user.id && b.userId !== user.id) return -1;
+          if (a.userId !== user.id && b.userId === user.id) return 1;
+          return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+        });
+
+        setStories(sortedStories);
       } catch (error) {
         console.error('Error fetching followed stories:', error);
         setStories([]);
@@ -388,7 +393,7 @@ const HomePage = () => {
       
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Stories Section - 80px */}
-        {!isCreateStoryModalOpen && (
+        {!isCreateStoryModalOpen && !isStoriesViewerOpen && (
           <div className="h-[80px] flex-shrink-0">
             <StoriesSection
               stories={stories}
@@ -402,7 +407,7 @@ const HomePage = () => {
         )}
         
         {/* Discover Section - 110px */}
-        {!isCreateStoryModalOpen && (
+        {!isCreateStoryModalOpen && !isStoriesViewerOpen && (
           <div className="h-[110px] flex-shrink-0">
             <CommunityHighlights
               currentCity={currentCity}
@@ -422,7 +427,7 @@ const HomePage = () => {
         )}
         
         {/* Map Section - fills remaining space and extends under bottom nav */}
-        {!isCreateStoryModalOpen && (
+        {!isCreateStoryModalOpen && !isStoriesViewerOpen && (
           <div className={isMapExpanded ? "fixed inset-0 z-50" : isSearchOverlayOpen ? "hidden" : "flex-1 relative pb-16"}>
             <MapSection
               mapCenter={mapCenter}

@@ -86,7 +86,8 @@ const resources = {
       mustTagLocation: 'Please select a location for your story',
       storyShared: 'Story shared successfully!',
       now: 'Now',
-      hoursAgo: 'h'
+      minutesShort: 'm',
+      hoursShort: 'h',
     },
     navigation: {
       explore: 'Explore',
@@ -465,7 +466,10 @@ const resources = {
       shareStory: 'Compartir Historia',
       publishing: 'Publicando...',
       mustTagLocation: 'Por favor selecciona una ubicación para tu historia',
-      storyShared: '¡Historia compartida exitosamente!'
+      storyShared: '¡Historia compartida exitosamente!',
+      now: 'Ahora',
+      minutesShort: 'm',
+      hoursShort: 'h'
     },
     navigation: {
       explore: 'Explorar',
@@ -847,7 +851,8 @@ const resources = {
       mustTagLocation: 'Seleziona una posizione per la tua storia',
       storyShared: 'Storia condivisa con successo!',
       now: 'Ora',
-      hoursAgo: 'h'
+      minutesShort: 'm',
+      hoursShort: 'h'
     },
     navigation: {
       explore: 'Esplora',
