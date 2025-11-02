@@ -8,7 +8,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import PinShareModal from '@/components/explore/PinShareModal';
+import { LocationShareModal } from '@/components/explore/LocationShareModal';
 
 interface PlaceActionButtonsProps {
   place: any;
@@ -152,7 +152,7 @@ const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
       </Dialog>
 
       {/* Share Modal */}
-      <PinShareModal isOpen={shareOpen} onClose={() => setShareOpen(false)} place={place} />
+      <LocationShareModal isOpen={shareOpen} onClose={() => setShareOpen(false)} place={place} />
     </>
   );
 };

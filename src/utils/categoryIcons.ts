@@ -1,11 +1,11 @@
 import { Utensils, Building, Coffee, ShoppingBag, MapPin, Music, Camera, Dumbbell, GraduationCap, Heart } from 'lucide-react';
 
-// Category image assets (transparent variants)
+// Category image assets (3D variants for vibrant categories)
 import imgRestaurant from '@/assets/category-restaurant-transparent.png';
-import imgBar from '@/assets/category-bar-transparent.png';
+import imgBar from '@/assets/category-bar-3d.png';
 import imgCafe from '@/assets/category-cafe-transparent.png';
-import imgHotel from '@/assets/category-hotel-transparent.png';
-import imgEntertainment from '@/assets/category-entertainment-transparent.png';
+import imgHotel from '@/assets/category-hotel-3d.png';
+import imgEntertainment from '@/assets/category-entertainment-3d.png';
 import imgMuseum from '@/assets/category-museum-transparent.png';
 import imgBakery from '@/assets/category-bakery-transparent.png';
 

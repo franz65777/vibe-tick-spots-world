@@ -5,7 +5,7 @@ import AddLocationModal from './AddLocationModal';
 import QuickAddPinModal from './QuickAddPinModal';
 import MapCategoryFilters from './MapCategoryFilters';
 import { cn } from '@/lib/utils';
-import PinShareModal from '../explore/PinShareModal';
+import { LocationShareModal } from '../explore/LocationShareModal';
 import { useMapLocations } from '@/hooks/useMapLocations';
 import { useMapFilter } from '@/contexts/MapFilterContext';
 import { Place } from '@/types/place';
@@ -369,7 +369,7 @@ const MapSection = ({
         allowedCategoriesFilter={selectedCategories}
       />
 
-      <PinShareModal
+      <LocationShareModal
         isOpen={isPinShareModalOpen}
         onClose={() => {
           setIsPinShareModalOpen(false);

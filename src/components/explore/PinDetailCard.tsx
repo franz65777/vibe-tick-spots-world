@@ -7,7 +7,7 @@ import { locationInteractionService } from '@/services/locationInteractionServic
 import { supabase } from '@/integrations/supabase/client';
 import VisitedModal from './VisitedModal';
 import { useNormalizedCity } from '@/hooks/useNormalizedCity';
-import PinShareModal from './PinShareModal';
+import { LocationShareModal } from './LocationShareModal';
 import LocationReviewModal from './LocationReviewModal';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import PostDetailModal from './PostDetailModal';
@@ -427,7 +427,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
         />
       )}
 
-      <PinShareModal
+      <LocationShareModal
         isOpen={shareOpen}
         onClose={() => setShareOpen(false)}
         place={place}

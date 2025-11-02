@@ -8,7 +8,7 @@ import { Place } from '@/types/place';
 import { usePlaceEngagement } from '@/hooks/usePlaceEngagement';
 import { usePinEngagement } from '@/hooks/usePinEngagement';
 import CommentModal from './CommentModal';
-import PinShareModal from './PinShareModal';
+import { LocationShareModal } from './LocationShareModal';
 import LocationPostLibrary from './LocationPostLibrary';
 import { getCategoryColor } from '@/utils/categoryIcons';
 import { useNormalizedCity } from '@/hooks/useNormalizedCity';
@@ -258,7 +258,7 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
         place={place}
       />
 
-      <PinShareModal
+      <LocationShareModal
         isOpen={shareModalOpen}
         onClose={() => setShareModalOpen(false)}
         place={place}

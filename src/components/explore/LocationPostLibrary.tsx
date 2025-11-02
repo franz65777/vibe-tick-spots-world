@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLocationInteraction } from '@/hooks/useLocationInteraction';
 import { locationInteractionService } from '@/services/locationInteractionService';
 import PlaceInteractionModal from '@/components/home/PlaceInteractionModal';
-import PinShareModal from './PinShareModal';
+import { LocationShareModal } from './LocationShareModal';
 import PostDetailModal from './PostDetailModal';
 import LocationReviewModal from './LocationReviewModal';
 import { toast } from 'sonner';
@@ -540,7 +540,7 @@ const LocationPostLibrary = ({
           }} />
 
           {/* Share modal */}
-          <PinShareModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} place={place} />
+          <LocationShareModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} place={place} />
           
           {/* Post Detail Modal */}
           {selectedPostId && (
