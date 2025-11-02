@@ -175,27 +175,36 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
   }
 
   return (
-    <div className="fixed inset-0 bg-background z-50 flex flex-col">
+    <div className="fixed inset-0 bg-background z-[9999] flex flex-col">
+      <style>{`
+        [class*="bottom-navigation"],
+        [class*="NewBottomNavigation"],
+        [class*="BusinessBottomNavigation"],
+        nav[class*="fixed bottom"] {
+          display: none !important;
+        }
+      `}</style>
+      
       {/* Header */}
-      <div className="bg-background border-b border-border px-4 py-3">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onClose}
-            className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
+      <div className="bg-background px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onClose}
+              className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
             <h1 className="text-lg font-semibold">{t('savedLocations', { ns: 'profile' })}</h1>
-            <p className="text-sm text-muted-foreground">
-              {filteredAndSortedPlaces.length} {t('of', { ns: 'common' })} {allPlaces.length} {t('locations', { ns: 'common' })}
-            </p>
+          </div>
+          <div className="bg-primary/10 text-primary font-bold px-3 py-1.5 rounded-full text-sm">
+            {allPlaces.length}
           </div>
         </div>
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-background border-b border-border px-4 py-3 space-y-3">
+      <div className="bg-background px-4 py-3 space-y-3">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <Input
@@ -278,7 +287,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
       {/* Locations List - Minimal Cards - Grid */}
       {!loading && filteredAndSortedPlaces.length > 0 && (
         <div className="flex-1 overflow-y-auto bg-background">
-          <div className="grid grid-cols-2 gap-3 px-4 py-4">
+          <div className="grid grid-cols-2 gap-3 px-4 py-3">
             {filteredAndSortedPlaces.map((p, idx) => (
               <div key={`${p.city}-${p.id}-${idx}`} className="relative group">
                 <MinimalLocationCard
