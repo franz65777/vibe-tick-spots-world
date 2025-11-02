@@ -1,5 +1,7 @@
 import React from 'react';
 import { useNormalizedCity } from '@/hooks/useNormalizedCity';
+import { useTranslation } from 'react-i18next';
+import { translateCityName, reverseTranslateCityName } from '@/utils/cityTranslations';
 
 interface CityLabelProps {
   id?: string;
@@ -11,11 +13,18 @@ interface CityLabelProps {
 }
 
 const CityLabel: React.FC<CityLabelProps> = ({ id, city, name, coordinates, address, className }) => {
+  const { i18n } = useTranslation();
   const { cityLabel } = useNormalizedCity({ id, city, name, coordinates, address });
   
-  // useNormalizedCity now handles all translations (static list + dynamic reverse-geocode)
-  // Show actual city or Unknown City (don't show "Nearby" which is confusing)
-  const displayCity = cityLabel && cityLabel !== 'Unknown' ? cityLabel : 'Unknown City';
+  // Normalize city name: reverse translate to English first, then translate to target language
+  let displayCity = cityLabel && cityLabel !== 'Unknown' ? cityLabel : 'Unknown City';
+  
+  if (displayCity !== 'Unknown City') {
+    // First, reverse translate to get English base name (e.g., "Torino" -> "Turin")
+    const englishName = reverseTranslateCityName(displayCity);
+    // Then translate to target language (e.g., "Turin" -> "Torino" if Italian)
+    displayCity = translateCityName(englishName, i18n.language);
+  }
   
   return <span className={className}>{displayCity}</span>;
 };
