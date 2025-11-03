@@ -201,6 +201,30 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       // Filter by selected user if one is selected later during aggregation
       const raw = (friendsSaves.data || []) as any[];
 
+      // Build followed users list directly from current saves feed
+      try {
+        const usersMap = new Map<string, { id: string; username: string; avatar_url: string; new_saves_count: number }>();
+        for (const r of raw) {
+          const uid = r.user_id;
+          if (!uid) continue;
+          const prev = usersMap.get(uid);
+          if (prev) {
+            prev.new_saves_count += 1;
+          } else {
+            usersMap.set(uid, {
+              id: uid,
+              username: r.username || 'User',
+              avatar_url: r.avatar_url || '',
+              new_saves_count: 1,
+            });
+          }
+        }
+        const list = Array.from(usersMap.values()).sort((a, b) => b.new_saves_count - a.new_saves_count);
+        setFollowedUsers(list);
+      } catch (e) {
+        console.warn('Could not build followed users from saves feed', e);
+      }
+
       // Map raw rows into grouped locations by place_id, aggregating all savers
       const byPlace = new Map<string, SwipeLocation & { saved_by_users: NonNullable<SwipeLocation['saved_by_users']> }>();
       for (const s of raw) {
@@ -486,7 +510,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       </div>
 
       {/* Followed Users Row */}
-      <div className="bg-background px-3 pt-6 pb-8 overflow-visible">
+      <div className="bg-background px-5 pt-10 pb-8 overflow-visible">
         <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2" style={{ scrollSnapType: 'x mandatory' }}>
           {/* All button */}
           <button
