@@ -22,20 +22,8 @@ const CityLabel: React.FC<CityLabelProps> = ({ id, city, name, coordinates, addr
   if (displayCity !== 'Unknown City') {
     // First, reverse translate to get English base name (e.g., "Torino" -> "Turin")
     const englishName = reverseTranslateCityName(displayCity);
-    
-    // Only translate if reverse translation succeeded (found a mapping)
-    // If reverse translation returns the same value, it means no mapping exists
-    if (englishName !== displayCity) {
-      // Then translate to target language (e.g., "Turin" -> "Torino" if Italian)
-      displayCity = translateCityName(englishName, i18n.language);
-    } else {
-      // If no reverse translation found, check if it's non-Latin script
-      const isNonLatin = /[^\u0000-\u007F\u0080-\u00FF\u0100-\u017F\u0180-\u024F]/.test(displayCity);
-      if (isNonLatin) {
-        // For non-Latin scripts without translation, use a fallback
-        displayCity = 'City';
-      }
-    }
+    // Then translate to target language (e.g., "Turin" -> "Torino" if Italian)
+    displayCity = translateCityName(englishName, i18n.language);
   }
   
   return <span className={className}>{displayCity}</span>;

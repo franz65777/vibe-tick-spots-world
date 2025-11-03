@@ -453,9 +453,8 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
               {/* Content */}
               <div className="px-2.5 flex-1 flex flex-col justify-between pb-2.5">
                 <div className="space-y-0.5">
-                  {/* Title with fixed height for alignment */}
-                  <h4 className="font-bold text-sm text-foreground line-clamp-2 leading-tight min-h-[2.5rem] flex items-end">
-                    <span className="line-clamp-2">{location.name}</span>
+                  <h4 className="font-bold text-sm text-foreground line-clamp-2 leading-tight">
+                    {location.name}
                   </h4>
                   
                   {/* City */}
