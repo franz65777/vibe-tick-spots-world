@@ -60,13 +60,49 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
   const [touchOffset, setTouchOffset] = useState({ x: 0, y: 0 });
   const [followedUsers, setFollowedUsers] = useState<FollowedUser[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<import('@/utils/allowedCategories').AllowedCategory | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<AllowedCategory | null>(null);
+  const [categoryCounts, setCategoryCounts] = useState<Record<AllowedCategory, number>>({
+    restaurant: 0,
+    bar: 0,
+    cafe: 0,
+    bakery: 0,
+    hotel: 0,
+    museum: 0,
+    entertainment: 0
+  });
+
+  useEffect(() => {
     fetchFollowedUsers();
   }, [user]);
 
   useEffect(() => {
     fetchDailyLocations();
   }, [userLocation, user, selectedUserId]);
+
+  // Calculate category counts when locations change
+  useEffect(() => {
+    const counts: Record<AllowedCategory, number> = {
+      restaurant: 0,
+      bar: 0,
+      cafe: 0,
+      bakery: 0,
+      hotel: 0,
+      museum: 0,
+      entertainment: 0
+    };
+    locations.forEach(loc => {
+      const cat = loc.category as AllowedCategory;
+      if (allowedCategories.includes(cat)) {
+        counts[cat]++;
+      }
+    });
+    setCategoryCounts(counts);
+  }, [locations]);
+
+  // Reset index when category changes
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [selectedCategory]);
 
   // Auto-load more when reaching near the end
   useEffect(() => {
@@ -428,7 +464,12 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
     setTouchStart(null);
   };
 
-  const currentLocation = locations[currentIndex];
+  // Filter locations by selected category
+  const filteredLocations = selectedCategory
+    ? locations.filter(loc => loc.category === selectedCategory)
+    : locations;
+  
+  const currentLocation = filteredLocations[currentIndex];
 
   return (
     <div className="fixed inset-0 bg-gradient-to-b from-gray-50 to-gray-100 z-50 flex flex-col">
@@ -512,6 +553,15 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
           ))}
         </div>
       </div>
+
+      {/* Category Filter */}
+      {!loading && filteredLocations.length > 0 && (
+        <SwipeCategoryFilter
+          selected={selectedCategory}
+          onSelect={setSelectedCategory}
+          counts={categoryCounts}
+        />
+      )}
 
       {/* Content */}
       <div className="flex-1 overflow-hidden">
