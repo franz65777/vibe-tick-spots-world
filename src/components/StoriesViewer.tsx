@@ -51,6 +51,7 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -99,7 +100,7 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
   }, [currentStory?.id, user, onStoryViewed]);
 
   useEffect(() => {
-    if (isPaused) return;
+    if (isPaused || isTyping) return;
 
     const timer = setInterval(() => {
       setProgress((prev) => {
@@ -112,7 +113,7 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
     }, 100);
 
     return () => clearInterval(timer);
-  }, [currentStoryIndex, isPaused]);
+  }, [currentStoryIndex, isPaused, isTyping]);
 
   const nextStory = () => {
     if (currentStoryIndex < stories.length - 1) {
@@ -219,6 +220,7 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
   const handleSendMessage = async () => {
     if (!message.trim() || !user || !currentStory) return;
     
+    setIsTyping(false); // Resume story after sending
     try {
       await messageService.sendStoryReply(currentStory.userId, currentStory.id, message);
       setMessage('');
@@ -391,12 +393,13 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
           )}
           
           {/* Location tag - Centered at bottom, larger with rounded corners */}
-          {currentStory.locationName && (
+          {currentStory.locationName && currentStory.locationId && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 if (onLocationClick) {
                   onLocationClick(currentStory.locationId);
+                  onClose(); // Close stories viewer to show map
                 }
               }}
               className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-black/80 backdrop-blur-md rounded-2xl px-6 py-3.5 hover:bg-black/90 transition-all shadow-2xl border border-white/10"
@@ -411,13 +414,38 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
       {/* Bottom interaction bar - Only for other users' stories */}
       {currentStory.userId !== user?.id && (
         <div className="absolute bottom-0 left-0 right-0 z-10 bg-gradient-to-t from-black/95 via-black/70 to-transparent pt-16 pb-safe">
-          <div className="px-4 pb-6 space-y-3">
-            {/* Action buttons row */}
-            <div className="flex items-center justify-center gap-4">
-              {/* Like button */}
+          <div className="px-4 pb-6">
+            {/* Single row with message input and action buttons */}
+            <div className="flex items-center gap-2">
+              {/* Message input bar */}
+              <div className="flex-1 flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-3">
+                <input
+                  type="text"
+                  value={message}
+                  onChange={(e) => {
+                    setMessage(e.target.value);
+                    setIsTyping(e.target.value.length > 0);
+                  }}
+                  onFocus={() => setIsTyping(true)}
+                  onBlur={() => setIsTyping(message.length > 0)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  placeholder={t('sendMessage', { ns: 'common' })}
+                  className="flex-1 bg-transparent text-white text-sm placeholder:text-white/60 outline-none"
+                />
+                {message.trim() && (
+                  <button
+                    onClick={handleSendMessage}
+                    className="text-white hover:text-white/80 transition-colors shrink-0"
+                  >
+                    <Send className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Action buttons */}
               <button
                 onClick={handleLike}
-                className="transition-all active:scale-90 p-2"
+                className="transition-all active:scale-90 p-2 shrink-0"
                 aria-label={liked ? "Unlike story" : "Like story"}
               >
                 <Heart 
@@ -427,10 +455,9 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
                 />
               </button>
 
-              {/* Share button */}
               <button
                 onClick={() => setIsShareModalOpen(true)}
-                className="transition-all active:scale-90 p-2"
+                className="transition-all active:scale-90 p-2 shrink-0"
                 aria-label="Share story"
               >
                 <svg 
@@ -448,37 +475,16 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
                 </svg>
               </button>
 
-              {/* Save location button */}
               <button
                 onClick={handleSaveLocation}
                 disabled={saving}
-                className="transition-all active:scale-90 p-2"
+                className="transition-all active:scale-90 p-2 shrink-0"
                 aria-label={isLocationSaved ? "Location saved" : "Save location"}
               >
                 <MapPin 
                   className={`w-6 h-6 ${isLocationSaved ? 'fill-blue-500 text-blue-500' : 'text-white'}`} 
                 />
               </button>
-            </div>
-
-            {/* Message input bar */}
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-3">
-              <input
-                type="text"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                placeholder={t('sendMessage', { ns: 'common' })}
-                className="flex-1 bg-transparent text-white text-sm placeholder:text-white/60 outline-none"
-              />
-              {message.trim() && (
-                <button
-                  onClick={handleSendMessage}
-                  className="text-white hover:text-white/80 transition-colors"
-                >
-                  <Send className="w-5 h-5" />
-                </button>
-              )}
             </div>
           </div>
         </div>

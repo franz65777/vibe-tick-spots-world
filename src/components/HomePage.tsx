@@ -299,7 +299,9 @@ const HomePage = () => {
           created_at,
           location_id,
           locations (
-            category
+            category,
+            latitude,
+            longitude
           )
         `)
         .in('user_id', userIdsToFetch)
@@ -329,6 +331,8 @@ const HomePage = () => {
       const formattedStories = storiesData?.map(story => {
         const profile = profilesMap.get(story.user_id);
         const locationCategory = story.locations?.category || null;
+        const locationLat = story.locations?.latitude || null;
+        const locationLng = story.locations?.longitude || null;
         
         return {
           id: story.id,
@@ -342,7 +346,9 @@ const HomePage = () => {
           locationName: story.location_name,
           locationAddress: story.location_address,
           timestamp: story.created_at,
-          locationCategory: locationCategory
+          locationCategory: locationCategory,
+          locationLat: locationLat,
+          locationLng: locationLng
         };
       }) || [];
 
@@ -487,6 +493,29 @@ const HomePage = () => {
           console.log('Story reply:', { storyId, userId, message });
         }}
         onLocationClick={(locationId: string) => {
+          // Find the story with this location to get coordinates
+          const story = stories.find(s => s.locationId === locationId);
+          if (story && story.locationLat && story.locationLng) {
+            setMapCenter({ 
+              lat: Number(story.locationLat), 
+              lng: Number(story.locationLng) 
+            });
+            // Set the place to show detail
+            setInitialPinToShow({
+              id: story.locationId,
+              name: story.locationName,
+              category: story.locationCategory || 'restaurant',
+              coordinates: { 
+                lat: Number(story.locationLat), 
+                lng: Number(story.locationLng) 
+              },
+              address: story.locationAddress || '',
+              isFollowing: false,
+              isNew: false,
+              likes: 0,
+              visitors: []
+            });
+          }
           setIsStoriesViewerOpen(false);
         }}
       />
