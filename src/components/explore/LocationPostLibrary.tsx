@@ -498,13 +498,13 @@ const LocationPostLibrary = ({
                 <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
                   <MapPin className="w-10 h-10 text-gray-400" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">No posts yet</h3>
-                <p className="text-gray-600 mb-6">Be the first to share your experience at {place.name}!</p>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('noPosts', { ns: 'explore', defaultValue: 'No posts yet' })}</h3>
+                <p className="text-gray-600 mb-6">{t('beFirstToShare', { ns: 'explore', defaultValue: 'Be the first to share your experience at' })} {place.name}!</p>
                 
                 {/* Show user's posts from their profile - only for this location */}
                 {userPosts && userPosts.filter(post => post.location_id === place.id || post.locations?.id === place.id).length > 0 && (
                   <div className="w-full mt-6">
-                    <h4 className="text-sm font-medium text-gray-700 mb-3">Your Posts at {place.name}</h4>
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">{t('yourPostsAt', { ns: 'explore', defaultValue: 'Your Posts at' })} {place.name}</h4>
                     <div className="grid grid-cols-2 gap-3">
                       {userPosts
                         .filter(post => post.location_id === place.id || post.locations?.id === place.id)
@@ -530,7 +530,7 @@ const LocationPostLibrary = ({
                 )}
                 
                 <Button className="bg-blue-600 hover:bg-blue-700 mt-6" onClick={() => window.location.href = '/add'}>
-                  {t('shareExperience', { ns: 'add' })}
+                  {t('shareExperience', { ns: 'explore', defaultValue: 'Share Your Experience' })}
                 </Button>
               </div>
             ) : (
@@ -569,7 +569,7 @@ const LocationPostLibrary = ({
                 {hasMorePosts && (
                   <div className="mt-4 flex justify-center pb-4">
                     <Button onClick={loadMorePosts} disabled={loading} variant="outline" size="sm">
-                      {loading ? 'Loading...' : 'Load More'}
+                      {loading ? t('loading', { ns: 'common', defaultValue: 'Loading...' }) : t('loadMore', { ns: 'common', defaultValue: 'Load More' })}
                     </Button>
                   </div>
                 )}

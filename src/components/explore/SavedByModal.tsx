@@ -138,7 +138,7 @@ const SavedByModal = ({ isOpen, onClose, placeId, googlePlaceId }: SavedByModalP
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-end">
+    <div className="fixed inset-0 z-[9999] bg-black/50 flex items-end">
       <div className="bg-background w-full h-[80vh] rounded-t-xl shadow-xl">
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h2 className="text-lg font-semibold text-foreground">{t('savedBy', { ns: 'explore', defaultValue: 'Saved by' })}</h2>
