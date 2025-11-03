@@ -486,7 +486,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       </div>
 
       {/* Followed Users Row */}
-      <div className="bg-background px-4 py-4 pb-8 overflow-visible">
+      <div className="bg-background px-3 pt-6 pb-8 overflow-visible">
         <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2" style={{ scrollSnapType: 'x mandatory' }}>
           {/* All button */}
           <button
