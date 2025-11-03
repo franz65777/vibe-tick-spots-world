@@ -205,6 +205,8 @@ const resources = {
       confirmedByMultipleUsers: 'Confirmed by multiple users',
       hasPhotos: 'Has Photos',
       locationsWithImages: 'Locations with images',
+      review: 'Review',
+      directions: 'Directions',
     },
     add: {
       newPost: 'New Post',
@@ -418,6 +420,7 @@ const resources = {
       share: 'Compartir',
       comment: 'Comentar',
       like: 'Me gusta',
+      saved: 'Guardado',
       likes: 'Me gusta',
       posts: 'publicaciones',
       locations: 'ubicaciones',
@@ -812,6 +815,7 @@ const resources = {
       share: 'Condividi',
       comment: 'Commenta',
       like: 'Mi piace',
+      saved: 'Salvato',
       likes: 'Mi piace',
       posts: 'Post',
       locations: 'posizioni',
@@ -986,6 +990,8 @@ const resources = {
       confirmedByMultipleUsers: 'Confermato da più utenti',
       hasPhotos: 'Ha Foto',
       locationsWithImages: 'Posizioni con immagini',
+      review: 'Recensione',
+      directions: 'Indicazioni',
     },
     add: {
       newPost: 'Nuovo Post',

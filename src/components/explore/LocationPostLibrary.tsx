@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, MapPin, Calendar, Users, Heart, MessageCircle, Share2, Bookmark, X, Navigation, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
@@ -53,6 +54,7 @@ const LocationPostLibrary = ({
   isOpen,
   onClose
 }: LocationPostLibraryProps) => {
+  const { t } = useTranslation();
   const {
     user
   } = useAuth();
@@ -403,7 +405,7 @@ const LocationPostLibrary = ({
                 className="flex-col h-auto py-3 gap-1 rounded-2xl"
               >
                 <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
-                <span className="text-xs">{isSaved ? 'Saved' : 'Save'}</span>
+                <span className="text-xs">{t(isSaved ? 'saved' : 'save', { ns: 'common' })}</span>
               </Button>
 
               <Button
@@ -413,7 +415,7 @@ const LocationPostLibrary = ({
                 className="flex-col h-auto py-3 gap-1 rounded-2xl"
               >
                 <Star className="w-5 h-5" />
-                <span className="text-xs">Review</span>
+                <span className="text-xs">{t('review', { ns: 'explore' })}</span>
               </Button>
 
               <Button
@@ -430,7 +432,7 @@ const LocationPostLibrary = ({
                 className="flex-col h-auto py-3 gap-1 rounded-2xl"
               >
                 <Navigation className="w-5 h-5" />
-                <span className="text-xs">Directions</span>
+                <span className="text-xs">{t('directions', { ns: 'explore' })}</span>
               </Button>
 
               <Button
@@ -440,7 +442,7 @@ const LocationPostLibrary = ({
                 className="flex-col h-auto py-3 gap-1 rounded-2xl"
               >
                 <Share2 className="w-5 h-5" />
-                <span className="text-xs">Share</span>
+                <span className="text-xs">{t('share', { ns: 'common' })}</span>
               </Button>
             </div>
           </div>
@@ -484,7 +486,7 @@ const LocationPostLibrary = ({
                 )}
                 
                 <Button className="bg-blue-600 hover:bg-blue-700 mt-6" onClick={() => window.location.href = '/add'}>
-                  Share Your Experience
+                  {t('shareExperience', { ns: 'add' })}
                 </Button>
               </div>
             ) : (

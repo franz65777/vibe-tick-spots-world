@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Heart, Bookmark, Users, MessageSquare, Share2, Navigation, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 import { locationInteractionService } from '@/services/locationInteractionService';
 import { LocationShareModal } from './LocationShareModal';
 import LocationReviewModal from './LocationReviewModal';
@@ -14,6 +15,7 @@ interface EnhancedLocationCardProps {
 }
 
 const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps) => {
+  const { t } = useTranslation();
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
@@ -188,7 +190,7 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
             className="flex-col h-auto py-3 gap-1 rounded-2xl"
           >
             <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
-            <span className="text-xs">{isSaved ? 'Saved' : 'Save'}</span>
+            <span className="text-xs">{t(isSaved ? 'saved' : 'save', { ns: 'common' })}</span>
           </Button>
 
           <Button
@@ -201,7 +203,7 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
             className="flex-col h-auto py-3 gap-1 rounded-2xl"
           >
             <Star className="w-5 h-5" />
-            <span className="text-xs">Review</span>
+            <span className="text-xs">{t('review', { ns: 'explore' })}</span>
           </Button>
 
           <Button
@@ -219,7 +221,7 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
             className="flex-col h-auto py-3 gap-1 rounded-2xl"
           >
             <Navigation className="w-5 h-5" />
-            <span className="text-xs">Directions</span>
+            <span className="text-xs">{t('directions', { ns: 'explore' })}</span>
           </Button>
 
           <Button
@@ -232,7 +234,7 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
             className="flex-col h-auto py-3 gap-1 rounded-2xl"
           >
             <Share2 className="w-5 h-5" />
-            <span className="text-xs">Share</span>
+            <span className="text-xs">{t('share', { ns: 'common' })}</span>
           </Button>
         </div>
       </div>

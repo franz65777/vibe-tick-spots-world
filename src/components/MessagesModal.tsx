@@ -415,7 +415,8 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
                                           address: placeData.address || '',
                                           city: placeData.city || '',
                                           coordinates: placeData.coordinates || { lat: 0, lng: 0 }
-                                        }
+                                        },
+                                        fromMessages: true
                                       }
                                     });
                                   }}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Heart, Bookmark, MessageCircle, Share2, MapPin, Star, Users } from 'lucide-react';
@@ -20,6 +21,7 @@ interface LocationCardProps {
 }
 
 const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
+  const { t } = useTranslation();
   const { isLiked, isSaved, toggleLike, toggleSave } = usePlaceEngagement();
   const { engagement } = usePinEngagement(place.id, place.google_place_id || null);
   const [isLiking, setIsLiking] = useState(false);
@@ -210,7 +212,7 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
                 } ${isLiking ? 'animate-pulse' : ''}`}
               >
                 <Heart className={`w-4 h-4 ${isLiked(place.id) ? 'fill-current' : ''}`} />
-                <span className="text-xs font-medium">Like</span>
+                <span className="text-xs font-medium">{t('like', { ns: 'common' })}</span>
               </Button>
               
               <Button
@@ -225,7 +227,7 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
                 } ${isSaving ? 'animate-pulse' : ''}`}
               >
                 <Bookmark className={`w-4 h-4 ${isSaved(place.id) ? 'fill-current' : ''}`} />
-                <span className="text-xs font-medium">Save</span>
+                <span className="text-xs font-medium">{t(isSaved(place.id) ? 'saved' : 'save', { ns: 'common' })}</span>
               </Button>
               
               <Button
@@ -235,7 +237,7 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
                 className="h-12 rounded-xl flex flex-col gap-1 text-gray-600 hover:text-green-600 hover:bg-green-50 transition-all"
               >
                 <MessageCircle className="w-4 h-4" />
-                <span className="text-xs font-medium">Comment</span>
+                <span className="text-xs font-medium">{t('comment', { ns: 'common' })}</span>
               </Button>
               
               <Button
@@ -245,7 +247,7 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
                 className="h-12 rounded-xl flex flex-col gap-1 text-gray-600 hover:text-purple-600 hover:bg-purple-50 transition-all"
               >
                 <Share2 className="w-4 h-4" />
-                <span className="text-xs font-medium">Share</span>
+                <span className="text-xs font-medium">{t('share', { ns: 'common' })}</span>
               </Button>
             </div>
           </div>
