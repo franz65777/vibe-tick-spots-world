@@ -29,10 +29,11 @@ const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => 
 
   const handleViewLocation = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Navigate to explore with sharedPlace to open modal
+    // Navigate to explore with sharedPlace and fromMessages flag
     navigate('/explore', { 
       state: { 
-        sharedPlace: placeData
+        sharedPlace: placeData,
+        fromMessages: true
       } 
     });
   };

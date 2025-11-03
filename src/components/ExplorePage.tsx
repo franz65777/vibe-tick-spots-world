@@ -44,12 +44,15 @@ const ExplorePage = () => {
   const { suggestions, fetchSuggestions } = useFollowSuggestions();
   const [viewingStories, setViewingStories] = useState<any[]>([]);
   const [viewingStoriesIndex, setViewingStoriesIndex] = useState(0);
+  const [fromMessages, setFromMessages] = useState(false);
 
   // Check for shared place from DM and open LocationPostLibrary
   useEffect(() => {
-    const state = location.state as { sharedPlace?: any } | null;
+    const state = location.state as { sharedPlace?: any; fromMessages?: boolean } | null;
     if (state?.sharedPlace) {
       const place = state.sharedPlace;
+      const isFromMessages = state.fromMessages || false;
+      setFromMessages(isFromMessages);
       console.log('📍 Opening shared place from DM:', place);
       
       // Normalize the place data structure for LocationPostLibrary
@@ -71,10 +74,20 @@ const ExplorePage = () => {
       setSelectedLocation(normalizedPlace);
       setIsLocationModalOpen(true);
       
-      // Clear the state only if it was used
-      navigate('/explore', { replace: true });
+      // If opened from messages, don't replace history - allow back navigation
+      if (!isFromMessages) {
+        navigate('/explore', { replace: true });
+      }
     }
   }, [location.state, navigate]);
+
+  const handleCloseLocationModal = () => {
+    setIsLocationModalOpen(false);
+    // If user came from messages, navigate back
+    if (fromMessages) {
+      navigate(-1);
+    }
+  };
 
   // Load user recommendations only
   useEffect(() => {
@@ -466,7 +479,7 @@ const ExplorePage = () => {
       {/* Location Post Library */}
       <LocationPostLibrary
         isOpen={isLocationModalOpen}
-        onClose={() => setIsLocationModalOpen(false)}
+        onClose={handleCloseLocationModal}
         place={selectedLocation}
       />
     </div>;
