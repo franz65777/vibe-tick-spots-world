@@ -15,6 +15,27 @@ export const usePlaceEngagement = () => {
     }
   }, [user]);
 
+  // Listen for global save changes from other components
+  useEffect(() => {
+    const handleSaveChanged = (event: CustomEvent) => {
+      const { locationId, isSaved } = event.detail;
+      setSavedPlaces(prev => {
+        const newSet = new Set(prev);
+        if (isSaved) {
+          newSet.add(locationId);
+        } else {
+          newSet.delete(locationId);
+        }
+        return newSet;
+      });
+    };
+    
+    window.addEventListener('location-save-changed', handleSaveChanged as EventListener);
+    return () => {
+      window.removeEventListener('location-save-changed', handleSaveChanged as EventListener);
+    };
+  }, []);
+
   const loadUserEngagement = async () => {
     if (!user) return;
 
@@ -97,6 +118,10 @@ export const usePlaceEngagement = () => {
             newSet.delete(place.id);
             return newSet;
           });
+          // Emit global event
+          window.dispatchEvent(new CustomEvent('location-save-changed', { 
+            detail: { locationId: place.id, isSaved: false } 
+          }));
         }
       } else {
         // Save
@@ -113,6 +138,10 @@ export const usePlaceEngagement = () => {
 
         if (!error) {
           setSavedPlaces(prev => new Set([...prev, place.id]));
+          // Emit global event
+          window.dispatchEvent(new CustomEvent('location-save-changed', { 
+            detail: { locationId: place.id, isSaved: true } 
+          }));
         }
       }
 

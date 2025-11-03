@@ -1152,6 +1152,11 @@ const MessagesPage = () => {
                                 <PlaceMessageCard
                                   placeData={message.shared_content}
                                   onViewPlace={(placeData) => {
+                                    // Get the other user ID from the message
+                                    const otherUserId = message.sender_id === user?.id 
+                                      ? message.receiver_id 
+                                      : message.sender_id;
+                                    
                                     navigate('/explore', { 
                                       state: { 
                                         sharedPlace: {
@@ -1162,7 +1167,9 @@ const MessagesPage = () => {
                                           address: placeData.address || '',
                                           city: placeData.city || '',
                                           coordinates: placeData.coordinates || { lat: 0, lng: 0 }
-                                        }
+                                        },
+                                        fromMessages: true,
+                                        returnToUserId: otherUserId
                                       }
                                     });
                                   }}

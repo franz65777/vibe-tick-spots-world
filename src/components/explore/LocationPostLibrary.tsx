@@ -101,6 +101,21 @@ const LocationPostLibrary = ({
     }
   }, [place?.id, user]);
 
+  // Listen for global save changes
+  useEffect(() => {
+    const handleSaveChanged = (event: CustomEvent) => {
+      const { locationId, isSaved: newSavedState } = event.detail;
+      if (locationId === place?.id) {
+        setIsSaved(newSavedState);
+      }
+    };
+    
+    window.addEventListener('location-save-changed', handleSaveChanged as EventListener);
+    return () => {
+      window.removeEventListener('location-save-changed', handleSaveChanged as EventListener);
+    };
+  }, [place?.id]);
+
   const checkIfLocationSaved = async () => {
     if (!user || !place?.id) return;
     try {
@@ -322,6 +337,10 @@ const LocationPostLibrary = ({
         await locationInteractionService.unsaveLocation(place.id);
         setIsSaved(false);
         toast.success('Location removed from saved');
+        // Emit global event
+        window.dispatchEvent(new CustomEvent('location-save-changed', { 
+          detail: { locationId: place.id, isSaved: false } 
+        }));
       } else {
         // Save the location
         const locationData = {
@@ -337,6 +356,10 @@ const LocationPostLibrary = ({
         await locationInteractionService.saveLocation(place.id, locationData);
         setIsSaved(true);
         toast.success('Location saved successfully!');
+        // Emit global event
+        window.dispatchEvent(new CustomEvent('location-save-changed', { 
+          detail: { locationId: place.id, isSaved: true } 
+        }));
       }
     } catch (error) {
       console.error('Error toggling save:', error);

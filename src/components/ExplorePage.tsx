@@ -45,14 +45,17 @@ const ExplorePage = () => {
   const [viewingStories, setViewingStories] = useState<any[]>([]);
   const [viewingStoriesIndex, setViewingStoriesIndex] = useState(0);
   const [fromMessages, setFromMessages] = useState(false);
+  const [returnToUserId, setReturnToUserId] = useState<string | null>(null);
 
   // Check for shared place from DM and open LocationPostLibrary
   useEffect(() => {
-    const state = location.state as { sharedPlace?: any; fromMessages?: boolean } | null;
+    const state = location.state as { sharedPlace?: any; fromMessages?: boolean; returnToUserId?: string } | null;
     if (state?.sharedPlace) {
       const place = state.sharedPlace;
       const isFromMessages = state.fromMessages || false;
+      const userId = state.returnToUserId || null;
       setFromMessages(isFromMessages);
+      setReturnToUserId(userId);
       console.log('📍 Opening shared place from DM:', place);
       
       // Normalize the place data structure for LocationPostLibrary
@@ -83,8 +86,10 @@ const ExplorePage = () => {
 
   const handleCloseLocationModal = () => {
     setIsLocationModalOpen(false);
-    // If user came from messages, navigate back
-    if (fromMessages) {
+    // If user came from messages, navigate back to the specific chat
+    if (fromMessages && returnToUserId) {
+      navigate('/messages', { state: { initialUserId: returnToUserId } });
+    } else if (fromMessages) {
       navigate(-1);
     }
   };
