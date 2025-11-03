@@ -494,6 +494,11 @@ const resources = {
       locationSaved: '¡Ubicación guardada!',
       failedToSave: 'Error al guardar ubicación',
       linkCopied: '¡Enlace copiado al portapapeles!',
+      savedBy: 'Guardado por',
+      communityPosts: 'Publicaciones de la comunidad',
+      noCommunityPostsYet: 'Aún no hay publicaciones',
+      beFirstToShare: '¡Sé el primero en compartir!',
+      searchPeople: 'Buscar personas...'
     },
     navigation: {
       explore: 'Explorar',
@@ -889,6 +894,11 @@ const resources = {
       locationSaved: 'Luogo salvato!',
       failedToSave: 'Impossibile salvare il luogo',
       linkCopied: 'Link copiato negli appunti!',
+      savedBy: 'Salvato da',
+      communityPosts: 'Post della community',
+      noCommunityPostsYet: 'Nessun post ancora',
+      beFirstToShare: 'Sii il primo a condividere!',
+      searchPeople: 'Cerca persone...'
     },
     navigation: {
       explore: 'Esplora',
@@ -1247,6 +1257,12 @@ const resources = {
       startFollowing: 'Commencez à suivre d\'autres utilisateurs pour voir leurs mises à jour!',
       exploreUsers: 'Explorer les utilisateurs',
       discoverPlaces: 'Découvrir des lieux',
+      linkCopied: 'Lien copié dans le presse-papiers!',
+      savedBy: 'Enregistré par',
+      communityPosts: 'Publications de la communauté',
+      noCommunityPostsYet: 'Aucune publication pour le moment',
+      beFirstToShare: 'Soyez le premier à partager!',
+      searchPeople: 'Rechercher des personnes...'
     },
     navigation: {
       explore: 'Explorer',
@@ -1575,6 +1591,12 @@ const resources = {
       startFollowing: 'Beginne anderen Benutzern zu folgen, um ihre Updates zu sehen!',
       exploreUsers: 'Benutzer erkunden',
       discoverPlaces: 'Orte entdecken',
+      linkCopied: 'Link in Zwischenablage kopiert!',
+      savedBy: 'Gespeichert von',
+      communityPosts: 'Community-Beiträge',
+      noCommunityPostsYet: 'Noch keine Beiträge',
+      beFirstToShare: 'Sei der Erste, der teilt!',
+      searchPeople: 'Personen suchen...'
     },
     navigation: {
       explore: 'Erkunden',
@@ -1883,7 +1905,13 @@ const resources = {
       remove: 'Remover',
       thisWeek: 'Esta semana',
       in: 'em',
-      thisArea: 'esta área'
+      thisArea: 'esta área',
+      linkCopied: 'Link copiado para a área de transferência!',
+      savedBy: 'Salvo por',
+      communityPosts: 'Publicações da comunidade',
+      noCommunityPostsYet: 'Nenhuma publicação ainda',
+      beFirstToShare: 'Seja o primeiro a compartilhar!',
+      searchPeople: 'Pesquisar pessoas...'
     },
     navigation: {
       explore: 'Explorar',
@@ -2190,7 +2218,13 @@ const resources = {
       remove: '移除',
       thisWeek: '本周',
       in: '在',
-      thisArea: '该区域'
+      thisArea: '该区域',
+      linkCopied: '链接已复制到剪贴板！',
+      savedBy: '保存者',
+      communityPosts: '社区帖子',
+      noCommunityPostsYet: '暂无帖子',
+      beFirstToShare: '成为第一个分享的人！',
+      searchPeople: '搜索用户...'
     },
     navigation: {
       explore: '探索',
@@ -2496,7 +2530,13 @@ const resources = {
       remove: '削除',
       thisWeek: '今週',
       in: 'で',
-      thisArea: 'このエリア'
+      thisArea: 'このエリア',
+      linkCopied: 'リンクをクリップボードにコピーしました！',
+      savedBy: '保存者',
+      communityPosts: 'コミュニティ投稿',
+      noCommunityPostsYet: 'まだ投稿がありません',
+      beFirstToShare: '最初に共有しましょう！',
+      searchPeople: '人を検索...'
     },
     navigation: {
       explore: '探索',
@@ -2803,7 +2843,13 @@ const resources = {
       remove: '제거',
       thisWeek: '이번 주',
       in: '에서',
-      thisArea: '이 지역'
+      thisArea: '이 지역',
+      linkCopied: '링크가 클립보드에 복사되었습니다！',
+      savedBy: '저장한 사용자',
+      communityPosts: '커뮤니티 게시물',
+      noCommunityPostsYet: '아직 게시물이 없습니다',
+      beFirstToShare: '첫 번째로 공유하세요！',
+      searchPeople: '사람 검색...'
     },
     navigation: {
       explore: '탐색',
@@ -3110,7 +3156,13 @@ const resources = {
       remove: 'إزالة',
       thisWeek: 'هذا الأسبوع',
       in: 'في',
-      thisArea: 'هذه المنطقة'
+      thisArea: 'هذه المنطقة',
+      linkCopied: 'تم نسخ الرابط إلى الحافظة！',
+      savedBy: 'حفظه',
+      communityPosts: 'منشورات المجتمع',
+      noCommunityPostsYet: 'لا توجد منشورات بعد',
+      beFirstToShare: 'كن أول من يشارك！',
+      searchPeople: 'البحث عن أشخاص...'
     },
     navigation: {
       explore: 'استكشاف',
@@ -3416,7 +3468,13 @@ const resources = {
       remove: 'हटाएं',
       thisWeek: 'इस सप्ताह',
       in: 'में',
-      thisArea: 'यह क्षेत्र'
+      thisArea: 'यह क्षेत्र',
+      linkCopied: 'लिंक क्लिपबोर्ड में कॉपी किया गया！',
+      savedBy: 'द्वारा सहेजा गया',
+      communityPosts: 'समुदाय पोस्ट',
+      noCommunityPostsYet: 'अभी तक कोई पोस्ट नहीं',
+      beFirstToShare: 'साझा करने वाले पहले बनें！',
+      searchPeople: 'लोगों को खोजें...'
     },
     navigation: {
       explore: 'खोजें',
@@ -3723,7 +3781,13 @@ const resources = {
       remove: 'Удалить',
       thisWeek: 'На этой неделе',
       in: 'в',
-      thisArea: 'этой области'
+      thisArea: 'этой области',
+      linkCopied: 'Ссылка скопирована в буфер обмена！',
+      savedBy: 'Сохранено',
+      communityPosts: 'Публикации сообщества',
+      noCommunityPostsYet: 'Пока нет публикаций',
+      beFirstToShare: 'Будьте первым, кто поделится！',
+      searchPeople: 'Поиск людей...'
     },
     navigation: {
       explore: 'Обзор',

@@ -141,7 +141,7 @@ const SavedByModal = ({ isOpen, onClose, placeId, googlePlaceId }: SavedByModalP
     <div className="fixed inset-0 z-[9999] bg-black/50 flex items-end">
       <div className="bg-background w-full h-[80vh] rounded-t-xl shadow-xl">
         <div className="flex items-center justify-between p-4 border-b border-border">
-          <h2 className="text-lg font-semibold text-foreground">{t('savedBy', { ns: 'explore', defaultValue: 'Saved by' })}</h2>
+          <h2 className="text-lg font-semibold text-foreground">{t('savedBy', { ns: 'common' })}</h2>
           <button onClick={onClose} aria-label="Close">
             <X className="w-6 h-6 text-muted-foreground" />
           </button>
@@ -153,7 +153,7 @@ const SavedByModal = ({ isOpen, onClose, placeId, googlePlaceId }: SavedByModalP
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={t('searchPeople', { ns: 'explore', defaultValue: 'Search people' }) as string}
+              placeholder={t('searchPeople', { ns: 'common' }) as string}
               className="pl-9 rounded-xl"
             />
           </div>

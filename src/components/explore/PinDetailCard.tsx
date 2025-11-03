@@ -348,7 +348,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
             <div className="flex items-center gap-2 mb-3">
               <MessageSquare className="w-4 h-4 text-muted-foreground" />
               <h4 className="font-semibold text-sm text-foreground">
-                {t('communityPosts', { ns: 'explore', defaultValue: 'Community posts' })} ({posts.length})
+                {t('communityPosts', { ns: 'common' })} ({posts.length})
               </h4>
             </div>
               
@@ -422,8 +422,8 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                   <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
                     <MessageSquare className="w-8 h-8 text-muted-foreground" />
                   </div>
-                  <p className="text-sm text-muted-foreground">{t('noCommunityPosts', { ns: 'explore', defaultValue: 'No community posts yet' })}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{t('beFirstToShare', { ns: 'explore', defaultValue: 'Be the first to share!' })}</p>
+                  <p className="text-sm text-muted-foreground">{t('noCommunityPostsYet', { ns: 'common' })}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('beFirstToShare', { ns: 'common' })}</p>
                 </div>
               )}
           </div>

@@ -118,14 +118,18 @@ const LeafletMapSetup = ({
     tileLayerRef.current = tile;
   }, [isDarkMode]);
 
-  // Update map center only on initial load, not on filter changes
+  // Update map center only on initial mount, never re-center automatically
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || preventCenterUpdate) return;
+    if (!map) return;
     
-    console.log('🗺️ Updating map center to:', mapCenter);
-    map.setView([mapCenter.lat, mapCenter.lng], 15);
-  }, []); // Empty dependency array to run only once
+    // Only set the initial view
+    const isInitialMount = !map.getZoom() || map.getZoom() === 0;
+    if (isInitialMount) {
+      console.log('🗺️ Initial map setup, centering to:', mapCenter);
+      map.setView([mapCenter.lat, mapCenter.lng], 15);
+    }
+  }, []); // Empty deps - run only once on mount
 
   // Current location marker
   useEffect(() => {
