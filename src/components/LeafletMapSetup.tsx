@@ -56,6 +56,15 @@ const LeafletMapSetup = ({
     return () => observer.disconnect();
   }, []);
 
+  // Keep latest handlers in refs to avoid re-initializing map on prop changes
+  const onMapRightClickRef = useRef(onMapRightClick);
+  const onMapClickRef = useRef(onMapClick);
+
+  useEffect(() => {
+    onMapRightClickRef.current = onMapRightClick;
+    onMapClickRef.current = onMapClick;
+  }, [onMapRightClick, onMapClick]);
+
   // Initialize map once
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -82,12 +91,12 @@ const LeafletMapSetup = ({
     tile.addTo(map);
     tileLayerRef.current = tile;
 
-    // Map events
+    // Map events (handlers read latest refs)
     map.on('contextmenu', (e: L.LeafletMouseEvent) => {
-      onMapRightClick?.({ lat: e.latlng.lat, lng: e.latlng.lng });
+      onMapRightClickRef.current?.({ lat: e.latlng.lat, lng: e.latlng.lng });
     });
     map.on('click', (e: L.LeafletMouseEvent) => {
-      onMapClick?.({ lat: e.latlng.lat, lng: e.latlng.lng });
+      onMapClickRef.current?.({ lat: e.latlng.lat, lng: e.latlng.lng });
     });
 
     return () => {
@@ -97,7 +106,7 @@ const LeafletMapSetup = ({
       tileLayerRef.current = null;
       currentLocationMarkerRef.current = null;
     };
-  }, [mapCenter.lat, mapCenter.lng, onMapClick, onMapRightClick, isDarkMode]);
+  }, []);
 
   // Update tile layer on theme change
   useEffect(() => {

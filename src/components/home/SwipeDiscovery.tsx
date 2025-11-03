@@ -9,8 +9,9 @@ import { CategoryIcon } from '@/components/common/CategoryIcon';
 import CityLabel from '@/components/common/CityLabel';
 import swipeNo from '@/assets/swipe-no-alpha.png';
 import swipePin from '@/assets/swipe-pin-alpha.png';
-import { useTransparentImage } from '@/hooks/useTransparentImage';
 import { useTranslation } from 'react-i18next';
+import SwipeCategoryFilter from './SwipeCategoryFilter';
+import { allowedCategories, type AllowedCategory } from '@/utils/allowedCategories';
 
 interface SwipeLocation {
   id: string;
@@ -29,6 +30,11 @@ interface SwipeLocation {
     username: string;
     avatar_url: string;
   };
+  saved_by_users?: {
+    id: string;
+    username: string;
+    avatar_url: string;
+  }[];
 }
 
 interface SwipeDiscoveryProps {
@@ -54,9 +60,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
   const [touchOffset, setTouchOffset] = useState({ x: 0, y: 0 });
   const [followedUsers, setFollowedUsers] = useState<FollowedUser[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  
-
-  useEffect(() => {
+  const [selectedCategory, setSelectedCategory] = useState<import('@/utils/allowedCategories').AllowedCategory | null>(null);
     fetchFollowedUsers();
   }, [user]);
 
@@ -142,9 +146,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       const [swipedData, mySavedPlaces, friendsSaves] = await Promise.all([
         supabase.from('location_swipes').select('location_id').eq('user_id', user.id),
         supabase.from('saved_places').select('place_id').eq('user_id', user.id),
-        selectedUserId
-          ? supabase.rpc('get_following_saved_places', { limit_count: 50 })
-          : supabase.rpc('get_following_saved_places', { limit_count: 50 })
+        supabase.rpc('get_following_saved_places', { limit_count: 50 })
       ]);
 
       const swipedLocationIds = (swipedData.data || []).map((s) => s.location_id);
@@ -160,53 +162,47 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
         swipedPlaceIds = new Set((data || []).map(l => l.google_place_id).filter(Boolean) as string[]);
       }
 
-      // Filter by selected user if one is selected
-      let rawCandidates = friendsSaves.data || [];
-      console.log('📦 Raw candidates before filter:', rawCandidates.length);
-      
-      if (selectedUserId) {
-        console.log('🔍 Filtering for user:', selectedUserId);
-        rawCandidates = rawCandidates.filter((s: any) => {
-          const matches = s.user_id === selectedUserId;
-          if (matches) {
-            console.log('✅ Match found:', s.place_name, 'from', s.username);
-          }
-          return matches;
-        });
-        console.log('📊 Filtered candidates:', rawCandidates.length);
-      }
+      // Filter by selected user if one is selected later during aggregation
+      const raw = (friendsSaves.data || []) as any[];
 
-      let candidates: SwipeLocation[] = rawCandidates.map((s: any) => {
+      // Map raw rows into grouped locations by place_id, aggregating all savers
+      const byPlace = new Map<string, SwipeLocation & { saved_by_users: NonNullable<SwipeLocation['saved_by_users']> }>();
+      for (const s of raw) {
         let coords: any = { lat: 0, lng: 0 };
         try {
-          coords = typeof s.coordinates === 'string' 
-            ? JSON.parse(s.coordinates) 
-            : (s.coordinates || { lat: 0, lng: 0 });
+          coords = typeof s.coordinates === 'string' ? JSON.parse(s.coordinates) : (s.coordinates || { lat: 0, lng: 0 });
         } catch (e) {
           console.error('Error parsing coordinates for', s.place_name, e);
         }
-        
         const latNum = Number(coords?.lat ?? coords?.latitude ?? 0);
         const lngNum = Number(coords?.lng ?? coords?.longitude ?? 0);
-        
-        console.log(`📌 Processing place: ${s.place_name} from ${s.username}`, { coords: { lat: latNum, lng: lngNum }, city: s.city });
-        
-        return {
-          id: s.place_id || `temp-${Math.random()}`,
-          place_id: s.place_id || '',
-          name: s.place_name || 'Unknown Place',
-          category: s.place_category || 'place',
-          city: s.city || null,
-          address: s.address || null,
-          image_url: undefined,
-          coordinates: { lat: latNum, lng: lngNum },
-          saved_by: {
-            id: s.user_id || '',
-            username: s.username || 'User',
-            avatar_url: s.avatar_url || '',
-          },
-        };
-      });
+        const placeId = s.place_id || '';
+        if (!placeId) continue;
+        const saver = { id: s.user_id || '', username: s.username || 'User', avatar_url: s.avatar_url || '' };
+        const existing = byPlace.get(placeId);
+        if (existing) {
+          if (!existing.saved_by_users.find(u => u.id === saver.id)) existing.saved_by_users.push(saver);
+        } else {
+          byPlace.set(placeId, {
+            id: placeId,
+            place_id: placeId,
+            name: s.place_name || 'Unknown Place',
+            category: s.place_category || 'place',
+            city: s.city || null,
+            address: s.address || null,
+            image_url: undefined,
+            coordinates: { lat: latNum, lng: lngNum },
+            saved_by: saver,
+            saved_by_users: [saver],
+          });
+        }
+      }
+
+      // Convert to array and apply optional selected user filter
+      let candidates: SwipeLocation[] = Array.from(byPlace.values());
+      if (selectedUserId) {
+        candidates = candidates.filter(c => c.saved_by_users?.some(u => u.id === selectedUserId));
+      }
 
       // Enrich candidates with internal location data (city/address/coords/image)
       if (candidates.length > 0) {
@@ -252,6 +248,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
           image_url: l.image_url || undefined,
           coordinates: { lat: Number(l.latitude) || 0, lng: Number(l.longitude) || 0 },
           saved_by: undefined,
+          saved_by_users: [],
         }));
         console.log('📍 Loaded', candidates.length, 'fallback locations');
       }
@@ -448,7 +445,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       </div>
 
       {/* Followed Users Row */}
-      <div className="bg-white border-b border-gray-100 px-4 py-3 overflow-hidden">
+      <div className="bg-background border-b border-border px-4 py-4 overflow-visible">
         <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1" style={{ scrollSnapType: 'x mandatory' }}>
           {/* All button */}
           <button
@@ -462,14 +459,12 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
             }`}
             style={{ scrollSnapAlign: 'start' }}
           >
-            <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
-              selectedUserId === null 
-                ? 'bg-gradient-to-br from-primary to-purple-500 ring-2 ring-primary ring-offset-2' 
-                : 'bg-gray-200'
+            <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all bg-muted ${
+              selectedUserId === null ? 'ring-2 ring-primary ring-offset-2' : ''
             }`}>
-              <Users className="w-6 h-6 text-white" />
+              <Users className="w-6 h-6 text-foreground" />
             </div>
-            <span className="text-xs font-medium text-gray-700">Tutti</span>
+            <span className="text-xs font-medium text-muted-foreground">{t('all', { ns: 'common' })}</span>
           </button>
 
           {followedUsers.map((followedUser) => (
@@ -597,9 +592,25 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/20" />
                 </div>
 
-                {/* Top - Saved by avatar */}
-                {currentLocation.saved_by && (
-                  <div className="absolute top-4 left-4 flex items-center gap-2 bg-black/60 backdrop-blur-sm rounded-full px-3 py-2 shadow-lg">
+                {/* Top - Saved by avatars (stacked) */}
+                {(currentLocation.saved_by_users && currentLocation.saved_by_users.length > 0) ? (
+                  <div className="absolute top-6 left-4 flex items-center gap-2 bg-black/55 backdrop-blur-sm rounded-full px-3 py-2 shadow-lg">
+                    <div className="flex -space-x-2">
+                      {currentLocation.saved_by_users.slice(0, 4).map(u => (
+                        <img
+                          key={u.id}
+                          src={u.avatar_url || undefined}
+                          alt={u.username}
+                          className="w-7 h-7 rounded-full object-cover ring-2 ring-white/30 bg-muted"
+                        />
+                      ))}
+                    </div>
+                    {currentLocation.saved_by_users.length > 4 && (
+                      <span className="text-white/90 text-xs font-medium">+{currentLocation.saved_by_users.length - 4}</span>
+                    )}
+                  </div>
+                ) : currentLocation.saved_by ? (
+                  <div className="absolute top-6 left-4 flex items-center gap-2 bg-black/55 backdrop-blur-sm rounded-full px-3 py-2 shadow-lg">
                     {currentLocation.saved_by.avatar_url ? (
                       <img 
                         src={currentLocation.saved_by.avatar_url} 
@@ -617,7 +628,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                       {currentLocation.saved_by.username}
                     </span>
                   </div>
-                )}
+                ) : null}
 
                 {/* Bottom Info */}
                 <div className="absolute bottom-0 left-0 right-0 p-6 pb-8">
