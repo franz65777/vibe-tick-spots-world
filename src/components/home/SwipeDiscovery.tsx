@@ -7,8 +7,8 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import CityLabel from '@/components/common/CityLabel';
-import swipeNo from '@/assets/swipe-no-alpha.png';
-import swipePin from '@/assets/swipe-pin-alpha.png';
+import swipeNo from '@/assets/swipe-no-clean.png';
+import swipePin from '@/assets/swipe-pin-clean.png';
 import { useTranslation } from 'react-i18next';
 import SwipeCategoryFilter from './SwipeCategoryFilter';
 import { allowedCategories, type AllowedCategory } from '@/utils/allowedCategories';
@@ -474,7 +474,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
   return (
     <div className="fixed inset-0 bg-gradient-to-b from-gray-50 to-gray-100 z-50 flex flex-col">
       {/* Header with back button */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3 shadow-sm">
+      <div className="bg-white px-4 py-3 flex items-center gap-3 shadow-sm">
         <button
           onClick={() => navigate('/')}
           className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -486,8 +486,8 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       </div>
 
       {/* Followed Users Row */}
-      <div className="bg-background border-b border-border px-4 py-4 overflow-visible">
-        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1" style={{ scrollSnapType: 'x mandatory' }}>
+      <div className="bg-background px-4 py-4 pb-6 overflow-visible">
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide" style={{ scrollSnapType: 'x mandatory' }}>
           {/* All button */}
           <button
             onClick={() => {
