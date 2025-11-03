@@ -18,6 +18,7 @@ import { supabase } from '@/integrations/supabase/client';
 import PlaceMessageCard from '@/components/messages/PlaceMessageCard';
 import PostMessageCard from '@/components/messages/PostMessageCard';
 import ProfileMessageCard from '@/components/messages/ProfileMessageCard';
+import StoryMessageCard from '@/components/messages/StoryMessageCard';
 import { useTranslation } from 'react-i18next';
 import { useStories } from '@/hooks/useStories';
 import StoriesViewer from '@/components/StoriesViewer';
@@ -1013,6 +1014,73 @@ const MessagesPage = () => {
                                   </audio>
                                 </div>
                               </div>
+                              {messageReactions[message.id]?.length > 0 && (
+                                <div className="absolute -bottom-2 left-2 flex gap-0.5 bg-background/95 rounded-full px-1.5 py-0.5 shadow-sm border border-border">
+                                  {messageReactions[message.id].map((reaction, idx) => (
+                                    <button
+                                      key={idx}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleReaction(message.id, reaction.emoji);
+                                      }}
+                                      className="text-sm leading-none hover:scale-110 transition-transform"
+                                    >
+                                      {reaction.emoji}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            {/* Timestamp below message */}
+                            <p className={`text-xs text-muted-foreground px-2 mt-1 ${isOwn ? 'text-right' : 'text-left'}`}>
+                              {formatMessageTime(message.created_at)}
+                            </p>
+                          </div>
+                        ) : message.message_type === 'story_reply' && message.story_id ? (
+                          // Story reply - show "Ha respondido a tu historia" with story preview
+                          <div className={`max-w-[85%] ${isOwn ? 'ml-auto' : ''}`}>
+                            {!isOwn && (
+                              <p className="text-xs text-muted-foreground mb-2 px-1">
+                                {t('repliedToYourStory', { ns: 'messages' })}
+                              </p>
+                            )}
+                            {message.content && (
+                              <div
+                                className={`rounded-2xl px-4 py-3 mb-2 relative ${
+                                  isOwn
+                                    ? 'bg-primary text-primary-foreground ml-auto max-w-fit'
+                                    : 'bg-card text-card-foreground border border-border'
+                                }`}
+                              >
+                                <p className="text-sm">{message.content}</p>
+                                {messageReactions[message.id]?.length > 0 && (
+                                  <div className="absolute -bottom-2 left-2 flex gap-0.5 bg-background/95 rounded-full px-1.5 py-0.5 shadow-sm border border-border">
+                                    {messageReactions[message.id].map((reaction, idx) => (
+                                      <button
+                                        key={idx}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          toggleReaction(message.id, reaction.emoji);
+                                        }}
+                                        className="text-sm leading-none hover:scale-110 transition-transform"
+                                      >
+                                        {reaction.emoji}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            {/* Timestamp below message */}
+                            <p className={`text-xs text-muted-foreground px-2 mt-1 ${isOwn ? 'text-right' : 'text-left'}`}>
+                              {formatMessageTime(message.created_at)}
+                            </p>
+                          </div>
+                        ) : message.message_type === 'story_share' && message.shared_content ? (
+                          // Story share - show story preview
+                          <div className={`max-w-[85%] ${isOwn ? 'ml-auto' : ''}`}>
+                            <div className="bg-card rounded-2xl border border-border overflow-hidden p-3 relative">
+                              <StoryMessageCard storyData={message.shared_content} content={message.content} />
                               {messageReactions[message.id]?.length > 0 && (
                                 <div className="absolute -bottom-2 left-2 flex gap-0.5 bg-background/95 rounded-full px-1.5 py-0.5 shadow-sm border border-border">
                                   {messageReactions[message.id].map((reaction, idx) => (

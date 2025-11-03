@@ -6,7 +6,7 @@ export interface DirectMessage {
   sender_id: string;
   receiver_id: string;
   content?: string;
-  message_type: 'text' | 'place_share' | 'trip_share' | 'post_share' | 'profile_share' | 'audio' | 'story_reply';
+  message_type: 'text' | 'place_share' | 'trip_share' | 'post_share' | 'profile_share' | 'audio' | 'story_reply' | 'story_share';
   shared_content?: any;
   created_at: string;
   read_at?: string;
@@ -287,24 +287,49 @@ class MessageService {
 
       const profileMap = new Map((profiles || []).map(p => [p.id, p]));
 
+      // Get story IDs for story_reply messages
+      const storyIds = [...new Set(messages?.filter(m => m.story_id).map(m => m.story_id) || [])];
+      const { data: stories } = storyIds.length > 0 
+        ? await supabase
+            .from('stories')
+            .select('id, media_url, media_type, location_name, user_id')
+            .in('id', storyIds)
+        : { data: [] };
+
+      const storyMap = new Map((stories || []).map(s => [s.id, s]));
+
       return (messages || []).map((message) => {
         const senderProfile = profileMap.get(message.sender_id);
-        return {
+        const result: DirectMessage = {
           id: message.id,
           sender_id: message.sender_id,
           receiver_id: message.receiver_id,
           content: message.content || undefined,
-          message_type: message.message_type as 'text' | 'place_share' | 'trip_share' | 'post_share' | 'profile_share' | 'audio',
+          message_type: message.message_type as 'text' | 'place_share' | 'trip_share' | 'post_share' | 'profile_share' | 'audio' | 'story_reply' | 'story_share',
           shared_content: message.shared_content || undefined,
           created_at: message.created_at,
           read_at: message.read_at || undefined,
           is_read: !!message.is_read,
+          story_id: message.story_id || undefined,
           sender: senderProfile ? {
             username: senderProfile.username || 'Unknown',
             full_name: senderProfile.full_name || 'Unknown User',
             avatar_url: senderProfile.avatar_url || ''
           } : undefined
-        } as DirectMessage;
+        };
+
+        // Add story data to shared_content if it's a story_reply
+        if (message.story_id && storyMap.has(message.story_id)) {
+          const story = storyMap.get(message.story_id)!;
+          result.shared_content = {
+            story_id: story.id,
+            media_url: story.media_url,
+            media_type: story.media_type,
+            location_name: story.location_name
+          };
+        }
+
+        return result;
       });
     } catch (error) {
       console.error('Error fetching messages:', error);

@@ -52,6 +52,7 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
   const [message, setMessage] = useState('');
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
   
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -100,7 +101,7 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
   }, [currentStory?.id, user, onStoryViewed]);
 
   useEffect(() => {
-    if (isPaused || isTyping) return;
+    if (isPaused || isTyping || isSharing) return;
 
     const timer = setInterval(() => {
       setProgress((prev) => {
@@ -113,7 +114,7 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
     }, 100);
 
     return () => clearInterval(timer);
-  }, [currentStoryIndex, isPaused, isTyping]);
+  }, [currentStoryIndex, isPaused, isTyping, isSharing]);
 
   const nextStory = () => {
     if (currentStoryIndex < stories.length - 1) {
@@ -236,9 +237,11 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
     
     try {
       const storyData = {
-        id: currentStory.id,
-        mediaUrl: currentStory.mediaUrl,
-        locationName: currentStory.locationName
+        story_id: currentStory.id,
+        media_url: currentStory.mediaUrl,
+        media_type: currentStory.mediaType,
+        location_name: currentStory.locationName,
+        user_name: currentStory.userName
       };
 
       await Promise.all(
@@ -246,14 +249,14 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
           supabase.from('direct_messages').insert({
             sender_id: user!.id,
             receiver_id: recipientId,
-            message_type: 'text',
-            content: `Check out this story from ${currentStory.userName} at ${currentStory.locationName}`,
+            message_type: 'story_share',
             shared_content: storyData
           })
         )
       );
 
-      toast.success(t('common:shared'));
+      toast.success(t('shared', { ns: 'common' }));
+      setIsSharing(false);
       return true;
     } catch (error) {
       console.error('Error sharing story:', error);
@@ -456,7 +459,10 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
               </button>
 
               <button
-                onClick={() => setIsShareModalOpen(true)}
+                onClick={() => {
+                  setIsSharing(true);
+                  setIsShareModalOpen(true);
+                }}
                 className="transition-all active:scale-90 p-2 shrink-0"
                 aria-label="Share story"
               >
@@ -490,13 +496,20 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
         </div>
       )}
 
-      {/* Share Modal */}
-      <ShareModal
-        isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
-        onShare={handleShare}
-        postId={currentStory.id}
-      />
+      {/* Share Modal with higher z-index */}
+      {isShareModalOpen && (
+        <div className="fixed inset-0 z-[2100]">
+          <ShareModal
+            isOpen={isShareModalOpen}
+            onClose={() => {
+              setIsShareModalOpen(false);
+              setIsSharing(false);
+            }}
+            onShare={handleShare}
+            postId={currentStory.id}
+          />
+        </div>
+      )}
     </div>
   );
 };
