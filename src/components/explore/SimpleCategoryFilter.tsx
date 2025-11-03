@@ -21,7 +21,7 @@ const SimpleCategoryFilter = ({ selectedCategory, onCategorySelect }: SimpleCate
           >
             <CategoryIcon
               category={category}
-              className={`${category.toLowerCase() === 'hotel' ? 'w-14 h-14' : 'w-10 h-10'} ${isSelected ? 'opacity-100' : 'opacity-80'}`}
+              className={`${category.toLowerCase() === 'hotel' ? 'w-12 h-12' : 'w-10 h-10'} ${isSelected ? 'opacity-100' : 'opacity-80'}`}
             />
           </button>
         );
