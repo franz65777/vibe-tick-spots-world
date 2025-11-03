@@ -1,12 +1,13 @@
 
 import { useState, useEffect } from 'react';
-import { X, Heart, Share2, Send } from 'lucide-react';
+import { X, Heart, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import ShareModal from '@/components/explore/ShareModal';
 
 interface Story {
   id: string;
@@ -49,6 +50,7 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
   const [liked, setLiked] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -186,27 +188,8 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
     }
   };
 
-  const handleShare = async () => {
-    if (!currentStory) return;
-    
-    const shareData = {
-      title: `${currentStory.userName}'s story`,
-      text: `Check out ${currentStory.userName}'s story at ${currentStory.locationName}`,
-      url: `${window.location.origin}/story/${currentStory.id}`
-    };
-    
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-        toast.success(t('storyShared', { ns: 'common' }));
-      } else {
-        // Fallback: copy link
-        await navigator.clipboard.writeText(shareData.url);
-        toast.success(t('linkCopied', { ns: 'common' }));
-      }
-    } catch (error) {
-      console.error('Error sharing:', error);
-    }
+  const handleShare = () => {
+    setIsShareModalOpen(true);
   };
 
   // Check if user has liked this story
@@ -322,7 +305,7 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
           {currentStory.mediaType === 'video' ? (
             <video
               src={currentStory.mediaUrl}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
               onMouseDown={handlePause}
               onMouseUp={handleResume}
               autoPlay
@@ -333,7 +316,7 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
             <img
               src={currentStory.mediaUrl}
               alt="Story"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
               onMouseDown={handlePause}
               onMouseUp={handleResume}
             />
@@ -342,12 +325,17 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
           {/* Location tag - Bottom right with improved styling */}
           {currentStory.locationName && (
             <button
-              onClick={() => onLocationClick && onLocationClick(currentStory.locationId)}
-              className="absolute bottom-6 right-4 flex items-center gap-2 bg-black/70 backdrop-blur-md rounded-xl px-4 py-2.5 hover:bg-black/85 transition-all shadow-lg"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onLocationClick) {
+                  onLocationClick(currentStory.locationId);
+                }
+              }}
+              className="absolute bottom-8 right-4 flex items-center gap-2.5 bg-black/75 backdrop-blur-md rounded-2xl px-5 py-3 hover:bg-black/90 transition-all shadow-xl"
             >
               <svg 
-                width="18" 
-                height="18" 
+                width="20" 
+                height="20" 
                 viewBox="0 0 24 24" 
                 fill="none" 
                 xmlns="http://www.w3.org/2000/svg"
@@ -358,85 +346,119 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
                   fill="currentColor"
                 />
               </svg>
-              <span className="text-white text-sm font-medium">{currentStory.locationName}</span>
+              <span className="text-white text-base font-semibold">{currentStory.locationName}</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Bottom interaction bar - Centered action buttons */}
-      <div className="absolute bottom-0 left-0 right-0 z-10 bg-gradient-to-t from-black/90 via-black/50 to-transparent pt-12 pb-safe">
-        {/* Message input bar */}
-        <div className="px-4 mb-4">
-          <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-2.5">
-            <input
-              type="text"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              placeholder={t('sendMessage', { ns: 'common' })}
-              className="flex-1 bg-transparent text-white text-sm placeholder:text-white/60 outline-none"
-            />
-            {message.trim() && (
+      {/* Bottom interaction bar - Only for other users' stories */}
+      {currentStory.userId !== user?.id && (
+        <div className="absolute bottom-0 left-0 right-0 z-10 bg-gradient-to-t from-black/90 via-black/50 to-transparent pt-12 pb-safe">
+          {/* Action buttons and message input at the same level */}
+          <div className="px-4 pb-4">
+            <div className="flex items-center gap-3">
+              {/* Message input bar */}
+              <div className="flex-1 flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-2.5">
+                <input
+                  type="text"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  placeholder={t('sendMessage', { ns: 'common' })}
+                  className="flex-1 bg-transparent text-white text-sm placeholder:text-white/60 outline-none"
+                />
+                {message.trim() && (
+                  <button
+                    onClick={handleSendMessage}
+                    className="text-white hover:text-white/80 transition-colors"
+                  >
+                    <Send className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Like button */}
               <button
-                onClick={handleSendMessage}
-                className="text-white hover:text-white/80 transition-colors"
+                onClick={handleLike}
+                className="transition-all active:scale-90"
+                aria-label={liked ? "Unlike story" : "Like story"}
               >
-                <Send className="w-5 h-5" />
+                <Heart 
+                  className={`w-7 h-7 transition-all ${
+                    liked ? 'fill-red-500 text-red-500' : 'text-white'
+                  }`} 
+                />
               </button>
-            )}
+
+              {/* Share button */}
+              <button
+                onClick={handleShare}
+                className="transition-all active:scale-90"
+                aria-label="Share story"
+              >
+                <svg 
+                  width="28" 
+                  height="28" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="text-white"
+                >
+                  <path 
+                    d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z" 
+                    fill="currentColor"
+                  />
+                </svg>
+              </button>
+
+              {/* Save location button */}
+              <button
+                onClick={handleSaveLocation}
+                disabled={saving}
+                className="transition-all active:scale-90"
+                aria-label={isLocationSaved ? "Location saved" : "Save location"}
+              >
+                <svg 
+                  width="28" 
+                  height="28" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  xmlns="http://www.w3.org/2000/svg"
+                  className={isLocationSaved ? 'text-blue-500' : 'text-white'}
+                >
+                  <path 
+                    d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" 
+                    fill={isLocationSaved ? 'currentColor' : 'none'}
+                    stroke="currentColor"
+                    strokeWidth={isLocationSaved ? '0' : '2'}
+                  />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
+      )}
 
-        {/* Action buttons - Centered */}
-        <div className="flex items-center justify-center gap-6 pb-4">
-          {/* Like button */}
-          <button
-            onClick={handleLike}
-            className="flex flex-col items-center gap-1 transition-all active:scale-90"
-            aria-label={liked ? "Unlike story" : "Like story"}
-          >
-            <Heart 
-              className={`w-7 h-7 transition-all ${
-                liked ? 'fill-red-500 text-red-500' : 'text-white'
-              }`} 
-            />
-          </button>
-
-          {/* Share button */}
-          <button
-            onClick={handleShare}
-            className="flex flex-col items-center gap-1 transition-all active:scale-90"
-            aria-label="Share story"
-          >
-            <Share2 className="w-7 h-7 text-white" />
-          </button>
-
-          {/* Save location button - Real pin icon */}
-          <button
-            onClick={handleSaveLocation}
-            disabled={saving}
-            className="flex flex-col items-center gap-1 transition-all active:scale-90"
-            aria-label={isLocationSaved ? "Location saved" : "Save location"}
-          >
-            <svg 
-              width="28" 
-              height="28" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              xmlns="http://www.w3.org/2000/svg"
-              className={isLocationSaved ? 'text-blue-500' : 'text-white'}
-            >
-              <path 
-                d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" 
-                fill={isLocationSaved ? 'currentColor' : 'none'}
-                stroke="currentColor"
-                strokeWidth={isLocationSaved ? '0' : '2'}
-              />
-            </svg>
-          </button>
-        </div>
-      </div>
+      {/* Share Modal */}
+      {isShareModalOpen && (
+        <ShareModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          place={{
+            id: currentStory.locationId,
+            name: currentStory.locationName,
+            address: currentStory.locationAddress,
+            category: currentStory.locationCategory || 'restaurant',
+            coordinates: { lat: 0, lng: 0 },
+            city: currentStory.locationAddress.split(',').pop()?.trim() || '',
+            image: currentStory.mediaUrl,
+            likes: 0,
+            visitors: [],
+            isNew: false
+          }}
+        />
+      )}
     </div>
   );
 };
