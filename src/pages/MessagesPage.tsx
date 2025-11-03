@@ -868,15 +868,24 @@ const MessagesPage = () => {
                 const lastMessage = thread.last_message;
                 const isMyMessage = lastMessage?.sender_id === user?.id;
                 const isStoryReply = lastMessage?.message_type === 'story_reply';
+                const isStoryShare = lastMessage?.message_type === 'story_share';
 
                 // Format message preview
                 let messagePreview = '';
-                if (isStoryReply) {
+                if (isStoryReply && !isMyMessage) {
                   messagePreview = t('repliedToYourStory', { ns: 'messages' });
+                } else if (isStoryShare) {
+                  messagePreview = t('sharedAStory', { ns: 'messages' });
                 } else if (unreadCount > 1) {
                   messagePreview = t('newMessages', { ns: 'messages', count: unreadCount });
                 } else if (lastMessage?.message_type === 'audio') {
                   messagePreview = t('audioMessage', { ns: 'messages' });
+                } else if (lastMessage?.message_type === 'place_share') {
+                  messagePreview = t('sharedAPlace', { ns: 'messages' });
+                } else if (lastMessage?.message_type === 'post_share') {
+                  messagePreview = t('sharedAPost', { ns: 'messages' });
+                } else if (lastMessage?.message_type === 'profile_share') {
+                  messagePreview = t('sharedAProfile', { ns: 'messages' });
                 } else if (lastMessage?.content) {
                   const content = lastMessage.content;
                   messagePreview = content.length > 30 ? `${content.substring(0, 30)}...` : content;
@@ -886,7 +895,7 @@ const MessagesPage = () => {
 
                 // Message status for sent messages
                 let statusText = '';
-                if (isMyMessage && !isStoryReply) {
+                if (isMyMessage && !isStoryReply && !isStoryShare) {
                   statusText = lastMessage?.is_read 
                     ? t('viewed', { ns: 'messages' })
                     : t('sent', { ns: 'messages' });

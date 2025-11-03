@@ -358,10 +358,10 @@ const FeedPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24 overflow-y-auto">
-      <div className="max-w-screen-sm mx-auto h-full">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
+      <div className="max-w-screen-sm mx-auto w-full h-full flex flex-col">
         {/* Header */}
-        <div className="sticky top-0 z-30 bg-background shadow-sm">
+        <div className="sticky top-0 z-30 bg-background shadow-sm shrink-0">
           <div className="px-4 py-3 flex justify-start">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -398,21 +398,22 @@ const FeedPage = () => {
         </div>
 
         {/* Feed Content */}
-        {feedItems.length === 0 ? (
-          <div className="text-center py-12 px-4 text-muted-foreground">
-            <p className="mb-2">{t('feedEmpty')}</p>
-            <p className="text-sm">{t('startFollowing')}</p>
-            <Button
-              onClick={() => navigate('/explore')}
-              variant="link"
-              className="mt-4"
-            >
-              {t('exploreUsers')}
-            </Button>
-          </div>
-        ) : (
-          <div className="h-full overflow-y-auto">
-            {feedItems.map((item) => {
+        <div className="flex-1 overflow-y-auto pb-24">
+          {feedItems.length === 0 ? (
+            <div className="text-center py-12 px-4 text-muted-foreground">
+              <p className="mb-2">{t('feedEmpty')}</p>
+              <p className="text-sm">{t('startFollowing')}</p>
+              <Button
+                onClick={() => navigate('/explore')}
+                variant="link"
+                className="mt-4"
+              >
+                {t('exploreUsers')}
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-0">
+              {feedItems.map((item) => {
               const username = item.username;
               const avatarUrl = item.avatar_url;
               const userId = item.user_id;
@@ -609,7 +610,7 @@ const FeedPage = () => {
                     {/* Caption */}
                     {caption && renderCaption(caption, item.id, username, userId)}
 
-                    {/* Timestamp */}
+                     {/* Timestamp */}
                     <p className="text-xs text-muted-foreground uppercase text-left">
                       {formatDistanceToNow(new Date(createdAt), { addSuffix: true, locale: dfnsLocale })}
                     </p>
@@ -619,7 +620,7 @@ const FeedPage = () => {
             })}
           </div>
         )}
-
+        </div>
 
         {/* Comment Drawer */}
         <CommentDrawer
