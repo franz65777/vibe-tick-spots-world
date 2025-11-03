@@ -268,93 +268,101 @@ const HomePage = () => {
   const [storiesLoading, setStoriesLoading] = useState(true);
 
   // Fetch stories from followed users AND current user's own stories
-  useEffect(() => {
-    const fetchFollowedStories = async () => {
-      if (!user) return;
+  const fetchFollowedStories = async () => {
+    if (!user) return;
 
-      try {
-        setStoriesLoading(true);
+    try {
+      setStoriesLoading(true);
 
-        // Get list of users current user is following
-        const { data: followData } = await supabase
-          .from('follows')
-          .select('following_id')
-          .eq('follower_id', user.id);
+      // Get list of users current user is following
+      const { data: followData } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', user.id);
 
-        const followingIds = followData?.map(f => f.following_id) || [];
+      const followingIds = followData?.map(f => f.following_id) || [];
+      
+      // Include current user's own stories by adding their ID
+      const userIdsToFetch = [...followingIds, user.id];
+
+      // Fetch stories from followed users AND current user (not expired)
+      const { data: storiesData, error } = await supabase
+        .from('stories')
+        .select(`
+          id,
+          user_id,
+          media_url,
+          media_type,
+          caption,
+          location_name,
+          location_address,
+          created_at,
+          location_id,
+          locations (
+            category
+          )
+        `)
+        .in('user_id', userIdsToFetch)
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Fetch profile data separately for each user
+      const userIds = [...new Set(storiesData?.map(s => s.user_id) || [])];
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .in('id', userIds);
+
+      const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+
+      // Check viewed status for each story
+      const { data: viewsData } = await supabase
+        .from('story_views')
+        .select('story_id')
+        .eq('user_id', user.id);
+
+      const viewedStoryIds = new Set(viewsData?.map(v => v.story_id) || []);
+
+      // Transform stories to expected format
+      const formattedStories = storiesData?.map(story => {
+        const profile = profilesMap.get(story.user_id);
+        const locationCategory = story.locations?.category || null;
         
-        // Include current user's own stories by adding their ID
-        const userIdsToFetch = [...followingIds, user.id];
+        return {
+          id: story.id,
+          userId: story.user_id,
+          userName: profile?.username || 'User',
+          userAvatar: profile?.avatar_url || '',
+          isViewed: viewedStoryIds.has(story.id),
+          mediaUrl: story.media_url,
+          mediaType: story.media_type,
+          locationId: story.location_id,
+          locationName: story.location_name,
+          locationAddress: story.location_address,
+          timestamp: story.created_at,
+          locationCategory: locationCategory
+        };
+      }) || [];
 
-        // Fetch stories from followed users AND current user (not expired)
-        const { data: storiesData, error } = await supabase
-          .from('stories')
-          .select(`
-            id,
-            user_id,
-            media_url,
-            media_type,
-            caption,
-            location_name,
-            location_address,
-            created_at,
-            location_id,
-            locations (
-              category
-            )
-          `)
-          .in('user_id', userIdsToFetch)
-          .gt('expires_at', new Date().toISOString())
-          .order('created_at', { ascending: false });
+      // Sort stories: current user's stories first, then by most recent
+      const sortedStories = formattedStories.sort((a, b) => {
+        if (a.userId === user.id && b.userId !== user.id) return -1;
+        if (a.userId !== user.id && b.userId === user.id) return 1;
+        return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+      });
 
-        if (error) throw error;
+      setStories(sortedStories);
+    } catch (error) {
+      console.error('Error fetching followed stories:', error);
+      setStories([]);
+    } finally {
+      setStoriesLoading(false);
+    }
+  };
 
-        // Fetch profile data separately for each user
-        const userIds = [...new Set(storiesData?.map(s => s.user_id) || [])];
-        const { data: profilesData } = await supabase
-          .from('profiles')
-          .select('id, username, avatar_url')
-          .in('id', userIds);
-
-        const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
-
-        // Transform stories to expected format
-        const formattedStories = storiesData?.map(story => {
-          const profile = profilesMap.get(story.user_id);
-          const locationCategory = story.locations?.category || null;
-          
-          return {
-            id: story.id,
-            userId: story.user_id,
-            userName: profile?.username || 'User',
-            userAvatar: profile?.avatar_url || '',
-            isViewed: false,
-            mediaUrl: story.media_url,
-            mediaType: story.media_type,
-            locationId: story.location_id,
-            locationName: story.location_name,
-            locationAddress: story.location_address,
-            timestamp: story.created_at,
-            locationCategory: locationCategory
-          };
-        }) || [];
-
-        // Sort stories: current user's stories first, then by most recent
-        const sortedStories = formattedStories.sort((a, b) => {
-          if (a.userId === user.id && b.userId !== user.id) return -1;
-          if (a.userId !== user.id && b.userId === user.id) return 1;
-          return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
-        });
-
-        setStories(sortedStories);
-      } catch (error) {
-        console.error('Error fetching followed stories:', error);
-        setStories([]);
-      } finally {
-        setStoriesLoading(false);
-      }
-    };
-
+  useEffect(() => {
     fetchFollowedStories();
   }, [user]);
 
@@ -471,7 +479,10 @@ const HomePage = () => {
         onStoryCreated={() => {}}
         onShare={() => {}}
         onCommentSubmit={() => {}}
-        onStoryViewed={() => {}}
+        onStoryViewed={(storyId) => {
+          // Refresh stories to update viewed status
+          fetchFollowedStories();
+        }}
       />
 
       {/* Spott Logo on app launch */}

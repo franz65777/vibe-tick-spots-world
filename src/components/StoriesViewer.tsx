@@ -222,40 +222,52 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
       </Button>
 
       {/* User info - Instagram style aligned left */}
-      <div className="absolute top-16 left-4 flex items-center gap-2.5 z-10">
-        <div className="w-9 h-9 rounded-full border-2 border-white overflow-hidden shadow-lg">
-          {currentStory.userAvatar ? (
-            <img 
-              src={currentStory.userAvatar} 
-              alt={currentStory.userName}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
-              <span className="text-xs font-bold text-gray-700">{getInitials(currentStory.userName)}</span>
-            </div>
-          )}
+      <div className="absolute top-16 left-4 z-10">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-full border-2 border-white overflow-hidden shadow-lg">
+            {currentStory.userAvatar ? (
+              <img 
+                src={currentStory.userAvatar} 
+                alt={currentStory.userName}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
+                <span className="text-xs font-bold text-gray-700">{getInitials(currentStory.userName)}</span>
+              </div>
+            )}
+          </div>
+          <div>
+            <p className="text-white font-semibold text-sm drop-shadow-lg">{currentStory.userName}</p>
+            <p className="text-white/90 text-xs drop-shadow-md font-medium">
+              {(() => {
+                const now = new Date();
+                const storyTime = new Date(currentStory.timestamp);
+                const diffMs = now.getTime() - storyTime.getTime();
+                const diffMinutes = Math.floor(diffMs / (1000 * 60));
+                const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                
+                if (diffMinutes < 1) {
+                  return t('now', { ns: 'common' });
+                } else if (diffMinutes < 60) {
+                  return `${diffMinutes}${t('minutesShort', { ns: 'common' })}`;
+                } else {
+                  return `${diffHours}${t('hoursShort', { ns: 'common' })}`;
+                }
+              })()}
+            </p>
+          </div>
         </div>
-        <div>
-          <p className="text-white font-semibold text-sm drop-shadow-lg">{currentStory.userName}</p>
-          <p className="text-white/90 text-xs drop-shadow-md font-medium">
-            {(() => {
-              const now = new Date();
-              const storyTime = new Date(currentStory.timestamp);
-              const diffMs = now.getTime() - storyTime.getTime();
-              const diffMinutes = Math.floor(diffMs / (1000 * 60));
-              const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-              
-              if (diffMinutes < 1) {
-                return t('now', { ns: 'common' });
-              } else if (diffMinutes < 60) {
-                return `${diffMinutes}${t('minutesShort', { ns: 'common' })}`;
-              } else {
-                return `${diffHours}${t('hoursShort', { ns: 'common' })}`;
-              }
-            })()}
-          </p>
-        </div>
+        
+        {/* Location name below avatar - clickable */}
+        {currentStory.locationName && (
+          <button
+            onClick={() => onLocationClick && onLocationClick(currentStory.locationId)}
+            className="mt-2 flex items-center gap-1.5 bg-black/50 backdrop-blur-sm rounded-full px-3 py-1.5 hover:bg-black/70 transition-all"
+          >
+            <span className="text-white text-xs font-medium drop-shadow-lg">{currentStory.locationName}</span>
+          </button>
+        )}
       </div>
 
       {/* Navigation areas */}
@@ -287,52 +299,39 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
         />
       </div>
 
-      {/* Location overlay on media - clickable */}
-      {onLocationClick && currentStory.locationId && (
-        <button
-          onClick={() => onLocationClick(currentStory.locationId)}
-          className="absolute bottom-24 left-4 bg-black/70 backdrop-blur-md rounded-2xl px-4 py-3 shadow-xl border border-white/20 hover:bg-black/80 transition-all z-10 flex items-center gap-3"
-        >
-          <MapPin className="w-5 h-5 text-white shrink-0" />
-          <div className="text-left">
-            <p className="text-white font-bold text-sm leading-tight">{currentStory.locationName}</p>
-            <p className="text-white/70 text-xs">{currentStory.locationAddress}</p>
-          </div>
-        </button>
-      )}
-
-      {/* Action buttons - Like and Save */}
-      <div className="absolute bottom-6 right-4 flex flex-col gap-3 z-10">
+      {/* Action buttons - Like and Pin (Horizontal at bottom) */}
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4 z-10">
         {/* Like button */}
         <button
           onClick={handleLike}
-          className={`w-14 h-14 rounded-full backdrop-blur-md shadow-xl border-2 flex items-center justify-center transition-all active:scale-90 ${
+          className={`w-16 h-16 rounded-full backdrop-blur-md shadow-xl border-2 flex items-center justify-center transition-all active:scale-90 ${
             liked 
-              ? 'bg-red-500 border-red-400' 
-              : 'bg-black/50 border-white/30 hover:bg-black/70'
+              ? 'bg-red-500/90 border-red-400' 
+              : 'bg-black/40 border-white/20 hover:bg-black/60'
           }`}
+          aria-label={liked ? "Unlike story" : "Like story"}
         >
           <Heart 
-            className={`w-7 h-7 transition-all ${
+            className={`w-8 h-8 transition-all ${
               liked ? 'fill-white text-white' : 'text-white'
             }`} 
           />
         </button>
 
-        {/* Save location button */}
+        {/* Save location button - filled when saved, outline when not */}
         <button
           onClick={handleSaveLocation}
-          disabled={isLocationSaved || saving}
-          className={`w-14 h-14 rounded-full backdrop-blur-md shadow-xl border-2 flex items-center justify-center transition-all active:scale-90 ${
-            isLocationSaved
-              ? 'bg-green-500 border-green-400'
-              : 'bg-black/50 border-white/30 hover:bg-black/70'
-          }`}
+          disabled={saving}
+          className="w-16 h-16 rounded-full backdrop-blur-md shadow-xl border-2 border-white/20 bg-black/40 hover:bg-black/60 flex items-center justify-center transition-all active:scale-90"
+          aria-label={isLocationSaved ? "Location saved" : "Save location"}
         >
           <img 
             src={pinIcon} 
             alt="Save" 
-            className={`w-7 h-7 ${isLocationSaved ? 'opacity-100' : 'opacity-90'}`}
+            className="w-8 h-8"
+            style={{
+              filter: isLocationSaved ? 'brightness(0) saturate(100%) invert(45%) sepia(93%) saturate(2466%) hue-rotate(198deg) brightness(101%) contrast(101%)' : 'brightness(0) invert(1)'
+            }}
           />
         </button>
       </div>
