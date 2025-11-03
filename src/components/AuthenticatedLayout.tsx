@@ -9,7 +9,7 @@ const AuthenticatedLayout: React.FC = () => {
   const isDiscoverRoute = location.pathname === '/discover';
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="h-screen overflow-hidden">
         <Outlet />
       </div>
