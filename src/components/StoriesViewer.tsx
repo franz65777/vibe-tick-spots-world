@@ -159,18 +159,32 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
           setLiked(true);
           toast.success('Story liked!');
           
-          // Create notification for story owner (if notifications table exists with proper structure)
+          // Create notification for story owner with proper user data
           if (currentStory.userId !== user.id) {
             try {
+              // Fetch sender's profile data
+              const { data: senderProfile } = await supabase
+                .from('profiles')
+                .select('username, avatar_url')
+                .eq('id', user.id)
+                .single();
+              
+              const senderUsername = senderProfile?.username || 'Someone';
+              
               await supabase
                 .from('notifications')
                 .insert({
                   user_id: currentStory.userId,
                   type: 'story_like',
-                  message: `${user.user_metadata?.username || 'Someone'} liked your story`,
-                  title: 'Story Liked',
+                  title: t('likedYourStory', { ns: 'notifications' }),
+                  message: senderUsername,
                   is_read: false,
-                  data: { story_id: currentStory.id, sender_id: user.id }
+                  data: { 
+                    story_id: currentStory.id, 
+                    user_id: user.id,
+                    user_name: senderUsername,
+                    user_avatar: senderProfile?.avatar_url
+                  }
                 });
             } catch (notifError) {
               console.log('Notification not sent:', notifError);

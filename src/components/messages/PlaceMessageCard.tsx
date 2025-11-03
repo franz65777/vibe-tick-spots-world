@@ -1,10 +1,11 @@
 
 import React from 'react';
-import { ExternalLink } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { getCategoryIcon, getCategoryColor } from '@/utils/categoryIcons';
+import { getCategoryImage } from '@/utils/categoryIcons';
 import CityLabel from '@/components/common/CityLabel';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 
 interface PlaceMessageCardProps {
   placeData: {
@@ -23,12 +24,22 @@ interface PlaceMessageCardProps {
 
 const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => {
   const { t } = useTranslation();
-  const CategoryIconComponent = getCategoryIcon(placeData.category);
-  const categoryColor = getCategoryColor(placeData.category);
+  const navigate = useNavigate();
+  const categoryImage = getCategoryImage(placeData.category);
+
+  const handleViewLocation = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Navigate to explore with sharedPlace to open modal
+    navigate('/explore', { 
+      state: { 
+        sharedPlace: placeData
+      } 
+    });
+  };
 
   return (
     <div 
-      onClick={() => onViewPlace(placeData)}
+      onClick={handleViewLocation}
       className="bg-card border border-border rounded-2xl overflow-hidden cursor-pointer hover:bg-accent/30 transition-all shadow-sm hover:shadow-md active:scale-[0.98]"
     >
       {placeData.image && (
@@ -43,8 +54,12 @@ const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => 
       
       <div className="p-3">
         <div className="flex items-start gap-2.5">
-          <div className={`w-9 h-9 rounded-xl ${categoryColor.replace('text-', 'bg-').replace('-500', '-100').replace('-600', '-100')} flex items-center justify-center shrink-0`}>
-            <CategoryIconComponent className={`w-4 h-4 ${categoryColor}`} />
+          <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+            <img 
+              src={categoryImage} 
+              alt={placeData.category}
+              className="w-10 h-10 object-contain"
+            />
           </div>
           <div className="flex-1 min-w-0">
             <h4 className="font-semibold text-[13px] text-foreground leading-tight mb-1">{placeData.name}</h4>
@@ -61,18 +76,15 @@ const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => 
           </div>
         </div>
         
-        <Button
-          size="sm"
-          variant="ghost"
-          className="w-full mt-2.5 h-8 text-[12px] font-medium text-primary hover:bg-primary/10"
-          onClick={(e) => {
-            e.stopPropagation();
-            onViewPlace(placeData);
-          }}
+        <div
+          className="w-full mt-3 px-4 py-2.5 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors cursor-pointer flex items-center justify-center gap-2"
+          onClick={handleViewLocation}
         >
-          <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
-          {t('viewLocation', { ns: 'messages' })}
-        </Button>
+          <MapPin className="w-4 h-4 text-primary" />
+          <span className="text-[13px] font-semibold text-primary">
+            {t('viewLocation', { ns: 'messages' })}
+          </span>
+        </div>
       </div>
     </div>
   );

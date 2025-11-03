@@ -69,6 +69,12 @@ const NotificationItem = ({ notification, onMarkAsRead, onAction }: Notification
         bgColor: 'bg-rose-50',
         borderColor: 'border-rose-200'
       },
+      story_like: {
+        icon: <Camera className="w-5 h-5 text-white" />,
+        gradient: 'bg-gradient-to-r from-purple-500 to-pink-500',
+        bgColor: 'bg-purple-50',
+        borderColor: 'border-purple-200'
+      },
       event: {
         icon: <Calendar className="w-5 h-5 text-white" />,
         gradient: 'bg-gradient-to-r from-blue-600 to-indigo-600',
@@ -143,7 +149,7 @@ const NotificationItem = ({ notification, onMarkAsRead, onAction }: Notification
           {style.icon}
           
           {/* User avatar overlay for user-related notifications */}
-          {['like', 'comment', 'follow', 'friend_request', 'friend_accepted'].includes(notification.type) && (
+          {['like', 'comment', 'follow', 'friend_request', 'friend_accepted', 'story_like', 'post_like'].includes(notification.type) && (
             <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full p-0.5 shadow-md">
               <Avatar className="h-5 w-5">
                 <AvatarImage src={getUserAvatar()} />
