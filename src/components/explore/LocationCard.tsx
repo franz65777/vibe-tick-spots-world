@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
@@ -22,13 +22,25 @@ interface LocationCardProps {
 
 const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
   const { t } = useTranslation();
-  const { isLiked, isSaved, toggleLike, toggleSave } = usePlaceEngagement();
+  const { isLiked, isSaved, toggleLike, toggleSave, refetch } = usePlaceEngagement();
   const { engagement } = usePinEngagement(place.id, place.google_place_id || null);
   const [isLiking, setIsLiking] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [commentModalOpen, setCommentModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [libraryModalOpen, setLibraryModalOpen] = useState(false);
+
+  // Listen for global save changes
+  useEffect(() => {
+    const handleSaveChanged = () => {
+      refetch();
+    };
+    
+    window.addEventListener('location-save-changed', handleSaveChanged);
+    return () => {
+      window.removeEventListener('location-save-changed', handleSaveChanged);
+    };
+  }, [refetch]);
 
   const { cityLabel } = useNormalizedCity({
     id: place.google_place_id || place.id,

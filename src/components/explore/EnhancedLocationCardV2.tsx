@@ -37,6 +37,21 @@ const EnhancedLocationCardV2 = ({ place, onCardClick }: EnhancedLocationCardV2Pr
     checkSaved();
   }, [place.id]);
 
+  // Listen for global save changes
+  useEffect(() => {
+    const handleSaveChanged = (event: CustomEvent) => {
+      const { locationId, isSaved: newSavedState } = event.detail;
+      if (locationId === place.id) {
+        setIsSaved(newSavedState);
+      }
+    };
+    
+    window.addEventListener('location-save-changed', handleSaveChanged as EventListener);
+    return () => {
+      window.removeEventListener('location-save-changed', handleSaveChanged as EventListener);
+    };
+  }, [place.id]);
+
   const handleSaveToggle = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setLoading(true);
@@ -45,6 +60,10 @@ const EnhancedLocationCardV2 = ({ place, onCardClick }: EnhancedLocationCardV2Pr
       if (isSaved) {
         await locationInteractionService.unsaveLocation(place.id);
         setIsSaved(false);
+        // Emit global event
+        window.dispatchEvent(new CustomEvent('location-save-changed', { 
+          detail: { locationId: place.id, isSaved: false } 
+        }));
       } else {
         await locationInteractionService.saveLocation(place.id, {
           google_place_id: place.google_place_id,
@@ -56,6 +75,10 @@ const EnhancedLocationCardV2 = ({ place, onCardClick }: EnhancedLocationCardV2Pr
           types: place.types || []
         });
         setIsSaved(true);
+        // Emit global event
+        window.dispatchEvent(new CustomEvent('location-save-changed', { 
+          detail: { locationId: place.id, isSaved: true } 
+        }));
       }
     } catch (error) {
       console.error('Error toggling save:', error);

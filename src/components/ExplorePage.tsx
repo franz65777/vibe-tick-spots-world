@@ -77,10 +77,8 @@ const ExplorePage = () => {
       setSelectedLocation(normalizedPlace);
       setIsLocationModalOpen(true);
       
-      // If opened from messages, don't replace history - allow back navigation
-      if (!isFromMessages) {
-        navigate('/explore', { replace: true });
-      }
+      // Clear the state to prevent reopening on re-render
+      navigate('/explore', { replace: true, state: {} });
     }
   }, [location.state, navigate]);
 

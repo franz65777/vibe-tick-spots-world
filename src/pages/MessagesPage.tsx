@@ -78,18 +78,35 @@ const MessagesPage = () => {
       loadThreads();
     }
 
-    // Check if we should open a specific thread
-    const state = location.state as any;
-    if (state?.initialUserId) {
-      handleUserSelect({ id: state.initialUserId });
-    }
-
     return () => {
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
       }
     };
   }, [user?.id]);
+
+  // Separate effect to handle initialUserId from location state
+  useEffect(() => {
+    const loadInitialThread = async () => {
+      const state = location.state as any;
+      if (state?.initialUserId && user) {
+        // Fetch the full user profile first
+        const { data: userProfile, error } = await supabase
+          .from('profiles')
+          .select('id, username, avatar_url, full_name')
+          .eq('id', state.initialUserId)
+          .single();
+        
+        if (userProfile && !error) {
+          await handleUserSelect(userProfile);
+          // Clear the state after using it
+          navigate('/messages', { replace: true, state: {} });
+        }
+      }
+    };
+
+    loadInitialThread();
+  }, [location.state, user]);
 
   useEffect(() => {
     if (selectedThread && view === 'chat') {
