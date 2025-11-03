@@ -13,6 +13,7 @@ import { LocationShareModal } from './LocationShareModal';
 import PostDetailModal from './PostDetailModal';
 import LocationReviewModal from './LocationReviewModal';
 import { toast } from 'sonner';
+import SavedByModal from './SavedByModal';
 import { useNormalizedCity } from '@/hooks/useNormalizedCity';
 import { useUserPosts } from '@/hooks/useUserPosts';
 import { useDetailedAddress } from '@/hooks/useDetailedAddress';
@@ -69,6 +70,7 @@ const LocationPostLibrary = ({
   const [postsPage, setPostsPage] = useState(1);
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
+  const [showSavedBy, setShowSavedBy] = useState(false);
   const { posts: userPosts } = useUserPosts(user?.id);
   const { cityLabel: displayCity } = useNormalizedCity({
     id: place?.google_place_id || place?.id,
@@ -411,13 +413,16 @@ const LocationPostLibrary = ({
                 <h1 className="font-bold text-lg text-gray-900">{place.name}</h1>
                 {/* Pin Count & Rating */}
                 {!statsLoading && (
-                  <div className="flex items-center gap-1.5">
-                    {stats.totalSaves > 0 && (
-                      <div className="flex items-center gap-1 bg-blue-50 px-2 py-0.5 rounded-full">
-                        <Bookmark className="w-3 h-3 fill-blue-600 text-blue-600" />
-                        <span className="text-xs font-semibold text-blue-600">{stats.totalSaves}</span>
-                      </div>
-                    )}
+            <div className="flex items-center gap-1.5">
+              {stats.totalSaves > 0 && (
+                <button
+                  onClick={() => setShowSavedBy(true)}
+                  className="flex items-center gap-1 bg-blue-50 px-2 py-0.5 rounded-full hover:bg-blue-100 transition-colors"
+                >
+                  <Bookmark className="w-3 h-3 fill-blue-600 text-blue-600" />
+                  <span className="text-xs font-semibold text-blue-600">{stats.totalSaves}</span>
+                </button>
+              )}
                     {stats.averageRating && (
                       <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-full">
                         <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
@@ -602,6 +607,14 @@ const LocationPostLibrary = ({
               name: place.name,
               google_place_id: place.google_place_id
             }}
+          />
+
+          {/* Saved By Modal */}
+          <SavedByModal
+            isOpen={showSavedBy}
+            onClose={() => setShowSavedBy(false)}
+            placeId={place.id}
+            googlePlaceId={place.google_place_id || null}
           />
         </div>
       )}
