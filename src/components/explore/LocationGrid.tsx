@@ -433,7 +433,7 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
             >
               {/* Top section with category and save */}
               <div className="relative p-2.5 flex items-start justify-between">
-                <CategoryIcon category={location.category} className="w-10 h-10" />
+                <CategoryIcon category={location.category} className="w-7 h-7" />
                 
                 <button
                   onClick={(e) => handleSaveToggle(e, location.id)}
