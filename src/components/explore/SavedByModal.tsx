@@ -154,7 +154,7 @@ const SavedByModal = ({ isOpen, onClose, placeId, googlePlaceId }: SavedByModalP
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t('searchPeople', { ns: 'explore', defaultValue: 'Search people' }) as string}
-              className="pl-9"
+              className="pl-9 rounded-xl"
             />
           </div>
         </div>

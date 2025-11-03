@@ -14,6 +14,8 @@ import PostDetailModal from './PostDetailModal';
 import { usePinEngagement } from '@/hooks/usePinEngagement';
 import { useDetailedAddress } from '@/hooks/useDetailedAddress';
 import { useLocationStats } from '@/hooks/useLocationStats';
+import SavedByModal from './SavedByModal';
+import { useTranslation } from 'react-i18next';
 
 interface PinDetailCardProps {
   place: any;
@@ -21,6 +23,7 @@ interface PinDetailCardProps {
 }
 
 const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
+  const { t } = useTranslation();
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -34,6 +37,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [locationDetails, setLocationDetails] = useState<any>(null);
   const [viewStartTime] = useState<number>(Date.now());
+  const [savedByOpen, setSavedByOpen] = useState(false);
   const { cityLabel } = useNormalizedCity({
     id: place.google_place_id || place.id,
     city: locationDetails?.city || place.city,
@@ -244,10 +248,16 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                   {!statsLoading && (
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       {stats.totalSaves > 0 && (
-                        <div className="flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded-full">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSavedByOpen(true);
+                          }}
+                          className="flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded-full hover:bg-primary/20 transition-colors"
+                        >
                           <Bookmark className="w-3 h-3 fill-primary text-primary" />
                           <span className="text-xs font-semibold text-primary">{stats.totalSaves}</span>
-                        </div>
+                        </button>
                       )}
                       {stats.averageRating && (
                         <div className="flex items-center gap-1 bg-amber-500/10 px-2 py-0.5 rounded-full">
@@ -295,7 +305,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                 className="flex-col h-auto py-3 gap-1 rounded-2xl"
               >
                 <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
-                <span className="text-xs">{isSaved ? 'Saved' : 'Save'}</span>
+                <span className="text-xs">{isSaved ? t('saved', { ns: 'common', defaultValue: 'Saved' }) : t('save', { ns: 'common', defaultValue: 'Save' })}</span>
               </Button>
 
               <Button
@@ -308,7 +318,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                 className="flex-col h-auto py-3 gap-1 rounded-2xl"
               >
                 <Star className="w-5 h-5" />
-                <span className="text-xs">Review</span>
+                <span className="text-xs">{t('review', { ns: 'common', defaultValue: 'Review' })}</span>
               </Button>
 
               <Button
@@ -318,7 +328,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                 className="flex-col h-auto py-3 gap-1 rounded-2xl"
               >
                 <Navigation className="w-5 h-5" />
-                <span className="text-xs">Directions</span>
+                <span className="text-xs">{t('directions', { ns: 'common', defaultValue: 'Directions' })}</span>
               </Button>
 
               <Button
@@ -328,7 +338,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                 className="flex-col h-auto py-3 gap-1 rounded-2xl"
               >
                 <Share2 className="w-5 h-5" />
-                <span className="text-xs">Share</span>
+                <span className="text-xs">{t('share', { ns: 'common', defaultValue: 'Share' })}</span>
               </Button>
             </div>
           </div>
@@ -338,7 +348,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
             <div className="flex items-center gap-2 mb-3">
               <MessageSquare className="w-4 h-4 text-muted-foreground" />
               <h4 className="font-semibold text-sm text-foreground">
-                Community posts ({posts.length})
+                {t('communityPosts', { ns: 'explore', defaultValue: 'Community posts' })} ({posts.length})
               </h4>
             </div>
               
@@ -402,7 +412,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                         variant="outline"
                         size="sm"
                       >
-                        {postsLoading ? 'Loading...' : 'Load More'}
+                        {postsLoading ? t('loading', { ns: 'common', defaultValue: 'Loading...' }) : t('loadMore', { ns: 'common', defaultValue: 'Load More' })}
                       </Button>
                     </div>
                   )}
@@ -412,8 +422,8 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                   <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
                     <MessageSquare className="w-8 h-8 text-muted-foreground" />
                   </div>
-                  <p className="text-sm text-muted-foreground">No community posts yet</p>
-                  <p className="text-xs text-muted-foreground mt-1">Be the first to share!</p>
+                  <p className="text-sm text-muted-foreground">{t('noCommunityPosts', { ns: 'explore', defaultValue: 'No community posts yet' })}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('beFirstToShare', { ns: 'explore', defaultValue: 'Be the first to share!' })}</p>
                 </div>
               )}
           </div>
@@ -451,6 +461,13 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
           source="pin"
         />
       )}
+
+      <SavedByModal
+        isOpen={savedByOpen}
+        onClose={() => setSavedByOpen(false)}
+        placeId={place.id || locationDetails?.id}
+        googlePlaceId={place.google_place_id || locationDetails?.google_place_id}
+      />
     </>
   );
 };
