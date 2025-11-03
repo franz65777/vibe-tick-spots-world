@@ -1,13 +1,13 @@
 
 import { useState, useEffect } from 'react';
-import { X, Heart, Send } from 'lucide-react';
+import { X, Heart, Send, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import ShareModal from '@/components/explore/ShareModal';
+import { ShareModal } from '@/components/social/ShareModal';
+import { messageService } from '@/services/messageService';
 
 interface Story {
   id: string;
@@ -54,14 +54,26 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
   
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { savedPlaces, savePlace } = useSavedPlaces();
   const currentStory = stories[currentStoryIndex];
-  
-  // Check if location is already saved
-  const allSavedPlaces = Object.values(savedPlaces).flat();
-  const isLocationSaved = currentStory?.locationId ? 
-    allSavedPlaces.some(place => place.id === currentStory.locationId) : 
-    false;
+  const [isLocationSaved, setIsLocationSaved] = useState(false);
+
+  // Check if location is saved
+  useEffect(() => {
+    const checkIfSaved = async () => {
+      if (!currentStory?.locationId || !user) return;
+      
+      const { data } = await supabase
+        .from('user_saved_locations')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('location_id', currentStory.locationId)
+        .maybeSingle();
+      
+      setIsLocationSaved(!!data);
+    };
+    
+    checkIfSaved();
+  }, [currentStory?.locationId, user]);
 
   useEffect(() => {
     if (!currentStory || !user) return;
@@ -144,6 +156,24 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
         if (!error) {
           setLiked(true);
           toast.success('Story liked!');
+          
+          // Create notification for story owner (if notifications table exists with proper structure)
+          if (currentStory.userId !== user.id) {
+            try {
+              await supabase
+                .from('notifications')
+                .insert({
+                  user_id: currentStory.userId,
+                  type: 'story_like',
+                  message: `${user.user_metadata?.username || 'Someone'} liked your story`,
+                  title: 'Story Liked',
+                  is_read: false,
+                  data: { story_id: currentStory.id, sender_id: user.id }
+                });
+            } catch (notifError) {
+              console.log('Notification not sent:', notifError);
+            }
+          }
         }
       }
     } catch (error) {
@@ -156,15 +186,28 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
     
     setSaving(true);
     try {
-      await savePlace({
-        id: currentStory.locationId,
-        name: currentStory.locationName,
-        address: currentStory.locationAddress,
-        category: currentStory.locationCategory || 'restaurant',
-        coordinates: { lat: 0, lng: 0 }, // These would need to be included in story data
-        city: currentStory.locationAddress.split(',').pop()?.trim() || ''
-      });
-      toast.success(t('locationSaved', { ns: 'common' }));
+      if (isLocationSaved) {
+        // Unsave
+        await supabase
+          .from('user_saved_locations')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('location_id', currentStory.locationId);
+        
+        setIsLocationSaved(false);
+        toast.success(t('common:removed'));
+      } else {
+        // Save
+        await supabase
+          .from('user_saved_locations')
+          .insert({
+            user_id: user.id,
+            location_id: currentStory.locationId
+          });
+        
+        setIsLocationSaved(true);
+        toast.success(t('locationSaved', { ns: 'common' }));
+      }
     } catch (error) {
       console.error('Error saving location:', error);
       toast.error(t('failedToSave', { ns: 'common' }));
@@ -177,19 +220,44 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
     if (!message.trim() || !user || !currentStory) return;
     
     try {
-      if (onReplyToStory) {
-        await onReplyToStory(currentStory.id, currentStory.userId, message);
-        setMessage('');
-        toast.success(t('messageSent', { ns: 'common' }));
-      }
+      await messageService.sendStoryReply(currentStory.userId, currentStory.id, message);
+      setMessage('');
+      toast.success(t('messageSent', { ns: 'common' }));
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Failed to send message');
     }
   };
 
-  const handleShare = () => {
-    setIsShareModalOpen(true);
+  const handleShare = async (recipientIds: string[]) => {
+    if (!currentStory) return false;
+    
+    try {
+      const storyData = {
+        id: currentStory.id,
+        mediaUrl: currentStory.mediaUrl,
+        locationName: currentStory.locationName
+      };
+
+      await Promise.all(
+        recipientIds.map(recipientId => 
+          supabase.from('direct_messages').insert({
+            sender_id: user!.id,
+            receiver_id: recipientId,
+            message_type: 'text',
+            content: `Check out this story from ${currentStory.userName} at ${currentStory.locationName}`,
+            shared_content: storyData
+          })
+        )
+      );
+
+      toast.success(t('common:shared'));
+      return true;
+    } catch (error) {
+      console.error('Error sharing story:', error);
+      toast.error('Failed to share story');
+      return false;
+    }
   };
 
   // Check if user has liked this story
@@ -242,8 +310,8 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
         <X className="w-6 h-6" />
       </Button>
 
-      {/* User info - Instagram style aligned left */}
-      <div className="absolute top-12 left-4 z-10">
+      {/* User info - Higher position */}
+      <div className="absolute top-6 left-4 z-10">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-full border-2 border-white overflow-hidden shadow-lg">
             {currentStory.userAvatar ? (
@@ -300,8 +368,8 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
       />
 
       {/* Story content - Full screen covering entire width */}
-      <div className="absolute inset-0 pt-16 pb-24">
-        <div className="relative w-full h-full">
+      <div className="absolute inset-0 pt-14 pb-28">
+        <div className="relative w-full h-full flex items-center justify-center bg-black">
           {currentStory.mediaType === 'video' ? (
             <video
               src={currentStory.mediaUrl}
@@ -322,7 +390,7 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
             />
           )}
           
-          {/* Location tag - Bottom right with improved styling */}
+          {/* Location tag - Centered at bottom, larger with rounded corners */}
           {currentStory.locationName && (
             <button
               onClick={(e) => {
@@ -331,21 +399,9 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
                   onLocationClick(currentStory.locationId);
                 }
               }}
-              className="absolute bottom-8 right-4 flex items-center gap-2.5 bg-black/75 backdrop-blur-md rounded-2xl px-5 py-3 hover:bg-black/90 transition-all shadow-xl"
+              className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-black/80 backdrop-blur-md rounded-2xl px-6 py-3.5 hover:bg-black/90 transition-all shadow-2xl border border-white/10"
             >
-              <svg 
-                width="20" 
-                height="20" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                xmlns="http://www.w3.org/2000/svg"
-                className="text-white"
-              >
-                <path 
-                  d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" 
-                  fill="currentColor"
-                />
-              </svg>
+              <MapPin className="w-5 h-5 text-white" />
               <span className="text-white text-base font-semibold">{currentStory.locationName}</span>
             </button>
           )}
@@ -354,38 +410,18 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
 
       {/* Bottom interaction bar - Only for other users' stories */}
       {currentStory.userId !== user?.id && (
-        <div className="absolute bottom-0 left-0 right-0 z-10 bg-gradient-to-t from-black/90 via-black/50 to-transparent pt-12 pb-safe">
-          {/* Action buttons and message input at the same level */}
-          <div className="px-4 pb-4">
-            <div className="flex items-center gap-3">
-              {/* Message input bar */}
-              <div className="flex-1 flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-2.5">
-                <input
-                  type="text"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                  placeholder={t('sendMessage', { ns: 'common' })}
-                  className="flex-1 bg-transparent text-white text-sm placeholder:text-white/60 outline-none"
-                />
-                {message.trim() && (
-                  <button
-                    onClick={handleSendMessage}
-                    className="text-white hover:text-white/80 transition-colors"
-                  >
-                    <Send className="w-5 h-5" />
-                  </button>
-                )}
-              </div>
-
+        <div className="absolute bottom-0 left-0 right-0 z-10 bg-gradient-to-t from-black/95 via-black/70 to-transparent pt-16 pb-safe">
+          <div className="px-4 pb-6 space-y-3">
+            {/* Action buttons row */}
+            <div className="flex items-center justify-center gap-4">
               {/* Like button */}
               <button
                 onClick={handleLike}
-                className="transition-all active:scale-90"
+                className="transition-all active:scale-90 p-2"
                 aria-label={liked ? "Unlike story" : "Like story"}
               >
                 <Heart 
-                  className={`w-7 h-7 transition-all ${
+                  className={`w-6 h-6 transition-all ${
                     liked ? 'fill-red-500 text-red-500' : 'text-white'
                   }`} 
                 />
@@ -393,13 +429,13 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
 
               {/* Share button */}
               <button
-                onClick={handleShare}
-                className="transition-all active:scale-90"
+                onClick={() => setIsShareModalOpen(true)}
+                className="transition-all active:scale-90 p-2"
                 aria-label="Share story"
               >
                 <svg 
-                  width="28" 
-                  height="28" 
+                  width="24" 
+                  height="24" 
                   viewBox="0 0 24 24" 
                   fill="none" 
                   xmlns="http://www.w3.org/2000/svg"
@@ -416,49 +452,45 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
               <button
                 onClick={handleSaveLocation}
                 disabled={saving}
-                className="transition-all active:scale-90"
+                className="transition-all active:scale-90 p-2"
                 aria-label={isLocationSaved ? "Location saved" : "Save location"}
               >
-                <svg 
-                  width="28" 
-                  height="28" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  xmlns="http://www.w3.org/2000/svg"
-                  className={isLocationSaved ? 'text-blue-500' : 'text-white'}
-                >
-                  <path 
-                    d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" 
-                    fill={isLocationSaved ? 'currentColor' : 'none'}
-                    stroke="currentColor"
-                    strokeWidth={isLocationSaved ? '0' : '2'}
-                  />
-                </svg>
+                <MapPin 
+                  className={`w-6 h-6 ${isLocationSaved ? 'fill-blue-500 text-blue-500' : 'text-white'}`} 
+                />
               </button>
+            </div>
+
+            {/* Message input bar */}
+            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-3">
+              <input
+                type="text"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                placeholder={t('sendMessage', { ns: 'common' })}
+                className="flex-1 bg-transparent text-white text-sm placeholder:text-white/60 outline-none"
+              />
+              {message.trim() && (
+                <button
+                  onClick={handleSendMessage}
+                  className="text-white hover:text-white/80 transition-colors"
+                >
+                  <Send className="w-5 h-5" />
+                </button>
+              )}
             </div>
           </div>
         </div>
       )}
 
       {/* Share Modal */}
-      {isShareModalOpen && (
-        <ShareModal
-          isOpen={isShareModalOpen}
-          onClose={() => setIsShareModalOpen(false)}
-          place={{
-            id: currentStory.locationId,
-            name: currentStory.locationName,
-            address: currentStory.locationAddress,
-            category: currentStory.locationCategory || 'restaurant',
-            coordinates: { lat: 0, lng: 0 },
-            city: currentStory.locationAddress.split(',').pop()?.trim() || '',
-            image: currentStory.mediaUrl,
-            likes: 0,
-            visitors: [],
-            isNew: false
-          }}
-        />
-      )}
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        onShare={handleShare}
+        postId={currentStory.id}
+      />
     </div>
   );
 };

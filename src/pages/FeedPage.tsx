@@ -358,8 +358,8 @@ const FeedPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <div className="max-w-screen-sm mx-auto">
+    <div className="min-h-screen bg-background pb-24 overflow-y-auto">
+      <div className="max-w-screen-sm mx-auto h-full">
         {/* Header */}
         <div className="sticky top-0 z-30 bg-background shadow-sm">
           <div className="px-4 py-3 flex justify-start">
@@ -411,7 +411,7 @@ const FeedPage = () => {
             </Button>
           </div>
         ) : (
-          <div>
+          <div className="h-full overflow-y-auto">
             {feedItems.map((item) => {
               const username = item.username;
               const avatarUrl = item.avatar_url;
