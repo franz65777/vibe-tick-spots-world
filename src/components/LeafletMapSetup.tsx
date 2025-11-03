@@ -118,14 +118,14 @@ const LeafletMapSetup = ({
     tileLayerRef.current = tile;
   }, [isDarkMode]);
 
-  // Update map center when prop changes (only if not prevented)
+  // Update map center only on initial load, not on filter changes
   useEffect(() => {
     const map = mapRef.current;
     if (!map || preventCenterUpdate) return;
     
     console.log('🗺️ Updating map center to:', mapCenter);
     map.setView([mapCenter.lat, mapCenter.lng], 15);
-  }, [mapCenter.lat, mapCenter.lng, preventCenterUpdate]);
+  }, []); // Empty dependency array to run only once
 
   // Current location marker
   useEffect(() => {

@@ -93,6 +93,11 @@ const resources = {
       locationSaved: 'Location saved!',
       failedToSave: 'Failed to save location',
       linkCopied: 'Link copied to clipboard!',
+      savedBy: 'Saved by',
+      communityPosts: 'Community posts',
+      noCommunityPostsYet: 'No community posts yet',
+      beFirstToShare: 'Be the first to share!',
+      searchPeople: 'Search people...'
     },
     navigation: {
       explore: 'Explore',
