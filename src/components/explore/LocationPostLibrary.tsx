@@ -499,7 +499,7 @@ const LocationPostLibrary = ({
                   <MapPin className="w-10 h-10 text-gray-400" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('noPosts', { ns: 'explore', defaultValue: 'No posts yet' })}</h3>
-                <p className="text-gray-600 mb-6">{t('beFirstToShare', { ns: 'explore', defaultValue: 'Be the first to share your experience at' })} {place.name}!</p>
+                <p className="text-gray-600 mb-6">{t('beFirstToShare', { ns: 'explore', defaultValue: 'Be the first to share your experience at' })} {detailedAddress}!</p>
                 
                 {/* Show user's posts from their profile - only for this location */}
                 {userPosts && userPosts.filter(post => post.location_id === place.id || post.locations?.id === place.id).length > 0 && (
