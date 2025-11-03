@@ -23,7 +23,7 @@ const SwipeCategoryFilter: React.FC<SwipeCategoryFilterProps> = ({ selected, onS
               aria-pressed={isSelected}
               aria-label={`${categoryDisplayNames[cat]} (${count})`}
             >
-              <CategoryIcon category={cat} className="w-8 h-8" />
+              <CategoryIcon category={cat} className="w-9 h-9" />
               <span className="absolute -top-1 -right-1 text-[10px] min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow">
                 {count}
               </span>
