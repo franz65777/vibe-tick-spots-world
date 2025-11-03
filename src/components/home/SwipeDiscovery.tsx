@@ -510,7 +510,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       </div>
 
       {/* Followed Users Row */}
-      <div className="bg-background px-5 pt-3 pb-6 overflow-visible">
+      <div className="bg-transparent px-5 pt-1 pb-4 overflow-visible">
         <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2" style={{ scrollSnapType: 'x mandatory' }}>
           {/* All button */}
           <button
@@ -727,7 +727,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                   </div>
 
                   {/* Action Buttons Inside Card */}
-                  <div className="flex items-center justify-center gap-6">
+                  <div className="flex items-center justify-between w-full px-2">
                     <button
                       onClick={() => handleSwipe('left')}
                       disabled={swipeDirection !== null}
