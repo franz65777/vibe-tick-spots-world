@@ -21,9 +21,9 @@ const SwipeCategoryFilter: React.FC<SwipeCategoryFilterProps> = ({ selected, onS
               onClick={() => onSelect(isSelected ? null : cat)}
               className={`relative rounded-md p-1.5 flex items-center justify-center ${isSelected ? 'ring-2 ring-primary bg-accent' : 'bg-card'} ${count === 0 ? 'opacity-50 pointer-events-none' : ''}`}
               aria-pressed={isSelected}
-              aria-label={`${categoryDisplayNames[cat]} (${count}}`}
+              aria-label={`${categoryDisplayNames[cat]} (${count})`}
             >
-              <CategoryIcon category={cat} className="w-9 h-9" />
+              <CategoryIcon category={cat} className={cat.toLowerCase() === 'hotel' ? 'w-9 h-9' : 'w-8 h-8'} />
               <span className="absolute -top-1 -right-1 text-[10px] min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow">
                 {count}
               </span>
