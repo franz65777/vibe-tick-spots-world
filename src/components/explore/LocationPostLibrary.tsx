@@ -105,7 +105,8 @@ const LocationPostLibrary = ({
   useEffect(() => {
     const handleSaveChanged = (event: CustomEvent) => {
       const { locationId, isSaved: newSavedState } = event.detail;
-      if (locationId === place?.id) {
+      // Update if event matches either internal id or google_place_id
+      if (locationId === place?.id || locationId === place?.google_place_id) {
         setIsSaved(newSavedState);
       }
     };
@@ -114,13 +115,18 @@ const LocationPostLibrary = ({
     return () => {
       window.removeEventListener('location-save-changed', handleSaveChanged as EventListener);
     };
-  }, [place?.id]);
+  }, [place?.id, place?.google_place_id]);
 
   const checkIfLocationSaved = async () => {
     if (!user || !place?.id) return;
     try {
-      const saved = await locationInteractionService.isLocationSaved(place.id);
-      setIsSaved(saved);
+      // Try with current id first
+      let saved = await locationInteractionService.isLocationSaved(place.id);
+      // If not saved, try with google_place_id as fallback
+      if (!saved && place.google_place_id && place.google_place_id !== place.id) {
+        saved = await locationInteractionService.isLocationSaved(place.google_place_id);
+      }
+      setIsSaved(!!saved);
     } catch (error) {
       console.error('Error checking if location is saved:', error);
     }
@@ -337,10 +343,15 @@ const LocationPostLibrary = ({
         await locationInteractionService.unsaveLocation(place.id);
         setIsSaved(false);
         toast.success('Location removed from saved');
-        // Emit global event
+        // Emit global events for both identifiers
         window.dispatchEvent(new CustomEvent('location-save-changed', { 
           detail: { locationId: place.id, isSaved: false } 
         }));
+        if (place.google_place_id) {
+          window.dispatchEvent(new CustomEvent('location-save-changed', { 
+            detail: { locationId: place.google_place_id, isSaved: false } 
+          }));
+        }
       } else {
         // Save the location
         const locationData = {
@@ -356,10 +367,15 @@ const LocationPostLibrary = ({
         await locationInteractionService.saveLocation(place.id, locationData);
         setIsSaved(true);
         toast.success('Location saved successfully!');
-        // Emit global event
+        // Emit global events for both identifiers
         window.dispatchEvent(new CustomEvent('location-save-changed', { 
           detail: { locationId: place.id, isSaved: true } 
         }));
+        if (place.google_place_id) {
+          window.dispatchEvent(new CustomEvent('location-save-changed', { 
+            detail: { locationId: place.google_place_id, isSaved: true } 
+          }));
+        }
       }
     } catch (error) {
       console.error('Error toggling save:', error);
