@@ -94,8 +94,8 @@ const FeedPage = () => {
         loadFeed();
       }, 30000);
 
-      // Set up realtime subscription
-      const channel = supabase
+      // Set up realtime subscriptions
+      const postsChannel = supabase
         .channel('feed_updates')
         .on(
           'postgres_changes',
@@ -110,33 +110,40 @@ const FeedPage = () => {
         )
         .subscribe();
 
+      const savedLocationsChannel = supabase
+        .channel('saved_locations_updates')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'user_saved_locations',
+            filter: `user_id=eq.${user.id}`
+          },
+          () => {
+            // Refresh feed to update pin button states
+            loadFeed();
+          }
+        )
+        .subscribe();
+
       return () => {
         clearInterval(pollInterval);
-        channel.unsubscribe();
+        postsChannel.unsubscribe();
+        savedLocationsChannel.unsubscribe();
       };
     }
   }, [user?.id, feedType]);
 
   const handleAvatarClick = (userId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const userStories = stories
-      .filter(s => s.user_id === userId)
-      .map((s, idx) => ({
-        id: s.id,
-        userId: s.user_id,
-        userName: 'User', // Will be populated from profile
-        userAvatar: '',
-        mediaUrl: s.media_url,
-        mediaType: s.media_type as 'image' | 'video',
-        locationId: s.location_id || '',
-        locationName: s.location_name || '',
-        locationAddress: s.location_address || '',
-        timestamp: s.created_at,
-        isViewed: false
-      }));
+    // Filter only this user's stories
+    const userStories = stories.filter(s => s.user_id === userId);
     
     if (userStories.length > 0) {
-      setSelectedUserStoryIndex(0);
+      // Find the index of this user's first story in the complete stories array
+      const firstUserStoryIndex = stories.findIndex(s => s.user_id === userId);
+      setSelectedUserStoryIndex(firstUserStoryIndex);
       setStoriesViewerOpen(true);
     } else {
       navigate(`/profile/${userId}`);
@@ -436,17 +443,17 @@ const FeedPage = () => {
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <button 
                         onClick={(e) => handleAvatarClick(userId, e)}
-                        className="shrink-0"
+                        className="shrink-0 relative"
                       >
-                        <Avatar className={cn(
-                          "h-8 w-8",
-                          userHasStory && "ring-2 ring-primary ring-offset-2 ring-offset-background"
-                        )}>
+                        <Avatar className="h-8 w-8">
                           <AvatarImage src={avatarUrl || undefined} />
                           <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
                             {username.slice(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
+                        {userHasStory && (
+                          <div className="absolute inset-0 rounded-full ring-2 ring-blue-500 ring-offset-2 ring-offset-background pointer-events-none" />
+                        )}
                       </button>
                       <div className="flex-1 min-w-0">
                         <button 

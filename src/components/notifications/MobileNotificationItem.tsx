@@ -163,6 +163,13 @@ const MobileNotificationItem = ({
             {' '}{t('likedYourPost', { ns: 'notifications' })}
           </span>
         );
+      case 'story_like':
+        return (
+          <span className="text-foreground text-[13px] leading-tight">
+            <span className="font-semibold">{username}</span>
+            {' '}{t('likedYourStory', { ns: 'notifications' })}
+          </span>
+        );
       case 'follow':
         return (
           <span className="text-foreground text-[13px] leading-tight">
@@ -175,6 +182,13 @@ const MobileNotificationItem = ({
           <span className="text-foreground text-[13px] leading-tight">
             <span className="font-semibold">{username}</span>
             {' '}{t('commentedOnYourPost', { ns: 'notifications' })}
+          </span>
+        );
+      case 'story_reply':
+        return (
+          <span className="text-foreground text-[13px] leading-tight">
+            <span className="font-semibold">{username}</span>
+            {' '}{t('repliedToYourStory', { ns: 'notifications' })}
           </span>
         );
       default:

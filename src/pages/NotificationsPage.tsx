@@ -48,6 +48,13 @@ const NotificationsPage = () => {
           navigate(`/profile`);
         }
         break;
+      case 'story_like':
+      case 'story_reply':
+        // For story notifications, open messages with that user
+        if (notification.data?.user_id) {
+          navigate('/messages', { state: { initialUserId: notification.data.user_id } });
+        }
+        break;
       default:
         break;
     }
