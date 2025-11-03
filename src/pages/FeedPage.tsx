@@ -32,6 +32,7 @@ const FeedPage = () => {
   const [expandedCaptions, setExpandedCaptions] = useState<Set<string>>(new Set());
   const [storiesViewerOpen, setStoriesViewerOpen] = useState(false);
   const [selectedUserStoryIndex, setSelectedUserStoryIndex] = useState(0);
+  const [filteredStories, setFilteredStories] = useState<typeof stories>([]);
   const [postLikes, setPostLikes] = useState<Map<string, PostLikeUser[]>>(new Map());
   const [feedType, setFeedType] = useState<'forYou' | 'promotions'>('promotions');
   
@@ -141,9 +142,9 @@ const FeedPage = () => {
     const userStories = stories.filter(s => s.user_id === userId);
     
     if (userStories.length > 0) {
-      // Find the index of this user's first story in the complete stories array
-      const firstUserStoryIndex = stories.findIndex(s => s.user_id === userId);
-      setSelectedUserStoryIndex(firstUserStoryIndex);
+      // Set filtered stories to only this user's stories
+      setFilteredStories(userStories);
+      setSelectedUserStoryIndex(0); // Always start from the first story of this user
       setStoriesViewerOpen(true);
     } else {
       navigate(`/profile/${userId}`);
@@ -654,9 +655,9 @@ const FeedPage = () => {
         />
 
         {/* Stories Viewer */}
-        {storiesViewerOpen && stories.length > 0 && (
+        {storiesViewerOpen && filteredStories.length > 0 && (
           <StoriesViewer
-            stories={stories.map((s) => ({
+            stories={filteredStories.map((s) => ({
               id: s.id,
               userId: s.user_id,
               userName: 'User',
@@ -672,6 +673,7 @@ const FeedPage = () => {
             initialStoryIndex={selectedUserStoryIndex}
             onClose={() => {
               setStoriesViewerOpen(false);
+              setFilteredStories([]);
             }}
             onStoryViewed={() => {}}
           />
