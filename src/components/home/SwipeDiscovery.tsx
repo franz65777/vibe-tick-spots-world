@@ -7,8 +7,8 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import CityLabel from '@/components/common/CityLabel';
-import swipeNo from '@/assets/swipe-no-clean.png';
-import swipePin from '@/assets/swipe-pin-clean.png';
+import swipeNo from '@/assets/swipe-no-3d-new.png';
+import swipePin from '@/assets/swipe-pin-3d-new.png';
 import { useTranslation } from 'react-i18next';
 import SwipeCategoryFilter from './SwipeCategoryFilter';
 import { allowedCategories, type AllowedCategory } from '@/utils/allowedCategories';
@@ -486,8 +486,8 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       </div>
 
       {/* Followed Users Row */}
-      <div className="bg-background px-4 py-4 pb-6 overflow-visible">
-        <div className="flex gap-3 overflow-x-auto scrollbar-hide" style={{ scrollSnapType: 'x mandatory' }}>
+      <div className="bg-background px-4 py-4 pb-8 overflow-visible">
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2" style={{ scrollSnapType: 'x mandatory' }}>
           {/* All button */}
           <button
             onClick={() => {
