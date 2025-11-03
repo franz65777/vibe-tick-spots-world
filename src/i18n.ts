@@ -88,6 +88,11 @@ const resources = {
       now: 'Now',
       minutesShort: 'm',
       hoursShort: 'h',
+      sendMessage: 'Send a message...',
+      messageSent: 'Message sent!',
+      locationSaved: 'Location saved!',
+      failedToSave: 'Failed to save location',
+      linkCopied: 'Link copied to clipboard!',
     },
     navigation: {
       explore: 'Explore',
@@ -469,7 +474,12 @@ const resources = {
       storyShared: '¡Historia compartida exitosamente!',
       now: 'Ahora',
       minutesShort: 'm',
-      hoursShort: 'h'
+      hoursShort: 'h',
+      sendMessage: 'Enviar un mensaje...',
+      messageSent: '¡Mensaje enviado!',
+      locationSaved: '¡Ubicación guardada!',
+      failedToSave: 'Error al guardar ubicación',
+      linkCopied: '¡Enlace copiado al portapapeles!',
     },
     navigation: {
       explore: 'Explorar',
@@ -852,7 +862,12 @@ const resources = {
       storyShared: 'Storia condivisa con successo!',
       now: 'Ora',
       minutesShort: 'm',
-      hoursShort: 'h'
+      hoursShort: 'h',
+      sendMessage: 'Invia un messaggio...',
+      messageSent: 'Messaggio inviato!',
+      locationSaved: 'Luogo salvato!',
+      failedToSave: 'Impossibile salvare il luogo',
+      linkCopied: 'Link copiato negli appunti!',
     },
     navigation: {
       explore: 'Esplora',

@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight, MapPin, Heart } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, MapPin, Heart, Share2, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { useAuth } from '@/contexts/AuthContext';
@@ -49,6 +49,7 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
   const [isPaused, setIsPaused] = useState(false);
   const [liked, setLiked] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
   
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -162,12 +163,45 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
         coordinates: { lat: 0, lng: 0 }, // These would need to be included in story data
         city: currentStory.locationAddress.split(',').pop()?.trim() || ''
       });
-      toast.success('Location saved to your favorites!');
+      toast.success(t('locationSaved', { ns: 'common' }));
     } catch (error) {
       console.error('Error saving location:', error);
-      toast.error('Failed to save location');
+      toast.error(t('failedToSave', { ns: 'common' }));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!message.trim() || !user || !currentStory) return;
+    
+    if (onReplyToStory) {
+      await onReplyToStory(currentStory.id, currentStory.userId, message);
+      setMessage('');
+      toast.success(t('messageSent', { ns: 'common' }));
+    }
+  };
+
+  const handleShare = async () => {
+    if (!currentStory) return;
+    
+    const shareData = {
+      title: `${currentStory.userName}'s story`,
+      text: `Check out ${currentStory.userName}'s story at ${currentStory.locationName}`,
+      url: `${window.location.origin}/story/${currentStory.id}`
+    };
+    
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        toast.success(t('storyShared', { ns: 'common' }));
+      } else {
+        // Fallback: copy link
+        await navigator.clipboard.writeText(shareData.url);
+        toast.success(t('linkCopied', { ns: 'common' }));
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
     }
   };
 
@@ -198,11 +232,11 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
   return (
     <div className="fixed inset-0 bg-black z-[2000] flex items-center justify-center">
       {/* Progress bars - Enhanced horizontal indicator */}
-      <div className="absolute top-4 left-4 right-4 flex gap-1.5 z-10">
+      <div className="absolute top-2 left-4 right-4 flex gap-1.5 z-10">
         {stories.map((_, index) => (
-          <div key={index} className="flex-1 h-1 bg-white/30 rounded-full overflow-hidden shadow-sm">
+          <div key={index} className="flex-1 h-0.5 bg-white/30 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-white to-blue-100 transition-all duration-100 rounded-full"
+              className="h-full bg-white transition-all duration-100"
               style={{
                 width: index < currentStoryIndex ? '100%' : index === currentStoryIndex ? `${progress}%` : '0%'
               }}
@@ -216,15 +250,15 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
         variant="ghost"
         size="icon"
         onClick={onClose}
-        className="absolute top-4 right-4 z-10 text-white hover:bg-white/20"
+        className="absolute top-2 right-2 z-10 text-white hover:bg-white/20 h-10 w-10"
       >
         <X className="w-6 h-6" />
       </Button>
 
       {/* User info - Instagram style aligned left */}
-      <div className="absolute top-16 left-4 z-10">
+      <div className="absolute top-12 left-4 z-10">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-full border-2 border-white overflow-hidden shadow-lg">
+          <div className="w-8 h-8 rounded-full border-2 border-white overflow-hidden shadow-lg">
             {currentStory.userAvatar ? (
               <img 
                 src={currentStory.userAvatar} 
@@ -239,7 +273,7 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
           </div>
           <div>
             <p className="text-white font-semibold text-sm drop-shadow-lg">{currentStory.userName}</p>
-            <p className="text-white/90 text-xs drop-shadow-md font-medium">
+            <p className="text-white/90 text-xs drop-shadow-md">
               {(() => {
                 const now = new Date();
                 const storyTime = new Date(currentStory.timestamp);
@@ -258,16 +292,6 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
             </p>
           </div>
         </div>
-        
-        {/* Location name below avatar - clickable */}
-        {currentStory.locationName && (
-          <button
-            onClick={() => onLocationClick && onLocationClick(currentStory.locationId)}
-            className="mt-2 flex items-center gap-1.5 bg-black/50 backdrop-blur-sm rounded-full px-3 py-1.5 hover:bg-black/70 transition-all"
-          >
-            <span className="text-white text-xs font-medium drop-shadow-lg">{currentStory.locationName}</span>
-          </button>
-        )}
       </div>
 
       {/* Navigation areas */}
@@ -288,76 +312,95 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
         onTouchEnd={handleResume}
       />
 
-      {/* Story content */}
-      <div className="w-full h-full flex items-center justify-center">
-        <img
-          src={currentStory.mediaUrl}
-          alt="Story"
-          className="max-w-full max-h-full object-contain"
-          onMouseDown={handlePause}
-          onMouseUp={handleResume}
-        />
+      {/* Story content - Full screen with minimal padding */}
+      <div className="absolute inset-0 pt-24 pb-28 flex items-center justify-center">
+        <div className="relative w-full h-full flex items-center justify-center">
+          <img
+            src={currentStory.mediaUrl}
+            alt="Story"
+            className="max-w-full max-h-full object-contain"
+            onMouseDown={handlePause}
+            onMouseUp={handleResume}
+          />
+          
+          {/* Location tag - Bottom right of image */}
+          {currentStory.locationName && (
+            <button
+              onClick={() => onLocationClick && onLocationClick(currentStory.locationId)}
+              className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-black/60 backdrop-blur-md rounded-md px-3 py-2 hover:bg-black/80 transition-all shadow-lg"
+            >
+              <MapPin className="w-3.5 h-3.5 text-white" />
+              <span className="text-white text-xs font-medium">{currentStory.locationName}</span>
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Action buttons - Like and Pin (Horizontal at bottom) */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4 z-10">
-        {/* Like button */}
-        <button
-          onClick={handleLike}
-          className={`w-16 h-16 rounded-full backdrop-blur-md shadow-xl border-2 flex items-center justify-center transition-all active:scale-90 ${
-            liked 
-              ? 'bg-red-500/90 border-red-400' 
-              : 'bg-black/40 border-white/20 hover:bg-black/60'
-          }`}
-          aria-label={liked ? "Unlike story" : "Like story"}
-        >
-          <Heart 
-            className={`w-8 h-8 transition-all ${
-              liked ? 'fill-white text-white' : 'text-white'
-            }`} 
-          />
-        </button>
+      {/* Bottom interaction bar - Instagram style */}
+      <div className="absolute bottom-0 left-0 right-0 z-10 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-8 pb-6 px-4">
+        <div className="flex items-center gap-3">
+          {/* Message input */}
+          <div className="flex-1 flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-2.5">
+            <input
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+              placeholder={t('sendMessage', { ns: 'common' })}
+              className="flex-1 bg-transparent text-white text-sm placeholder:text-white/60 outline-none"
+            />
+            {message.trim() && (
+              <button
+                onClick={handleSendMessage}
+                className="text-white hover:text-white/80 transition-colors"
+              >
+                <Send className="w-5 h-5" />
+              </button>
+            )}
+          </div>
 
-        {/* Save location button - filled when saved, outline when not */}
-        <button
-          onClick={handleSaveLocation}
-          disabled={saving}
-          className="w-16 h-16 rounded-full backdrop-blur-md shadow-xl border-2 border-white/20 bg-black/40 hover:bg-black/60 flex items-center justify-center transition-all active:scale-90"
-          aria-label={isLocationSaved ? "Location saved" : "Save location"}
-        >
-          <img 
-            src={pinIcon} 
-            alt="Save" 
-            className="w-8 h-8"
-            style={{
-              filter: isLocationSaved ? 'brightness(0) saturate(100%) invert(45%) sepia(93%) saturate(2466%) hue-rotate(198deg) brightness(101%) contrast(101%)' : 'brightness(0) invert(1)'
-            }}
-          />
-        </button>
+          {/* Like button */}
+          <button
+            onClick={handleLike}
+            className="w-11 h-11 rounded-full flex items-center justify-center transition-all active:scale-90"
+            aria-label={liked ? "Unlike story" : "Like story"}
+          >
+            <Heart 
+              className={`w-7 h-7 transition-all ${
+                liked ? 'fill-red-500 text-red-500' : 'text-white'
+              }`} 
+            />
+          </button>
+
+          {/* Share button */}
+          <button
+            onClick={handleShare}
+            className="w-11 h-11 rounded-full flex items-center justify-center transition-all active:scale-90"
+            aria-label="Share story"
+          >
+            <Share2 className="w-6 h-6 text-white" />
+          </button>
+
+          {/* Save location button */}
+          <button
+            onClick={handleSaveLocation}
+            disabled={saving}
+            className="w-11 h-11 rounded-full flex items-center justify-center transition-all active:scale-90"
+            aria-label={isLocationSaved ? "Location saved" : "Save location"}
+          >
+            <img 
+              src={pinIcon} 
+              alt="Save" 
+              className="w-7 h-7"
+              style={{
+                filter: isLocationSaved 
+                  ? 'brightness(0) saturate(100%) invert(45%) sepia(93%) saturate(2466%) hue-rotate(198deg) brightness(101%) contrast(101%)' 
+                  : 'brightness(0) invert(1)'
+              }}
+            />
+          </button>
+        </div>
       </div>
-
-      {/* Navigation arrows */}
-      {currentStoryIndex > 0 && (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={previousStory}
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 z-10"
-        >
-          <ChevronLeft className="w-6 h-6" />
-        </Button>
-      )}
-      
-      {currentStoryIndex < stories.length - 1 && (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={nextStory}
-          className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 z-10"
-        >
-          <ChevronRight className="w-6 h-6" />
-        </Button>
-      )}
     </div>
   );
 };
