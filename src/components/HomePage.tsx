@@ -480,8 +480,14 @@ const HomePage = () => {
         onShare={() => {}}
         onCommentSubmit={() => {}}
         onStoryViewed={(storyId) => {
-          // Refresh stories to update viewed status
           fetchFollowedStories();
+        }}
+        onReplyToStory={async (storyId: string, userId: string, message: string) => {
+          // Story replies will be handled via messages functionality
+          console.log('Story reply:', { storyId, userId, message });
+        }}
+        onLocationClick={(locationId: string) => {
+          setIsStoriesViewerOpen(false);
         }}
       />
 

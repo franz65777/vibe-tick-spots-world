@@ -58,6 +58,8 @@ interface ModalsManagerProps {
   onShare: (friendIds: string[], place: Place) => void;
   onCommentSubmit: (text: string, place: Place) => void;
   onStoryViewed: (storyId: string) => void;
+  onReplyToStory?: (storyId: string, userId: string, message: string) => Promise<void>;
+  onLocationClick?: (locationId: string) => void;
 }
 
 const ModalsManager = ({
@@ -79,7 +81,9 @@ const ModalsManager = ({
   onStoryCreated,
   onShare,
   onCommentSubmit,
-  onStoryViewed
+  onStoryViewed,
+  onReplyToStory,
+  onLocationClick
 }: ModalsManagerProps) => {
   return (
     <>
@@ -118,6 +122,8 @@ const ModalsManager = ({
           initialStoryIndex={currentStoryIndex}
           onClose={onStoriesViewerClose}
           onStoryViewed={onStoryViewed}
+          onReplyToStory={onReplyToStory}
+          onLocationClick={onLocationClick}
         />
       )}
     </>

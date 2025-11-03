@@ -1,13 +1,12 @@
 
 import { useState, useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight, MapPin, Heart, Share2, Send } from 'lucide-react';
+import { X, Heart, Share2, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import pinIcon from '@/assets/pin-icon.png';
 
 interface Story {
   id: string;
@@ -175,10 +174,15 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
   const handleSendMessage = async () => {
     if (!message.trim() || !user || !currentStory) return;
     
-    if (onReplyToStory) {
-      await onReplyToStory(currentStory.id, currentStory.userId, message);
-      setMessage('');
-      toast.success(t('messageSent', { ns: 'common' }));
+    try {
+      if (onReplyToStory) {
+        await onReplyToStory(currentStory.id, currentStory.userId, message);
+        setMessage('');
+        toast.success(t('messageSent', { ns: 'common' }));
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast.error('Failed to send message');
     }
   };
 
@@ -312,35 +316,59 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
         onTouchEnd={handleResume}
       />
 
-      {/* Story content - Full screen with minimal padding */}
-      <div className="absolute inset-0 pt-24 pb-28 flex items-center justify-center">
-        <div className="relative w-full h-full flex items-center justify-center">
-          <img
-            src={currentStory.mediaUrl}
-            alt="Story"
-            className="max-w-full max-h-full object-contain"
-            onMouseDown={handlePause}
-            onMouseUp={handleResume}
-          />
+      {/* Story content - Full screen covering entire width */}
+      <div className="absolute inset-0 pt-16 pb-24">
+        <div className="relative w-full h-full">
+          {currentStory.mediaType === 'video' ? (
+            <video
+              src={currentStory.mediaUrl}
+              className="w-full h-full object-cover"
+              onMouseDown={handlePause}
+              onMouseUp={handleResume}
+              autoPlay
+              loop
+              playsInline
+            />
+          ) : (
+            <img
+              src={currentStory.mediaUrl}
+              alt="Story"
+              className="w-full h-full object-cover"
+              onMouseDown={handlePause}
+              onMouseUp={handleResume}
+            />
+          )}
           
-          {/* Location tag - Bottom right of image */}
+          {/* Location tag - Bottom right with improved styling */}
           {currentStory.locationName && (
             <button
               onClick={() => onLocationClick && onLocationClick(currentStory.locationId)}
-              className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-black/60 backdrop-blur-md rounded-md px-3 py-2 hover:bg-black/80 transition-all shadow-lg"
+              className="absolute bottom-6 right-4 flex items-center gap-2 bg-black/70 backdrop-blur-md rounded-xl px-4 py-2.5 hover:bg-black/85 transition-all shadow-lg"
             >
-              <MapPin className="w-3.5 h-3.5 text-white" />
-              <span className="text-white text-xs font-medium">{currentStory.locationName}</span>
+              <svg 
+                width="18" 
+                height="18" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                xmlns="http://www.w3.org/2000/svg"
+                className="text-white"
+              >
+                <path 
+                  d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" 
+                  fill="currentColor"
+                />
+              </svg>
+              <span className="text-white text-sm font-medium">{currentStory.locationName}</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Bottom interaction bar - Instagram style */}
-      <div className="absolute bottom-0 left-0 right-0 z-10 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-8 pb-6 px-4">
-        <div className="flex items-center gap-3">
-          {/* Message input */}
-          <div className="flex-1 flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-2.5">
+      {/* Bottom interaction bar - Centered action buttons */}
+      <div className="absolute bottom-0 left-0 right-0 z-10 bg-gradient-to-t from-black/90 via-black/50 to-transparent pt-12 pb-safe">
+        {/* Message input bar */}
+        <div className="px-4 mb-4">
+          <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-2.5">
             <input
               type="text"
               value={message}
@@ -358,11 +386,14 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
               </button>
             )}
           </div>
+        </div>
 
+        {/* Action buttons - Centered */}
+        <div className="flex items-center justify-center gap-6 pb-4">
           {/* Like button */}
           <button
             onClick={handleLike}
-            className="w-11 h-11 rounded-full flex items-center justify-center transition-all active:scale-90"
+            className="flex flex-col items-center gap-1 transition-all active:scale-90"
             aria-label={liked ? "Unlike story" : "Like story"}
           >
             <Heart 
@@ -375,29 +406,34 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
           {/* Share button */}
           <button
             onClick={handleShare}
-            className="w-11 h-11 rounded-full flex items-center justify-center transition-all active:scale-90"
+            className="flex flex-col items-center gap-1 transition-all active:scale-90"
             aria-label="Share story"
           >
-            <Share2 className="w-6 h-6 text-white" />
+            <Share2 className="w-7 h-7 text-white" />
           </button>
 
-          {/* Save location button */}
+          {/* Save location button - Real pin icon */}
           <button
             onClick={handleSaveLocation}
             disabled={saving}
-            className="w-11 h-11 rounded-full flex items-center justify-center transition-all active:scale-90"
+            className="flex flex-col items-center gap-1 transition-all active:scale-90"
             aria-label={isLocationSaved ? "Location saved" : "Save location"}
           >
-            <img 
-              src={pinIcon} 
-              alt="Save" 
-              className="w-7 h-7"
-              style={{
-                filter: isLocationSaved 
-                  ? 'brightness(0) saturate(100%) invert(45%) sepia(93%) saturate(2466%) hue-rotate(198deg) brightness(101%) contrast(101%)' 
-                  : 'brightness(0) invert(1)'
-              }}
-            />
+            <svg 
+              width="28" 
+              height="28" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              xmlns="http://www.w3.org/2000/svg"
+              className={isLocationSaved ? 'text-blue-500' : 'text-white'}
+            >
+              <path 
+                d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" 
+                fill={isLocationSaved ? 'currentColor' : 'none'}
+                stroke="currentColor"
+                strokeWidth={isLocationSaved ? '0' : '2'}
+              />
+            </svg>
           </button>
         </div>
       </div>
