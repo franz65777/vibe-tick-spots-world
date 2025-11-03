@@ -189,6 +189,7 @@ const MapSection = ({
             onMapClick={handleMapClick}
             activeFilter={activeFilter}
             fullScreen={isExpanded}
+            preventCenterUpdate={true}
           />
         )}
 

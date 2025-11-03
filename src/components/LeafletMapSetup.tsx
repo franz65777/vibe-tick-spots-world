@@ -18,6 +18,7 @@ interface LeafletMapSetupProps {
   onMapClick?: (coords: { lat: number; lng: number }) => void;
   activeFilter?: string;
   fullScreen?: boolean;
+  preventCenterUpdate?: boolean;
 }
 
 // Vanilla Leaflet implementation to avoid react-leaflet context crash
@@ -32,6 +33,7 @@ const LeafletMapSetup = ({
   onMapClick,
   activeFilter,
   fullScreen,
+  preventCenterUpdate = true, // Default to true to prevent auto-recentering
 }: LeafletMapSetupProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -116,14 +118,14 @@ const LeafletMapSetup = ({
     tileLayerRef.current = tile;
   }, [isDarkMode]);
 
-  // Update map center when prop changes
+  // Update map center when prop changes (only if not prevented)
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || preventCenterUpdate) return;
     
     console.log('🗺️ Updating map center to:', mapCenter);
     map.setView([mapCenter.lat, mapCenter.lng], 15);
-  }, [mapCenter.lat, mapCenter.lng]);
+  }, [mapCenter.lat, mapCenter.lng, preventCenterUpdate]);
 
   // Current location marker
   useEffect(() => {
