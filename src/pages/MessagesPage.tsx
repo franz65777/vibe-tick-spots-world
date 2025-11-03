@@ -307,7 +307,8 @@ const MessagesPage = () => {
       setSearchQuery('');
       setSearchResults([]);
     } else {
-      navigate(-1);
+      // When exiting from threads list, go to home page
+      navigate('/');
     }
   };
 

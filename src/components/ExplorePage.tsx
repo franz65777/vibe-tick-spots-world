@@ -81,10 +81,16 @@ const ExplorePage = () => {
   }, [location.state, navigate]);
   const handleCloseLocationModal = () => {
     setIsLocationModalOpen(false);
-    // If user came from messages, navigate back to the specific chat
+    setSelectedLocation(null);
+    
+    // If user came from messages, navigate back to the specific chat (clear state to prevent loops)
     if (fromMessages && returnToUserId) {
-      navigate('/messages', { state: { initialUserId: returnToUserId } });
+      // Reset flags and navigate back to the chat
+      setFromMessages(false);
+      setReturnToUserId(null);
+      navigate('/messages', { state: { initialUserId: returnToUserId }, replace: true });
     } else if (fromMessages) {
+      setFromMessages(false);
       navigate(-1);
     }
   };

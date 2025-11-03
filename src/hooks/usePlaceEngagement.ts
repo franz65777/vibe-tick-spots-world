@@ -47,14 +47,25 @@ export const usePlaceEngagement = () => {
         .select('place_id')
         .eq('user_id', user.id);
 
-      // Load saved places  
-      const { data: saves } = await supabase
+      // Load saved places from both tables (user_saved_locations and saved_places)
+      const { data: internalSaves } = await supabase
+        .from('user_saved_locations')
+        .select('location_id')
+        .eq('user_id', user.id);
+      
+      const { data: googleSaves } = await supabase
         .from('saved_places')
         .select('place_id')
         .eq('user_id', user.id);
 
+      // Combine both saved location sources
+      const allSavedIds = [
+        ...(internalSaves?.map(s => s.location_id) || []),
+        ...(googleSaves?.map(s => s.place_id) || [])
+      ];
+
       setLikedPlaces(new Set(likes?.map(l => l.place_id) || []));
-      setSavedPlaces(new Set(saves?.map(s => s.place_id) || []));
+      setSavedPlaces(new Set(allSavedIds));
     } catch (error) {
       console.error('Error loading user engagement:', error);
     }
@@ -106,14 +117,10 @@ export const usePlaceEngagement = () => {
       const isSaved = savedPlaces.has(place.id);
 
       if (isSaved) {
-        // Unsave
-        const { error } = await supabase
-          .from('saved_places')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('place_id', place.id);
-
-        if (!error) {
+        // Unsave using the service (handles both tables)
+        const success = await locationInteractionService.unsaveLocation(place.id);
+        
+        if (success) {
           setSavedPlaces(prev => {
             const newSet = new Set(prev);
             newSet.delete(place.id);
@@ -125,19 +132,18 @@ export const usePlaceEngagement = () => {
           }));
         }
       } else {
-        // Save
-        const { error } = await supabase
-          .from('saved_places')
-          .insert({
-            user_id: user.id,
-            place_id: place.id,
-            place_name: place.name,
-            place_category: place.category,
-            city: place.city,
-            coordinates: place.coordinates
-          });
+        // Save using the service (handles location creation if needed)
+        const success = await locationInteractionService.saveLocation(place.id, {
+          google_place_id: place.google_place_id,
+          name: place.name,
+          address: place.address,
+          latitude: place.coordinates?.lat || 0,
+          longitude: place.coordinates?.lng || 0,
+          category: place.category,
+          types: []
+        });
 
-        if (!error) {
+        if (success) {
           setSavedPlaces(prev => new Set([...prev, place.id]));
           // Emit global event
           window.dispatchEvent(new CustomEvent('location-save-changed', { 
