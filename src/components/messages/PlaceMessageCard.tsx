@@ -29,7 +29,12 @@ const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => 
 
   const handleViewLocation = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Navigate to explore with sharedPlace and fromMessages flag
+    // Prefer parent-provided handler so it can include routing context (e.g., returnToUserId)
+    if (onViewPlace) {
+      onViewPlace(placeData);
+      return;
+    }
+    // Fallback navigation if no handler is provided
     navigate('/explore', { 
       state: { 
         sharedPlace: placeData,
@@ -37,7 +42,6 @@ const PlaceMessageCard = ({ placeData, onViewPlace }: PlaceMessageCardProps) => 
       } 
     });
   };
-
   return (
     <div 
       onClick={handleViewLocation}

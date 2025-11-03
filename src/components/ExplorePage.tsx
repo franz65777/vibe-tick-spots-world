@@ -76,12 +76,9 @@ const ExplorePage = () => {
       
       setSelectedLocation(normalizedPlace);
       setIsLocationModalOpen(true);
-      
-      // Clear the state to prevent reopening on re-render
-      navigate('/explore', { replace: true, state: {} });
+      // Do not clear state here; keep it so back/close can route properly when coming from messages
     }
   }, [location.state, navigate]);
-
   const handleCloseLocationModal = () => {
     setIsLocationModalOpen(false);
     // If user came from messages, navigate back to the specific chat
@@ -91,7 +88,6 @@ const ExplorePage = () => {
       navigate(-1);
     }
   };
-
   // Load user recommendations only
   useEffect(() => {
     const loadUserRecommendations = async () => {
