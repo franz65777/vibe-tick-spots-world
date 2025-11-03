@@ -252,7 +252,7 @@ const ExplorePage = () => {
   };
   const isSearchActive = searchQuery.trim().length > 0;
   const displayUsers = isSearchActive ? filteredUsers : userRecommendations;
-  return <div className="flex flex-col h-full bg-gray-50">
+  return <div className="flex flex-col h-full">
       {/* Simplified Header */}
       <div className="bg-white border-b border-gray-200 pt-12">
         <div className="p-4 pt-2">
