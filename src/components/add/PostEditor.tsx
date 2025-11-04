@@ -94,29 +94,6 @@ export const PostEditor: React.FC<PostEditorProps> = ({
         <div className="w-9" /> {/* Spacer for centering */}
       </div>
 
-      {/* Share Button */}
-      <div className="bg-background p-4 pb-2">
-        <Button
-          onClick={onSubmit}
-          disabled={!canSubmit}
-          variant="default"
-          className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl shadow-sm"
-          size="lg"
-        >
-          {isUploading ? (
-            <>
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              {t('sharing', { ns: 'add' })}
-            </>
-          ) : (
-            <>
-              <Send className="w-5 h-5 mr-2" />
-              {t('share', { ns: 'common' })}
-            </>
-          )}
-        </Button>
-      </div>
-
       {/* Content */}
       <div className="flex-1 overflow-hidden">
         <div className="max-w-2xl mx-auto p-2 space-y-2">
@@ -155,6 +132,29 @@ export const PostEditor: React.FC<PostEditorProps> = ({
             onCategoryChange={onCategoryChange}
             disabled={isBusinessAccount}
           />
+
+          {/* Share Button - Below Location */}
+          <div className="pt-2">
+            <Button
+              onClick={onSubmit}
+              disabled={!canSubmit}
+              variant="default"
+              className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl shadow-sm"
+              size="lg"
+            >
+              {isUploading ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  {t('sharing', { ns: 'add' })}
+                </>
+              ) : (
+                <>
+                  <Send className="w-5 h-5 mr-2" />
+                  {t('share', { ns: 'common' })}
+                </>
+              )}
+            </Button>
+          </div>
 
           {/* Optional Rating - Only for personal accounts */}
           {onRatingChange && !isBusinessAccount && (
