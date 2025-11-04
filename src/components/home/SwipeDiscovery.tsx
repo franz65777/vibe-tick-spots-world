@@ -510,8 +510,8 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       </div>
 
       {/* Followed Users Row - positioned above everything */}
-      <div className="bg-background px-4 pt-3 pb-3 overflow-visible relative z-30 mt-2">
-        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 pl-2 pr-3" style={{ scrollSnapType: 'x mandatory' }}>
+      <div className="bg-background px-4 pt-3 pb-3 overflow-visible relative z-20 mt-1">
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1 pl-2 pr-3" style={{ scrollSnapType: 'x mandatory' }}>
           {/* All button */}
           <button
             onClick={() => {
@@ -524,10 +524,10 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
             }`}
             style={{ scrollSnapAlign: 'start' }}
           >
-            <div className={`relative z-[70] w-12 h-12 rounded-full flex items-center justify-center transition-all bg-muted ${
+            <div className={`relative z-[70] w-14 h-14 rounded-full flex items-center justify-center transition-all bg-muted ${
               selectedUserId === null ? 'ring-2 ring-primary ring-offset-2' : ''
             }`}>
-              <Users className="w-5 h-5 text-foreground" />
+              <Users className="w-6 h-6 text-foreground" />
             </div>
             <span className="text-xs font-medium text-muted-foreground">{t('all', { ns: 'common' })}</span>
           </button>
@@ -551,12 +551,12 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                   <img
                     src={followedUser.avatar_url}
                     alt={followedUser.username}
-                    className={`w-12 h-12 rounded-full object-cover transition-all ${
+                    className={`w-14 h-14 rounded-full object-cover transition-all ${
                       selectedUserId === followedUser.id ? 'ring-2 ring-primary ring-offset-2' : ''
                     }`}
                   />
                 ) : (
-                  <div className={`w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center transition-all ${
+                  <div className={`w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center transition-all ${
                     selectedUserId === followedUser.id ? 'ring-2 ring-primary ring-offset-2' : ''
                   }`}>
                     <span className="text-white text-lg font-bold">
@@ -647,7 +647,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                 opacity: swipeDirection ? 0 : 1 - Math.abs(touchOffset.x) / 600
               }}
             >
-              <div className="relative w-full aspect-[9/14] max-h-[70vh] rounded-2xl overflow-hidden shadow-xl bg-white border border-gray-100">
+              <div className="relative w-full aspect-[2/3] rounded-2xl overflow-hidden shadow-xl bg-white border border-gray-100">
                 {/* Image or Gradient Background */}
                 <div className="absolute inset-0">
                   {currentLocation.image_url ? (
