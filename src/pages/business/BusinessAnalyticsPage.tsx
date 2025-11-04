@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, Users, FileText, Share2, Clock, Heart } from 'lucide-react';
+import { TrendingUp, Users, FileText, Share2, Clock, Heart, Camera } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { useTranslation } from 'react-i18next';
@@ -291,7 +291,7 @@ const BusinessAnalyticsPage = () => {
             <CardContent className="pt-3 pb-2.5 relative z-10">
               <div className="flex items-start justify-between mb-2">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-500 to-rose-600 flex items-center justify-center shadow-md">
-                  <Heart className="w-4 h-4 text-white" />
+                  <Camera className="w-4 h-4 text-white" />
                 </div>
               </div>
               <div>
@@ -314,7 +314,7 @@ const BusinessAnalyticsPage = () => {
             <CardContent className="pt-3 pb-2.5 relative z-10">
               <div className="flex items-start justify-between mb-2">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-md">
-                  <FileText className="w-4 h-4 text-white" />
+                  <Camera className="w-4 h-4 text-white" />
                 </div>
               </div>
               <div>
@@ -337,7 +337,7 @@ const BusinessAnalyticsPage = () => {
             <CardContent className="pt-3 pb-2.5 relative z-10">
               <div className="flex items-start justify-between mb-2">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center shadow-md">
-                  <Share2 className="w-4 h-4 text-white" />
+                  <Camera className="w-4 h-4 text-white" />
                 </div>
               </div>
               <div>
@@ -360,7 +360,7 @@ const BusinessAnalyticsPage = () => {
             <CardContent className="pt-3 pb-2.5 relative z-10">
               <div className="flex items-start justify-between mb-2">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-md">
-                  <Clock className="w-4 h-4 text-white" />
+                  <Camera className="w-4 h-4 text-white" />
                 </div>
               </div>
               <div>
