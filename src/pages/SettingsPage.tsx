@@ -5,11 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { useTranslation } from 'react-i18next';
-import { ChevronRight, Globe, Building2, BellOff, ArrowLeft } from 'lucide-react';
+import { ChevronRight, Globe, Building2, BellOff, ArrowLeft, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import BusinessRequestModal from '@/components/BusinessRequestModal';
 import LanguageModal from '@/components/settings/LanguageModal';
 import MutedLocationsModal from '@/components/settings/MutedLocationsModal';
+import { useAdminRole } from '@/hooks/useAdminRole';
 
 const languages = [
   { code: 'en', label: 'English', flag: '🇬🇧' },
@@ -30,6 +31,7 @@ const SettingsPage: React.FC = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { isAdmin } = useAdminRole();
   const [language, setLanguage] = useState('en');
   const [saving, setSaving] = useState(false);
   const [businessModalOpen, setBusinessModalOpen] = useState(false);
@@ -145,6 +147,25 @@ const SettingsPage: React.FC = () => {
               </div>
               <ChevronRight className="w-5 h-5 text-muted-foreground" />
             </button>
+
+            {/* Admin Panel - Only visible to admins */}
+            {isAdmin && (
+              <button
+                onClick={() => navigate('/admin/business-requests')}
+                className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors border-t"
+              >
+                <div className="flex items-center gap-3">
+                  <Shield className="w-5 h-5 text-muted-foreground" />
+                  <div className="text-left">
+                    <div className="font-medium">{t('adminPanel', { ns: 'settings' })}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {t('manageBusinessRequests', { ns: 'settings' })}
+                    </div>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              </button>
+            )}
           </CardContent>
         </Card>
       </div>

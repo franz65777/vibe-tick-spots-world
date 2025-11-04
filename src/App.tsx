@@ -19,6 +19,7 @@ import FeedPage from '@/pages/FeedPage';
 import ActivityFeedPage from '@/pages/ActivityFeedPage';
 import LeaderboardPage from '@/pages/LeaderboardPage';
 import AdminAnalyticsPage from '@/pages/AdminAnalyticsPage';
+import AdminBusinessRequestsPage from '@/pages/AdminBusinessRequestsPage';
 import NotificationsPage from '@/pages/NotificationsPage';
 import MessagesPage from '@/pages/MessagesPage';
 import DiscoverPage from '@/pages/DiscoverPage';
@@ -108,6 +109,7 @@ function AppContent() {
         <Route path="/subscription" element={<SubscriptionPage />} />
         <Route path="/profile/:userId" element={<UserProfilePage />} />
         <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
+        <Route path="/admin/business-requests" element={<AdminBusinessRequestsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<NotFound />} />
       </Route>

@@ -291,6 +291,16 @@ const resources = {
       mute: 'Mute',
       searchMutedLocations: 'Search muted locations...',
       noSearchResults: 'No locations found',
+      adminPanel: 'Admin Panel',
+      manageBusinessRequests: 'Manage business account requests',
+    },
+    accountSwitch: {
+      title: 'Switch Account',
+      subtitle: 'Choose which account to use',
+      personalAccount: 'Personal Account',
+      businessDashboard: 'Business Dashboard',
+      requestBusiness: 'Request Business Account',
+      requestBusinessDescription: 'Get access to business tools',
     },
     feed: {
       yourFeed: 'Your Feed',
@@ -1334,6 +1344,16 @@ const resources = {
       mute: 'Disattiva',
       searchMutedLocations: 'Cerca ubicazioni disattivate...',
       noSearchResults: 'Nessuna ubicazione trovata',
+      adminPanel: 'Pannello Admin',
+      manageBusinessRequests: 'Gestisci richieste account aziendali',
+    },
+    accountSwitch: {
+      title: 'Cambia Account',
+      subtitle: 'Scegli quale account usare',
+      personalAccount: 'Account Personale',
+      businessDashboard: 'Dashboard Aziendale',
+      requestBusiness: 'Richiedi Account Aziendale',
+      requestBusinessDescription: 'Ottieni accesso agli strumenti aziendali',
     },
     feed: {
       yourFeed: 'Il Tuo Feed',
