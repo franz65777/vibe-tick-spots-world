@@ -510,7 +510,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       </div>
 
       {/* Followed Users Row - positioned above everything */}
-      <div className="bg-background px-4 pt-3 pb-3 overflow-visible relative z-20 mt-1">
+      <div className="bg-background px-3 pt-1 pb-2 overflow-visible relative z-50 -mt-3">
         <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1 pl-2 pr-3" style={{ scrollSnapType: 'x mandatory' }}>
           {/* All button */}
           <button
@@ -631,7 +631,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
             </div>
           </div>
         ) : (
-          <div className="h-full flex items-start justify-center px-3 pt-2 pb-3 mt-1">
+          <div className="h-full flex items-start justify-center px-3 pt-1 pb-2">
             {/* Swipeable Card */}
             <div
               onTouchStart={handleTouchStart}
@@ -647,7 +647,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                 opacity: swipeDirection ? 0 : 1 - Math.abs(touchOffset.x) / 600
               }}
             >
-              <div className="relative w-full aspect-[2/3] rounded-2xl overflow-hidden shadow-xl bg-white border border-gray-100">
+              <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden shadow-xl bg-white border border-gray-100">
                 {/* Image or Gradient Background */}
                 <div className="absolute inset-0">
                   {currentLocation.image_url ? (
