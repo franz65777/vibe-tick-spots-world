@@ -105,14 +105,43 @@ const BusinessOverviewPageV2 = () => {
     try {
       setLoading(true);
 
+      if (!user) return;
+
+      // First, fetch the business profile to get the linked location
+      const { data: businessProfile, error: businessError } = await supabase
+        .from('business_profiles')
+        .select('location_id, verification_status')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (businessError) throw businessError;
+
+      if (!businessProfile || businessProfile.verification_status !== 'verified') {
+        toast.error('No verified business account found');
+        setLoading(false);
+        return;
+      }
+
+      if (!businessProfile.location_id) {
+        toast.error('No location linked to your business account');
+        setLoading(false);
+        return;
+      }
+
+      // Fetch the specific location owned by this business
       const { data: locationData, error: locationError } = await supabase
         .from('locations')
         .select('*')
-        .order('created_at', { ascending: false })
-        .limit(1)
+        .eq('id', businessProfile.location_id)
         .maybeSingle();
 
       if (locationError) throw locationError;
+
+      if (!locationData) {
+        toast.error('No location found for your business account');
+        setLoading(false);
+        return;
+      }
 
       if (locationData) {
         setLocation(locationData);

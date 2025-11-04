@@ -236,6 +236,7 @@ export type Database = {
           business_type: string
           created_at: string | null
           id: string
+          location_id: string | null
           phone_number: string | null
           subscription_expires_at: string | null
           subscription_plan: string | null
@@ -253,6 +254,7 @@ export type Database = {
           business_type: string
           created_at?: string | null
           id?: string
+          location_id?: string | null
           phone_number?: string | null
           subscription_expires_at?: string | null
           subscription_plan?: string | null
@@ -270,6 +272,7 @@ export type Database = {
           business_type?: string
           created_at?: string | null
           id?: string
+          location_id?: string | null
           phone_number?: string | null
           subscription_expires_at?: string | null
           subscription_plan?: string | null
@@ -282,6 +285,13 @@ export type Database = {
           website_url?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "business_profiles_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "business_profiles_user_id_fkey"
             columns: ["user_id"]

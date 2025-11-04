@@ -68,20 +68,20 @@ const BusinessProfilePage = () => {
     if (!user) return;
 
     try {
-      // Get the business profile
+      setLoading(true);
+      // Get the business profile with location_id
       const { data: businessProfile } = await supabase
         .from('business_profiles')
-        .select('*')
+        .select('location_id, verification_status')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (businessProfile) {
-        // Fetch location with order to ensure consistency
+      if (businessProfile && businessProfile.location_id) {
+        // Fetch the specific location owned by this business
         const { data: locationData } = await supabase
           .from('locations')
           .select('*')
-          .order('created_at', { ascending: false })
-          .limit(1)
+          .eq('id', businessProfile.location_id)
           .maybeSingle();
 
         if (locationData) {
