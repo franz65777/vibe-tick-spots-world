@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAnalytics } from '@/hooks/useAnalytics';
-import { LayoutGrid, BarChart3, Plus, Camera, User } from 'lucide-react';
+import { LayoutGrid, BarChart3, Plus, Activity, User } from 'lucide-react';
 import { toast } from 'sonner';
 import AccountSwitchModal from './AccountSwitchModal';
 import { useTranslation } from 'react-i18next';
@@ -85,7 +85,7 @@ const BusinessBottomNavigation = () => {
       path: '/business/add'
     },
     { 
-      icon: <Camera size={24} strokeWidth={2} />, 
+      icon: <Activity size={24} strokeWidth={2} />, 
       label: t('feed', { ns: 'common' }), 
       path: '/business/feed'
     },
