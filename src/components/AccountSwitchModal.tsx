@@ -26,11 +26,6 @@ const AccountSwitchModal: React.FC<AccountSwitchModalProps> = ({
   const [locationName, setLocationName] = useState<string>('Business Account');
   const [locationCategory, setLocationCategory] = useState<string>('restaurant');
 
-  // Don't show modal if user doesn't have a business account
-  if (!hasValidBusinessAccount) {
-    return null;
-  }
-
   useEffect(() => {
     const fetchLocation = async () => {
       if (!profile?.id) return;
@@ -75,6 +70,11 @@ const AccountSwitchModal: React.FC<AccountSwitchModalProps> = ({
       description: 'Business Dashboard',
     },
   ];
+
+  // Don't show modal if user doesn't have a business account
+  if (!hasValidBusinessAccount) {
+    return null;
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
