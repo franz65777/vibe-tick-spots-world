@@ -59,32 +59,25 @@ const AccountSwitchModal: React.FC<AccountSwitchModalProps> = ({
 
   const CategoryIcon = getCategoryIcon(locationCategory);
 
-  const accounts = hasValidBusinessAccount
-    ? [
-        {
-          id: 'personal',
-          name: profile?.username || 'Personal',
-          avatar: profile?.avatar_url,
-          icon: <User className="w-5 h-5" />,
-          description: t('personalAccount', { ns: 'accountSwitch' }),
-        },
-        {
-          id: 'business',
-          name: locationName,
-          avatar: null,
-          icon: <CategoryIcon className="w-5 h-5" />,
-          description: t('businessDashboard', { ns: 'accountSwitch' }),
-        },
-      ]
-    : [
-        {
-          id: 'personal',
-          name: profile?.username || 'Personal',
-          avatar: profile?.avatar_url,
-          icon: <User className="w-5 h-5" />,
-          description: t('personalAccount', { ns: 'accountSwitch' }),
-        },
-      ];
+  const accounts = [
+    {
+      id: 'personal',
+      name: profile?.username || 'Personal',
+      avatar: profile?.avatar_url,
+      icon: <User className="w-5 h-5" />,
+      description: t('personalAccount', { ns: 'accountSwitch' }),
+    },
+    {
+      id: 'business',
+      name: hasValidBusinessAccount ? locationName : t('requestBusiness', { ns: 'accountSwitch' }),
+      avatar: null,
+      icon: hasValidBusinessAccount ? <CategoryIcon className="w-5 h-5" /> : <Plus className="w-5 h-5" />,
+      description: hasValidBusinessAccount 
+        ? t('businessDashboard', { ns: 'accountSwitch' })
+        : t('requestBusinessDescription', { ns: 'accountSwitch' }),
+      isRequest: !hasValidBusinessAccount,
+    },
+  ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -102,12 +95,19 @@ const AccountSwitchModal: React.FC<AccountSwitchModalProps> = ({
               <button
                 key={account.id}
                 onClick={() => {
-                  onSwitch(account.id as 'personal' | 'business');
-                  onOpenChange(false);
+                  if (account.isRequest) {
+                    onOpenChange(false);
+                    navigate('/business-claim');
+                  } else {
+                    onSwitch(account.id as 'personal' | 'business');
+                    onOpenChange(false);
+                  }
                 }}
                 className={cn(
                   'w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all hover:bg-accent/50',
-                  currentMode === account.id
+                  account.isRequest
+                    ? 'border-dashed border-border bg-muted/30 hover:border-primary/50'
+                    : currentMode === account.id
                     ? 'border-primary bg-primary/5'
                     : 'border-border bg-background'
                 )}
@@ -144,34 +144,6 @@ const AccountSwitchModal: React.FC<AccountSwitchModalProps> = ({
                 </div>
               </button>
             ))}
-
-            {/* Request Business Account Button */}
-            {!hasValidBusinessAccount && (
-              <button
-                onClick={() => {
-                  onOpenChange(false);
-                  navigate('/settings');
-                }}
-                className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-dashed border-border bg-muted/30 transition-all hover:bg-muted/50 hover:border-primary/50"
-              >
-                <div className="relative">
-                  <Avatar className="w-12 h-12">
-                    <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10">
-                      <Plus className="w-5 h-5" />
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-
-                <div className="flex-1 text-left">
-                  <div className="font-semibold text-foreground">
-                    {t('requestBusiness', { ns: 'accountSwitch' })}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {t('requestBusinessDescription', { ns: 'accountSwitch' })}
-                  </div>
-                </div>
-              </button>
-            )}
           </div>
         </div>
       </DialogContent>
