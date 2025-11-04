@@ -510,7 +510,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       </div>
 
       {/* Followed Users Row - positioned above everything */}
-      <div className="bg-background px-4 pt-4 pb-4 overflow-visible relative z-20 mt-4">
+      <div className="bg-background px-4 pt-3 pb-3 overflow-visible relative z-30 mt-2">
         <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 pl-2 pr-3" style={{ scrollSnapType: 'x mandatory' }}>
           {/* All button */}
           <button
@@ -524,10 +524,10 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
             }`}
             style={{ scrollSnapAlign: 'start' }}
           >
-            <div className={`relative z-[70] w-14 h-14 rounded-full flex items-center justify-center transition-all bg-muted ${
+            <div className={`relative z-[70] w-12 h-12 rounded-full flex items-center justify-center transition-all bg-muted ${
               selectedUserId === null ? 'ring-2 ring-primary ring-offset-2' : ''
             }`}>
-              <Users className="w-6 h-6 text-foreground" />
+              <Users className="w-5 h-5 text-foreground" />
             </div>
             <span className="text-xs font-medium text-muted-foreground">{t('all', { ns: 'common' })}</span>
           </button>
@@ -551,12 +551,12 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                   <img
                     src={followedUser.avatar_url}
                     alt={followedUser.username}
-                    className={`w-14 h-14 rounded-full object-cover transition-all ${
+                    className={`w-12 h-12 rounded-full object-cover transition-all ${
                       selectedUserId === followedUser.id ? 'ring-2 ring-primary ring-offset-2' : ''
                     }`}
                   />
                 ) : (
-                  <div className={`w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center transition-all ${
+                  <div className={`w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center transition-all ${
                     selectedUserId === followedUser.id ? 'ring-2 ring-primary ring-offset-2' : ''
                   }`}>
                     <span className="text-white text-lg font-bold">
