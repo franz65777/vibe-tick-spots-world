@@ -498,7 +498,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
   return (
     <div className="fixed inset-0 bg-gradient-to-b from-gray-50 to-gray-100 z-50 flex flex-col">
       {/* Header with back button */}
-      <div className="bg-white px-4 py-3 flex items-center gap-3 shadow-sm">
+      <div className="bg-white px-4 py-3 flex items-center gap-3 shadow-sm relative z-10">
         <button
           onClick={() => navigate('/')}
           className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -510,8 +510,8 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       </div>
 
       {/* Followed Users Row */}
-      <div className="bg-background px-5 pt-3 pb-6 overflow-visible">
-        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2" style={{ scrollSnapType: 'x mandatory' }}>
+      <div className="bg-background px-5 pt-2 pb-5 overflow-visible relative z-20 -mt-1">
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 pl-2 pr-2" style={{ scrollSnapType: 'x mandatory' }}>
           {/* All button */}
           <button
             onClick={() => {
@@ -524,7 +524,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
             }`}
             style={{ scrollSnapAlign: 'start' }}
           >
-            <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all bg-muted ${
+            <div className={`relative z-10 w-14 h-14 rounded-full flex items-center justify-center transition-all bg-muted ${
               selectedUserId === null ? 'ring-2 ring-primary ring-offset-2' : ''
             }`}>
               <Users className="w-6 h-6 text-foreground" />
@@ -546,7 +546,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
               }`}
               style={{ scrollSnapAlign: 'start' }}
             >
-              <div className="relative">
+              <div className="relative z-10">
                 {followedUser.avatar_url ? (
                   <img
                     src={followedUser.avatar_url}
