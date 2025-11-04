@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { BellOff, ArrowLeft, Bell } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { BellOff, ArrowLeft, Bell, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useMutedLocations } from '@/hooks/useMutedLocations';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,13 +19,25 @@ const MutedLocationsModal: React.FC<MutedLocationsModalProps> = ({ open, onOpenC
   const { t } = useTranslation();
   const { user } = useAuth();
   const { mutedLocations, isLoading, unmuteLocation, isMuting } = useMutedLocations(user?.id);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredLocations = useMemo(() => {
+    if (!mutedLocations || !searchQuery.trim()) return mutedLocations;
+    
+    const query = searchQuery.toLowerCase();
+    return mutedLocations.filter((muted: any) => 
+      muted.locations?.name?.toLowerCase().includes(query) ||
+      muted.locations?.address?.toLowerCase().includes(query) ||
+      muted.locations?.city?.toLowerCase().includes(query)
+    );
+  }, [mutedLocations, searchQuery]);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-full p-0 [&>button]:hidden">
         <div className="h-full flex flex-col">
-          <SheetHeader className="p-4 border-b">
-            <div className="flex items-center gap-3">
+          <SheetHeader className="p-4">
+            <div className="flex items-center gap-3 mb-4">
               <button
                 onClick={() => onOpenChange(false)}
                 className="p-2 hover:bg-muted rounded-full transition-colors"
@@ -35,6 +48,17 @@ const MutedLocationsModal: React.FC<MutedLocationsModalProps> = ({ open, onOpenC
                 <BellOff className="w-5 h-5" />
                 {t('mutedLocations', { ns: 'settings' })}
               </SheetTitle>
+            </div>
+            
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder={t('searchMutedLocations', { ns: 'settings', defaultValue: 'Search muted locations...' })}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 rounded-full"
+              />
             </div>
           </SheetHeader>
 
@@ -51,8 +75,8 @@ const MutedLocationsModal: React.FC<MutedLocationsModalProps> = ({ open, onOpenC
                 </div>
               ))}
             </>
-          ) : mutedLocations && mutedLocations.length > 0 ? (
-            mutedLocations.map((muted: any) => (
+          ) : filteredLocations && filteredLocations.length > 0 ? (
+            filteredLocations.map((muted: any) => (
               <div
                 key={muted.id}
                 className="flex items-center gap-3 p-4 border rounded-lg hover:bg-muted/50 transition-colors"
@@ -87,7 +111,12 @@ const MutedLocationsModal: React.FC<MutedLocationsModalProps> = ({ open, onOpenC
           ) : (
             <div className="text-center py-12">
               <BellOff className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">{t('noMutedLocations', { ns: 'settings' })}</p>
+              <p className="text-muted-foreground">
+                {searchQuery.trim() 
+                  ? t('noSearchResults', { ns: 'settings', defaultValue: 'No locations found' })
+                  : t('noMutedLocations', { ns: 'settings' })
+                }
+              </p>
             </div>
           )}
         </div>

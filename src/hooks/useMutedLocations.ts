@@ -12,7 +12,18 @@ export const useMutedLocations = (userId: string | undefined) => {
 
       const { data, error } = await supabase
         .from('user_muted_locations')
-        .select('id, location_id, created_at')
+        .select(`
+          id, 
+          location_id, 
+          created_at,
+          locations (
+            id,
+            name,
+            address,
+            city,
+            category
+          )
+        `)
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
