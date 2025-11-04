@@ -63,7 +63,7 @@ const NotificationsPage = () => {
   return (
     <div className="h-screen w-full bg-background flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="shrink-0 bg-background border-b border-border w-full">
+      <header className="shrink-0 bg-background w-full">
         <div className="px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button
@@ -75,14 +75,7 @@ const NotificationsPage = () => {
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <div className="flex items-center gap-2">
-              <h1 className="font-bold text-xl text-foreground">{t('title', { ns: 'notifications' })}</h1>
-              {unreadCount > 0 && (
-                <div className="px-2 py-0.5 bg-primary text-primary-foreground text-xs font-bold rounded-full min-w-[20px] text-center">
-                  {unreadCount}
-                </div>
-              )}
-            </div>
+            <h1 className="font-bold text-xl text-foreground">{t('title', { ns: 'notifications' })}</h1>
           </div>
           
           {unreadCount > 0 && (
@@ -116,7 +109,7 @@ const NotificationsPage = () => {
             <p className="text-muted-foreground text-sm">No new notifications</p>
           </div>
         ) : (
-          <div>
+          <div className="w-full">
             {notifications.map((notification) => (
               <MobileNotificationItem
                 key={notification.id}

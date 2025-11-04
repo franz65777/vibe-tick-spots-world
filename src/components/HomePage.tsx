@@ -442,7 +442,7 @@ const HomePage = () => {
         
         {/* Map Section - fills remaining space and extends under bottom nav */}
         {!isCreateStoryModalOpen && !isStoriesViewerOpen && (
-          <div className={isMapExpanded ? "fixed inset-0 z-50" : isSearchOverlayOpen ? "hidden" : "flex-1 relative pb-[calc(4rem+env(safe-area-inset-bottom))]"}>
+          <div className={isMapExpanded ? "fixed inset-0 z-50" : isSearchOverlayOpen ? "hidden" : "flex-1 relative overflow-hidden"}>
             <MapSection
               mapCenter={mapCenter}
               currentCity={currentCity}

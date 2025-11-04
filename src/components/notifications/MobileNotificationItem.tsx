@@ -204,7 +204,7 @@ const MobileNotificationItem = ({
   return (
     <div
       onClick={handleClick}
-      className={`flex items-start gap-2.5 px-4 py-3 cursor-pointer active:bg-accent/50 transition-colors ${
+      className={`w-full flex items-start gap-2.5 px-4 py-3 cursor-pointer active:bg-accent/50 transition-colors ${
         !notification.is_read ? 'bg-accent/20' : 'bg-background'
       }`}
     >
