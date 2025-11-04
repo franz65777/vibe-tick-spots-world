@@ -39,7 +39,7 @@ export const useMutedLocations = (userId: string | undefined) => {
 
       const { error } = await supabase
         .from('user_muted_locations')
-        .insert({ user_id: userId, location_id: locationId });
+        .upsert({ user_id: userId, location_id: locationId }, { onConflict: 'user_id,location_id' });
 
       if (error) throw error;
     },

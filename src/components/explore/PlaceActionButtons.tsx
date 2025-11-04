@@ -69,7 +69,7 @@ const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
 
   return (
     <>
-      <div className="flex items-center gap-2">
+      <div className="grid grid-cols-5 gap-2">
         <Button
           variant="outline"
           size="sm"
@@ -115,7 +115,7 @@ const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
           size="icon"
           onClick={handleMuteToggle}
           disabled={isMuting}
-          className={`h-16 w-16 rounded-full ${
+          className={`h-12 w-12 rounded-full place-self-center ${
             isMuted 
               ? 'bg-muted text-muted-foreground hover:bg-muted/80' 
               : 'hover:bg-muted'

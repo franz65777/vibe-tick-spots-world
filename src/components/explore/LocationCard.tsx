@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Heart, Bookmark, MessageCircle, Share2, MapPin, Star, Users, Bell, BellOff } from 'lucide-react';
+import { Heart, Bookmark, MessageCircle, Share2, MapPin, Star, Users } from 'lucide-react';
 import { Place } from '@/types/place';
 import { usePlaceEngagement } from '@/hooks/usePlaceEngagement';
 import { usePinEngagement } from '@/hooks/usePinEngagement';
@@ -226,7 +226,7 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
             </div>
 
             {/* Action Buttons */}
-            <div className="grid grid-cols-5 gap-2 pt-2">
+            <div className="grid grid-cols-4 gap-2 pt-2">
               <Button
                 variant="ghost"
                 size="sm"
@@ -277,20 +277,6 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
                 <span className="text-xs font-medium">{t('share', { ns: 'common' })}</span>
               </Button>
 
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleMuteToggle}
-                disabled={isMuting}
-                className={`h-12 rounded-xl flex flex-col gap-1 transition-all ${
-                  isMuted
-                    ? 'text-muted-foreground bg-muted hover:bg-muted/80' 
-                    : 'text-gray-600 hover:text-yellow-600 hover:bg-yellow-50'
-                }`}
-              >
-                {isMuted ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
-                <span className="text-xs font-medium">{isMuted ? t('muted', { ns: 'settings' }) : t('mute', { ns: 'settings' })}</span>
-              </Button>
             </div>
           </div>
         </CardContent>

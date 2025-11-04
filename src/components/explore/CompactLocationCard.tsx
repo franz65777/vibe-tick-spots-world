@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Heart, Bookmark, MessageCircle, Share2, MapPin, Star, Camera, Users, Bell, BellOff } from 'lucide-react';
+import { Heart, Bookmark, MessageCircle, Share2, MapPin, Star, Camera, Users } from 'lucide-react';
 import { Place } from '@/types/place';
 import { usePlaceEngagement } from '@/hooks/usePlaceEngagement';
 import { usePinEngagement } from '@/hooks/usePinEngagement';
@@ -235,20 +235,6 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
 
               {/* Mute & Share Buttons */}
               <div className="flex gap-1.5">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleMuteToggle}
-                  disabled={isMuting}
-                  className={`h-7 w-7 rounded-full p-0 backdrop-blur-sm shadow-lg border-0 ${
-                    isMuted 
-                      ? 'bg-muted text-muted-foreground hover:bg-muted/80' 
-                      : 'bg-white/95 hover:bg-white'
-                  }`}
-                >
-                  {isMuted ? <BellOff className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5" />}
-                </Button>
-
                 <Button
                   variant="outline"
                   size="sm"

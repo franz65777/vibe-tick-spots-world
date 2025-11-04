@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { MapPin, Heart, Bookmark, Users, MessageSquare, Share2, Navigation, Star, Bell, BellOff } from 'lucide-react';
+import { MapPin, Heart, Bookmark, Users, MessageSquare, Share2, Navigation, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 import { locationInteractionService } from '@/services/locationInteractionService';
@@ -140,7 +140,7 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
 
   return (
     <div 
-      className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer hover:shadow-md transition-all duration-300 group mx-4 mb-3"
+      className="bg-white rounded-xl shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-all duration-300 group mx-4 mb-3"
       onClick={() => onCardClick(place)}
     >
       {/* Mobile Optimized Image section */}
@@ -210,7 +210,7 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
         </div>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-4 gap-2">
           <Button
             onClick={handleSaveToggle}
             disabled={loading}
@@ -266,25 +266,6 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
             <span className="text-xs">{t('share', { ns: 'common' })}</span>
           </Button>
 
-          <Button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (isMuted) {
-                unmuteLocation(place.id);
-              } else {
-                muteLocation(place.id);
-              }
-            }}
-            disabled={isMuting}
-            size="sm"
-            variant="secondary"
-            className={`flex-col h-auto py-3 gap-1 rounded-2xl ${
-              isMuted ? 'bg-muted text-muted-foreground' : ''
-            }`}
-          >
-            {isMuted ? <BellOff className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
-            <span className="text-xs">{isMuted ? t('muted', { ns: 'settings' }) : t('mute', { ns: 'settings' })}</span>
-          </Button>
         </div>
       </div>
       

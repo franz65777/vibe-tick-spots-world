@@ -300,7 +300,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
 
           {/* Action Buttons */}
           <div className="bg-background px-4 pb-4">
-            <div className="flex items-center gap-2">
+            <div className="grid grid-cols-5 gap-2">
               <Button
                 onClick={handleSaveToggle}
                 disabled={loading}
@@ -358,7 +358,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                 disabled={isMuting}
                 size="icon"
                 variant="secondary"
-                className={`h-16 w-16 rounded-full ${
+                className={`h-12 w-12 rounded-full place-self-center ${
                   mutedLocations?.some((m: any) => m.location_id === place.id) ? 'bg-muted text-muted-foreground hover:bg-muted/80' : ''
                 }`}
               >

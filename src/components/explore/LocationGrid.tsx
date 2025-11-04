@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, BellOff } from 'lucide-react';
+
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import LocationPostLibrary from './LocationPostLibrary';
@@ -433,32 +433,13 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
             <div
               key={location.id}
               onClick={() => handleLocationClick(location)}
-              className="relative bg-white dark:bg-card rounded-2xl overflow-hidden cursor-pointer transition-all border border-border flex flex-col h-[140px]"
+              className="relative bg-white dark:bg-card rounded-2xl overflow-hidden cursor-pointer transition-all flex flex-col h-[140px]"
             >
               {/* Top section with category, mute, and save */}
               <div className="relative p-2.5 flex items-start justify-between">
                 <CategoryIcon category={location.category} className={location.category.toLowerCase() === 'hotel' || location.category.toLowerCase() === 'restaurant' ? 'w-9 h-9' : 'w-7 h-7'} />
                 
                 <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (isMuted) {
-                        unmuteLocation(location.id);
-                      } else {
-                        muteLocation(location.id);
-                      }
-                    }}
-                    disabled={isMuting}
-                    className={`rounded-full p-1.5 transition-all ${
-                      isMuted 
-                        ? 'bg-muted text-muted-foreground hover:bg-muted/80' 
-                        : 'bg-muted hover:bg-muted/60 text-muted-foreground'
-                    }`}
-                    aria-label={isMuted ? 'Unmute location' : 'Mute location'}
-                  >
-                    {isMuted ? <BellOff className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5" />}
-                  </button>
                   
                   <button
                     onClick={(e) => handleSaveToggle(e, location.id)}
