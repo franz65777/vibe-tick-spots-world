@@ -8,6 +8,16 @@ import { CheckCircle, XCircle, Clock, Building2, Mail, Phone, FileText, ArrowLef
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface BusinessRequest {
   id: string;
@@ -26,6 +36,8 @@ const AdminBusinessRequestsPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<BusinessRequest | null>(null);
 
   const { data: requests, isLoading } = useQuery({
@@ -34,6 +46,7 @@ const AdminBusinessRequestsPage = () => {
       const { data, error } = await supabase
         .from('business_claim_requests')
         .select('*')
+        .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -83,11 +96,25 @@ const AdminBusinessRequestsPage = () => {
 
         if (locationError) throw locationError;
       }
+
+      // 4. Send notification to user
+      const { error: notificationError } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: request.user_id,
+          type: 'business_approved',
+          title: 'Business Account Approved',
+          message: `Your business account request for "${request.business_name}" has been approved! You can now switch to your business account.`,
+          read: false,
+        });
+
+      if (notificationError) console.error('Failed to send notification:', notificationError);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-business-requests'] });
       toast.success('Business request approved successfully');
       setSelectedRequest(null);
+      setApproveDialogOpen(false);
     },
     onError: (error) => {
       toast.error('Failed to approve request: ' + error.message);
@@ -96,6 +123,9 @@ const AdminBusinessRequestsPage = () => {
 
   const rejectMutation = useMutation({
     mutationFn: async (requestId: string) => {
+      const request = requests?.find(r => r.id === requestId);
+      if (!request) throw new Error('Request not found');
+
       const { error } = await supabase
         .from('business_claim_requests')
         .update({
@@ -106,11 +136,25 @@ const AdminBusinessRequestsPage = () => {
         .eq('id', requestId);
 
       if (error) throw error;
+
+      // Send notification to user
+      const { error: notificationError } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: request.user_id,
+          type: 'business_rejected',
+          title: 'Business Account Request Rejected',
+          message: `Your business account request for "${request.business_name}" has been rejected. Please contact support for more information.`,
+          read: false,
+        });
+
+      if (notificationError) console.error('Failed to send notification:', notificationError);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-business-requests'] });
       toast.success('Business request rejected');
       setSelectedRequest(null);
+      setRejectDialogOpen(false);
     },
     onError: (error) => {
       toast.error('Failed to reject request: ' + error.message);
@@ -191,7 +235,10 @@ const AdminBusinessRequestsPage = () => {
               {request.status === 'pending' && (
                 <div className="flex gap-2 pt-4 border-t">
                   <Button
-                    onClick={() => approveMutation.mutate(request.id)}
+                    onClick={() => {
+                      setSelectedRequest(request);
+                      setApproveDialogOpen(true);
+                    }}
                     disabled={approveMutation.isPending}
                     className="flex-1"
                   >
@@ -199,7 +246,10 @@ const AdminBusinessRequestsPage = () => {
                     Approve
                   </Button>
                   <Button
-                    onClick={() => rejectMutation.mutate(request.id)}
+                    onClick={() => {
+                      setSelectedRequest(request);
+                      setRejectDialogOpen(true);
+                    }}
                     disabled={rejectMutation.isPending}
                     variant="destructive"
                     className="flex-1"
@@ -215,12 +265,70 @@ const AdminBusinessRequestsPage = () => {
           {requests && requests.length === 0 && (
             <Card className="p-12 text-center">
               <Building2 className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No requests yet</h3>
-              <p className="text-muted-foreground">Business account requests will appear here</p>
+              <h3 className="text-lg font-semibold mb-2">No pending requests</h3>
+              <p className="text-muted-foreground">Pending business account requests will appear here</p>
             </Card>
           )}
         </div>
       </div>
+
+      {/* Approve Confirmation Dialog */}
+      <AlertDialog open={approveDialogOpen} onOpenChange={setApproveDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Approve Business Account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to approve the business account request for{' '}
+              <strong>{selectedRequest?.business_name}</strong>?
+              <br /><br />
+              This will grant the user access to the business dashboard and allow them to manage their location.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (selectedRequest) {
+                  approveMutation.mutate(selectedRequest.id);
+                }
+              }}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Approve
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reject Confirmation Dialog */}
+      <AlertDialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reject Business Account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to reject the business account request for{' '}
+              <strong>{selectedRequest?.business_name}</strong>?
+              <br /><br />
+              The user will be notified that their request has been rejected. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (selectedRequest) {
+                  rejectMutation.mutate(selectedRequest.id);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              <XCircle className="w-4 h-4 mr-2" />
+              Reject
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

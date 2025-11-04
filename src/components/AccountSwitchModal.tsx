@@ -32,13 +32,14 @@ const AccountSwitchModal: React.FC<AccountSwitchModalProps> = ({
 
   useEffect(() => {
     const fetchLocation = async () => {
-      if (!profile?.id) return;
+      if (!profile?.id || !hasValidBusinessAccount) return;
 
       try {
-        // Fetch the first location for this business (we can enhance this later)
+        // Fetch the first location claimed by this user
         const { data, error } = await supabase
           .from('locations')
           .select('name, category')
+          .eq('claimed_by', profile.id)
           .limit(1)
           .maybeSingle();
 
@@ -54,7 +55,7 @@ const AccountSwitchModal: React.FC<AccountSwitchModalProps> = ({
     if (open) {
       fetchLocation();
     }
-  }, [open, profile?.id]);
+  }, [open, profile?.id, hasValidBusinessAccount]);
 
   const CategoryIcon = getCategoryIcon(locationCategory);
 
