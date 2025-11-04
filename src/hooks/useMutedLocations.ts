@@ -26,7 +26,7 @@ export const useMutedLocations = (userId: string | undefined) => {
 
       const { data: locations, error: locErr } = await supabase
         .from('locations')
-        .select('id, name, address, city, category')
+        .select('id, name, address, city, category, latitude, longitude')
         .in('id', ids);
 
       if (locErr) throw locErr;

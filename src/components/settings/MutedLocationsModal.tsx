@@ -94,6 +94,10 @@ const MutedLocationsModal: React.FC<MutedLocationsModalProps> = ({ open, onOpenC
                     {formatDetailedAddress({
                       city: muted.locations?.city,
                       address: muted.locations?.address,
+                      coordinates: muted.locations ? {
+                        lat: muted.locations.latitude,
+                        lng: muted.locations.longitude
+                      } : null
                     })}
                   </p>
                 </div>
