@@ -13,6 +13,7 @@ import { useBusinessProfile } from '@/hooks/useBusinessProfile';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocationStats } from '@/hooks/useLocationStats';
 import { useBusinessLocationStats } from '@/hooks/useBusinessLocationStats';
+import { useTranslation } from 'react-i18next';
 
 interface Location {
   id: string;
@@ -41,6 +42,7 @@ interface Post {
 }
 
 const BusinessOverviewPageV2 = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { businessProfile } = useBusinessProfile();
@@ -129,7 +131,7 @@ const BusinessOverviewPageV2 = () => {
       }
     } catch (error) {
       console.error('Error fetching data:', error);
-      toast.error('Failed to load location data');
+      toast.error(t('failedLoadLocation', { ns: 'business' }));
     } finally {
       setLoading(false);
     }
@@ -185,10 +187,10 @@ const BusinessOverviewPageV2 = () => {
       if (updateError) throw updateError;
 
       setLocation({ ...location, image_url: publicUrl });
-      toast.success('Cover image updated successfully');
+      toast.success(t('coverImageUpdated', { ns: 'business' }));
     } catch (error) {
       console.error('Error uploading cover image:', error);
-      toast.error('Failed to upload cover image');
+      toast.error(t('failedUploadCover', { ns: 'business' }));
     } finally {
       setUploading(false);
     }
@@ -212,7 +214,7 @@ const BusinessOverviewPageV2 = () => {
       <div className="min-h-screen bg-background pb-24 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
+          <p className="text-muted-foreground">{t('loading', { ns: 'business' })}</p>
         </div>
       </div>
     );
@@ -222,7 +224,7 @@ const BusinessOverviewPageV2 = () => {
     return (
       <div className="min-h-screen bg-background pb-24 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-muted-foreground">No location found</p>
+          <p className="text-muted-foreground">{t('noLocationFound', { ns: 'business' })}</p>
         </div>
       </div>
     );
@@ -277,7 +279,7 @@ const BusinessOverviewPageV2 = () => {
             </div>
 
             <div className="flex items-center gap-2 flex-shrink-0">
-              <Button variant="ghost" size="sm" onClick={() => navigate('/business/notifications')} className="relative">
+              <Button variant="ghost" size="icon" onClick={() => navigate('/business/notifications')} className="relative h-10 w-10">
                 <Bell className="w-5 h-5" />
                 {unreadNotifications > 0 && (
                   <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] bg-destructive rounded-full flex items-center justify-center text-[10px] font-bold text-destructive-foreground">
@@ -285,7 +287,7 @@ const BusinessOverviewPageV2 = () => {
                   </span>
                 )}
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/business/messages')}>
+              <Button variant="ghost" size="icon" onClick={() => navigate('/business/messages')} className="h-10 w-10">
                 <Send className="w-5 h-5" />
               </Button>
             </div>
@@ -298,7 +300,7 @@ const BusinessOverviewPageV2 = () => {
             <CardContent className="p-3 text-center">
               <Eye className="w-5 h-5 text-primary mx-auto mb-1" />
               <p className="text-lg font-bold text-foreground">{statsLoading ? '...' : viewsCount}</p>
-              <p className="text-[10px] text-muted-foreground">Views</p>
+              <p className="text-[10px] text-muted-foreground">{t('views', { ns: 'business' })}</p>
             </CardContent>
           </Card>
 
@@ -306,7 +308,7 @@ const BusinessOverviewPageV2 = () => {
             <CardContent className="p-3 text-center">
               <MessageSquare className="w-5 h-5 text-chart-2 mx-auto mb-1" />
               <p className="text-lg font-bold text-foreground">{statsLoading ? '...' : commentsCount}</p>
-              <p className="text-[10px] text-muted-foreground">Comments</p>
+              <p className="text-[10px] text-muted-foreground">{t('comments', { ns: 'business' })}</p>
             </CardContent>
           </Card>
 
@@ -314,7 +316,7 @@ const BusinessOverviewPageV2 = () => {
             <CardContent className="p-3 text-center">
               <MapPin className="w-5 h-5 text-chart-3 mx-auto mb-1" />
               <p className="text-lg font-bold text-foreground">{statsLoading ? '...' : stats.totalSaves}</p>
-              <p className="text-[10px] text-muted-foreground">Saves</p>
+              <p className="text-[10px] text-muted-foreground">{t('saves', { ns: 'business' })}</p>
             </CardContent>
           </Card>
         </div>
@@ -332,7 +334,7 @@ const BusinessOverviewPageV2 = () => {
                     <p className="text-2xl font-bold text-foreground">
                       {statsLoading ? '...' : dailyGrowth >= 0 ? `+${dailyGrowth}%` : `${dailyGrowth}%`}
                     </p>
-                    <p className="text-xs text-muted-foreground">Daily Growth</p>
+                    <p className="text-xs text-muted-foreground">{t('dailyGrowth', { ns: 'business' })}</p>
                   </div>
                 </div>
               </CardContent>
@@ -348,7 +350,7 @@ const BusinessOverviewPageV2 = () => {
                     <p className="text-2xl font-bold text-foreground">
                       {stats.averageRating ? stats.averageRating.toFixed(1) : 'N/A'}
                     </p>
-                    <p className="text-xs text-muted-foreground">Avg Rating</p>
+                    <p className="text-xs text-muted-foreground">{t('avgRating', { ns: 'business' })}</p>
                   </div>
                 </div>
               </CardContent>
@@ -364,13 +366,13 @@ const BusinessOverviewPageV2 = () => {
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
                   <Target className="w-8 h-8 text-primary" />
                 </div>
-                <h3 className="text-lg font-bold text-foreground mb-2">Grow Your Presence</h3>
+                <h3 className="text-lg font-bold text-foreground mb-2">{t('growYourPresence', { ns: 'business' })}</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  No user posts yet. Start creating content to engage your audience.
+                  {t('noUserPostsYet', { ns: 'business' })}
                 </p>
                 <Button onClick={() => navigate('/business/add')} className="gap-2">
                   <Sparkles className="w-4 h-4" />
-                  Create Content
+                  {t('createContent', { ns: 'business' })}
                 </Button>
               </CardContent>
             </Card>
@@ -379,12 +381,12 @@ const BusinessOverviewPageV2 = () => {
           <div className="px-4 pb-4">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-base font-semibold text-foreground">User Content</h2>
-                <p className="text-xs text-muted-foreground">{posts.length} posts</p>
+                <h2 className="text-base font-semibold text-foreground">{t('userContent', { ns: 'business' })}</h2>
+                <p className="text-xs text-muted-foreground">{posts.length} {t('posts', { ns: 'common' })}</p>
               </div>
               <Button size="sm" variant="outline" onClick={() => navigate('/business/add')}>
                 <Sparkles className="w-4 h-4 mr-2" />
-                New Post
+                {t('newPost', { ns: 'business' })}
               </Button>
             </div>
             <BusinessLocationPosts posts={posts} onPinToggle={handlePinToggle} />

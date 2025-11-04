@@ -436,7 +436,16 @@ const resources = {
       markAllRead: 'Mark all read',
       allMarkedAsRead: 'All notifications marked as read',
       failedMarkAsRead: 'Failed to mark notifications as read',
-      claimLocationFirst: 'Please claim a business location first'
+      claimLocationFirst: 'Please claim a business location first',
+      views: 'Views',
+      comments: 'Comments',
+      saves: 'Saves',
+      dailyGrowth: 'Daily Growth',
+      avgRating: 'Avg Rating',
+      userContent: 'User Content',
+      newPost: 'New Post',
+      coverImageUpdated: 'Cover image updated successfully',
+      failedUploadCover: 'Failed to upload cover image'
     }
   },
   es: {
@@ -871,7 +880,16 @@ const resources = {
       notificationsDescription: 'Recibirás notificaciones sobre publicaciones, reseñas y actividad en tu ubicación de negocio',
       markAllRead: 'Marcar todo como leído',
       allMarkedAsRead: 'Todas las notificaciones marcadas como leídas',
-      failedMarkAsRead: 'Error al marcar las notificaciones como leídas'
+      failedMarkAsRead: 'Error al marcar las notificaciones como leídas',
+      views: 'Vistas',
+      comments: 'Comentarios',
+      saves: 'Guardados',
+      dailyGrowth: 'Crecimiento Diario',
+      avgRating: 'Calificación Promedio',
+      userContent: 'Contenido de Usuario',
+      newPost: 'Nueva Publicación',
+      coverImageUpdated: 'Imagen de portada actualizada correctamente',
+      failedUploadCover: 'Error al cargar la imagen de portada'
     }
   },
 
@@ -1301,7 +1319,16 @@ const resources = {
       notificationsDescription: 'Riceverai notifiche su post, recensioni e attività nella tua posizione business',
       markAllRead: 'Segna tutto come letto',
       allMarkedAsRead: 'Tutte le notifiche segnate come lette',
-      failedMarkAsRead: 'Impossibile segnare le notifiche come lette'
+      failedMarkAsRead: 'Impossibile segnare le notifiche come lette',
+      views: 'Visualizzazioni',
+      comments: 'Commenti',
+      saves: 'Salvataggi',
+      dailyGrowth: 'Crescita Giornaliera',
+      avgRating: 'Valutazione Media',
+      userContent: 'Contenuto Utente',
+      newPost: 'Nuovo Post',
+      coverImageUpdated: 'Immagine di copertina aggiornata con successo',
+      failedUploadCover: 'Impossibile caricare l\'immagine di copertina'
     }
   },
 
@@ -1697,7 +1724,16 @@ const resources = {
       notificationsDescription: 'Vous recevrez des notifications sur les publications, avis et activités dans votre lieu commercial',
       markAllRead: 'Tout marquer comme lu',
       allMarkedAsRead: 'Toutes les notifications marquées comme lues',
-      failedMarkAsRead: 'Échec du marquage des notifications comme lues'
+      failedMarkAsRead: 'Échec du marquage des notifications comme lues',
+      views: 'Vues',
+      comments: 'Commentaires',
+      saves: 'Sauvegardes',
+      dailyGrowth: 'Croissance Quotidienne',
+      avgRating: 'Note Moyenne',
+      userContent: 'Contenu Utilisateur',
+      newPost: 'Nouvelle Publication',
+      coverImageUpdated: 'Image de couverture mise à jour avec succès',
+      failedUploadCover: 'Échec du téléchargement de l\'image de couverture'
     }
   },
 
