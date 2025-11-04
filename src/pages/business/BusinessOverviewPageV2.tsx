@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLocationStats } from '@/hooks/useLocationStats';
 import { useBusinessLocationStats } from '@/hooks/useBusinessLocationStats';
 import { useTranslation } from 'react-i18next';
+import { useDetailedAddress } from '@/hooks/useDetailedAddress';
 
 interface Location {
   id: string;
@@ -23,6 +24,8 @@ interface Location {
   address?: string;
   image_url?: string;
   google_place_id?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface Post {
@@ -55,6 +58,15 @@ const BusinessOverviewPageV2 = () => {
   
   const { stats } = useLocationStats(location?.id || null, location?.google_place_id || null);
   const { viewsCount, commentsCount, dailyGrowth, loading: statsLoading } = useBusinessLocationStats(location?.id || null);
+
+  const { detailedAddress } = useDetailedAddress({
+    id: location?.id,
+    city: location?.city,
+    address: location?.address,
+    coordinates: location?.latitude && location?.longitude 
+      ? { lat: Number(location.latitude), lng: Number(location.longitude) }
+      : undefined,
+  });
 
   useEffect(() => {
     fetchLocationAndPosts();
@@ -267,20 +279,21 @@ const BusinessOverviewPageV2 = () => {
               <div className="flex-1 text-left">
                 <h1 className="text-sm font-bold text-foreground flex items-center gap-2">
                   {location.name}
-                  {businessProfile?.verification_status === 'verified' && (
-                    <Sparkles className="w-3 h-3 text-primary" />
-                  )}
                 </h1>
                 <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
                   <MapPin className="w-3 h-3 flex-shrink-0" />
-                  <span className="truncate">{formatLocationAddress()}</span>
+                  <span className="truncate">
+                    {detailedAddress || 
+                     (location.address && location.city ? `${location.city}, ${location.address}` : location.city) || 
+                     'Location'}
+                  </span>
                 </div>
               </div>
             </div>
 
             <div className="flex items-center gap-2 flex-shrink-0">
               <Button variant="ghost" size="sm" onClick={() => navigate('/business/notifications')} className="relative h-8 w-8 p-0">
-                <Bell className="w-5 h-5" />
+                <Bell className="w-6 h-6" />
                 {unreadNotifications > 0 && (
                   <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] bg-destructive rounded-full flex items-center justify-center text-[10px] font-bold text-destructive-foreground">
                     {unreadNotifications > 9 ? '9+' : unreadNotifications}
@@ -288,7 +301,7 @@ const BusinessOverviewPageV2 = () => {
                 )}
               </Button>
               <Button variant="ghost" size="sm" onClick={() => navigate('/business/messages')} className="h-8 w-8 p-0">
-                <Send className="w-5 h-5" />
+                <Send className="w-6 h-6" />
               </Button>
             </div>
           </div>
