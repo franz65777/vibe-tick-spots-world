@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +32,41 @@ const BusinessRequestModal: React.FC<BusinessRequestModalProps> = ({ open, onOpe
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [selectedLocationAddress, setSelectedLocationAddress] = useState<string>('');
+  const [searchResultsAddresses, setSearchResultsAddresses] = useState<Record<string, string>>({});
+
+  // Pre-fetch address for selected location
+  useEffect(() => {
+    const fetchAddress = async () => {
+      if (selectedLocation) {
+        const address = await formatDetailedAddress({
+          city: selectedLocation.city,
+          address: selectedLocation.address,
+          coordinates: { lat: selectedLocation.latitude, lng: selectedLocation.longitude }
+        });
+        setSelectedLocationAddress(address);
+      }
+    };
+    fetchAddress();
+  }, [selectedLocation]);
+
+  // Pre-fetch addresses for search results
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      const addresses: Record<string, string> = {};
+      for (const location of searchResults) {
+        addresses[location.id] = await formatDetailedAddress({
+          city: location.city,
+          address: location.address,
+          coordinates: { lat: location.latitude, lng: location.longitude }
+        });
+      }
+      setSearchResultsAddresses(addresses);
+    };
+    if (searchResults.length > 0) {
+      fetchAddresses();
+    }
+  }, [searchResults]);
 
   const handleLocationSearch = async (query: string) => {
     setLocationSearch(query);
@@ -232,14 +267,10 @@ const BusinessRequestModal: React.FC<BusinessRequestModalProps> = ({ open, onOpe
                   <div className="flex items-start gap-2 flex-1 min-w-0">
                     <MapPin className="w-4 h-4 mt-1 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{selectedLocation.name}</p>
-                      <p className="text-sm text-muted-foreground truncate">
-                        {formatDetailedAddress({
-                          city: selectedLocation.city,
-                          address: selectedLocation.address,
-                          coordinates: { lat: selectedLocation.latitude, lng: selectedLocation.longitude }
-                        })}
-                      </p>
+                       <p className="font-medium truncate">{selectedLocation.name}</p>
+                       <p className="text-sm text-muted-foreground truncate">
+                         {selectedLocationAddress}
+                       </p>
                     </div>
                   </div>
                   <Button
@@ -278,11 +309,7 @@ const BusinessRequestModal: React.FC<BusinessRequestModalProps> = ({ open, onOpe
                       >
                         <p className="font-medium">{location.name}</p>
                         <p className="text-sm text-muted-foreground truncate">
-                          {formatDetailedAddress({
-                            city: location.city,
-                            address: location.address,
-                            coordinates: { lat: location.latitude, lng: location.longitude }
-                          })}
+                          {searchResultsAddresses[location.id] || 'Loading...'}
                         </p>
                       </button>
                     ))}

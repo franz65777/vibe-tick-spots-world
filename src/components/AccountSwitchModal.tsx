@@ -3,6 +3,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Check, Building2, User } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
+import { useBusinessProfile } from '@/hooks/useBusinessProfile';
 import { getCategoryIcon } from '@/utils/categoryIcons';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -21,8 +22,14 @@ const AccountSwitchModal: React.FC<AccountSwitchModalProps> = ({
   currentMode,
 }) => {
   const { profile } = useProfile();
+  const { hasValidBusinessAccount } = useBusinessProfile();
   const [locationName, setLocationName] = useState<string>('Business Account');
   const [locationCategory, setLocationCategory] = useState<string>('restaurant');
+
+  // Don't show modal if user doesn't have a business account
+  if (!hasValidBusinessAccount) {
+    return null;
+  }
 
   useEffect(() => {
     const fetchLocation = async () => {

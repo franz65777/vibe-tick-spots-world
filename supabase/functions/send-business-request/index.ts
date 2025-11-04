@@ -35,38 +35,43 @@ const handler = async (req: Request): Promise<Response> => {
       ? `<h3>Attached Documents:</h3><ul>${requestData.documentUrls.map(url => `<li><a href="${url}">${url}</a></li>`).join('')}</ul>`
       : '<p><em>No documents attached</em></p>';
 
+    // Send email to the user making the request (since external domains need verification)
     const emailResponse = await resend.emails.send({
-      from: "Spott Business <noreply@resend.dev>",
-      to: ["spott.business.request@gmail.com"],
-      replyTo: requestData.contactEmail,
-      subject: `New Business Account Request - ${requestData.businessName}`,
+      from: "Spott Business <onboarding@resend.dev>",
+      to: [requestData.userEmail],
+      cc: [requestData.contactEmail],
+      subject: `Business Account Request Received - ${requestData.businessName}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #333;">New Business Account Request</h1>
+          <h1 style="color: #333;">Business Account Request Received</h1>
+          <p style="font-size: 16px; color: #666;">Thank you for submitting your business account request. We have received your application and will review it shortly.</p>
           
-          <h2 style="color: #666; border-bottom: 2px solid #eee; padding-bottom: 10px;">Business Information</h2>
+          <h2 style="color: #666; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 30px;">Submitted Information</h2>
+          
+          <h3 style="color: #555; margin-top: 20px;">Business Information</h3>
           <p><strong>Business Name:</strong> ${requestData.businessName}</p>
           <p><strong>Business Type:</strong> ${requestData.businessType}</p>
           <p><strong>Description:</strong> ${requestData.description || 'N/A'}</p>
           
-          <h2 style="color: #666; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 30px;">Location Details</h2>
+          <h3 style="color: #555; margin-top: 20px;">Location Details</h3>
           <p><strong>Location Name:</strong> ${requestData.locationName}</p>
           <p><strong>Address:</strong> ${requestData.locationAddress}</p>
           
-          <h2 style="color: #666; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 30px;">Contact Information</h2>
+          <h3 style="color: #555; margin-top: 20px;">Contact Information</h3>
           <p><strong>Contact Email:</strong> ${requestData.contactEmail}</p>
           <p><strong>Contact Phone:</strong> ${requestData.contactPhone || 'N/A'}</p>
-          
-          <h2 style="color: #666; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 30px;">Applicant Details</h2>
-          <p><strong>User Name:</strong> ${requestData.userName}</p>
-          <p><strong>User Email:</strong> ${requestData.userEmail}</p>
           
           <div style="margin-top: 30px; padding: 15px; background-color: #f5f5f5; border-radius: 5px;">
             ${documentsList}
           </div>
           
+          <div style="margin-top: 30px; padding: 20px; background-color: #e3f2fd; border-left: 4px solid #2196f3; border-radius: 5px;">
+            <p style="margin: 0; color: #1976d2; font-weight: bold;">What's Next?</p>
+            <p style="margin: 10px 0 0 0; color: #555;">Our team will review your request and get back to you within 1-2 business days. You will receive an email notification once your account is approved.</p>
+          </div>
+          
           <p style="margin-top: 30px; color: #888; font-size: 12px;">
-            This is an automated email from the Spott business request system.
+            This is an automated confirmation from Spott. If you have any questions, please reply to this email.
           </p>
         </div>
       `,

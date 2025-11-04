@@ -6,12 +6,14 @@ import { LayoutGrid, BarChart3, Plus, Activity, User } from 'lucide-react';
 import { toast } from 'sonner';
 import AccountSwitchModal from './AccountSwitchModal';
 import { useTranslation } from 'react-i18next';
+import { useBusinessProfile } from '@/hooks/useBusinessProfile';
 
 const BusinessBottomNavigation = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { trackEvent } = useAnalytics();
+  const { hasValidBusinessAccount } = useBusinessProfile();
   
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
@@ -38,6 +40,9 @@ const BusinessBottomNavigation = () => {
   };
 
   const handleProfileLongPressStart = () => {
+    // Only show switch modal if user has a business account
+    if (!hasValidBusinessAccount) return;
+    
     const timer = setTimeout(() => {
       setShowSwitchModal(true);
     }, 800); // 800ms long press

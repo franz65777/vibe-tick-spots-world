@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,34 @@ const MutedLocationsModal: React.FC<MutedLocationsModalProps> = ({ open, onOpenC
   const { user } = useAuth();
   const { mutedLocations, isLoading, unmuteLocation, isMuting } = useMutedLocations(user?.id);
   const [searchQuery, setSearchQuery] = useState('');
+  const [addresses, setAddresses] = useState<Record<string, string>>({});
+
+  // Pre-fetch addresses for locations with missing address
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      if (!mutedLocations) return;
+      
+      const newAddresses: Record<string, string> = {};
+      
+      for (const muted of mutedLocations) {
+        if (muted.locations && !muted.locations.address && muted.locations.latitude && muted.locations.longitude) {
+          const address = await formatDetailedAddress({
+            city: muted.locations.city,
+            address: muted.locations.address,
+            coordinates: {
+              lat: muted.locations.latitude,
+              lng: muted.locations.longitude
+            }
+          });
+          newAddresses[muted.id] = address;
+        }
+      }
+      
+      setAddresses(newAddresses);
+    };
+    
+    fetchAddresses();
+  }, [mutedLocations]);
 
   const filteredLocations = useMemo(() => {
     if (!mutedLocations || !searchQuery.trim()) return mutedLocations;
@@ -91,14 +119,7 @@ const MutedLocationsModal: React.FC<MutedLocationsModalProps> = ({ open, onOpenC
                     {muted.locations?.name || 'Unknown Location'}
                   </h3>
                   <p className="text-sm text-muted-foreground truncate">
-                    {formatDetailedAddress({
-                      city: muted.locations?.city,
-                      address: muted.locations?.address,
-                      coordinates: muted.locations ? {
-                        lat: muted.locations.latitude,
-                        lng: muted.locations.longitude
-                      } : null
-                    })}
+                    {addresses[muted.id] || muted.locations?.address || muted.locations?.city || 'Unknown location'}
                   </p>
                 </div>
                 <Button
