@@ -79,27 +79,27 @@ export const useBusinessBadges = ({ locationId, googlePlaceId }: UseBusinessBadg
 
       const items: BusinessBadgeItem[] = [
         // Content & Posts
-        mk('first-post', 'firstPost', 'firstPostDesc', '📸', postsCount >= 1, postsCount, 1),
-        mk('content-creator', 'contentCreator', 'contentCreatorDesc', '🎨', postsCount >= 10, postsCount, 10),
-        mk('social-star', 'socialStar', 'socialStarDesc', '⭐', postsCount >= 50, postsCount, 50),
-        mk('content-master', 'contentMaster', 'contentMasterDesc', '👑', postsCount >= 100, postsCount, 100),
+        mk('first-post', 'First Post', 'Create your first post', '📸', postsCount >= 1, postsCount, 1),
+        mk('content-creator', 'Content Creator', 'Share 10 posts', '🎨', postsCount >= 10, postsCount, 10),
+        mk('social-star', 'Social Star', 'Share 50 posts', '⭐', postsCount >= 50, postsCount, 50),
+        mk('content-master', 'Content Master', 'Share 100 posts', '👑', postsCount >= 100, postsCount, 100),
 
         // Engagement
-        mk('popular-spot', 'popularSpot', 'popularSpotDesc', '❤️', savesCount >= 50, savesCount, 50),
-        mk('community-favorite', 'communityFavorite', 'communityFavoriteDesc', '🌟', savesCount >= 100, savesCount, 100),
-        mk('local-legend', 'localLegend', 'localLegendDesc', '🏆', savesCount >= 500, savesCount, 500),
-        mk('trending-now', 'trendingNow', 'trendingNowDesc', '🔥', sharesCount >= 100, sharesCount, 100),
+        mk('popular-spot', 'Popular Spot', 'Get 50 saves', '❤️', savesCount >= 50, savesCount, 50),
+        mk('community-favorite', 'Community Favorite', 'Get 100 saves', '🌟', savesCount >= 100, savesCount, 100),
+        mk('local-legend', 'Local Legend', 'Get 500 saves', '🏆', savesCount >= 500, savesCount, 500),
+        mk('trending-now', 'Trending Now', 'Get 100 shares', '🔥', sharesCount >= 100, sharesCount, 100),
 
         // Marketing & Promotions
-        mk('first-campaign', 'firstCampaign', 'firstCampaignDesc', '📢', notificationsCount >= 1, notificationsCount, 1),
-        mk('marketing-pro', 'marketingPro', 'marketingProDesc', '📊', notificationsCount >= 10, notificationsCount, 10),
-        mk('promotion-expert', 'promotionExpert', 'promotionExpertDesc', '🎯', notificationsCount >= 25, notificationsCount, 25),
+        mk('first-campaign', 'First Campaign', 'Send your first notification', '📢', notificationsCount >= 1, notificationsCount, 1),
+        mk('marketing-pro', 'Marketing Pro', 'Send 10 notifications', '📊', notificationsCount >= 10, notificationsCount, 10),
+        mk('promotion-expert', 'Promotion Expert', 'Send 25 notifications', '🎯', notificationsCount >= 25, notificationsCount, 25),
 
         // Events & Deals (from posts)
-        mk('event-host', 'eventHost', 'eventHostDesc', '🎉', eventsCount >= 1, eventsCount, 1),
-        mk('festival-organizer', 'festivalOrganizer', 'festivalOrganizerDesc', '🎪', eventsCount >= 5, eventsCount, 5),
-        mk('special-deals', 'specialDeals', 'specialDealsDesc', '🎁', discountsCount >= 1, discountsCount, 1),
-        mk('deal-master', 'dealMaster', 'dealMasterDesc', '💰', discountsCount >= 10, discountsCount, 10),
+        mk('event-host', 'Event Host', 'Create your first event', '🎉', eventsCount >= 1, eventsCount, 1),
+        mk('festival-organizer', 'Festival Organizer', 'Create 5 events', '🎪', eventsCount >= 5, eventsCount, 5),
+        mk('special-deals', 'Special Deals', 'Create your first discount', '🎁', discountsCount >= 1, discountsCount, 1),
+        mk('deal-master', 'Deal Master', 'Create 10 discounts', '💰', discountsCount >= 10, discountsCount, 10),
       ];
 
       setBadges(items);

@@ -185,14 +185,6 @@ const BusinessProfilePage = () => {
 
           {/* Contact Info */}
           <div className="space-y-2">
-            <div className="flex items-start gap-3 text-sm">
-              <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-              <span className="text-foreground text-left">
-                {location.address && location.city 
-                  ? `${location.address}, ${location.city}`
-                  : location.city || location.address || 'No address available'}
-              </span>
-            </div>
 
             {location.phone && (
               <div className="flex items-center gap-3 text-sm">
