@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Navigation, Heart, Bookmark, MessageSquare, ChevronLeft, Share2, Star } from 'lucide-react';
+import { MapPin, Navigation, Heart, Bookmark, MessageSquare, ChevronLeft, Share2, Star, Bell, BellOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { useMutedLocations } from '@/hooks/useMutedLocations';
+import { useAuth } from '@/contexts/AuthContext';
 import { locationInteractionService } from '@/services/locationInteractionService';
 import { supabase } from '@/integrations/supabase/client';
 import VisitedModal from './VisitedModal';
@@ -23,6 +25,8 @@ interface PinDetailCardProps {
 }
 
 const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
+  const { user } = useAuth();
+  const { mutedLocations, muteLocation, unmuteLocation, isMuting } = useMutedLocations(user?.id);
   const { t } = useTranslation();
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -296,7 +300,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
 
           {/* Action Buttons */}
           <div className="bg-background px-4 pb-4">
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-5 gap-2">
               <Button
                 onClick={handleSaveToggle}
                 disabled={loading}
@@ -339,6 +343,27 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
               >
                 <Share2 className="w-5 h-5" />
                 <span className="text-xs">{t('share', { ns: 'common', defaultValue: 'Share' })}</span>
+              </Button>
+
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const isMuted = mutedLocations?.some((m: any) => m.location_id === place.id);
+                  if (isMuted) {
+                    unmuteLocation(place.id);
+                  } else {
+                    muteLocation(place.id);
+                  }
+                }}
+                disabled={isMuting}
+                size="sm"
+                variant="secondary"
+                className={`flex-col h-auto py-3 gap-1 rounded-2xl ${
+                  mutedLocations?.some((m: any) => m.location_id === place.id) ? 'bg-muted text-muted-foreground' : ''
+                }`}
+              >
+                {mutedLocations?.some((m: any) => m.location_id === place.id) ? <BellOff className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
+                <span className="text-xs">{mutedLocations?.some((m: any) => m.location_id === place.id) ? t('muted') : t('mute')}</span>
               </Button>
             </div>
           </div>
