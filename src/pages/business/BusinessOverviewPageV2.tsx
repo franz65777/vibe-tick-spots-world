@@ -293,7 +293,7 @@ const BusinessOverviewPageV2 = () => {
 
             <div className="flex items-center gap-2 flex-shrink-0">
               <Button variant="ghost" size="sm" onClick={() => navigate('/business/notifications')} className="relative h-8 w-8 p-0">
-                <Bell className="w-6 h-6" />
+                <Bell className="w-8 h-8" />
                 {unreadNotifications > 0 && (
                   <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] bg-destructive rounded-full flex items-center justify-center text-[10px] font-bold text-destructive-foreground">
                     {unreadNotifications > 9 ? '9+' : unreadNotifications}
@@ -301,7 +301,7 @@ const BusinessOverviewPageV2 = () => {
                 )}
               </Button>
               <Button variant="ghost" size="sm" onClick={() => navigate('/business/messages')} className="h-8 w-8 p-0">
-                <Send className="w-6 h-6" />
+                <Send className="w-8 h-8" />
               </Button>
             </div>
           </div>

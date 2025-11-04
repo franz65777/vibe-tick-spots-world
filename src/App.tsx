@@ -22,7 +22,7 @@ import AdminAnalyticsPage from '@/pages/AdminAnalyticsPage';
 import NotificationsPage from '@/pages/NotificationsPage';
 import MessagesPage from '@/pages/MessagesPage';
 import DiscoverPage from '@/pages/DiscoverPage';
-import BusinessOverviewPage from '@/pages/business/BusinessOverviewPage';
+
 import BusinessAnalyticsPage from '@/pages/business/BusinessAnalyticsPage';
 import BusinessAddPage from '@/pages/business/BusinessAddPage';
 import BusinessFeedPage from '@/pages/business/BusinessFeedPage';
