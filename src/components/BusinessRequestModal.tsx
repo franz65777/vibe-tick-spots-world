@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Mail, FileText, Building2, ArrowLeft, Search, MapPin } from 'lucide-react';
+import { Mail, FileText, Building2, ArrowLeft, Search, MapPin, Upload, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -30,6 +30,8 @@ const BusinessRequestModal: React.FC<BusinessRequestModalProps> = ({ open, onOpe
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleLocationSearch = async (query: string) => {
     setLocationSearch(query);
@@ -55,6 +57,18 @@ const BusinessRequestModal: React.FC<BusinessRequestModalProps> = ({ open, onOpe
     }
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const newFiles = Array.from(files);
+    setUploadedFiles(prev => [...prev, ...newFiles]);
+  };
+
+  const removeFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -70,6 +84,37 @@ const BusinessRequestModal: React.FC<BusinessRequestModalProps> = ({ open, onOpe
 
     setIsSubmitting(true);
     try {
+      // Upload documents to storage
+      const documentUrls: string[] = [];
+      if (uploadedFiles.length > 0) {
+        setIsUploading(true);
+        for (const file of uploadedFiles) {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${user.id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+          
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('business-documents')
+            .upload(fileName, file);
+
+          if (uploadError) throw uploadError;
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('business-documents')
+            .getPublicUrl(fileName);
+
+          documentUrls.push(publicUrl);
+        }
+        setIsUploading(false);
+      }
+
+      // Get user profile data
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('username, email')
+        .eq('id', user.id)
+        .single();
+
+      // Insert into database
       const { error } = await supabase
         .from('business_claim_requests')
         .insert({
@@ -85,6 +130,31 @@ const BusinessRequestModal: React.FC<BusinessRequestModalProps> = ({ open, onOpe
 
       if (error) throw error;
 
+      // Send email notification
+      try {
+        await supabase.functions.invoke('send-business-request', {
+          body: {
+            businessName,
+            businessType,
+            description,
+            contactEmail,
+            contactPhone,
+            locationName: selectedLocation.name,
+            locationAddress: formatDetailedAddress({
+              city: selectedLocation.city,
+              address: selectedLocation.address,
+              coordinates: { lat: selectedLocation.latitude, lng: selectedLocation.longitude }
+            }),
+            userName: profileData?.username || 'Unknown User',
+            userEmail: profileData?.email || user.email || 'No email',
+            documentUrls
+          }
+        });
+      } catch (emailError) {
+        console.error('Failed to send email notification:', emailError);
+        // Don't fail the whole request if email fails
+      }
+
       toast.success('Business request submitted successfully');
       onOpenChange(false);
       
@@ -97,11 +167,13 @@ const BusinessRequestModal: React.FC<BusinessRequestModalProps> = ({ open, onOpe
       setSelectedLocation(null);
       setLocationSearch('');
       setSearchResults([]);
+      setUploadedFiles([]);
     } catch (error: any) {
       console.error('Error submitting business request:', error);
       toast.error(error.message || 'Failed to submit request');
     } finally {
       setIsSubmitting(false);
+      setIsUploading(false);
     }
   };
 
@@ -254,6 +326,54 @@ const BusinessRequestModal: React.FC<BusinessRequestModalProps> = ({ open, onOpe
             />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="documents">Supporting Documents</Label>
+            <div className="border-2 border-dashed rounded-lg p-4 text-center">
+              <input
+                id="documents"
+                type="file"
+                multiple
+                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              <label
+                htmlFor="documents"
+                className="cursor-pointer flex flex-col items-center gap-2"
+              >
+                <Upload className="w-8 h-8 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">
+                  Click to upload documents (PDF, Images, Word)
+                </span>
+              </label>
+            </div>
+            
+            {uploadedFiles.length > 0 && (
+              <div className="space-y-2 mt-3">
+                {uploadedFiles.map((file, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-2 bg-muted rounded-lg"
+                  >
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <FileText className="w-4 h-4 flex-shrink-0" />
+                      <span className="text-sm truncate">{file.name}</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeFile(index)}
+                      className="flex-shrink-0"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="bg-muted p-4 rounded-lg space-y-3">
             <h3 className="font-semibold flex items-center gap-2 text-sm">
               <FileText className="w-4 h-4" />
@@ -270,9 +390,9 @@ const BusinessRequestModal: React.FC<BusinessRequestModalProps> = ({ open, onOpe
             type="submit"
             className="w-full"
             size="lg"
-            disabled={isSubmitting || !selectedLocation}
+            disabled={isSubmitting || isUploading || !selectedLocation}
           >
-            {isSubmitting ? 'Submitting...' : 'Submit Request'}
+            {isUploading ? 'Uploading documents...' : isSubmitting ? 'Submitting...' : 'Submit Request'}
           </Button>
 
           <div className="text-xs text-muted-foreground space-y-1">
