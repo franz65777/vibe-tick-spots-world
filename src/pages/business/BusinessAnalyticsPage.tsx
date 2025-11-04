@@ -295,14 +295,16 @@ const BusinessAnalyticsPage = () => {
                 </div>
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground font-medium mb-0.5">{t('totalSaves', { ns: 'business' })}</p>
-                <p className="text-2xl font-bold text-foreground mb-1.5">{analytics.totalSaves}</p>
-                {analytics.savesChange !== 0 && (
-                  <div className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${analytics.savesChange > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400'}`}>
-                    <TrendingUp className={`w-2.5 h-2.5 ${analytics.savesChange < 0 ? 'rotate-180' : ''}`} />
-                    {analytics.savesChange > 0 ? '+' : ''}{analytics.savesChange}%
-                  </div>
-                )}
+                <p className="text-[10px] text-muted-foreground font-medium mb-1">{t('totalSaves', { ns: 'business' })}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-2xl font-bold text-foreground">{analytics.totalSaves}</p>
+                  {analytics.savesChange !== 0 && (
+                    <div className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${analytics.savesChange > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400'}`}>
+                      <TrendingUp className={`w-2.5 h-2.5 ${analytics.savesChange < 0 ? 'rotate-180' : ''}`} />
+                      {analytics.savesChange > 0 ? '+' : ''}{analytics.savesChange}%
+                    </div>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -316,14 +318,16 @@ const BusinessAnalyticsPage = () => {
                 </div>
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground font-medium mb-0.5">{t('totalPosts', { ns: 'business' })}</p>
-                <p className="text-2xl font-bold text-foreground mb-1.5">{analytics.totalPosts}</p>
-                {analytics.postsChange !== 0 && (
-                  <div className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${analytics.postsChange > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400'}`}>
-                    <TrendingUp className={`w-2.5 h-2.5 ${analytics.postsChange < 0 ? 'rotate-180' : ''}`} />
-                    {analytics.postsChange > 0 ? '+' : ''}{analytics.postsChange}%
-                  </div>
-                )}
+                <p className="text-[10px] text-muted-foreground font-medium mb-1">{t('totalPosts', { ns: 'business' })}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-2xl font-bold text-foreground">{analytics.totalPosts}</p>
+                  {analytics.postsChange !== 0 && (
+                    <div className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${analytics.postsChange > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400'}`}>
+                      <TrendingUp className={`w-2.5 h-2.5 ${analytics.postsChange < 0 ? 'rotate-180' : ''}`} />
+                      {analytics.postsChange > 0 ? '+' : ''}{analytics.postsChange}%
+                    </div>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -337,14 +341,16 @@ const BusinessAnalyticsPage = () => {
                 </div>
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground font-medium mb-0.5">{t('totalShares', { ns: 'business' })}</p>
-                <p className="text-2xl font-bold text-foreground mb-1.5">{analytics.totalShares}</p>
-                {analytics.sharesChange !== 0 && (
-                  <div className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${analytics.sharesChange > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400'}`}>
-                    <TrendingUp className={`w-2.5 h-2.5 ${analytics.sharesChange < 0 ? 'rotate-180' : ''}`} />
-                    {analytics.sharesChange > 0 ? '+' : ''}{analytics.sharesChange}%
-                  </div>
-                )}
+                <p className="text-[10px] text-muted-foreground font-medium mb-1">{t('totalShares', { ns: 'business' })}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-2xl font-bold text-foreground">{analytics.totalShares}</p>
+                  {analytics.sharesChange !== 0 && (
+                    <div className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${analytics.sharesChange > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400'}`}>
+                      <TrendingUp className={`w-2.5 h-2.5 ${analytics.sharesChange < 0 ? 'rotate-180' : ''}`} />
+                      {analytics.sharesChange > 0 ? '+' : ''}{analytics.sharesChange}%
+                    </div>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -358,14 +364,16 @@ const BusinessAnalyticsPage = () => {
                 </div>
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground font-medium mb-0.5">{t('avgTime', { ns: 'business' })}</p>
-                <p className="text-2xl font-bold text-foreground mb-1.5">{analytics.avgTimeSpent}m</p>
-                {analytics.timeChange !== 0 && (
-                  <div className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${analytics.timeChange > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400'}`}>
-                    <TrendingUp className={`w-2.5 h-2.5 ${analytics.timeChange < 0 ? 'rotate-180' : ''}`} />
-                    {analytics.timeChange > 0 ? '+' : ''}{analytics.timeChange}%
-                  </div>
-                )}
+                <p className="text-[10px] text-muted-foreground font-medium mb-1">{t('avgTime', { ns: 'business' })}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-2xl font-bold text-foreground">{analytics.avgTimeSpent}m</p>
+                  {analytics.timeChange !== 0 && (
+                    <div className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${analytics.timeChange > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400'}`}>
+                      <TrendingUp className={`w-2.5 h-2.5 ${analytics.timeChange < 0 ? 'rotate-180' : ''}`} />
+                      {analytics.timeChange > 0 ? '+' : ''}{analytics.timeChange}%
+                    </div>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -393,7 +401,7 @@ const BusinessAnalyticsPage = () => {
               className="h-[160px]"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={analytics.savesOverTime} margin={{ top: 5, right: 5, bottom: 5, left: -25 }}>
+                <LineChart data={analytics.savesOverTime} margin={{ top: 5, right: 15, bottom: 5, left: -25 }}>
                   <defs>
                     <linearGradient id="savesGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
@@ -451,7 +459,7 @@ const BusinessAnalyticsPage = () => {
               className="h-[160px]"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={analytics.postsOverTime} margin={{ top: 5, right: 5, bottom: 5, left: -25 }}>
+                <BarChart data={analytics.postsOverTime} margin={{ top: 5, right: 15, bottom: 5, left: -25 }}>
                   <defs>
                     <linearGradient id="postsGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="hsl(var(--chart-2))" stopOpacity={0.8} />
@@ -505,7 +513,7 @@ const BusinessAnalyticsPage = () => {
               className="h-[160px]"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={analytics.weeklyEngagement} margin={{ top: 5, right: 5, bottom: 5, left: -25 }}>
+                <BarChart data={analytics.weeklyEngagement} margin={{ top: 5, right: 15, bottom: 5, left: -25 }}>
                   <defs>
                     <linearGradient id="engagementGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="hsl(var(--chart-3))" stopOpacity={0.8} />
