@@ -509,9 +509,9 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
         <h1 className="text-lg font-semibold text-gray-900">{t('discoverPlaces')}</h1>
       </div>
 
-      {/* Followed Users Row */}
-      <div className="bg-background px-5 pt-2 pb-5 overflow-visible relative z-20 -mt-1">
-        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 pl-2 pr-2" style={{ scrollSnapType: 'x mandatory' }}>
+      {/* Followed Users Row - positioned above everything */}
+      <div className="bg-background px-3 pt-1 pb-2 overflow-visible relative z-50 -mt-3">
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1 pl-2 pr-3" style={{ scrollSnapType: 'x mandatory' }}>
           {/* All button */}
           <button
             onClick={() => {
@@ -524,7 +524,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
             }`}
             style={{ scrollSnapAlign: 'start' }}
           >
-            <div className={`relative z-10 w-14 h-14 rounded-full flex items-center justify-center transition-all bg-muted ${
+            <div className={`relative z-[70] w-14 h-14 rounded-full flex items-center justify-center transition-all bg-muted ${
               selectedUserId === null ? 'ring-2 ring-primary ring-offset-2' : ''
             }`}>
               <Users className="w-6 h-6 text-foreground" />
@@ -546,7 +546,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
               }`}
               style={{ scrollSnapAlign: 'start' }}
             >
-              <div className="relative z-10">
+              <div className="relative z-[70]">
                 {followedUser.avatar_url ? (
                   <img
                     src={followedUser.avatar_url}
@@ -565,7 +565,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                   </div>
                 )}
                 {followedUser.new_saves_count > 0 && (
-                  <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center shadow-md">
+                  <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center shadow-md z-[80]">
                     {followedUser.new_saves_count > 9 ? '9+' : followedUser.new_saves_count}
                   </div>
                 )}
@@ -631,13 +631,13 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
             </div>
           </div>
         ) : (
-          <div className="h-full flex items-center justify-center p-3">
+          <div className="h-full flex items-start justify-center px-3 pt-1 pb-2">
             {/* Swipeable Card */}
             <div
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
-              className="w-full max-w-md transition-transform duration-300"
+              className="w-full max-w-[480px] mx-auto transition-transform duration-300"
               style={{
                 transform: swipeDirection 
                   ? swipeDirection === 'left' 
