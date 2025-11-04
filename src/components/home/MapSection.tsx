@@ -206,7 +206,7 @@ const MapSection = ({
         )}
 
         {/* Map Controls - List View and Expand Toggle - Inside map */}
-        <div className={`${isExpanded ? 'fixed' : 'absolute'} bottom-20 right-3 z-[1000] flex flex-row gap-2`}>
+        <div className={`${isExpanded ? 'fixed' : 'absolute'} bottom-[calc(4rem+0.75rem)] right-3 z-[1000] flex flex-row gap-2`}>
           {/* Expand/Collapse Button */}
           {onToggleExpand && (
             <Button

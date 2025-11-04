@@ -131,10 +131,10 @@ export const LocationShareModal = ({ isOpen, onClose, place }: LocationShareModa
   return (
     <Drawer.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 bg-black/50 z-[70]" />
-        <Drawer.Content className="fixed inset-x-0 bottom-0 z-[71] bg-background rounded-t-3xl flex flex-col max-h-[85vh] outline-none w-full">
+        <Drawer.Overlay className="fixed inset-0 bg-black/50 z-[3000]" />
+        <Drawer.Content className="fixed inset-x-0 bottom-0 z-[3001] bg-background rounded-t-3xl flex flex-col max-h-[85vh] outline-none w-full">
           <style>{`
-            [data-vaul-drawer-wrapper] { z-index: 71 !important; }
+            [data-vaul-drawer-wrapper] { z-index: 3001 !important; }
             body:has([data-vaul-drawer][data-state="open"]) .bottom-navigation { display: none !important; }
           `}</style>
           {/* Handle bar */}

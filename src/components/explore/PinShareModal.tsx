@@ -114,7 +114,7 @@ const PinShareModal = ({ isOpen, onClose, place }: PinShareModalProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md z-[3001]">
         <DialogHeader>
           <DialogTitle>Share {place?.name}</DialogTitle>
         </DialogHeader>
