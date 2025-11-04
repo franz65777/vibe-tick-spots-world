@@ -5,6 +5,8 @@ import { TrendingUp, Users, FileText, Share2, Clock, Heart, Camera } from 'lucid
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { useTranslation } from 'react-i18next';
+import { format } from 'date-fns';
+import { enUS, es } from 'date-fns/locale';
 
 interface AnalyticsData {
   totalSaves: number;
@@ -21,10 +23,21 @@ interface AnalyticsData {
 }
 
 const BusinessAnalyticsPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [locationId, setLocationId] = useState<string | null>(null);
+  
+  const dateLocale = i18n.language === 'es' ? es : enUS;
+  
+  const formatChartDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return format(date, 'MMM d', { locale: dateLocale });
+    } catch {
+      return dateString;
+    }
+  };
 
   useEffect(() => {
     fetchAnalytics();
@@ -385,7 +398,7 @@ const BusinessAnalyticsPage = () => {
           <CardHeader className="pb-3 relative z-10">
             <CardTitle className="text-sm flex items-center gap-2 font-semibold">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-500 to-rose-600 flex items-center justify-center">
-                <Heart className="w-4 h-4 text-white" />
+                <Camera className="w-4 h-4 text-white" />
               </div>
               {t('savesOverTime', { ns: 'business' })}
             </CardTitle>
@@ -401,7 +414,7 @@ const BusinessAnalyticsPage = () => {
               className="h-[160px]"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={analytics.savesOverTime} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
+                <LineChart data={analytics.savesOverTime} margin={{ top: 5, right: 30, bottom: 5, left: 0 }}>
                   <defs>
                     <linearGradient id="savesGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
@@ -415,13 +428,14 @@ const BusinessAnalyticsPage = () => {
                     interval="preserveEnd"
                     tickMargin={8}
                     stroke="hsl(var(--border))"
+                    tickFormatter={formatChartDate}
                   />
                   <YAxis 
                     tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} 
                     width={35}
                     stroke="hsl(var(--border))"
                   />
-                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <ChartTooltip content={<ChartTooltipContent labelFormatter={formatChartDate} />} />
                   <Line 
                     type="monotone" 
                     dataKey="count" 
@@ -459,7 +473,7 @@ const BusinessAnalyticsPage = () => {
               className="h-[160px]"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={analytics.postsOverTime} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
+                <BarChart data={analytics.postsOverTime} margin={{ top: 5, right: 30, bottom: 5, left: 0 }}>
                   <defs>
                     <linearGradient id="postsGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="hsl(var(--chart-2))" stopOpacity={0.8} />
@@ -473,13 +487,14 @@ const BusinessAnalyticsPage = () => {
                     interval="preserveEnd"
                     tickMargin={8}
                     stroke="hsl(var(--border))"
+                    tickFormatter={formatChartDate}
                   />
                   <YAxis 
                     tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} 
                     width={35}
                     stroke="hsl(var(--border))"
                   />
-                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <ChartTooltip content={<ChartTooltipContent labelFormatter={formatChartDate} />} />
                   <Bar 
                     dataKey="count" 
                     fill="url(#postsGradient)" 
@@ -513,7 +528,7 @@ const BusinessAnalyticsPage = () => {
               className="h-[160px]"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={analytics.weeklyEngagement} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
+                <BarChart data={analytics.weeklyEngagement} margin={{ top: 5, right: 30, bottom: 5, left: 0 }}>
                   <defs>
                     <linearGradient id="engagementGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="hsl(var(--chart-3))" stopOpacity={0.8} />
