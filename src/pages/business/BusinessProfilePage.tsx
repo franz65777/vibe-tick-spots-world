@@ -12,6 +12,7 @@ import { formatDetailedAddress } from '@/utils/addressFormatter';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import BusinessBadges from '@/components/business/BusinessBadges';
 
 interface BusinessLocation {
   id: string;
@@ -268,9 +269,10 @@ const BusinessProfilePage = () => {
           )}
 
           {activeTab === 'badges' && (
-            <div className="text-center py-12 text-muted-foreground">
-              <p>{t('badgesComingSoon', { ns: 'business' })}</p>
-            </div>
+            <BusinessBadges 
+              locationId={location.id}
+              googlePlaceId={location.google_place_id || null}
+            />
           )}
 
           {activeTab === 'tagged' && location.id && (
