@@ -510,8 +510,8 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       </div>
 
       {/* Followed Users Row - positioned above everything */}
-      <div className="bg-background px-4 pt-3 pb-3 overflow-visible relative z-20 mt-1">
-        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1 pl-2 pr-3" style={{ scrollSnapType: 'x mandatory' }}>
+      <div className="bg-background px-4 pt-4 pb-4 overflow-visible relative z-20 mt-4">
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 pl-2 pr-3" style={{ scrollSnapType: 'x mandatory' }}>
           {/* All button */}
           <button
             onClick={() => {
@@ -647,7 +647,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                 opacity: swipeDirection ? 0 : 1 - Math.abs(touchOffset.x) / 600
               }}
             >
-              <div className="relative w-full aspect-[2/3] rounded-2xl overflow-hidden shadow-xl bg-white border border-gray-100">
+              <div className="relative w-full aspect-[9/14] max-h-[70vh] rounded-2xl overflow-hidden shadow-xl bg-white border border-gray-100">
                 {/* Image or Gradient Background */}
                 <div className="absolute inset-0">
                   {currentLocation.image_url ? (
