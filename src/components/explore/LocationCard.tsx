@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Heart, Bookmark, MessageCircle, Share2, MapPin, Star, Users } from 'lucide-react';
+import { Heart, Bookmark, MessageCircle, Share2, MapPin, Star, Users, Bell, BellOff } from 'lucide-react';
 import { Place } from '@/types/place';
 import { usePlaceEngagement } from '@/hooks/usePlaceEngagement';
 import { usePinEngagement } from '@/hooks/usePinEngagement';
@@ -14,6 +14,8 @@ import LocationPostLibrary from './LocationPostLibrary';
 import { getCategoryColor } from '@/utils/categoryIcons';
 import { useNormalizedCity } from '@/hooks/useNormalizedCity';
 import { useLocationStats } from '@/hooks/useLocationStats';
+import { useMutedLocations } from '@/hooks/useMutedLocations';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface LocationCardProps {
   place: Place;
@@ -22,13 +24,17 @@ interface LocationCardProps {
 
 const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const { isLiked, isSaved, toggleLike, toggleSave, refetch } = usePlaceEngagement();
   const { engagement } = usePinEngagement(place.id, place.google_place_id || null);
+  const { mutedLocations, muteLocation, unmuteLocation, isMuting } = useMutedLocations(user?.id);
   const [isLiking, setIsLiking] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [commentModalOpen, setCommentModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [libraryModalOpen, setLibraryModalOpen] = useState(false);
+
+  const isMuted = mutedLocations?.some((m: any) => m.location_id === place.id);
 
   // Listen for global save changes
   useEffect(() => {
@@ -84,6 +90,15 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
   const handleShare = (e: React.MouseEvent) => {
     e.stopPropagation();
     setShareModalOpen(true);
+  };
+
+  const handleMuteToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isMuted) {
+      unmuteLocation(place.id);
+    } else {
+      muteLocation(place.id);
+    }
   };
 
   const handleCardClick = () => {
@@ -211,7 +226,7 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
             </div>
 
             {/* Action Buttons */}
-            <div className="grid grid-cols-4 gap-2 pt-2">
+            <div className="grid grid-cols-5 gap-2 pt-2">
               <Button
                 variant="ghost"
                 size="sm"
@@ -260,6 +275,21 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
               >
                 <Share2 className="w-4 h-4" />
                 <span className="text-xs font-medium">{t('share', { ns: 'common' })}</span>
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleMuteToggle}
+                disabled={isMuting}
+                className={`h-12 rounded-xl flex flex-col gap-1 transition-all ${
+                  isMuted
+                    ? 'text-muted-foreground bg-muted hover:bg-muted/80' 
+                    : 'text-gray-600 hover:text-yellow-600 hover:bg-yellow-50'
+                }`}
+              >
+                {isMuted ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+                <span className="text-xs font-medium">{isMuted ? t('muted', { ns: 'settings' }) : t('mute', { ns: 'settings' })}</span>
               </Button>
             </div>
           </div>

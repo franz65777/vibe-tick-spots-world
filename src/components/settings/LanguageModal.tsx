@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import React from 'react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useTranslation } from 'react-i18next';
-import { Globe } from 'lucide-react';
+import { Globe, ArrowLeft } from 'lucide-react';
 
 interface LanguageModalProps {
   open: boolean;
@@ -36,16 +36,26 @@ const LanguageModal: React.FC<LanguageModalProps> = ({
   const { t } = useTranslation();
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Globe className="w-5 h-5" />
-            {t('language', { ns: 'settings' })}
-          </DialogTitle>
-        </DialogHeader>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="bottom" className="h-full p-0">
+        <div className="h-full flex flex-col">
+          <SheetHeader className="p-4 border-b">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => onOpenChange(false)}
+                className="p-2 hover:bg-muted rounded-full transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <SheetTitle className="flex items-center gap-2">
+                <Globe className="w-5 h-5" />
+                {t('language', { ns: 'settings' })}
+              </SheetTitle>
+            </div>
+          </SheetHeader>
 
-        <div className="grid grid-cols-2 gap-2.5 py-4">
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="grid grid-cols-2 gap-2.5">
           {languages.map((lang) => (
             <button
               key={lang.code}
@@ -75,9 +85,11 @@ const LanguageModal: React.FC<LanguageModalProps> = ({
               )}
             </button>
           ))}
+          </div>
         </div>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 };
 

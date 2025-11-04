@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Heart, Bookmark, MessageCircle, Share2, MapPin, Star, Camera, Users } from 'lucide-react';
+import { Heart, Bookmark, MessageCircle, Share2, MapPin, Star, Camera, Users, Bell, BellOff } from 'lucide-react';
 import { Place } from '@/types/place';
 import { usePlaceEngagement } from '@/hooks/usePlaceEngagement';
 import { usePinEngagement } from '@/hooks/usePinEngagement';
@@ -16,6 +16,8 @@ import { getCategoryColor } from '@/utils/categoryIcons';
 import { normalizeCity } from '@/utils/cityNormalization';
 import { useNormalizedCity } from '@/hooks/useNormalizedCity';
 import { useLocationStats } from '@/hooks/useLocationStats';
+import { useMutedLocations } from '@/hooks/useMutedLocations';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface CompactLocationCardProps {
   place: Place;
@@ -23,6 +25,7 @@ interface CompactLocationCardProps {
 }
 
 const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) => {
+  const { user } = useAuth();
   const { isLiked, isSaved, toggleLike, toggleSave } = usePlaceEngagement();
   const { engagement } = usePinEngagement(place.id, place.google_place_id || null);
   const [isLiking, setIsLiking] = useState(false);
@@ -33,6 +36,7 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
   const [libraryModalOpen, setLibraryModalOpen] = useState(false);
   const [smartImage, setSmartImage] = useState<string>('');
   const [imageLoading, setImageLoading] = useState(true);
+  const { mutedLocations, muteLocation, unmuteLocation, isMuting } = useMutedLocations(user?.id);
   const { cityLabel } = useNormalizedCity({
     id: place.google_place_id || place.id,
     city: place.city,
@@ -42,6 +46,8 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
   });
 
   const { stats } = useLocationStats(place.id, place.google_place_id || null);
+
+  const isMuted = mutedLocations?.some((m: any) => m.location_id === place.id);
 
   useEffect(() => {
     loadSmartImage();
@@ -100,6 +106,15 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
   const handleShare = (e: React.MouseEvent) => {
     e.stopPropagation();
     setShareModalOpen(true);
+  };
+
+  const handleMuteToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isMuted) {
+      unmuteLocation(place.id);
+    } else {
+      muteLocation(place.id);
+    }
   };
 
   const handleCardClick = () => {
@@ -218,15 +233,31 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
                 </div>
               </div>
 
-              {/* Share Button */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleShare}
-                className="h-7 w-7 rounded-full p-0 bg-white/95 hover:bg-white backdrop-blur-sm shadow-lg border-0"
-              >
-                <Share2 className="w-3.5 h-3.5" />
-              </Button>
+              {/* Mute & Share Buttons */}
+              <div className="flex gap-1.5">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleMuteToggle}
+                  disabled={isMuting}
+                  className={`h-7 w-7 rounded-full p-0 backdrop-blur-sm shadow-lg border-0 ${
+                    isMuted 
+                      ? 'bg-muted text-muted-foreground hover:bg-muted/80' 
+                      : 'bg-white/95 hover:bg-white'
+                  }`}
+                >
+                  {isMuted ? <BellOff className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5" />}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleShare}
+                  className="h-7 w-7 rounded-full p-0 bg-white/95 hover:bg-white backdrop-blur-sm shadow-lg border-0"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>

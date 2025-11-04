@@ -98,7 +98,7 @@ const SettingsPage: React.FC = () => {
             {/* Language Setting */}
             <button
               onClick={() => setLanguageModalOpen(true)}
-              className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors border-b"
+              className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
                 <Globe className="w-5 h-5 text-muted-foreground" />
@@ -115,7 +115,7 @@ const SettingsPage: React.FC = () => {
             {/* Business Account Setting */}
             <button
               onClick={() => setBusinessModalOpen(true)}
-              className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors border-b"
+              className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
                 <Building2 className="w-5 h-5 text-muted-foreground" />

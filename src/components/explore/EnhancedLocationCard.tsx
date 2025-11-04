@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { MapPin, Heart, Bookmark, Users, MessageSquare, Share2, Navigation, Star } from 'lucide-react';
+import { MapPin, Heart, Bookmark, Users, MessageSquare, Share2, Navigation, Star, Bell, BellOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 import { locationInteractionService } from '@/services/locationInteractionService';
@@ -8,6 +8,8 @@ import { LocationShareModal } from './LocationShareModal';
 import LocationReviewModal from './LocationReviewModal';
 import { useNormalizedCity } from '@/hooks/useNormalizedCity';
 import { useLocationStats } from '@/hooks/useLocationStats';
+import { useMutedLocations } from '@/hooks/useMutedLocations';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface EnhancedLocationCardProps {
   place: any;
@@ -16,12 +18,16 @@ interface EnhancedLocationCardProps {
 
 const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const { mutedLocations, muteLocation, unmuteLocation, isMuting } = useMutedLocations(user?.id);
+
+  const isMuted = mutedLocations?.some((m: any) => m.location_id === place.id);
 
   const { cityLabel } = useNormalizedCity({
     id: place.google_place_id || place.id,
@@ -204,7 +210,7 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
         </div>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-5 gap-2">
           <Button
             onClick={handleSaveToggle}
             disabled={loading}
@@ -258,6 +264,26 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
           >
             <Share2 className="w-5 h-5" />
             <span className="text-xs">{t('share', { ns: 'common' })}</span>
+          </Button>
+
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isMuted) {
+                unmuteLocation(place.id);
+              } else {
+                muteLocation(place.id);
+              }
+            }}
+            disabled={isMuting}
+            size="sm"
+            variant="secondary"
+            className={`flex-col h-auto py-3 gap-1 rounded-2xl ${
+              isMuted ? 'bg-muted text-muted-foreground' : ''
+            }`}
+          >
+            {isMuted ? <BellOff className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
+            <span className="text-xs">{isMuted ? t('muted', { ns: 'settings' }) : t('mute', { ns: 'settings' })}</span>
           </Button>
         </div>
       </div>

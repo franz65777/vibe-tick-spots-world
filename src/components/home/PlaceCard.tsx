@@ -1,9 +1,11 @@
 
 import React, { useState } from 'react';
-import { Heart, MessageSquare, Users, MapPin, Share2, Building2 } from 'lucide-react';
+import { Heart, MessageSquare, Users, MapPin, Share2, Building2, Bell, BellOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import PlaceInteractionModal from './PlaceInteractionModal';
 import { Place } from '@/types/place';
+import { useMutedLocations } from '@/hooks/useMutedLocations';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PlaceCardProps {
   place: Place;
@@ -30,10 +32,14 @@ const PlaceCard = ({
   cityName,
   userLocation 
 }: PlaceCardProps) => {
+  const { user } = useAuth();
+  const { mutedLocations, muteLocation, unmuteLocation, isMuting } = useMutedLocations(user?.id);
   const [interactionModal, setInteractionModal] = useState<{ isOpen: boolean; mode: 'comments' | 'share' }>({
     isOpen: false,
     mode: 'comments'
   });
+
+  const isMuted = mutedLocations?.some((m: any) => m.location_id === place.id);
 
   const handleCommentClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -53,6 +59,15 @@ const PlaceCard = ({
   const handleSaveClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onSaveToggle(place);
+  };
+
+  const handleMuteToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isMuted) {
+      unmuteLocation(place.id);
+    } else {
+      muteLocation(place.id);
+    }
   };
 
   // Helper to get visitor count
@@ -199,6 +214,21 @@ const PlaceCard = ({
             >
               <Share2 className="w-4 h-4 mr-2" />
               Share
+            </Button>
+
+            <Button
+              onClick={handleMuteToggle}
+              variant="ghost"
+              size="sm"
+              disabled={isMuting}
+              className={`flex-1 rounded-xl transition-all duration-200 ${
+                isMuted 
+                  ? 'bg-muted text-muted-foreground hover:bg-muted/80' 
+                  : 'text-gray-600 hover:bg-yellow-50 hover:text-yellow-600'
+              }`}
+            >
+              {isMuted ? <BellOff className="w-4 h-4 mr-2" /> : <Bell className="w-4 h-4 mr-2" />}
+              {isMuted ? 'Muted' : 'Mute'}
             </Button>
           </div>
 
