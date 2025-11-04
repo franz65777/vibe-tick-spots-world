@@ -7,13 +7,14 @@ const AuthenticatedLayout: React.FC = () => {
   const location = useLocation();
   const isBusinessRoute = location.pathname.startsWith('/business');
   const isDiscoverRoute = location.pathname === '/discover';
+  const isSettingsRoute = location.pathname === '/settings';
 
   return (
     <div className="min-h-screen bg-background">
       <div className="h-screen overflow-hidden">
         <Outlet />
       </div>
-      {!isDiscoverRoute && (
+      {!isDiscoverRoute && !isSettingsRoute && (
         <div className="fixed bottom-0 left-0 right-0 z-[1500]">
           {isBusinessRoute ? <BusinessBottomNavigation /> : <NewBottomNavigation />}
         </div>

@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { useTranslation } from 'react-i18next';
-import { ChevronRight, Globe, Building2 } from 'lucide-react';
+import { ChevronRight, Globe, Building2, BellOff, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import BusinessRequestModal from '@/components/BusinessRequestModal';
+import LanguageModal from '@/components/settings/LanguageModal';
+import MutedLocationsModal from '@/components/settings/MutedLocationsModal';
 
 const languages = [
   { code: 'en', label: 'English', flag: '🇬🇧' },
@@ -27,9 +29,12 @@ const languages = [
 const SettingsPage: React.FC = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [language, setLanguage] = useState('en');
   const [saving, setSaving] = useState(false);
   const [businessModalOpen, setBusinessModalOpen] = useState(false);
+  const [languageModalOpen, setLanguageModalOpen] = useState(false);
+  const [mutedLocationsModalOpen, setMutedLocationsModalOpen] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -74,16 +79,25 @@ const SettingsPage: React.FC = () => {
   };
 
   return (
-    <>
-      <main className="p-4 max-w-2xl mx-auto w-full pb-24">
-        <Card className="border-0 shadow-lg">
-          <CardHeader className="border-b">
-            <CardTitle className="text-2xl">{t('title', { ns: 'settings' })}</CardTitle>
-          </CardHeader>
+    <div className="h-screen flex flex-col bg-background">
+      {/* Header with back button */}
+      <div className="flex items-center gap-3 p-4 border-b bg-background sticky top-0 z-10">
+        <button
+          onClick={() => navigate('/profile')}
+          className="p-2 hover:bg-muted rounded-full transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <h1 className="text-2xl font-bold">{t('title', { ns: 'settings' })}</h1>
+      </div>
+
+      {/* Settings content */}
+      <div className="flex-1 overflow-y-auto">
+        <Card className="border-0 shadow-none rounded-none">
           <CardContent className="p-0">
             {/* Language Setting */}
             <button
-              onClick={() => {/* Could open language modal */}}
+              onClick={() => setLanguageModalOpen(true)}
               className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors border-b"
             >
               <div className="flex items-center gap-3">
@@ -101,7 +115,7 @@ const SettingsPage: React.FC = () => {
             {/* Business Account Setting */}
             <button
               onClick={() => setBusinessModalOpen(true)}
-              className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+              className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors border-b"
             >
               <div className="flex items-center gap-3">
                 <Building2 className="w-5 h-5 text-muted-foreground" />
@@ -115,46 +129,43 @@ const SettingsPage: React.FC = () => {
               <ChevronRight className="w-5 h-5 text-muted-foreground" />
             </button>
 
-            {/* Expandable Language Grid */}
-            <div className="p-6 bg-muted/30">
-              <div className="grid grid-cols-2 gap-2.5">
-                {languages.map((lang) => (
-                  <button
-                    key={lang.code}
-                    onClick={() => handleLanguageChange(lang.code)}
-                    disabled={saving}
-                    className={`flex items-center gap-2.5 p-3 rounded-xl border-2 transition-all min-h-[60px] ${
-                      language === lang.code
-                        ? 'border-primary bg-primary/10 shadow-sm'
-                        : 'border-border bg-background hover:border-primary/30'
-                    } ${saving ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    <span className="text-2xl flex-shrink-0">{lang.flag}</span>
-                    <div className="flex-1 text-left min-w-0">
-                      <div className={`font-medium text-sm truncate ${language === lang.code ? 'text-primary' : 'text-foreground'}`}>
-                        {lang.label}
-                      </div>
-                    </div>
-                    {language === lang.code && (
-                      <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                        <svg className="w-3 h-3 text-primary-foreground" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                    )}
-                  </button>
-                ))}
+            {/* Muted Locations Setting */}
+            <button
+              onClick={() => setMutedLocationsModalOpen(true)}
+              className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <BellOff className="w-5 h-5 text-muted-foreground" />
+                <div className="text-left">
+                  <div className="font-medium">{t('mutedLocations', { ns: 'settings' })}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {t('manageMutedLocations', { ns: 'settings' })}
+                  </div>
+                </div>
               </div>
-            </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </button>
           </CardContent>
         </Card>
-      </main>
+      </div>
 
+      {/* Modals */}
       <BusinessRequestModal 
         open={businessModalOpen} 
         onOpenChange={setBusinessModalOpen} 
       />
-    </>
+      <LanguageModal
+        open={languageModalOpen}
+        onOpenChange={setLanguageModalOpen}
+        currentLanguage={language}
+        onLanguageChange={handleLanguageChange}
+        saving={saving}
+      />
+      <MutedLocationsModal
+        open={mutedLocationsModalOpen}
+        onOpenChange={setMutedLocationsModalOpen}
+      />
+    </div>
   );
 };
 
