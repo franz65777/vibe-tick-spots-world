@@ -219,10 +219,10 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
 
         <div className="flex gap-2">
           <Select value={selectedCity} onValueChange={setSelectedCity}>
-            <SelectTrigger className="flex-1 bg-background rounded-full">
+            <SelectTrigger className="flex-1 bg-background rounded-full border-border">
               <SelectValue placeholder={t('allCities', { ns: 'profile' })} />
             </SelectTrigger>
-            <SelectContent className="bg-background z-50">
+            <SelectContent className="bg-background border-border z-[9999]">
               <SelectItem value="all">{t('allCities', { ns: 'profile' })}</SelectItem>
               {cities.map(city => (
                 <SelectItem key={city.original} value={city.original}>
@@ -233,10 +233,10 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
           </Select>
 
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="flex-1 bg-background rounded-full">
+            <SelectTrigger className="flex-1 bg-background rounded-full border-border">
               <SelectValue placeholder={t('sortBy', { ns: 'common' })} />
             </SelectTrigger>
-            <SelectContent className="bg-background z-50">
+            <SelectContent className="bg-background border-border z-[9999]">
               <SelectItem value="recent">{t('recentlySaved', { ns: 'profile' })}</SelectItem>
               <SelectItem value="name">{t('nameAZ', { ns: 'common' })}</SelectItem>
               <SelectItem value="city">{t('cityAZ', { ns: 'common' })}</SelectItem>
