@@ -59,17 +59,23 @@ const AdminBusinessRequestsPage = () => {
       const request = requests?.find(r => r.id === requestId);
       if (!request) throw new Error('Request not found');
 
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error('Not authenticated');
+
       // 1. Update the claim request status
       const { error: updateError } = await supabase
         .from('business_claim_requests')
         .update({
           status: 'approved',
           approved_at: new Date().toISOString(),
-          approved_by: (await supabase.auth.getUser()).data.user?.id,
+          approved_by: userData.user.id,
         })
         .eq('id', requestId);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating claim request:', updateError);
+        throw updateError;
+      }
 
       // 2. Create/update business profile
       const { error: profileError } = await supabase
@@ -85,7 +91,10 @@ const AdminBusinessRequestsPage = () => {
           onConflict: 'user_id',
         });
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('Error creating business profile:', profileError);
+        throw profileError;
+      }
 
       // 3. Update location claimed_by if location_id exists
       if (request.location_id) {
@@ -94,7 +103,10 @@ const AdminBusinessRequestsPage = () => {
           .update({ claimed_by: request.user_id })
           .eq('id', request.location_id);
 
-        if (locationError) throw locationError;
+        if (locationError) {
+          console.error('Error updating location:', locationError);
+          throw locationError;
+        }
       }
 
       // 4. Send notification to user
@@ -126,16 +138,22 @@ const AdminBusinessRequestsPage = () => {
       const request = requests?.find(r => r.id === requestId);
       if (!request) throw new Error('Request not found');
 
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error('Not authenticated');
+
       const { error } = await supabase
         .from('business_claim_requests')
         .update({
           status: 'rejected',
           approved_at: new Date().toISOString(),
-          approved_by: (await supabase.auth.getUser()).data.user?.id,
+          approved_by: userData.user.id,
         })
         .eq('id', requestId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error rejecting claim request:', error);
+        throw error;
+      }
 
       // Send notification to user
       const { error: notificationError } = await supabase

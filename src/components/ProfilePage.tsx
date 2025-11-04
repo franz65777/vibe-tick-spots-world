@@ -3,8 +3,6 @@ import { useState, useEffect } from 'react';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Building2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import ProfileHeader from './profile/ProfileHeader';
 import ProfileStats from './profile/ProfileStats';
@@ -17,15 +15,12 @@ import FollowersModal from './profile/FollowersModal';
 import SavedLocationsList from './profile/SavedLocationsList';
 import { useUserBadges } from '@/hooks/useUserBadges';
 import { ThemeToggle } from './ThemeToggle';
-import { useBusinessProfile } from '@/hooks/useBusinessProfile';
-import { toast } from 'sonner';
 
 const ProfilePage = () => {
   const { t } = useTranslation();
   const { profile, loading, error } = useProfile();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { businessProfile, hasValidBusinessAccount, loading: businessLoading } = useBusinessProfile();
   const [activeTab, setActiveTab] = useState('posts');
   const [modalState, setModalState] = useState<{ isOpen: boolean; type: 'followers' | 'following' | null }>({
     isOpen: false,
@@ -35,19 +30,6 @@ const ProfilePage = () => {
   const { badges } = useUserBadges();
   const [lastBadgeCount, setLastBadgeCount] = useState(0);
   const [hasNewBadges, setHasNewBadges] = useState(false);
-
-  const handleSwitchToBusinessView = () => {
-    if (!hasValidBusinessAccount) {
-      toast.error(t('noBusinessAccount', { ns: 'profile' }), {
-        description: t('needVerification', { ns: 'profile' })
-      });
-      return;
-    }
-    // Note: localStorage only used for UI preference, not authorization
-    // Actual authorization is verified server-side via business_profiles table
-    localStorage.setItem('accountMode', 'business');
-    navigate('/business');
-  };
 
   // Track new badges
   useEffect(() => {
@@ -124,20 +106,6 @@ const ProfilePage = () => {
         onPostsClick={handlePostsClick}
         onLocationsClick={handleLocationsClick}
       />
-      
-      {/* Business Dashboard Link - Only show if user has verified business */}
-      {!businessLoading && hasValidBusinessAccount && (
-        <div className="px-4 py-2">
-          <Button
-            onClick={handleSwitchToBusinessView}
-            variant="outline"
-            className="w-full"
-          >
-            <Building2 className="w-4 h-4 mr-2" />
-            {t('switchToBusiness', { ns: 'profile' })}
-          </Button>
-        </div>
-      )}
       
       <ProfileTabs
         activeTab={activeTab} 
