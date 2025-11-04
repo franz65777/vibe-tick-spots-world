@@ -401,7 +401,7 @@ const BusinessAnalyticsPage = () => {
               className="h-[160px]"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={analytics.savesOverTime} margin={{ top: 5, right: 15, bottom: 5, left: -25 }}>
+                <LineChart data={analytics.savesOverTime} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
                   <defs>
                     <linearGradient id="savesGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
@@ -443,7 +443,7 @@ const BusinessAnalyticsPage = () => {
           <CardHeader className="pb-3 relative z-10">
             <CardTitle className="text-sm flex items-center gap-2 font-semibold">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
-                <FileText className="w-4 h-4 text-white" />
+                <Camera className="w-4 h-4 text-white" />
               </div>
               {t('postsGrowth', { ns: 'business' })}
             </CardTitle>
@@ -459,7 +459,7 @@ const BusinessAnalyticsPage = () => {
               className="h-[160px]"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={analytics.postsOverTime} margin={{ top: 5, right: 15, bottom: 5, left: -25 }}>
+                <BarChart data={analytics.postsOverTime} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
                   <defs>
                     <linearGradient id="postsGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="hsl(var(--chart-2))" stopOpacity={0.8} />
@@ -513,7 +513,7 @@ const BusinessAnalyticsPage = () => {
               className="h-[160px]"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={analytics.weeklyEngagement} margin={{ top: 5, right: 15, bottom: 5, left: -25 }}>
+                <BarChart data={analytics.weeklyEngagement} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
                   <defs>
                     <linearGradient id="engagementGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="hsl(var(--chart-3))" stopOpacity={0.8} />
