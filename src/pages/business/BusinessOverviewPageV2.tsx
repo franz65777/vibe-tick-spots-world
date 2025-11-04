@@ -307,7 +307,7 @@ const BusinessOverviewPageV2 = () => {
             <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -mr-8 -mt-8" />
           </Card>
 
-          <Card className="relative overflow-hidden border-0 shadow-md bg-gradient-to-br from-chart-2 via-chart-2/90 to-chart-2/80">
+          <Card className="relative overflow-hidden border-0 shadow-md bg-gradient-to-br from-accent via-accent/90 to-accent/80">
             <CardContent className="p-3 text-center relative z-10">
               <div className="w-8 h-8 mx-auto mb-1.5 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
                 <MessageSquare className="w-4 h-4 text-white" />
@@ -318,7 +318,7 @@ const BusinessOverviewPageV2 = () => {
             <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -mr-8 -mt-8" />
           </Card>
 
-          <Card className="relative overflow-hidden border-0 shadow-md bg-gradient-to-br from-chart-3 via-chart-3/90 to-chart-3/80">
+          <Card className="relative overflow-hidden border-0 shadow-md bg-gradient-to-br from-secondary via-secondary/90 to-secondary/80">
             <CardContent className="p-3 text-center relative z-10">
               <div className="w-8 h-8 mx-auto mb-1.5 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
                 <Heart className="w-4 h-4 text-white" />
