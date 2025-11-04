@@ -73,6 +73,18 @@ const BusinessOverviewPageV2 = () => {
     fetchBusinessNotifications();
   }, []);
 
+  // Refetch location when component becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && location) {
+        fetchLocationAndPosts();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [location]);
+
   const fetchBusinessNotifications = async () => {
     if (!user) return;
     
@@ -96,6 +108,7 @@ const BusinessOverviewPageV2 = () => {
       const { data: locationData, error: locationError } = await supabase
         .from('locations')
         .select('*')
+        .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 

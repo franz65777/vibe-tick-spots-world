@@ -54,6 +54,16 @@ const BusinessProfilePage = () => {
     fetchMarketingContent();
   }, [user]);
 
+  // Refetch when tab becomes active
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchBusinessLocation();
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [user]);
+
   const fetchBusinessLocation = async () => {
     if (!user) return;
 
@@ -66,10 +76,11 @@ const BusinessProfilePage = () => {
         .maybeSingle();
 
       if (businessProfile) {
-        // For now, fetch a demo location - in production this would be linked via business_profiles
+        // Fetch location with order to ensure consistency
         const { data: locationData } = await supabase
           .from('locations')
           .select('*')
+          .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
 
