@@ -45,6 +45,14 @@ export const useMutedLocations = (userId: string | undefined) => {
         .from('user_muted_locations')
         .insert([{ user_id: userId, location_id: locationId }]);
 
+      if (error) {
+        // Ignore unique constraint violation (already muted)
+        if ((error as any).code === '23505' || error.message?.toLowerCase().includes('duplicate key')) {
+          return;
+        }
+        throw error;
+      }
+
       if (error) throw error;
     },
     onSuccess: () => {
