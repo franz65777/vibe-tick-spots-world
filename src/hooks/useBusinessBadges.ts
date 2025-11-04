@@ -141,15 +141,45 @@ export const useBusinessBadges = ({ locationId, googlePlaceId }: UseBusinessBadg
     earned: boolean,
     progress?: number,
     max?: number
-  ): BusinessBadgeItem => ({
-    id,
-    name: t(nameKey as any, { ns: 'business', defaultValue: nameKey }),
-    description: t(descKey as any, { ns: 'business', defaultValue: descKey }),
-    icon,
-    earned,
-    progress,
-    max,
-  });
+  ): BusinessBadgeItem => {
+    // Default English translations for fallback
+    const defaults: Record<string, string> = {
+      firstPost: 'First Post',
+      contentCreator: 'Content Creator', 
+      contentMaster: 'Content Master',
+      popularSpot: 'Popular Spot',
+      localLegend: 'Local Legend',
+      firstCampaign: 'First Campaign',
+      marketingPro: 'Marketing Pro',
+      eventHost: 'Event Host',
+      festivalOrganizer: 'Festival Organizer',
+      specialDeals: 'Special Deals',
+      dealMaster: 'Deal Master',
+      trendingNow: 'Trending Now',
+      firstPostDesc: 'Create your first post',
+      contentCreatorDesc: 'Share 10 posts',
+      contentMasterDesc: 'Share 50+ posts',
+      popularSpotDesc: 'Get 50 saves',
+      localLegendDesc: 'Get 200+ saves', 
+      firstCampaignDesc: 'Send your first notification',
+      marketingProDesc: 'Send 10 notifications',
+      eventHostDesc: 'Create your first event',
+      festivalOrganizerDesc: 'Create 5+ events',
+      specialDealsDesc: 'Create your first discount',
+      dealMasterDesc: 'Create 10+ discounts',
+      trendingNowDesc: 'Get 100 shares'
+    };
+
+    return {
+      id,
+      name: t(nameKey, { ns: 'business', defaultValue: defaults[nameKey] || nameKey }),
+      description: t(descKey, { ns: 'business', defaultValue: defaults[descKey] || descKey }),
+      icon,
+      earned,
+      progress,
+      max,
+    };
+  };
 
   return { loading, badges };
 };

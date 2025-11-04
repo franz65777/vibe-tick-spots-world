@@ -462,7 +462,32 @@ const resources = {
       highEngagement: 'High Engagement',
       usersSpendAverage: 'Users spend an average of {{minutes}} minutes viewing your content.',
       socialReach: 'Social Reach',
-      contentSharedTimes: 'Your content has been shared {{times}} times, expanding your reach.'
+      contentSharedTimes: 'Your content has been shared {{times}} times, expanding your reach.',
+      // Business Badges
+      firstPost: 'First Post',
+      firstPostDesc: 'Create your first post',
+      contentCreator: 'Content Creator', 
+      contentCreatorDesc: 'Share 10 posts',
+      contentMaster: 'Content Master',
+      contentMasterDesc: 'Share 50+ posts',
+      popularSpot: 'Popular Spot',
+      popularSpotDesc: 'Get 50 saves',
+      localLegend: 'Local Legend',
+      localLegendDesc: 'Get 200+ saves',
+      firstCampaign: 'First Campaign',
+      firstCampaignDesc: 'Send your first notification',
+      marketingPro: 'Marketing Pro',
+      marketingProDesc: 'Send 10 notifications',
+      eventHost: 'Event Host',
+      eventHostDesc: 'Create your first event',
+      festivalOrganizer: 'Festival Organizer',
+      festivalOrganizerDesc: 'Create 5+ events',
+      specialDeals: 'Special Deals',
+      specialDealsDesc: 'Create your first discount',
+      dealMaster: 'Deal Master',
+      dealMasterDesc: 'Create 10+ discounts',
+      trendingNow: 'Trending Now',
+      trendingNowDesc: 'Get 100 shares'
     }
   },
   es: {
