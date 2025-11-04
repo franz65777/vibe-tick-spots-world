@@ -7,6 +7,7 @@ import { useMutedLocations } from '@/hooks/useMutedLocations';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getCategoryImage } from '@/utils/categoryIcons';
+import { formatDetailedAddress } from '@/utils/addressFormatter';
 
 interface MutedLocationsModalProps {
   open: boolean;
@@ -62,15 +63,15 @@ const MutedLocationsModal: React.FC<MutedLocationsModalProps> = ({ open, onOpenC
                   className="w-12 h-12 object-contain flex-shrink-0"
                 />
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-medium truncate mb-1">{muted.locations?.name}</h3>
-                  {muted.locations?.address && (
-                    <p className="text-sm text-muted-foreground truncate">
-                      {muted.locations.address}
-                    </p>
-                  )}
-                  {muted.locations?.city && (
-                    <p className="text-xs text-muted-foreground">{muted.locations.city}</p>
-                  )}
+                  <h3 className="font-medium truncate mb-1">
+                    {muted.locations?.name || 'Unknown Location'}
+                  </h3>
+                  <p className="text-sm text-muted-foreground truncate">
+                    {formatDetailedAddress({
+                      city: muted.locations?.city,
+                      address: muted.locations?.address,
+                    })}
+                  </p>
                 </div>
                 <Button
                   variant="outline"
