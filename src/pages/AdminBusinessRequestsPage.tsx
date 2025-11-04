@@ -30,6 +30,10 @@ interface BusinessRequest {
   contact_phone: string;
   status: 'pending' | 'approved' | 'rejected';
   created_at: string;
+  user_profile?: {
+    username: string;
+    avatar_url: string | null;
+  };
 }
 
 const AdminBusinessRequestsPage = () => {
@@ -45,12 +49,25 @@ const AdminBusinessRequestsPage = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('business_claim_requests')
-        .select('*')
+        .select(`
+          *,
+          profiles!business_claim_requests_user_id_fkey(
+            username,
+            avatar_url
+          )
+        `)
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as BusinessRequest[];
+      
+      // Transform data to match interface
+      const transformedData = data?.map(req => ({
+        ...req,
+        user_profile: Array.isArray(req.profiles) ? req.profiles[0] : req.profiles
+      })) as BusinessRequest[];
+      
+      return transformedData;
     },
   });
 
@@ -222,6 +239,16 @@ const AdminBusinessRequestsPage = () => {
                   <p className="text-sm text-muted-foreground mb-2">
                     Type: {request.business_type}
                   </p>
+                  {request.user_profile && (
+                    <div className="flex items-center gap-2 mb-2">
+                      <img 
+                        src={request.user_profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${request.user_profile.username}`}
+                        alt={request.user_profile.username}
+                        className="w-6 h-6 rounded-full"
+                      />
+                      <span className="text-sm font-medium">@{request.user_profile.username}</span>
+                    </div>
+                  )}
                   <p className="text-sm text-muted-foreground">
                     Submitted: {new Date(request.created_at).toLocaleDateString()}
                   </p>

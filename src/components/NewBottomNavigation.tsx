@@ -41,11 +41,14 @@ const NewBottomNavigation = () => {
   };
 
   const handleProfileLongPressStart = () => {
-    // Only show switch modal if user has a business account
-    if (!hasValidBusinessAccount) return;
-    
     const timer = setTimeout(() => {
-      setShowSwitchModal(true);
+      if (hasValidBusinessAccount) {
+        setShowSwitchModal(true);
+      } else {
+        // Navigate to settings for business account request
+        navigate('/settings');
+        toast.info(t('request_business_account', { ns: 'common', defaultValue: 'Request a business account from Settings' }));
+      }
     }, 800); // 800ms long press
     setLongPressTimer(timer);
   };
