@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, MessageSquare, Send } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 interface Message {
   id: string;
@@ -25,6 +26,7 @@ interface Message {
 }
 
 const BusinessMessagesPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { businessProfile } = useBusinessProfile();
@@ -80,7 +82,7 @@ const BusinessMessagesPage = () => {
       setMessages(messagesWithProfiles);
     } catch (error) {
       console.error('Error fetching business messages:', error);
-      toast.error('Failed to load messages');
+      toast.error(t('failedLoadMessages', { ns: 'business' }));
     } finally {
       setLoading(false);
     }
@@ -103,10 +105,10 @@ const BusinessMessagesPage = () => {
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <div>
-                <h1 className="text-lg font-bold text-foreground">Business Messages</h1>
+                <h1 className="text-lg font-bold text-foreground">{t('businessMessages', { ns: 'business' })}</h1>
                 {unreadCount > 0 && (
                   <p className="text-xs text-muted-foreground">
-                    {unreadCount} unread message{unreadCount !== 1 ? 's' : ''}
+                    {unreadCount} {t('unreadMessages', { count: unreadCount, ns: 'business' })}
                   </p>
                 )}
               </div>
@@ -127,10 +129,10 @@ const BusinessMessagesPage = () => {
                   <MessageSquare className="w-8 h-8 text-muted-foreground" />
                 </div>
                 <h3 className="text-lg font-semibold text-foreground mb-2">
-                  No messages yet
+                  {t('noMessagesYet', { ns: 'business' })}
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Customer inquiries and messages will appear here
+                  {t('customerInquiries', { ns: 'business' })}
                 </p>
               </CardContent>
             </Card>
@@ -168,7 +170,7 @@ const BusinessMessagesPage = () => {
                         </div>
                         {!message.is_read && (
                           <Badge variant="secondary" className="text-xs">
-                            New
+                            {t('new', { ns: 'messages' })}
                           </Badge>
                         )}
                       </div>

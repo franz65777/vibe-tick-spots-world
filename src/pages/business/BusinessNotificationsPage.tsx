@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Bell, Check, MapPin, Star, Users, TrendingUp } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 interface BusinessNotification {
   id: string;
@@ -21,6 +22,7 @@ interface BusinessNotification {
 }
 
 const BusinessNotificationsPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { businessProfile } = useBusinessProfile();
@@ -50,7 +52,7 @@ const BusinessNotificationsPage = () => {
       setNotifications(data || []);
     } catch (error) {
       console.error('Error fetching business notifications:', error);
-      toast.error('Failed to load notifications');
+      toast.error(t('failedLoadNotifications', { ns: 'business' }));
     } finally {
       setLoading(false);
     }
@@ -87,10 +89,10 @@ const BusinessNotificationsPage = () => {
       if (error) throw error;
 
       setNotifications(notifications.map(n => ({ ...n, is_read: true })));
-      toast.success('All notifications marked as read');
+      toast.success(t('allMarkedAsRead', { ns: 'business' }));
     } catch (error) {
       console.error('Error marking all as read:', error);
-      toast.error('Failed to mark notifications as read');
+      toast.error(t('failedMarkAsRead', { ns: 'business' }));
     }
   };
 
@@ -126,10 +128,10 @@ const BusinessNotificationsPage = () => {
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <div>
-                <h1 className="text-lg font-bold text-foreground">Business Notifications</h1>
+                <h1 className="text-lg font-bold text-foreground">{t('businessNotifications', { ns: 'business' })}</h1>
                 {unreadCount > 0 && (
                   <p className="text-xs text-muted-foreground">
-                    {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
+                    {unreadCount} {t('unreadNotifications', { count: unreadCount, ns: 'business' })}
                   </p>
                 )}
               </div>
@@ -142,7 +144,7 @@ const BusinessNotificationsPage = () => {
                 className="gap-2"
               >
                 <Check className="w-4 h-4" />
-                Mark all read
+                {t('markAllRead', { ns: 'business' })}
               </Button>
             )}
           </div>
@@ -161,10 +163,10 @@ const BusinessNotificationsPage = () => {
                   <Bell className="w-8 h-8 text-muted-foreground" />
                 </div>
                 <h3 className="text-lg font-semibold text-foreground mb-2">
-                  No notifications yet
+                  {t('noNotificationsYet', { ns: 'business' })}
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  You'll receive notifications about posts, reviews, and activity at your business location
+                  {t('notificationsDescription', { ns: 'business' })}
                 </p>
               </CardContent>
             </Card>
@@ -191,7 +193,7 @@ const BusinessNotificationsPage = () => {
                         </h4>
                         {!notification.is_read && (
                           <Badge variant="secondary" className="text-xs">
-                            New
+                            {t('new', { ns: 'messages' })}
                           </Badge>
                         )}
                       </div>

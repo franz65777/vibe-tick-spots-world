@@ -3,8 +3,10 @@ import { Camera, Megaphone } from 'lucide-react';
 import { NewAddPage } from '@/components/add/NewAddPage';
 import BusinessMarketingCreator from '@/components/business/BusinessMarketingCreator';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 const BusinessAddPage = () => {
+  const { t } = useTranslation();
   const [activeMode, setActiveMode] = useState<'post' | 'marketing'>('post');
 
   useEffect(() => {
@@ -32,7 +34,7 @@ const BusinessAddPage = () => {
                 )}
               >
                 <Camera className="w-4 h-4" />
-                <span>Post</span>
+                <span>{t('post', { ns: 'business' })}</span>
               </button>
               <button
                 onClick={() => setActiveMode('marketing')}
@@ -44,7 +46,7 @@ const BusinessAddPage = () => {
                 )}
               >
                 <Megaphone className="w-4 h-4" />
-                <span>Marketing</span>
+                <span>{t('marketing', { ns: 'business' })}</span>
               </button>
             </div>
           </div>
