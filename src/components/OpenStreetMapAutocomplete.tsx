@@ -14,6 +14,7 @@ interface OpenStreetMapAutocompleteProps {
   placeholder?: string;
   className?: string;
   initialQuery?: string;
+  disabled?: boolean;
 }
 
 interface SearchResult {
@@ -31,6 +32,7 @@ const OpenStreetMapAutocomplete = ({
   placeholder = 'Search for a place...',
   className = '',
   initialQuery = '',
+  disabled = false,
 }: OpenStreetMapAutocompleteProps) => {
   const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -143,6 +145,7 @@ const OpenStreetMapAutocomplete = ({
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => query.length >= 2 && setShowResults(true)}
           placeholder={placeholder}
+          disabled={disabled}
           className="pl-10 pr-10"
         />
         {loading && (

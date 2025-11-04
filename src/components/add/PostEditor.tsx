@@ -27,6 +27,7 @@ interface PostEditorProps {
   onUserRemoved: (userId: string) => void;
   onRatingChange?: (rating: number | undefined) => void;
   onSubmit: () => void;
+  isBusinessAccount?: boolean;
 }
 
 export const PostEditor: React.FC<PostEditorProps> = ({
@@ -46,7 +47,8 @@ export const PostEditor: React.FC<PostEditorProps> = ({
   onUserTagged,
   onUserRemoved,
   onRatingChange,
-  onSubmit
+  onSubmit,
+  isBusinessAccount = false
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -128,10 +130,11 @@ export const PostEditor: React.FC<PostEditorProps> = ({
             onLocationSelect={onLocationSelect}
             selectedCategory={selectedCategory}
             onCategoryChange={onCategoryChange}
+            disabled={isBusinessAccount}
           />
 
-          {/* Optional Rating */}
-          {onRatingChange && (
+          {/* Optional Rating - Only for personal accounts */}
+          {onRatingChange && !isBusinessAccount && (
             <div className="space-y-2">
               <label className="text-sm font-medium">{t('ratePlace', { ns: 'add' })}</label>
               <div className="flex gap-2">

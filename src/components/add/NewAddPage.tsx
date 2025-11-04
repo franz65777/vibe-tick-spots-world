@@ -5,11 +5,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { useBusinessProfile } from '@/hooks/useBusinessProfile';
 
 export const NewAddPage = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { businessProfile, hasValidBusinessAccount } = useBusinessProfile();
   
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
@@ -19,6 +21,54 @@ export const NewAddPage = () => {
   const [taggedUsers, setTaggedUsers] = useState<any[]>([]);
   const [rating, setRating] = useState<number | undefined>();
   const [isUploading, setIsUploading] = useState(false);
+  const [businessLocation, setBusinessLocation] = useState<any>(null);
+
+  // Fetch business location if this is a business account
+  React.useEffect(() => {
+    const fetchBusinessLocation = async () => {
+      if (!hasValidBusinessAccount || !businessProfile) return;
+      
+      try {
+        const { data: locationClaim } = await supabase
+          .from('location_claims')
+          .select('location_id')
+          .eq('business_id', businessProfile.id)
+          .eq('verification_status', 'verified')
+          .limit(1)
+          .maybeSingle();
+
+        if (locationClaim) {
+          const { data: location } = await supabase
+            .from('locations')
+            .select('*')
+            .eq('id', locationClaim.location_id)
+            .single();
+
+          if (location) {
+            setBusinessLocation(location);
+            // Auto-set location for business posts
+            setSelectedLocation({
+              place_id: location.google_place_id || location.id,
+              name: location.name,
+              formatted_address: location.address,
+              geometry: {
+                location: {
+                  lat: () => location.latitude,
+                  lng: () => location.longitude
+                }
+              },
+              types: []
+            });
+            setSelectedCategory(location.category);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching business location:', error);
+      }
+    };
+
+    fetchBusinessLocation();
+  }, [hasValidBusinessAccount, businessProfile]);
 
   const handleFilesSelect = async (files: FileList) => {
     const fileArray = Array.from(files);
@@ -72,6 +122,12 @@ export const NewAddPage = () => {
   };
 
   const handleLocationSelect = (location: any) => {
+    // Prevent location change if business account
+    if (hasValidBusinessAccount && businessLocation) {
+      toast.info(t('locationLockedToBusiness', { ns: 'business' }));
+      return;
+    }
+
     if (location === null) {
       setSelectedLocation(null);
       setSelectedCategory('');
@@ -255,7 +311,7 @@ export const NewAddPage = () => {
       selectedLocation={selectedLocation}
       selectedCategory={selectedCategory}
       taggedUsers={taggedUsers}
-      rating={rating}
+      rating={hasValidBusinessAccount ? undefined : rating}
       isUploading={isUploading}
       onFilesSelect={handleFilesSelect}
       onRemoveFile={handleRemoveFile}
@@ -264,8 +320,9 @@ export const NewAddPage = () => {
       onCategoryChange={setSelectedCategory}
       onUserTagged={handleUserTagged}
       onUserRemoved={handleUserRemoved}
-      onRatingChange={setRating}
+      onRatingChange={hasValidBusinessAccount ? undefined : setRating}
       onSubmit={handleSubmit}
+      isBusinessAccount={hasValidBusinessAccount}
     />
   );
 };

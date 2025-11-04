@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface BusinessMarketingCreatorProps {
   onSuccess?: () => void;
@@ -16,6 +17,7 @@ interface BusinessMarketingCreatorProps {
 const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onSuccess, onCancel }) => {
   type ContentType = 'event' | 'discount' | 'promotion' | 'announcement';
 
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [contentType, setContentType] = useState<ContentType>('event');
   const [title, setTitle] = useState('');
@@ -40,10 +42,10 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
           setStartDate(data.metadata.start_date || '');
           setEndDate(data.metadata.end_date || '');
           setDiscountAmount(data.metadata.discount_amount || '');
-          setTerms(data.metadata.terms || '');
+        setTerms(data.metadata.terms || '');
         }
         localStorage.removeItem('campaign_template');
-        toast.success('Campaign template loaded! Customize and publish.');
+        toast.success(t('campaignLoaded', { ns: 'business' }));
       } catch (error) {
         console.error('Error loading template:', error);
       }
@@ -51,10 +53,10 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
   }, []);
 
   const contentTypes = [
-    { value: 'event' as ContentType, label: 'Event', icon: CalendarDays },
-    { value: 'discount' as ContentType, label: 'Discount', icon: Percent },
-    { value: 'promotion' as ContentType, label: 'Promo', icon: Megaphone },
-    { value: 'announcement' as ContentType, label: 'News', icon: Calendar }
+    { value: 'event' as ContentType, label: t('event', { ns: 'business' }), icon: CalendarDays },
+    { value: 'discount' as ContentType, label: t('discount', { ns: 'business' }), icon: Percent },
+    { value: 'promotion' as ContentType, label: t('promo', { ns: 'business' }), icon: Megaphone },
+    { value: 'announcement' as ContentType, label: t('news', { ns: 'business' }), icon: Calendar }
   ];
 
   const handleFilesSelect = (files: FileList) => {
@@ -81,12 +83,12 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
 
   const handleSubmit = async () => {
     if (!user) {
-      toast.error('You must be logged in');
+      toast.error(t('mustBeLoggedIn', { ns: 'business' }));
       return;
     }
 
     if (!title.trim()) {
-      toast.error('Please provide a title');
+      toast.error(t('provideTitleError', { ns: 'business' }));
       return;
     }
 
@@ -129,7 +131,7 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
         .single();
 
       if (!businessProfile) {
-        toast.error('Business profile not found');
+        toast.error(t('businessProfileNotFound', { ns: 'business' }));
         return;
       }
 
@@ -156,7 +158,7 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
 
       if (error) throw error;
 
-      toast.success('Marketing campaign published!');
+      toast.success(t('campaignPublished', { ns: 'business' }));
 
       // Reset form
       setTitle('');
@@ -171,7 +173,7 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
       onSuccess?.();
     } catch (error) {
       console.error('Error creating marketing content:', error);
-      toast.error('Failed to create content');
+      toast.error(t('failedCreateContent', { ns: 'business' }));
     } finally {
       setIsSubmitting(false);
     }
@@ -202,22 +204,22 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
       <div className="flex-1 min-h-0 space-y-3 overflow-hidden flex flex-col">
         {/* Title */}
         <div className="flex-shrink-0">
-          <label className="text-base font-medium mb-1 block">Title</label>
+          <label className="text-base font-medium mb-1 block">{t('title', { ns: 'business' })}</label>
           <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder={`${contentType} title...`}
+            placeholder={`${t(contentType, { ns: 'business' })} ${t('titlePlaceholder', { ns: 'business' })}`}
             className="h-10 text-base"
           />
         </div>
 
         {/* Description */}
         <div className="flex-shrink-0">
-          <label className="text-base font-medium mb-1 block">Description</label>
+          <label className="text-base font-medium mb-1 block">{t('description', { ns: 'business' })}</label>
           <Textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder={`Describe your ${contentType}...`}
+            placeholder={`${t('descriptionPlaceholder', { ns: 'business' })} ${t(contentType, { ns: 'business' })}...`}
             className="min-h-[56px] text-base resize-none"
             rows={2}
           />
@@ -227,7 +229,7 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
         {contentType === 'event' && (
           <div className="grid grid-cols-2 gap-2 flex-shrink-0">
             <div>
-              <label className="text-base font-medium mb-1 block">Start</label>
+              <label className="text-base font-medium mb-1 block">{t('start', { ns: 'business' })}</label>
               <Input
                 type="datetime-local"
                 value={startDate}
@@ -236,7 +238,7 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
               />
             </div>
             <div>
-              <label className="text-base font-medium mb-1 block">End</label>
+              <label className="text-base font-medium mb-1 block">{t('end', { ns: 'business' })}</label>
               <Input
                 type="datetime-local"
                 value={endDate}
@@ -249,14 +251,14 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
 
         {contentType === 'discount' && (
           <div className="flex-shrink-0">
-            <label className="text-base font-medium mb-1 block">Discount (%)</label>
+            <label className="text-base font-medium mb-1 block">{t('discountPercent', { ns: 'business' })}</label>
             <Input
               type="number"
               min="0"
               max="100"
               value={discountAmount}
               onChange={(e) => setDiscountAmount(e.target.value)}
-              placeholder="e.g., 20"
+              placeholder={t('discountPlaceholder', { ns: 'business' })}
               className="h-10 text-base"
             />
           </div>
@@ -264,11 +266,11 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
 
         {(contentType === 'discount' || contentType === 'promotion') && (
           <div className="flex-shrink-0">
-            <label className="text-base font-medium mb-1 block">Terms</label>
+            <label className="text-base font-medium mb-1 block">{t('terms', { ns: 'business' })}</label>
             <Textarea
               value={terms}
               onChange={(e) => setTerms(e.target.value)}
-              placeholder="Terms & conditions..."
+              placeholder={t('termsPlaceholder', { ns: 'business' })}
               className="min-h-[50px] text-base resize-none"
               rows={2}
             />
@@ -277,12 +279,12 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
 
         {/* Image Upload */}
         <div className="flex-shrink-0">
-          <label className="text-sm font-medium mb-1 block">Images (up to 3)</label>
+          <label className="text-sm font-medium mb-1 block">{t('imagesUpTo3', { ns: 'business' })}</label>
           <div className="space-y-2">
             {selectedFiles.length < 3 && (
               <label className="flex items-center justify-center gap-2 p-3 border-2 border-dashed rounded-lg cursor-pointer hover:border-primary transition-colors">
                 <ImagePlus className="w-4 h-4" />
-                <span className="text-sm">Add Images</span>
+                <span className="text-sm">{t('addImages', { ns: 'business' })}</span>
                 <input
                   type="file"
                   multiple
@@ -326,12 +328,12 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Publishing...
+                {t('publishing', { ns: 'business' })}
               </>
             ) : (
               <>
                 <Send className="w-4 h-4 mr-2" />
-                Publish Campaign
+                {t('publishCampaign', { ns: 'business' })}
               </>
             )}
           </Button>

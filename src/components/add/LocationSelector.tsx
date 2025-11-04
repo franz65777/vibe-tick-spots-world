@@ -9,13 +9,15 @@ interface LocationSelectorProps {
   onLocationSelect: (location: any) => void;
   selectedCategory: string;
   onCategoryChange: (category: string) => void;
+  disabled?: boolean;
 }
 
 export const LocationSelector: React.FC<LocationSelectorProps> = ({
   selectedLocation,
   onLocationSelect,
   selectedCategory,
-  onCategoryChange
+  onCategoryChange,
+  disabled = false
 }) => {
   const { t } = useTranslation();
   
@@ -33,6 +35,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
             onPlaceSelect={onLocationSelect}
             placeholder={t('searchForPlace', { ns: 'add' })}
             className="w-full"
+            disabled={disabled}
           />
           <div className="flex items-start gap-2 p-3 bg-destructive/10 rounded-lg">
             <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
@@ -48,15 +51,17 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
               <p className="font-semibold text-foreground">{selectedLocation.name}</p>
               <p className="text-sm text-muted-foreground">{selectedLocation.formatted_address || selectedLocation.address}</p>
             </div>
-            <button
-              onClick={() => {
-                onLocationSelect(null);
-                onCategoryChange('');
-              }}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {t('changeLocation', { ns: 'add' })}
-            </button>
+            {!disabled && (
+              <button
+                onClick={() => {
+                  onLocationSelect(null);
+                  onCategoryChange('');
+                }}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {t('changeLocation', { ns: 'add' })}
+              </button>
+            )}
           </div>
         </div>
       )}
