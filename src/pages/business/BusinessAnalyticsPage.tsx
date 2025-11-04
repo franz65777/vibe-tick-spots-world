@@ -284,86 +284,101 @@ const BusinessAnalyticsPage = () => {
           <p className="text-xs text-muted-foreground mt-0.5">{t('trackPerformance', { ns: 'business' })}</p>
         </div>
 
-        {/* Key Metrics Grid */}
-        <div className="grid grid-cols-2 gap-2.5">
-          <Card>
-            <CardContent className="pt-5 pb-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">{t('totalSaves', { ns: 'business' })}</p>
-                  <p className="text-xl font-bold text-foreground mt-0.5">{analytics.totalSaves}</p>
-                  {analytics.savesChange !== 0 && (
-                    <p className={`text-[10px] mt-0.5 flex items-center gap-0.5 ${analytics.savesChange > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                      <TrendingUp className={`w-2.5 h-2.5 ${analytics.savesChange < 0 ? 'rotate-180' : ''}`} />
-                      {analytics.savesChange > 0 ? '+' : ''}{analytics.savesChange}% {t('thisWeekLower', { ns: 'business' })}
-                    </p>
-                  )}
+        {/* Key Metrics Grid - Enhanced Design */}
+        <div className="grid grid-cols-2 gap-3">
+          <Card className="relative overflow-hidden border-0 shadow-lg">
+            <div className="absolute inset-0 bg-gradient-to-br from-rose-500/20 via-rose-500/10 to-transparent" />
+            <CardContent className="pt-5 pb-4 relative z-10">
+              <div className="flex items-start justify-between mb-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-rose-600 flex items-center justify-center shadow-md">
+                  <Heart className="w-5 h-5 text-white" />
                 </div>
-                <Heart className="w-7 h-7 text-primary/20" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground font-medium mb-1">{t('totalSaves', { ns: 'business' })}</p>
+                <p className="text-3xl font-bold text-foreground mb-2">{analytics.totalSaves}</p>
+                {analytics.savesChange !== 0 && (
+                  <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold ${analytics.savesChange > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400'}`}>
+                    <TrendingUp className={`w-3 h-3 ${analytics.savesChange < 0 ? 'rotate-180' : ''}`} />
+                    {analytics.savesChange > 0 ? '+' : ''}{analytics.savesChange}% {t('thisWeekLower', { ns: 'business' })}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="pt-5 pb-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">{t('totalPosts', { ns: 'business' })}</p>
-                  <p className="text-xl font-bold text-foreground mt-0.5">{analytics.totalPosts}</p>
-                  {analytics.postsChange !== 0 && (
-                    <p className={`text-[10px] mt-0.5 flex items-center gap-0.5 ${analytics.postsChange > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                      <TrendingUp className={`w-2.5 h-2.5 ${analytics.postsChange < 0 ? 'rotate-180' : ''}`} />
-                      {analytics.postsChange > 0 ? '+' : ''}{analytics.postsChange}% {t('thisWeekLower', { ns: 'business' })}
-                    </p>
-                  )}
+          <Card className="relative overflow-hidden border-0 shadow-lg">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/10 to-transparent" />
+            <CardContent className="pt-5 pb-4 relative z-10">
+              <div className="flex items-start justify-between mb-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-md">
+                  <FileText className="w-5 h-5 text-white" />
                 </div>
-                <FileText className="w-7 h-7 text-primary/20" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground font-medium mb-1">{t('totalPosts', { ns: 'business' })}</p>
+                <p className="text-3xl font-bold text-foreground mb-2">{analytics.totalPosts}</p>
+                {analytics.postsChange !== 0 && (
+                  <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold ${analytics.postsChange > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400'}`}>
+                    <TrendingUp className={`w-3 h-3 ${analytics.postsChange < 0 ? 'rotate-180' : ''}`} />
+                    {analytics.postsChange > 0 ? '+' : ''}{analytics.postsChange}% {t('thisWeekLower', { ns: 'business' })}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="pt-5 pb-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">{t('totalShares', { ns: 'business' })}</p>
-                  <p className="text-xl font-bold text-foreground mt-0.5">{analytics.totalShares}</p>
-                  {analytics.sharesChange !== 0 && (
-                    <p className={`text-[10px] mt-0.5 flex items-center gap-0.5 ${analytics.sharesChange > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                      <TrendingUp className={`w-2.5 h-2.5 ${analytics.sharesChange < 0 ? 'rotate-180' : ''}`} />
-                      {analytics.sharesChange > 0 ? '+' : ''}{analytics.sharesChange}% {t('thisWeekLower', { ns: 'business' })}
-                    </p>
-                  )}
+          <Card className="relative overflow-hidden border-0 shadow-lg">
+            <div className="absolute inset-0 bg-gradient-to-br from-violet-500/20 via-violet-500/10 to-transparent" />
+            <CardContent className="pt-5 pb-4 relative z-10">
+              <div className="flex items-start justify-between mb-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center shadow-md">
+                  <Share2 className="w-5 h-5 text-white" />
                 </div>
-                <Share2 className="w-7 h-7 text-primary/20" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground font-medium mb-1">{t('totalShares', { ns: 'business' })}</p>
+                <p className="text-3xl font-bold text-foreground mb-2">{analytics.totalShares}</p>
+                {analytics.sharesChange !== 0 && (
+                  <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold ${analytics.sharesChange > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400'}`}>
+                    <TrendingUp className={`w-3 h-3 ${analytics.sharesChange < 0 ? 'rotate-180' : ''}`} />
+                    {analytics.sharesChange > 0 ? '+' : ''}{analytics.sharesChange}% {t('thisWeekLower', { ns: 'business' })}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="pt-5 pb-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">{t('avgTime', { ns: 'business' })}</p>
-                  <p className="text-xl font-bold text-foreground mt-0.5">{analytics.avgTimeSpent}m</p>
-                  {analytics.timeChange !== 0 && (
-                    <p className={`text-[10px] mt-0.5 flex items-center gap-0.5 ${analytics.timeChange > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                      <TrendingUp className={`w-2.5 h-2.5 ${analytics.timeChange < 0 ? 'rotate-180' : ''}`} />
-                      {analytics.timeChange > 0 ? '+' : ''}{analytics.timeChange}% {t('thisWeekLower', { ns: 'business' })}
-                    </p>
-                  )}
+          <Card className="relative overflow-hidden border-0 shadow-lg">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/20 via-amber-500/10 to-transparent" />
+            <CardContent className="pt-5 pb-4 relative z-10">
+              <div className="flex items-start justify-between mb-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-md">
+                  <Clock className="w-5 h-5 text-white" />
                 </div>
-                <Clock className="w-7 h-7 text-primary/20" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground font-medium mb-1">{t('avgTime', { ns: 'business' })}</p>
+                <p className="text-3xl font-bold text-foreground mb-2">{analytics.avgTimeSpent}m</p>
+                {analytics.timeChange !== 0 && (
+                  <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold ${analytics.timeChange > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400'}`}>
+                    <TrendingUp className={`w-3 h-3 ${analytics.timeChange < 0 ? 'rotate-180' : ''}`} />
+                    {analytics.timeChange > 0 ? '+' : ''}{analytics.timeChange}% {t('thisWeekLower', { ns: 'business' })}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Saves Over Time Chart */}
-        <Card className="bg-gradient-to-br from-card to-card/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Heart className="w-4 h-4 text-primary" />
+        {/* Saves Over Time Chart - Enhanced */}
+        <Card className="relative overflow-hidden border-0 shadow-lg">
+          <div className="absolute inset-0 bg-gradient-to-br from-rose-500/5 to-transparent" />
+          <CardHeader className="pb-3 relative z-10">
+            <CardTitle className="text-sm flex items-center gap-2 font-semibold">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-500 to-rose-600 flex items-center justify-center">
+                <Heart className="w-4 h-4 text-white" />
+              </div>
               {t('savesOverTime', { ns: 'business' })}
             </CardTitle>
           </CardHeader>
@@ -414,11 +429,14 @@ const BusinessAnalyticsPage = () => {
           </CardContent>
         </Card>
 
-        {/* Posts Over Time Chart */}
-        <Card className="bg-gradient-to-br from-card to-card/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <FileText className="w-4 h-4 text-primary" />
+        {/* Posts Over Time Chart - Enhanced */}
+        <Card className="relative overflow-hidden border-0 shadow-lg">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+          <CardHeader className="pb-3 relative z-10">
+            <CardTitle className="text-sm flex items-center gap-2 font-semibold">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
+                <FileText className="w-4 h-4 text-white" />
+              </div>
               {t('postsGrowth', { ns: 'business' })}
             </CardTitle>
           </CardHeader>
@@ -465,11 +483,14 @@ const BusinessAnalyticsPage = () => {
           </CardContent>
         </Card>
 
-        {/* Weekly Engagement Chart */}
-        <Card className="bg-gradient-to-br from-card to-card/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Clock className="w-4 h-4 text-primary" />
+        {/* Weekly Engagement Chart - Enhanced */}
+        <Card className="relative overflow-hidden border-0 shadow-lg">
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent" />
+          <CardHeader className="pb-3 relative z-10">
+            <CardTitle className="text-sm flex items-center gap-2 font-semibold">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center">
+                <Clock className="w-4 h-4 text-white" />
+              </div>
               {t('weeklyEngagement', { ns: 'business' })}
             </CardTitle>
           </CardHeader>
