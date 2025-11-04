@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import BusinessBadges from '@/components/business/BusinessBadges';
+import { useDetailedAddress } from '@/hooks/useDetailedAddress';
 
 interface BusinessLocation {
   id: string;
@@ -26,6 +27,8 @@ interface BusinessLocation {
   phone?: string;
   website?: string;
   hours?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 const BusinessProfilePage = () => {
@@ -36,6 +39,15 @@ const BusinessProfilePage = () => {
   const [activeTab, setActiveTab] = useState('posts');
   const [loading, setLoading] = useState(true);
   const [marketingContent, setMarketingContent] = useState<any[]>([]);
+
+  const { detailedAddress } = useDetailedAddress({
+    id: location?.id,
+    city: location?.city,
+    address: location?.address,
+    coordinates: location?.latitude && location?.longitude 
+      ? { lat: Number(location.latitude), lng: Number(location.longitude) }
+      : undefined,
+  });
 
   useEffect(() => {
     fetchBusinessLocation();
@@ -155,6 +167,12 @@ const BusinessProfilePage = () => {
               {formatCategory(location.category)}
             </Badge>
           </div>
+        </div>
+
+        {/* Location Label */}
+        <div className="px-4 pt-4 flex items-center gap-2 text-muted-foreground">
+          <MapPin className="w-4 h-4" />
+          <span className="text-sm">{detailedAddress || location.city || 'Location'}</span>
         </div>
 
         {/* Location Info */}

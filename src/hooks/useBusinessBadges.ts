@@ -79,27 +79,27 @@ export const useBusinessBadges = ({ locationId, googlePlaceId }: UseBusinessBadg
 
       const items: BusinessBadgeItem[] = [
         // Content & Posts
-        mk('first-post', 'businessBadges.firstPost', 'businessBadges.firstPostDesc', '📸', postsCount >= 1, postsCount, 1),
-        mk('content-creator', 'businessBadges.contentCreator', 'businessBadges.contentCreatorDesc', '🎨', postsCount >= 10, postsCount, 10),
-        mk('social-star', 'businessBadges.socialStar', 'businessBadges.socialStarDesc', '⭐', postsCount >= 50, postsCount, 50),
-        mk('content-master', 'businessBadges.contentMaster', 'businessBadges.contentMasterDesc', '👑', postsCount >= 100, postsCount, 100),
+        mk('first-post', 'firstPost', 'firstPostDesc', '📸', postsCount >= 1, postsCount, 1),
+        mk('content-creator', 'contentCreator', 'contentCreatorDesc', '🎨', postsCount >= 10, postsCount, 10),
+        mk('social-star', 'socialStar', 'socialStarDesc', '⭐', postsCount >= 50, postsCount, 50),
+        mk('content-master', 'contentMaster', 'contentMasterDesc', '👑', postsCount >= 100, postsCount, 100),
 
         // Engagement
-        mk('popular-spot', 'businessBadges.popularSpot', 'businessBadges.popularSpotDesc', '❤️', savesCount >= 50, savesCount, 50),
-        mk('community-favorite', 'businessBadges.communityFavorite', 'businessBadges.communityFavoriteDesc', '🌟', savesCount >= 100, savesCount, 100),
-        mk('local-legend', 'businessBadges.localLegend', 'businessBadges.localLegendDesc', '🏆', savesCount >= 500, savesCount, 500),
-        mk('trending-now', 'businessBadges.trendingNow', 'businessBadges.trendingNowDesc', '🔥', sharesCount >= 100, sharesCount, 100),
+        mk('popular-spot', 'popularSpot', 'popularSpotDesc', '❤️', savesCount >= 50, savesCount, 50),
+        mk('community-favorite', 'communityFavorite', 'communityFavoriteDesc', '🌟', savesCount >= 100, savesCount, 100),
+        mk('local-legend', 'localLegend', 'localLegendDesc', '🏆', savesCount >= 500, savesCount, 500),
+        mk('trending-now', 'trendingNow', 'trendingNowDesc', '🔥', sharesCount >= 100, sharesCount, 100),
 
         // Marketing & Promotions
-        mk('first-campaign', 'businessBadges.firstCampaign', 'businessBadges.firstCampaignDesc', '📢', notificationsCount >= 1, notificationsCount, 1),
-        mk('marketing-pro', 'businessBadges.marketingPro', 'businessBadges.marketingProDesc', '📊', notificationsCount >= 10, notificationsCount, 10),
-        mk('promotion-expert', 'businessBadges.promotionExpert', 'businessBadges.promotionExpertDesc', '🎯', notificationsCount >= 25, notificationsCount, 25),
+        mk('first-campaign', 'firstCampaign', 'firstCampaignDesc', '📢', notificationsCount >= 1, notificationsCount, 1),
+        mk('marketing-pro', 'marketingPro', 'marketingProDesc', '📊', notificationsCount >= 10, notificationsCount, 10),
+        mk('promotion-expert', 'promotionExpert', 'promotionExpertDesc', '🎯', notificationsCount >= 25, notificationsCount, 25),
 
         // Events & Deals (from posts)
-        mk('event-host', 'businessBadges.eventHost', 'businessBadges.eventHostDesc', '🎉', eventsCount >= 1, eventsCount, 1),
-        mk('festival-organizer', 'businessBadges.festivalOrganizer', 'businessBadges.festivalOrganizerDesc', '🎪', eventsCount >= 5, eventsCount, 5),
-        mk('special-deals', 'businessBadges.specialDeals', 'businessBadges.specialDealsDesc', '🎁', discountsCount >= 1, discountsCount, 1),
-        mk('deal-master', 'businessBadges.dealMaster', 'businessBadges.dealMasterDesc', '💰', discountsCount >= 10, discountsCount, 10),
+        mk('event-host', 'eventHost', 'eventHostDesc', '🎉', eventsCount >= 1, eventsCount, 1),
+        mk('festival-organizer', 'festivalOrganizer', 'festivalOrganizerDesc', '🎪', eventsCount >= 5, eventsCount, 5),
+        mk('special-deals', 'specialDeals', 'specialDealsDesc', '🎁', discountsCount >= 1, discountsCount, 1),
+        mk('deal-master', 'dealMaster', 'dealMasterDesc', '💰', discountsCount >= 10, discountsCount, 10),
       ];
 
       setBadges(items);
@@ -118,8 +118,8 @@ export const useBusinessBadges = ({ locationId, googlePlaceId }: UseBusinessBadg
     max?: number
   ): BusinessBadgeItem => ({
     id,
-    name: t(nameKey as any, { defaultValue: nameKey }),
-    description: t(descKey as any, { defaultValue: descKey }),
+    name: t(nameKey as any, { ns: 'business', defaultValue: nameKey }),
+    description: t(descKey as any, { ns: 'business', defaultValue: descKey }),
     icon,
     earned,
     progress,

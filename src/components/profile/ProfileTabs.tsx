@@ -36,7 +36,7 @@ const ProfileTabs = ({
           )}
         >
           <Grid3X3 className="w-4 h-4" />
-          <span className="hidden sm:inline">{t('profile.posts')}</span>
+          <span className="hidden sm:inline">{t('posts', { ns: 'profile' })}</span>
         </button>
         {showTrips && (
           <button
@@ -49,7 +49,7 @@ const ProfileTabs = ({
             )}
           >
             <MapPin className="w-4 h-4" />
-            <span className="hidden sm:inline">{t('profile.trips')}</span>
+            <span className="hidden sm:inline">{t('trips', { ns: 'profile' })}</span>
           </button>
         )}
         {showMarketing && (
@@ -63,7 +63,7 @@ const ProfileTabs = ({
             )}
           >
             <Megaphone className="w-4 h-4" />
-            <span className="hidden sm:inline">{t('profile.marketing')}</span>
+            <span className="hidden sm:inline">{t('marketing', { ns: 'profile' })}</span>
           </button>
         )}
         <button
@@ -76,7 +76,7 @@ const ProfileTabs = ({
           )}
         >
           <Award className="w-4 h-4" />
-          <span className="hidden sm:inline">{t('profile.badges')}</span>
+          <span className="hidden sm:inline">{t('badges', { ns: 'profile' })}</span>
           {hasNewBadges && activeTab !== 'badges' && (
             <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
           )}
@@ -91,7 +91,7 @@ const ProfileTabs = ({
           )}
         >
           <Tag className="w-4 h-4" />
-          <span className="hidden sm:inline">{t('profile.tagged')}</span>
+          <span className="hidden sm:inline">{t('tagged', { ns: 'profile' })}</span>
         </button>
       </div>
     </div>

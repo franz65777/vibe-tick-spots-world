@@ -30,10 +30,7 @@ const BusinessBadges: React.FC<Props> = ({ locationId, googlePlaceId }) => {
   }
 
   return (
-    <div className="space-y-3">
-      <h2 className="text-sm font-semibold text-foreground">
-        {t('businessBadgesTitle', { ns: 'business', defaultValue: 'Business Badges' })}
-      </h2>
+    <div className="space-y-3 max-h-[calc(100vh-400px)] overflow-y-auto px-1">
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {badges.map((b) => (
           <div
