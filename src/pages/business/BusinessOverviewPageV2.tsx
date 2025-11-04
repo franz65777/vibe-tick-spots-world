@@ -237,8 +237,8 @@ const BusinessOverviewPageV2 = () => {
     <div className="min-h-screen bg-gradient-to-b from-background via-muted/5 to-background pb-24">
       <div className="max-w-screen-sm mx-auto">
         {/* Sticky Header */}
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b">
-          <div className="flex items-center justify-between p-4">
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm">
+          <div className="flex items-center justify-between p-3">
             <div className="flex items-center gap-3 flex-1">
               {/* Profile Image - Smaller Icon */}
               <div className="relative group flex-shrink-0">
@@ -294,74 +294,74 @@ const BusinessOverviewPageV2 = () => {
           </div>
         </div>
 
-        {/* Stats Cards - Enhanced Design */}
-        <div className="p-4 grid grid-cols-3 gap-3">
-          <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-primary via-primary/90 to-primary/80">
-            <CardContent className="p-4 text-center relative z-10">
-              <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                <Eye className="w-5 h-5 text-white" />
+        {/* Stats Cards - Compact Design */}
+        <div className="p-3 grid grid-cols-3 gap-2.5">
+          <Card className="relative overflow-hidden border-0 shadow-md bg-gradient-to-br from-primary via-primary/90 to-primary/80">
+            <CardContent className="p-3 text-center relative z-10">
+              <div className="w-8 h-8 mx-auto mb-1.5 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <Eye className="w-4 h-4 text-white" />
               </div>
-              <p className="text-2xl font-bold text-white mb-1">{statsLoading ? '...' : viewsCount}</p>
-              <p className="text-xs text-white/80 font-medium">{t('views', { ns: 'business' })}</p>
+              <p className="text-xl font-bold text-white mb-0.5">{statsLoading ? '...' : viewsCount}</p>
+              <p className="text-[10px] text-white/80 font-medium">{t('views', { ns: 'business' })}</p>
             </CardContent>
-            <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10" />
+            <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -mr-8 -mt-8" />
           </Card>
 
-          <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-chart-2 via-chart-2/90 to-chart-2/80">
-            <CardContent className="p-4 text-center relative z-10">
-              <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                <MessageSquare className="w-5 h-5 text-white" />
+          <Card className="relative overflow-hidden border-0 shadow-md bg-gradient-to-br from-chart-2 via-chart-2/90 to-chart-2/80">
+            <CardContent className="p-3 text-center relative z-10">
+              <div className="w-8 h-8 mx-auto mb-1.5 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <MessageSquare className="w-4 h-4 text-white" />
               </div>
-              <p className="text-2xl font-bold text-white mb-1">{statsLoading ? '...' : commentsCount}</p>
-              <p className="text-xs text-white/80 font-medium">{t('comments', { ns: 'business' })}</p>
+              <p className="text-xl font-bold text-white mb-0.5">{statsLoading ? '...' : commentsCount}</p>
+              <p className="text-[10px] text-white/80 font-medium">{t('comments', { ns: 'business' })}</p>
             </CardContent>
-            <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10" />
+            <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -mr-8 -mt-8" />
           </Card>
 
-          <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-chart-3 via-chart-3/90 to-chart-3/80">
-            <CardContent className="p-4 text-center relative z-10">
-              <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                <Heart className="w-5 h-5 text-white" />
+          <Card className="relative overflow-hidden border-0 shadow-md bg-gradient-to-br from-chart-3 via-chart-3/90 to-chart-3/80">
+            <CardContent className="p-3 text-center relative z-10">
+              <div className="w-8 h-8 mx-auto mb-1.5 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <Heart className="w-4 h-4 text-white" />
               </div>
-              <p className="text-2xl font-bold text-white mb-1">{statsLoading ? '...' : stats.totalSaves}</p>
-              <p className="text-xs text-white/80 font-medium">{t('saves', { ns: 'business' })}</p>
+              <p className="text-xl font-bold text-white mb-0.5">{statsLoading ? '...' : stats.totalSaves}</p>
+              <p className="text-[10px] text-white/80 font-medium">{t('saves', { ns: 'business' })}</p>
             </CardContent>
-            <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10" />
+            <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -mr-8 -mt-8" />
           </Card>
         </div>
 
-        {/* Quick Insights - Enhanced Design */}
-        <div className="px-4 pb-4">
-          <div className="grid grid-cols-2 gap-3">
-            <Card className="relative overflow-hidden border-0 shadow-lg">
+        {/* Quick Insights - Compact Design */}
+        <div className="px-3 pb-3">
+          <div className="grid grid-cols-2 gap-2.5">
+            <Card className="relative overflow-hidden border-0 shadow-md">
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 via-emerald-500/10 to-transparent" />
-              <CardContent className="p-4 relative z-10">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg">
-                    <TrendingUp className="w-5 h-5 text-white" />
+              <CardContent className="p-3 relative z-10">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-md">
+                    <TrendingUp className="w-4 h-4 text-white" />
                   </div>
-                  <Zap className="w-5 h-5 text-emerald-500/40" />
+                  <Zap className="w-4 h-4 text-emerald-500/40" />
                 </div>
-                <p className="text-3xl font-bold text-foreground mb-1">
+                <p className="text-2xl font-bold text-foreground mb-0.5">
                   {statsLoading ? '...' : dailyGrowth >= 0 ? `+${dailyGrowth}%` : `${dailyGrowth}%`}
                 </p>
-                <p className="text-xs text-muted-foreground font-medium">{t('dailyGrowth', { ns: 'business' })}</p>
+                <p className="text-[10px] text-muted-foreground font-medium">{t('dailyGrowth', { ns: 'business' })}</p>
               </CardContent>
             </Card>
 
-            <Card className="relative overflow-hidden border-0 shadow-lg">
+            <Card className="relative overflow-hidden border-0 shadow-md">
               <div className="absolute inset-0 bg-gradient-to-br from-amber-500/20 via-amber-500/10 to-transparent" />
-              <CardContent className="p-4 relative z-10">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-lg">
-                    <Star className="w-5 h-5 text-white" />
+              <CardContent className="p-3 relative z-10">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-md">
+                    <Star className="w-4 h-4 text-white" />
                   </div>
-                  <Sparkles className="w-5 h-5 text-amber-500/40" />
+                  <Sparkles className="w-4 h-4 text-amber-500/40" />
                 </div>
-                <p className="text-3xl font-bold text-foreground mb-1">
+                <p className="text-2xl font-bold text-foreground mb-0.5">
                   {stats.averageRating ? stats.averageRating.toFixed(1) : 'N/A'}
                 </p>
-                <p className="text-xs text-muted-foreground font-medium">{t('avgRating', { ns: 'business' })}</p>
+                <p className="text-[10px] text-muted-foreground font-medium">{t('avgRating', { ns: 'business' })}</p>
               </CardContent>
             </Card>
           </div>

@@ -277,93 +277,93 @@ const BusinessAnalyticsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="h-screen bg-background pb-24 overflow-y-auto">
       <div className="max-w-screen-sm mx-auto px-3 py-3 space-y-3">
         <div>
           <h1 className="text-xl font-bold text-foreground">{t('businessAnalytics', { ns: 'business' })}</h1>
           <p className="text-xs text-muted-foreground mt-0.5">{t('trackPerformance', { ns: 'business' })}</p>
         </div>
 
-        {/* Key Metrics Grid - Enhanced Design */}
-        <div className="grid grid-cols-2 gap-3">
-          <Card className="relative overflow-hidden border-0 shadow-lg">
+        {/* Key Metrics Grid - Compact Design */}
+        <div className="grid grid-cols-2 gap-2.5">
+          <Card className="relative overflow-hidden border-0 shadow-md">
             <div className="absolute inset-0 bg-gradient-to-br from-rose-500/20 via-rose-500/10 to-transparent" />
-            <CardContent className="pt-5 pb-4 relative z-10">
-              <div className="flex items-start justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-rose-600 flex items-center justify-center shadow-md">
-                  <Heart className="w-5 h-5 text-white" />
+            <CardContent className="pt-3 pb-2.5 relative z-10">
+              <div className="flex items-start justify-between mb-2">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-500 to-rose-600 flex items-center justify-center shadow-md">
+                  <Heart className="w-4 h-4 text-white" />
                 </div>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground font-medium mb-1">{t('totalSaves', { ns: 'business' })}</p>
-                <p className="text-3xl font-bold text-foreground mb-2">{analytics.totalSaves}</p>
+                <p className="text-[10px] text-muted-foreground font-medium mb-0.5">{t('totalSaves', { ns: 'business' })}</p>
+                <p className="text-2xl font-bold text-foreground mb-1.5">{analytics.totalSaves}</p>
                 {analytics.savesChange !== 0 && (
-                  <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold ${analytics.savesChange > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400'}`}>
-                    <TrendingUp className={`w-3 h-3 ${analytics.savesChange < 0 ? 'rotate-180' : ''}`} />
-                    {analytics.savesChange > 0 ? '+' : ''}{analytics.savesChange}% {t('thisWeekLower', { ns: 'business' })}
+                  <div className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${analytics.savesChange > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400'}`}>
+                    <TrendingUp className={`w-2.5 h-2.5 ${analytics.savesChange < 0 ? 'rotate-180' : ''}`} />
+                    {analytics.savesChange > 0 ? '+' : ''}{analytics.savesChange}%
                   </div>
                 )}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="relative overflow-hidden border-0 shadow-lg">
+          <Card className="relative overflow-hidden border-0 shadow-md">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/10 to-transparent" />
-            <CardContent className="pt-5 pb-4 relative z-10">
-              <div className="flex items-start justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-md">
-                  <FileText className="w-5 h-5 text-white" />
+            <CardContent className="pt-3 pb-2.5 relative z-10">
+              <div className="flex items-start justify-between mb-2">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-md">
+                  <FileText className="w-4 h-4 text-white" />
                 </div>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground font-medium mb-1">{t('totalPosts', { ns: 'business' })}</p>
-                <p className="text-3xl font-bold text-foreground mb-2">{analytics.totalPosts}</p>
+                <p className="text-[10px] text-muted-foreground font-medium mb-0.5">{t('totalPosts', { ns: 'business' })}</p>
+                <p className="text-2xl font-bold text-foreground mb-1.5">{analytics.totalPosts}</p>
                 {analytics.postsChange !== 0 && (
-                  <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold ${analytics.postsChange > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400'}`}>
-                    <TrendingUp className={`w-3 h-3 ${analytics.postsChange < 0 ? 'rotate-180' : ''}`} />
-                    {analytics.postsChange > 0 ? '+' : ''}{analytics.postsChange}% {t('thisWeekLower', { ns: 'business' })}
+                  <div className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${analytics.postsChange > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400'}`}>
+                    <TrendingUp className={`w-2.5 h-2.5 ${analytics.postsChange < 0 ? 'rotate-180' : ''}`} />
+                    {analytics.postsChange > 0 ? '+' : ''}{analytics.postsChange}%
                   </div>
                 )}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="relative overflow-hidden border-0 shadow-lg">
+          <Card className="relative overflow-hidden border-0 shadow-md">
             <div className="absolute inset-0 bg-gradient-to-br from-violet-500/20 via-violet-500/10 to-transparent" />
-            <CardContent className="pt-5 pb-4 relative z-10">
-              <div className="flex items-start justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center shadow-md">
-                  <Share2 className="w-5 h-5 text-white" />
+            <CardContent className="pt-3 pb-2.5 relative z-10">
+              <div className="flex items-start justify-between mb-2">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center shadow-md">
+                  <Share2 className="w-4 h-4 text-white" />
                 </div>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground font-medium mb-1">{t('totalShares', { ns: 'business' })}</p>
-                <p className="text-3xl font-bold text-foreground mb-2">{analytics.totalShares}</p>
+                <p className="text-[10px] text-muted-foreground font-medium mb-0.5">{t('totalShares', { ns: 'business' })}</p>
+                <p className="text-2xl font-bold text-foreground mb-1.5">{analytics.totalShares}</p>
                 {analytics.sharesChange !== 0 && (
-                  <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold ${analytics.sharesChange > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400'}`}>
-                    <TrendingUp className={`w-3 h-3 ${analytics.sharesChange < 0 ? 'rotate-180' : ''}`} />
-                    {analytics.sharesChange > 0 ? '+' : ''}{analytics.sharesChange}% {t('thisWeekLower', { ns: 'business' })}
+                  <div className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${analytics.sharesChange > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400'}`}>
+                    <TrendingUp className={`w-2.5 h-2.5 ${analytics.sharesChange < 0 ? 'rotate-180' : ''}`} />
+                    {analytics.sharesChange > 0 ? '+' : ''}{analytics.sharesChange}%
                   </div>
                 )}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="relative overflow-hidden border-0 shadow-lg">
+          <Card className="relative overflow-hidden border-0 shadow-md">
             <div className="absolute inset-0 bg-gradient-to-br from-amber-500/20 via-amber-500/10 to-transparent" />
-            <CardContent className="pt-5 pb-4 relative z-10">
-              <div className="flex items-start justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-md">
-                  <Clock className="w-5 h-5 text-white" />
+            <CardContent className="pt-3 pb-2.5 relative z-10">
+              <div className="flex items-start justify-between mb-2">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-md">
+                  <Clock className="w-4 h-4 text-white" />
                 </div>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground font-medium mb-1">{t('avgTime', { ns: 'business' })}</p>
-                <p className="text-3xl font-bold text-foreground mb-2">{analytics.avgTimeSpent}m</p>
+                <p className="text-[10px] text-muted-foreground font-medium mb-0.5">{t('avgTime', { ns: 'business' })}</p>
+                <p className="text-2xl font-bold text-foreground mb-1.5">{analytics.avgTimeSpent}m</p>
                 {analytics.timeChange !== 0 && (
-                  <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold ${analytics.timeChange > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400'}`}>
-                    <TrendingUp className={`w-3 h-3 ${analytics.timeChange < 0 ? 'rotate-180' : ''}`} />
-                    {analytics.timeChange > 0 ? '+' : ''}{analytics.timeChange}% {t('thisWeekLower', { ns: 'business' })}
+                  <div className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${analytics.timeChange > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400'}`}>
+                    <TrendingUp className={`w-2.5 h-2.5 ${analytics.timeChange < 0 ? 'rotate-180' : ''}`} />
+                    {analytics.timeChange > 0 ? '+' : ''}{analytics.timeChange}%
                   </div>
                 )}
               </div>
@@ -390,10 +390,10 @@ const BusinessAnalyticsPage = () => {
                   color: "hsl(var(--primary))",
                 },
               }}
-              className="h-[180px]"
+              className="h-[160px]"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={analytics.savesOverTime} margin={{ top: 5, right: 10, bottom: 5, left: -20 }}>
+                <LineChart data={analytics.savesOverTime} margin={{ top: 5, right: 5, bottom: 5, left: -25 }}>
                   <defs>
                     <linearGradient id="savesGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
@@ -448,10 +448,10 @@ const BusinessAnalyticsPage = () => {
                   color: "hsl(var(--chart-2))",
                 },
               }}
-              className="h-[180px]"
+              className="h-[160px]"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={analytics.postsOverTime} margin={{ top: 5, right: 10, bottom: 5, left: -20 }}>
+                <BarChart data={analytics.postsOverTime} margin={{ top: 5, right: 5, bottom: 5, left: -25 }}>
                   <defs>
                     <linearGradient id="postsGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="hsl(var(--chart-2))" stopOpacity={0.8} />
@@ -502,10 +502,10 @@ const BusinessAnalyticsPage = () => {
                   color: "hsl(var(--chart-3))",
                 },
               }}
-              className="h-[180px]"
+              className="h-[160px]"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={analytics.weeklyEngagement} margin={{ top: 5, right: 10, bottom: 5, left: -20 }}>
+                <BarChart data={analytics.weeklyEngagement} margin={{ top: 5, right: 5, bottom: 5, left: -25 }}>
                   <defs>
                     <linearGradient id="engagementGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="hsl(var(--chart-3))" stopOpacity={0.8} />
