@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Bell, BellOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import LocationPostLibrary from './LocationPostLibrary';
@@ -8,6 +9,7 @@ import CityLabel from '@/components/common/CityLabel';
 import { getCachedData, clearCache } from '@/services/performanceService';
 import { normalizeCity } from '@/utils/cityNormalization';
 import { reverseTranslateCityName } from '@/utils/cityTranslations';
+import { useMutedLocations } from '@/hooks/useMutedLocations';
 
 interface LocationGridProps {
   searchQuery?: string;
@@ -33,6 +35,7 @@ interface LocationCard {
 
 const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
   const { user } = useAuth();
+  const { mutedLocations, muteLocation, unmuteLocation, isMuting } = useMutedLocations(user?.id);
   const [locations, setLocations] = useState<LocationCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLocation, setSelectedLocation] = useState<LocationCard | null>(null);
@@ -424,6 +427,7 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
       <div className="grid grid-cols-2 gap-2 px-2 pb-20">
         {locations.map((location) => {
           const isSaved = userSavedIds.has(location.id);
+          const isMuted = mutedLocations?.some((m: any) => m.location_id === location.id);
           
           return (
             <div
@@ -431,23 +435,45 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
               onClick={() => handleLocationClick(location)}
               className="relative bg-white dark:bg-card rounded-2xl overflow-hidden cursor-pointer transition-all border border-border flex flex-col h-[140px]"
             >
-              {/* Top section with category and save */}
+              {/* Top section with category, mute, and save */}
               <div className="relative p-2.5 flex items-start justify-between">
                 <CategoryIcon category={location.category} className={location.category.toLowerCase() === 'hotel' || location.category.toLowerCase() === 'restaurant' ? 'w-9 h-9' : 'w-7 h-7'} />
                 
-                <button
-                  onClick={(e) => handleSaveToggle(e, location.id)}
-                  className={`rounded-full p-1.5 transition-all ${
-                    isSaved 
-                      ? 'bg-primary text-primary-foreground shadow-sm' 
-                      : 'bg-muted hover:bg-muted/80 text-muted-foreground'
-                  }`}
-                  aria-label={isSaved ? 'Unsave location' : 'Save location'}
-                >
-                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
-                  </svg>
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isMuted) {
+                        unmuteLocation(location.id);
+                      } else {
+                        muteLocation(location.id);
+                      }
+                    }}
+                    disabled={isMuting}
+                    className={`rounded-full p-1.5 transition-all ${
+                      isMuted 
+                        ? 'bg-muted text-muted-foreground hover:bg-muted/80' 
+                        : 'bg-muted hover:bg-muted/60 text-muted-foreground'
+                    }`}
+                    aria-label={isMuted ? 'Unmute location' : 'Mute location'}
+                  >
+                    {isMuted ? <BellOff className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5" />}
+                  </button>
+                  
+                  <button
+                    onClick={(e) => handleSaveToggle(e, location.id)}
+                    className={`rounded-full p-1.5 transition-all ${
+                      isSaved 
+                        ? 'bg-primary text-primary-foreground shadow-sm' 
+                        : 'bg-muted hover:bg-muted/80 text-muted-foreground'
+                    }`}
+                    aria-label={isSaved ? 'Unsave location' : 'Save location'}
+                  >
+                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               {/* Content */}

@@ -300,13 +300,13 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
 
           {/* Action Buttons */}
           <div className="bg-background px-4 pb-4">
-            <div className="grid grid-cols-5 gap-2">
+            <div className="flex items-center gap-2">
               <Button
                 onClick={handleSaveToggle}
                 disabled={loading}
                 size="sm"
                 variant="secondary"
-                className="flex-col h-auto py-3 gap-1 rounded-2xl"
+                className="flex-1 flex-col h-auto py-3 gap-1 rounded-2xl"
               >
                 <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
                 <span className="text-xs">{isSaved ? t('saved', { ns: 'common', defaultValue: 'Saved' }) : t('save', { ns: 'common', defaultValue: 'Save' })}</span>
@@ -319,7 +319,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                 }}
                 size="sm"
                 variant="secondary"
-                className="flex-col h-auto py-3 gap-1 rounded-2xl"
+                className="flex-1 flex-col h-auto py-3 gap-1 rounded-2xl"
               >
                 <Star className="w-5 h-5" />
                 <span className="text-xs">{t('review', { ns: 'common', defaultValue: 'Review' })}</span>
@@ -329,7 +329,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                 onClick={handleDirections}
                 size="sm"
                 variant="secondary"
-                className="flex-col h-auto py-3 gap-1 rounded-2xl"
+                className="flex-1 flex-col h-auto py-3 gap-1 rounded-2xl"
               >
                 <Navigation className="w-5 h-5" />
                 <span className="text-xs">{t('directions', { ns: 'common', defaultValue: 'Directions' })}</span>
@@ -339,7 +339,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                 onClick={() => setShareOpen(true)}
                 size="sm"
                 variant="secondary"
-                className="flex-col h-auto py-3 gap-1 rounded-2xl"
+                className="flex-1 flex-col h-auto py-3 gap-1 rounded-2xl"
               >
                 <Share2 className="w-5 h-5" />
                 <span className="text-xs">{t('share', { ns: 'common', defaultValue: 'Share' })}</span>
@@ -356,14 +356,13 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                   }
                 }}
                 disabled={isMuting}
-                size="sm"
+                size="icon"
                 variant="secondary"
-                className={`flex-col h-auto py-3 gap-1 rounded-2xl ${
-                  mutedLocations?.some((m: any) => m.location_id === place.id) ? 'bg-muted text-muted-foreground' : ''
+                className={`h-16 w-16 rounded-full ${
+                  mutedLocations?.some((m: any) => m.location_id === place.id) ? 'bg-muted text-muted-foreground hover:bg-muted/80' : ''
                 }`}
               >
                 {mutedLocations?.some((m: any) => m.location_id === place.id) ? <BellOff className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
-                <span className="text-xs">{mutedLocations?.some((m: any) => m.location_id === place.id) ? t('muted') : t('mute')}</span>
               </Button>
             </div>
           </div>

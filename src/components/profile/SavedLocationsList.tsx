@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { ArrowLeft, Search, MapPin, X } from 'lucide-react';
+import { ArrowLeft, Search, MapPin, X, Bell, BellOff } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { UnifiedLocationService } from '@/services/unifiedLocationService';
 import { useTranslation } from 'react-i18next';
 import { translateCityName } from '@/utils/cityTranslations';
+import { useMutedLocations } from '@/hooks/useMutedLocations';
 
 interface SavedLocationsListProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ interface SavedLocationsListProps {
 const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps) => {
   const { t, i18n } = useTranslation();
   const { user: currentUser } = useAuth();
+  const { mutedLocations, muteLocation, unmuteLocation, isMuting } = useMutedLocations(currentUser?.id);
   const targetUserId = userId || currentUser?.id;
   const [savedPlaces, setSavedPlaces] = useState<any>({});
   const [loading, setLoading] = useState(true);
@@ -288,36 +290,60 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
       {!loading && filteredAndSortedPlaces.length > 0 && (
         <div className="flex-1 overflow-y-auto bg-background">
           <div className="grid grid-cols-2 gap-3 px-4 py-3">
-            {filteredAndSortedPlaces.map((p, idx) => (
-              <div key={`${p.city}-${p.id}-${idx}`} className="relative group">
-                <MinimalLocationCard
-                  place={{
-                    id: p.id,
-                    name: p.name,
-                    category: p.category,
-                    city: p.city,
-                    address: p.address,
-                    google_place_id: p.google_place_id,
-                    coordinates: p.coordinates,
-                    savedCount: p.savedCount || 0,
-                    postsCount: p.postsCount || 0
-                  }}
-                  onCardClick={() => handlePlaceClick(p)}
-                />
-                {isOwnProfile && (
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            {filteredAndSortedPlaces.map((p, idx) => {
+              const isMuted = mutedLocations?.some((m: any) => m.location_id === p.id);
+              
+              return (
+                <div key={`${p.city}-${p.id}-${idx}`} className="relative group">
+                  <MinimalLocationCard
+                    place={{
+                      id: p.id,
+                      name: p.name,
+                      category: p.category,
+                      city: p.city,
+                      address: p.address,
+                      google_place_id: p.google_place_id,
+                      coordinates: p.coordinates,
+                      savedCount: p.savedCount || 0,
+                      postsCount: p.postsCount || 0
+                    }}
+                    onCardClick={() => handlePlaceClick(p)}
+                  />
+                  <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6 bg-background/80 hover:bg-background"
-                      onClick={(e) => handleUnsave(e, p)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isMuted) {
+                          unmuteLocation(p.id);
+                        } else {
+                          muteLocation(p.id);
+                        }
+                      }}
+                      disabled={isMuting}
+                      className={`h-6 w-6 rounded-full ${
+                        isMuted 
+                          ? 'bg-muted text-muted-foreground hover:bg-muted/80' 
+                          : 'bg-background/80 hover:bg-background'
+                      }`}
                     >
-                      <X className="h-4 w-4" />
+                      {isMuted ? <BellOff className="h-3.5 w-3.5" /> : <Bell className="h-3.5 w-3.5" />}
                     </Button>
+                    {isOwnProfile && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 bg-background/80 hover:bg-background"
+                        onClick={(e) => handleUnsave(e, p)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
-                )}
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

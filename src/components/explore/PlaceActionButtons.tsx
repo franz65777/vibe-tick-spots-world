@@ -69,12 +69,12 @@ const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
 
   return (
     <>
-      <div className="grid grid-cols-5 gap-2">
+      <div className="flex items-center gap-2">
         <Button
           variant="outline"
           size="sm"
           onClick={handleWebsite}
-          className="flex flex-col gap-1 h-16 px-2"
+          className="flex-1 flex flex-col gap-1 h-16 px-2"
         >
           <Globe className="w-5 h-5" />
           <span className="text-xs">Website</span>
@@ -84,7 +84,7 @@ const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
           variant="outline"
           size="sm"
           onClick={handleCall}
-          className="flex flex-col gap-1 h-16 px-2"
+          className="flex-1 flex flex-col gap-1 h-16 px-2"
         >
           <Phone className="w-5 h-5" />
           <span className="text-xs">Call</span>
@@ -94,7 +94,7 @@ const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
           variant="outline"
           size="sm"
           onClick={() => setDirectionsModalOpen(true)}
-          className="flex flex-col gap-1 h-16 px-2"
+          className="flex-1 flex flex-col gap-1 h-16 px-2"
         >
           <Navigation className="w-5 h-5" />
           <span className="text-xs">Directions</span>
@@ -104,7 +104,7 @@ const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
           variant="outline"
           size="sm"
           onClick={() => setShareOpen(true)}
-          className="flex flex-col gap-1 h-16 px-2"
+          className="flex-1 flex flex-col gap-1 h-16 px-2"
         >
           <Share2 className="w-5 h-5" />
           <span className="text-xs">Share</span>
@@ -112,13 +112,16 @@ const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
 
         <Button
           variant="outline"
-          size="sm"
+          size="icon"
           onClick={handleMuteToggle}
           disabled={isMuting}
-          className={`flex flex-col gap-1 h-16 px-2 ${isMuted ? 'bg-muted' : ''}`}
+          className={`h-16 w-16 rounded-full ${
+            isMuted 
+              ? 'bg-muted text-muted-foreground hover:bg-muted/80' 
+              : 'hover:bg-muted'
+          }`}
         >
           {isMuted ? <BellOff className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
-          <span className="text-xs">{isMuted ? t('muted') : t('mute')}</span>
         </Button>
       </div>
 
