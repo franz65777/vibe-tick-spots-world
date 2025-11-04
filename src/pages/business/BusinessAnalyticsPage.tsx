@@ -280,7 +280,7 @@ const BusinessAnalyticsPage = () => {
     <div className="h-screen bg-background pb-24 overflow-y-auto">
       <div className="max-w-screen-sm mx-auto px-3 py-3 space-y-3">
         <div>
-          <h1 className="text-xl font-bold text-foreground">{t('businessAnalytics', { ns: 'business' })}</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t('businessAnalytics', { ns: 'business' })}</h1>
           <p className="text-xs text-muted-foreground mt-0.5">{t('trackPerformance', { ns: 'business' })}</p>
         </div>
 
@@ -390,7 +390,7 @@ const BusinessAnalyticsPage = () => {
               {t('savesOverTime', { ns: 'business' })}
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-2">
+          <CardContent className="px-3">
             <ChartContainer
               config={{
                 count: {
@@ -400,8 +400,8 @@ const BusinessAnalyticsPage = () => {
               }}
               className="h-[160px]"
             >
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={analytics.savesOverTime} margin={{ top: 5, right: 15, bottom: 5, left: -25 }}>
+              <ResponsiveContainer width="95%" height="100%">
+                <LineChart data={analytics.savesOverTime} margin={{ top: 5, right: 10, bottom: 5, left: -25 }}>
                   <defs>
                     <linearGradient id="savesGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
@@ -448,7 +448,7 @@ const BusinessAnalyticsPage = () => {
               {t('postsGrowth', { ns: 'business' })}
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-2">
+          <CardContent className="px-3">
             <ChartContainer
               config={{
                 count: {
@@ -458,8 +458,8 @@ const BusinessAnalyticsPage = () => {
               }}
               className="h-[160px]"
             >
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={analytics.postsOverTime} margin={{ top: 5, right: 15, bottom: 5, left: -25 }}>
+              <ResponsiveContainer width="95%" height="100%">
+                <BarChart data={analytics.postsOverTime} margin={{ top: 5, right: 10, bottom: 5, left: -25 }}>
                   <defs>
                     <linearGradient id="postsGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="hsl(var(--chart-2))" stopOpacity={0.8} />
@@ -502,7 +502,7 @@ const BusinessAnalyticsPage = () => {
               {t('weeklyEngagement', { ns: 'business' })}
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-2">
+          <CardContent className="px-3">
             <ChartContainer
               config={{
                 minutes: {
@@ -512,8 +512,8 @@ const BusinessAnalyticsPage = () => {
               }}
               className="h-[160px]"
             >
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={analytics.weeklyEngagement} margin={{ top: 5, right: 15, bottom: 5, left: -25 }}>
+              <ResponsiveContainer width="95%" height="100%">
+                <BarChart data={analytics.weeklyEngagement} margin={{ top: 5, right: 10, bottom: 5, left: -25 }}>
                   <defs>
                     <linearGradient id="engagementGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="hsl(var(--chart-3))" stopOpacity={0.8} />
