@@ -309,28 +309,8 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
                     }}
                     onCardClick={() => handlePlaceClick(p)}
                   />
-                  <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (isMuted) {
-                          unmuteLocation(p.id);
-                        } else {
-                          muteLocation(p.id);
-                        }
-                      }}
-                      disabled={isMuting}
-                      className={`h-6 w-6 rounded-full ${
-                        isMuted 
-                          ? 'bg-muted text-muted-foreground hover:bg-muted/80' 
-                          : 'bg-background/80 hover:bg-background'
-                      }`}
-                    >
-                      {isMuted ? <BellOff className="h-3.5 w-3.5" /> : <Bell className="h-3.5 w-3.5" />}
-                    </Button>
-                    {isOwnProfile && (
+                  {isOwnProfile && (
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -339,8 +319,8 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
                       >
                         <X className="h-4 w-4" />
                       </Button>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
