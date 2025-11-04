@@ -37,9 +37,13 @@ export const useMutedLocations = (userId: string | undefined) => {
     mutationFn: async (locationId: string) => {
       if (!userId) throw new Error('User not authenticated');
 
+      // Avoid RLS issues from UPSERT (which requires UPDATE policy)
+      // If already muted, no-op to prevent duplicates
+      if (mutedLocations?.some((m: any) => m.location_id === locationId)) return;
+
       const { error } = await supabase
         .from('user_muted_locations')
-        .upsert({ user_id: userId, location_id: locationId }, { onConflict: 'user_id,location_id' });
+        .insert({ user_id: userId, location_id: locationId });
 
       if (error) throw error;
     },
