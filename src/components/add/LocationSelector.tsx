@@ -40,18 +40,25 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
           <div className="flex items-start gap-2 p-3 bg-destructive/10 rounded-lg">
             <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
             <p className="text-xs text-muted-foreground">
-              {t('youMustTagLocation', { ns: 'add' })}
+              {disabled ? t('postingToBusinessLocation', { ns: 'add' }) : t('youMustTagLocation', { ns: 'add' })}
             </p>
           </div>
         </div>
       ) : (
         <div className="space-y-3">
-          <div className="p-4 bg-primary/10 rounded-xl space-y-2">
-            <div>
-              <p className="font-semibold text-foreground">{selectedLocation.name}</p>
-              <p className="text-sm text-muted-foreground">{selectedLocation.formatted_address || selectedLocation.address}</p>
+          <div className="p-4 bg-primary/10 border-2 border-primary/20 rounded-xl space-y-2">
+            <div className="flex items-start gap-2">
+              <MapPin className="w-4 h-4 text-primary shrink-0 mt-1" />
+              <div className="flex-1">
+                <p className="font-semibold text-foreground">{selectedLocation.name}</p>
+                <p className="text-sm text-muted-foreground">{selectedLocation.formatted_address || selectedLocation.address}</p>
+              </div>
             </div>
-            {!disabled && (
+            {disabled ? (
+              <p className="text-xs text-primary font-medium">
+                {t('postingToYourLocation', { ns: 'add' })}
+              </p>
+            ) : (
               <button
                 onClick={() => {
                   onLocationSelect(null);

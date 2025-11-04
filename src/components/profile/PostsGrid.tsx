@@ -7,6 +7,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePostDeletion } from '@/hooks/usePostDeletion';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 interface Post {
   id: string;
@@ -31,6 +32,7 @@ interface PostsGridProps {
 }
 
 const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGridProps) => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { profile } = useProfile();
   const targetUserId = userId || profile?.id;
@@ -70,7 +72,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
     
     console.log('Delete post clicked:', postId);
     
-    if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+    if (!confirm(t('confirmDeletePost', { ns: 'business' }))) {
       return;
     }
 
@@ -80,15 +82,15 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
       
       if (result.success) {
         console.log('Post deleted successfully');
-        toast.success('Post deleted successfully');
+        toast.success(t('postDeletedSuccess', { ns: 'business' }));
         await refetch(); // Refresh the posts list
       } else {
         console.error('Failed to delete post:', result.error);
-        toast.error(result.error?.message || 'Failed to delete post');
+        toast.error(result.error?.message || t('failedDeletePost', { ns: 'business' }));
       }
     } catch (error) {
       console.error('Error deleting post:', error);
-      toast.error('Failed to delete post. Please try again.');
+      toast.error(t('failedDeletePost', { ns: 'business' }));
     }
   };
 
@@ -104,12 +106,12 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
   if (posts.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
-        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-          <Grid3X3 className="w-8 h-8 text-gray-400" />
+        <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+          <Grid3X3 className="w-8 h-8 text-muted-foreground" />
         </div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">No posts yet</h3>
-        <p className="text-gray-600 text-sm">
-          {isOwnProfile ? "Start sharing your favorite places!" : "No posts to show"}
+        <h3 className="text-lg font-semibold text-foreground mb-2">{t('noPostsYet', { ns: 'business' })}</h3>
+        <p className="text-muted-foreground text-sm">
+          {isOwnProfile ? t('startSharing', { ns: 'business' }) : t('noPostsToShow', { ns: 'business' })}
         </p>
       </div>
     );

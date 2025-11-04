@@ -360,9 +360,12 @@ const BusinessAnalyticsPage = () => {
         </div>
 
         {/* Saves Over Time Chart */}
-        <Card>
+        <Card className="bg-gradient-to-br from-card to-card/50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">{t('savesOverTime', { ns: 'business' })}</CardTitle>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Heart className="w-4 h-4 text-primary" />
+              {t('savesOverTime', { ns: 'business' })}
+            </CardTitle>
           </CardHeader>
           <CardContent className="px-2">
             <ChartContainer
@@ -372,25 +375,38 @@ const BusinessAnalyticsPage = () => {
                   color: "hsl(var(--primary))",
                 },
               }}
-              className="h-[160px]"
+              className="h-[180px]"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={analytics.savesOverTime} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" opacity={0.3} />
+                <LineChart data={analytics.savesOverTime} margin={{ top: 5, right: 10, bottom: 5, left: -20 }}>
+                  <defs>
+                    <linearGradient id="savesGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" opacity={0.2} />
                   <XAxis 
                     dataKey="date" 
-                    tick={{ fontSize: 9 }}
+                    tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
                     interval="preserveEnd"
-                    tickMargin={5}
+                    tickMargin={8}
+                    stroke="hsl(var(--border))"
                   />
-                  <YAxis tick={{ fontSize: 9 }} width={30} />
+                  <YAxis 
+                    tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} 
+                    width={35}
+                    stroke="hsl(var(--border))"
+                  />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Line 
                     type="monotone" 
                     dataKey="count" 
                     stroke="hsl(var(--primary))" 
-                    strokeWidth={2}
-                    dot={{ fill: "hsl(var(--primary))", r: 3 }}
+                    strokeWidth={3}
+                    dot={{ fill: "hsl(var(--primary))", r: 4, strokeWidth: 2, stroke: "hsl(var(--background))" }}
+                    activeDot={{ r: 6, strokeWidth: 2, stroke: "hsl(var(--background))" }}
+                    fill="url(#savesGradient)"
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -399,73 +415,99 @@ const BusinessAnalyticsPage = () => {
         </Card>
 
         {/* Posts Over Time Chart */}
-        <Card>
+        <Card className="bg-gradient-to-br from-card to-card/50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">{t('postsGrowth', { ns: 'business' })}</CardTitle>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <FileText className="w-4 h-4 text-primary" />
+              {t('postsGrowth', { ns: 'business' })}
+            </CardTitle>
           </CardHeader>
           <CardContent className="px-2">
             <ChartContainer
               config={{
                 count: {
                   label: "Posts",
-                  color: "hsl(var(--primary))",
+                  color: "hsl(var(--chart-2))",
                 },
               }}
-              className="h-[160px]"
+              className="h-[180px]"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={analytics.postsOverTime} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" opacity={0.3} />
+                <BarChart data={analytics.postsOverTime} margin={{ top: 5, right: 10, bottom: 5, left: -20 }}>
+                  <defs>
+                    <linearGradient id="postsGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(var(--chart-2))" stopOpacity={0.8} />
+                      <stop offset="100%" stopColor="hsl(var(--chart-2))" stopOpacity={0.3} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" opacity={0.2} />
                   <XAxis 
                     dataKey="date" 
-                    tick={{ fontSize: 9 }}
+                    tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
                     interval="preserveEnd"
-                    tickMargin={5}
+                    tickMargin={8}
+                    stroke="hsl(var(--border))"
                   />
-                  <YAxis tick={{ fontSize: 9 }} width={30} />
+                  <YAxis 
+                    tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} 
+                    width={35}
+                    stroke="hsl(var(--border))"
+                  />
                   <ChartTooltip content={<ChartTooltipContent />} />
-                  <Line 
-                    type="monotone" 
+                  <Bar 
                     dataKey="count" 
-                    stroke="hsl(var(--primary))" 
-                    strokeWidth={2}
-                    dot={{ fill: "hsl(var(--primary))", r: 3 }}
+                    fill="url(#postsGradient)" 
+                    radius={[8, 8, 0, 0]}
                   />
-                </LineChart>
+                </BarChart>
               </ResponsiveContainer>
             </ChartContainer>
           </CardContent>
         </Card>
 
         {/* Weekly Engagement Chart */}
-        <Card>
+        <Card className="bg-gradient-to-br from-card to-card/50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">{t('weeklyEngagement', { ns: 'business' })}</CardTitle>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Clock className="w-4 h-4 text-primary" />
+              {t('weeklyEngagement', { ns: 'business' })}
+            </CardTitle>
           </CardHeader>
           <CardContent className="px-2">
             <ChartContainer
               config={{
                 minutes: {
                   label: "Minutes",
-                  color: "hsl(var(--primary))",
+                  color: "hsl(var(--chart-3))",
                 },
               }}
-              className="h-[160px]"
+              className="h-[180px]"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={analytics.weeklyEngagement} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" opacity={0.3} />
+                <BarChart data={analytics.weeklyEngagement} margin={{ top: 5, right: 10, bottom: 5, left: -20 }}>
+                  <defs>
+                    <linearGradient id="engagementGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(var(--chart-3))" stopOpacity={0.8} />
+                      <stop offset="100%" stopColor="hsl(var(--chart-3))" stopOpacity={0.3} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" opacity={0.2} />
                   <XAxis 
                     dataKey="week" 
-                    tick={{ fontSize: 9 }}
-                    tickMargin={5}
+                    tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                    tickMargin={8}
+                    stroke="hsl(var(--border))"
                   />
-                  <YAxis tick={{ fontSize: 9 }} width={30} />
+                  <YAxis 
+                    tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} 
+                    width={35}
+                    stroke="hsl(var(--border))"
+                  />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Bar 
                     dataKey="minutes" 
-                    fill="hsl(var(--primary))" 
-                    radius={[6, 6, 0, 0]}
+                    fill="url(#engagementGradient)" 
+                    radius={[8, 8, 0, 0]}
                   />
                 </BarChart>
               </ResponsiveContainer>
@@ -476,39 +518,42 @@ const BusinessAnalyticsPage = () => {
         {/* Insights Section */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Key Insights</CardTitle>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-primary" />
+              {t('keyInsights', { ns: 'business' })}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2.5">
-            <div className="flex items-start gap-2.5 p-2.5 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg">
+            <div className="flex items-start gap-2.5 p-2.5 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
               <TrendingUp className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs font-medium text-foreground">Growing Popularity</p>
+                <p className="text-xs font-medium text-foreground">{t('growingPopularity', { ns: 'business' })}</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">
                   {analytics.savesChange > 0 
-                    ? `Your location saves increased by ${analytics.savesChange}% this week. Keep engaging!`
+                    ? t('savesIncreased', { percent: analytics.savesChange, ns: 'business' })
                     : analytics.savesChange < 0
-                    ? `Your location saves decreased by ${Math.abs(analytics.savesChange)}% this week.`
-                    : 'Your location saves remained steady this week.'}
+                    ? t('savesDecreased', { percent: Math.abs(analytics.savesChange), ns: 'business' })
+                    : t('savesSteady', { ns: 'business' })}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-start gap-2.5 p-2.5 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+            <div className="flex items-start gap-2.5 p-2.5 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
               <Users className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs font-medium text-foreground">High Engagement</p>
+                <p className="text-xs font-medium text-foreground">{t('highEngagement', { ns: 'business' })}</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                  Users spend an average of {analytics.avgTimeSpent} minutes viewing your content.
+                  {t('usersSpendAverage', { minutes: analytics.avgTimeSpent, ns: 'business' })}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-start gap-2.5 p-2.5 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
+            <div className="flex items-start gap-2.5 p-2.5 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
               <Share2 className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs font-medium text-foreground">Social Reach</p>
+                <p className="text-xs font-medium text-foreground">{t('socialReach', { ns: 'business' })}</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                  Your content has been shared {analytics.totalShares} times, expanding your reach.
+                  {t('contentSharedTimes', { times: analytics.totalShares, ns: 'business' })}
                 </p>
               </div>
             </div>
