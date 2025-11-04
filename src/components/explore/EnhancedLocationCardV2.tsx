@@ -173,7 +173,7 @@ const EnhancedLocationCardV2 = ({ place, onCardClick }: EnhancedLocationCardV2Pr
 
         {/* Content Library Preview */}
         {place.postCount > 0 && (
-          <div className="pt-3 border-t">
+          <div className="pt-3">
             <button
               onClick={() => onCardClick(place)}
               className="w-full flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/50 transition-colors"

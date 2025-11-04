@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Phone, Globe, Navigation, Share2, Bell, BellOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -17,6 +18,7 @@ interface PlaceActionButtonsProps {
 }
 
 const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { mutedLocations, muteLocation, unmuteLocation, isMuting } = useMutedLocations(user?.id);
   const [directionsModalOpen, setDirectionsModalOpen] = useState(false);
@@ -116,7 +118,7 @@ const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
           className={`flex flex-col gap-1 h-16 px-2 ${isMuted ? 'bg-muted' : ''}`}
         >
           {isMuted ? <BellOff className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
-          <span className="text-xs">{isMuted ? 'Muted' : 'Mute'}</span>
+          <span className="text-xs">{isMuted ? t('muted') : t('mute')}</span>
         </Button>
       </div>
 

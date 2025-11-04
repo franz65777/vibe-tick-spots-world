@@ -319,7 +319,7 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
 
           {/* Selected Users */}
           {selectedUsers.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-gray-200">
+            <div className="mt-3 pt-3">
               <p className="text-xs text-gray-500 mb-2 font-medium">{t('mapFilters:showingPinsFrom')}</p>
               <div className="flex flex-wrap gap-1.5">
                 {selectedUsers.map(user => (

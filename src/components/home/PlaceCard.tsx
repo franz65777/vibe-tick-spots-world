@@ -6,6 +6,7 @@ import PlaceInteractionModal from './PlaceInteractionModal';
 import { Place } from '@/types/place';
 import { useMutedLocations } from '@/hooks/useMutedLocations';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 interface PlaceCardProps {
   place: Place;
@@ -32,6 +33,7 @@ const PlaceCard = ({
   cityName,
   userLocation 
 }: PlaceCardProps) => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { mutedLocations, muteLocation, unmuteLocation, isMuting } = useMutedLocations(user?.id);
   const [interactionModal, setInteractionModal] = useState<{ isOpen: boolean; mode: 'comments' | 'share' }>({
@@ -228,13 +230,13 @@ const PlaceCard = ({
               }`}
             >
               {isMuted ? <BellOff className="w-4 h-4 mr-2" /> : <Bell className="w-4 h-4 mr-2" />}
-              {isMuted ? 'Muted' : 'Mute'}
+              {isMuted ? t('muted') : t('mute')}
             </Button>
           </div>
 
           {/* Added by section */}
           {place.addedBy && (
-            <div className="mt-3 pt-3 border-t border-gray-100">
+            <div className="mt-3 pt-3">
               <div className="flex items-center gap-2 text-xs text-gray-500">
                 <span>Discovered by</span>
                 <span className="font-medium text-gray-700">
