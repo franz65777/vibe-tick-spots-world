@@ -10,25 +10,29 @@ export const useMutedLocations = (userId: string | undefined) => {
     queryFn: async () => {
       if (!userId) return [];
 
+      // 1) Fetch muted rows (no join to avoid FK requirement)
       const { data, error } = await supabase
         .from('user_muted_locations')
-        .select(`
-          id, 
-          location_id, 
-          created_at,
-          locations (
-            id,
-            name,
-            address,
-            city,
-            category
-          )
-        `)
+        .select('id, location_id, created_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      const muted = data || [];
+
+      // 2) Fetch locations in one shot
+      const ids = muted.map((m: any) => m.location_id).filter(Boolean);
+      if (ids.length === 0) return muted;
+
+      const { data: locations, error: locErr } = await supabase
+        .from('locations')
+        .select('id, name, address, city, category')
+        .in('id', ids);
+
+      if (locErr) throw locErr;
+      const locMap = new Map((locations || []).map((l: any) => [l.id, l]));
+
+      return muted.map((m: any) => ({ ...m, locations: locMap.get(m.location_id) || null }));
     },
     enabled: !!userId,
   });
