@@ -12,18 +12,7 @@ export const useMutedLocations = (userId: string | undefined) => {
 
       const { data, error } = await supabase
         .from('user_muted_locations')
-        .select(`
-          id,
-          location_id,
-          created_at,
-          locations (
-            id,
-            name,
-            address,
-            city,
-            category
-          )
-        `)
+        .select('id, location_id, created_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
@@ -43,7 +32,7 @@ export const useMutedLocations = (userId: string | undefined) => {
 
       const { error } = await supabase
         .from('user_muted_locations')
-        .insert({ user_id: userId, location_id: locationId });
+        .insert({ user_id: userId, location_id: locationId }, { returning: 'minimal' });
 
       if (error) throw error;
     },
