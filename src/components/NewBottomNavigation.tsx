@@ -40,28 +40,9 @@ const NewBottomNavigation = () => {
     trackEvent('nav_tab_clicked', { tab: label.toLowerCase() });
   };
 
-  const handleProfileLongPressStart = () => {
-    const timer = setTimeout(() => {
-      if (hasValidBusinessAccount) {
-        setShowSwitchModal(true);
-      } else {
-        // Navigate to settings for business account request
-        navigate('/settings');
-        toast.info(t('request_business_account', { ns: 'common', defaultValue: 'Request a business account from Settings' }));
-      }
-    }, 800); // 800ms long press
-    setLongPressTimer(timer);
-  };
-
-  const handleProfileLongPressEnd = () => {
-    if (longPressTimer) {
-      clearTimeout(longPressTimer);
-      setLongPressTimer(null);
-      // Short tap - navigate to profile
-      if (!showSwitchModal) {
-        handleNavClick('/profile', 'Profile');
-      }
-    }
+  const handleProfileClick = () => {
+    // Always show the account switch modal on profile click
+    setShowSwitchModal(true);
   };
 
   const handleAccountSwitch = (mode: 'personal' | 'business') => {
@@ -129,12 +110,7 @@ const NewBottomNavigation = () => {
               return (
                 <button
                   key={item.path}
-                  onClick={isProfileTab ? undefined : () => handleNavClick(item.path, item.label)}
-                  onMouseDown={isProfileTab ? handleProfileLongPressStart : undefined}
-                  onMouseUp={isProfileTab ? handleProfileLongPressEnd : undefined}
-                  onMouseLeave={isProfileTab ? handleProfileLongPressEnd : undefined}
-                  onTouchStart={isProfileTab ? handleProfileLongPressStart : undefined}
-                  onTouchEnd={isProfileTab ? handleProfileLongPressEnd : undefined}
+                  onClick={isProfileTab ? handleProfileClick : () => handleNavClick(item.path, item.label)}
                   className="flex flex-col items-center justify-center gap-1 min-w-[64px] py-2 transition-colors duration-200"
                   aria-label={item.label}
                   aria-current={isActive ? 'page' : undefined}
