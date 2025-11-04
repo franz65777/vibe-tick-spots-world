@@ -115,13 +115,13 @@ const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
           size="icon"
           onClick={handleMuteToggle}
           disabled={isMuting}
-          className={`h-12 w-12 rounded-full place-self-center ${
+          className={`h-10 w-10 rounded-full place-self-center ${
             isMuted 
               ? 'bg-muted text-muted-foreground hover:bg-muted/80' 
               : 'hover:bg-muted'
           }`}
         >
-          {isMuted ? <BellOff className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
+          {isMuted ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
         </Button>
       </div>
 

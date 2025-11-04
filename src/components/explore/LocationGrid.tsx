@@ -433,7 +433,7 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
             <div
               key={location.id}
               onClick={() => handleLocationClick(location)}
-              className="relative bg-white dark:bg-card rounded-2xl overflow-hidden cursor-pointer transition-all flex flex-col h-[140px]"
+              className="relative bg-white dark:bg-card rounded-2xl overflow-hidden cursor-pointer transition-all flex flex-col h-[140px] border border-border"
             >
               {/* Top section with category, mute, and save */}
               <div className="relative p-2.5 flex items-start justify-between">

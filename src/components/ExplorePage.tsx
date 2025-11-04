@@ -301,7 +301,7 @@ const ExplorePage = () => {
             {searchMode === 'locations' ? (
               <>
                 {/* Category Filter */}
-                <div className="px-4 py-3 bg-white">
+                <div className="px-4 py-3">
                   <SimpleCategoryFilter
                     selectedCategory={selectedCategory}
                     onCategorySelect={setSelectedCategory}

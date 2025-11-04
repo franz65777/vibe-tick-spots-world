@@ -358,11 +358,11 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                 disabled={isMuting}
                 size="icon"
                 variant="secondary"
-                className={`h-12 w-12 rounded-full place-self-center ${
+                className={`h-10 w-10 rounded-full place-self-center ${
                   mutedLocations?.some((m: any) => m.location_id === place.id) ? 'bg-muted text-muted-foreground hover:bg-muted/80' : ''
                 }`}
               >
-                {mutedLocations?.some((m: any) => m.location_id === place.id) ? <BellOff className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
+                {mutedLocations?.some((m: any) => m.location_id === place.id) ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
               </Button>
             </div>
           </div>
