@@ -61,9 +61,9 @@ const NotificationsPage = () => {
   };
 
   return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden">
+    <div className="h-screen w-full bg-background flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="shrink-0 bg-background border-b border-border">
+      <header className="shrink-0 bg-background border-b border-border w-full">
         <div className="px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button
@@ -116,7 +116,7 @@ const NotificationsPage = () => {
             <p className="text-muted-foreground text-sm">No new notifications</p>
           </div>
         ) : (
-          <div className="divide-y divide-border">
+          <div>
             {notifications.map((notification) => (
               <MobileNotificationItem
                 key={notification.id}

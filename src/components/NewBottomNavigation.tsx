@@ -99,10 +99,9 @@ const NewBottomNavigation = () => {
         className="fixed bottom-0 left-0 right-0 z-[110]"
         role="navigation"
         aria-label="Main navigation"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        <div className="max-w-screen-sm mx-auto px-3 pb-3">
-          <div className="rounded-2xl bg-white shadow-[0_8px_16px_rgba(0,0,0,0.08)] border border-gray-100 px-2 h-16 flex items-center justify-around">
+        <div className="w-full px-0 pb-[env(safe-area-inset-bottom)] bg-white border-t border-gray-100">
+          <div className="h-16 flex items-center justify-around px-2">
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
               const isProfileTab = item.path === '/profile';

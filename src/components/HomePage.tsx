@@ -391,7 +391,7 @@ const HomePage = () => {
 
   return (
     <MapFilterProvider>
-      <div className="h-screen bg-white dark:bg-gray-900 flex flex-col overflow-hidden">
+      <div className="h-screen w-full bg-white dark:bg-gray-900 flex flex-col overflow-hidden">
         {/* Fixed Header - ~60px */}
         {!isCreateStoryModalOpen && (
           <Header
@@ -442,7 +442,7 @@ const HomePage = () => {
         
         {/* Map Section - fills remaining space and extends under bottom nav */}
         {!isCreateStoryModalOpen && !isStoriesViewerOpen && (
-          <div className={isMapExpanded ? "fixed inset-0 z-50" : isSearchOverlayOpen ? "hidden" : "flex-1 relative pb-16"}>
+          <div className={isMapExpanded ? "fixed inset-0 z-50" : isSearchOverlayOpen ? "hidden" : "flex-1 relative pb-[calc(4rem+env(safe-area-inset-bottom))]"}>
             <MapSection
               mapCenter={mapCenter}
               currentCity={currentCity}

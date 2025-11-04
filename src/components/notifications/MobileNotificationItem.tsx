@@ -228,12 +228,12 @@ const MobileNotificationItem = ({
       </Avatar>
 
       {/* Notification Text and Time */}
-      <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+      <div className="flex-1 min-w-0">
         <div className="text-left">
           {getNotificationText()}
-        </div>
-        <div className="text-muted-foreground text-[12px]">
-          {getRelativeTime(notification.created_at)}
+          <span className="text-muted-foreground text-[12px] ml-1.5">
+            {getRelativeTime(notification.created_at)}
+          </span>
         </div>
       </div>
 

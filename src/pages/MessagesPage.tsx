@@ -670,9 +670,9 @@ const MessagesPage = () => {
   };
 
   return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden">
+    <div className="h-screen w-full bg-background flex flex-col overflow-hidden">
       {/* Header */}
-      <header className={`shrink-0 bg-background ${view === 'chat' ? 'border-b border-border' : ''}`}>
+      <header className={`shrink-0 bg-background w-full ${view === 'chat' ? 'border-b border-border' : ''}`}>
         <div className="px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <Button
