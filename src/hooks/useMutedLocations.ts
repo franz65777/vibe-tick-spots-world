@@ -32,7 +32,7 @@ export const useMutedLocations = (userId: string | undefined) => {
 
       const { error } = await supabase
         .from('user_muted_locations')
-        .insert({ user_id: userId, location_id: locationId }, { returning: 'minimal' });
+        .insert([{ user_id: userId, location_id: locationId }]);
 
       if (error) throw error;
     },
