@@ -13,6 +13,7 @@ import { useUserBadges } from '@/hooks/useUserBadges';
 import { useBusinessProfile } from '@/hooks/useBusinessProfile';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
+import { useDetailedAddress } from '@/hooks/useDetailedAddress';
 
 interface Location {
   id: string;
@@ -22,6 +23,8 @@ interface Location {
   address?: string;
   image_url?: string;
   google_place_id?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface Post {
@@ -52,6 +55,15 @@ const BusinessOverviewPage = () => {
   const [uploading, setUploading] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { detailedAddress } = useDetailedAddress({
+    id: location?.id,
+    city: location?.city,
+    address: location?.address,
+    coordinates: location?.latitude && location?.longitude 
+      ? { lat: Number(location.latitude), lng: Number(location.longitude) }
+      : undefined,
+  });
 
   useEffect(() => {
     fetchLocationAndPosts();
@@ -247,7 +259,7 @@ const BusinessOverviewPage = () => {
               onClick={() => navigate('/business/notifications')}
               className="relative"
             >
-              <Bell className="w-5 h-5" />
+              <Bell className="w-6 h-6" />
               {unreadNotifications > 0 && (
                 <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-destructive rounded-full flex items-center justify-center text-xs font-bold text-destructive-foreground">
                   {unreadNotifications > 99 ? '99+' : unreadNotifications}
@@ -259,7 +271,7 @@ const BusinessOverviewPage = () => {
               size="sm"
               onClick={() => navigate('/business/messages')}
             >
-              <Send className="w-5 h-5" />
+              <Send className="w-6 h-6" />
             </Button>
           </div>
         </div>
@@ -305,7 +317,6 @@ const BusinessOverviewPage = () => {
                   {location.name}
                   {businessProfile?.verification_status === 'verified' && (
                     <Badge className="bg-primary/10 text-primary border-primary/20 text-xs">
-                      <Sparkles className="w-3 h-3 mr-1" />
                       {t('verified', { ns: 'business' })}
                     </Badge>
                   )}
@@ -316,7 +327,11 @@ const BusinessOverviewPage = () => {
               </div>
               <div className="flex items-center gap-2 text-muted-foreground mb-3">
                 <MapPin className="w-4 h-4 flex-shrink-0" />
-                <span className="text-sm">{formatLocationAddress()}</span>
+                <span className="text-sm">
+                  {detailedAddress || 
+                   (location.address && location.city ? `${location.city}, ${location.address}` : location.city) || 
+                   'Location'}
+                </span>
               </div>
               
               {/* Quick Stats */}
