@@ -239,7 +239,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
       >
         <DrawerContent className="transition-all duration-300 h-auto max-h-[30vh] data-[state=open]:max-h-[90vh] z-[2000]">
           {/* Draggable Header - Compact and Draggable */}
-          <div className="bg-background px-4 pt-3 pb-2 cursor-grab active:cursor-grabbing">
+          <div className="bg-background px-4 pt-3 pb-2 cursor-grab active:cursor-grabbing border-b border-border">
             <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-3" />
             <div className="flex items-center gap-3 pb-2">
               <div className="shrink-0">
@@ -300,50 +300,52 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
 
           {/* Action Buttons */}
           <div className="bg-background px-4 pb-4">
-            <div className="grid grid-cols-5 gap-2">
-              <Button
-                onClick={handleSaveToggle}
-                disabled={loading}
-                size="sm"
-                variant="secondary"
-                className="flex-1 flex-col h-auto py-3 gap-1 rounded-2xl"
-              >
-                <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
-                <span className="text-xs">{isSaved ? t('saved', { ns: 'common', defaultValue: 'Saved' }) : t('save', { ns: 'common', defaultValue: 'Save' })}</span>
-              </Button>
+            <div className="flex items-center gap-2">
+              <div className="grid grid-cols-4 gap-2 flex-1">
+                <Button
+                  onClick={handleSaveToggle}
+                  disabled={loading}
+                  size="sm"
+                  variant="secondary"
+                  className="flex-col h-auto py-3 gap-1 rounded-2xl"
+                >
+                  <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
+                  <span className="text-xs">{isSaved ? t('saved', { ns: 'common', defaultValue: 'Saved' }) : t('save', { ns: 'common', defaultValue: 'Save' })}</span>
+                </Button>
 
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setReviewOpen(true);
-                }}
-                size="sm"
-                variant="secondary"
-                className="flex-1 flex-col h-auto py-3 gap-1 rounded-2xl"
-              >
-                <Star className="w-5 h-5" />
-                <span className="text-xs">{t('review', { ns: 'common', defaultValue: 'Review' })}</span>
-              </Button>
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setReviewOpen(true);
+                  }}
+                  size="sm"
+                  variant="secondary"
+                  className="flex-col h-auto py-3 gap-1 rounded-2xl"
+                >
+                  <Star className="w-5 h-5" />
+                  <span className="text-xs">{t('review', { ns: 'common', defaultValue: 'Review' })}</span>
+                </Button>
 
-              <Button
-                onClick={handleDirections}
-                size="sm"
-                variant="secondary"
-                className="flex-1 flex-col h-auto py-3 gap-1 rounded-2xl"
-              >
-                <Navigation className="w-5 h-5" />
-                <span className="text-xs">{t('directions', { ns: 'common', defaultValue: 'Directions' })}</span>
-              </Button>
+                <Button
+                  onClick={handleDirections}
+                  size="sm"
+                  variant="secondary"
+                  className="flex-col h-auto py-3 gap-1 rounded-2xl"
+                >
+                  <Navigation className="w-5 h-5" />
+                  <span className="text-xs">{t('directions', { ns: 'common', defaultValue: 'Directions' })}</span>
+                </Button>
 
-              <Button
-                onClick={() => setShareOpen(true)}
-                size="sm"
-                variant="secondary"
-                className="flex-1 flex-col h-auto py-3 gap-1 rounded-2xl"
-              >
-                <Share2 className="w-5 h-5" />
-                <span className="text-xs">{t('share', { ns: 'common', defaultValue: 'Share' })}</span>
-              </Button>
+                <Button
+                  onClick={() => setShareOpen(true)}
+                  size="sm"
+                  variant="secondary"
+                  className="flex-col h-auto py-3 gap-1 rounded-2xl"
+                >
+                  <Share2 className="w-5 h-5" />
+                  <span className="text-xs">{t('share', { ns: 'common', defaultValue: 'Share' })}</span>
+                </Button>
+              </div>
 
               <Button
                 onClick={(e) => {
@@ -358,7 +360,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                 disabled={isMuting}
                 size="icon"
                 variant="secondary"
-                className={`h-10 w-10 rounded-full place-self-center ${
+                className={`h-10 w-10 rounded-full flex-shrink-0 ${
                   mutedLocations?.some((m: any) => m.location_id === place.id) ? 'bg-muted text-muted-foreground hover:bg-muted/80' : ''
                 }`}
               >

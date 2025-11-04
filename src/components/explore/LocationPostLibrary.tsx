@@ -405,7 +405,7 @@ const LocationPostLibrary = ({
       ) : (
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="bg-white px-4 py-4 flex items-center gap-3 shadow-sm border-b">
+          <div className="bg-white px-4 py-4 flex items-center gap-3 shadow-sm">
             <Button variant="ghost" size="sm" onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
               <ChevronLeft className="w-5 h-5" />
             </Button>
@@ -442,54 +442,56 @@ const LocationPostLibrary = ({
           </div>
 
           {/* Actions */}
-          <div className="bg-white px-4 py-3 border-b">
-            <div className="grid grid-cols-5 gap-2">
-              <Button
-                onClick={handleSaveLocation}
-                size="sm"
-                variant="secondary"
-                className="flex-col h-auto py-3 gap-1 rounded-2xl"
-              >
-                <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
-                <span className="text-xs">{t(isSaved ? 'saved' : 'save', { ns: 'common' })}</span>
-              </Button>
+          <div className="bg-white px-4 py-3">
+            <div className="flex items-center gap-2">
+              <div className="grid grid-cols-4 gap-2 flex-1">
+                <Button
+                  onClick={handleSaveLocation}
+                  size="sm"
+                  variant="secondary"
+                  className="flex-col h-auto py-3 gap-1 rounded-2xl"
+                >
+                  <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
+                  <span className="text-xs">{t(isSaved ? 'saved' : 'save', { ns: 'common' })}</span>
+                </Button>
 
-              <Button
-                onClick={() => setIsReviewModalOpen(true)}
-                size="sm"
-                variant="secondary"
-                className="flex-col h-auto py-3 gap-1 rounded-2xl"
-              >
-                <Star className="w-5 h-5" />
-                <span className="text-xs">{t('review', { ns: 'explore' })}</span>
-              </Button>
+                <Button
+                  onClick={() => setIsReviewModalOpen(true)}
+                  size="sm"
+                  variant="secondary"
+                  className="flex-col h-auto py-3 gap-1 rounded-2xl"
+                >
+                  <Star className="w-5 h-5" />
+                  <span className="text-xs">{t('review', { ns: 'explore' })}</span>
+                </Button>
 
-              <Button
-                onClick={() => {
-                  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-                  const coords = place.coordinates ? `${place.coordinates.lat},${place.coordinates.lng}` : '';
-                  const url = isIOS 
-                    ? `maps://maps.apple.com/?daddr=${coords}`
-                    : `https://www.google.com/maps/dir/?api=1&destination=${coords}`;
-                  window.open(url, '_blank');
-                }}
-                size="sm"
-                variant="secondary"
-                className="flex-col h-auto py-3 gap-1 rounded-2xl"
-              >
-                <Navigation className="w-5 h-5" />
-                <span className="text-xs">{t('directions', { ns: 'explore' })}</span>
-              </Button>
+                <Button
+                  onClick={() => {
+                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                    const coords = place.coordinates ? `${place.coordinates.lat},${place.coordinates.lng}` : '';
+                    const url = isIOS 
+                      ? `maps://maps.apple.com/?daddr=${coords}`
+                      : `https://www.google.com/maps/dir/?api=1&destination=${coords}`;
+                    window.open(url, '_blank');
+                  }}
+                  size="sm"
+                  variant="secondary"
+                  className="flex-col h-auto py-3 gap-1 rounded-2xl"
+                >
+                  <Navigation className="w-5 h-5" />
+                  <span className="text-xs">{t('directions', { ns: 'explore' })}</span>
+                </Button>
 
-              <Button
-                onClick={() => setIsShareModalOpen(true)}
-                size="sm"
-                variant="secondary"
-                className="flex-col h-auto py-3 gap-1 rounded-2xl"
-              >
-                <Share2 className="w-5 h-5" />
-                <span className="text-xs">{t('share', { ns: 'common' })}</span>
-              </Button>
+                <Button
+                  onClick={() => setIsShareModalOpen(true)}
+                  size="sm"
+                  variant="secondary"
+                  className="flex-col h-auto py-3 gap-1 rounded-2xl"
+                >
+                  <Share2 className="w-5 h-5" />
+                  <span className="text-xs">{t('share', { ns: 'common' })}</span>
+                </Button>
+              </div>
 
               <Button
                 onClick={(e) => {
@@ -504,7 +506,7 @@ const LocationPostLibrary = ({
                 disabled={isMuting}
                 size="icon"
                 variant="secondary"
-                className={`h-10 w-10 rounded-full place-self-center ${
+                className={`h-10 w-10 rounded-full flex-shrink-0 ${
                   mutedLocations?.some((m: any) => m.location_id === place.id) ? 'bg-muted text-muted-foreground hover:bg-muted/80' : ''
                 }`}
               >
