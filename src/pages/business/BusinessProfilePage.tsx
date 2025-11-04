@@ -172,7 +172,11 @@ const BusinessProfilePage = () => {
         {/* Location Label */}
         <div className="px-4 pt-4 flex items-center gap-2 text-muted-foreground">
           <MapPin className="w-4 h-4" />
-          <span className="text-sm">{detailedAddress || location.city || 'Location'}</span>
+          <span className="text-sm">
+            {detailedAddress || 
+             (location.address && location.city ? `${location.city}, ${location.address}` : location.city) || 
+             'Location'}
+          </span>
         </div>
 
         {/* Location Info */}
