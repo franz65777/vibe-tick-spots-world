@@ -36,8 +36,9 @@ const handler = async (req: Request): Promise<Response> => {
       : '<p><em>No documents attached</em></p>';
 
     const emailResponse = await resend.emails.send({
-      from: "Spott Business Requests <onboarding@resend.dev>",
+      from: "Spott Business <noreply@resend.dev>",
       to: ["spott.business.request@gmail.com"],
+      replyTo: requestData.contactEmail,
       subject: `New Business Account Request - ${requestData.businessName}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

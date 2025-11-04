@@ -203,29 +203,29 @@ const BusinessRequestModal: React.FC<BusinessRequestModalProps> = ({ open, onOpe
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="businessName">Business Name *</Label>
+            <Label htmlFor="businessName">{t('businessName', { ns: 'settings' })} *</Label>
             <Input
               id="businessName"
               value={businessName}
               onChange={(e) => setBusinessName(e.target.value)}
               required
-              placeholder="Enter your business name"
+              placeholder={t('businessNamePlaceholder', { ns: 'settings' })}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="businessType">Business Type *</Label>
+            <Label htmlFor="businessType">{t('businessType', { ns: 'settings' })} *</Label>
             <Input
               id="businessType"
               value={businessType}
               onChange={(e) => setBusinessType(e.target.value)}
               required
-              placeholder="e.g., Restaurant, Cafe, Bar"
+              placeholder={t('businessTypePlaceholder', { ns: 'settings' })}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="location">Location *</Label>
+            <Label htmlFor="location">{t('location', { ns: 'settings' })} *</Label>
             {selectedLocation ? (
               <div className="border rounded-lg p-3 bg-muted/50">
                 <div className="flex items-start justify-between gap-2">
@@ -248,7 +248,7 @@ const BusinessRequestModal: React.FC<BusinessRequestModalProps> = ({ open, onOpe
                     size="sm"
                     onClick={() => setSelectedLocation(null)}
                   >
-                    Change
+                    {t('change', { ns: 'settings' })}
                   </Button>
                 </div>
               </div>
@@ -257,7 +257,7 @@ const BusinessRequestModal: React.FC<BusinessRequestModalProps> = ({ open, onOpe
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search for your location..."
+                    placeholder={t('searchLocation', { ns: 'settings' })}
                     value={locationSearch}
                     onChange={(e) => handleLocationSearch(e.target.value)}
                     className="pl-10"
@@ -293,41 +293,41 @@ const BusinessRequestModal: React.FC<BusinessRequestModalProps> = ({ open, onOpe
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">{t('description', { ns: 'settings' })}</Label>
             <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Tell us about your business..."
+              placeholder={t('descriptionPlaceholder', { ns: 'settings' })}
               rows={3}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="contactEmail">Contact Email *</Label>
+            <Label htmlFor="contactEmail">{t('contactEmail', { ns: 'settings' })} *</Label>
             <Input
               id="contactEmail"
               type="email"
               value={contactEmail}
               onChange={(e) => setContactEmail(e.target.value)}
               required
-              placeholder="your@email.com"
+              placeholder={t('emailPlaceholder', { ns: 'settings' })}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="contactPhone">Contact Phone</Label>
+            <Label htmlFor="contactPhone">{t('contactPhone', { ns: 'settings' })}</Label>
             <Input
               id="contactPhone"
               type="tel"
               value={contactPhone}
               onChange={(e) => setContactPhone(e.target.value)}
-              placeholder="+1234567890"
+              placeholder={t('phonePlaceholder', { ns: 'settings' })}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="documents">Supporting Documents</Label>
+            <Label htmlFor="documents">{t('supportingDocuments', { ns: 'settings' })}</Label>
             <div className="border-2 border-dashed rounded-lg p-4 text-center">
               <input
                 id="documents"
@@ -343,7 +343,7 @@ const BusinessRequestModal: React.FC<BusinessRequestModalProps> = ({ open, onOpe
               >
                 <Upload className="w-8 h-8 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground">
-                  Click to upload documents (PDF, Images, Word)
+                  {t('uploadDocuments', { ns: 'settings' })}
                 </span>
               </label>
             </div>
@@ -392,7 +392,11 @@ const BusinessRequestModal: React.FC<BusinessRequestModalProps> = ({ open, onOpe
             size="lg"
             disabled={isSubmitting || isUploading || !selectedLocation}
           >
-            {isUploading ? 'Uploading documents...' : isSubmitting ? 'Submitting...' : 'Submit Request'}
+            {isUploading 
+              ? t('uploadingDocuments', { ns: 'settings' }) 
+              : isSubmitting 
+              ? t('submitting', { ns: 'settings' }) 
+              : t('submitRequest', { ns: 'settings' })}
           </Button>
 
           <div className="text-xs text-muted-foreground space-y-1">
