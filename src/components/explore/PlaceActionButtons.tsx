@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Phone, Globe, Navigation, Share2 } from 'lucide-react';
+import { Phone, Globe, Navigation, Share2, Bell, BellOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -9,14 +9,20 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { LocationShareModal } from '@/components/explore/LocationShareModal';
+import { useMutedLocations } from '@/hooks/useMutedLocations';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PlaceActionButtonsProps {
   place: any;
 }
 
 const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
+  const { user } = useAuth();
+  const { mutedLocations, muteLocation, unmuteLocation, isMuting } = useMutedLocations(user?.id);
   const [directionsModalOpen, setDirectionsModalOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+
+  const isMuted = mutedLocations?.some((m: any) => m.location_id === place.id);
 
   const handleCall = () => {
     // In production, fetch phone number from Google Places API
@@ -51,9 +57,17 @@ const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
     setDirectionsModalOpen(false);
   };
 
+  const handleMuteToggle = () => {
+    if (isMuted) {
+      unmuteLocation(place.id);
+    } else {
+      muteLocation(place.id);
+    }
+  };
+
   return (
     <>
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-5 gap-2">
         <Button
           variant="outline"
           size="sm"
@@ -92,6 +106,17 @@ const PlaceActionButtons = ({ place }: PlaceActionButtonsProps) => {
         >
           <Share2 className="w-5 h-5" />
           <span className="text-xs">Share</span>
+        </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleMuteToggle}
+          disabled={isMuting}
+          className={`flex flex-col gap-1 h-16 px-2 ${isMuted ? 'bg-muted' : ''}`}
+        >
+          {isMuted ? <BellOff className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
+          <span className="text-xs">{isMuted ? 'Muted' : 'Mute'}</span>
         </Button>
       </div>
 

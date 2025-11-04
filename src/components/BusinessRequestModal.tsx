@@ -18,7 +18,7 @@ const BusinessRequestModal: React.FC<BusinessRequestModalProps> = ({ open, onOpe
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-full p-0">
+      <SheetContent side="bottom" className="h-full p-0 [&>button]:hidden">
         <div className="h-full flex flex-col">
           <SheetHeader className="p-4 border-b">
             <div className="flex items-center gap-3">
