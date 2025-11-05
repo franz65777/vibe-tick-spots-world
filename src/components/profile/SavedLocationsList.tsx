@@ -188,7 +188,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
       `}</style>
       
       {/* Header */}
-      <div className="bg-background border-b border-gray-100 sticky top-0 z-40 shadow-sm">
+      <div className="bg-background border-b border-gray-100 sticky top-0 z-40 shadow-sm mt-2.5">
         <div className="flex items-center justify-between pl-1 pr-4 py-4 gap-2">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <button
@@ -206,7 +206,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-background px-4 py-3 space-y-3">
+      <div className="bg-background px-4 py-2 space-y-3">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <Input
