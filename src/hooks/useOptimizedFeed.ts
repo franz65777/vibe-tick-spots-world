@@ -33,7 +33,9 @@ export const useOptimizedFeed = () => {
             id,
             name,
             address,
-            city
+            city,
+            latitude,
+            longitude
           )
         `)
         .in('user_id', userIds)

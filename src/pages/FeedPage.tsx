@@ -21,10 +21,12 @@ import { ShareModal } from '@/components/social/ShareModal';
 import { messageService } from '@/services/messageService';
 import { toast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useQueryClient } from '@tanstack/react-query';
 
 const FeedPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { t, i18n } = useTranslation();
   const dfnsLocale = i18n.language.startsWith('it') ? itLocale : i18n.language.startsWith('es') ? esLocale : enUS;
   
@@ -143,15 +145,8 @@ const FeedPage = () => {
     const newComment = await addPostComment(commentPostId, user.id, content);
     if (newComment) {
       setComments(prev => [...prev, newComment]);
-      
-      // Update comment count in feed
-      setFeedItems(prev => prev.map(item => {
-        const itemPostId = item.post_id || item.id;
-        if (itemPostId === commentPostId) {
-          return { ...item, comments_count: (item.comments_count || 0) + 1 };
-        }
-        return item;
-      }));
+      // Invalida cache per aggiornare count
+      queryClient.invalidateQueries({ queryKey: ['feed', user.id] });
     }
   };
 
@@ -161,17 +156,8 @@ const FeedPage = () => {
     const success = await deletePostComment(commentId, user.id);
     if (success) {
       setComments(prev => prev.filter(c => c.id !== commentId));
-      
-      // Update comment count in feed
-      if (commentPostId) {
-        setFeedItems(prev => prev.map(item => {
-          const itemPostId = item.post_id || item.id;
-          if (itemPostId === commentPostId) {
-            return { ...item, comments_count: Math.max(0, (item.comments_count || 0) - 1) };
-          }
-          return item;
-        }));
-      }
+      // Invalida cache per aggiornare count
+      queryClient.invalidateQueries({ queryKey: ['feed', user.id] });
     }
   };
 
@@ -183,14 +169,14 @@ const FeedPage = () => {
   const handleShare = async (recipientIds: string[]) => {
     if (!sharePostId) return false;
     
-    const postItem = feedItems.find(item => (item.post_id || item.id) === sharePostId);
+    const postItem = feedItems.find(item => item.id === sharePostId);
     if (!postItem) return false;
 
     try {
       const postData = {
         id: sharePostId,
-        caption: postItem.content,
-        media_urls: postItem.media_urls || (postItem.media_url ? [postItem.media_url] : [])
+        caption: postItem.caption,
+        media_urls: postItem.media_urls || []
       };
 
       await Promise.all(
@@ -289,7 +275,7 @@ const FeedPage = () => {
     );
   };
 
-  if (loading) {
+  if (feedLoading) {
     return (
       <div className="min-h-screen bg-background">
       <div className="w-full space-y-4">
@@ -367,18 +353,18 @@ const FeedPage = () => {
           ) : (
             <div className="space-y-0">
               {feedItems.map((item) => {
-              const username = item.username;
-              const avatarUrl = item.avatar_url;
+              const profile = item.profiles as any;
+              const username = profile?.username || 'Unknown';
+              const avatarUrl = profile?.avatar_url;
               const userId = item.user_id;
-              const postId = item.post_id || item.id;
-              const mediaUrls = item.media_urls && item.media_urls.length > 0
-                ? item.media_urls 
-                : item.media_url ? [item.media_url] : [];
+              const postId = item.id;
+              const mediaUrls = item.media_urls || [];
               const hasMultipleMedia = mediaUrls.length > 1;
               const userHasStory = stories.some(s => s.user_id === userId);
-              const locationName = item.location_name;
+              const location = item.locations as any;
+              const locationName = location?.name;
               const locationId = item.location_id;
-              const caption = item.content;
+              const caption = item.caption;
               const rating = item.rating;
               const createdAt = item.created_at;
 
@@ -411,9 +397,9 @@ const FeedPage = () => {
                         >
                           {username}
                         </button>
-                        {locationName && locationId && item.latitude && item.longitude && (
+                        {locationName && locationId && location?.latitude && location?.longitude && (
                           <button
-                            onClick={(e) => handleLocationClick(locationId, item.latitude, item.longitude, locationName, e)}
+                            onClick={(e) => handleLocationClick(locationId, location.latitude, location.longitude, locationName, e)}
                             className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 truncate"
                           >
                             <MapPin className="w-3 h-3 shrink-0" />
