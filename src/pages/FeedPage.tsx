@@ -278,26 +278,6 @@ const FeedPage = () => {
     );
   };
 
-  if (feedLoading) {
-    return (
-      <div className="min-h-screen bg-background">
-      <div className="w-full space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="space-y-3">
-              <div className="flex items-center gap-3 p-3">
-                <Skeleton className="h-10 w-10 rounded-full" />
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-3 w-24" />
-                </div>
-              </div>
-              <Skeleton className="aspect-square w-full" />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
@@ -341,7 +321,22 @@ const FeedPage = () => {
 
         {/* Feed Content */}
         <div className="flex-1 overflow-y-scroll pb-24 scrollbar-hide">
-          {feedItems.length === 0 ? (
+           {feedItems.length === 0 && feedLoading ? (
+            <div className="py-4">
+              {[1,2,3].map((i) => (
+                <div key={i} className="space-y-3">
+                  <div className="flex items-center gap-3 px-3 py-3">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                  </div>
+                  <Skeleton className="aspect-square w-full" />
+                </div>
+              ))}
+            </div>
+           ) : feedItems.length === 0 ? (
             <div className="text-center py-12 px-4 text-muted-foreground">
               <p className="mb-2">{t('feedEmpty')}</p>
               <p className="text-sm">{t('startFollowing')}</p>
@@ -374,13 +369,13 @@ const FeedPage = () => {
               return (
                 <article key={item.id} className="bg-background">
                   {/* Post Header */}
-                  <div className="flex items-center justify-between px-3 py-2.5">
+                  <div className="flex items-center justify-between px-2 py-2.5">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <button 
                         onClick={(e) => handleAvatarClick(userId, e)}
                         className="shrink-0 relative"
                       >
-                        <Avatar className="h-8 w-8">
+                        <Avatar className="h-10 w-10">
                           <AvatarImage src={avatarUrl || undefined} />
                           <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
                             {username.slice(0, 2).toUpperCase()}

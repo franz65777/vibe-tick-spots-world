@@ -132,7 +132,7 @@ export const PostActions = ({
     <div className="flex items-center gap-1.5 mt-1 pt-0">
       <button
         onClick={handleLikeClick}
-        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg transition-all font-medium ${
+        className={`flex items-center gap-1.5 px-2 py-2 rounded-lg transition-all font-medium ${
           isLiked
             ? 'bg-red-50 text-red-600 hover:bg-red-100'
             : 'hover:bg-muted text-muted-foreground hover:text-foreground'
@@ -147,7 +147,7 @@ export const PostActions = ({
           e.stopPropagation();
           onCommentClick();
         }}
-        className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all font-medium"
+        className="flex items-center gap-1.5 px-2 py-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all font-medium"
       >
         <MessageCircle className="w-5 h-5" />
         <span className="text-sm font-semibold">{commentsCount || 0}</span>
@@ -158,7 +158,7 @@ export const PostActions = ({
           e.stopPropagation();
           onShareClick();
         }}
-        className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all font-medium"
+        className="flex items-center gap-1.5 px-2 py-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all font-medium"
       >
         <Share2 className="w-5 h-5" />
         <span className="text-sm font-semibold">{sharesCount || 0}</span>
@@ -166,7 +166,7 @@ export const PostActions = ({
 
       <button
         onClick={handlePinClick}
-        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg transition-all ml-auto font-medium ${
+        className={`flex items-center gap-1.5 px-2 py-2 rounded-lg transition-all ml-auto font-medium ${
           isLocationSaved
             ? 'bg-blue-50 text-blue-600 hover:bg-blue-100'
             : 'hover:bg-muted text-muted-foreground hover:text-foreground'
