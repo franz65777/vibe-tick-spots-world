@@ -460,7 +460,7 @@ const ExplorePage = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="px-4 py-8">
+                  <div className="px-0 py-8">
                     {isSearchActive && (
                       <NoResults searchMode="users" searchQuery={searchQuery} />
                     )}

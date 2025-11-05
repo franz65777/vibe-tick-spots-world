@@ -36,7 +36,7 @@ const NoResults = ({ searchMode, searchQuery, onAddLocation }: NoResultsProps) =
   const ActionIcon = config.actionIcon;
 
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-4">
+    <div className="flex flex-col items-center justify-center py-16 px-0">
       <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
         <Icon className="w-10 h-10 text-gray-400" />
       </div>
