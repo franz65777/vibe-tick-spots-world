@@ -41,8 +41,13 @@ const NewBottomNavigation = () => {
   };
 
   const handleProfileClick = () => {
-    // Always show the account switch modal on profile click
-    setShowSwitchModal(true);
+    // Only show modal if user has a valid business account, otherwise navigate directly
+    if (hasValidBusinessAccount) {
+      setShowSwitchModal(true);
+    } else {
+      navigate('/profile');
+      trackEvent('nav_tab_clicked', { tab: 'profile' });
+    }
   };
 
   const handleAccountSwitch = (mode: 'personal' | 'business') => {
