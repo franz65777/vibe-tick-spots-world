@@ -95,6 +95,8 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
 
   if (!isOpen || !location) return null;
 
+  const hasValidCoordinates = location.coordinates.lat !== 0 && location.coordinates.lng !== 0;
+
   return (
     <div className="fixed inset-0 z-[100] bg-black/50" onClick={onClose}>
       <div
@@ -121,24 +123,33 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
           {/* Map Section */}
-          <div className="w-full h-48 relative">
-            <MapContainer
-              center={[location.coordinates.lat, location.coordinates.lng]}
-              zoom={15}
-              className="w-full h-full"
-              zoomControl={false}
-              scrollWheelZoom={false}
-            >
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              <Marker
-                position={[location.coordinates.lat, location.coordinates.lng]}
-                icon={customIcon}
-              />
-            </MapContainer>
-          </div>
+          {hasValidCoordinates ? (
+            <div className="w-full h-48 relative">
+              <MapContainer
+                center={[location.coordinates.lat, location.coordinates.lng]}
+                zoom={15}
+                className="w-full h-full"
+                zoomControl={false}
+                scrollWheelZoom={false}
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <Marker
+                  position={[location.coordinates.lat, location.coordinates.lng]}
+                  icon={customIcon}
+                />
+              </MapContainer>
+            </div>
+          ) : (
+            <div className="w-full h-48 bg-muted flex items-center justify-center">
+              <div className="text-center text-muted-foreground">
+                <MapPin className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p>Coordinate non disponibili</p>
+              </div>
+            </div>
+          )}
 
           {/* Posts Section */}
           <div className="p-4">
