@@ -188,18 +188,18 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
       `}</style>
       
       {/* Header */}
-      <div className="bg-background px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      <div className="bg-background border-b border-gray-100 sticky top-0 z-40 shadow-sm">
+        <div className="flex items-center justify-between pl-1 pr-4 py-3 gap-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
             <button
               onClick={onClose}
-              className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors"
+              className="p-2 hover:bg-muted rounded-lg transition-colors flex-shrink-0"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <h1 className="text-lg font-semibold">{t('savedLocations', { ns: 'profile' })}</h1>
+            <h1 className="text-base font-semibold truncate">{t('savedLocations', { ns: 'profile' })}</h1>
           </div>
-          <div className="bg-primary/10 text-primary font-bold px-3 py-1.5 rounded-full text-sm">
+          <div className="bg-primary/10 text-primary font-bold px-3 py-1.5 rounded-full text-sm flex-shrink-0">
             {allPlaces.length}
           </div>
         </div>
