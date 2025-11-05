@@ -286,7 +286,7 @@ const ExplorePage = () => {
       </div>
 
       {/* Results */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide">
+      <div className="flex-1 overflow-y-auto scrollbar-hide pb-20">
         {loading || isSearching ? (
           <div className="flex items-center justify-center py-20">
             <div className="flex items-center gap-3">
@@ -446,7 +446,7 @@ const ExplorePage = () => {
 
                 {/* User Results */}
                 {displayUsers.length > 0 ? (
-                  <div className="space-y-3 px-1 pb-4">
+                  <div className="space-y-3 px-1 pb-20">
                     {displayUsers.map(user => (
                       <UserCard
                         key={user.id}
