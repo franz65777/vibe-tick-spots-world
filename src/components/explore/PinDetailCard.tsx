@@ -42,6 +42,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
   const [locationDetails, setLocationDetails] = useState<any>(null);
   const [viewStartTime] = useState<number>(Date.now());
   const [savedByOpen, setSavedByOpen] = useState(false);
+  const [snap, setSnap] = useState<number | string | null>(0.45); // Start at mid height
   const { cityLabel } = useNormalizedCity({
     id: place.google_place_id || place.id,
     city: locationDetails?.city || place.city,
@@ -235,9 +236,16 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
       <Drawer 
         open={true}
         modal={false}
-        onOpenChange={(open) => { if (!open) onClose(); }}
+        snapPoints={[0.45, 0.9, 1]}
+        activeSnapPoint={snap}
+        setActiveSnapPoint={setSnap}
+        onClose={onClose}
+        dismissible={true}
+        onOpenChange={(open) => { 
+          if (!open) onClose(); 
+        }}
       >
-        <DrawerContent className={`transition-all duration-300 h-auto max-h-[30vh] data-[state=open]:max-h-[90vh] ${shareOpen ? 'z-[1000]' : 'z-[2000]'}`}>
+        <DrawerContent className="transition-all duration-300 h-auto">
           {/* Draggable Header - Compact and Draggable */}
           <div className="bg-background px-4 pt-3 pb-2 cursor-grab active:cursor-grabbing">
             <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-3" />
