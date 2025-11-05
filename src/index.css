@@ -13,37 +13,54 @@
     display: none;
   }
   
-  @keyframes gradient-rotate {
+  @keyframes border-spin {
     0% {
-      background-position: 0% 50%;
-    }
-    50% {
-      background-position: 100% 50%;
+      transform: rotate(0deg);
     }
     100% {
-      background-position: 0% 50%;
+      transform: rotate(360deg);
+    }
+  }
+  
+  @keyframes border-pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.6;
     }
   }
   
   .campaign-border {
     position: relative;
-    /* Fallback inner border using design tokens */
-    box-shadow: 0 0 0 2px hsl(var(--primary)) inset;
+    overflow: visible;
   }
   
   .campaign-border::before {
     content: '';
     position: absolute;
+    inset: -3px;
+    border-radius: inherit;
+    background: conic-gradient(
+      from 0deg,
+      hsl(var(--primary)) 0deg,
+      hsl(217.2 91.2% 75%) 90deg,
+      transparent 180deg,
+      hsl(var(--primary)) 270deg,
+      hsl(217.2 91.2% 75%) 360deg
+    );
+    animation: border-spin 2s linear infinite;
+    pointer-events: none;
+    z-index: -1;
+  }
+  
+  .campaign-border::after {
+    content: '';
+    position: absolute;
     inset: 0;
     border-radius: inherit;
-    padding: 2px; /* border thickness */
-    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.75), hsl(var(--primary)), hsl(var(--primary) / 0.75), hsl(var(--primary)));
-    background-size: 200% 200%;
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    animation: gradient-rotate 3s ease infinite;
-    pointer-events: none;
+    background: hsl(var(--background));
+    z-index: -1;
   }
 }
 
