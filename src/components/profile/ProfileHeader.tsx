@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useProfile } from '@/hooks/useProfile';
+import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
@@ -36,7 +36,7 @@ const ProfileHeader = ({
   onBadgesClick
 }: ProfileHeaderProps) => {
   const { t } = useTranslation();
-  const { profile, refetch } = useProfile();
+  const { profile, refetch } = useOptimizedProfile();
   const { user } = useAuth();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isProfilePictureEditorOpen, setIsProfilePictureEditorOpen] = useState(false);

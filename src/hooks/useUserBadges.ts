@@ -49,19 +49,35 @@ const previousEarnedBadges = useRef<Set<string>>(new Set());
 
 useEffect(() => {
   if (!targetUserId) return;
+  // Hydrate previously notified badges
   try {
     const raw = localStorage.getItem(`badge_notified_${targetUserId}`);
     previousEarnedBadges.current = new Set(raw ? JSON.parse(raw) : []);
   } catch {}
-  fetchUserStats();
+
+  // Instant UI: hydrate cached badges if available
+  let hasCache = false;
+  try {
+    const cached = localStorage.getItem(`badges_cache_${targetUserId}`);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed)) {
+        setBadges(parsed);
+        setLoading(false);
+        hasCache = true;
+      }
+    }
+  } catch {}
+
+  fetchUserStats(hasCache);
 }, [targetUserId]);
 
-  const fetchUserStats = async () => {
-    if (!targetUserId) return;
+const fetchUserStats = async (hasCache: boolean = false) => {
+  if (!targetUserId) return;
 
-    try {
-      setLoading(true);
-      console.log('Fetching user stats for badge calculation:', targetUserId);
+  try {
+    if (!hasCache) setLoading(true);
+    console.log('Fetching user stats for badge calculation:', targetUserId);
 
       // Fetch user profile data
       const { data: profile } = await supabase
@@ -398,6 +414,13 @@ useEffect(() => {
     // Filter badges to show only current level and next level for each category
     const filteredBadges = filterProgressiveBadges(allBadges);
     setBadges(filteredBadges);
+
+    // Cache computed badges for instant load next time
+    try {
+      if (targetUserId) {
+        localStorage.setItem(`badges_cache_${targetUserId}`, JSON.stringify(filteredBadges));
+      }
+    } catch {}
   };
 
   const filterProgressiveBadges = (allBadges: Badge[]): Badge[] => {

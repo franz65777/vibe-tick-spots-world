@@ -34,10 +34,13 @@ const FeedPage = () => {
   const { posts: allFeedItems, loading: feedLoading } = useOptimizedFeed();
   const [feedType, setFeedType] = useState<'forYou' | 'promotions'>('forYou');
   
-  // Filtra i post in base al tipo di feed
-  const feedItems = feedType === 'promotions'
-    ? allFeedItems.filter((item: any) => item.is_business_post === true)
-    : allFeedItems.filter((item: any) => item.is_business_post === false || item.is_business_post == null);
+  // Filtra i post in base al tipo di feed con fallback se vuoto
+  const feedItems = (() => {
+    const filtered = feedType === 'promotions'
+      ? allFeedItems.filter((item: any) => item.is_business_post === true)
+      : allFeedItems.filter((item: any) => item.is_business_post === false || item.is_business_post == null);
+    return filtered.length ? filtered : allFeedItems;
+  })();
   
   const [expandedCaptions, setExpandedCaptions] = useState<Set<string>>(new Set());
   const [storiesViewerOpen, setStoriesViewerOpen] = useState(false);

@@ -23,7 +23,7 @@ export const useOptimizedProfile = (userId?: string) => {
   const { user } = useAuth();
   const targetUserId = userId || user?.id;
 
-  const { data: profile, isLoading, error } = useQuery({
+  const { data: profile, isLoading, error, refetch } = useQuery({
     queryKey: ['profile', targetUserId],
     queryFn: async () => {
       if (!targetUserId) return null;
@@ -66,5 +66,6 @@ export const useOptimizedProfile = (userId?: string) => {
     profile,
     loading: isLoading,
     error: error?.message,
+    refetch,
   };
 };
