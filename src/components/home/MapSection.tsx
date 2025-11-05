@@ -197,7 +197,9 @@ const MapSection = ({
         {!isListViewOpen && (
           <div className={cn(
             "z-[1100] w-full max-w-[95vw] mx-auto px-4",
-            "absolute top-4 left-0 right-0"
+            isExpanded 
+              ? "fixed top-[calc(env(safe-area-inset-top)+1rem)] left-0 right-0"
+              : "absolute top-4 left-0 right-0"
           )}>
             <div className="flex justify-center">
               <MapCategoryFilters currentCity={currentCity} />
@@ -206,7 +208,7 @@ const MapSection = ({
         )}
 
         {/* Map Controls - List View and Expand Toggle - Inside map */}
-        <div className={`${isExpanded ? 'fixed' : 'absolute'} bottom-[calc(4rem+env(safe-area-inset-bottom)-1.75rem)] right-3 z-[1000] flex flex-row gap-2`}>
+        <div className={`${isExpanded ? 'fixed bottom-[calc(env(safe-area-inset-bottom)+1rem)]' : 'absolute bottom-[calc(4rem+env(safe-area-inset-bottom)-1.75rem)]'} right-3 z-[1000] flex flex-row gap-2`}>
           {/* Expand/Collapse Button */}
           {onToggleExpand && (
             <Button

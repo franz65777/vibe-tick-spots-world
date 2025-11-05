@@ -391,7 +391,7 @@ const HomePage = () => {
 
   return (
     <MapFilterProvider>
-      <div className="h-screen w-full bg-white dark:bg-gray-900 flex flex-col overflow-hidden">
+      <div className="h-screen w-full bg-white dark:bg-gray-900 flex flex-col overflow-hidden" data-map-expanded={isMapExpanded}>
         {/* Fixed Header - ~60px */}
         {!isCreateStoryModalOpen && (
           <Header
