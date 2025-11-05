@@ -416,7 +416,7 @@ const LocationPostLibrary = ({
             
             <div className="flex-1">
               <div className="flex items-start gap-2 mb-1">
-                <h1 className="font-bold text-lg text-gray-900">{place.name}</h1>
+                <h1 className="font-bold text-lg text-gray-900 text-left">{place.name}</h1>
                 {/* Pin Count & Rating */}
                 {!statsLoading && (
             <div className="flex items-center gap-1.5">
