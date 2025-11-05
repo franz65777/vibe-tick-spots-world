@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, MapPin, Image } from 'lucide-react';
-import { MapContainer, TileLayer, Marker } from 'react-leaflet';
-import { Icon } from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import pinIcon from '@/assets/pin-icon.png';
+
 
 interface LocationDetailDrawerProps {
   location: {
@@ -34,11 +31,6 @@ interface Post {
   avatar_url: string;
 }
 
-const customIcon = new Icon({
-  iconUrl: pinIcon,
-  iconSize: [32, 32],
-  iconAnchor: [16, 32],
-});
 
 const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawerProps) => {
   const { user } = useAuth();
@@ -124,23 +116,14 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
         <div className="flex-1 overflow-y-auto">
           {/* Map Section */}
           {hasValidCoordinates ? (
-            <div className="w-full h-48 relative">
-              <MapContainer
-                center={[location.coordinates.lat, location.coordinates.lng]}
-                zoom={15}
-                className="w-full h-full"
-                zoomControl={false}
-                scrollWheelZoom={false}
-              >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                <Marker
-                  position={[location.coordinates.lat, location.coordinates.lng]}
-                  icon={customIcon}
-                />
-              </MapContainer>
+            <div className="w-full h-48 relative rounded-lg overflow-hidden">
+              <iframe
+                title="Mappa location"
+                src={`https://maps.google.com/maps?q=${location.coordinates.lat},${location.coordinates.lng}&z=15&output=embed`}
+                className="w-full h-full border-0"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
             </div>
           ) : (
             <div className="w-full h-48 bg-muted flex items-center justify-center">
