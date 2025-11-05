@@ -15,8 +15,8 @@ import { useState, useEffect } from 'react';
 import BadgeDisplay from './BadgeDisplay';
 import EditProfileModal from './EditProfileModal';
 import ProfilePictureEditor from '../ProfilePictureEditor';
-import { useFollowStats } from '@/hooks/useFollowStats';
-import { useSavedPlaces } from '@/hooks/useSavedPlaces';
+import { useOptimizedFollowStats } from '@/hooks/useOptimizedFollowStats';
+import { useOptimizedSavedPlaces } from '@/hooks/useOptimizedSavedPlaces';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
@@ -40,8 +40,8 @@ const ProfileHeader = ({
   const { user } = useAuth();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isProfilePictureEditorOpen, setIsProfilePictureEditorOpen] = useState(false);
-  const { stats } = useFollowStats();
-  const { getStats } = useSavedPlaces();
+  const { stats } = useOptimizedFollowStats();
+  const { getStats } = useOptimizedSavedPlaces();
   const navigate = useNavigate();
 
   // Optimized realtime updates - only on specific changes, no polling
