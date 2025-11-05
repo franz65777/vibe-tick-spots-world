@@ -67,16 +67,14 @@ const AccountSwitchModal: React.FC<AccountSwitchModalProps> = ({
       icon: <User className="w-5 h-5" />,
       description: t('personalAccount', { ns: 'accountSwitch' }),
     },
-    {
+    ...(hasValidBusinessAccount ? [{
       id: 'business',
-      name: hasValidBusinessAccount ? locationName : t('requestBusiness', { ns: 'accountSwitch' }),
+      name: locationName,
       avatar: null,
-      icon: hasValidBusinessAccount ? <CategoryIcon className="w-5 h-5" /> : <Plus className="w-5 h-5" />,
-      description: hasValidBusinessAccount 
-        ? t('businessDashboard', { ns: 'accountSwitch' })
-        : t('requestBusinessDescription', { ns: 'accountSwitch' }),
-      isRequest: !hasValidBusinessAccount,
-    },
+      icon: <CategoryIcon className="w-5 h-5" />,
+      description: t('businessDashboard', { ns: 'accountSwitch' }),
+      isRequest: false,
+    }] : []),
   ];
 
   return (
