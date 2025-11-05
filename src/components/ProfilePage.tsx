@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useProfile } from '@/hooks/useProfile';
+import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -15,11 +15,12 @@ import FollowersModal from './profile/FollowersModal';
 import SavedLocationsList from './profile/SavedLocationsList';
 import { useUserBadges } from '@/hooks/useUserBadges';
 import { ThemeToggle } from './ThemeToggle';
+import ProfileSkeleton from './ProfileSkeleton';
 
 const ProfilePage = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { profile, loading, error } = useProfile();
+  const { profile, loading, error } = useOptimizedProfile();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('posts');
   const [modalState, setModalState] = useState<{ isOpen: boolean; type: 'followers' | 'following' | null }>({
@@ -70,26 +71,14 @@ const ProfilePage = () => {
     setIsLocationsListOpen(true);
   };
 
-  // Show loading only if we have no profile data at all - prevents flash of wrong user
+  // Mostra skeleton solo al primo caricamento - React Query gestisce il resto
   if (loading && !profile) {
-    return (
-      <div className="flex flex-col h-full bg-background">
-        <div className="flex items-center justify-center h-64">
-          <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-        </div>
-      </div>
-    );
+    return <ProfileSkeleton />;
   }
 
-  // Don't render if user mismatch - prevents showing wrong user's data
+  // Don't render if user mismatch
   if (profile && user && profile.id !== user.id) {
-    return (
-      <div className="flex flex-col h-full bg-background">
-        <div className="flex items-center justify-center h-64">
-          <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-        </div>
-      </div>
-    );
+    return <ProfileSkeleton />;
   }
 
   if (error) {

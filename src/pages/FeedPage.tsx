@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getUserFeed, FeedItem } from '@/services/feedService';
+import { useOptimizedFeed } from '@/hooks/useOptimizedFeed';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MapPin, Star, ChevronDown } from 'lucide-react';
@@ -27,15 +27,21 @@ const FeedPage = () => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const dfnsLocale = i18n.language.startsWith('it') ? itLocale : i18n.language.startsWith('es') ? esLocale : enUS;
-  const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  
+  // Usa React Query per feed - dati cached istantanei
+  const { posts: allFeedItems, loading: feedLoading } = useOptimizedFeed();
+  const [feedType, setFeedType] = useState<'forYou' | 'promotions'>('forYou');
+  
+  // Filtra i post in base al tipo di feed
+  const feedItems = feedType === 'promotions'
+    ? allFeedItems.filter((item: any) => item.is_business_post === true)
+    : allFeedItems.filter((item: any) => item.is_business_post === false || item.is_business_post == null);
+  
   const [expandedCaptions, setExpandedCaptions] = useState<Set<string>>(new Set());
   const [storiesViewerOpen, setStoriesViewerOpen] = useState(false);
   const [selectedUserStoryIndex, setSelectedUserStoryIndex] = useState(0);
   const [filteredStories, setFilteredStories] = useState<typeof stories>([]);
   const [postLikes, setPostLikes] = useState<Map<string, PostLikeUser[]>>(new Map());
-  const [feedType, setFeedType] = useState<'forYou' | 'promotions'>('forYou');
-  
   // Comment drawer state
   const [commentDrawerOpen, setCommentDrawerOpen] = useState(false);
   const [commentPostId, setCommentPostId] = useState<string | null>(null);
@@ -47,7 +53,7 @@ const FeedPage = () => {
   
   const { stories } = useStories();
 
-  // Hide bottom navigation when overlays (comments/share) are open
+  // Hide bottom navigation when overlays are open
   useEffect(() => {
     const isOpen = commentDrawerOpen || shareModalOpen;
     window.dispatchEvent(new CustomEvent(isOpen ? 'ui:overlay-open' : 'ui:overlay-close'));
@@ -56,85 +62,24 @@ const FeedPage = () => {
     };
   }, [commentDrawerOpen, shareModalOpen]);
 
-  const loadFeed = async () => {
-    if (!user?.id) return;
-    try {
-      setLoading(true);
-      const allItems = await getUserFeed(user.id);
-      
-      // Filter based on feed type - inversed logic
-      const items = feedType === 'promotions' 
-        ? allItems.filter(item => item.is_business_post === true)
-        : allItems.filter(item => item.is_business_post === false || item.is_business_post == null);
-      
-      setFeedItems(items);
-      
-      // Load likes for each post
+  // Carica likes quando cambiano i feedItems
+  useEffect(() => {
+    if (!user?.id || feedItems.length === 0) return;
+    
+    const loadLikes = async () => {
       const likesMap = new Map<string, PostLikeUser[]>();
       await Promise.all(
-        items.map(async (item) => {
-          const postId = item.post_id || item.id;
+        feedItems.slice(0, 10).map(async (item: any) => {
+          const postId = item.id;
           const likes = await getPostLikesWithUsers(postId, user.id, 3);
           likesMap.set(postId, likes);
         })
       );
       setPostLikes(likesMap);
-    } catch (error) {
-      console.error('Error loading feed:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (user?.id) {
-      loadFeed();
-
-      // Set up polling for new content
-      const pollInterval = setInterval(() => {
-        loadFeed();
-      }, 30000);
-
-      // Set up realtime subscriptions
-      const postsChannel = supabase
-        .channel('feed_updates')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'posts'
-          },
-          () => {
-            loadFeed();
-          }
-        )
-        .subscribe();
-
-      const savedLocationsChannel = supabase
-        .channel('saved_locations_updates')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'user_saved_locations',
-            filter: `user_id=eq.${user.id}`
-          },
-          () => {
-            // Refresh feed to update pin button states
-            loadFeed();
-          }
-        )
-        .subscribe();
-
-      return () => {
-        clearInterval(pollInterval);
-        postsChannel.unsubscribe();
-        savedLocationsChannel.unsubscribe();
-      };
-    }
-  }, [user?.id, feedType]);
+    };
+    
+    loadLikes();
+  }, [feedItems, user?.id]);
 
   const handleAvatarClick = (userId: string, e: React.MouseEvent) => {
     e.stopPropagation();

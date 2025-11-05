@@ -2,8 +2,8 @@
 import { Heart, MessageCircle, Grid3X3, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import PostDetailModal from '../explore/PostDetailModal';
-import { usePosts } from '@/hooks/usePosts';
-import { useProfile } from '@/hooks/useProfile';
+import { useOptimizedPosts } from '@/hooks/useOptimizedPosts';
+import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePostDeletion } from '@/hooks/usePostDeletion';
 import { toast } from 'sonner';
@@ -34,9 +34,9 @@ interface PostsGridProps {
 const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGridProps) => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { profile } = useProfile();
+  const { profile } = useOptimizedProfile();
   const targetUserId = userId || profile?.id;
-  const { posts: allPosts, loading, refetch } = usePosts(targetUserId);
+  const { posts: allPosts, loading } = useOptimizedPosts(targetUserId);
   const { deletePost, deleting } = usePostDeletion();
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
 
@@ -83,7 +83,9 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
       if (result.success) {
         console.log('Post deleted successfully');
         toast.success(t('postDeletedSuccess', { ns: 'business' }));
-        await refetch(); // Refresh the posts list
+        // Invalidate cache per aggiornare
+        const { queryClient } = await import('@/lib/queryClient');
+        queryClient.invalidateQueries({ queryKey: ['posts', targetUserId] });
       } else {
         console.error('Failed to delete post:', result.error);
         toast.error(result.error?.message || t('failedDeletePost', { ns: 'business' }));
@@ -188,9 +190,11 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
         <PostDetailModal 
           postId={selectedPostId}
           isOpen={true}
-          onClose={() => {
+          onClose={async () => {
             setSelectedPostId(null);
-            refetch(); // Refresh posts to show updated counts
+            // Invalidate cache per aggiornare i contatori
+            const { queryClient } = await import('@/lib/queryClient');
+            queryClient.invalidateQueries({ queryKey: ['posts', targetUserId] });
           }}
           source="profile"
         />

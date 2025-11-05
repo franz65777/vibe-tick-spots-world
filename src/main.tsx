@@ -1,4 +1,6 @@
 import { createRoot } from 'react-dom/client'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { queryClient } from './lib/queryClient'
 import App from './App.tsx'
 import MinimalApp from './components/MinimalApp.tsx'
 import 'leaflet/dist/leaflet.css'
@@ -17,5 +19,9 @@ const root = createRoot(rootElement);
 console.log('✅ React root created');
 
 const safeBoot = location.search.includes('safe=1') || localStorage.getItem('SAFE_BOOT') === '1';
-root.render(safeBoot ? <MinimalApp /> : <App />);
+root.render(
+  <QueryClientProvider client={queryClient}>
+    {safeBoot ? <MinimalApp /> : <App />}
+  </QueryClientProvider>
+);
 console.log('✅ Full App render called');
