@@ -280,8 +280,8 @@ const FeedPage = () => {
 
 
   return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden">
-      <div className="w-full h-full flex flex-col">
+    <div className="h-screen bg-background flex flex-col overflow-hidden w-full max-w-full">
+      <div className="w-full h-full flex flex-col max-w-full">
         {/* Header */}
         <div className="sticky top-0 z-30 bg-background shadow-sm shrink-0">
           <div className="px-4 py-3 flex justify-start">
@@ -320,7 +320,7 @@ const FeedPage = () => {
         </div>
 
         {/* Feed Content */}
-        <div className="flex-1 overflow-y-scroll pb-24 scrollbar-hide bg-background">
+        <div className="flex-1 overflow-y-scroll pb-24 scrollbar-hide bg-background w-full max-w-full">
           {feedItems.length === 0 && feedLoading ? (
             <div className="py-4">
               {[1,2,3].map((i) => (
@@ -349,7 +349,7 @@ const FeedPage = () => {
               </Button>
             </div>
            ) : (
-            <div className="space-y-0 bg-background">
+            <div className="space-y-0 bg-background w-full max-w-full">
               {feedItems.map((item) => {
               const profile = item.profiles as any;
               const username = profile?.username || 'Unknown';
@@ -367,9 +367,9 @@ const FeedPage = () => {
               const createdAt = item.created_at;
 
               return (
-                <article key={item.id} className="post-compact bg-background border-b border-border">
+                <article key={item.id} className="post-compact bg-background border-b border-border w-full max-w-full">
                   {/* Post Header */}
-                  <div className="post-compact-header flex items-center justify-between">
+                  <div className="post-compact-header flex items-center justify-between w-full">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <button 
                         onClick={(e) => handleAvatarClick(userId, e)}
@@ -416,7 +416,7 @@ const FeedPage = () => {
 
                   {/* Post Media */}
                   {mediaUrls.length > 0 && (
-                    <div className="post-compact-media relative">
+                    <div className="post-compact-media relative w-full max-w-full">
                       {hasMultipleMedia ? (
                         <Carousel className="w-full" gutter={false}>
                           <CarouselContent className="-ml-0">
@@ -490,7 +490,7 @@ const FeedPage = () => {
                   )}
 
                   {/* Post Actions */}
-                  <div className="post-compact-actions space-y-2.5">
+                  <div className="post-compact-actions space-y-2.5 w-full">
                     <PostActions
                       postId={postId}
                       likesCount={item.likes_count || 0}
