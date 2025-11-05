@@ -32,7 +32,7 @@ const Header = ({
   return (
     <>
       <header className="bg-white border-b border-gray-100 sticky top-0 z-40 shadow-sm">
-        <div className="flex items-center justify-between px-0 py-3 gap-2">
+        <div className="flex items-center justify-between pl-1 pr-0 py-3 gap-1">
           {/* Left: City Selection - Now with more space */}
           <div className="flex-1 min-w-0">
             <CityAutocompleteBar 
