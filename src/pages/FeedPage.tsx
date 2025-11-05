@@ -487,7 +487,7 @@ const FeedPage = () => {
 
                   {/* Post Media */}
                   {mediaUrls.length > 0 && (
-                    <div className="relative">
+                    <div className="relative" style={{ width: '100vw', marginLeft: 'calc(50% - 50vw)' }}>
                       {hasMultipleMedia ? (
                         <Carousel className="w-full">
                           <CarouselContent className="-ml-0">
