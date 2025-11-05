@@ -8,7 +8,7 @@ const AuthenticatedLayout: React.FC = () => {
   const isBusinessRoute = location.pathname.startsWith('/business');
   const isDiscoverRoute = location.pathname === '/discover';
   const isSettingsRoute = location.pathname === '/settings';
-  const isAddRoute = location.pathname === '/add';
+  const isAddRoute = location.pathname === '/add' || location.pathname === '/business/add';
   const isHomePage = location.pathname === '/';
   const [isMapExpanded, setIsMapExpanded] = useState(false);
 
