@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, MapPin, Search, Users, UserPlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -513,7 +513,22 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
   const filteredLocations = selectedCategory
     ? locations.filter(loc => loc.category === selectedCategory)
     : locations;
-  
+
+  // Dynamic remaining counts per user based on filtered, swipeable locations
+  const remainingCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    filteredLocations.forEach((loc) => {
+      const savers = (loc.saved_by_users && loc.saved_by_users.length > 0)
+        ? loc.saved_by_users
+        : (loc.saved_by ? [loc.saved_by] : []);
+      savers.forEach((s) => {
+        if (!s?.id) return;
+        map.set(s.id, (map.get(s.id) || 0) + 1);
+      });
+    });
+    return map;
+  }, [filteredLocations]);
+
   const currentLocation = filteredLocations[currentIndex];
 
   return (
@@ -531,7 +546,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       </div>
 
       {/* Followed Users Row - overflow visible to prevent clipping */}
-      <div className="bg-background px-4 pt-10 pb-2 overflow-visible relative z-30">
+      <div className="bg-background px-4 pt-2 pb-2 overflow-visible relative z-30">
         <div className="flex gap-3 overflow-x-auto overflow-y-visible scrollbar-hide pb-1 pl-2 pr-3" style={{ scrollSnapType: 'x mandatory' }}>
           {/* All button */}
           <button
@@ -553,49 +568,52 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
             <span className="text-xs font-medium text-muted-foreground">{t('all', { ns: 'common' })}</span>
           </button>
 
-          {followedUsers.map((followedUser) => (
-            <button
-              key={followedUser.id}
-              onClick={() => {
-                console.log('🎯 Selected user:', followedUser.username, followedUser.id);
-                setSelectedUserId(followedUser.id);
-                setCurrentIndex(0);
-                fetchDailyLocations();
-              }}
-              className={`flex-shrink-0 flex flex-col items-center gap-1.5 transition-opacity ${
-                selectedUserId === followedUser.id ? 'opacity-100' : 'opacity-60'
-              }`}
-              style={{ scrollSnapAlign: 'start' }}
-            >
-              <div className="relative z-[90]">
-                {followedUser.avatar_url ? (
-                  <img
-                    src={followedUser.avatar_url}
-                    alt={followedUser.username}
-                    className={`w-14 h-14 rounded-full object-cover transition-all ${
+          {followedUsers.map((followedUser) => {
+            const remaining = remainingCounts.get(followedUser.id) ?? 0;
+            return (
+              <button
+                key={followedUser.id}
+                onClick={() => {
+                  console.log('🎯 Selected user:', followedUser.username, followedUser.id);
+                  setSelectedUserId(followedUser.id);
+                  setCurrentIndex(0);
+                  fetchDailyLocations();
+                }}
+                className={`flex-shrink-0 flex flex-col items-center gap-1.5 transition-opacity ${
+                  selectedUserId === followedUser.id ? 'opacity-100' : 'opacity-60'
+                }`}
+                style={{ scrollSnapAlign: 'start' }}
+              >
+                <div className="relative z-[90]">
+                  {followedUser.avatar_url ? (
+                    <img
+                      src={followedUser.avatar_url}
+                      alt={followedUser.username}
+                      className={`w-14 h-14 rounded-full object-cover transition-all ${
+                        selectedUserId === followedUser.id ? 'ring-2 ring-primary ring-offset-2' : ''
+                      }`}
+                    />
+                  ) : (
+                    <div className={`w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center transition-all ${
                       selectedUserId === followedUser.id ? 'ring-2 ring-primary ring-offset-2' : ''
-                    }`}
-                  />
-                ) : (
-                  <div className={`w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center transition-all ${
-                    selectedUserId === followedUser.id ? 'ring-2 ring-primary ring-offset-2' : ''
-                  }`}>
-                    <span className="text-white text-lg font-bold">
-                      {followedUser.username[0]?.toUpperCase()}
-                    </span>
-                  </div>
-                )}
-                {followedUser.new_saves_count > 0 && (
-                  <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center shadow-md z-[100]">
-                    {followedUser.new_saves_count > 9 ? '9+' : followedUser.new_saves_count}
-                  </div>
-                )}
-              </div>
-              <span className="text-[10px] font-medium text-gray-700 max-w-[60px] truncate">
-                {followedUser.username}
-              </span>
-            </button>
-          ))}
+                    }`}>
+                      <span className="text-white text-lg font-bold">
+                        {followedUser.username[0]?.toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  {remaining > 0 && (
+                    <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center shadow-md z-[100]">
+                      {remaining > 9 ? '9+' : remaining}
+                    </div>
+                  )}
+                </div>
+                <span className="text-[10px] font-medium text-gray-700 max-w-[60px] truncate">
+                  {followedUser.username}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -679,7 +697,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
             </div>
           </div>
         ) : (
-          <div className="h-full flex items-start justify-center px-3 pt-6 pb-3">
+          <div className="h-full flex items-start justify-center px-3 pt-3 pb-3">
             {/* Swipeable Card */}
             <div
               onTouchStart={handleTouchStart}
