@@ -102,6 +102,70 @@ export const useLocationStats = (locationId: string | null, googlePlaceId: strin
     };
 
     fetchStats();
+
+    // Set up real-time subscriptions for live updates
+    const channels: any[] = [];
+
+    if (googlePlaceId) {
+      const savedPlacesChannel = supabase
+        .channel(`saved_places_${googlePlaceId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'saved_places',
+            filter: `place_id=eq.${googlePlaceId}`
+          },
+          () => {
+            fetchStats();
+          }
+        )
+        .subscribe();
+      channels.push(savedPlacesChannel);
+    }
+
+    if (locationId) {
+      const userSavedChannel = supabase
+        .channel(`user_saved_locations_${locationId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'user_saved_locations',
+            filter: `location_id=eq.${locationId}`
+          },
+          () => {
+            fetchStats();
+          }
+        )
+        .subscribe();
+      channels.push(userSavedChannel);
+
+      const interactionsChannel = supabase
+        .channel(`interactions_${locationId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'interactions',
+            filter: `location_id=eq.${locationId}`
+          },
+          () => {
+            fetchStats();
+          }
+        )
+        .subscribe();
+      channels.push(interactionsChannel);
+    }
+
+    return () => {
+      channels.forEach(channel => {
+        supabase.removeChannel(channel);
+      });
+    };
   }, [locationId, googlePlaceId]);
 
   return { stats, loading };
