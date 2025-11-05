@@ -246,6 +246,8 @@ const resources = {
       youMustTagLocation: 'You must tag a location to share your post. This helps others discover great places!',
       searchUsersToTag: 'Search users to tag...',
       uploading: 'Uploading',
+      inYourNetwork: 'In your network',
+      noPlacesFound: 'No places found for',
     },
     settings: {
       title: 'Settings',
@@ -779,6 +781,8 @@ const resources = {
       youMustTagLocation: '¡Debes etiquetar un lugar para compartir tu publicación. Esto ayuda a otros a descubrir lugares geniales!',
       searchUsersToTag: 'Buscar usuarios para etiquetar...',
       uploading: 'Subiendo',
+      inYourNetwork: 'En tu red',
+      noPlacesFound: 'No se encontraron lugares para',
     },
     settings: {
       title: 'Configuración',
@@ -1299,6 +1303,8 @@ const resources = {
       youMustTagLocation: 'Devi taggare una posizione per condividere il tuo post. Questo aiuta gli altri a scoprire luoghi fantastici!',
       searchUsersToTag: 'Cerca utenti da taggare...',
       uploading: 'Caricamento',
+      inYourNetwork: 'Nella tua rete',
+      noPlacesFound: 'Nessun luogo trovato per',
     },
     settings: {
       title: 'Impostazioni',
@@ -1815,6 +1821,8 @@ const resources = {
       youMustTagLocation: 'Vous devez taguer un lieu pour partager votre publication. Cela aide les autres à découvrir de super endroits !',
       searchUsersToTag: 'Rechercher des utilisateurs à taguer...',
       uploading: 'Téléchargement',
+      inYourNetwork: 'Dans votre réseau',
+      noPlacesFound: 'Aucun lieu trouvé pour',
     },
     settings: {
       title: 'Paramètres',
@@ -2301,6 +2309,8 @@ const resources = {
       youMustTagLocation: 'Du musst einen Ort markieren, um deinen Beitrag zu teilen. Das hilft anderen, tolle Orte zu entdecken!',
       searchUsersToTag: 'Benutzer suchen...',
       uploading: 'Hochladen',
+      inYourNetwork: 'In deinem Netzwerk',
+      noPlacesFound: 'Keine Orte gefunden für',
     },
     settings: {
       title: 'Einstellungen',
@@ -2663,6 +2673,8 @@ const resources = {
       youMustTagLocation: 'Você deve marcar um local para compartilhar sua publicação. Isso ajuda outros a descobrirem ótimos lugares!',
       searchUsersToTag: 'Buscar usuários para marcar...',
       uploading: 'Enviando',
+      inYourNetwork: 'Na sua rede',
+      noPlacesFound: 'Nenhum local encontrado para',
     },
     settings: {
       title: 'Configurações',

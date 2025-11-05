@@ -3,6 +3,7 @@ import { Search, MapPin, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
 import { supabase } from '@/integrations/supabase/client';
+import { useTranslation } from 'react-i18next';
 
 interface OpenStreetMapAutocompleteProps {
   onPlaceSelect: (place: {
@@ -34,6 +35,7 @@ const OpenStreetMapAutocomplete = ({
   initialQuery = '',
   disabled = false,
 }: OpenStreetMapAutocompleteProps) => {
+  const { t } = useTranslation();
   const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -155,7 +157,7 @@ const OpenStreetMapAutocomplete = ({
 
       {/* Results dropdown */}
       {showResults && results.length > 0 && (
-        <div className="absolute z-50 w-full mt-2 bg-background border border-border rounded-lg shadow-lg max-h-[300px] overflow-y-auto">
+        <div className="absolute z-50 w-full mt-2 bg-background border border-border rounded-lg shadow-lg max-h-[300px] overflow-y-auto scrollbar-hide">
           {results.map((result) => (
             <button
               key={result.id}
@@ -172,7 +174,7 @@ const OpenStreetMapAutocomplete = ({
                 </div>
                 {result.source === 'database' && (
                   <div className="text-xs text-primary mt-1">
-                    In your network
+                    {t('inYourNetwork', { ns: 'add' })}
                   </div>
                 )}
               </div>
@@ -184,7 +186,7 @@ const OpenStreetMapAutocomplete = ({
       {/* No results message */}
       {showResults && !loading && query.length >= 2 && results.length === 0 && (
         <div className="absolute z-50 w-full mt-2 bg-background border border-border rounded-lg shadow-lg p-4 text-center text-muted-foreground text-sm">
-          No places found for "{query}"
+          {t('noPlacesFound', { ns: 'add' })} "{query}"
         </div>
       )}
     </div>
