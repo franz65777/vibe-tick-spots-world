@@ -46,7 +46,7 @@ const StoriesSection = ({ stories = [], onCreateStory, onStoryClick }: StoriesSe
     });
   
   return (
-    <div className="flex gap-4 px-0 py-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory bg-transparent">
+    <div className="flex gap-4 px-1 py-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory bg-transparent">
       {/* User's Own Story or Create Story Button */}
       {hasMyStories ? (
         <button

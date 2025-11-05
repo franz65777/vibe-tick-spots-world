@@ -137,7 +137,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
   };
 
   return (
-    <div className="h-full px-0 py-3 bg-white/50">
+    <div className="h-full px-1 py-3 bg-white/50">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-pink-500 rounded-lg flex items-center justify-center shadow-sm">
@@ -163,13 +163,13 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
 
       {/* Horizontal chips */}
       {loading ? (
-        <div className="flex gap-2 overflow-x-auto pb-2 px-0">
+        <div className="flex gap-2 overflow-x-auto pb-2">
           {[1, 2, 3].map(i => (
             <div key={i} className="flex-shrink-0 w-40 h-10 rounded-lg bg-gray-200 animate-pulse" />
           ))}
         </div>
       ) : popularSpots.length > 0 ? (
-        <div className="flex gap-2 overflow-x-auto pb-2 px-0 scrollbar-hide">
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
           {popularSpots.map((spot) => (
             <button
               key={spot.id}

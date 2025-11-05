@@ -200,7 +200,7 @@ const MapSection = ({
             "z-[1100] w-full",
             isExpanded
               ? "fixed top-[calc(env(safe-area-inset-top)+2rem)] left-0 right-0 px-4"
-              : "absolute top-4 left-0 right-0 px-0"
+              : "absolute top-4 left-0 right-0 px-1"
           )}>
             <div className="flex justify-center w-full">
               <MapCategoryFilters currentCity={currentCity} />
