@@ -281,9 +281,9 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
               </Button>
             </div>
 
-            {/* Marketing Campaign Banner - Expandable Section */}
+            {/* Marketing Campaign - Expandable Section */}
             {campaign && (
-              <div className="pt-4 -mx-6 -mb-6 border-t border-gray-100 mt-4">
+              <div className="pt-3 mt-3 border-t border-border">
                 <MarketingCampaignBanner campaign={campaign} />
               </div>
             )}
