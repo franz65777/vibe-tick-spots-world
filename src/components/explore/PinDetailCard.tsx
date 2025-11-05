@@ -370,7 +370,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
           </div>
 
           {/* Community Posts - Vertical Grid with Scrolling */}
-          <div className="px-4 py-4 bg-muted/30 flex-1 overflow-y-auto max-h-[calc(90vh-240px)]">
+          <div className="px-4 py-4 flex-1 overflow-y-auto max-h-[calc(90vh-240px)]">
             <div className="flex items-center gap-2 mb-3">
               <MessageSquare className="w-4 h-4 text-muted-foreground" />
               <h4 className="font-semibold text-sm text-foreground">
