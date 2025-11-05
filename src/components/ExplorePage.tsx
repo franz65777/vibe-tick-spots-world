@@ -286,7 +286,7 @@ const ExplorePage = () => {
       </div>
 
       {/* Results */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto scrollbar-hide">
         {loading || isSearching ? (
           <div className="flex items-center justify-center py-20">
             <div className="flex items-center gap-3">
