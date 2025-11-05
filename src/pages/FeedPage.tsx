@@ -367,7 +367,7 @@ const FeedPage = () => {
               const createdAt = item.created_at;
 
               return (
-                <article key={item.id} className="post-compact bg-background border-b border-border">
+                <article key={item.id} className="post-compact bg-background">
                   {/* Post Header */}
                   <div className="post-compact-header flex items-center justify-between">
                     <div className="flex items-center gap-3 flex-1 min-w-0">

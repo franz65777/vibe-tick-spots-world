@@ -60,6 +60,21 @@ export const PostActions = ({
     checkIfSaved();
   }, [locationId, user]);
 
+  // Listen for global save changes
+  useEffect(() => {
+    const handleSaveChanged = (event: CustomEvent) => {
+      const { locationId: changedLocationId, isSaved } = event.detail;
+      if (changedLocationId === locationId) {
+        setIsLocationSaved(isSaved);
+      }
+    };
+    
+    window.addEventListener('location-save-changed', handleSaveChanged as EventListener);
+    return () => {
+      window.removeEventListener('location-save-changed', handleSaveChanged as EventListener);
+    };
+  }, [locationId]);
+
   const handleLikeClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
@@ -90,6 +105,10 @@ export const PostActions = ({
           .eq('location_id', locationId);
         
         setIsLocationSaved(false);
+        // Emit global event
+        window.dispatchEvent(new CustomEvent('location-save-changed', { 
+          detail: { locationId, isSaved: false } 
+        }));
         toast({
           title: 'Removed',
           description: `${locationName || 'Location'} removed from saved`,
@@ -113,6 +132,10 @@ export const PostActions = ({
           });
         
         setIsLocationSaved(true);
+        // Emit global event
+        window.dispatchEvent(new CustomEvent('location-save-changed', { 
+          detail: { locationId, isSaved: true } 
+        }));
         toast({
           title: t('common:save'),
           description: `${locationName || 'Location'} saved successfully!`,
