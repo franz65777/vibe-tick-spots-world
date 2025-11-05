@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, Calendar, Sparkles, Tag, Megaphone, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import { MarketingCampaign } from '@/hooks/useMarketingCampaign';
+import { formatDistanceToNow } from 'date-fns';
+import { it, es, fr, de, pt, enUS } from 'date-fns/locale';
 
 interface MarketingCampaignBannerProps {
   campaign: MarketingCampaign;
@@ -11,20 +13,19 @@ interface MarketingCampaignBannerProps {
 const MarketingCampaignBanner = ({ campaign }: MarketingCampaignBannerProps) => {
   const { t, i18n } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
-  const [timeLeft, setTimeLeft] = useState<string>('');
 
   const getCampaignIcon = () => {
     switch (campaign.campaign_type) {
       case 'event':
-        return <Sparkles className="w-3.5 h-3.5" />;
+        return <Sparkles className="w-4 h-4" />;
       case 'discount':
-        return <Tag className="w-3.5 h-3.5" />;
+        return <Tag className="w-4 h-4" />;
       case 'promotion':
-        return <Megaphone className="w-3.5 h-3.5" />;
+        return <Megaphone className="w-4 h-4" />;
       case 'news':
-        return <Star className="w-3.5 h-3.5" />;
+        return <Star className="w-4 h-4" />;
       default:
-        return <Megaphone className="w-3.5 h-3.5" />;
+        return <Megaphone className="w-4 h-4" />;
     }
   };
 
@@ -43,41 +44,31 @@ const MarketingCampaignBanner = ({ campaign }: MarketingCampaignBannerProps) => 
     }
   };
 
-  useEffect(() => {
-    const calculateTimeLeft = () => {
-      const now = new Date();
-      const end = new Date(campaign.end_date);
-      const diffMs = end.getTime() - now.getTime();
+  const getDateLocale = () => {
+    switch (i18n.language) {
+      case 'it': return it;
+      case 'es': return es;
+      case 'fr': return fr;
+      case 'de': return de;
+      case 'pt': return pt;
+      default: return enUS;
+    }
+  };
 
-      if (diffMs <= 0) {
-        return t('marketingCampaign.expired', { ns: 'common', defaultValue: 'Expired' });
-      }
+  const getCampaignTypeTranslation = () => {
+    return t(`marketingCampaign.${campaign.campaign_type}`, { ns: 'common' });
+  };
 
-      const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-
-      // If more than 1 day, show days
-      if (days > 0) {
-        return `${days}d ${hours}h`;
-      }
-      // If less than 1 day but more than 1 hour, show hours
-      if (hours > 0) {
-        return `${hours}h ${minutes}m`;
-      }
-      // If less than 1 hour, show minutes
-      return `${minutes}m`;
-    };
-
-    const updateTime = () => {
-      setTimeLeft(calculateTimeLeft());
-    };
-
-    updateTime();
-    const interval = setInterval(updateTime, 60000); // Update every minute
-
-    return () => clearInterval(interval);
-  }, [campaign.end_date, i18n.language, t]);
+  const getTimeUntilEnd = () => {
+    try {
+      return formatDistanceToNow(new Date(campaign.end_date), {
+        addSuffix: true,
+        locale: getDateLocale()
+      });
+    } catch {
+      return '';
+    }
+  };
 
   return (
     <div className="w-full">
@@ -87,21 +78,21 @@ const MarketingCampaignBanner = ({ campaign }: MarketingCampaignBannerProps) => 
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-2 flex-1">
-            <div className="w-7 h-7 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 text-primary">
+          <div className="flex items-start gap-3 flex-1">
+            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 text-primary">
               {getCampaignIcon()}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <Badge variant="secondary" className="text-xs font-medium">
-                  {t(`marketingCampaign.${campaign.campaign_type}`, { ns: 'common', defaultValue: campaign.campaign_type })}
+                  {getCampaignTypeTranslation()}
                 </Badge>
               </div>
-              <h4 className="font-semibold text-sm leading-tight mb-1 text-foreground text-left">
+              <h4 className="font-semibold text-sm leading-tight mb-1 line-clamp-2 text-foreground text-left">
                 {campaign.title}
               </h4>
               {!isExpanded && (
-                <p className="text-muted-foreground text-xs text-left">
+                <p className="text-muted-foreground text-xs line-clamp-1 text-left">
                   {campaign.description}
                 </p>
               )}
@@ -115,13 +106,13 @@ const MarketingCampaignBanner = ({ campaign }: MarketingCampaignBannerProps) => 
         {/* Expanded Content */}
         {isExpanded && (
           <div className="mt-3 pt-3 border-t border-border/50">
-            <p className="text-foreground text-xs mb-3 leading-relaxed text-left">
+            <p className="text-foreground text-xs mb-3 leading-relaxed line-clamp-2 text-left">
               {campaign.description}
             </p>
             <div className="flex items-center gap-2 text-muted-foreground text-xs">
               <Calendar className="w-3.5 h-3.5" />
               <span>
-                {t('marketingCampaign.endsIn', { ns: 'common', defaultValue: 'Ends in' })} {timeLeft}
+                {t('marketingCampaign.endsIn', { ns: 'common' })} {getTimeUntilEnd()}
               </span>
             </div>
           </div>
