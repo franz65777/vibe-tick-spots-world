@@ -99,6 +99,7 @@ const resources = {
       noCommunityPostsYet: 'No community posts yet',
       beFirstToShare: 'Be the first to share!',
       searchPeople: 'Search people...',
+      you: 'You',
       marketingCampaign: {
         event: 'Event',
         discount: 'Discount',
@@ -641,6 +642,7 @@ const resources = {
       noCommunityPostsYet: 'Aún no hay publicaciones',
       beFirstToShare: '¡Sé el primero en compartir!',
       searchPeople: 'Buscar personas...',
+      you: 'Tú',
       marketingCampaign: {
         event: 'Evento',
         discount: 'Descuento',
@@ -1176,6 +1178,7 @@ const resources = {
       noCommunityPostsYet: 'Nessun post ancora',
       beFirstToShare: 'Sii il primo a condividere!',
       searchPeople: 'Cerca persone...',
+      you: 'Tu',
       marketingCampaign: {
         event: 'Evento',
         discount: 'Sconto',
@@ -1702,6 +1705,7 @@ const resources = {
       noCommunityPostsYet: 'Aucune publication pour le moment',
       beFirstToShare: 'Soyez le premier à partager!',
       searchPeople: 'Rechercher des personnes...',
+      you: 'Vous',
       marketingCampaign: {
         event: 'Événement',
         discount: 'Réduction',
@@ -2197,6 +2201,7 @@ const resources = {
       noCommunityPostsYet: 'Noch keine Beiträge',
       beFirstToShare: 'Sei der Erste, der teilt!',
       searchPeople: 'Personen suchen...',
+      you: 'Du',
       marketingCampaign: {
         event: 'Veranstaltung',
         discount: 'Rabatt',
@@ -2568,6 +2573,7 @@ const resources = {
       noCommunityPostsYet: 'Nenhuma publicação ainda',
       beFirstToShare: 'Seja o primeiro a compartilhar!',
       searchPeople: 'Pesquisar pessoas...',
+      you: 'Você',
       marketingCampaign: {
         event: 'Evento',
         discount: 'Desconto',
