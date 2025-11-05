@@ -414,7 +414,7 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
 
   if (locations.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 px-2">
+      <div className="flex flex-col items-center justify-center py-16 px-4">
         <div className="text-center">
           <p className="text-gray-500">No locations found</p>
         </div>
@@ -424,7 +424,7 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-2 px-2 pb-20">
+      <div className="grid grid-cols-2 gap-3 px-4 py-3 pb-20">
         {locations.map((location) => {
           const isSaved = userSavedIds.has(location.id);
           const isMuted = mutedLocations?.some((m: any) => m.location_id === location.id);
