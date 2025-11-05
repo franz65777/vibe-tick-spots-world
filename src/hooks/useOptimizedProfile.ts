@@ -46,17 +46,20 @@ export const useOptimizedProfile = (userId?: string) => {
             })
             .select()
             .single();
+          console.log('Created new profile for', targetUserId);
           return newProfile as Profile;
         }
+        console.error('Profile query error:', error);
         throw error;
       }
 
+      console.log('Profile loaded:', data?.username);
       return data as Profile;
     },
     enabled: !!targetUserId,
-    staleTime: 5 * 60 * 1000, // 5 minuti
-    gcTime: 10 * 60 * 1000, // 10 minuti
-    refetchOnMount: false, // Non refetch se dati recenti
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnMount: 'always',
   });
 
   return {

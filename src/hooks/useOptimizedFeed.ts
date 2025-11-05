@@ -42,13 +42,17 @@ export const useOptimizedFeed = () => {
         .order('created_at', { ascending: false })
         .limit(50);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Feed query error:', error);
+        throw error;
+      }
+      console.log('Feed loaded:', data?.length, 'posts');
       return data || [];
     },
     enabled: !!user?.id,
-    staleTime: 2 * 60 * 1000, // 2 minuti
+    staleTime: 1 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
-    refetchOnMount: false,
+    refetchOnMount: 'always',
   });
 
   return {

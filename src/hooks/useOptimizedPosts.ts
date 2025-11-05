@@ -23,13 +23,17 @@ export const useOptimizedPosts = (userId?: string) => {
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Posts query error:', error);
+        throw error;
+      }
+      console.log('Posts loaded for user', userId, ':', data?.length);
       return data || [];
     },
-    enabled: true,
-    staleTime: 3 * 60 * 1000, // 3 minuti
-    gcTime: 10 * 60 * 1000,
-    refetchOnMount: false,
+    enabled: !!userId,
+    staleTime: 1 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnMount: 'always',
   });
 
   return {
