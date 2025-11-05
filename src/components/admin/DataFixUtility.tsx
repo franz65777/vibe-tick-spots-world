@@ -10,6 +10,7 @@ import { LocationDataFix } from './LocationDataFix';
 const DataFixUtility = () => {
   const [isFixingCities, setIsFixingCities] = useState(false);
   const [isFixingCategories, setIsFixingCategories] = useState(false);
+  const [isCleaningDuplicates, setIsCleaningDuplicates] = useState(false);
 
   const handleFixCities = async () => {
     setIsFixingCities(true);
@@ -50,6 +51,41 @@ const DataFixUtility = () => {
       });
     } finally {
       setIsFixingCategories(false);
+    }
+  };
+
+  const handleCleanDuplicates = async () => {
+    setIsCleaningDuplicates(true);
+    try {
+      // Delete bad location entries with invalid data
+      const badLocationIds = ['cc443454-664b-4706-a50e-bf5e8bde2523', 'd035a816-2e21-4ea8-82a5-827f5a655a12'];
+      
+      // First delete user_saved_locations references
+      const { error: savedError } = await supabase
+        .from('user_saved_locations')
+        .delete()
+        .in('location_id', badLocationIds);
+      
+      if (savedError) throw savedError;
+      
+      // Delete the bad locations
+      const { error: locError } = await supabase
+        .from('locations')
+        .delete()
+        .in('id', badLocationIds);
+      
+      if (locError) throw locError;
+      
+      toast.success('Duplicate locations cleaned!', {
+        description: 'Removed 2 invalid duplicate entries (B Bar and Brownes of Sandymount)'
+      });
+    } catch (error) {
+      console.error('Error cleaning duplicates:', error);
+      toast.error('Failed to clean duplicates', {
+        description: error.message
+      });
+    } finally {
+      setIsCleaningDuplicates(false);
     }
   };
 
@@ -114,6 +150,30 @@ const DataFixUtility = () => {
                 </>
               ) : (
                 'Fix Categories'
+              )}
+            </Button>
+          </div>
+
+          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+            <div className="flex-1">
+              <h4 className="font-semibold text-sm mb-1">Clean Duplicate Locations</h4>
+              <p className="text-xs text-muted-foreground">
+                Removes invalid duplicate entries with missing coordinates and wrong Google Place IDs
+              </p>
+            </div>
+            <Button 
+              onClick={handleCleanDuplicates} 
+              disabled={isCleaningDuplicates}
+              size="sm"
+              variant="destructive"
+            >
+              {isCleaningDuplicates ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Cleaning...
+                </>
+              ) : (
+                'Clean Duplicates'
               )}
             </Button>
           </div>
