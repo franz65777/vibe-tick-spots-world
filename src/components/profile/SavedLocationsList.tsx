@@ -189,7 +189,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
       
       {/* Header */}
       <div className="bg-background border-b border-gray-100 sticky top-0 z-40 shadow-sm">
-        <div className="flex items-center justify-between pl-1 pr-4 py-3 gap-2">
+        <div className="flex items-center justify-between pl-1 pr-4 py-4 gap-2">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <button
               onClick={onClose}
