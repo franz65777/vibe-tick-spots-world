@@ -88,11 +88,11 @@ const MarketingCampaignBanner = ({ campaign }: MarketingCampaignBannerProps) => 
                   {getCampaignTypeTranslation()}
                 </Badge>
               </div>
-              <h4 className="font-semibold text-sm leading-tight mb-1 line-clamp-2 text-foreground">
+              <h4 className="font-semibold text-sm leading-tight mb-1 line-clamp-2 text-foreground text-left">
                 {campaign.title}
               </h4>
               {!isExpanded && (
-                <p className="text-muted-foreground text-xs line-clamp-1">
+                <p className="text-muted-foreground text-xs line-clamp-1 text-left">
                   {campaign.description}
                 </p>
               )}
@@ -106,7 +106,7 @@ const MarketingCampaignBanner = ({ campaign }: MarketingCampaignBannerProps) => 
         {/* Expanded Content */}
         {isExpanded && (
           <div className="mt-3 pt-3 border-t border-border/50">
-            <p className="text-foreground text-sm mb-3 leading-relaxed">
+            <p className="text-foreground text-xs mb-3 leading-relaxed line-clamp-2 text-left">
               {campaign.description}
             </p>
             <div className="flex items-center gap-2 text-muted-foreground text-xs">
