@@ -496,21 +496,21 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
   const currentLocation = filteredLocations[currentIndex];
 
   return (
-    <div className="fixed inset-0 w-full bg-gradient-to-b from-gray-50 to-gray-100 z-50 flex flex-col overflow-hidden pt-12">
+    <div className="fixed inset-0 w-full bg-background z-50 flex flex-col overflow-hidden pt-8">
       {/* Header with back button - moved down for mobile safe area */}
-      <div className="bg-white px-4 py-2.5 flex items-center gap-3 shadow-sm relative z-10">
+      <div className="bg-transparent px-4 py-2 flex items-center gap-3 relative z-10">
         <button
           onClick={() => navigate('/')}
-          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          className="p-2 hover:bg-muted rounded-full transition-colors"
           aria-label="Go back"
         >
-          <ArrowLeft className="w-5 h-5 text-gray-700" />
+          <ArrowLeft className="w-5 h-5 text-foreground" />
         </button>
-        <h1 className="text-xl font-semibold text-gray-900">{t('discoverPlaces')}</h1>
+        <h1 className="text-xl font-semibold text-foreground">{t('discoverPlaces')}</h1>
       </div>
 
-      {/* Followed Users Row - positioned above everything */}
-      <div className="bg-background px-4 pt-2 pb-2 overflow-visible relative z-20">
+      {/* Followed Users Row - positioned with padding to avoid clipping */}
+      <div className="bg-background px-4 pt-4 pb-2 overflow-visible relative z-20">
         <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1 pl-2 pr-3" style={{ scrollSnapType: 'x mandatory' }}>
           {/* All button */}
           <button
