@@ -196,12 +196,12 @@ const MapSection = ({
         {/* Map Category Filters - Hide when list view is open */}
         {!isListViewOpen && (
           <div className={cn(
-            "z-[1100] w-full max-w-[95vw] mx-auto px-4",
+            "z-[1100] w-full px-0",
             isExpanded
               ? "fixed top-[calc(env(safe-area-inset-top)+2rem)] left-0 right-0"
               : "absolute top-4 left-0 right-0"
           )}>
-            <div className="flex justify-center">
+            <div className="flex justify-center w-full">
               <MapCategoryFilters currentCity={currentCity} />
             </div>
           </div>
