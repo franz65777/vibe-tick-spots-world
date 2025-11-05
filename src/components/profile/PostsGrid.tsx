@@ -1,7 +1,7 @@
 
 import { Heart, MessageCircle, Grid3X3, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import PostDetailModal from '../explore/PostDetailModal';
+import PostDetailModalMobile from '../explore/PostDetailModalMobile';
 import { useOptimizedPosts } from '@/hooks/useOptimizedPosts';
 import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
 import { useAuth } from '@/contexts/AuthContext';
@@ -187,7 +187,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
       </div>
 
       {selectedPostId && (
-        <PostDetailModal 
+        <PostDetailModalMobile 
           postId={selectedPostId}
           isOpen={true}
           onClose={async () => {
@@ -196,7 +196,6 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
             const { queryClient } = await import('@/lib/queryClient');
             queryClient.invalidateQueries({ queryKey: ['posts', targetUserId] });
           }}
-          source="profile"
         />
       )}
     </div>
