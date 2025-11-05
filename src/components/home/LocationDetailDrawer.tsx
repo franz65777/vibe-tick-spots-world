@@ -1,10 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, MapPin, Image } from 'lucide-react';
+import { MapPin, Image } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { createLeafletCustomMarker } from '@/utils/leafletMarkerCreator';
+import { formatDetailedAddress } from '@/utils/addressFormatter';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer';
 
 interface LocationDetailDrawerProps {
   location: {
@@ -118,7 +125,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
     };
   }, [isOpen, location?.coordinates, isDarkMode]);
 
-  // Fetch location data to get full address
+  // Fetch location data to get full address with reverse geocoding fallback
   useEffect(() => {
     if (!isOpen || !location) return;
     fetchLocationData();
@@ -128,19 +135,18 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
   const fetchLocationData = async () => {
     if (!location) return;
     try {
-      const { data } = await supabase
-        .from('locations')
-        .select('address, city')
-        .eq('google_place_id', location.place_id)
-        .maybeSingle();
+      const coords: any = location.coordinates || {};
+      const lat = Number(coords.lat ?? coords.latitude ?? 0);
+      const lng = Number(coords.lng ?? coords.longitude ?? 0);
 
-      if (data) {
-        // Build full address from DB
-        const addr = [data.address, data.city].filter(Boolean).join(', ');
-        setFullAddress(addr || 'Indirizzo non disponibile');
-      } else {
-        setFullAddress('Indirizzo non disponibile');
-      }
+      // Use formatDetailedAddress which includes reverse geocoding
+      const addr = await formatDetailedAddress({
+        city: location.city,
+        address: location.address,
+        coordinates: lat && lng ? { lat, lng } : null,
+      });
+
+      setFullAddress(addr);
     } catch (error) {
       console.error('Error fetching location data:', error);
       setFullAddress('Indirizzo non disponibile');
@@ -207,37 +213,31 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
     }
   };
 
-  if (!isOpen || !location) return null;
-
-  const c: any = location.coordinates || {};
+  const c: any = location?.coordinates || {};
   const lat = Number(c.lat ?? c.latitude ?? 0);
   const lng = Number(c.lng ?? c.longitude ?? 0);
   const hasValidCoordinates = !!lat && !!lng;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/50" onClick={onClose}>
-      <div
-        className="fixed inset-x-0 bottom-0 bg-background rounded-t-3xl max-h-[90vh] overflow-hidden flex flex-col animate-slide-up"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DrawerContent className="h-[85vh] flex flex-col">
+        {/* Drag handle */}
+        <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-muted-foreground/20 mt-3 mb-2" />
+
         {/* Header - Fixed */}
-        <div className="flex-shrink-0 p-4 border-b">
+        <DrawerHeader className="flex-shrink-0 px-4 pb-4 border-b">
           <div className="flex items-start justify-between">
-            <div className="flex-1 pr-8">
-              <h2 className="text-xl font-bold text-foreground mb-1">{location.name}</h2>
+            <div className="flex-1 pr-4">
+              <DrawerTitle className="text-xl font-bold text-foreground mb-1">
+                {location?.name}
+              </DrawerTitle>
               <div className="flex items-start gap-1 text-sm text-muted-foreground">
                 <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <span className="line-clamp-2">{fullAddress}</span>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-muted rounded-full transition-colors flex-shrink-0"
-            >
-              <X className="w-5 h-5" />
-            </button>
           </div>
-        </div>
+        </DrawerHeader>
 
         {/* Map Section - Fixed */}
         <div className="flex-shrink-0">
@@ -287,8 +287,8 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
             )}
           </div>
         </div>
-      </div>
-    </div>
+      </DrawerContent>
+    </Drawer>
   );
 };
 
