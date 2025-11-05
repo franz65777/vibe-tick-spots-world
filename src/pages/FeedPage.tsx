@@ -320,8 +320,8 @@ const FeedPage = () => {
         </div>
 
         {/* Feed Content */}
-        <div className="flex-1 overflow-y-scroll pb-24 scrollbar-hide">
-           {feedItems.length === 0 && feedLoading ? (
+        <div className="flex-1 overflow-y-scroll pb-24 scrollbar-hide bg-background">
+          {feedItems.length === 0 && feedLoading ? (
             <div className="py-4">
               {[1,2,3].map((i) => (
                 <div key={i} className="space-y-3">
@@ -348,8 +348,8 @@ const FeedPage = () => {
                 {t('exploreUsers')}
               </Button>
             </div>
-          ) : (
-            <div className="space-y-0">
+           ) : (
+            <div className="space-y-0 bg-background">
               {feedItems.map((item) => {
               const profile = item.profiles as any;
               const username = profile?.username || 'Unknown';
@@ -367,9 +367,9 @@ const FeedPage = () => {
               const createdAt = item.created_at;
 
               return (
-                <article key={item.id} className="bg-background">
+                <article key={item.id} className="post-compact bg-background border-b border-border">
                   {/* Post Header */}
-                  <div className="flex items-center justify-between px-2 py-2.5">
+                  <div className="post-compact-header flex items-center justify-between">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <button 
                         onClick={(e) => handleAvatarClick(userId, e)}
@@ -416,7 +416,7 @@ const FeedPage = () => {
 
                   {/* Post Media */}
                   {mediaUrls.length > 0 && (
-                    <div className="relative full-bleed">
+                    <div className="post-compact-media relative">
                       {hasMultipleMedia ? (
                         <Carousel className="w-full" gutter={false}>
                           <CarouselContent className="-ml-0">
@@ -490,7 +490,7 @@ const FeedPage = () => {
                   )}
 
                   {/* Post Actions */}
-                  <div className="px-3 py-2 space-y-2.5">
+                  <div className="post-compact-actions space-y-2.5">
                     <PostActions
                       postId={postId}
                       likesCount={item.likes_count || 0}

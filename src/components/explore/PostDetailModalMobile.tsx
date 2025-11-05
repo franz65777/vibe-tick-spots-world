@@ -238,9 +238,9 @@ export const PostDetailModalMobile = ({ postId, isOpen, onClose }: PostDetailMod
           <X className="w-5 h-5" />
         </button>
 
-        <article className="min-h-screen pb-20">
+        <article className="post-compact min-h-screen pb-20">
           {/* Header */}
-          <div className="flex items-center justify-between px-3 py-3 border-b border-border">
+          <div className="post-compact-header flex items-center justify-between border-b border-border">
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <button 
                 onClick={(e) => {
@@ -289,7 +289,7 @@ export const PostDetailModalMobile = ({ postId, isOpen, onClose }: PostDetailMod
 
           {/* Media */}
           {post.media_urls.length > 0 && (
-            <div className="relative">
+            <div className="post-compact-media relative">
               {hasMultipleMedia ? (
                 <Carousel className="w-full" gutter={false}>
                   <CarouselContent className="-ml-0">
@@ -347,7 +347,7 @@ export const PostDetailModalMobile = ({ postId, isOpen, onClose }: PostDetailMod
           )}
 
           {/* Actions and Content */}
-          <div className="px-3 py-2 space-y-2.5">
+          <div className="post-compact-actions space-y-2.5">
             <PostActions
               postId={post.id}
               likesCount={post.likes_count || 0}
