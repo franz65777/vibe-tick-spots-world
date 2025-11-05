@@ -25,9 +25,10 @@ interface PopularSpotsProps {
   currentCity?: string;
   onLocationClick?: (coords: { lat: number; lng: number }) => void;
   onSwipeDiscoveryOpen?: () => void;
+  onSpotSelect?: (spot: PopularSpot) => void;
 }
 
-const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen }: PopularSpotsProps) => {
+const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSpotSelect }: PopularSpotsProps) => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [popularSpots, setPopularSpots] = useState<PopularSpot[]>([]);
@@ -132,6 +133,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen }: Po
 
   const handleSpotClick = (spot: PopularSpot) => {
     onLocationClick?.(spot.coordinates);
+    onSpotSelect?.(spot);
   };
 
   return (

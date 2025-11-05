@@ -436,6 +436,20 @@ const HomePage = () => {
               }}
               onMapLocationClick={(coords: { lat: number; lng: number }) => setMapCenter(coords)}
               onSwipeDiscoveryOpen={() => navigate('/discover')}
+              onSpotSelect={(spot) => {
+                // Convert PopularSpot to Place format and show it
+                setInitialPinToShow({
+                  id: spot.id,
+                  name: spot.name,
+                  category: spot.category,
+                  address: spot.address || '',
+                  coordinates: spot.coordinates,
+                  isFollowing: false,
+                  isNew: false,
+                  likes: 0,
+                  visitors: [],
+                });
+              }}
             />
           </div>
         )}
