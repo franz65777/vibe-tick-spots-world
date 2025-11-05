@@ -243,7 +243,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
   return (
     <>
       <Drawer 
-        open={true}
+        open={!savedByOpen}
         modal={false}
         onOpenChange={(open) => { if (!open) onClose(); }}
       >
