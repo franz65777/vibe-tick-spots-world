@@ -14,6 +14,7 @@ interface MarkerOptions {
   recommendationScore?: number;
   friendAvatars?: string[];
   isDarkMode?: boolean;
+  hasCampaign?: boolean;
 }
 
 // Get category image path
@@ -56,7 +57,7 @@ const getCategoryImage = (category: string): string => {
 };
 
 export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => {
-  const { category, isSaved, isRecommended, recommendationScore = 0, isDarkMode } = options;
+  const { category, isSaved, isRecommended, recommendationScore = 0, isDarkMode, hasCampaign } = options;
   
   // Get category image
   const categoryImg = getCategoryImage(category);
@@ -73,9 +74,77 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
     ringColor = 'rgba(59, 130, 246, 0.3)';
   }
   
+  // Campaign sparkle effect
+  const campaignEffect = hasCampaign ? `
+    <!-- Animated sparkle effect for campaigns -->
+    <div class="campaign-sparkle" style="
+      position: absolute;
+      top: -8px;
+      left: -8px;
+      width: 52px;
+      height: 52px;
+      pointer-events: none;
+    ">
+      <div class="sparkle sparkle-1" style="
+        position: absolute;
+        top: 0;
+        left: 18px;
+        width: 6px;
+        height: 6px;
+        background: linear-gradient(135deg, #FFD700, #FFA500);
+        border-radius: 50%;
+        animation: sparkle-float 2s ease-in-out infinite;
+      "></div>
+      <div class="sparkle sparkle-2" style="
+        position: absolute;
+        top: 8px;
+        right: 2px;
+        width: 4px;
+        height: 4px;
+        background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+        border-radius: 50%;
+        animation: sparkle-float 2s ease-in-out 0.3s infinite;
+      "></div>
+      <div class="sparkle sparkle-3" style="
+        position: absolute;
+        bottom: 18px;
+        left: 2px;
+        width: 5px;
+        height: 5px;
+        background: linear-gradient(135deg, #4ECDC4, #44A08D);
+        border-radius: 50%;
+        animation: sparkle-float 2s ease-in-out 0.6s infinite;
+      "></div>
+      <div class="sparkle sparkle-4" style="
+        position: absolute;
+        bottom: 8px;
+        right: 6px;
+        width: 4px;
+        height: 4px;
+        background: linear-gradient(135deg, #A8E6CF, #FFD3B6);
+        border-radius: 50%;
+        animation: sparkle-float 2s ease-in-out 0.9s infinite;
+      "></div>
+    </div>
+    
+    <!-- Pulsing glow ring -->
+    <div style="
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 215, 0, 0.4) 0%, transparent 70%);
+      animation: campaign-pulse 2s ease-in-out infinite;
+    "></div>
+  ` : '';
+  
   // Create custom marker HTML with larger icon and subtle design
   const markerHtml = `
     <div class="custom-leaflet-marker" style="position: relative; width: 36px; height: 44px;">
+      ${campaignEffect}
+      
       <!-- Subtle shadow ring -->
       <div style="
         position: absolute;
@@ -119,6 +188,36 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
       }
       .custom-leaflet-marker:hover {
         transform: scale(1.1) translateY(-2px);
+      }
+      
+      @keyframes sparkle-float {
+        0%, 100% {
+          transform: translateY(0) scale(1);
+          opacity: 1;
+        }
+        25% {
+          transform: translateY(-8px) scale(1.2);
+          opacity: 0.8;
+        }
+        50% {
+          transform: translateY(-12px) scale(1);
+          opacity: 0.6;
+        }
+        75% {
+          transform: translateY(-6px) scale(1.1);
+          opacity: 0.9;
+        }
+      }
+      
+      @keyframes campaign-pulse {
+        0%, 100% {
+          transform: scale(1);
+          opacity: 0.6;
+        }
+        50% {
+          transform: scale(1.3);
+          opacity: 0.3;
+        }
       }
     </style>
   `;

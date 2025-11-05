@@ -6,6 +6,7 @@ import PinDetailCard from './explore/PinDetailCard';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { createCurrentLocationMarker, createLeafletCustomMarker } from '@/utils/leafletMarkerCreator';
 import { useAnalytics } from '@/hooks/useAnalytics';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LeafletMapSetupProps {
   places: Place[];
@@ -179,7 +180,7 @@ const LeafletMapSetup = ({
     };
   }, []);
 
-  // Current location marker
+  // Current location marker - always visible
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -193,13 +194,17 @@ const LeafletMapSetup = ({
       } else {
         currentLocationMarkerRef.current = L.marker([location.latitude, location.longitude], {
           icon,
-          zIndexOffset: 2000,
+          zIndexOffset: 3000, // Increased to always be on top
+          pane: 'markerPane', // Ensure it's in the correct pane
         }).addTo(map);
+        
+        // Ensure marker stays on top
+        currentLocationMarkerRef.current.setZIndexOffset(3000);
       }
     }
   }, [location?.latitude, location?.longitude]);
 
-  // Places markers
+  // Places markers with campaign detection
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -212,43 +217,64 @@ const LeafletMapSetup = ({
       }
     });
 
-    // Add / update markers
-    places.forEach((place) => {
-      if (!place.coordinates?.lat || !place.coordinates?.lng) return;
+    // Fetch active campaigns for all locations
+    const fetchCampaigns = async () => {
+      const locationIds = places.map(p => p.id).filter(Boolean);
+      if (locationIds.length === 0) return;
 
-      const icon = createLeafletCustomMarker({
-        category: place.category || 'attraction',
-        isSaved: place.isSaved,
-        isRecommended: place.isRecommended,
-        recommendationScore: place.recommendationScore,
-        friendAvatars: [],
-        isDarkMode,
-      });
+      const { data: campaigns } = await supabase
+        .from('marketing_campaigns')
+        .select('location_id')
+        .in('location_id', locationIds)
+        .eq('is_active', true)
+        .gt('end_date', new Date().toISOString());
 
-      let marker = markersRef.current.get(place.id);
-      if (!marker) {
-        marker = L.marker([place.coordinates.lat, place.coordinates.lng], {
-          icon,
-        }).addTo(map);
-        marker.on('click', () => {
-          // Simple bounce animation
-          const el = marker!.getElement();
-          if (el) {
-            el.style.animation = 'bounce 0.7s ease-in-out';
-            setTimeout(() => (el.style.animation = ''), 700);
-          }
-          trackEvent('map_pin_clicked', {
-            place_id: place.id,
-            category: place.category,
-            source_tab: 'map',
-          });
-          onPinClick?.(place);
+      const campaignLocationIds = new Set(campaigns?.map(c => c.location_id) || []);
+
+      // Add / update markers
+      places.forEach((place) => {
+        if (!place.coordinates?.lat || !place.coordinates?.lng) return;
+
+        const hasCampaign = campaignLocationIds.has(place.id);
+
+        const icon = createLeafletCustomMarker({
+          category: place.category || 'attraction',
+          isSaved: place.isSaved,
+          isRecommended: place.isRecommended,
+          recommendationScore: place.recommendationScore,
+          friendAvatars: [],
+          isDarkMode,
+          hasCampaign,
         });
-        markersRef.current.set(place.id, marker);
-      }
-      marker.setIcon(icon);
-      marker.setLatLng([place.coordinates.lat, place.coordinates.lng]);
-    });
+
+        let marker = markersRef.current.get(place.id);
+        if (!marker) {
+          marker = L.marker([place.coordinates.lat, place.coordinates.lng], {
+            icon,
+          }).addTo(map);
+          marker.on('click', () => {
+            // Simple bounce animation
+            const el = marker!.getElement();
+            if (el) {
+              el.style.animation = 'bounce 0.7s ease-in-out';
+              setTimeout(() => (el.style.animation = ''), 700);
+            }
+            trackEvent('map_pin_clicked', {
+              place_id: place.id,
+              category: place.category,
+              source_tab: 'map',
+              has_campaign: hasCampaign,
+            });
+            onPinClick?.(place);
+          });
+          markersRef.current.set(place.id, marker);
+        }
+        marker.setIcon(icon);
+        marker.setLatLng([place.coordinates.lat, place.coordinates.lng]);
+      });
+    };
+
+    fetchCampaigns();
   }, [places, isDarkMode, onPinClick, trackEvent]);
 
   return (
