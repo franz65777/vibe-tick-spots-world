@@ -24,8 +24,8 @@ const ProfileTabs = ({
 }: ProfileTabsProps) => {
   const { t } = useTranslation();
   return (
-    <div className="px-3">
-      <div className="flex bg-gray-100 rounded-xl p-1 mb-4">
+    <div className="">{/* No padding */}
+      <div className="flex bg-gray-100 rounded-xl p-1 mb-4 mx-3">
         <button
           onClick={() => onTabChange('posts')}
           className={cn(
