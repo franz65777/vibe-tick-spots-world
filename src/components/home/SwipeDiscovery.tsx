@@ -446,10 +446,25 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
         toast.success(`${location.name} saved!`);
       }
 
-      // Remove swiped location from list and move to next
+      // Remove swiped location from list and update counts
       setTimeout(() => {
         setSwipeDirection(null);
         setTouchOffset({ x: 0, y: 0 });
+        
+        // Update follower counts if this location was saved by the selected user
+        if (location.saved_by_users && location.saved_by_users.length > 0) {
+          setFollowedUsers(prev => prev.map(user => {
+            const wasSavedByThisUser = location.saved_by_users?.some(saver => saver.id === user.id);
+            if (wasSavedByThisUser) {
+              return {
+                ...user,
+                new_saves_count: Math.max(0, user.new_saves_count - 1)
+              };
+            }
+            return user;
+          }));
+        }
+        
         // Remove the current location from the list
         setLocations(prev => prev.filter((_, idx) => idx !== currentIndex));
         // Don't increment index since we removed an item
@@ -498,9 +513,9 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
   const currentLocation = filteredLocations[currentIndex];
 
   return (
-    <div className="fixed inset-0 w-full bg-background z-50 flex flex-col overflow-hidden pt-8">
-      {/* Header with back button - moved down for mobile safe area */}
-      <div className="bg-transparent px-4 py-2 flex items-center gap-3 relative z-10">
+    <div className="fixed inset-0 w-full bg-background z-50 flex flex-col overflow-hidden">
+      {/* Header with back button - compact for more space */}
+      <div className="bg-transparent px-4 py-1.5 flex items-center gap-3 relative z-10">
         <button
           onClick={() => navigate('/')}
           className="p-2 hover:bg-muted rounded-full transition-colors"
@@ -511,8 +526,8 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
         <h1 className="text-xl font-semibold text-foreground">{t('discoverPlaces')}</h1>
       </div>
 
-      {/* Followed Users Row - positioned with padding to avoid clipping */}
-      <div className="bg-background px-4 pt-10 pb-2 overflow-visible relative z-30">
+      {/* Followed Users Row - overflow visible to prevent clipping */}
+      <div className="bg-background px-4 pt-2 pb-2 -mt-2 overflow-visible relative z-30">
         <div className="flex gap-3 overflow-x-auto overflow-y-visible scrollbar-hide pb-1 pl-2 pr-3" style={{ scrollSnapType: 'x mandatory' }}>
           {/* All button */}
           <button
@@ -597,38 +612,65 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
             <p className="text-gray-600 font-medium">{t('findingAmazingPlaces')}</p>
           </div>
         ) : !currentLocation ? (
-          <div className="h-full flex items-center justify-center p-8 text-center">
-            {/* Empty state content */}
-            <div className="space-y-6 max-w-sm mx-auto">
-              <div className="flex items-center justify-center">
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center shadow-lg">
-                  <Users className="w-12 h-12 text-white" />
+          <div className="h-full flex flex-col">
+            {/* Keep filters visible even when no cards */}
+            <div className="px-4 py-3">
+              <SwipeCategoryFilter
+                selected={selectedCategory}
+                onSelect={(cat) => {
+                  setSelectedCategory(cat);
+                  setCurrentIndex(0);
+                }}
+                counts={categoryCounts}
+              />
+            </div>
+            
+            {/* Empty state */}
+            <div className="flex-1 flex items-center justify-center p-8 text-center">
+              <div className="space-y-6 max-w-sm mx-auto">
+                <div className="flex items-center justify-center">
+                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center shadow-lg">
+                    <Users className="w-12 h-12 text-white" />
+                  </div>
                 </div>
-              </div>
-              
-              <div className="space-y-3">
-                <h3 className="text-2xl font-bold text-gray-900">{t('noPlacesToDiscover')}</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  {t('followMorePeople')}
-                </p>
-              </div>
-              
-              <div className="flex flex-col items-stretch gap-3 pt-4">
-                <Button 
-                  onClick={() => navigate('/explore', { state: { searchMode: 'users' } })} 
-                  className="rounded-full h-12 text-base font-semibold"
-                  size="lg"
-                >
-                  <UserPlus className="w-5 h-5 mr-2" />
-                  {t('findPeopleToFollow')}
-                </Button>
-                <Button 
-                  onClick={fetchDailyLocations} 
-                  variant="outline" 
-                  className="rounded-full h-12 text-base"
-                >
-                  {t('tryAgain')}
-                </Button>
+                
+                <div className="space-y-3">
+                  <h3 className="text-2xl font-bold text-gray-900">{t('noPlacesToDiscover')}</h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    {selectedCategory 
+                      ? t('noPlacesInCategory', { category: selectedCategory })
+                      : t('followMorePeople')
+                    }
+                  </p>
+                </div>
+                
+                <div className="flex flex-col items-stretch gap-3 pt-4">
+                  {selectedCategory && (
+                    <Button 
+                      onClick={() => setSelectedCategory(null)} 
+                      className="rounded-full h-12 text-base font-semibold"
+                      size="lg"
+                    >
+                      {t('showAllCategories', { ns: 'common' })}
+                    </Button>
+                  )}
+                  <Button 
+                    onClick={() => navigate('/explore', { state: { searchMode: 'users' } })} 
+                    variant={selectedCategory ? "outline" : "default"}
+                    className="rounded-full h-12 text-base font-semibold"
+                    size="lg"
+                  >
+                    <UserPlus className="w-5 h-5 mr-2" />
+                    {t('findPeopleToFollow')}
+                  </Button>
+                  <Button 
+                    onClick={fetchDailyLocations} 
+                    variant="outline" 
+                    className="rounded-full h-12 text-base"
+                  >
+                    {t('tryAgain')}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
