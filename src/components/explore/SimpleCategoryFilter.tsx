@@ -9,7 +9,7 @@ interface SimpleCategoryFilterProps {
 
 const SimpleCategoryFilter = ({ selectedCategory, onCategorySelect }: SimpleCategoryFilterProps) => {
   return (
-    <div className="grid grid-cols-7 gap-2 px-4 py-3">
+    <div className="grid grid-cols-7 gap-2 px-1 py-3">
       {allowedCategories.map((category) => {
         const isSelected = selectedCategory === category;
         return (

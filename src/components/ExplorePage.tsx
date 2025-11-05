@@ -255,7 +255,7 @@ const ExplorePage = () => {
   return <div className="flex flex-col h-full">
       {/* Simplified Header */}
       <div className="bg-white border-b border-gray-200 pt-safe">
-        <div className="px-4 py-4 pt-2">
+        <div className="px-1 py-4 pt-2">
           {/* Search Mode Toggle */}
           <div className="flex bg-gray-100 rounded-xl p-1 mb-4">
             <button onClick={() => setSearchMode('locations')} className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all ${searchMode === 'locations' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
@@ -316,7 +316,7 @@ const ExplorePage = () => {
               <>
                 {/* Search History & Follow Suggestions - Only in People mode */}
                 {!isSearchActive && (
-                  <div className="px-4 py-4 space-y-6">
+                  <div className="px-1 py-4 space-y-6">
                     {/* Search History */}
                     {searchHistory.length > 0 && (
                       <div>
@@ -446,7 +446,7 @@ const ExplorePage = () => {
 
                 {/* User Results */}
                 {displayUsers.length > 0 ? (
-                  <div className="space-y-3 px-4 pb-4">
+                  <div className="space-y-3 px-1 pb-4">
                     {displayUsers.map(user => (
                       <UserCard
                         key={user.id}
@@ -458,7 +458,7 @@ const ExplorePage = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="px-4 py-8">
+                  <div className="px-1 py-8">
                     {isSearchActive && (
                       <NoResults searchMode="users" searchQuery={searchQuery} />
                     )}
