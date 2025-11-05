@@ -496,8 +496,8 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
   const currentLocation = filteredLocations[currentIndex];
 
   return (
-    <div className="fixed inset-0 w-full bg-gradient-to-b from-gray-50 to-gray-100 z-50 flex flex-col overflow-hidden">
-      {/* Header with back button */}
+    <div className="fixed inset-0 w-full bg-gradient-to-b from-gray-50 to-gray-100 z-50 flex flex-col overflow-hidden pt-12">
+      {/* Header with back button - moved down for mobile safe area */}
       <div className="bg-white px-4 py-2.5 flex items-center gap-3 shadow-sm relative z-10">
         <button
           onClick={() => navigate('/')}
@@ -631,7 +631,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
             </div>
           </div>
         ) : (
-          <div className="h-full flex items-start justify-center px-3 pt-1 pb-3">
+          <div className="h-full flex items-start justify-center px-3 pt-6 pb-3">
             {/* Swipeable Card */}
             <div
               onTouchStart={handleTouchStart}
