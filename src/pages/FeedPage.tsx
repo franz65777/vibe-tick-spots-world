@@ -504,11 +504,13 @@ const FeedPage = () => {
                                         playsInline
                                         loop
                                       />
-                                    ) : (
+                                     ) : (
                                       <img
                                         src={url}
                                         alt={`Post ${idx + 1}`}
                                         className="w-full h-full object-cover block touch-pinch-zoom"
+                                        loading="lazy"
+                                        decoding="async"
                                         style={{ touchAction: 'pinch-zoom' }}
                                       />
                                     )}
@@ -537,6 +539,8 @@ const FeedPage = () => {
                                 src={mediaUrls[0]}
                                 alt="Post"
                                 className="w-full h-full object-cover block touch-pinch-zoom"
+                                loading="lazy"
+                                decoding="async"
                                 style={{ touchAction: 'pinch-zoom' }}
                               />
                             )}

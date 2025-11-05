@@ -44,54 +44,23 @@ const ProfileHeader = ({
   const { getStats } = useSavedPlaces();
   const navigate = useNavigate();
 
-  // Real-time updates - refetch on interval
-  useEffect(() => {
-    const interval = setInterval(() => {
-      refetch();
-    }, 5000); // Update every 5 seconds
-    
-    return () => clearInterval(interval);
-  }, [refetch]);
-
-  // Subscribe to realtime changes
+  // Optimized realtime updates - only on specific changes, no polling
   useEffect(() => {
     if (!user?.id) return;
 
     const channel = supabase
-      .channel('profile-changes')
+      .channel(`profile-changes-${user.id}`)
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'UPDATE',
           schema: 'public',
           table: 'profiles',
           filter: `id=eq.${user.id}`
         },
         () => {
-          refetch();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'posts',
-          filter: `user_id=eq.${user.id}`
-        },
-        () => {
-          refetch();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'follows'
-        },
-        () => {
-          refetch();
+          // Debounce refetch to avoid too many calls
+          setTimeout(() => refetch(), 300);
         }
       )
       .subscribe();
@@ -144,6 +113,8 @@ const ProfileHeader = ({
                     src={profile.avatar_url} 
                     alt={displayUsername}
                     className="w-full h-full object-cover rounded-full"
+                    loading="lazy"
+                    decoding="async"
                   />
                 ) : (
                   <span className="text-sm font-semibold text-muted-foreground">{getInitials()}</span>

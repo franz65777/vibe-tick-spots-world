@@ -130,6 +130,8 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
               src={post.media_urls[0]}
               alt={post.caption || 'Post'}
               className="w-full h-full object-cover"
+              loading="lazy"
+              decoding="async"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.src = '/placeholder.svg';

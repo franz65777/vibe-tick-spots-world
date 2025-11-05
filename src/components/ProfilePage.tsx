@@ -18,8 +18,8 @@ import { ThemeToggle } from './ThemeToggle';
 
 const ProfilePage = () => {
   const { t } = useTranslation();
-  const { profile, loading, error } = useProfile();
   const { user } = useAuth();
+  const { profile, loading, error } = useProfile();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('posts');
   const [modalState, setModalState] = useState<{ isOpen: boolean; type: 'followers' | 'following' | null }>({
@@ -30,6 +30,13 @@ const ProfilePage = () => {
   const { badges } = useUserBadges();
   const [lastBadgeCount, setLastBadgeCount] = useState(0);
   const [hasNewBadges, setHasNewBadges] = useState(false);
+
+  // Reset state when user changes - prevents showing stale data
+  useEffect(() => {
+    setActiveTab('posts');
+    setModalState({ isOpen: false, type: null });
+    setIsLocationsListOpen(false);
+  }, [user?.id]);
 
   // Track new badges
   useEffect(() => {
@@ -63,7 +70,19 @@ const ProfilePage = () => {
     setIsLocationsListOpen(true);
   };
 
-  if (loading) {
+  // Show loading only if we have no profile data at all - prevents flash of wrong user
+  if (loading && !profile) {
+    return (
+      <div className="flex flex-col h-full bg-background">
+        <div className="flex items-center justify-center h-64">
+          <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if user mismatch - prevents showing wrong user's data
+  if (profile && user && profile.id !== user.id) {
     return (
       <div className="flex flex-col h-full bg-background">
         <div className="flex items-center justify-center h-64">
