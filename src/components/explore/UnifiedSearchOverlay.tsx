@@ -119,9 +119,9 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-lg z-50 flex flex-col" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-lg z-[3000] flex flex-col" onClick={onClose}>
       {/* Header with integrated search */}
-      <div className="bg-white px-4 py-3 flex items-center gap-3 shadow-lg" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white safe-area-pt px-4 pt-3 pb-3 flex items-center gap-3 shadow-lg" onClick={(e) => e.stopPropagation()}>
         <button
           onClick={onClose}
           className="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
