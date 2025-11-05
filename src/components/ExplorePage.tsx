@@ -257,12 +257,12 @@ const ExplorePage = () => {
       <div className="bg-white border-b border-gray-200 pt-safe">
         <div className="px-0 py-4 pt-2">
           {/* Search Mode Toggle */}
-          <div className="flex bg-gray-100 rounded-xl p-1 mb-4">
-            <button onClick={() => setSearchMode('locations')} className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all ${searchMode === 'locations' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
+          <div className="flex bg-gray-100 rounded-none p-1 mb-4">
+            <button onClick={() => setSearchMode('locations')} className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-none text-sm font-medium transition-all ${searchMode === 'locations' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
               <MapPin className="w-4 h-4" />
               {t('places', { ns: 'explore' })}
             </button>
-            <button onClick={() => setSearchMode('users')} className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all ${searchMode === 'users' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
+            <button onClick={() => setSearchMode('users')} className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-none text-sm font-medium transition-all ${searchMode === 'users' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
               <Users className="w-4 h-4" />
               {t('people', { ns: 'explore' })}
             </button>
@@ -276,7 +276,7 @@ const ExplorePage = () => {
               placeholder={searchMode === 'locations' ? t('searchPlaces', { ns: 'explore' }) : t('searchPeople', { ns: 'explore' })} 
               value={searchQuery} 
               onChange={e => handleSearch(e.target.value)} 
-              className="pl-12 pr-4 h-12 bg-gray-50 border-gray-200 focus:bg-white rounded-xl text-gray-900 placeholder-gray-500" 
+              className="pl-12 pr-4 h-12 bg-gray-50 border-gray-200 focus:bg-white rounded-none text-gray-900 placeholder-gray-500" 
             />
             {searchQuery && <Button onClick={clearSearch} variant="ghost" size="sm" className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100 rounded-full text-gray-500">
                 ×
