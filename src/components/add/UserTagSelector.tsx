@@ -79,7 +79,7 @@ export const UserTagSelector: React.FC<UserTagSelectorProps> = ({
 
         {/* Search Results Dropdown */}
         {searchResults.length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+          <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-2xl shadow-lg z-10 max-h-48 overflow-y-auto scrollbar-hide">
             {searchResults.map((result) => (
               <button
                 key={result.id}

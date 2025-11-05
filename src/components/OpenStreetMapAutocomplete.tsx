@@ -157,7 +157,7 @@ const OpenStreetMapAutocomplete = ({
 
       {/* Results dropdown */}
       {showResults && results.length > 0 && (
-        <div className="absolute z-50 w-full mt-2 bg-background border border-border rounded-lg shadow-lg max-h-[300px] overflow-y-auto scrollbar-hide">
+        <div className="absolute z-50 w-full mt-2 bg-background border border-border rounded-2xl shadow-lg max-h-[300px] overflow-y-auto scrollbar-hide">
           {results.map((result) => (
             <button
               key={result.id}
@@ -185,7 +185,7 @@ const OpenStreetMapAutocomplete = ({
 
       {/* No results message */}
       {showResults && !loading && query.length >= 2 && results.length === 0 && (
-        <div className="absolute z-50 w-full mt-2 bg-background border border-border rounded-lg shadow-lg p-4 text-center text-muted-foreground text-sm">
+        <div className="absolute z-50 w-full mt-2 bg-background border border-border rounded-2xl shadow-lg p-4 text-center text-muted-foreground text-sm">
           {t('noPlacesFound', { ns: 'add' })} "{query}"
         </div>
       )}
