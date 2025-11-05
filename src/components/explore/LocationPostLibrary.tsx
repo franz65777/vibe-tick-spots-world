@@ -19,6 +19,8 @@ import { useUserPosts } from '@/hooks/useUserPosts';
 import { useDetailedAddress } from '@/hooks/useDetailedAddress';
 import { useLocationStats } from '@/hooks/useLocationStats';
 import { useMutedLocations } from '@/hooks/useMutedLocations';
+import { useMarketingCampaign } from '@/hooks/useMarketingCampaign';
+import MarketingCampaignBanner from './MarketingCampaignBanner';
 interface LocationPost {
   id: string;
   user_id: string;
@@ -94,6 +96,8 @@ const LocationPostLibrary = ({
     place?.id || null,
     place?.google_place_id || null
   );
+  const { campaign } = useMarketingCampaign(place?.id);
+  const [isCampaignExpanded, setIsCampaignExpanded] = useState(false);
 
   // All hooks MUST be called before any early returns
   useEffect(() => {
@@ -514,6 +518,24 @@ const LocationPostLibrary = ({
               </Button>
             </div>
           </div>
+
+          {/* Marketing Campaign - Expandable Section */}
+          {campaign && (
+            <div className="bg-white px-4 pb-2">
+              <button
+                onClick={(e) => { e.stopPropagation(); setIsCampaignExpanded(!isCampaignExpanded); }}
+                className="w-full px-3 py-2 flex items-center justify-between bg-background border-2 border-primary/20 hover:border-primary/40 rounded-xl transition-all"
+              >
+                <span className="text-sm font-medium truncate text-foreground">{campaign.title}</span>
+                <svg className={`w-4 h-4 text-primary transition-transform ${isCampaignExpanded ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+              {isCampaignExpanded && (
+                <div className="pt-2">
+                  <MarketingCampaignBanner campaign={campaign} />
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Posts Library - vertical grid with scrolling */}
           <div className="flex-1 overflow-y-auto scrollbar-hide bg-white">
