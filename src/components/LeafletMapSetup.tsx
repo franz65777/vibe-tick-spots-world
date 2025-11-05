@@ -140,6 +140,16 @@ const LeafletMapSetup = ({
     }
   }, []); // Empty deps - run only once on mount
 
+  // Ensure tiles recalc when toggling fullscreen to avoid white map
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    // Defer to next tick so container size is final
+    setTimeout(() => {
+      try { map.invalidateSize(); } catch {}
+    }, 50);
+  }, [fullScreen]);
+
   // Current location marker
   useEffect(() => {
     const map = mapRef.current;
