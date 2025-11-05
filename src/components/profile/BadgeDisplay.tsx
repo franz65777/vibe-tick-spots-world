@@ -24,7 +24,7 @@ const BadgeDisplay = ({ userId, onBadgesClick }: BadgeDisplayProps) => {
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-0.5">
+      <div className="flex gap-0.5">
         <div className="w-8 h-8 bg-muted rounded-full animate-pulse"></div>
         <div className="w-8 h-8 bg-muted rounded-full animate-pulse"></div>
       </div>
@@ -37,7 +37,7 @@ const BadgeDisplay = ({ userId, onBadgesClick }: BadgeDisplayProps) => {
 
   return (
     <>
-      <div className="flex flex-col gap-0.5 items-center">
+      <div className="flex gap-0.5 items-center">
         {displayBadges.map((badge) => (
           <button
             key={badge.id}
