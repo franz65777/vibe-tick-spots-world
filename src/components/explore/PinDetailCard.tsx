@@ -67,7 +67,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
     locationIdForEngagement,
     googlePlaceIdForEngagement
   );
-  const { campaign } = useMarketingCampaign(place.id);
+  const { campaign } = useMarketingCampaign(place.id, place.google_place_id);
   const [isCampaignExpanded, setIsCampaignExpanded] = useState(false);
 
   const fetchPosts = async (page: number = 1) => {

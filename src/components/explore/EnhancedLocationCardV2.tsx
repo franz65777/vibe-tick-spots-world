@@ -28,7 +28,7 @@ const EnhancedLocationCardV2 = ({ place, onCardClick }: EnhancedLocationCardV2Pr
   });
 
   const { stats } = useLocationStats(place.id, place.google_place_id);
-  const { campaign } = useMarketingCampaign(place.id);
+  const { campaign } = useMarketingCampaign(place.id, place.google_place_id);
 
   useEffect(() => {
     const checkSaved = async () => {

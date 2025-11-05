@@ -96,7 +96,7 @@ const LocationPostLibrary = ({
     place?.id || null,
     place?.google_place_id || null
   );
-  const { campaign } = useMarketingCampaign(place?.id);
+  const { campaign } = useMarketingCampaign(place?.id, place?.google_place_id);
   const [isCampaignExpanded, setIsCampaignExpanded] = useState(false);
 
   // All hooks MUST be called before any early returns

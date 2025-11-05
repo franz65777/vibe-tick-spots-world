@@ -45,7 +45,7 @@ const PlaceCard = ({
   const [isCampaignExpanded, setIsCampaignExpanded] = useState(false);
 
   const isMuted = mutedLocations?.some((m: any) => m.location_id === place.id);
-  const { campaign } = useMarketingCampaign(place.id);
+  const { campaign } = useMarketingCampaign(place.id, place.google_place_id);
 
   const handleCommentClick = (e: React.MouseEvent) => {
     e.stopPropagation();

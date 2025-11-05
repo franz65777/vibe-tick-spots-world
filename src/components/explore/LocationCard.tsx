@@ -59,7 +59,7 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
   });
 
   const { stats } = useLocationStats(place.id, place.google_place_id || null);
-  const { campaign } = useMarketingCampaign(place.id);
+  const { campaign } = useMarketingCampaign(place.id, place.google_place_id || undefined);
 
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();

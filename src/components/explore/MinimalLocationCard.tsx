@@ -27,7 +27,7 @@ const MinimalLocationCard = ({
   onCardClick
 }: MinimalLocationCardProps) => {
   const { stats } = useLocationStats(place.id, place.google_place_id);
-  const { campaign } = useMarketingCampaign(place.id);
+  const { campaign } = useMarketingCampaign(place.id, place.google_place_id);
   const [isExpanded, setIsExpanded] = useState(false);
 
   return <div className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200">
