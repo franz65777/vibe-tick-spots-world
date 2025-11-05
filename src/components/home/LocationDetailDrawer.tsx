@@ -1,0 +1,181 @@
+import React, { useState, useEffect } from 'react';
+import { X, MapPin, Image } from 'lucide-react';
+import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import { Icon } from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import pinIcon from '@/assets/pin-icon.png';
+
+interface LocationDetailDrawerProps {
+  location: {
+    place_id: string;
+    name: string;
+    category: string;
+    city: string | null;
+    address?: string;
+    coordinates: {
+      lat: number;
+      lng: number;
+    };
+    image_url?: string;
+  } | null;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+interface Post {
+  id: string;
+  user_id: string;
+  caption: string;
+  media_url: string;
+  created_at: string;
+  username: string;
+  avatar_url: string;
+}
+
+const customIcon = new Icon({
+  iconUrl: pinIcon,
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+});
+
+const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawerProps) => {
+  const { user } = useAuth();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && location) {
+      fetchLocationPosts();
+    }
+  }, [isOpen, location]);
+
+  const fetchLocationPosts = async () => {
+    if (!location) return;
+    
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('posts')
+        .select(`
+          id,
+          user_id,
+          caption,
+          media_url,
+          created_at,
+          profiles:user_id (
+            username,
+            avatar_url
+          )
+        `)
+        .eq('location_id', location.place_id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+
+      const formattedPosts = (data || []).map((p: any) => ({
+        id: p.id,
+        user_id: p.user_id,
+        caption: p.caption || '',
+        media_url: p.media_url,
+        created_at: p.created_at,
+        username: p.profiles?.username || 'User',
+        avatar_url: p.profiles?.avatar_url || '',
+      }));
+
+      setPosts(formattedPosts);
+    } catch (error) {
+      console.error('Error fetching location posts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen || !location) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-black/50" onClick={onClose}>
+      <div
+        className="fixed inset-x-0 bottom-0 bg-background rounded-t-3xl max-h-[90vh] overflow-hidden flex flex-col animate-slide-up"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b">
+          <div className="flex-1">
+            <h2 className="text-xl font-bold text-foreground">{location.name}</h2>
+            <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+              <MapPin className="w-4 h-4" />
+              <span>{location.address || location.city || 'Location'}</span>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-muted rounded-full transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto">
+          {/* Map Section */}
+          <div className="w-full h-48 relative">
+            <MapContainer
+              center={[location.coordinates.lat, location.coordinates.lng]}
+              zoom={15}
+              className="w-full h-full"
+              zoomControl={false}
+              scrollWheelZoom={false}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              <Marker
+                position={[location.coordinates.lat, location.coordinates.lng]}
+                icon={customIcon}
+              />
+            </MapContainer>
+          </div>
+
+          {/* Posts Section */}
+          <div className="p-4">
+            <h3 className="text-lg font-semibold mb-3 text-foreground">
+              Post degli utenti
+            </h3>
+            
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : posts.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Image className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p>Nessun post ancora per questa location</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                {posts.map((post) => (
+                  <div
+                    key={post.id}
+                    className="aspect-square rounded-lg overflow-hidden bg-muted relative"
+                  >
+                    <img
+                      src={post.media_url}
+                      alt={post.caption}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default LocationDetailDrawer;

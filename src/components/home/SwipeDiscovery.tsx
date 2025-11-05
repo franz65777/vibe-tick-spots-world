@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import LocationDetailDrawer from './LocationDetailDrawer';
 import { ArrowLeft, MapPin, Search, Users, UserPlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -71,6 +72,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
     entertainment: 0
   });
   const [processedPlaceIds, setProcessedPlaceIds] = useState<Set<string>>(new Set());
+  const [detailLocation, setDetailLocation] = useState<SwipeLocation | null>(null);
 
   useEffect(() => {
     fetchFollowedUsers();
@@ -703,7 +705,8 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
-              className="w-full max-w-[480px] mx-auto transition-transform duration-300"
+              onClick={() => setDetailLocation(currentLocation)}
+              className="w-full max-w-[480px] mx-auto transition-transform duration-300 cursor-pointer"
               style={{
                 transform: swipeDirection 
                   ? swipeDirection === 'left' 
@@ -817,6 +820,13 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
           </div>
         )}
       </div>
+
+      {/* Location Detail Drawer */}
+      <LocationDetailDrawer
+        location={detailLocation}
+        isOpen={!!detailLocation}
+        onClose={() => setDetailLocation(null)}
+      />
     </div>
   );
 };
