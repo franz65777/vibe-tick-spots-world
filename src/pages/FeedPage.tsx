@@ -347,7 +347,7 @@ const FeedPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="max-w-screen-sm mx-auto space-y-4">
+      <div className="w-full space-y-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className="space-y-3">
               <div className="flex items-center gap-3 p-3">
@@ -367,7 +367,7 @@ const FeedPage = () => {
 
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
-      <div className="max-w-screen-sm mx-auto w-full h-full flex flex-col">
+      <div className="w-full h-full flex flex-col">
         {/* Header */}
         <div className="sticky top-0 z-30 bg-background shadow-sm shrink-0">
           <div className="px-4 py-3 flex justify-start">
@@ -490,11 +490,11 @@ const FeedPage = () => {
                     <div className="relative">
                       {hasMultipleMedia ? (
                         <Carousel className="w-full">
-                          <CarouselContent>
+                          <CarouselContent className="-ml-0">
                             {mediaUrls.map((url, idx) => {
                               const isVideo = url.includes('.mp4') || url.includes('.mov') || url.includes('.webm');
                               return (
-                                <CarouselItem key={idx}>
+                                <CarouselItem key={idx} className="pl-0">
                                   <div className="aspect-square bg-muted">
                                     {isVideo ? (
                                       <video
