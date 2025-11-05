@@ -7,6 +7,8 @@ import { locationInteractionService } from '@/services/locationInteractionServic
 import PlaceActionButtons from './PlaceActionButtons';
 import { useNormalizedCity } from '@/hooks/useNormalizedCity';
 import { useLocationStats } from '@/hooks/useLocationStats';
+import { useMarketingCampaign } from '@/hooks/useMarketingCampaign';
+import MarketingCampaignBanner from './MarketingCampaignBanner';
 
 interface EnhancedLocationCardV2Props {
   place: any;
@@ -26,6 +28,7 @@ const EnhancedLocationCardV2 = ({ place, onCardClick }: EnhancedLocationCardV2Pr
   });
 
   const { stats } = useLocationStats(place.id, place.google_place_id);
+  const { campaign } = useMarketingCampaign(place.id);
 
   useEffect(() => {
     const checkSaved = async () => {
@@ -161,6 +164,13 @@ const EnhancedLocationCardV2 = ({ place, onCardClick }: EnhancedLocationCardV2Pr
             </Badge>
           ))}
         </div>
+
+        {/* Marketing Campaign Banner */}
+        {campaign && (
+          <div className="-mx-4 mb-3">
+            <MarketingCampaignBanner campaign={campaign} />
+          </div>
+        )}
 
         {/* City Name */}
         <div className="flex items-start gap-2 text-sm text-muted-foreground">

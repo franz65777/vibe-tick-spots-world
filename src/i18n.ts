@@ -98,7 +98,14 @@ const resources = {
       communityPosts: 'Community posts',
       noCommunityPostsYet: 'No community posts yet',
       beFirstToShare: 'Be the first to share!',
-      searchPeople: 'Search people...'
+      searchPeople: 'Search people...',
+      marketingCampaign: {
+        event: 'Event',
+        discount: 'Discount',
+        promotion: 'Promotion',
+        news: 'News',
+        endsIn: 'Ends'
+      }
     },
     navigation: {
       explore: 'Explore',
@@ -633,7 +640,14 @@ const resources = {
       communityPosts: 'Publicaciones de la comunidad',
       noCommunityPostsYet: 'Aún no hay publicaciones',
       beFirstToShare: '¡Sé el primero en compartir!',
-      searchPeople: 'Buscar personas...'
+      searchPeople: 'Buscar personas...',
+      marketingCampaign: {
+        event: 'Evento',
+        discount: 'Descuento',
+        promotion: 'Promoción',
+        news: 'Noticias',
+        endsIn: 'Termina'
+      }
     },
     navigation: {
       explore: 'Explorar',
@@ -1161,7 +1175,14 @@ const resources = {
       communityPosts: 'Post della community',
       noCommunityPostsYet: 'Nessun post ancora',
       beFirstToShare: 'Sii il primo a condividere!',
-      searchPeople: 'Cerca persone...'
+      searchPeople: 'Cerca persone...',
+      marketingCampaign: {
+        event: 'Evento',
+        discount: 'Sconto',
+        promotion: 'Promozione',
+        news: 'Novità',
+        endsIn: 'Termina'
+      }
     },
     navigation: {
       explore: 'Esplora',
@@ -1680,7 +1701,14 @@ const resources = {
       communityPosts: 'Publications de la communauté',
       noCommunityPostsYet: 'Aucune publication pour le moment',
       beFirstToShare: 'Soyez le premier à partager!',
-      searchPeople: 'Rechercher des personnes...'
+      searchPeople: 'Rechercher des personnes...',
+      marketingCampaign: {
+        event: 'Événement',
+        discount: 'Réduction',
+        promotion: 'Promotion',
+        news: 'Actualités',
+        endsIn: 'Se termine'
+      }
     },
     navigation: {
       explore: 'Explorer',
@@ -2168,7 +2196,14 @@ const resources = {
       communityPosts: 'Community-Beiträge',
       noCommunityPostsYet: 'Noch keine Beiträge',
       beFirstToShare: 'Sei der Erste, der teilt!',
-      searchPeople: 'Personen suchen...'
+      searchPeople: 'Personen suchen...',
+      marketingCampaign: {
+        event: 'Veranstaltung',
+        discount: 'Rabatt',
+        promotion: 'Aktion',
+        news: 'Neuigkeiten',
+        endsIn: 'Endet'
+      }
     },
     navigation: {
       explore: 'Erkunden',
@@ -2532,7 +2567,14 @@ const resources = {
       communityPosts: 'Publicações da comunidade',
       noCommunityPostsYet: 'Nenhuma publicação ainda',
       beFirstToShare: 'Seja o primeiro a compartilhar!',
-      searchPeople: 'Pesquisar pessoas...'
+      searchPeople: 'Pesquisar pessoas...',
+      marketingCampaign: {
+        event: 'Evento',
+        discount: 'Desconto',
+        promotion: 'Promoção',
+        news: 'Novidades',
+        endsIn: 'Termina'
+      }
     },
     navigation: {
       explore: 'Explorar',

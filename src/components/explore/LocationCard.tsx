@@ -16,6 +16,8 @@ import { useNormalizedCity } from '@/hooks/useNormalizedCity';
 import { useLocationStats } from '@/hooks/useLocationStats';
 import { useMutedLocations } from '@/hooks/useMutedLocations';
 import { useAuth } from '@/contexts/AuthContext';
+import { useMarketingCampaign } from '@/hooks/useMarketingCampaign';
+import MarketingCampaignBanner from './MarketingCampaignBanner';
 
 interface LocationCardProps {
   place: Place;
@@ -57,6 +59,7 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
   });
 
   const { stats } = useLocationStats(place.id, place.google_place_id || null);
+  const { campaign } = useMarketingCampaign(place.id);
 
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -224,6 +227,13 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
                 )}
               </div>
             </div>
+
+            {/* Marketing Campaign Banner */}
+            {campaign && (
+              <div className="-mx-6 -mb-6 mt-4">
+                <MarketingCampaignBanner campaign={campaign} />
+              </div>
+            )}
 
             {/* Action Buttons */}
             <div className="grid grid-cols-4 gap-2 pt-2">

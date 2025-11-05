@@ -7,6 +7,8 @@ import { Place } from '@/types/place';
 import { useMutedLocations } from '@/hooks/useMutedLocations';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
+import { useMarketingCampaign } from '@/hooks/useMarketingCampaign';
+import MarketingCampaignBanner from '@/components/explore/MarketingCampaignBanner';
 
 interface PlaceCardProps {
   place: Place;
@@ -42,6 +44,7 @@ const PlaceCard = ({
   });
 
   const isMuted = mutedLocations?.some((m: any) => m.location_id === place.id);
+  const { campaign } = useMarketingCampaign(place.id);
 
   const handleCommentClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -165,6 +168,13 @@ const PlaceCard = ({
               </div>
             )}
           </div>
+
+          {/* Marketing Campaign Banner */}
+          {campaign && (
+            <div className="-mx-4 -mb-4 mb-4">
+              <MarketingCampaignBanner campaign={campaign} />
+            </div>
+          )}
 
           {/* Action buttons with unique travel-inspired design */}
           <div className="flex items-center gap-2">

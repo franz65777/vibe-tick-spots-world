@@ -1100,6 +1100,56 @@ export type Database = {
           },
         ]
       }
+      marketing_campaigns: {
+        Row: {
+          business_user_id: string
+          campaign_type: string
+          created_at: string
+          description: string
+          end_date: string
+          id: string
+          is_active: boolean
+          location_id: string
+          metadata: Json | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          business_user_id: string
+          campaign_type: string
+          created_at?: string
+          description: string
+          end_date: string
+          id?: string
+          is_active?: boolean
+          location_id: string
+          metadata?: Json | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          business_user_id?: string
+          campaign_type?: string
+          created_at?: string
+          description?: string
+          end_date?: string
+          id?: string
+          is_active?: boolean
+          location_id?: string
+          metadata?: Json | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_campaigns_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       media: {
         Row: {
           caption: string | null
