@@ -8,6 +8,7 @@ const AuthenticatedLayout: React.FC = () => {
   const isBusinessRoute = location.pathname.startsWith('/business');
   const isDiscoverRoute = location.pathname === '/discover';
   const isSettingsRoute = location.pathname === '/settings';
+  const isAddRoute = location.pathname === '/add';
   const isHomePage = location.pathname === '/';
   const [isMapExpanded, setIsMapExpanded] = useState(false);
 
@@ -40,7 +41,7 @@ const AuthenticatedLayout: React.FC = () => {
       <div className="h-screen overflow-hidden">
         <Outlet />
       </div>
-      {!isDiscoverRoute && !isSettingsRoute && !isMapExpanded && (
+      {!isDiscoverRoute && !isSettingsRoute && !isAddRoute && !isMapExpanded && (
         <div className="fixed bottom-0 left-0 right-0 z-[1500]">
           {isBusinessRoute ? <BusinessBottomNavigation /> : <NewBottomNavigation />}
         </div>
