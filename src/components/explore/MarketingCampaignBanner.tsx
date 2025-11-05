@@ -32,15 +32,15 @@ const MarketingCampaignBanner = ({ campaign }: MarketingCampaignBannerProps) => 
   const getCampaignColor = () => {
     switch (campaign.campaign_type) {
       case 'event':
-        return 'from-purple-500 to-pink-500';
+        return 'bg-purple-50/80 dark:bg-purple-950/30 border-purple-200/50 dark:border-purple-800/30';
       case 'discount':
-        return 'from-green-500 to-emerald-500';
+        return 'bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-200/50 dark:border-emerald-800/30';
       case 'promotion':
-        return 'from-orange-500 to-red-500';
+        return 'bg-orange-50/80 dark:bg-orange-950/30 border-orange-200/50 dark:border-orange-800/30';
       case 'news':
-        return 'from-blue-500 to-cyan-500';
+        return 'bg-blue-50/80 dark:bg-blue-950/30 border-blue-200/50 dark:border-blue-800/30';
       default:
-        return 'from-gray-500 to-gray-600';
+        return 'bg-muted/80 border-border/50';
     }
   };
 
@@ -71,46 +71,46 @@ const MarketingCampaignBanner = ({ campaign }: MarketingCampaignBannerProps) => 
   };
 
   return (
-    <div className="mx-4 mb-4">
+    <div className="w-full">
       <div 
-        className={`bg-gradient-to-r ${getCampaignColor()} rounded-2xl p-4 text-white shadow-lg cursor-pointer transition-all duration-300 hover:shadow-xl`}
+        className={`${getCampaignColor()} border rounded-xl p-4 shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md`}
         onClick={() => setIsExpanded(!isExpanded)}
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3 flex-1">
-            <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 text-primary">
               {getCampaignIcon()}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <Badge className="bg-white/25 text-white border-0 text-xs font-medium backdrop-blur-sm">
+                <Badge variant="secondary" className="text-xs font-medium">
                   {getCampaignTypeTranslation()}
                 </Badge>
               </div>
-              <h4 className="font-bold text-base leading-tight mb-1 line-clamp-2">
+              <h4 className="font-semibold text-sm leading-tight mb-1 line-clamp-2 text-foreground">
                 {campaign.title}
               </h4>
               {!isExpanded && (
-                <p className="text-white/90 text-sm line-clamp-1">
+                <p className="text-muted-foreground text-xs line-clamp-1">
                   {campaign.description}
                 </p>
               )}
             </div>
           </div>
-          <button className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-white/20 rounded-full backdrop-blur-sm hover:bg-white/30 transition-colors">
-            {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+          <button className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-muted/50 rounded-full hover:bg-muted transition-colors">
+            {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
           </button>
         </div>
 
         {/* Expanded Content */}
         {isExpanded && (
-          <div className="mt-4 pt-4 border-t border-white/20">
-            <p className="text-white/95 text-sm mb-3 leading-relaxed">
+          <div className="mt-3 pt-3 border-t border-border/50">
+            <p className="text-foreground text-sm mb-3 leading-relaxed">
               {campaign.description}
             </p>
-            <div className="flex items-center gap-2 text-white/80 text-xs">
-              <Calendar className="w-4 h-4" />
+            <div className="flex items-center gap-2 text-muted-foreground text-xs">
+              <Calendar className="w-3.5 h-3.5" />
               <span>
                 {t('marketingCampaign.endsIn', { ns: 'common' })} {getTimeUntilEnd()}
               </span>

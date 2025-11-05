@@ -378,10 +378,10 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
             <div className="px-4 pb-2">
               <button
                 onClick={(e) => { e.stopPropagation(); setIsCampaignExpanded(!isCampaignExpanded); }}
-                className="w-full px-3 py-2 flex items-center justify-between bg-muted/40 hover:bg-muted rounded-xl transition-colors"
+                className="w-full px-3 py-2 flex items-center justify-between bg-background border-2 border-primary/20 hover:border-primary/40 rounded-xl transition-all"
               >
-                <span className="text-sm font-medium truncate">{campaign.title}</span>
-                <svg className={`w-4 h-4 text-muted-foreground transition-transform ${isCampaignExpanded ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6"/></svg>
+                <span className="text-sm font-medium truncate text-foreground">{campaign.title}</span>
+                <svg className={`w-4 h-4 text-primary transition-transform ${isCampaignExpanded ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6"/></svg>
               </button>
               {isCampaignExpanded && (
                 <div className="pt-2">
