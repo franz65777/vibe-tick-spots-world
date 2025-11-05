@@ -189,17 +189,17 @@ const MapSection = ({
             onMapClick={handleMapClick}
             activeFilter={activeFilter}
             fullScreen={isExpanded}
-            preventCenterUpdate={true}
+            preventCenterUpdate={false}
           />
         )}
 
         {/* Map Category Filters - Hide when list view is open */}
         {!isListViewOpen && (
           <div className={cn(
-            "z-[1100] w-full px-0",
+            "z-[1100] w-full",
             isExpanded
-              ? "fixed top-[calc(env(safe-area-inset-top)+2rem)] left-0 right-0"
-              : "absolute top-4 left-0 right-0"
+              ? "fixed top-[calc(env(safe-area-inset-top)+2rem)] left-0 right-0 px-4"
+              : "absolute top-4 left-0 right-0 px-0"
           )}>
             <div className="flex justify-center w-full">
               <MapCategoryFilters currentCity={currentCity} />

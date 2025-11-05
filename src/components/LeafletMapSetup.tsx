@@ -127,27 +127,28 @@ const LeafletMapSetup = ({
     tileLayerRef.current = tile;
   }, [isDarkMode]);
 
-  // Update map center only on initial mount, never re-center automatically
+  // Update map center when it changes (for selected place from cards)
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || preventCenterUpdate) return;
     
-    // Only set the initial view
-    const isInitialMount = !map.getZoom() || map.getZoom() === 0;
-    if (isInitialMount) {
-      console.log('🗺️ Initial map setup, centering to:', mapCenter);
-      map.setView([mapCenter.lat, mapCenter.lng], 15);
-    }
-  }, []); // Empty deps - run only once on mount
+    console.log('🗺️ Centering map to:', mapCenter);
+    map.setView([mapCenter.lat, mapCenter.lng], 15, { animate: true });
+  }, [mapCenter.lat, mapCenter.lng, preventCenterUpdate]);
 
   // Ensure tiles recalc when toggling fullscreen to avoid white map
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    // Defer to next tick so container size is final
-    setTimeout(() => {
-      try { map.invalidateSize(); } catch {}
-    }, 50);
+    // Multiple invalidate attempts with increasing delays to fix white tiles
+    const timeouts = [
+      setTimeout(() => { try { map.invalidateSize(); } catch {} }, 50),
+      setTimeout(() => { try { map.invalidateSize(); } catch {} }, 150),
+      setTimeout(() => { try { map.invalidateSize(); } catch {} }, 300),
+      setTimeout(() => { try { map.invalidateSize(); } catch {} }, 500),
+    ];
+    
+    return () => timeouts.forEach(t => clearTimeout(t));
   }, [fullScreen]);
 
   // Current location marker
