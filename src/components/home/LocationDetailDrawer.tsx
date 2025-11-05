@@ -1,12 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, MapPin, Image } from 'lucide-react';
-import { MapContainer, TileLayer, Marker } from 'react-leaflet';
-import { Icon } from 'leaflet';
+import L, { Icon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import pinIcon from '@/assets/pin-icon.png';
-
 
 interface LocationDetailDrawerProps {
   location: {
@@ -16,8 +14,10 @@ interface LocationDetailDrawerProps {
     city: string | null;
     address?: string;
     coordinates: {
-      lat: number;
-      lng: number;
+      lat?: number;
+      lng?: number;
+      latitude?: number;
+      longitude?: number;
     };
     image_url?: string;
   } | null;
@@ -41,24 +41,71 @@ const customIcon = new Icon({
   iconAnchor: [16, 32],
 });
 
-
 const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawerProps) => {
   const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Leaflet (vanilla) map refs
+  const mapDivRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<L.Map | null>(null);
+
+  // Init / update Leaflet map when opening
   useEffect(() => {
-    if (isOpen && location) {
-      fetchLocationPosts();
-    }
-  }, [isOpen, location]);
+    if (!isOpen || !location) return;
+
+    const coords: any = location.coordinates || {};
+    const lat = Number(coords.lat ?? coords.latitude ?? 0);
+    const lng = Number(coords.lng ?? coords.longitude ?? 0);
+    if (!lat || !lng) return;
+
+    // Defer to next tick to ensure drawer container is mounted
+    const t = setTimeout(() => {
+      try {
+        if (!mapDivRef.current) return;
+        if (mapRef.current) {
+          mapRef.current.setView([lat, lng], 15);
+        } else {
+          const map = L.map(mapDivRef.current, {
+            center: [lat, lng],
+            zoom: 15,
+            zoomControl: true,
+            attributionControl: true,
+          });
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors',
+          }).addTo(map);
+          L.marker([lat, lng], { icon: customIcon }).addTo(map);
+          mapRef.current = map;
+          // Fix for initial white tiles
+          setTimeout(() => map.invalidateSize(), 100);
+        }
+      } catch (e) {
+        console.error('Leaflet map init error', e);
+      }
+    }, 0);
+
+    return () => {
+      clearTimeout(t);
+      if (mapRef.current && !isOpen) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, [isOpen, location?.coordinates]);
+
+  // Fetch posts for this location
+  useEffect(() => {
+    if (!isOpen || !location) return;
+    fetchLocationPosts();
+  }, [isOpen, location?.place_id]);
 
   const fetchLocationPosts = async () => {
     if (!location) return;
-    
     setLoading(true);
     try {
-      // First, get the location UUID from the locations table using google_place_id
+      // Resolve UUID from google_place_id (place_id)
       const { data: locationData, error: locationError } = await supabase
         .from('locations')
         .select('id')
@@ -71,14 +118,12 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
         return;
       }
 
-      // If no location found, no posts to show
       if (!locationData) {
         setPosts([]);
         setLoading(false);
         return;
       }
 
-      // Now fetch posts using the location UUID
       const { data, error } = await supabase
         .from('posts')
         .select(`
@@ -118,13 +163,12 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
 
   if (!isOpen || !location) return null;
 
-  // Safely extract coordinates - handle multiple formats
-  const coords: any = location.coordinates || {};
-  const lat = Number(coords.lat ?? coords.latitude ?? 0);
-  const lng = Number(coords.lng ?? coords.longitude ?? 0);
-  const hasValidCoordinates = lat !== 0 && lng !== 0;
-  
-  // Format full address
+  // Coordinates & address formatting (robust)
+  const c: any = location.coordinates || {};
+  const lat = Number(c.lat ?? c.latitude ?? 0);
+  const lng = Number(c.lng ?? c.longitude ?? 0);
+  const hasValidCoordinates = !!lat && !!lng;
+
   const fullAddress = [location.address, location.city].filter(Boolean).join(', ');
 
   return (
@@ -155,26 +199,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
         {/* Map Section - Fixed */}
         <div className="flex-shrink-0">
           {hasValidCoordinates ? (
-            <div className="w-full h-48 relative">
-              <MapContainer
-                center={[lat, lng]}
-                zoom={15}
-                className="w-full h-full"
-                zoomControl={true}
-                scrollWheelZoom={true}
-                doubleClickZoom={true}
-                touchZoom={true}
-              >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                <Marker
-                  position={[lat, lng]}
-                  icon={customIcon}
-                />
-              </MapContainer>
-            </div>
+            <div ref={mapDivRef} className="w-full h-48 relative rounded-lg overflow-hidden" />
           ) : (
             <div className="w-full h-48 bg-muted flex items-center justify-center">
               <div className="text-center text-muted-foreground">
@@ -191,7 +216,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
             <h3 className="text-lg font-semibold mb-3 text-foreground sticky top-0 bg-background py-2 z-10">
               Post degli utenti
             </h3>
-            
+
             {loading ? (
               <div className="flex justify-center py-8">
                 <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
