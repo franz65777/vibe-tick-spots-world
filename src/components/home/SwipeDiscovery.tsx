@@ -446,11 +446,13 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
         toast.success(`${location.name} saved!`);
       }
 
-      // Move to next after animation
+      // Remove swiped location from list and move to next
       setTimeout(() => {
         setSwipeDirection(null);
         setTouchOffset({ x: 0, y: 0 });
-        setCurrentIndex(prev => prev + 1);
+        // Remove the current location from the list
+        setLocations(prev => prev.filter((_, idx) => idx !== currentIndex));
+        // Don't increment index since we removed an item
       }, 300);
     } catch (error) {
       console.error('Error swiping:', error);
@@ -510,7 +512,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       </div>
 
       {/* Followed Users Row - positioned with padding to avoid clipping */}
-      <div className="bg-background px-4 pt-6 pb-2 overflow-visible relative z-30">
+      <div className="bg-background px-4 pt-10 pb-2 overflow-visible relative z-30">
         <div className="flex gap-3 overflow-x-auto overflow-y-visible scrollbar-hide pb-1 pl-2 pr-3" style={{ scrollSnapType: 'x mandatory' }}>
           {/* All button */}
           <button
