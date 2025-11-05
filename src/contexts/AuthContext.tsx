@@ -29,6 +29,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     console.log('AuthProvider: Setting up auth state listener...');
     
+    // Function to check and refresh token if needed
+    const checkAndRefreshToken = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        // Check if token is expired or will expire soon (within 5 minutes)
+        const expiresAt = session.expires_at;
+        if (expiresAt) {
+          const expiryTime = expiresAt * 1000; // Convert to milliseconds
+          const now = Date.now();
+          const fiveMinutes = 5 * 60 * 1000;
+
+          if (expiryTime - now < fiveMinutes) {
+            console.log('AuthProvider: Token expired or expiring soon, refreshing...');
+            const { data, error } = await supabase.auth.refreshSession();
+            if (error) {
+              console.error('AuthProvider: Error refreshing expired token:', error);
+              await supabase.auth.signOut();
+            } else {
+              console.log('AuthProvider: Token refreshed successfully');
+              setSession(data.session);
+              setUser(data.session?.user ?? null);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('AuthProvider: Error checking token expiry:', error);
+      }
+    };
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -66,40 +97,78 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // Check for existing session with timeout
+    // Check for existing session and validate token
     console.log('AuthProvider: Checking for existing session...');
     Promise.race([
       supabase.auth.getSession(),
       new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Session check timeout')), 3000)
       )
-    ]).then(({ data: { session } }: any) => {
+    ]).then(async ({ data: { session } }: any) => {
       console.log('AuthProvider: Existing session:', session?.user?.email);
-      setSession(session);
-      setUser(session?.user ?? null);
+      
+      // Check if token is expired
+      if (session?.expires_at) {
+        const expiryTime = session.expires_at * 1000;
+        const now = Date.now();
+        
+        if (expiryTime <= now) {
+          console.log('AuthProvider: Token expired, refreshing...');
+          const { data, error } = await supabase.auth.refreshSession();
+          if (error) {
+            console.error('AuthProvider: Error refreshing expired session:', error);
+            await supabase.auth.signOut();
+            setSession(null);
+            setUser(null);
+          } else {
+            setSession(data.session);
+            setUser(data.session?.user ?? null);
+          }
+        } else {
+          setSession(session);
+          setUser(session?.user ?? null);
+        }
+      } else {
+        setSession(session);
+        setUser(session?.user ?? null);
+      }
+      
       setLoading(false);
     }).catch((error) => {
       console.warn('AuthProvider: Session check failed or timed out:', error);
       setLoading(false);
     });
 
-    // Set up automatic token refresh every 45 minutes
+    // Check token on visibility change (when user returns to tab)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('AuthProvider: Tab visible, checking token...');
+        checkAndRefreshToken();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Set up automatic token refresh every 50 minutes (before 60min expiry)
     const refreshInterval = setInterval(async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        console.log('AuthProvider: Refreshing session token...');
+        console.log('AuthProvider: Periodic token refresh...');
         const { error } = await supabase.auth.refreshSession();
         if (error) {
           console.error('AuthProvider: Error refreshing session, signing out:', error);
           await supabase.auth.signOut();
         }
       }
-    }, 45 * 60 * 1000);
+    }, 50 * 60 * 1000); // Every 50 minutes
+
+    // Check token immediately on mount
+    checkAndRefreshToken();
 
     return () => {
       console.log('AuthProvider: Cleaning up auth subscription');
       subscription.unsubscribe();
       clearInterval(refreshInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 
