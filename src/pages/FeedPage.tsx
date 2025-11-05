@@ -487,7 +487,7 @@ const FeedPage = () => {
 
                   {/* Post Media */}
                   {mediaUrls.length > 0 && (
-                    <div className="relative" style={{ width: '100vw', marginLeft: 'calc(50% - 50vw)' }}>
+                    <div className="relative" style={{ position: 'relative', left: '50%', right: '50%', marginLeft: '-50vw', marginRight: '-50vw', width: '100vw' }}>
                       {hasMultipleMedia ? (
                         <Carousel className="w-full">
                           <CarouselContent className="-ml-0">
@@ -495,11 +495,11 @@ const FeedPage = () => {
                               const isVideo = url.includes('.mp4') || url.includes('.mov') || url.includes('.webm');
                               return (
                                 <CarouselItem key={idx} className="pl-0">
-                                  <div className="aspect-square bg-muted">
+                                  <div className="aspect-square w-full">
                                     {isVideo ? (
                                       <video
                                         src={url}
-                                        className="w-full h-full object-cover touch-pinch-zoom"
+                                        className="w-full h-full object-cover block touch-pinch-zoom"
                                         controls
                                         playsInline
                                         loop
@@ -508,7 +508,7 @@ const FeedPage = () => {
                                       <img
                                         src={url}
                                         alt={`Post ${idx + 1}`}
-                                        className="w-full h-full object-cover touch-pinch-zoom"
+                                        className="w-full h-full object-cover block touch-pinch-zoom"
                                         style={{ touchAction: 'pinch-zoom' }}
                                       />
                                     )}
