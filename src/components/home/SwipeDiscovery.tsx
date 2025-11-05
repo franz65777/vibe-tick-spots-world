@@ -70,6 +70,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
     museum: 0,
     entertainment: 0
   });
+  const [processedPlaceIds, setProcessedPlaceIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchFollowedUsers();
@@ -201,10 +202,11 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       // Filter by selected user if one is selected later during aggregation
       const raw = (friendsSaves.data || []) as any[];
 
-      // Build followed users list directly from current saves feed
+      // Build followed users list directly from current saves feed, excluding already processed places
       try {
+        const sourceForCounts = raw.filter((r: any) => !processedPlaceIds.has(r.place_id));
         const usersMap = new Map<string, { id: string; username: string; avatar_url: string; new_saves_count: number }>();
-        for (const r of raw) {
+        for (const r of sourceForCounts) {
           const uid = r.user_id;
           if (!uid) continue;
           const prev = usersMap.get(uid);
@@ -237,7 +239,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
         const latNum = Number(coords?.lat ?? coords?.latitude ?? 0);
         const lngNum = Number(coords?.lng ?? coords?.longitude ?? 0);
         const placeId = s.place_id || '';
-        if (!placeId) continue;
+        if (!placeId || processedPlaceIds.has(placeId)) continue;
         const saver = { id: s.user_id || '', username: s.username || 'User', avatar_url: s.avatar_url || '' };
         const existing = byPlace.get(placeId);
         if (existing) {
@@ -450,19 +452,21 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       setTimeout(() => {
         setSwipeDirection(null);
         setTouchOffset({ x: 0, y: 0 });
+
+        // Mark this place as processed so it won't be counted again in future fetches
+        setProcessedPlaceIds((prev) => {
+          const next = new Set(prev);
+          if (location.place_id) next.add(location.place_id);
+          return next;
+        });
         
-        // Update follower counts if this location was saved by the selected user
+        // Update follower counts if this location was saved by any shown user
         if (location.saved_by_users && location.saved_by_users.length > 0) {
-          setFollowedUsers(prev => prev.map(user => {
-            const wasSavedByThisUser = location.saved_by_users?.some(saver => saver.id === user.id);
-            if (wasSavedByThisUser) {
-              return {
-                ...user,
-                new_saves_count: Math.max(0, user.new_saves_count - 1)
-              };
-            }
-            return user;
-          }));
+          setFollowedUsers(prev => prev.map(u => (
+            location.saved_by_users!.some(saver => saver.id === u.id)
+              ? { ...u, new_saves_count: Math.max(0, (u.new_saves_count || 0) - 1) }
+              : u
+          )));
         }
         
         // Remove the current location from the list
@@ -513,9 +517,9 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
   const currentLocation = filteredLocations[currentIndex];
 
   return (
-    <div className="fixed inset-0 w-full bg-background z-50 flex flex-col overflow-hidden">
+    <div className="fixed inset-0 w-full bg-background z-50 flex flex-col overflow-hidden pt-8">
       {/* Header with back button - compact for more space */}
-      <div className="bg-transparent px-4 py-1.5 flex items-center gap-3 relative z-10">
+      <div className="bg-transparent px-4 py-2.5 flex items-center gap-3 relative z-10">
         <button
           onClick={() => navigate('/')}
           className="p-2 hover:bg-muted rounded-full transition-colors"
@@ -527,7 +531,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       </div>
 
       {/* Followed Users Row - overflow visible to prevent clipping */}
-      <div className="bg-background px-4 pt-2 pb-2 -mt-2 overflow-visible relative z-30">
+      <div className="bg-background px-4 pt-10 pb-2 overflow-visible relative z-30">
         <div className="flex gap-3 overflow-x-auto overflow-y-visible scrollbar-hide pb-1 pl-2 pr-3" style={{ scrollSnapType: 'x mandatory' }}>
           {/* All button */}
           <button
