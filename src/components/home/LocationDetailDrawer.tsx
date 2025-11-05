@@ -73,7 +73,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
     const lng = Number(coords.lng ?? coords.longitude ?? 0);
     if (!lat || !lng) return;
 
-    // Defer to next tick to ensure drawer container is mounted
+    // Defer to ensure drawer is fully mounted and sized
     const t = setTimeout(() => {
       try {
         if (!mapDivRef.current) return;
@@ -85,14 +85,17 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
 
         if (mapRef.current) {
           mapRef.current.setView([lat, lng], 15);
+          // Force map refresh
+          setTimeout(() => mapRef.current?.invalidateSize(), 100);
         } else {
           const map = L.map(mapDivRef.current, {
             center: [lat, lng],
             zoom: 15,
-            zoomControl: false, // Remove zoom buttons
+            zoomControl: false,
             attributionControl: true,
             doubleClickZoom: false,
           });
+          
           L.tileLayer(tileUrl, {
             maxZoom: 19,
             attribution: '&copy; OpenStreetMap, &copy; CartoDB',
@@ -108,22 +111,29 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
 
           L.marker([lat, lng], { icon }).addTo(map);
           mapRef.current = map;
-          // Fix for initial white tiles
+          
+          // Multiple invalidate attempts to fix white tiles
           setTimeout(() => map.invalidateSize(), 100);
+          setTimeout(() => map.invalidateSize(), 300);
+          setTimeout(() => map.invalidateSize(), 500);
         }
       } catch (e) {
         console.error('Leaflet map init error', e);
       }
-    }, 0);
+    }, 100);
 
     return () => {
       clearTimeout(t);
-      if (mapRef.current && !isOpen) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
     };
   }, [isOpen, location?.coordinates, isDarkMode]);
+
+  // Cleanup map on close
+  useEffect(() => {
+    if (!isOpen && mapRef.current) {
+      mapRef.current.remove();
+      mapRef.current = null;
+    }
+  }, [isOpen]);
 
   // Fetch location data to get full address with reverse geocoding fallback
   useEffect(() => {

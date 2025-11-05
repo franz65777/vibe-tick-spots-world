@@ -13,6 +13,9 @@ export const formatDetailedAddress = async (params: {
   const { city, coordinates } = params;
   let { address } = params;
 
+  // Get normalized city first
+  const normalizedCity = normalizeCity(city || null);
+
   // If address is missing but we have coordinates, try reverse geocoding
   if (!address && coordinates?.lat && coordinates?.lng) {
     try {
@@ -21,38 +24,48 @@ export const formatDetailedAddress = async (params: {
         {
           headers: {
             'User-Agent': 'Spott App',
-            'Accept-Language': 'en',
+            'Accept-Language': 'it,en',
           },
         }
       );
       
       if (response.ok) {
         const data = await response.json();
-        // Extract street address from Nominatim response
         const addr = data.address;
-        const street = addr?.road || addr?.street || '';
+        
+        // Try to build complete address: street + house_number
+        const road = addr?.road || addr?.street || addr?.pedestrian || '';
         const houseNumber = addr?.house_number || '';
-        if (street) {
-          address = houseNumber ? `${street} ${houseNumber}` : street;
+        const suburb = addr?.suburb || '';
+        const cityName = addr?.city || addr?.town || addr?.village || '';
+        
+        // Build street address with number
+        if (road && houseNumber) {
+          address = `${road} ${houseNumber}`;
+        } else if (road) {
+          address = road;
+        } else if (suburb) {
+          address = suburb;
+        }
+        
+        // Override city if we got better data from geocoding
+        if (cityName && normalizedCity === 'Unknown') {
+          return address ? `${cityName}, ${address}` : cityName;
         }
       }
     } catch (error) {
       console.error('Reverse geocoding failed:', error);
     }
   }
-
-  // Get normalized city
-  const normalizedCity = normalizeCity(city || null);
   
-  // Extract street address (first part before the first comma, or the whole address if no comma)
+  // Extract street address (first part before the first comma)
   let streetPart = '';
   if (address) {
     const parts = address.split(',').map(p => p.trim());
-    // The first part is usually the street name and number
     streetPart = parts[0] || '';
   }
 
-  // Return formatted address
+  // Return formatted address: "City, Street Number"
   if (normalizedCity !== 'Unknown' && streetPart) {
     return `${normalizedCity}, ${streetPart}`;
   } else if (normalizedCity !== 'Unknown') {
@@ -61,5 +74,5 @@ export const formatDetailedAddress = async (params: {
     return streetPart;
   }
   
-  return 'Unknown Location';
+  return 'Indirizzo non disponibile';
 };
