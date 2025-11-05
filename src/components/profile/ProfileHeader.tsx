@@ -25,13 +25,15 @@ interface ProfileHeaderProps {
   onFollowingClick: () => void;
   onPostsClick: () => void;
   onLocationsClick: () => void;
+  onBadgesClick?: () => void;
 }
 
 const ProfileHeader = ({ 
   onFollowersClick, 
   onFollowingClick, 
   onPostsClick, 
-  onLocationsClick 
+  onLocationsClick,
+  onBadgesClick
 }: ProfileHeaderProps) => {
   const { t } = useTranslation();
   const { profile, refetch } = useProfile();
@@ -157,41 +159,42 @@ const ProfileHeader = ({
 
         {/* Stats and Info */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <h1 className="text-base font-bold text-foreground truncate">{displayUsername}</h1>
+          <div className="flex items-start justify-between mb-2">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <h1 className="text-base font-bold text-foreground">{displayUsername}</h1>
               {hasBusinessAccount && (
                 <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center shrink-0">
                   <Building2 className="w-3 h-3 text-primary-foreground" />
                 </div>
               )}
             </div>
-            <div className="flex flex-wrap gap-1 mt-1">
-              <BadgeDisplay userId={user?.id} />
-            </div>
             
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <MoreHorizontal className="w-5 h-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 bg-background z-50">
-                <DropdownMenuItem onClick={() => setIsEditModalOpen(true)}>
-                  <Edit className="w-4 h-4 mr-2" />
-                  {t('edit', { ns: 'common' })} {t('profile', { ns: 'navigation' })}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/settings')}>
-                  <Settings className="w-4 h-4 mr-2" />
-                  {t('title', { ns: 'settings' })}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="text-destructive">
-                  <LogOut className="w-4 h-4 mr-2" />
-                  {t('logout', { ns: 'common' })}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex items-center gap-2 shrink-0">
+              <BadgeDisplay userId={user?.id} onBadgesClick={onBadgesClick} />
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <MoreHorizontal className="w-5 h-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48 bg-background z-50">
+                  <DropdownMenuItem onClick={() => setIsEditModalOpen(true)}>
+                    <Edit className="w-4 h-4 mr-2" />
+                    {t('edit', { ns: 'common' })} {t('profile', { ns: 'navigation' })}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/settings')}>
+                    <Settings className="w-4 h-4 mr-2" />
+                    {t('title', { ns: 'settings' })}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+                    <LogOut className="w-4 h-4 mr-2" />
+                    {t('logout', { ns: 'common' })}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
           {/* Stats Row (without Posts) */}

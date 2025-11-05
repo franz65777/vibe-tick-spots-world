@@ -105,6 +105,7 @@ const ProfilePage = () => {
         onFollowingClick={() => openModal('following')}
         onPostsClick={handlePostsClick}
         onLocationsClick={handleLocationsClick}
+        onBadgesClick={() => setActiveTab('badges')}
       />
       
       <ProfileTabs
