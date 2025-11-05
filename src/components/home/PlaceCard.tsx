@@ -42,6 +42,7 @@ const PlaceCard = ({
     isOpen: false,
     mode: 'comments'
   });
+  const [isCampaignExpanded, setIsCampaignExpanded] = useState(false);
 
   const isMuted = mutedLocations?.some((m: any) => m.location_id === place.id);
   const { campaign } = useMarketingCampaign(place.id);
@@ -169,12 +170,6 @@ const PlaceCard = ({
             )}
           </div>
 
-          {/* Marketing Campaign Banner */}
-          {campaign && (
-            <div className="-mx-4 -mb-4 mb-4">
-              <MarketingCampaignBanner campaign={campaign} />
-            </div>
-          )}
 
           {/* Action buttons with unique travel-inspired design */}
           <div className="flex items-center gap-2">
@@ -243,6 +238,24 @@ const PlaceCard = ({
               {isMuted ? t('muted') : t('mute')}
             </Button>
           </div>
+
+          {/* Expandable Marketing Campaign Section */}
+          {campaign && (
+            <div className="mt-4 border-t border-gray-100">
+              <button
+                onClick={(e) => { e.stopPropagation(); setIsCampaignExpanded(!isCampaignExpanded); }}
+                className="w-full px-2 py-2 flex items-center justify-between hover:bg-gray-50 rounded-md"
+              >
+                <span className="text-sm font-medium text-gray-900 truncate">{campaign.title}</span>
+                <svg className={`w-4 h-4 text-gray-500 transition-transform ${isCampaignExpanded ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+              {isCampaignExpanded && (
+                <div className="pt-2 -mx-4 -mb-4">
+                  <MarketingCampaignBanner campaign={campaign} />
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Added by section */}
           {place.addedBy && (

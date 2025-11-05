@@ -3,7 +3,6 @@ import { Search, MapPin, Loader2, Locate } from 'lucide-react';
 import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
 import { useTranslation } from 'react-i18next';
 import { useGeolocation } from '@/hooks/useGeolocation';
-import { toast } from '@/hooks/use-toast';
 
 interface CityAutocompleteBarProps {
   searchQuery: string;
@@ -66,7 +65,7 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
       lng: location.longitude 
     });
     
-    toast({ description: `${t('locationDetected', { ns: 'common' })}: ${location.city}` });
+    // No toast here – silently update the UI with detected city
   }, [location?.latitude, location?.longitude, location?.city]);
 
   useEffect(() => {
@@ -153,14 +152,10 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
   const handleCurrentLocation = async () => {
     try {
       console.log('🌍 Geolocation button clicked');
-      toast({ description: t('gettingLocation', { ns: 'common' }) });
       getCurrentLocation();
-      
-      // Wait for location to be updated
-      // The useEffect will handle the city selection
+      // UI updates happen when location state changes
     } catch (error) {
       console.error('Error getting current location:', error);
-      toast({ description: 'Failed to get location', variant: 'destructive' });
     }
   };
 
