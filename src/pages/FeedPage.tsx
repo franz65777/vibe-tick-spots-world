@@ -377,7 +377,7 @@ const FeedPage = () => {
                   variant="ghost" 
                   className="h-auto p-0 hover:bg-transparent font-bold text-lg gap-1.5 -ml-2 justify-start text-left"
                 >
-                  {feedType === 'forYou' ? t('promotions') : t('forYou')}
+                  {feedType === 'forYou' ? t('forYou') : t('promotions')}
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -387,8 +387,8 @@ const FeedPage = () => {
                   className="cursor-pointer focus:bg-accent"
                 >
                   <div className="flex flex-col py-1">
-                    <span className="font-semibold">{t('promotions')}</span>
-                    <span className="text-xs text-muted-foreground">{t('promotionsDesc')}</span>
+                    <span className="font-semibold">{t('forYou')}</span>
+                    <span className="text-xs text-muted-foreground">{t('forYouDesc')}</span>
                   </div>
                 </DropdownMenuItem>
                 <DropdownMenuItem 
@@ -396,8 +396,8 @@ const FeedPage = () => {
                   className="cursor-pointer focus:bg-accent"
                 >
                   <div className="flex flex-col py-1">
-                    <span className="font-semibold">{t('forYou')}</span>
-                    <span className="text-xs text-muted-foreground">{t('forYouDesc')}</span>
+                    <span className="font-semibold">{t('promotions')}</span>
+                    <span className="text-xs text-muted-foreground">{t('promotionsDesc')}</span>
                   </div>
                 </DropdownMenuItem>
               </DropdownMenuContent>
