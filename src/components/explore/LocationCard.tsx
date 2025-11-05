@@ -228,13 +228,6 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
               </div>
             </div>
 
-            {/* Marketing Campaign Banner */}
-            {campaign && (
-              <div className="-mx-6 -mb-6 mt-4">
-                <MarketingCampaignBanner campaign={campaign} />
-              </div>
-            )}
-
             {/* Action Buttons */}
             <div className="grid grid-cols-4 gap-2 pt-2">
               <Button
@@ -286,8 +279,14 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
                 <Share2 className="w-4 h-4" />
                 <span className="text-xs font-medium">{t('share', { ns: 'common' })}</span>
               </Button>
-
             </div>
+
+            {/* Marketing Campaign Banner - Expandable Section */}
+            {campaign && (
+              <div className="pt-4 -mx-6 -mb-6 border-t border-gray-100 mt-4">
+                <MarketingCampaignBanner campaign={campaign} />
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

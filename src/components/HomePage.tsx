@@ -120,7 +120,6 @@ const HomePage = () => {
             const location = { lat: latitude, lng: longitude };
             setUserLocation(location);
             setMapCenter(location);
-            console.log('User location obtained:', location);
           },
           (error) => {
             console.warn('Error getting user location:', error);

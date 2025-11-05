@@ -74,7 +74,7 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
     ringColor = 'rgba(59, 130, 246, 0.3)';
   }
   
-  // Campaign sparkle effect - more sparkles, closer to pin
+  // Campaign sparkle effect - 5 sparkles max, closer to pin
   const campaignEffect = hasCampaign ? `
     <!-- Animated sparkle effect for campaigns -->
     <div class="campaign-sparkle" style="
@@ -85,7 +85,7 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
       height: 52px;
       pointer-events: none;
     ">
-      <!-- Top sparkles -->
+      <!-- Top center -->
       <div class="sparkle sparkle-1" style="
         position: absolute;
         top: -2px;
@@ -96,6 +96,7 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
         border-radius: 50%;
         animation: sparkle-float 1.8s ease-in-out infinite;
       "></div>
+      <!-- Top right -->
       <div class="sparkle sparkle-2" style="
         position: absolute;
         top: 2px;
@@ -104,8 +105,9 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
         height: 5px;
         background: linear-gradient(135deg, #FF6B6B, #FF8E53);
         border-radius: 50%;
-        animation: sparkle-float 1.8s ease-in-out 0.2s infinite;
+        animation: sparkle-float 1.8s ease-in-out 0.3s infinite;
       "></div>
+      <!-- Top left -->
       <div class="sparkle sparkle-3" style="
         position: absolute;
         top: 2px;
@@ -114,10 +116,9 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
         height: 5px;
         background: linear-gradient(135deg, #4ECDC4, #44A08D);
         border-radius: 50%;
-        animation: sparkle-float 1.8s ease-in-out 0.4s infinite;
+        animation: sparkle-float 1.8s ease-in-out 0.6s infinite;
       "></div>
-      
-      <!-- Side sparkles -->
+      <!-- Side left -->
       <div class="sparkle sparkle-4" style="
         position: absolute;
         top: 12px;
@@ -126,8 +127,9 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
         height: 6px;
         background: linear-gradient(135deg, #A8E6CF, #FFD3B6);
         border-radius: 50%;
-        animation: sparkle-float 1.8s ease-in-out 0.6s infinite;
+        animation: sparkle-float 1.8s ease-in-out 0.9s infinite;
       "></div>
+      <!-- Side right -->
       <div class="sparkle sparkle-5" style="
         position: absolute;
         top: 12px;
@@ -135,28 +137,6 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
         width: 6px;
         height: 6px;
         background: linear-gradient(135deg, #FFD700, #FFA500);
-        border-radius: 50%;
-        animation: sparkle-float 1.8s ease-in-out 0.8s infinite;
-      "></div>
-      
-      <!-- Bottom sparkles -->
-      <div class="sparkle sparkle-6" style="
-        position: absolute;
-        bottom: 22px;
-        left: 6px;
-        width: 4px;
-        height: 4px;
-        background: linear-gradient(135deg, #FF6B6B, #FF8E53);
-        border-radius: 50%;
-        animation: sparkle-float 1.8s ease-in-out 1s infinite;
-      "></div>
-      <div class="sparkle sparkle-7" style="
-        position: absolute;
-        bottom: 22px;
-        right: 6px;
-        width: 4px;
-        height: 4px;
-        background: linear-gradient(135deg, #4ECDC4, #44A08D);
         border-radius: 50%;
         animation: sparkle-float 1.8s ease-in-out 1.2s infinite;
       "></div>
