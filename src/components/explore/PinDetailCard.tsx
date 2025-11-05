@@ -148,9 +148,15 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
       }
     };
 
+    // Reset state when place changes
+    setLocationDetails(null);
+    setPosts([]);
+    setPostsPage(1);
+    setHasMorePosts(true);
+    
     checkInteractions();
     fetchPosts();
-  }, [place.id]);
+  }, [place.id, place.google_place_id, place.name]);
 
   useEffect(() => {
     const fetchLocationById = async () => {
