@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, MapPin, Image } from 'lucide-react';
-import L, { Icon } from 'leaflet';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import pinIcon from '@/assets/pin-icon.png';
+import { createLeafletCustomMarker } from '@/utils/leafletMarkerCreator';
 
 interface LocationDetailDrawerProps {
   location: {
@@ -35,20 +35,27 @@ interface Post {
   avatar_url: string;
 }
 
-const customIcon = new Icon({
-  iconUrl: pinIcon,
-  iconSize: [32, 32],
-  iconAnchor: [16, 32],
-});
-
 const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawerProps) => {
   const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
+  const [fullAddress, setFullAddress] = useState<string>('');
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   // Leaflet (vanilla) map refs
   const mapDivRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
+
+  // Detect dark mode
+  useEffect(() => {
+    const checkDarkMode = () => {
+      setIsDarkMode(document.documentElement.classList.contains('dark'));
+    };
+    checkDarkMode();
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
 
   // Init / update Leaflet map when opening
   useEffect(() => {
@@ -63,20 +70,36 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
     const t = setTimeout(() => {
       try {
         if (!mapDivRef.current) return;
+
+        // Use same CartoDB tile style as home page
+        const tileUrl = isDarkMode
+          ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+          : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+
         if (mapRef.current) {
           mapRef.current.setView([lat, lng], 15);
         } else {
           const map = L.map(mapDivRef.current, {
             center: [lat, lng],
             zoom: 15,
-            zoomControl: true,
+            zoomControl: false, // Remove zoom buttons
             attributionControl: true,
+            doubleClickZoom: false,
           });
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          L.tileLayer(tileUrl, {
             maxZoom: 19,
-            attribution: '&copy; OpenStreetMap contributors',
+            attribution: '&copy; OpenStreetMap, &copy; CartoDB',
           }).addTo(map);
-          L.marker([lat, lng], { icon: customIcon }).addTo(map);
+
+          // Use the same custom marker as home page
+          const icon = createLeafletCustomMarker({
+            category: location.category || 'restaurant',
+            isSaved: false,
+            isRecommended: false,
+            isDarkMode,
+          });
+
+          L.marker([lat, lng], { icon }).addTo(map);
           mapRef.current = map;
           // Fix for initial white tiles
           setTimeout(() => map.invalidateSize(), 100);
@@ -93,13 +116,36 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
         mapRef.current = null;
       }
     };
-  }, [isOpen, location?.coordinates]);
+  }, [isOpen, location?.coordinates, isDarkMode]);
 
-  // Fetch posts for this location
+  // Fetch location data to get full address
   useEffect(() => {
     if (!isOpen || !location) return;
+    fetchLocationData();
     fetchLocationPosts();
   }, [isOpen, location?.place_id]);
+
+  const fetchLocationData = async () => {
+    if (!location) return;
+    try {
+      const { data } = await supabase
+        .from('locations')
+        .select('address, city')
+        .eq('google_place_id', location.place_id)
+        .maybeSingle();
+
+      if (data) {
+        // Build full address from DB
+        const addr = [data.address, data.city].filter(Boolean).join(', ');
+        setFullAddress(addr || 'Indirizzo non disponibile');
+      } else {
+        setFullAddress('Indirizzo non disponibile');
+      }
+    } catch (error) {
+      console.error('Error fetching location data:', error);
+      setFullAddress('Indirizzo non disponibile');
+    }
+  };
 
   const fetchLocationPosts = async () => {
     if (!location) return;
@@ -163,13 +209,10 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
 
   if (!isOpen || !location) return null;
 
-  // Coordinates & address formatting (robust)
   const c: any = location.coordinates || {};
   const lat = Number(c.lat ?? c.latitude ?? 0);
   const lng = Number(c.lng ?? c.longitude ?? 0);
   const hasValidCoordinates = !!lat && !!lng;
-
-  const fullAddress = [location.address, location.city].filter(Boolean).join(', ');
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/50" onClick={onClose}>
@@ -184,7 +227,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
               <h2 className="text-xl font-bold text-foreground mb-1">{location.name}</h2>
               <div className="flex items-start gap-1 text-sm text-muted-foreground">
                 <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <span className="line-clamp-2">{fullAddress || 'Indirizzo non disponibile'}</span>
+                <span className="line-clamp-2">{fullAddress}</span>
               </div>
             </div>
             <button
