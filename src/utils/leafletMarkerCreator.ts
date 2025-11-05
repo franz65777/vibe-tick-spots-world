@@ -74,56 +74,91 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
     ringColor = 'rgba(59, 130, 246, 0.3)';
   }
   
-  // Campaign sparkle effect
+  // Campaign sparkle effect - more sparkles, closer to pin
   const campaignEffect = hasCampaign ? `
     <!-- Animated sparkle effect for campaigns -->
     <div class="campaign-sparkle" style="
       position: absolute;
-      top: -8px;
-      left: -8px;
-      width: 52px;
+      top: -4px;
+      left: -4px;
+      width: 44px;
       height: 52px;
       pointer-events: none;
     ">
+      <!-- Top sparkles -->
       <div class="sparkle sparkle-1" style="
         position: absolute;
-        top: 0;
+        top: -2px;
         left: 18px;
-        width: 6px;
-        height: 6px;
+        width: 7px;
+        height: 7px;
         background: linear-gradient(135deg, #FFD700, #FFA500);
         border-radius: 50%;
-        animation: sparkle-float 2s ease-in-out infinite;
+        animation: sparkle-float 1.8s ease-in-out infinite;
       "></div>
       <div class="sparkle sparkle-2" style="
         position: absolute;
-        top: 8px;
-        right: 2px;
-        width: 4px;
-        height: 4px;
+        top: 2px;
+        right: 4px;
+        width: 5px;
+        height: 5px;
         background: linear-gradient(135deg, #FF6B6B, #FF8E53);
         border-radius: 50%;
-        animation: sparkle-float 2s ease-in-out 0.3s infinite;
+        animation: sparkle-float 1.8s ease-in-out 0.2s infinite;
       "></div>
       <div class="sparkle sparkle-3" style="
         position: absolute;
-        bottom: 18px;
-        left: 2px;
+        top: 2px;
+        left: 4px;
         width: 5px;
         height: 5px;
         background: linear-gradient(135deg, #4ECDC4, #44A08D);
         border-radius: 50%;
-        animation: sparkle-float 2s ease-in-out 0.6s infinite;
+        animation: sparkle-float 1.8s ease-in-out 0.4s infinite;
       "></div>
+      
+      <!-- Side sparkles -->
       <div class="sparkle sparkle-4" style="
         position: absolute;
-        bottom: 8px;
+        top: 12px;
+        left: 0px;
+        width: 6px;
+        height: 6px;
+        background: linear-gradient(135deg, #A8E6CF, #FFD3B6);
+        border-radius: 50%;
+        animation: sparkle-float 1.8s ease-in-out 0.6s infinite;
+      "></div>
+      <div class="sparkle sparkle-5" style="
+        position: absolute;
+        top: 12px;
+        right: 0px;
+        width: 6px;
+        height: 6px;
+        background: linear-gradient(135deg, #FFD700, #FFA500);
+        border-radius: 50%;
+        animation: sparkle-float 1.8s ease-in-out 0.8s infinite;
+      "></div>
+      
+      <!-- Bottom sparkles -->
+      <div class="sparkle sparkle-6" style="
+        position: absolute;
+        bottom: 22px;
+        left: 6px;
+        width: 4px;
+        height: 4px;
+        background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+        border-radius: 50%;
+        animation: sparkle-float 1.8s ease-in-out 1s infinite;
+      "></div>
+      <div class="sparkle sparkle-7" style="
+        position: absolute;
+        bottom: 22px;
         right: 6px;
         width: 4px;
         height: 4px;
-        background: linear-gradient(135deg, #A8E6CF, #FFD3B6);
+        background: linear-gradient(135deg, #4ECDC4, #44A08D);
         border-radius: 50%;
-        animation: sparkle-float 2s ease-in-out 0.9s infinite;
+        animation: sparkle-float 1.8s ease-in-out 1.2s infinite;
       "></div>
     </div>
     

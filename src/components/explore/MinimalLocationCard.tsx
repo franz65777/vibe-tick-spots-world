@@ -1,8 +1,10 @@
-import React from 'react';
-import { Star } from 'lucide-react';
+import React, { useState } from 'react';
+import { Star, ChevronDown, ChevronUp } from 'lucide-react';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import CityLabel from '@/components/common/CityLabel';
 import { useLocationStats } from '@/hooks/useLocationStats';
+import { useMarketingCampaign } from '@/hooks/useMarketingCampaign';
+import MarketingCampaignBanner from './MarketingCampaignBanner';
 interface MinimalLocationCardProps {
   place: {
     id: string;
@@ -25,8 +27,11 @@ const MinimalLocationCard = ({
   onCardClick
 }: MinimalLocationCardProps) => {
   const { stats } = useLocationStats(place.id, place.google_place_id);
+  const { campaign } = useMarketingCampaign(place.id);
+  const [isExpanded, setIsExpanded] = useState(false);
 
-  return <div className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-all duration-200" onClick={onCardClick}>
+  return <div className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200">
+      <div className="p-3 cursor-pointer" onClick={onCardClick}>
       <div className="flex items-center gap-3">
         <div className="shrink-0 bg-gray-50 rounded-xl p-1.5">
           <CategoryIcon category={place.category} className="w-8 h-8" />
@@ -55,6 +60,34 @@ const MinimalLocationCard = ({
           </div>
         </div>
       </div>
+      </div>
+      
+      {/* Marketing Campaign Section */}
+      {campaign && (
+        <div className="border-t border-gray-100">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsExpanded(!isExpanded);
+            }}
+            className="w-full px-3 py-2 flex items-center justify-between hover:bg-gray-50 transition-colors"
+          >
+            <span className="text-xs font-medium text-primary">
+              {campaign.title}
+            </span>
+            {isExpanded ? (
+              <ChevronUp className="w-3 h-3 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="w-3 h-3 text-muted-foreground" />
+            )}
+          </button>
+          {isExpanded && (
+            <div className="px-3 pb-3">
+              <MarketingCampaignBanner campaign={campaign} />
+            </div>
+          )}
+        </div>
+      )}
     </div>;
 };
 export default MinimalLocationCard;
