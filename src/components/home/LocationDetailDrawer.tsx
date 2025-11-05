@@ -58,6 +58,27 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
     
     setLoading(true);
     try {
+      // First, get the location UUID from the locations table using google_place_id
+      const { data: locationData, error: locationError } = await supabase
+        .from('locations')
+        .select('id')
+        .eq('google_place_id', location.place_id)
+        .maybeSingle();
+
+      if (locationError) {
+        console.error('Error fetching location:', locationError);
+        setLoading(false);
+        return;
+      }
+
+      // If no location found, no posts to show
+      if (!locationData) {
+        setPosts([]);
+        setLoading(false);
+        return;
+      }
+
+      // Now fetch posts using the location UUID
       const { data, error } = await supabase
         .from('posts')
         .select(`
@@ -71,7 +92,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
             avatar_url
           )
         `)
-        .eq('location_id', location.place_id)
+        .eq('location_id', locationData.id)
         .order('created_at', { ascending: false })
         .limit(20);
 
@@ -97,7 +118,11 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
 
   if (!isOpen || !location) return null;
 
-  const hasValidCoordinates = location.coordinates.lat !== 0 && location.coordinates.lng !== 0;
+  // Safely extract coordinates - handle multiple formats
+  const coords: any = location.coordinates || {};
+  const lat = Number(coords.lat ?? coords.latitude ?? 0);
+  const lng = Number(coords.lng ?? coords.longitude ?? 0);
+  const hasValidCoordinates = lat !== 0 && lng !== 0;
   
   // Format full address
   const fullAddress = [location.address, location.city].filter(Boolean).join(', ');
@@ -132,7 +157,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
           {hasValidCoordinates ? (
             <div className="w-full h-48 relative">
               <MapContainer
-                center={[location.coordinates.lat, location.coordinates.lng]}
+                center={[lat, lng]}
                 zoom={15}
                 className="w-full h-full"
                 zoomControl={true}
@@ -145,7 +170,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
                 <Marker
-                  position={[location.coordinates.lat, location.coordinates.lng]}
+                  position={[lat, lng]}
                   icon={customIcon}
                 />
               </MapContainer>
