@@ -340,7 +340,7 @@ const FeedPage = () => {
         </div>
 
         {/* Feed Content */}
-        <div className="flex-1 overflow-y-auto pb-24">
+        <div className="flex-1 overflow-y-scroll pb-24 scrollbar-hide">
           {feedItems.length === 0 ? (
             <div className="text-center py-12 px-4 text-muted-foreground">
               <p className="mb-2">{t('feedEmpty')}</p>

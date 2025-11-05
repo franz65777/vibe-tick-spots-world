@@ -64,12 +64,30 @@ export const useOptimizedFeed = () => {
       }));
 
       console.log('Feed loaded (enriched):', enriched.length);
+
+      // Cache feed per caricamento istantaneo prossima volta
+      try {
+        if (user?.id) {
+          localStorage.setItem(`feed_cache_${user.id}`, JSON.stringify(enriched));
+        }
+      } catch {}
+
       return enriched;
     },
     enabled: !!user?.id,
     staleTime: 1 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
     refetchOnMount: 'always',
+    initialData: () => {
+      // Carica subito dalla cache per UI istantanea
+      if (!user?.id) return [];
+      try {
+        const cached = localStorage.getItem(`feed_cache_${user.id}`);
+        return cached ? JSON.parse(cached) : [];
+      } catch {
+        return [];
+      }
+    },
   });
 
   return {
