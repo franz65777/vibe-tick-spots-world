@@ -345,7 +345,7 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
       </Button>
 
       {/* User info - Moved down for mobile safe area */}
-      <div className="absolute top-24 left-4 z-10">
+      <div className="absolute top-20 left-4 z-10">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-full border-2 border-white overflow-hidden shadow-lg">
             {currentStory.userAvatar ? (
