@@ -307,7 +307,7 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
   return (
     <div className="fixed inset-0 bg-black z-[2000] flex items-center justify-center">
       {/* Progress bars - Enhanced horizontal indicator with category icon */}
-      <div className="absolute top-4 left-4 right-4 flex gap-1.5 z-10">
+      <div className="absolute top-12 left-4 right-4 flex gap-1.5 z-10">
         {stories.map((_, index) => (
           <div key={index} className="flex-1 h-1 bg-white/30 rounded-full overflow-hidden relative">
             <div
@@ -319,14 +319,14 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
             {/* Category icon that moves along the progress bar for current story */}
             {index === currentStoryIndex && currentStory.locationCategory && (
               <div 
-                className="absolute top-1/2 -translate-y-1/2 transition-all duration-100 -mt-3"
+                className="absolute top-1/2 -translate-y-1/2 transition-all duration-100 -mt-4 z-20"
                 style={{
                   left: `calc(${progress}% - 12px)` // Center the icon on the progress
                 }}
               >
                 <CategoryIcon 
                   category={currentStory.locationCategory} 
-                  className="w-6 h-6 drop-shadow-lg"
+                  className="w-7 h-7 drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]"
                 />
               </div>
             )}
@@ -339,13 +339,13 @@ const StoriesViewer = ({ stories, initialStoryIndex, onClose, onStoryViewed, onL
         variant="ghost"
         size="icon"
         onClick={onClose}
-        className="absolute top-4 right-2 z-10 text-white hover:bg-white/20 h-10 w-10"
+        className="absolute top-12 right-2 z-10 text-white hover:bg-white/20 h-10 w-10"
       >
         <X className="w-6 h-6" />
       </Button>
 
       {/* User info - Moved down for mobile safe area */}
-      <div className="absolute top-16 left-4 z-10">
+      <div className="absolute top-24 left-4 z-10">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-full border-2 border-white overflow-hidden shadow-lg">
             {currentStory.userAvatar ? (
