@@ -41,10 +41,28 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
   const [selectedLocation, setSelectedLocation] = useState<LocationCard | null>(null);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [userSavedIds, setUserSavedIds] = useState<Set<string>>(new Set());
+  const [campaignLocationIds, setCampaignLocationIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchLocations();
+    fetchActiveCampaigns();
   }, [searchQuery, selectedCategory, user?.id]);
+
+  const fetchActiveCampaigns = async () => {
+    try {
+      const { data } = await supabase
+        .from('marketing_campaigns')
+        .select('location_id')
+        .eq('is_active', true)
+        .gt('end_date', new Date().toISOString());
+      
+      if (data) {
+        setCampaignLocationIds(new Set(data.map(c => c.location_id)));
+      }
+    } catch (error) {
+      console.error('Error fetching campaigns:', error);
+    }
+  };
 
   const fetchLocations = async () => {
     if (!user) {
@@ -424,16 +442,27 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-2 px-1 py-3 pb-20">
+      <div className="grid grid-cols-2 gap-2 px-1 py-3 pb-6">
         {locations.map((location) => {
           const isSaved = userSavedIds.has(location.id);
           const isMuted = mutedLocations?.some((m: any) => m.location_id === location.id);
+          const hasCampaign = campaignLocationIds.has(location.id);
           
           return (
             <div
               key={location.id}
               onClick={() => handleLocationClick(location)}
-              className="relative bg-white dark:bg-card rounded-2xl overflow-hidden cursor-pointer transition-all flex flex-col h-[140px] border border-border"
+              className={`relative rounded-2xl overflow-hidden cursor-pointer transition-all flex flex-col h-[140px] ${
+                hasCampaign 
+                  ? 'border-2 animate-gradient-border' 
+                  : 'border border-border bg-white dark:bg-card'
+              }`}
+              style={hasCampaign ? {
+                backgroundImage: 'linear-gradient(white, white), linear-gradient(135deg, #3b82f6, #60a5fa, #3b82f6, #60a5fa, #3b82f6)',
+                backgroundOrigin: 'border-box',
+                backgroundClip: 'padding-box, border-box',
+                backgroundSize: '100%, 200% 200%',
+              } : undefined}
             >
               {/* Top section with category, mute, and save */}
               <div className="relative p-2.5 flex items-start justify-between">
