@@ -487,9 +487,9 @@ const FeedPage = () => {
 
                   {/* Post Media */}
                   {mediaUrls.length > 0 && (
-                    <div className="relative" style={{ position: 'relative', left: '50%', right: '50%', marginLeft: '-50vw', marginRight: '-50vw', width: '100vw' }}>
+                    <div className="relative full-bleed">
                       {hasMultipleMedia ? (
-                        <Carousel className="w-full">
+                        <Carousel className="w-full" gutter={false}>
                           <CarouselContent className="-ml-0">
                             {mediaUrls.map((url, idx) => {
                               const isVideo = url.includes('.mp4') || url.includes('.mov') || url.includes('.webm');
@@ -523,11 +523,11 @@ const FeedPage = () => {
                       ) : (() => {
                         const isVideo = mediaUrls[0].includes('.mp4') || mediaUrls[0].includes('.mov') || mediaUrls[0].includes('.webm');
                         return (
-                          <div className="aspect-square bg-muted">
+                          <div className="aspect-square w-full">
                             {isVideo ? (
                               <video
                                 src={mediaUrls[0]}
-                                className="w-full h-full object-cover touch-pinch-zoom"
+                                className="w-full h-full object-cover block touch-pinch-zoom"
                                 controls
                                 playsInline
                                 loop
@@ -536,7 +536,7 @@ const FeedPage = () => {
                               <img
                                 src={mediaUrls[0]}
                                 alt="Post"
-                                className="w-full h-full object-cover touch-pinch-zoom"
+                                className="w-full h-full object-cover block touch-pinch-zoom"
                                 style={{ touchAction: 'pinch-zoom' }}
                               />
                             )}
