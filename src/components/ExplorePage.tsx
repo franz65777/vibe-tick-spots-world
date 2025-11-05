@@ -255,7 +255,7 @@ const ExplorePage = () => {
   return <div className="flex flex-col h-full">
       {/* Simplified Header */}
       <div className="bg-white border-b border-gray-200 pt-safe">
-        <div className="px-0 py-4 pt-2">
+        <div className="px-2 py-4 pt-2">
           {/* Search Mode Toggle */}
           <div className="flex bg-gray-100 rounded-xl p-1 mb-4">
             <button onClick={() => setSearchMode('locations')} className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all ${searchMode === 'locations' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
@@ -271,12 +271,12 @@ const ExplorePage = () => {
           {/* Search Bar */}
           <div className="relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <Input 
-              type="text" 
-              placeholder={searchMode === 'locations' ? t('searchPlaces', { ns: 'explore' }) : t('searchPeople', { ns: 'explore' })} 
-              value={searchQuery} 
-              onChange={e => handleSearch(e.target.value)} 
-              className="pl-12 pr-4 h-12 bg-gray-50 border-gray-200 focus:bg-white rounded-xl text-gray-900 placeholder-gray-500" 
+            <Input
+              type="text"
+              placeholder={searchMode === 'locations' ? t('searchPlaces', { ns: 'explore' }) : t('searchPeople', { ns: 'explore' })}
+              value={searchQuery}
+              onChange={e => handleSearch(e.target.value)}
+              className="pl-12 pr-4 h-12 bg-gray-50 border-gray-200 focus:bg-white rounded-xl text-gray-900 placeholder-gray-500"
             />
             {searchQuery && <Button onClick={clearSearch} variant="ghost" size="sm" className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100 rounded-full text-gray-500">
                 ×
@@ -301,7 +301,7 @@ const ExplorePage = () => {
             {searchMode === 'locations' ? (
               <>
                 {/* Category Filter */}
-                <div className="px-0 py-3">
+                <div className="px-2 py-3">
                   <SimpleCategoryFilter
                     selectedCategory={selectedCategory}
                     onCategorySelect={setSelectedCategory}
@@ -318,7 +318,7 @@ const ExplorePage = () => {
               <>
                 {/* Search History & Follow Suggestions - Only in People mode */}
                 {!isSearchActive && (
-                  <div className="px-0 py-4 space-y-6">
+                  <div className="px-2 py-4 space-y-6">
                     {/* Search History */}
                     {searchHistory.length > 0 && (
                       <div>
@@ -448,19 +448,19 @@ const ExplorePage = () => {
 
                 {/* User Results */}
                 {displayUsers.length > 0 ? (
-                  <div className="space-y-3 px-0 pb-4">
+                  <div className="space-y-3 px-2 pb-4">
                     {displayUsers.map(user => (
-                      <UserCard 
-                        key={user.id} 
-                        user={user} 
-                        onUserClick={() => handleUserClick(user.id)} 
-                        onFollowUser={handleFollowUser} 
-                        onMessageUser={handleMessageUser} 
+                      <UserCard
+                        key={user.id}
+                        user={user}
+                        onUserClick={() => handleUserClick(user.id)}
+                        onFollowUser={handleFollowUser}
+                        onMessageUser={handleMessageUser}
                       />
                     ))}
                   </div>
                 ) : (
-                  <div className="px-0 py-8">
+                  <div className="px-2 py-8">
                     {isSearchActive && (
                       <NoResults searchMode="users" searchQuery={searchQuery} />
                     )}
