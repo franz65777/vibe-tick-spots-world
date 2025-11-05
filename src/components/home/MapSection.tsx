@@ -179,6 +179,7 @@ const MapSection = ({
         {/* Hide map when list view is open */}
         {!isListViewOpen && (
           <LeafletMapSetup
+            key={isExpanded ? 'map-full' : 'map-embedded'}
             places={places}
             onPinClick={handlePinClick}
             onPinShare={handlePinShare}

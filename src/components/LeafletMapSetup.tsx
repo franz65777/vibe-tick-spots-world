@@ -151,6 +151,34 @@ const LeafletMapSetup = ({
     return () => timeouts.forEach(t => clearTimeout(t));
   }, [fullScreen]);
 
+  // Observe container size changes and invalidate map to prevent white tiles
+  useEffect(() => {
+    const container = containerRef.current;
+    const map = mapRef.current;
+    if (!container || !map) return;
+
+    const ro = new ResizeObserver(() => {
+      // Use rAF + timeout to ensure layout settled
+      requestAnimationFrame(() => {
+        try { map.invalidateSize(); } catch {}
+        setTimeout(() => { try { map.invalidateSize(); } catch {} }, 100);
+      });
+    });
+    ro.observe(container);
+
+    const onWindowResize = () => {
+      try { map.invalidateSize(); } catch {}
+    };
+    window.addEventListener('orientationchange', onWindowResize);
+    window.addEventListener('resize', onWindowResize);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('orientationchange', onWindowResize);
+      window.removeEventListener('resize', onWindowResize);
+    };
+  }, []);
+
   // Current location marker
   useEffect(() => {
     const map = mapRef.current;
