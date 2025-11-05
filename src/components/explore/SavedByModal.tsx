@@ -42,33 +42,46 @@ const SavedByModal = ({ isOpen, onClose, placeId, googlePlaceId }: SavedByModalP
         const userIds = new Set<string>();
 
         if (placeId) {
-          const { data: internal } = await supabase
+          const { data: internal, error: internalError } = await supabase
             .from('user_saved_locations')
             .select('user_id')
             .eq('location_id', placeId);
+          
+          if (internalError) {
+            console.error('Error fetching from user_saved_locations:', internalError);
+          }
           internal?.forEach((r: any) => r.user_id && userIds.add(r.user_id));
         }
 
         if (googlePlaceId) {
-          const { data: google } = await supabase
+          const { data: google, error: googleError } = await supabase
             .from('saved_places')
             .select('user_id')
             .eq('place_id', googlePlaceId);
+          
+          if (googleError) {
+            console.error('Error fetching from saved_places:', googleError);
+          }
           google?.forEach((r: any) => r.user_id && userIds.add(r.user_id));
         }
 
-        const ids = Array.from(userIds).filter((id) => id && id !== currentUser?.id);
+        // Don't filter out current user - include everyone
+        const ids = Array.from(userIds).filter((id) => id);
         if (ids.length === 0) {
           setSavers([]);
           setLoading(false);
           return;
         }
 
-        // 2) Fetch profiles
-        const { data: profiles } = await supabase
+        // 2) Fetch profiles for all users
+        const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select('id, username, avatar_url')
           .in('id', ids);
+
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+        }
 
         // 3) Determine following state
         let followingSet = new Set<string>();
@@ -88,8 +101,12 @@ const SavedByModal = ({ isOpen, onClose, placeId, googlePlaceId }: SavedByModalP
           isFollowing: followingSet.has(p.id),
         }));
 
-        // Sort: following first, then others, then by username
+        // Sort: current user first, then following, then others
         list.sort((a, b) => {
+          const aIsCurrentUser = a.id === currentUser?.id;
+          const bIsCurrentUser = b.id === currentUser?.id;
+          
+          if (aIsCurrentUser !== bIsCurrentUser) return aIsCurrentUser ? -1 : 1;
           if (a.isFollowing !== b.isFollowing) return a.isFollowing ? -1 : 1;
           return (a.username || '').localeCompare(b.username || '');
         });
@@ -170,38 +187,47 @@ const SavedByModal = ({ isOpen, onClose, placeId, googlePlaceId }: SavedByModalP
                 {t('noResults', { ns: 'common', defaultValue: 'No results' })}
               </div>
             ) : (
-              filtered.map((u) => (
-                <div key={u.id} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={u.avatar_url || undefined} />
-                      <AvatarFallback>{(u.username || 'U')[0].toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium text-foreground">{u.username || 'User'}</p>
-                      <p className="text-sm text-muted-foreground">@{u.username}</p>
+              filtered.map((u) => {
+                const isCurrentUser = u.id === currentUser?.id;
+                return (
+                  <div key={u.id} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={u.avatar_url || undefined} />
+                        <AvatarFallback>{(u.username || 'U')[0].toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium text-foreground">
+                          {isCurrentUser ? t('you', { ns: 'common', defaultValue: 'You' }) : (u.username || 'User')}
+                        </p>
+                        {!isCurrentUser && (
+                          <p className="text-sm text-muted-foreground">@{u.username}</p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant={u.isFollowing ? 'outline' : 'default'}
-                    onClick={() => toggleFollow(u.id, u.isFollowing)}
-                    className="flex items-center gap-2"
-                  >
-                    {u.isFollowing ? (
-                      <>
-                        <Check className="w-4 h-4" />
-                        {t('following', { ns: 'common', defaultValue: 'Following' })}
-                      </>
-                    ) : (
-                      <>
-                        <UserPlus className="w-4 h-4" />
-                        {t('follow', { ns: 'common', defaultValue: 'Follow' })}
-                      </>
+                    {!isCurrentUser && (
+                      <Button
+                        size="sm"
+                        variant={u.isFollowing ? 'outline' : 'default'}
+                        onClick={() => toggleFollow(u.id, u.isFollowing)}
+                        className="flex items-center gap-2"
+                      >
+                        {u.isFollowing ? (
+                          <>
+                            <Check className="w-4 h-4" />
+                            {t('following', { ns: 'common', defaultValue: 'Following' })}
+                          </>
+                        ) : (
+                          <>
+                            <UserPlus className="w-4 h-4" />
+                            {t('follow', { ns: 'common', defaultValue: 'Follow' })}
+                          </>
+                        )}
+                      </Button>
                     )}
-                  </Button>
-                </div>
-              ))
+                  </div>
+                );
+              })
             )}
           </div>
         </ScrollArea>
