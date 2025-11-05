@@ -404,10 +404,10 @@ const HomePage = () => {
           />
         )}
       
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-x-hidden">
         {/* Stories Section - 90px with overflow visible */}
         {!isCreateStoryModalOpen && !isStoriesViewerOpen && (
-          <div className="h-[90px] flex-shrink-0 overflow-visible">
+          <div className="h-[90px] flex-shrink-0">
             <StoriesSection
               stories={stories}
               onCreateStory={() => setIsCreateStoryModalOpen(true)}
