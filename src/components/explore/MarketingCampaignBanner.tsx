@@ -101,7 +101,7 @@ const MarketingCampaignBanner = ({ campaign }: MarketingCampaignBannerProps) => 
                 {campaign.title}
               </h4>
               {!isExpanded && (
-                <p className="text-muted-foreground text-xs text-left">
+                <p className="text-muted-foreground text-xs text-left line-clamp-1">
                   {campaign.description}
                 </p>
               )}
