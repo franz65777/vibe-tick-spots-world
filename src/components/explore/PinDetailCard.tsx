@@ -18,6 +18,8 @@ import { useDetailedAddress } from '@/hooks/useDetailedAddress';
 import { useLocationStats } from '@/hooks/useLocationStats';
 import SavedByModal from './SavedByModal';
 import { useTranslation } from 'react-i18next';
+import { useMarketingCampaign } from '@/hooks/useMarketingCampaign';
+import MarketingCampaignBanner from './MarketingCampaignBanner';
 
 interface PinDetailCardProps {
   place: any;
@@ -65,6 +67,8 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
     locationIdForEngagement,
     googlePlaceIdForEngagement
   );
+  const { campaign } = useMarketingCampaign(place.id);
+  const [isCampaignExpanded, setIsCampaignExpanded] = useState(false);
 
   const fetchPosts = async (page: number = 1) => {
     setPostsLoading(true);
@@ -368,6 +372,24 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
               </Button>
             </div>
           </div>
+
+          {/* Marketing Campaign - Expandable Section */}
+          {campaign && (
+            <div className="px-4 pb-2">
+              <button
+                onClick={(e) => { e.stopPropagation(); setIsCampaignExpanded(!isCampaignExpanded); }}
+                className="w-full px-3 py-2 flex items-center justify-between bg-muted/40 hover:bg-muted rounded-xl transition-colors"
+              >
+                <span className="text-sm font-medium truncate">{campaign.title}</span>
+                <svg className={`w-4 h-4 text-muted-foreground transition-transform ${isCampaignExpanded ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+              {isCampaignExpanded && (
+                <div className="pt-2">
+                  <MarketingCampaignBanner campaign={campaign} />
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Community Posts - Vertical Grid with Scrolling */}
           <div className="px-4 py-4 flex-1 overflow-y-auto max-h-[calc(90vh-240px)]">
