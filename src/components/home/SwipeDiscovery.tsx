@@ -134,7 +134,17 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
 
       const followingIds = followsData.map(f => f.following_id);
 
-      // Get profiles and count of recent saves (last 7 days)
+      // Get my saved place_ids
+      const { data: mySavedPlaces } = await supabase
+        .from('saved_places')
+        .select('place_id')
+        .eq('user_id', user.id);
+
+      const mySavedPlaceIds = new Set((mySavedPlaces || []).map(s => s.place_id));
+
+      console.log('🗺️ My saved places count:', mySavedPlaceIds.size);
+
+      // Get profiles
       const { data: usersWithSaves } = await supabase
         .from('profiles')
         .select('id, username, avatar_url')
@@ -144,27 +154,32 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
 
       if (!usersWithSaves) return;
 
-      // Count recent saves for each user
+      // Count NEW saves for each user (places they saved that I haven't)
       const usersWithCounts = await Promise.all(
         usersWithSaves.map(async (profile) => {
-          const { count } = await supabase
+          // Get all their saved places
+          const { data: theirSaves } = await supabase
             .from('saved_places')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', profile.id)
-            .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+            .select('place_id')
+            .eq('user_id', profile.id);
+
+          // Count how many of their saves are NEW to me (I haven't saved them)
+          const newPlacesCount = (theirSaves || []).filter(
+            save => !mySavedPlaceIds.has(save.place_id)
+          ).length;
 
           return {
             id: profile.id,
             username: profile.username || 'User',
             avatar_url: profile.avatar_url || '',
-            new_saves_count: count || 0
+            new_saves_count: newPlacesCount
           };
         })
       );
 
-      console.log('✨ Users with counts:', usersWithCounts);
+      console.log('✨ Users with new places count:', usersWithCounts);
 
-      // Sort users by new saves count and filter to only show users with new saves
+      // Sort users by new saves count and filter to only show users with NEW places
       const sortedUsers = usersWithCounts
         .filter(u => u.new_saves_count > 0)
         .sort((a, b) => b.new_saves_count - a.new_saves_count);

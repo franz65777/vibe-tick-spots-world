@@ -11,7 +11,6 @@ interface Story {
   userAvatar: string;
   isViewed: boolean;
   allUserStoriesViewed?: boolean;
-  locationId?: string | null;
 }
 
 interface StoriesSectionProps {
@@ -24,11 +23,8 @@ const StoriesSection = ({ stories = [], onCreateStory, onStoryClick }: StoriesSe
   const { t } = useTranslation();
   const { user } = useAuth();
   
-  // Filter stories to only include those with locations (new places to swipe)
-  const storiesWithLocations = stories.filter(story => story.locationId);
-  
   // Group stories by user
-  const groupedStories = storiesWithLocations.reduce((acc, story) => {
+  const groupedStories = stories.reduce((acc, story) => {
     if (!acc[story.userId]) {
       acc[story.userId] = [];
     }
@@ -41,7 +37,7 @@ const StoriesSection = ({ stories = [], onCreateStory, onStoryClick }: StoriesSe
   const hasMyStories = myStories.length > 0;
   const myStoriesAllViewed = myStories.every(s => s.isViewed);
   
-  // Get other users' stories (one representative per user) - only those with locations
+  // Get other users' stories (one representative per user)
   const otherUserStories = Object.entries(groupedStories)
     .filter(([userId]) => userId !== user?.id)
     .map(([userId, userStories]) => {
