@@ -17,37 +17,54 @@ export const useOptimizedFeed = () => {
         .eq('follower_id', user.id);
 
       const followingIds = followingData?.map(f => f.following_id) || [];
-      const userIds = [...followingIds, user.id];
+      const userIds = Array.from(new Set([...followingIds, user.id]));
 
-      const { data, error } = await supabase
+      // 1) Prendi i post senza join (evita errori di relazione)
+      const { data: postData, error: postError } = await supabase
         .from('posts')
-        .select(`
-          *,
-          profiles!posts_user_id_fkey (
-            username,
-            avatar_url,
-            full_name,
-            id
-          ),
-          locations (
-            id,
-            name,
-            address,
-            city,
-            latitude,
-            longitude
-          )
-        `)
+        .select('*')
         .in('user_id', userIds)
         .order('created_at', { ascending: false })
         .limit(50);
 
-      if (error) {
-        console.error('Feed query error:', error);
-        throw error;
+      if (postError) {
+        console.error('Feed posts error:', postError);
+        throw postError;
       }
-      console.log('Feed loaded:', data?.length, 'posts');
-      return data || [];
+
+      const posts = postData || [];
+      if (posts.length === 0) return [];
+
+      // 2) Carica profili e locations in parallelo
+      const profileIds = Array.from(new Set(posts.map((p: any) => p.user_id).filter(Boolean)));
+      const locationIds = Array.from(new Set(posts.map((p: any) => p.location_id).filter(Boolean)));
+
+      const [profilesRes, locationsRes] = await Promise.all([
+        profileIds.length
+          ? supabase.from('profiles').select('id,username,avatar_url,full_name').in('id', profileIds)
+          : Promise.resolve({ data: [], error: null }),
+        locationIds.length
+          ? supabase.from('locations').select('id,name,address,city,latitude,longitude').in('id', locationIds)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+
+      if ((profilesRes as any).error) console.warn('Profiles load warning:', (profilesRes as any).error);
+      if ((locationsRes as any).error) console.warn('Locations load warning:', (locationsRes as any).error);
+
+      const profiles = (profilesRes as any).data || [];
+      const locations = (locationsRes as any).data || [];
+      const profileMap = new Map(profiles.map((p: any) => [p.id, p]));
+      const locationMap = new Map(locations.map((l: any) => [l.id, l]));
+
+      // 3) Arricchisci i post con oggetti compatibili con il rendering esistente
+      const enriched = posts.map((p: any) => ({
+        ...p,
+        profiles: profileMap.get(p.user_id) || null,
+        locations: p.location_id ? (locationMap.get(p.location_id) || null) : null,
+      }));
+
+      console.log('Feed loaded (enriched):', enriched.length);
+      return enriched;
     },
     enabled: !!user?.id,
     staleTime: 1 * 60 * 1000,
