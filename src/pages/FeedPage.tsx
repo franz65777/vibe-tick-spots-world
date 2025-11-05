@@ -34,7 +34,7 @@ const FeedPage = () => {
   const [selectedUserStoryIndex, setSelectedUserStoryIndex] = useState(0);
   const [filteredStories, setFilteredStories] = useState<typeof stories>([]);
   const [postLikes, setPostLikes] = useState<Map<string, PostLikeUser[]>>(new Map());
-  const [feedType, setFeedType] = useState<'forYou' | 'promotions'>('promotions');
+  const [feedType, setFeedType] = useState<'forYou' | 'promotions'>('forYou');
   
   // Comment drawer state
   const [commentDrawerOpen, setCommentDrawerOpen] = useState(false);
@@ -440,7 +440,7 @@ const FeedPage = () => {
               return (
                 <article key={item.id} className="bg-background">
                   {/* Post Header */}
-                  <div className="flex items-center justify-between px-3 py-2">
+                  <div className="flex items-center justify-between px-4 py-2.5">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <button 
                         onClick={(e) => handleAvatarClick(userId, e)}
@@ -557,7 +557,7 @@ const FeedPage = () => {
                   )}
 
                   {/* Post Actions */}
-                  <div className="px-3 py-1 space-y-2">
+                  <div className="px-4 py-2 space-y-2.5">
                     <PostActions
                       postId={postId}
                       likesCount={item.likes_count || 0}
