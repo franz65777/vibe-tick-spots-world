@@ -129,7 +129,7 @@ const ProfileHeader = ({
   };
 
   return (
-    <div className="px-4 py-4 bg-background">
+    <div className="pl-1 pr-4 py-4 bg-background">
       <div className="flex gap-4">
         {/* Profile Picture */}
         <div className="relative shrink-0">
