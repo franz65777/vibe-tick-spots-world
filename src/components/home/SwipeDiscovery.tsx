@@ -221,7 +221,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
 
       // Build followed users list directly from current saves feed, excluding already processed places
       try {
-        const sourceForCounts = raw.filter((r: any) => !processedPlaceIds.has(r.place_id));
+        const sourceForCounts = raw.filter((r: any) => !processedPlaceIds.has(r.place_id) && !mySavedPlaceIds.has(r.place_id));
         const usersMap = new Map<string, { id: string; username: string; avatar_url: string; new_saves_count: number }>();
         for (const r of sourceForCounts) {
           const uid = r.user_id;
@@ -238,7 +238,9 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
             });
           }
         }
-        const list = Array.from(usersMap.values()).sort((a, b) => b.new_saves_count - a.new_saves_count);
+        const list = Array.from(usersMap.values())
+          .filter(u => u.new_saves_count > 0)
+          .sort((a, b) => b.new_saves_count - a.new_saves_count);
         setFollowedUsers(list);
       } catch (e) {
         console.warn('Could not build followed users from saves feed', e);
@@ -563,7 +565,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       </div>
 
       {/* Followed Users Row - overflow visible to prevent clipping */}
-      <div className="bg-background px-4 pt-2 pb-2 overflow-visible relative z-30">
+      <div className="bg-background px-4 pt-3 pb-3 overflow-visible relative z-30">
         <div className="flex gap-3 overflow-x-auto overflow-y-visible scrollbar-hide pb-1 pl-2 pr-3" style={{ scrollSnapType: 'x mandatory' }}>
           {/* All button */}
           <button
