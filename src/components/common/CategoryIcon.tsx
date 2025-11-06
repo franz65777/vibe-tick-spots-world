@@ -18,28 +18,28 @@ export const CategoryIcon: React.FC<CategoryIconProps> = ({ category, className 
 
     switch (categoryLower) {
       case 'bakery':
-        return { src: bakery, style: { objectFit: 'contain' } };
+        return { src: bakery, scale: 1 };
       case 'bar':
       case 'bar & pub':
-        return { src: bar, style: { objectFit: 'contain' } };
+        return { src: bar, scale: 1 };
       case 'museum':
-        return { src: museum, style: { objectFit: 'contain' } };
+        return { src: museum, scale: 1 };
       case 'hotel':
-        return { src: hotel, style: { objectFit: 'contain' } };
+        return { src: hotel, scale: 1.2 };
       case 'cafe':
       case 'café':
-        return { src: cafe, style: { objectFit: 'contain' } };
+        return { src: cafe, scale: 1 };
       case 'restaurant':
-        return { src: restaurant, style: { objectFit: 'contain' } };
+        return { src: restaurant, scale: 1.4 };
       case 'entertainment':
-        return { src: entertainment, style: { objectFit: 'contain' } };
+        return { src: entertainment, scale: 1 };
       default:
         // Fallback to a neutral transparent icon (use restaurant as neutral) to avoid white backgrounds
-        return { src: restaurant, style: { objectFit: 'contain' } };
+        return { src: restaurant, scale: 1.4 };
     }
   };
 
-  const { src, style } = getCategoryImage();
+  const { src, scale } = getCategoryImage();
 
   return (
     <div className={`${className} flex items-center justify-center`}>
@@ -47,7 +47,10 @@ export const CategoryIcon: React.FC<CategoryIconProps> = ({ category, className 
         src={src}
         alt={category}
         className="w-full h-full object-contain"
-        style={style as any}
+        style={{ 
+          objectFit: 'contain',
+          transform: `scale(${scale})`
+        }}
         loading="eager"
         fetchPriority="high"
       />
