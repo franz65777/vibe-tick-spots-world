@@ -29,18 +29,18 @@ const LeaderboardPage = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Minimal Header */}
-      <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-4">
-        <div className="max-w-4xl mx-auto">
+      <div className="sticky top-0 z-10 bg-background border-b border-border py-4">
+        <div className="px-4">
           <div className="flex items-center gap-3 mb-4">
             <Button
-              onClick={() => navigate(-1)}
+              onClick={() => navigate('/explore', { state: { searchMode: 'users' } })}
               variant="ghost"
               size="icon"
               className="rounded-full"
             >
               <ChevronLeft className="w-5 h-5" />
             </Button>
-            <h1 className="text-2xl font-bold text-foreground">Leaderboard</h1>
+            <h1 className="text-2xl font-bold text-foreground">{t('leaderboard', { ns: 'common' })}</h1>
           </div>
 
           {/* Top Filters */}
@@ -102,7 +102,7 @@ const LeaderboardPage = () => {
       </div>
 
       {/* Leaderboard List */}
-      <div className="max-w-4xl mx-auto px-4 pt-4">
+      <div className="pt-4 px-4">
         {loading ? (
           <div className="space-y-3">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
@@ -120,7 +120,7 @@ const LeaderboardPage = () => {
           <div className="text-center py-12">
             <p className="text-muted-foreground text-sm">No data available for this metric</p>
             <Button 
-              onClick={() => navigate('/explore')} 
+              onClick={() => navigate('/explore', { state: { searchMode: 'users' } })} 
               variant="outline"
               className="mt-4 rounded-full"
             >
@@ -128,37 +128,36 @@ const LeaderboardPage = () => {
             </Button>
           </div>
         ) : (
-          <div className="space-y-0 divide-y divide-border">
+          <div className="space-y-2">
             {users.map((user) => (
               <div
                 key={user.id}
                 onClick={() => navigate(`/profile/${user.id}`)}
-                className="flex items-center gap-3 py-3 cursor-pointer hover:bg-muted/30 transition-colors px-3 -mx-3 rounded-lg"
+                className="flex items-center gap-3 py-3 cursor-pointer hover:bg-muted/30 transition-colors rounded-lg"
               >
                 {/* Rank */}
-                <div className="w-8 text-center">
+                <div className="w-8 text-center flex-shrink-0">
                   <span className="text-base font-semibold text-muted-foreground">
                     {user.rank}
                   </span>
                 </div>
 
-                {/* Avatar */}
-                <Avatar className="w-12 h-12">
-                  <AvatarImage src={user.avatar_url} />
-                  <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                    {user.username.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+                {/* Avatar + Username aligned left */}
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <Avatar className="w-12 h-12 flex-shrink-0">
+                    <AvatarImage src={user.avatar_url} />
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                      {user.username.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
 
-                {/* Username */}
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-foreground truncate">
+                  <p className="font-semibold text-foreground truncate text-left">
                     @{user.username}
                   </p>
                 </div>
 
                 {/* Score */}
-                <div className="text-right">
+                <div className="text-right flex-shrink-0">
                   <span className="text-xl font-bold text-foreground">{user.score}</span>
                 </div>
               </div>
