@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 interface PostDetailModalMobileProps {
   postId: string;
   locationId?: string;
+  userId?: string;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -45,7 +46,7 @@ interface PostData {
   } | null;
 }
 
-export const PostDetailModalMobile = ({ postId, locationId, isOpen, onClose }: PostDetailModalMobileProps) => {
+export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onClose }: PostDetailModalMobileProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -105,6 +106,45 @@ export const PostDetailModalMobile = ({ postId, locationId, isOpen, onClose }: P
         }
 
         setPosts(postsWithProfiles as any);
+      } else if (userId) {
+        // Load all posts for this user
+        const { data: postsData, error: postsError } = await supabase
+          .from('posts')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
+
+        if (postsError) throw postsError;
+
+        const postsWithProfiles = await Promise.all(
+          (postsData || []).map(async (post) => {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('username, avatar_url')
+              .eq('id', post.user_id)
+              .single();
+
+            const { data: locData } = await supabase
+              .from('locations')
+              .select('id, name, category, city, latitude, longitude')
+              .eq('id', post.location_id)
+              .single();
+
+            return {
+              ...post,
+              profiles: profileData,
+              locations: locData,
+            };
+          })
+        );
+
+        const initialPostIndex = postsWithProfiles.findIndex(p => p.id === postId);
+        if (initialPostIndex > 0) {
+          const [initialPost] = postsWithProfiles.splice(initialPostIndex, 1);
+          postsWithProfiles.unshift(initialPost);
+        }
+
+        setPosts(postsWithProfiles as any);
       } else {
         // Load single post
         const { data: postData, error: postError } = await supabase
@@ -132,11 +172,7 @@ export const PostDetailModalMobile = ({ postId, locationId, isOpen, onClose }: P
           locationData = locData;
         }
         
-        setPosts([{
-          ...postData,
-          profiles: profileData,
-          locations: locationData,
-        }] as any);
+        setPosts([{...postData, profiles: profileData, locations: locationData}] as any);
       }
     } catch (error) {
       console.error('Error loading post:', error);
@@ -277,8 +313,8 @@ export const PostDetailModalMobile = ({ postId, locationId, isOpen, onClose }: P
     <>
       <div className="fixed inset-0 z-[3000] bg-background overflow-y-auto scrollbar-hide">
         {/* Top safe area padding */}
-        <div className="h-16 bg-background sticky top-0 z-20 flex items-center px-4 border-b border-border">
-          {locationId && (
+        <div className="h-16 bg-background sticky top-0 z-20 flex items-center px-4 mt-4">
+          {(locationId || userId) && (
             <button
               onClick={onClose}
               className="flex items-center gap-2 text-foreground hover:opacity-70 transition-opacity"
@@ -286,7 +322,7 @@ export const PostDetailModalMobile = ({ postId, locationId, isOpen, onClose }: P
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M19 12H5M12 19l-7-7 7-7"/>
               </svg>
-              <span className="font-semibold">{t('location', { ns: 'common' })}</span>
+              <span className="font-semibold">{locationId ? t('location', { ns: 'common' }) : t('profile', { ns: 'common' })}</span>
             </button>
           )}
         </div>

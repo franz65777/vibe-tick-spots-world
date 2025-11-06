@@ -189,6 +189,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
       {selectedPostId && (
         <PostDetailModalMobile 
           postId={selectedPostId}
+          userId={targetUserId}
           isOpen={true}
           onClose={async () => {
             setSelectedPostId(null);

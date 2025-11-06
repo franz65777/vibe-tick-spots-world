@@ -361,12 +361,16 @@ const LeafletMapSetup = ({
           isOpen={true}
           onClose={() => {
             setSelectedPostFromPin(null);
-            // Force map re-render by temporarily hiding and showing
-            const container = containerRef.current;
-            if (container && mapRef.current) {
+            // Force map to reflow after becoming visible
+            if (mapRef.current) {
+              // Next frame
+              requestAnimationFrame(() => {
+                mapRef.current?.invalidateSize(true);
+              });
+              // After a short delay (in case of transitions)
               setTimeout(() => {
-                mapRef.current?.invalidateSize();
-              }, 100);
+                mapRef.current?.invalidateSize(true);
+              }, 200);
             }
           }}
         />
