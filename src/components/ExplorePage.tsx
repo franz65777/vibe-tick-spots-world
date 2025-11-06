@@ -64,11 +64,12 @@ const ExplorePage = () => {
   const [returnToUserId, setReturnToUserId] = useState<string | null>(null);
   const [showAllHistory, setShowAllHistory] = useState(false);
   const [localSearchHistory, setLocalSearchHistory] = useState<typeof searchHistory>([]);
+  const [hiddenUserIds, setHiddenUserIds] = useState<Set<string>>(new Set());
 
-  // Sync local history with hook history
+  // Sync local history with hook history, excluding hidden users
   useEffect(() => {
-    setLocalSearchHistory(searchHistory);
-  }, [searchHistory]);
+    setLocalSearchHistory(searchHistory.filter((i) => !i.target_user_id || !hiddenUserIds.has(i.target_user_id)));
+  }, [searchHistory, hiddenUserIds]);
 
   // Check for shared place from DM and open LocationPostLibrary
   useEffect(() => {
@@ -220,6 +221,12 @@ const ExplorePage = () => {
 
         // Refresh search history to show the new entry
         await fetchSearchHistory();
+        // Ensure it is not filtered out locally
+        setHiddenUserIds(prev => {
+          const n = new Set(prev);
+          n.delete(userId);
+          return n;
+        });
       } catch (error) {
         console.error('Error saving search history:', error);
       }
@@ -330,6 +337,12 @@ const ExplorePage = () => {
           target_user_id: item.target_user_id
         });
         await fetchSearchHistory();
+        // If had been hidden via X, unhide it now
+        setHiddenUserIds(prev => {
+          const n = new Set(prev);
+          n.delete(item.target_user_id as string);
+          return n;
+        });
       } catch (e) {
         console.error('Failed to update history order:', e);
       }
@@ -360,6 +373,7 @@ const ExplorePage = () => {
         .delete()
         .eq('user_id', user.id)
         .eq('search_type', 'users');
+      setHiddenUserIds(new Set());
       await fetchSearchHistory();
     } catch (error) {
       console.error('Error clearing history:', error);
@@ -499,6 +513,13 @@ const ExplorePage = () => {
                                   e.stopPropagation();
                                   // Optimistic update
                                   setLocalSearchHistory(prev => prev.filter(h => h.target_user_id !== item.target_user_id));
+                                  if (item.target_user_id) {
+                                    setHiddenUserIds(prev => {
+                                      const n = new Set(prev);
+                                      n.add(item.target_user_id as string);
+                                      return n;
+                                    });
+                                  }
                                   if (user) {
                                     try {
                                       // Remove entries by target id (any search_type)
