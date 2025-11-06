@@ -62,6 +62,7 @@ const ExplorePage = () => {
   const [viewingStoriesIndex, setViewingStoriesIndex] = useState(0);
   const [fromMessages, setFromMessages] = useState(false);
   const [returnToUserId, setReturnToUserId] = useState<string | null>(null);
+  const [showAllHistory, setShowAllHistory] = useState(false);
 
   // Check for shared place from DM and open LocationPostLibrary
   useEffect(() => {
@@ -303,8 +304,24 @@ const ExplorePage = () => {
     setSearchQuery('');
     setFilteredUsers([]);
   };
+  
+  const clearAllHistory = async () => {
+    if (!user) return;
+    try {
+      await supabase
+        .from('search_history')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('search_type', 'users');
+      await fetchSearchHistory();
+    } catch (error) {
+      console.error('Error clearing history:', error);
+    }
+  };
+  
   const isSearchActive = searchQuery.trim().length > 0;
   const displayUsers = filteredUsers;
+  const displayedHistory = showAllHistory ? searchHistory : searchHistory.slice(0, 10);
   return <div className="flex flex-col h-full">
       {/* Simplified Header */}
       <div className="bg-white pt-safe">
@@ -381,15 +398,25 @@ const ExplorePage = () => {
                     {/* Search History */}
                     {searchHistory.length > 0 && (
                       <div>
-                        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                          <Search className="w-4 h-4" />
-                          {t('recent', { ns: 'common' })}
-                        </h3>
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                            <Search className="w-4 h-4" />
+                            {t('recent', { ns: 'common' })}
+                          </h3>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={clearAllHistory}
+                            className="text-xs text-muted-foreground hover:text-destructive h-7"
+                          >
+                            {t('clearHistory', { ns: 'common' })}
+                          </Button>
+                        </div>
                         <div className="space-y-2">
-                          {searchHistory.map((item) => (
+                          {displayedHistory.map((item) => (
                             <div
                               key={item.id}
-                              className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                              className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors animate-fade-in"
                             >
                               <div
                                 className="relative flex-shrink-0 cursor-pointer"
@@ -428,6 +455,16 @@ const ExplorePage = () => {
                             </div>
                           ))}
                         </div>
+                        {searchHistory.length > 10 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setShowAllHistory(!showAllHistory)}
+                            className="w-full mt-2 text-xs text-primary hover:text-primary/80"
+                          >
+                            {showAllHistory ? t('less', { ns: 'common' }) : t('showAll', { ns: 'common' })}
+                          </Button>
+                        )}
                       </div>
                     )}
                   </div>

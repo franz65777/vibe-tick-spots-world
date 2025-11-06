@@ -7,6 +7,7 @@ const resources = {
   en: {
     common: {
       clearAll: 'Clear All',
+      clearHistory: 'Clear History',
       thisCity: 'this city',
       loadingLocations: 'Loading locations...',
       error: 'Error',
@@ -597,6 +598,7 @@ const resources = {
   es: {
     common: {
       clearAll: 'Borrar Todo',
+      clearHistory: 'Borrar historial',
       thisCity: 'esta ciudad',
       loadingLocations: 'Cargando ubicaciones...',
       error: 'Error',
@@ -1180,6 +1182,7 @@ const resources = {
   it: {
     common: {
       clearAll: 'Cancella Tutto',
+      clearHistory: 'Svuota cronologia',
       thisCity: 'questa città',
       loadingLocations: 'Caricamento posizioni...',
       error: 'Errore',
@@ -1787,6 +1790,7 @@ const resources = {
   fr: {
     common: {
       clearAll: 'Tout effacer',
+      clearHistory: 'Effacer l\'historique',
       thisCity: 'cette ville',
       loadingLocations: 'Chargement des emplacements...',
       error: 'Erreur',
@@ -2307,6 +2311,7 @@ const resources = {
   de: {
     common: {
       clearAll: 'Alles löschen',
+      clearHistory: 'Verlauf löschen',
       thisCity: 'diese Stadt',
       loadingLocations: 'Orte laden...',
       error: 'Fehler',
@@ -2729,6 +2734,7 @@ const resources = {
   pt: {
     common: {
       clearAll: 'Limpar tudo',
+      clearHistory: 'Limpar histórico',
       thisCity: 'esta cidade',
       loadingLocations: 'Carregando locais...',
       error: 'Erro',
@@ -3155,6 +3161,7 @@ const resources = {
   'zh-CN': {
     common: {
       clearAll: '全部清除',
+      clearHistory: '清除历史',
       thisCity: '这个城市',
       loadingLocations: '正在加载位置...',
       error: '错误',
@@ -3521,6 +3528,7 @@ const resources = {
   ja: {
     common: {
       clearAll: 'すべてクリア',
+      clearHistory: '履歴を消去',
       thisCity: 'この都市',
       loadingLocations: '場所を読み込み中...',
       error: 'エラー',
@@ -3886,6 +3894,7 @@ const resources = {
   ko: {
     common: {
       clearAll: '모두 지우기',
+      clearHistory: '기록 지우기',
       thisCity: '이 도시',
       loadingLocations: '위치 로드 중...',
       error: '오류',
@@ -4252,6 +4261,7 @@ const resources = {
   ar: {
     common: {
       clearAll: 'مسح الكل',
+      clearHistory: 'مسح السجل',
       thisCity: 'هذه المدينة',
       loadingLocations: 'تحميل المواقع...',
       error: 'خطأ',
@@ -4618,6 +4628,7 @@ const resources = {
   hi: {
     common: {
       clearAll: 'सभी साफ़ करें',
+      clearHistory: 'इतिहास साफ़ करें',
       thisCity: 'यह शहर',
       loadingLocations: 'स्थान लोड हो रहे हैं...',
       error: 'त्रुटि',
@@ -4983,6 +4994,7 @@ const resources = {
   ru: {
     common: {
       clearAll: 'Очистить всё',
+      clearHistory: 'Очистить историю',
       thisCity: 'этот город',
       loadingLocations: 'Загрузка мест...',
       error: 'Ошибка',
