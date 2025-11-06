@@ -1915,6 +1915,7 @@ const resources = {
       findingSpots: 'Recherche des lieux populaires',
       noPopularSpots: 'Aucun lieu populaire trouvé à',
       topContributors: 'Meilleurs contributeurs',
+      weeklyLeaderboard: 'Classement Hebdomadaire',
       viewFullLeaderboard: 'Voir le classement complet',
       yourStory: 'Votre histoire'
     },
@@ -2264,9 +2265,6 @@ const resources = {
       startExploring: 'Commencer à Explorer',
       wantToJoin: 'Voulez-vous rejoindre le classement?',
       exploreAmazingPlaces: 'Explorez des endroits incroyables, partagez vos découvertes et grimpez les rangs!'
-    },
-    home: {
-      weeklyLeaderboard: 'Classement Hebdomadaire'
     }
   },
 
@@ -2419,6 +2417,7 @@ const resources = {
       findingSpots: 'Beliebte Orte finden',
       noPopularSpots: 'Keine beliebten Orte gefunden in',
       topContributors: 'Top-Beitragende',
+      weeklyLeaderboard: 'Wöchentliche Bestenliste',
       viewFullLeaderboard: 'Gesamtrangliste anzeigen',
       yourStory: 'Deine Geschichte'
     },
@@ -2686,9 +2685,6 @@ const resources = {
       startExploring: 'Entdecken Beginnen',
       wantToJoin: 'Möchtest du der Bestenliste beitreten?',
       exploreAmazingPlaces: 'Entdecke erstaunliche Orte, teile deine Entdeckungen und klettere die Ränge hinauf!'
-    },
-    home: {
-      weeklyLeaderboard: 'Wöchentliche Bestenliste'
     }
   },
 
@@ -2845,6 +2841,7 @@ const resources = {
       findingSpots: 'Encontrando locais populares',
       noPopularSpots: 'Nenhum local popular encontrado em',
       topContributors: 'Principais colaboradores',
+      weeklyLeaderboard: 'Classificação Semanal',
       viewFullLeaderboard: 'Ver classificação completa',
       yourStory: 'Sua história'
     },
@@ -3112,9 +3109,6 @@ const resources = {
       startExploring: 'Começar a Explorar',
       wantToJoin: 'Quer entrar para a classificação?',
       exploreAmazingPlaces: 'Explore lugares incríveis, compartilhe suas descobertas e suba nos rankings!'
-    },
-    home: {
-      weeklyLeaderboard: 'Classificação Semanal'
     }
   },
 
