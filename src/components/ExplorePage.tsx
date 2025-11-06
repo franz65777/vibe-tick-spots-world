@@ -64,7 +64,19 @@ const ExplorePage = () => {
   const [returnToUserId, setReturnToUserId] = useState<string | null>(null);
   const [showAllHistory, setShowAllHistory] = useState(false);
   const [localSearchHistory, setLocalSearchHistory] = useState<typeof searchHistory>([]);
-  const [hiddenUserIds, setHiddenUserIds] = useState<Set<string>>(new Set());
+  const [hiddenUserIds, setHiddenUserIds] = useState<Set<string>>(() => {
+    try {
+      const stored = sessionStorage.getItem('hiddenSearchHistoryUsers');
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  // Persist hiddenUserIds to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem('hiddenSearchHistoryUsers', JSON.stringify(Array.from(hiddenUserIds)));
+  }, [hiddenUserIds]);
 
   // Sync local history with hook history, excluding hidden users
   useEffect(() => {
