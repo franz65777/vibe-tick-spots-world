@@ -139,7 +139,8 @@ export const PostDetailModalMobile = ({ postId, isOpen, onClose }: PostDetailMod
           id: post.locations.id,
           name: post.locations.name,
           lat: post.locations.latitude,
-          lng: post.locations.longitude
+          lng: post.locations.longitude,
+          sourcePostId: post.id
         }
       }
     });

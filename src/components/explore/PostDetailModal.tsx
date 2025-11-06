@@ -411,14 +411,23 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', op
                       <button
                         onClick={() => {
                           onClose();
-                          navigate('/explore', {
+                          if (!post.locations) return;
+                          navigate('/', {
                             state: {
-                              openLocationDetail: {
-                                id: post.locations!.id,
-                                name: post.locations!.name,
-                                google_place_id: post.locations!.google_place_id
-                              }
-                            }
+                              centerMap: {
+                                lat: post.locations.latitude,
+                                lng: post.locations.longitude,
+                                locationId: post.locations.id,
+                                shouldFocus: true,
+                              },
+                              openPinDetail: {
+                                id: post.locations.id,
+                                name: post.locations.name,
+                                lat: post.locations.latitude,
+                                lng: post.locations.longitude,
+                                sourcePostId: post.id,
+                              },
+                            },
                           });
                         }}
                         className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"

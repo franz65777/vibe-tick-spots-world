@@ -263,7 +263,8 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                   }}
                   size="icon"
                   variant="ghost"
-                  className="shrink-0 h-10 w-10 rounded-full"
+                  className="shrink-0 h-10 w-10 rounded-full animate-fade-in"
+                  aria-label="Torna al post"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </Button>

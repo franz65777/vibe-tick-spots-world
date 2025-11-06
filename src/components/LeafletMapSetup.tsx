@@ -340,6 +340,7 @@ const LeafletMapSetup = ({
             city: selectedPlace.city,
             google_place_id: selectedPlace.google_place_id,
             coordinates: selectedPlace.coordinates,
+            sourcePostId: (selectedPlace as any).sourcePostId,
           }}
           onClose={() => onCloseSelectedPlace?.()}
         />
