@@ -1417,7 +1417,7 @@ const MessagesPage = () => {
           <SheetHeader>
             <SheetTitle className="text-center">{t('shareSavedPlace', { ns: 'messages' })}</SheetTitle>
           </SheetHeader>
-          <ScrollArea className="h-full pt-4">
+          <ScrollArea className="h-full pt-4 [&>div>div]:!overflow-y-auto [&>div>div]:scrollbar-hide">
             {savedPlaces.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
                 <img src={pinIcon} alt="Pin" className="w-12 h-12 mb-3 opacity-50" />
@@ -1442,7 +1442,11 @@ const MessagesPage = () => {
                         <img 
                           src={getCategoryImage(place.category)} 
                           alt={place.category}
-                          className={`object-contain ${place.category === 'restaurant' ? 'w-12 h-12' : 'w-10 h-10'}`}
+                          className={`object-contain ${
+                            place.category === 'restaurant' || place.category === 'hotel' 
+                              ? 'w-[52px] h-[52px]' 
+                              : 'w-10 h-10'
+                          }`}
                         />
                       </div>
                     )}
