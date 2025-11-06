@@ -34,6 +34,7 @@ export const PostActions = ({
   const { isLiked, likeCount, toggleLike } = useSocialEngagement(postId);
   const [localLikesCount, setLocalLikesCount] = useState(likesCount);
   const [isLocationSaved, setIsLocationSaved] = useState(false);
+  const [googlePlaceId, setGooglePlaceId] = useState<string | null>(null);
 
   useEffect(() => {
     if (likeCount !== undefined) {
@@ -44,34 +45,51 @@ export const PostActions = ({
   }, [likeCount, likesCount]);
 
   useEffect(() => {
-    const checkIfSaved = async () => {
+    const loadStatus = async () => {
       if (!locationId || !user) return;
-      
-      const { data } = await supabase
+
+      // Fetch Google Place ID for this internal location (if any)
+      const { data: loc } = await supabase
+        .from('locations')
+        .select('google_place_id')
+        .eq('id', locationId)
+        .maybeSingle();
+      const gpId = loc?.google_place_id || null;
+      setGooglePlaceId(gpId);
+
+      // Check internal saves
+      const { data: internalSave } = await supabase
         .from('user_saved_locations')
         .select('id')
         .eq('user_id', user.id)
         .eq('location_id', locationId)
         .maybeSingle();
-      
-      setIsLocationSaved(!!data);
-    };
-    
-    checkIfSaved();
 
-    // Set up realtime listener for this location
+      // Check saved_places if we have a Google Place ID
+      let googleSaved = false;
+      if (gpId) {
+        const { data: sp } = await supabase
+          .from('saved_places')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('place_id', gpId)
+          .maybeSingle();
+        googleSaved = !!sp;
+      }
+
+      setIsLocationSaved(!!internalSave || googleSaved);
+    };
+
+    loadStatus();
+
     if (!locationId || !user) return;
 
-    const channel = supabase
+    // Realtime for internal saves
+    const chInternal = supabase
       .channel(`location-saves-${locationId}-${postId}`)
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'user_saved_locations',
-          filter: `location_id=eq.${locationId}`
-        },
+        { event: '*', schema: 'public', table: 'user_saved_locations', filter: `location_id=eq.${locationId}` },
         (payload) => {
           if (payload.eventType === 'INSERT' && payload.new.user_id === user.id) {
             setIsLocationSaved(true);
@@ -82,10 +100,30 @@ export const PostActions = ({
       )
       .subscribe();
 
+    // Realtime for saved_places by Google Place ID
+    let chGoogle: ReturnType<typeof supabase.channel> | undefined;
+    if (googlePlaceId) {
+      chGoogle = supabase
+        .channel(`saved-places-${googlePlaceId}-${postId}`)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'saved_places', filter: `place_id=eq.${googlePlaceId}` },
+          (payload) => {
+            if (payload.eventType === 'INSERT' && payload.new.user_id === user.id) {
+              setIsLocationSaved(true);
+            } else if (payload.eventType === 'DELETE' && payload.old.user_id === user.id) {
+              setIsLocationSaved(false);
+            }
+          }
+        )
+        .subscribe();
+    }
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(chInternal);
+      if (chGoogle) supabase.removeChannel(chGoogle);
     };
-  }, [locationId, user, postId]);
+  }, [locationId, user, postId, googlePlaceId]);
 
   // Listen for global save changes
   useEffect(() => {
@@ -130,6 +168,15 @@ export const PostActions = ({
           .delete()
           .eq('user_id', user.id)
           .eq('location_id', locationId);
+
+        // Also remove from saved_places if it was saved via Google Places
+        if (googlePlaceId) {
+          await supabase
+            .from('saved_places')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('place_id', googlePlaceId);
+        }
         
         setIsLocationSaved(false);
         // Emit global event
