@@ -91,7 +91,7 @@ const NotificationsPage = () => {
         </div>
       </header>
 
-      {/* Content */}
+      {/* Content - Full width without padding */}
       <div className="flex-1 min-h-0 overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center py-20">

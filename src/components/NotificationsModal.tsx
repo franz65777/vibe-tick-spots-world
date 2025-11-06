@@ -76,7 +76,7 @@ const NotificationsModal = ({ isOpen, onClose }: NotificationsModalProps) => {
           </Button>
         </div>
 
-        {/* Content */}
+        {/* Content - Full width without padding */}
         <ScrollArea className="flex-1">
           {loading ? (
             <div className="flex items-center justify-center py-20">
@@ -94,7 +94,7 @@ const NotificationsModal = ({ isOpen, onClose }: NotificationsModalProps) => {
               <p className="text-muted-foreground text-sm">No new notifications</p>
             </div>
           ) : (
-            <div className="divide-y divide-border">
+            <div className="w-full">
               {notifications.map((notification) => (
                 <MobileNotificationItem
                   key={notification.id}
