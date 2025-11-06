@@ -2801,7 +2801,10 @@ const resources = {
       newBadgeUnlocked: 'Novo Badge Desbloqueado'
     },
     notifications: {
+      title: 'Notificações',
       likedYourPost: 'curtiu sua publicação',
+      likedYourStory: 'curtiu sua história',
+      repliedToYourStory: 'respondeu à sua história',
       startedFollowing: 'começou a te seguir',
       commentedOnYourPost: 'comentou sua publicação',
       taggedYouInPost: 'marcou você em uma publicação',
@@ -3163,7 +3166,10 @@ const resources = {
       newBadgeUnlocked: '新徽章解锁'
     },
     notifications: {
+      title: '通知',
       likedYourPost: '赞了你的帖子',
+      likedYourStory: '赞了你的故事',
+      repliedToYourStory: '回复了你的故事',
       startedFollowing: '开始关注你',
       commentedOnYourPost: '评论了你的帖子',
       taggedYouInPost: '在帖子中标记了你',
@@ -3524,7 +3530,10 @@ const resources = {
       newBadgeUnlocked: '新しいバッジを獲得'
     },
     notifications: {
+      title: '通知',
       likedYourPost: 'があなたの投稿にいいねしました',
+      likedYourStory: 'があなたのストーリーにいいねしました',
+      repliedToYourStory: 'があなたのストーリーに返信しました',
       startedFollowing: 'があなたをフォローし始めました',
       commentedOnYourPost: 'があなたの投稿にコメントしました',
       taggedYouInPost: 'があなたを投稿にタグ付けしました',
@@ -3886,7 +3895,10 @@ const resources = {
       newBadgeUnlocked: '새 배지 획득'
     },
     notifications: {
+      title: '알림',
       likedYourPost: '님이 게시물을 좋아합니다',
+      likedYourStory: '님이 스토리를 좋아합니다',
+      repliedToYourStory: '님이 스토리에 답장했습니다',
       startedFollowing: '님이 팔로우하기 시작했습니다',
       commentedOnYourPost: '님이 게시물에 댓글을 달았습니다',
       taggedYouInPost: '님이 게시물에 태그했습니다',
@@ -4248,7 +4260,10 @@ const resources = {
       newBadgeUnlocked: 'تم فتح شارة جديدة'
     },
     notifications: {
+      title: 'الإشعارات',
       likedYourPost: 'أعجب بمنشورك',
+      likedYourStory: 'أعجب بقصتك',
+      repliedToYourStory: 'رد على قصتك',
       startedFollowing: 'بدأ في متابعتك',
       commentedOnYourPost: 'علق على منشورك',
       taggedYouInPost: 'أشار إليك في منشور',
@@ -4609,7 +4624,10 @@ const resources = {
       newBadgeUnlocked: 'नई बैज अनलॉक हुई'
     },
     notifications: {
+      title: 'सूचनाएं',
       likedYourPost: 'ने आपकी पोस्ट पसंद की',
+      likedYourStory: 'ने आपकी कहानी पसंद की',
+      repliedToYourStory: 'ने आपकी कहानी का जवाब दिया',
       startedFollowing: 'ने आपको फॉलो करना शुरू किया',
       commentedOnYourPost: 'ने आपकी पोस्ट पर टिप्पणी की',
       taggedYouInPost: 'ने आपको पोस्ट में टैग किया',
@@ -4971,7 +4989,10 @@ const resources = {
       newBadgeUnlocked: 'Новый значок разблокирован'
     },
     notifications: {
+      title: 'Уведомления',
       likedYourPost: 'понравился ваш пост',
+      likedYourStory: 'понравилась ваша история',
+      repliedToYourStory: 'ответил(а) на вашу историю',
       startedFollowing: 'начал(а) подписываться на вас',
       commentedOnYourPost: 'прокомментировал(а) ваш пост',
       taggedYouInPost: 'отметил(а) вас в посте',
