@@ -3,8 +3,7 @@ import { MapPin, Star, X } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { formatDistanceToNow, Locale } from 'date-fns';
-import { it, es, fr, de, pt, ru, ja, zhCN, ar, hi, ko, enUS } from 'date-fns/locale';
+import { formatPostDate } from '@/utils/dateFormatter';
 import { useNavigate } from 'react-router-dom';
 import { CommentDrawer } from '@/components/social/CommentDrawer';
 import { ShareModal } from '@/components/social/ShareModal';
@@ -59,16 +58,6 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
   const [shareOpen, setShareOpen] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [expandedCaptions, setExpandedCaptions] = useState<{ [key: string]: boolean }>({});
-  
-  const getDateLocale = () => {
-    const localeMap: { [key: string]: Locale } = { 
-      it, es, fr, de, pt, ru, ja, 
-      zh: zhCN, 
-      ar, hi, ko, 
-      en: enUS 
-    };
-    return localeMap[i18n.language] || enUS;
-  };
 
   useEffect(() => {
     if (isOpen && postId) {
@@ -472,7 +461,7 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
 
                 {/* Timestamp */}
                 <p className="text-xs text-muted-foreground uppercase text-left">
-                  {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: getDateLocale() })}
+                  {formatPostDate(post.created_at, t)}
                 </p>
               </div>
             </article>

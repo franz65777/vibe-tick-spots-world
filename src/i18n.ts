@@ -107,6 +107,20 @@ const resources = {
         promotion: 'Promotion',
         news: 'News',
         endsIn: 'Ends'
+      },
+      months: {
+        0: 'January',
+        1: 'February',
+        2: 'March',
+        3: 'April',
+        4: 'May',
+        5: 'June',
+        6: 'July',
+        7: 'August',
+        8: 'September',
+        9: 'October',
+        10: 'November',
+        11: 'December'
       }
     },
     navigation: {
@@ -651,6 +665,20 @@ const resources = {
         promotion: 'Promoción',
         news: 'Noticias',
         endsIn: 'Termina'
+      },
+      months: {
+        0: 'Enero',
+        1: 'Febrero',
+        2: 'Marzo',
+        3: 'Abril',
+        4: 'Mayo',
+        5: 'Junio',
+        6: 'Julio',
+        7: 'Agosto',
+        8: 'Septiembre',
+        9: 'Octubre',
+        10: 'Noviembre',
+        11: 'Diciembre'
       }
     },
     navigation: {
@@ -1188,6 +1216,20 @@ const resources = {
         promotion: 'Promozione',
         news: 'Novità',
         endsIn: 'Termina'
+      },
+      months: {
+        0: 'Gennaio',
+        1: 'Febbraio',
+        2: 'Marzo',
+        3: 'Aprile',
+        4: 'Maggio',
+        5: 'Giugno',
+        6: 'Luglio',
+        7: 'Agosto',
+        8: 'Settembre',
+        9: 'Ottobre',
+        10: 'Novembre',
+        11: 'Dicembre'
       }
     },
     navigation: {
@@ -1715,6 +1757,20 @@ const resources = {
         promotion: 'Promotion',
         news: 'Actualités',
         endsIn: 'Se termine'
+      },
+      months: {
+        0: 'Janvier',
+        1: 'Février',
+        2: 'Mars',
+        3: 'Avril',
+        4: 'Mai',
+        5: 'Juin',
+        6: 'Juillet',
+        7: 'Août',
+        8: 'Septembre',
+        9: 'Octobre',
+        10: 'Novembre',
+        11: 'Décembre'
       }
     },
     navigation: {
@@ -2211,6 +2267,20 @@ const resources = {
         promotion: 'Aktion',
         news: 'Neuigkeiten',
         endsIn: 'Endet'
+      },
+      months: {
+        0: 'Januar',
+        1: 'Februar',
+        2: 'März',
+        3: 'April',
+        4: 'Mai',
+        5: 'Juni',
+        6: 'Juli',
+        7: 'August',
+        8: 'September',
+        9: 'Oktober',
+        10: 'November',
+        11: 'Dezember'
       }
     },
     navigation: {
@@ -2590,6 +2660,20 @@ const resources = {
         promotion: 'Promoção',
         news: 'Novidades',
         endsIn: 'Termina'
+      },
+      months: {
+        0: 'Janeiro',
+        1: 'Fevereiro',
+        2: 'Março',
+        3: 'Abril',
+        4: 'Maio',
+        5: 'Junho',
+        6: 'Julho',
+        7: 'Agosto',
+        8: 'Setembro',
+        9: 'Outubro',
+        10: 'Novembro',
+        11: 'Dezembro'
       }
     },
     navigation: {
