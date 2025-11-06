@@ -1438,11 +1438,11 @@ const MessagesPage = () => {
                         className="w-14 h-14 rounded-lg object-cover"
                       />
                     ) : (
-                      <div className="w-14 h-14 flex items-center justify-center bg-muted rounded-lg">
+                      <div className="w-14 h-14 flex items-center justify-center">
                         <img 
                           src={getCategoryImage(place.category)} 
                           alt={place.category}
-                          className="w-10 h-10 object-contain"
+                          className={`object-contain ${place.category === 'restaurant' ? 'w-12 h-12' : 'w-10 h-10'}`}
                         />
                       </div>
                     )}
