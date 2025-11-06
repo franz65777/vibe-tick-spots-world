@@ -273,7 +273,7 @@ const ExplorePage = () => {
     setFilteredUsers([]);
   };
   const isSearchActive = searchQuery.trim().length > 0;
-  const displayUsers = isSearchActive ? filteredUsers : userRecommendations;
+  const displayUsers = filteredUsers;
   return <div className="flex flex-col h-full">
       {/* Simplified Header */}
       <div className="bg-white pt-safe">
@@ -399,27 +399,27 @@ const ExplorePage = () => {
                   </div>
                 )}
 
-                {/* User Results */}
-                {displayUsers.length > 0 ? (
-                  <div className="space-y-1 px-1 pb-6">
-                    {displayUsers.map(user => (
-                      <UserCard
-                        key={user.id}
-                        user={user}
-                        onUserClick={() => handleUserClick(user.id)}
-                        onFollowUser={handleFollowUser}
-                        onMessageUser={handleMessageUser}
-                        searchQuery={searchQuery}
-                        searchMode={searchMode}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="px-1 py-8">
-                    {isSearchActive && (
+                {/* User Results - show only when an actual search is active */}
+                {isSearchActive && (
+                  displayUsers.length > 0 ? (
+                    <div className="space-y-1 px-1 pb-6">
+                      {displayUsers.map(user => (
+                        <UserCard
+                          key={user.id}
+                          user={user}
+                          onUserClick={() => handleUserClick(user.id)}
+                          onFollowUser={handleFollowUser}
+                          onMessageUser={handleMessageUser}
+                          searchQuery={searchQuery}
+                          searchMode={searchMode}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="px-1 py-8">
                       <NoResults searchMode="users" searchQuery={searchQuery} />
-                    )}
-                  </div>
+                    </div>
+                  )
                 )}
               </>
             )}
