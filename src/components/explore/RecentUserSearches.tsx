@@ -37,7 +37,7 @@ const RecentUserSearches = () => {
         .eq('search_type', 'users')
         .not('target_user_id', 'is', null)
         .order('searched_at', { ascending: false })
-        .limit(10);
+        .limit(50);
 
       if (idHistory && idHistory.length > 0) {
         const userIds = [...new Set(idHistory.map(s => s.target_user_id).filter(Boolean))];

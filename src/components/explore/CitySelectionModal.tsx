@@ -87,9 +87,14 @@ const CitySelectionModal = ({
         
         // Check all 4 metrics - user should have data in at least one
         const checks = await Promise.all([
-          // Saved
+          // Saved (both tables)
           supabase
             .from('user_saved_locations')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', profile.id)
+            .limit(1),
+          supabase
+            .from('saved_places')
             .select('id', { count: 'exact', head: true })
             .eq('user_id', profile.id)
             .limit(1),
