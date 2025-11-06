@@ -296,14 +296,26 @@ const ExplorePage = () => {
   const handleHistoryAvatarClick = async (item: any) => {
     if (!item.target_user_id) return;
 
-    // Re-save to bump this user on top and avoid duplicates
+    // Re-save to bump this user on top and avoid duplicates (also remove legacy username-only entries)
     if (user) {
       try {
+        // Delete any existing rows for this target (by id) and legacy rows saved by username only
         await supabase
           .from('search_history')
           .delete()
           .eq('user_id', user.id)
           .eq('target_user_id', item.target_user_id);
+
+        if (item.username) {
+          await supabase
+            .from('search_history')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('search_type', 'users')
+            .eq('search_query', item.username);
+        }
+
+        // Insert new record (most recent) so it appears at the top
         await supabase.from('search_history').insert({
           user_id: user.id,
           search_query: item.username || item.search_query,
@@ -466,7 +478,7 @@ const ExplorePage = () => {
                               </div>
                               <div
                                 className="flex-1 min-w-0 cursor-pointer text-left"
-                                onClick={() => item.target_user_id && navigate(`/profile/${item.target_user_id}`, { state: { from: 'explore', searchMode: 'users' } })}
+                                onClick={() => handleHistoryAvatarClick(item)}
                               >
                                 <p className="text-sm font-medium text-foreground truncate text-left">
                                   {item.username || 'User'}
@@ -480,7 +492,28 @@ const ExplorePage = () => {
                                   e.stopPropagation();
                                   // Optimistic update
                                   setLocalSearchHistory(prev => prev.filter(h => h.target_user_id !== item.target_user_id));
-                                  await deleteSearchHistoryItem(item.id, item.target_user_id || undefined);
+                                  if (user) {
+                                    try {
+                                      await supabase
+                                        .from('search_history')
+                                        .delete()
+                                        .eq('user_id', user.id)
+                                        .eq('target_user_id', item.target_user_id);
+                                      if (item.username) {
+                                        await supabase
+                                          .from('search_history')
+                                          .delete()
+                                          .eq('user_id', user.id)
+                                          .eq('search_type', 'users')
+                                          .eq('search_query', item.username);
+                                      }
+                                      await fetchSearchHistory();
+                                    } catch (err) {
+                                      console.error('Error deleting history item:', err);
+                                      // Re-sync
+                                      await fetchSearchHistory();
+                                    }
+                                  }
                                 }}
                                 className="p-1 hover:bg-muted rounded-full"
                               >
