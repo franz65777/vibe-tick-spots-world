@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, MessageCircle, Bell, BellOff, MoreHorizontal, ChevronDown } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Bell, BellOff, MoreHorizontal, ChevronDown, Ban } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -11,6 +11,7 @@ import {
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useMutualFollowers } from '@/hooks/useMutualFollowers';
 import { useNotificationMuting } from '@/hooks/useNotificationMuting';
+import { useUserBlocking } from '@/hooks/useUserBlocking';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
 import ProfileTabs from './profile/ProfileTabs';
@@ -36,6 +37,7 @@ const UserProfilePage = () => {
   const { profile, loading, error, followUser, unfollowUser } = useUserProfile(userId);
   const { mutualFollowers, totalCount } = useMutualFollowers(userId);
   const { isMuted, toggleMute } = useNotificationMuting(userId);
+  const { isBlocked, blockUser, unblockUser } = useUserBlocking(userId);
   const [activeTab, setActiveTab] = useState('posts');
   const [modalState, setModalState] = useState<{ isOpen: boolean; type: 'followers' | 'following' | null }>({
     isOpen: false,
@@ -92,6 +94,14 @@ const UserProfilePage = () => {
       unfollowUser();
     } else {
       followUser();
+    }
+  };
+
+  const handleBlockToggle = async () => {
+    if (isBlocked) {
+      await unblockUser();
+    } else {
+      await blockUser();
     }
   };
 
@@ -158,9 +168,9 @@ const UserProfilePage = () => {
               title={isMuted ? t('userProfile.unmute', { ns: 'common' }) : t('userProfile.mute', { ns: 'common' })}
             >
               {isMuted ? (
-                <BellOff className="w-6 h-6" />
+                <BellOff className="w-5 h-5" />
               ) : (
-                <Bell className="w-6 h-6" />
+                <Bell className="w-5 h-5" />
               )}
             </Button>
             <DropdownMenu>
@@ -177,6 +187,10 @@ const UserProfilePage = () => {
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => setIsShareModalOpen(true)}>
                   {t('userProfile.shareProfile', { ns: 'common' })}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleBlockToggle} className="text-destructive">
+                  <Ban className="w-4 h-4 mr-2" />
+                  {isBlocked ? t('userProfile.unblockUser', { ns: 'common' }) : t('userProfile.blockUser', { ns: 'common' })}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -220,7 +234,7 @@ const UserProfilePage = () => {
                 className="hover:opacity-70 transition-opacity"
               >
                 <span className="font-bold">{profile.followers_count || 0}</span>{' '}
-                <span className="text-muted-foreground">{t('common.followers')}</span>
+                <span className="text-muted-foreground">{t('userProfile.followers', { ns: 'common' })}</span>
               </button>
               
               <button 
@@ -228,7 +242,7 @@ const UserProfilePage = () => {
                 className="hover:opacity-70 transition-opacity"
               >
                 <span className="font-bold">{profile.following_count || 0}</span>{' '}
-                <span className="text-muted-foreground">{t('common.following')}</span>
+                <span className="text-muted-foreground">{t('userProfile.following', { ns: 'common' })}</span>
               </button>
               
               <button 
@@ -236,7 +250,7 @@ const UserProfilePage = () => {
                 className="hover:opacity-70 transition-opacity"
               >
                 <span className="font-bold">{profile.places_visited || 0}</span>{' '}
-                <span className="text-muted-foreground">{t('profile.saved')}</span>
+                <span className="text-muted-foreground">{t('userProfile.saved', { ns: 'common' })}</span>
               </button>
             </div>
           </div>
@@ -302,11 +316,11 @@ const UserProfilePage = () => {
             >
               {profile.is_following ? (
                 <>
-                  {t('common.following')}
+                  {t('userProfile.following', { ns: 'common' })}
                   <ChevronDown className="w-4 h-4 ml-1" />
                 </>
               ) : (
-                t('common.follow')
+                t('userProfile.follow', { ns: 'common' })
               )}
             </Button>
             <Button 

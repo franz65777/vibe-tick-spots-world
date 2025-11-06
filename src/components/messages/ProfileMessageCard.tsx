@@ -9,9 +9,10 @@ interface ProfileMessageCardProps {
     username: string;
     avatar_url?: string;
     bio?: string;
-    follower_count?: number;
-    following_count?: number;
+    places_visited?: number;
+    cities_visited?: number;
     posts_count?: number;
+    recent_photos?: string[];
   };
 }
 
@@ -42,25 +43,40 @@ const ProfileMessageCard = ({ profileData }: ProfileMessageCardProps) => {
 
       {/* Stats */}
       <div className="flex gap-4 text-sm mb-3">
+        {profileData.places_visited !== undefined && (
+          <div>
+            <span className="font-bold text-foreground">{profileData.places_visited}</span>{' '}
+            <span className="text-muted-foreground">{t('userProfile.saved', { ns: 'common' })}</span>
+          </div>
+        )}
+        {profileData.cities_visited !== undefined && (
+          <div>
+            <span className="font-bold text-foreground">{profileData.cities_visited}</span>{' '}
+            <span className="text-muted-foreground">{t('userProfile.cities', { ns: 'common' })}</span>
+          </div>
+        )}
         {profileData.posts_count !== undefined && (
           <div>
             <span className="font-bold text-foreground">{profileData.posts_count}</span>{' '}
-            <span className="text-muted-foreground">{t('posts', { ns: 'common', defaultValue: 'posts' })}</span>
-          </div>
-        )}
-        {profileData.follower_count !== undefined && (
-          <div>
-            <span className="font-bold text-foreground">{profileData.follower_count}</span>{' '}
-            <span className="text-muted-foreground">{t('followers', { ns: 'common', defaultValue: 'followers' })}</span>
-          </div>
-        )}
-        {profileData.following_count !== undefined && (
-          <div>
-            <span className="font-bold text-foreground">{profileData.following_count}</span>{' '}
-            <span className="text-muted-foreground">{t('following', { ns: 'common', defaultValue: 'following' })}</span>
+            <span className="text-muted-foreground">{t('userProfile.photos', { ns: 'common' })}</span>
           </div>
         )}
       </div>
+
+      {/* Recent Photos */}
+      {profileData.recent_photos && profileData.recent_photos.length > 0 && (
+        <div className="grid grid-cols-3 gap-1 mb-3">
+          {profileData.recent_photos.slice(0, 3).map((photoUrl, index) => (
+            <div key={index} className="aspect-square rounded-lg overflow-hidden bg-muted">
+              <img 
+                src={photoUrl} 
+                alt={`Recent photo ${index + 1}`}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ))}
+        </div>
+      )}
 
       <Button 
         onClick={handleViewProfile}
