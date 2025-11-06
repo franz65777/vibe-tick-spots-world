@@ -51,6 +51,7 @@ const HomePage = () => {
     } catch {}
     return { lat: 37.7749, lng: -122.4194 };
   });
+  const [recenterToken, setRecenterToken] = useState(0);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   // Modal states
   const [isCreateStoryModalOpen, setIsCreateStoryModalOpen] = useState(false);
@@ -210,6 +211,7 @@ const HomePage = () => {
       console.log('🗺️ Updating map center and user location to:', newCenter);
       setMapCenter(newCenter);
       setUserLocation(newCenter);
+      setRecenterToken((v) => v + 1);
       
       // Store in localStorage for persistence
       localStorage.setItem('lastMapCenter', JSON.stringify(newCenter));
@@ -464,6 +466,7 @@ const HomePage = () => {
               onToggleExpand={() => setIsMapExpanded(!isMapExpanded)}
               initialSelectedPlace={initialPinToShow}
               onClearInitialPlace={() => setInitialPinToShow(null)}
+              recenterToken={recenterToken}
             />
           </div>
         )}

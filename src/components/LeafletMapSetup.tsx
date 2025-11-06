@@ -21,6 +21,7 @@ interface LeafletMapSetupProps {
   activeFilter?: string;
   fullScreen?: boolean;
   preventCenterUpdate?: boolean;
+  recenterToken?: number;
 }
 
 // Vanilla Leaflet implementation to avoid react-leaflet context crash
@@ -36,6 +37,7 @@ const LeafletMapSetup = ({
   activeFilter,
   fullScreen,
   preventCenterUpdate = true, // Default to true to prevent auto-recentering
+  recenterToken,
 }: LeafletMapSetupProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -134,9 +136,9 @@ const LeafletMapSetup = ({
     const map = mapRef.current;
     if (!map || preventCenterUpdate) return;
     
-    console.log('🗺️ Centering map to:', mapCenter);
+    console.log('🗺️ Centering map to:', mapCenter, 'token:', recenterToken);
     map.setView([mapCenter.lat, mapCenter.lng], 15, { animate: true });
-  }, [mapCenter.lat, mapCenter.lng, preventCenterUpdate]);
+  }, [mapCenter.lat, mapCenter.lng, preventCenterUpdate, recenterToken]);
 
   // Center map when a place is selected from navigation (e.g., from feed)
   useEffect(() => {

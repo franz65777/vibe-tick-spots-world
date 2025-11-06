@@ -49,6 +49,7 @@ interface MapSectionProps {
   onToggleExpand?: () => void;
   initialSelectedPlace?: Place | null;
   onClearInitialPlace?: () => void;
+  recenterToken?: number;
 }
 
 const MapSection = ({ 
@@ -57,7 +58,8 @@ const MapSection = ({
   isExpanded = false, 
   onToggleExpand,
   initialSelectedPlace,
-  onClearInitialPlace
+  onClearInitialPlace,
+  recenterToken
 }: MapSectionProps) => {
   const [isAddLocationModalOpen, setIsAddLocationModalOpen] = useState(false);
   const [isQuickAddModalOpen, setIsQuickAddModalOpen] = useState(false);
@@ -200,6 +202,7 @@ const MapSection = ({
             activeFilter={activeFilter}
             fullScreen={isExpanded}
             preventCenterUpdate={false}
+            recenterToken={recenterToken}
           />
         )}
 
