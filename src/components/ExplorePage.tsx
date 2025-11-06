@@ -459,8 +459,8 @@ const ExplorePage = () => {
               <>
                 {/* Search History & Follow Suggestions - Only in People mode */}
                 {!isSearchActive && (
-                  <div className="px-1 py-4 space-y-6">
-                    {/* Weekly Leaderboard - shown first */}
+                  <div className="px-1 py-2 space-y-4">
+                    {/* Weekly Leaderboard - shown first, closer to search bar */}
                     {champions.length > 0 && (
                       <CommunityChampions 
                         champions={champions} 
