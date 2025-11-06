@@ -63,17 +63,23 @@ const CitySelectionModal = ({
       }
 
       // 1) Saved Google places with explicit city
-      const { data: sp } = await supabase
+      let spQuery = supabase
         .from('saved_places')
         .select('city, user_id')
-        .not('city', 'is', null)
-        .in('user_id', (filter === 'following' ? followingIds : [] as string[]) || undefined);
+        .not('city', 'is', null);
+      if (filter === 'following' && followingIds.length > 0) {
+        spQuery = spQuery.in('user_id', followingIds);
+      }
+      const { data: sp } = await spQuery;
 
       // 2) Internal saved locations joined to locations to get city
-      const { data: uslWithCity } = await supabase
+      let uslQuery = supabase
         .from('user_saved_locations')
-        .select('user_id, locations:location_id(city)')
-        .in('user_id', (filter === 'following' ? followingIds : [] as string[]) || undefined);
+        .select('user_id, locations:location_id(city)');
+      if (filter === 'following' && followingIds.length > 0) {
+        uslQuery = uslQuery.in('user_id', followingIds);
+      }
+      const { data: uslWithCity } = await uslQuery;
 
       const cityCounts: Record<string, Set<string>> = {};
 
