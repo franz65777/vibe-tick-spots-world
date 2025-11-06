@@ -4159,8 +4159,6 @@ const resources = {
         blockUser: '사용자 차단',
         unblockUser: '차단 해제'
       }
-        andOthers: '외 {{count}}명'
-      }
     },
     navigation: {
       explore: '탐색',
@@ -4940,14 +4938,6 @@ const resources = {
         blockUser: 'उपयोगकर्ता को ब्लॉक करें',
         unblockUser: 'उपयोगकर्ता को अनब्लॉक करें'
       }
-        block: 'उपयोगकर्ता को ब्लॉक करें',
-        unblock: 'अनब्लॉक करें',
-        shareProfile: 'प्रोफ़ाइल साझा करें',
-        sendMessage: 'संदेश भेजें',
-        moreOptions: 'अधिक विकल्प',
-        followedBy: 'द्वारा फॉलो किया गया',
-        andOthers: 'और {{count}} अन्य'
-      }
     },
     navigation: {
       explore: 'खोजें',
@@ -5337,13 +5327,6 @@ const resources = {
         photos: 'Фото',
         blockUser: 'Заблокировать пользователя',
         unblockUser: 'Разблокировать пользователя'
-      }
-        unblock: 'Разблокировать',
-        shareProfile: 'Поделиться профилем',
-        sendMessage: 'Отправить сообщение',
-        moreOptions: 'Дополнительные опции',
-        followedBy: 'Подписан(а) на',
-        andOthers: 'и еще {{count}}'
       }
     },
     navigation: {
