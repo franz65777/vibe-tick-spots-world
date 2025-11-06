@@ -181,6 +181,14 @@ const ExplorePage = () => {
                            suggestions.find(u => u.id === userId) ||
                            champions.find(c => c.id === userId);
         
+        // Delete existing record to avoid duplicates
+        await supabase
+          .from('search_history')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('target_user_id', userId);
+        
+        // Insert new record (will appear at top due to newest timestamp)
         await supabase.from('search_history').insert({
           user_id: user.id,
           search_query: clickedUser?.username || userId,
@@ -199,7 +207,7 @@ const ExplorePage = () => {
       state: { 
         from: 'explore',
         searchQuery: searchQuery,
-        searchMode: searchMode
+        searchMode: 'users'
       } 
     });
   };
@@ -271,7 +279,7 @@ const ExplorePage = () => {
         state: { 
           from: 'explore',
           searchQuery: searchQuery,
-          searchMode: searchMode
+          searchMode: 'users'
         } 
       });
     }
@@ -347,6 +355,14 @@ const ExplorePage = () => {
                 {/* Search History & Follow Suggestions - Only in People mode */}
                 {!isSearchActive && (
                   <div className="px-1 py-4 space-y-6">
+                    {/* Weekly Leaderboard - shown first */}
+                    {champions.length > 0 && (
+                      <CommunityChampions 
+                        champions={champions} 
+                        onUserClick={handleUserClick}
+                      />
+                    )}
+
                     {/* Search History */}
                     {searchHistory.length > 0 && (
                       <div>
@@ -376,7 +392,7 @@ const ExplorePage = () => {
                               </div>
                               <div
                                 className="flex-1 min-w-0 cursor-pointer"
-                                onClick={() => item.target_user_id && navigate(`/profile/${item.target_user_id}`)}
+                                onClick={() => item.target_user_id && navigate(`/profile/${item.target_user_id}`, { state: { searchMode: 'users' } })}
                               >
                                 <p className="text-sm font-medium text-foreground truncate">
                                   {item.username || 'User'}
@@ -395,14 +411,6 @@ const ExplorePage = () => {
                           ))}
                         </div>
                       </div>
-                    )}
-
-                    {/* Weekly Leaderboard */}
-                    {champions.length > 0 && (
-                      <CommunityChampions 
-                        champions={champions} 
-                        onUserClick={handleUserClick}
-                      />
                     )}
                   </div>
                 )}

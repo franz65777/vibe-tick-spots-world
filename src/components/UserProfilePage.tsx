@@ -42,6 +42,14 @@ const UserProfilePage = () => {
     const recordVisit = async () => {
       if (currentUser?.id && userId && currentUser.id !== userId) {
         try {
+          // Delete existing record to avoid duplicates
+          await supabase
+            .from('search_history')
+            .delete()
+            .eq('user_id', currentUser.id)
+            .eq('target_user_id', userId);
+          
+          // Insert new record (will appear at top due to newest timestamp)
           await supabase.from('search_history').insert({
             user_id: currentUser.id,
             search_query: profile?.username || userId,
