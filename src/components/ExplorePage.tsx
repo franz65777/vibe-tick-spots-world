@@ -20,6 +20,19 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import StoriesViewer from './StoriesViewer';
 import { useTranslation } from 'react-i18next';
+import { useMutualFollowers } from '@/hooks/useMutualFollowers';
+
+// Small component to render mutual followers line for recent items
+const RecentMutualFollowers = ({ userId }: { userId: string }) => {
+  const { mutualFollowers, totalCount } = useMutualFollowers(userId);
+  if (mutualFollowers.length === 0) return null;
+  return (
+    <p className="text-xs text-muted-foreground truncate mt-0.5">
+      Seguito da {mutualFollowers.slice(0, 2).map(f => f.username).join(', ')}
+      {totalCount > 2 && ` + ${totalCount - 2} altri`}
+    </p>
+  );
+};
 
 const ExplorePage = () => {
   const { t } = useTranslation();
@@ -115,12 +128,14 @@ const ExplorePage = () => {
     loadUserRecommendations();
   }, [user, searchMode]);
 
-  // Execute search if there's a query from navigation state
+  // Execute search if there's a query from navigation state and sync mode on state changes
   useEffect(() => {
-    if (searchQuery.trim() && searchMode === 'users' && user) {
+    const state = location.state as { searchMode?: 'locations' | 'users'; searchQuery?: string } | null;
+    if (state?.searchMode) setSearchMode(state.searchMode);
+    if (searchQuery.trim() && (state?.searchMode || searchMode) === 'users' && user) {
       handleSearch(searchQuery);
     }
-  }, []);
+  }, [location.state]);
 
   // Search for users only
   const performSearch = async (query: string) => {
@@ -368,7 +383,7 @@ const ExplorePage = () => {
                       <div>
                         <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
                           <Search className="w-4 h-4" />
-                          {t('recent', { ns: 'explore' })}
+                          {t('recent', { ns: 'common' })}
                         </h3>
                         <div className="space-y-2">
                           {searchHistory.map((item) => (
@@ -391,17 +406,20 @@ const ExplorePage = () => {
                                 )}
                               </div>
                               <div
-                                className="flex-1 min-w-0 cursor-pointer"
-                                onClick={() => item.target_user_id && navigate(`/profile/${item.target_user_id}`, { state: { searchMode: 'users' } })}
+                                className="flex-1 min-w-0 cursor-pointer text-left"
+                                onClick={() => item.target_user_id && navigate(`/profile/${item.target_user_id}`, { state: { from: 'explore', searchMode: 'users' } })}
                               >
-                                <p className="text-sm font-medium text-foreground truncate">
+                                <p className="text-sm font-medium text-foreground truncate text-left">
                                   {item.username || 'User'}
                                 </p>
+                                {item.target_user_id && (
+                                  <RecentMutualFollowers userId={item.target_user_id} />
+                                )}
                               </div>
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  deleteSearchHistoryItem(item.id);
+                                  deleteSearchHistoryItem(item.id, item.target_user_id || undefined);
                                 }}
                                 className="p-1 hover:bg-muted rounded-full"
                               >

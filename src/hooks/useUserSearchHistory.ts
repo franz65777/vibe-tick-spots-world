@@ -94,7 +94,16 @@ export const useUserSearchHistory = () => {
         })
         .filter((item): item is SearchHistoryItem => item !== null);
 
-      setSearchHistory(enrichedHistory);
+      // Deduplicate by target_user_id (keep most recent only)
+      const seen = new Set<string>();
+      const uniqueHistory = enrichedHistory.filter((item) => {
+        if (!item.target_user_id) return false;
+        if (seen.has(item.target_user_id)) return false;
+        seen.add(item.target_user_id);
+        return true;
+      });
+
+      setSearchHistory(uniqueHistory);
     } catch (error) {
       console.error('Error fetching search history:', error);
       setSearchHistory([]);
@@ -103,15 +112,22 @@ export const useUserSearchHistory = () => {
     }
   };
 
-  const deleteSearchHistoryItem = async (id: string) => {
+  const deleteSearchHistoryItem = async (id: string, targetUserId?: string) => {
     if (!user) return;
     
     try {
-      const { error } = await supabase
+      let query = supabase
         .from('search_history')
         .delete()
-        .eq('id', id)
         .eq('user_id', user.id);
+      
+      if (targetUserId) {
+        query = query.eq('target_user_id', targetUserId);
+      } else {
+        query = query.eq('id', id);
+      }
+
+      const { error } = await query;
 
       if (error) throw error;
       

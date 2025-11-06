@@ -37,33 +37,10 @@ const UserProfilePage = () => {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
 
-  // Record visit in Recent Searches when viewing someone else's profile
+  // Recording visits for search history is handled in ExplorePage only to avoid duplicates
   useEffect(() => {
-    const recordVisit = async () => {
-      if (currentUser?.id && userId && currentUser.id !== userId) {
-        try {
-          // Delete existing record to avoid duplicates
-          await supabase
-            .from('search_history')
-            .delete()
-            .eq('user_id', currentUser.id)
-            .eq('target_user_id', userId);
-          
-          // Insert new record (will appear at top due to newest timestamp)
-          await supabase.from('search_history').insert({
-            user_id: currentUser.id,
-            search_query: profile?.username || userId,
-            search_type: 'users',
-            target_user_id: userId
-          });
-        } catch (e) {
-          console.error('Failed to record profile visit:', e);
-        }
-      }
-    };
-    recordVisit();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser?.id, userId, profile?.username]);
+    // Intentionally left blank
+  }, []);
 
   const isOwnProfile = currentUser?.id === userId;
 

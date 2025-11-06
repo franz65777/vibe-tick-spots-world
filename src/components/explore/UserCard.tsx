@@ -75,6 +75,8 @@ const UserCard = ({
 
   const handleAvatarClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    // Ensure history is saved by parent before navigation
+    onUserClick(user);
     if (hasActiveStory) {
       // Open stories viewer
       const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -111,6 +113,8 @@ const UserCard = ({
     if (target.closest('button') || target.closest('.avatar-clickable')) {
       return;
     }
+    // Save history via parent
+    onUserClick(user);
     navigate(`/profile/${user.id}`, { 
       state: { 
         from: 'explore',
