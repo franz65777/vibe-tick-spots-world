@@ -17,6 +17,8 @@ import FollowersModal from './profile/FollowersModal';
 import SavedLocationsList from './profile/SavedLocationsList';
 import ShareProfileModal from './profile/ShareProfileModal';
 import MessagesModal from './MessagesModal';
+import { useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 const UserProfilePage = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -34,6 +36,26 @@ const UserProfilePage = () => {
   const [isLocationsListOpen, setIsLocationsListOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
+
+  // Record visit in Recent Searches when viewing someone else's profile
+  useEffect(() => {
+    const recordVisit = async () => {
+      if (currentUser?.id && userId && currentUser.id !== userId) {
+        try {
+          await supabase.from('search_history').insert({
+            user_id: currentUser.id,
+            search_query: profile?.username || userId,
+            search_type: 'users',
+            target_user_id: userId
+          });
+        } catch (e) {
+          console.error('Failed to record profile visit:', e);
+        }
+      }
+    };
+    recordVisit();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.id, userId, profile?.username]);
 
   const isOwnProfile = currentUser?.id === userId;
 
