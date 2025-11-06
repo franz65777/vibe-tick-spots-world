@@ -757,6 +757,17 @@ const resources = {
       week: 'semana',
       weeks: 'semanas',
       leaderboard: 'Tabla de Clasificación',
+      userProfile: {
+        mute: 'Silenciar notificaciones',
+        unmute: 'Activar notificaciones',
+        block: 'Bloquear Usuario',
+        unblock: 'Desbloquear Usuario',
+        shareProfile: 'Compartir Perfil',
+        sendMessage: 'Enviar mensaje',
+        moreOptions: 'Más opciones',
+        followedBy: 'Seguido por',
+        andOthers: 'y otros {{count}}'
+      }
     },
     navigation: {
       explore: 'Explorar',
@@ -2486,6 +2497,17 @@ const resources = {
       week: 'Woche',
       weeks: 'Wochen',
       leaderboard: 'Bestenliste',
+      userProfile: {
+        mute: 'Benachrichtigungen stummschalten',
+        unmute: 'Benachrichtigungen aktivieren',
+        block: 'Benutzer blockieren',
+        unblock: 'Benutzer entsperren',
+        shareProfile: 'Profil teilen',
+        sendMessage: 'Nachricht senden',
+        moreOptions: 'Weitere Optionen',
+        followedBy: 'Gefolgt von',
+        andOthers: 'und {{count}} weitere'
+      }
     },
     navigation: {
       explore: 'Erkunden',
@@ -4084,6 +4106,17 @@ const resources = {
       week: '주',
       weeks: '주',
       leaderboard: '리더보드',
+      userProfile: {
+        mute: '알림 끄기',
+        unmute: '알림 켜기',
+        block: '사용자 차단',
+        unblock: '차단 해제',
+        shareProfile: '프로필 공유',
+        sendMessage: '메시지 보내기',
+        moreOptions: '더보기',
+        followedBy: '팔로우:',
+        andOthers: '외 {{count}}명'
+      }
     },
     navigation: {
       explore: '탐색',
@@ -4457,6 +4490,17 @@ const resources = {
       week: 'أسبوع',
       weeks: 'أسابيع',
       leaderboard: 'لوحة المتصدرين',
+      userProfile: {
+        mute: 'كتم الإشعارات',
+        unmute: 'تفعيل الإشعارات',
+        block: 'حظر المستخدم',
+        unblock: 'إلغاء الحظر',
+        shareProfile: 'مشاركة الملف الشخصي',
+        sendMessage: 'إرسال رسالة',
+        moreOptions: 'خيارات إضافية',
+        followedBy: 'متابع بواسطة',
+        andOthers: 'و {{count}} آخرين'
+      }
     },
     navigation: {
       explore: 'استكشاف',
@@ -4829,6 +4873,17 @@ const resources = {
       week: 'सप्ताह',
       weeks: 'सप्ताह',
       leaderboard: 'लीडरबोर्ड',
+      userProfile: {
+        mute: 'सूचनाएं बंद करें',
+        unmute: 'सूचनाएं चालू करें',
+        block: 'उपयोगकर्ता को ब्लॉक करें',
+        unblock: 'अनब्लॉक करें',
+        shareProfile: 'प्रोफ़ाइल साझा करें',
+        sendMessage: 'संदेश भेजें',
+        moreOptions: 'अधिक विकल्प',
+        followedBy: 'द्वारा फॉलो किया गया',
+        andOthers: 'और {{count}} अन्य'
+      }
     },
     navigation: {
       explore: 'खोजें',
@@ -5202,6 +5257,17 @@ const resources = {
       week: 'неделя',
       weeks: 'недели',
       leaderboard: 'Таблица лидеров',
+      userProfile: {
+        mute: 'Отключить уведомления',
+        unmute: 'Включить уведомления',
+        block: 'Заблокировать пользователя',
+        unblock: 'Разблокировать',
+        shareProfile: 'Поделиться профилем',
+        sendMessage: 'Отправить сообщение',
+        moreOptions: 'Дополнительные опции',
+        followedBy: 'Подписан(а) на',
+        andOthers: 'и еще {{count}}'
+      }
     },
     navigation: {
       explore: 'Обзор',

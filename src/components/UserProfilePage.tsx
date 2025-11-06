@@ -205,7 +205,7 @@ const UserProfilePage = () => {
           {/* Username and Stats Column */}
           <div className="flex-1 flex flex-col gap-3">
             {/* Username with Badges */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between">
               <h2 className="text-base font-semibold">{displayUsername}</h2>
               <BadgeDisplay 
                 userId={userId} 
@@ -346,9 +346,24 @@ const UserProfilePage = () => {
         initialUserId={userId}
       />
 
-      <Achievements 
-        userId={userId}
-      />
+      {showBadgesModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
+          <div className="bg-background w-full rounded-t-3xl max-h-[80vh] overflow-hidden">
+            <Achievements 
+              userId={userId}
+            />
+            <div className="p-4">
+              <Button 
+                onClick={() => setShowBadgesModal(false)}
+                variant="secondary"
+                className="w-full"
+              >
+                {t('common.close')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
