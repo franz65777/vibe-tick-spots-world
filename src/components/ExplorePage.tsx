@@ -494,11 +494,15 @@ const ExplorePage = () => {
                                   setLocalSearchHistory(prev => prev.filter(h => h.target_user_id !== item.target_user_id));
                                   if (user) {
                                     try {
+                                      // Remove entries by target id
                                       await supabase
                                         .from('search_history')
                                         .delete()
                                         .eq('user_id', user.id)
+                                        .eq('search_type', 'users')
                                         .eq('target_user_id', item.target_user_id);
+
+                                      // Legacy: rows saved with username only
                                       if (item.username) {
                                         await supabase
                                           .from('search_history')
@@ -507,6 +511,15 @@ const ExplorePage = () => {
                                           .eq('search_type', 'users')
                                           .eq('search_query', item.username);
                                       }
+
+                                      // Legacy: rows saved with UUID string in search_query
+                                      await supabase
+                                        .from('search_history')
+                                        .delete()
+                                        .eq('user_id', user.id)
+                                        .eq('search_type', 'users')
+                                        .eq('search_query', item.target_user_id);
+
                                       await fetchSearchHistory();
                                     } catch (err) {
                                       console.error('Error deleting history item:', err);

@@ -116,21 +116,30 @@ export const useUserSearchHistory = () => {
     if (!user) return;
     
     try {
-      let query = supabase
-        .from('search_history')
-        .delete()
-        .eq('user_id', user.id);
-      
       if (targetUserId) {
-        query = query.eq('target_user_id', targetUserId);
+        // Delete by target_user_id and legacy entries saved only via search_query (username or UUID)
+        await supabase
+          .from('search_history')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('search_type', 'users')
+          .eq('target_user_id', targetUserId);
+
+        // Legacy: username-based rows (best-effort, only within users type)
+        await supabase
+          .from('search_history')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('search_type', 'users')
+          .eq('search_query', targetUserId);
       } else {
-        query = query.eq('id', id);
+        await supabase
+          .from('search_history')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('id', id);
       }
 
-      const { error } = await query;
-
-      if (error) throw error;
-      
       // Refresh the list
       await fetchSearchHistory();
     } catch (error) {
