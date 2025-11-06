@@ -2249,30 +2249,24 @@ const resources = {
       dealMaster: 'Maître des Offres',
       dealMasterDesc: 'Créez 10+ réductions',
       trendingNow: 'Tendance Actuelle',
-      trendingNowDesc: 'Obtenez 100 partages',
-      promo: 'Promo',
-      news: 'Actualités',
-      title: 'Titre',
-      titlePlaceholder: 'titre...',
-      description: 'Description',
-      descriptionPlaceholder: 'Décrivez votre',
-      start: 'Début',
-      end: 'Fin',
-      discountPercent: 'Réduction (%)',
-      discountPlaceholder: 'ex., 20',
-      terms: 'Conditions',
-      termsPlaceholder: 'Conditions générales...',
-      imagesUpTo3: 'Images (jusqu\'à 3)',
-      addImages: 'Ajouter des images',
-      publishing: 'Publication...',
-      publishCampaign: 'Publier la campagne',
-      mustBeLoggedIn: 'Vous devez être connecté',
-      provideTitleError: 'Veuillez fournir un titre',
-      businessProfileNotFound: 'Profil commercial introuvable',
-      campaignPublished: 'Campagne marketing publiée!',
-      failedCreateContent: 'Échec de la création du contenu',
-      campaignLoaded: 'Modèle de campagne chargé! Personnalisez et publiez.',
-      locationLockedToBusiness: 'L\'emplacement est verrouillé à votre établissement revendiqué'
+      trendingNowDesc: 'Obtenez 100 partages'
+    },
+    gamification: {
+      level: 'Niveau'
+    },
+    leaderboard: {
+      leaderboard: 'Classement',
+      topExplorersThisWeek: 'Meilleurs explorateurs cette semaine',
+      allCities: 'Toutes les Villes',
+      allCategories: 'Toutes les Catégories',
+      noChampionsYet: 'Pas Encore de Champions',
+      beTheFirst: 'Soyez le premier au classement!',
+      startExploring: 'Commencer à Explorer',
+      wantToJoin: 'Voulez-vous rejoindre le classement?',
+      exploreAmazingPlaces: 'Explorez des endroits incroyables, partagez vos découvertes et grimpez les rangs!'
+    },
+    home: {
+      weeklyLeaderboard: 'Classement Hebdomadaire'
     }
   },
 
@@ -2678,6 +2672,23 @@ const resources = {
       dealMasterDesc: 'Erstelle 10+ Rabatte',
       trendingNow: 'Im Trend',
       trendingNowDesc: 'Erhalte 100 Shares'
+    },
+    gamification: {
+      level: 'Level'
+    },
+    leaderboard: {
+      leaderboard: 'Bestenliste',
+      topExplorersThisWeek: 'Top-Entdecker dieser Woche',
+      allCities: 'Alle Städte',
+      allCategories: 'Alle Kategorien',
+      noChampionsYet: 'Noch Keine Champions',
+      beTheFirst: 'Sei der Erste auf der Bestenliste!',
+      startExploring: 'Entdecken Beginnen',
+      wantToJoin: 'Möchtest du der Bestenliste beitreten?',
+      exploreAmazingPlaces: 'Entdecke erstaunliche Orte, teile deine Entdeckungen und klettere die Ränge hinauf!'
+    },
+    home: {
+      weeklyLeaderboard: 'Wöchentliche Bestenliste'
     }
   },
 
@@ -3087,6 +3098,23 @@ const resources = {
       dealMasterDesc: 'Crie 10+ descontos',
       trendingNow: 'Em Alta',
       trendingNowDesc: 'Obtenha 100 compartilhamentos'
+    },
+    gamification: {
+      level: 'Nível'
+    },
+    leaderboard: {
+      leaderboard: 'Classificação',
+      topExplorersThisWeek: 'Principais exploradores desta semana',
+      allCities: 'Todas as Cidades',
+      allCategories: 'Todas as Categorias',
+      noChampionsYet: 'Ainda Sem Campeões',
+      beTheFirst: 'Seja o primeiro na classificação!',
+      startExploring: 'Começar a Explorar',
+      wantToJoin: 'Quer entrar para a classificação?',
+      exploreAmazingPlaces: 'Explore lugares incríveis, compartilhe suas descobertas e suba nos rankings!'
+    },
+    home: {
+      weeklyLeaderboard: 'Classificação Semanal'
     }
   },
 
