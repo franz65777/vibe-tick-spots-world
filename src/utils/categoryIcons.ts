@@ -7,7 +7,7 @@ import imgCafe from '@/assets/category-cafe-3d-new.png';
 import imgHotel from '@/assets/category-hotel-3d-new.png';
 import imgEntertainment from '@/assets/category-entertainment-3d-new.png';
 import imgMuseum from '@/assets/category-museum-3d-new.png';
-import imgBakery from '@/assets/category-bakery-3d-new.png';
+import imgBakery from '@/assets/category-bakery-bread-3d.png';
 
 export const getCategoryIcon = (category: string) => {
   const categoryLower = category?.toLowerCase?.() || '';
