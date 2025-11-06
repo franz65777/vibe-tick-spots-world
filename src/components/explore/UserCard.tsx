@@ -82,13 +82,11 @@ const UserCard = ({
         .order('created_at', { ascending: true });
       
       if (stories && stories.length > 0) {
-        // You can emit an event or use a callback to open stories viewer
         console.log('Open stories for user:', user.id);
-        // For now, navigate to profile - you can enhance this to open stories modal
-        navigate(`/profile/${user.id}`);
+        navigate(`/profile/${user.id}`, { state: { from: 'explore' } });
       }
     } else {
-      navigate(`/profile/${user.id}`);
+      navigate(`/profile/${user.id}`, { state: { from: 'explore' } });
     }
   };
 
@@ -97,7 +95,7 @@ const UserCard = ({
     if (target.closest('button') || target.closest('.avatar-clickable')) {
       return;
     }
-    navigate(`/profile/${user.id}`);
+    navigate(`/profile/${user.id}`, { state: { from: 'explore' } });
   };
 
   const getInitials = (name: string) => {
@@ -150,12 +148,12 @@ const UserCard = ({
           {/* Mutual followers display */}
           {mutualFollowers.length > 0 ? (
             <p className="text-xs text-muted-foreground truncate mt-0.5">
-              {t('common.followers', { ns: 'common' })}: {mutualFollowers.slice(0, 2).map(f => f.username).join(', ')}
-              {totalCount > 2 && ` + ${totalCount - 2} ${t('common.more', { ns: 'common' })}`}
+              {t('followers', { ns: 'common' })}: {mutualFollowers.slice(0, 2).map(f => f.username).join(', ')}
+              {totalCount > 2 && ` + ${totalCount - 2} ${t('more', { ns: 'common' })}`}
             </p>
           ) : user.follower_count > 0 ? (
             <p className="text-xs text-muted-foreground truncate mt-0.5">
-              {user.follower_count} {t('common.followers', { ns: 'common' })}
+              {user.follower_count} {t('followers', { ns: 'common' })}
             </p>
           ) : (
             <p className="text-xs text-muted-foreground truncate mt-0.5">
@@ -176,14 +174,14 @@ const UserCard = ({
               ? 'bg-secondary text-secondary-foreground hover:bg-secondary/80' 
               : 'bg-primary text-primary-foreground hover:bg-primary/90'
           }`}
-          aria-label={isOptimisticFollowing ? t('common.following', { ns: 'common' }) : t('common.follow', { ns: 'common' })}
+          aria-label={isOptimisticFollowing ? t('following', { ns: 'common' }) : t('follow', { ns: 'common' })}
         >
           {isFollowLoading ? (
             <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
           ) : isOptimisticFollowing ? (
-            t('common.following', { ns: 'common' })
+            t('following', { ns: 'common' })
           ) : (
-            t('common.follow', { ns: 'common' })
+            t('follow', { ns: 'common' })
           )}
         </Button>
       </div>

@@ -26,7 +26,10 @@ const ExplorePage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(() => {
+    const state = location.state as { searchQuery?: string } | null;
+    return state?.searchQuery || '';
+  });
   const [searchMode, setSearchMode] = useState<'locations' | 'users'>(() => {
     const state = location.state as { searchMode?: 'locations' | 'users' } | null;
     return state?.searchMode || 'locations';
@@ -112,6 +115,13 @@ const ExplorePage = () => {
     loadUserRecommendations();
   }, [user, searchMode]);
 
+  // Execute search if there's a query from navigation state
+  useEffect(() => {
+    if (searchQuery.trim() && searchMode === 'users' && user) {
+      handleSearch(searchQuery);
+    }
+  }, []);
+
   // Search for users only
   const performSearch = async (query: string) => {
     if (!user || !query.trim() || searchMode !== 'users') return {
@@ -177,7 +187,13 @@ const ExplorePage = () => {
       });
     }
     
-    navigate(`/profile/${userId}`);
+    navigate(`/profile/${userId}`, { 
+      state: { 
+        from: 'explore',
+        searchQuery: searchQuery,
+        searchMode: searchMode
+      } 
+    });
   };
   const handleFollowUser = async (userId: string) => {
     if (!user) return;
@@ -243,7 +259,13 @@ const ExplorePage = () => {
     if (item.has_active_story && item.target_user_id) {
       openStoriesForUser(item.target_user_id, item.username || item.search_query, item.avatar_url);
     } else if (item.target_user_id) {
-      navigate(`/profile/${item.target_user_id}`);
+      navigate(`/profile/${item.target_user_id}`, { 
+        state: { 
+          from: 'explore',
+          searchQuery: searchQuery,
+          searchMode: searchMode
+        } 
+      });
     }
   };
   const clearSearch = () => {

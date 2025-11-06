@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, MessageCircle, Bell, BellOff, MoreHorizontal, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -21,6 +21,7 @@ import MessagesModal from './MessagesModal';
 const UserProfilePage = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user: currentUser } = useAuth();
   const { profile, loading, error, followUser, unfollowUser } = useUserProfile(userId);
   const { mutualFollowers, totalCount } = useMutualFollowers(userId);
@@ -35,6 +36,22 @@ const UserProfilePage = () => {
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
 
   const isOwnProfile = currentUser?.id === userId;
+
+  const handleBack = () => {
+    const state = location.state as { from?: string; searchQuery?: string; searchMode?: 'locations' | 'users' } | null;
+    if (state?.from === 'explore') {
+      // Return to explore with preserved search state
+      navigate('/explore', { 
+        state: { 
+          searchQuery: state.searchQuery || '',
+          searchMode: state.searchMode || 'users'
+        },
+        replace: true
+      });
+    } else {
+      navigate(-1);
+    }
+  };
 
   const openModal = (type: 'followers' | 'following') => {
     setModalState({ isOpen: true, type });
@@ -78,7 +95,7 @@ const UserProfilePage = () => {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <p className="text-destructive mb-4">User not found</p>
-            <Button onClick={() => navigate(-1)}>Go Back</Button>
+            <Button onClick={handleBack}>Go Back</Button>
           </div>
         </div>
       </div>
@@ -108,7 +125,7 @@ const UserProfilePage = () => {
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div className="flex items-center gap-3 flex-1">
           <button 
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             className="p-0 hover:opacity-70 transition-opacity"
           >
             <ArrowLeft className="w-6 h-6" />
