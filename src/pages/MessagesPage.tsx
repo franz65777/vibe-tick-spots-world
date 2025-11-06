@@ -948,7 +948,7 @@ const MessagesPage = () => {
                       <AvatarFallback>{otherParticipant.username?.[0]?.toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0 text-left">
-                      <div className="flex justify-between items-start mb-1">
+                      <div className="flex justify-between items-end mb-1">
                         <p className="font-semibold text-base text-foreground truncate">
                           {otherParticipant.username}
                         </p>
@@ -1438,11 +1438,11 @@ const MessagesPage = () => {
                         className="w-14 h-14 rounded-lg object-cover"
                       />
                     ) : (
-                      <div className="w-14 h-14 flex items-center justify-center">
+                      <div className="w-14 h-14 flex items-center justify-center bg-muted rounded-lg">
                         <img 
                           src={getCategoryImage(place.category)} 
                           alt={place.category}
-                          className="w-14 h-14 object-contain"
+                          className="w-10 h-10 object-contain"
                         />
                       </div>
                     )}
