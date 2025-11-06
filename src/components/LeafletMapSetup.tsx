@@ -295,17 +295,20 @@ const LeafletMapSetup = ({
   return (
     <>
       {/* Hide map when viewing a post */}
-      {!selectedPostFromPin && (
-        <div
-          ref={containerRef}
-          className={
-            fullScreen
-              ? 'relative w-full h-full rounded-2xl overflow-hidden bg-background'
-              : 'relative w-full min-h-[60vh] rounded-lg overflow-hidden'
-          }
-          style={{ minHeight: fullScreen ? '100%' : '60vh' }}
-        />
-      )}
+      <div
+        ref={containerRef}
+        className={
+          fullScreen
+            ? 'relative w-full h-full rounded-2xl overflow-hidden bg-background'
+            : 'relative w-full min-h-[60vh] rounded-lg overflow-hidden'
+        }
+        style={{ 
+          minHeight: fullScreen ? '100%' : '60vh',
+          visibility: selectedPostFromPin ? 'hidden' : 'visible',
+          position: selectedPostFromPin ? 'absolute' : 'relative',
+          pointerEvents: selectedPostFromPin ? 'none' : 'auto'
+        }}
+      />
 
       <style>{`
         @keyframes bounce {
@@ -361,17 +364,22 @@ const LeafletMapSetup = ({
           isOpen={true}
           onClose={() => {
             setSelectedPostFromPin(null);
-            // Force map to reflow after becoming visible
-            if (mapRef.current) {
-              // Next frame
-              requestAnimationFrame(() => {
-                mapRef.current?.invalidateSize(true);
-              });
-              // After a short delay (in case of transitions)
-              setTimeout(() => {
-                mapRef.current?.invalidateSize(true);
-              }, 200);
-            }
+            // Force map to reflow after becoming visible - use multiple attempts
+            setTimeout(() => {
+              if (mapRef.current) {
+                mapRef.current.invalidateSize(true);
+              }
+            }, 50);
+            setTimeout(() => {
+              if (mapRef.current) {
+                mapRef.current.invalidateSize(true);
+              }
+            }, 150);
+            setTimeout(() => {
+              if (mapRef.current) {
+                mapRef.current.invalidateSize(true);
+              }
+            }, 300);
           }}
         />
       )}

@@ -3,7 +3,8 @@ import { MapPin, Star, X } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, Locale } from 'date-fns';
+import { it, es, fr, de, pt, ru, ja, zhCN, ar, hi, ko, enUS } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import { CommentDrawer } from '@/components/social/CommentDrawer';
 import { ShareModal } from '@/components/social/ShareModal';
@@ -49,13 +50,23 @@ interface PostData {
 export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onClose }: PostDetailModalMobileProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
   const [commentsDrawerOpen, setCommentsDrawerOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [expandedCaptions, setExpandedCaptions] = useState<{ [key: string]: boolean }>({});
+  
+  const getDateLocale = () => {
+    const localeMap: { [key: string]: Locale } = { 
+      it, es, fr, de, pt, ru, ja, 
+      zh: zhCN, 
+      ar, hi, ko, 
+      en: enUS 
+    };
+    return localeMap[i18n.language] || enUS;
+  };
 
   useEffect(() => {
     if (isOpen && postId) {
@@ -313,7 +324,7 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
     <>
       <div className="fixed inset-0 z-[3000] bg-background overflow-y-auto scrollbar-hide">
         {/* Top safe area padding */}
-        <div className="h-16 bg-background sticky top-0 z-20 flex items-center px-4 mt-4">
+        <div className="h-16 bg-background sticky top-0 z-20 flex items-center px-4 mt-2">
           {(locationId || userId) && (
             <button
               onClick={onClose}
@@ -331,7 +342,7 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
           const hasMultipleMedia = post.media_urls.length > 1;
           
           return (
-            <article key={post.id} className="post-compact border-b-8 border-background/50 pb-4">{index === 0 && <div className="h-4" />}
+            <article key={post.id} className="post-compact border-b-8 border-background/50 pb-4">{index === 0 && <div className="h-2" />}
               {/* Header */}
               <div className="post-compact-header flex items-center justify-between border-b border-border">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -457,7 +468,7 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
 
                 {/* Timestamp */}
                 <p className="text-xs text-muted-foreground uppercase text-left">
-                  {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                  {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: getDateLocale() })}
                 </p>
               </div>
             </article>
