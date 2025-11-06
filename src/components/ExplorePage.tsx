@@ -435,34 +435,13 @@ const ExplorePage = () => {
                       </div>
                     )}
                     
+                    {/* Weekly Leaderboard */}
                     {champions.length > 0 && (
                       <CommunityChampions 
                         champions={champions} 
                         onUserClick={handleUserClick}
                       />
                     )}
-                    
-                    {/* Invite Friends Button */}
-                    <div className="pt-0">
-                      <Button
-                        onClick={() => {
-                          const shareText = 'Join me on this amazing app!';
-                          const shareUrl = window.location.origin;
-                          if (navigator.share) {
-                            navigator.share({ title: 'Join me!', text: shareText, url: shareUrl })
-                              .catch(() => {});
-                          } else {
-                            navigator.clipboard.writeText(shareUrl);
-                            toast.success('Link copied to clipboard!');
-                          }
-                        }}
-                        variant="outline"
-                        className="w-full py-6 bg-gradient-to-r from-blue-500/10 to-purple-500/10 hover:from-blue-500/20 hover:to-purple-500/20 border-blue-200 hover:border-blue-300 transition-all"
-                      >
-                        <UserPlus className="w-5 h-5 mr-2" />
-                        <span className="font-semibold">{t('inviteFriends', { ns: 'explore' })}</span>
-                      </Button>
-                    </div>
                   </div>
                 )}
 

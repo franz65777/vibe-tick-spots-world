@@ -31,23 +31,23 @@ const CommunityChampions = ({
   if (champions.length === 0) {
     return null;
   }
-  return <Card className="bg-card border-border shadow-sm overflow-hidden">
-      <div className="bg-gradient-to-br from-primary/5 to-accent/5 px-4 py-4">
+  return <Card className="bg-card border-border shadow-sm overflow-hidden rounded-xl">
+      <div className="px-4 py-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <Trophy className="w-5 h-5 text-primary" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+              <Trophy className="w-4 h-4 text-primary" />
             </div>
-            <h3 className="text-lg font-bold text-foreground">{t('weeklyLeaderboard', { ns: 'home' })}</h3>
+            <h3 className="text-base font-bold text-foreground">{t('weeklyLeaderboard', { ns: 'home' })}</h3>
           </div>
           <Button
             onClick={() => navigate('/leaderboard')}
             variant="outline"
             size="sm"
-            className="rounded-full font-semibold hover:bg-primary/5 hover:text-primary hover:border-primary/20 flex items-center gap-1.5"
+            className="rounded-full text-xs font-semibold hover:bg-primary/5 hover:text-primary hover:border-primary/20 flex items-center gap-1.5 h-8 px-3"
           >
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span>{t('thisWeek', { ns: 'common' })}</span>
+            <TrendingUp className="w-3 h-3" />
+            <span className="whitespace-nowrap">{t('thisWeek', { ns: 'common' })}</span>
           </Button>
         </div>
       </div>
