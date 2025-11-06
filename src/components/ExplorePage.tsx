@@ -63,6 +63,12 @@ const ExplorePage = () => {
   const [fromMessages, setFromMessages] = useState(false);
   const [returnToUserId, setReturnToUserId] = useState<string | null>(null);
   const [showAllHistory, setShowAllHistory] = useState(false);
+  const [localSearchHistory, setLocalSearchHistory] = useState<typeof searchHistory>([]);
+
+  // Sync local history with hook history
+  useEffect(() => {
+    setLocalSearchHistory(searchHistory);
+  }, [searchHistory]);
 
   // Check for shared place from DM and open LocationPostLibrary
   useEffect(() => {
@@ -343,7 +349,7 @@ const ExplorePage = () => {
   
   const isSearchActive = searchQuery.trim().length > 0;
   const displayUsers = filteredUsers;
-  const displayedHistory = showAllHistory ? searchHistory : searchHistory.slice(0, 10);
+  const displayedHistory = showAllHistory ? localSearchHistory : localSearchHistory.slice(0, 10);
   return <div className="flex flex-col h-full">
       {/* Simplified Header */}
       <div className="bg-white pt-safe">
@@ -418,7 +424,7 @@ const ExplorePage = () => {
                     )}
 
                     {/* Search History */}
-                    {searchHistory.length > 0 && (
+                    {localSearchHistory.length > 0 && (
                       <div>
                         <div className="flex items-center justify-between mb-3">
                           <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -428,7 +434,11 @@ const ExplorePage = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={clearAllHistory}
+                            onClick={async () => {
+                              // Optimistic clear
+                              setLocalSearchHistory([]);
+                              await clearAllHistory();
+                            }}
                             className="text-xs text-muted-foreground hover:text-destructive h-7"
                           >
                             {t('clearHistory', { ns: 'common' })}
@@ -466,9 +476,11 @@ const ExplorePage = () => {
                                 )}
                               </div>
                               <button
-                                onClick={(e) => {
+                                onClick={async (e) => {
                                   e.stopPropagation();
-                                  deleteSearchHistoryItem(item.id, item.target_user_id || undefined);
+                                  // Optimistic update
+                                  setLocalSearchHistory(prev => prev.filter(h => h.target_user_id !== item.target_user_id));
+                                  await deleteSearchHistoryItem(item.id, item.target_user_id || undefined);
                                 }}
                                 className="p-1 hover:bg-muted rounded-full"
                               >
@@ -477,7 +489,7 @@ const ExplorePage = () => {
                             </div>
                           ))}
                         </div>
-                        {searchHistory.length > 10 && (
+                        {localSearchHistory.length > 10 && (
                           <Button
                             variant="ghost"
                             size="sm"

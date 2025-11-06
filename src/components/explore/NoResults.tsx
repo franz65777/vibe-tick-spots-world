@@ -12,21 +12,19 @@ interface NoResultsProps {
 const NoResults = ({ searchMode, searchQuery, onAddLocation }: NoResultsProps) => {
   const { t } = useTranslation();
 
-  const messages = {
-    locations: {
-      title: t('noResults', { ns: 'explore' }),
-      description: t('tryDifferentSearch', { ns: 'explore' }),
-      icon: MapPin as any,
-      actionText: t('add', { ns: 'common' })
-    },
-    users: {
-      title: t('noResults', { ns: 'explore' }),
-      description: t('tryDifferentSearch', { ns: 'explore' }),
-      icon: Users as any
-    }
-  } as const;
+  const config = searchMode === 'locations' ? {
+    title: t('noResults', { ns: 'explore' }),
+    description: t('tryDifferentSearch', { ns: 'explore' }),
+    icon: MapPin as any,
+    actionText: t('add', { ns: 'common' })
+  } : {
+    title: t('noUsersFoundTitle', { ns: 'explore' }),
+    description: searchQuery 
+      ? t('noUsersFoundForQuery', { ns: 'explore', query: searchQuery })
+      : t('noUsersFoundGeneric', { ns: 'explore' }),
+    icon: Users as any
+  };
 
-  const config = messages[searchMode];
   const Icon = config.icon;
 
   return (
