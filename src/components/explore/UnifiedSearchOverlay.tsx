@@ -18,6 +18,7 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const [trendingCities, setTrendingCities] = useState<{ name: string; count: number }[]>([]);
+  const searchCacheRef = useRef<Map<string, CityResult[]>>(new Map());
 
   const popularCities = [
     { name: 'Dublin', lat: 53.3498053, lng: -6.2603097 },
@@ -76,13 +77,18 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
   }, [isOpen]);
 
   useEffect(() => {
+    if (query.trim()) {
+      setLoading(true);
+    }
+    
     const timer = setTimeout(() => {
       if (query.trim()) {
         searchCities();
       } else {
         setResults([]);
+        setLoading(false);
       }
-    }, 300);
+    }, 150);
 
     return () => clearTimeout(timer);
   }, [query]);
@@ -90,16 +96,29 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
   const searchCities = async () => {
     if (!query.trim()) return;
 
+    const cacheKey = `${query.toLowerCase()}-${i18n.language}`;
+    
+    // Check cache first
+    if (searchCacheRef.current.has(cacheKey)) {
+      setResults(searchCacheRef.current.get(cacheKey)!);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const nominatimResults = await nominatimGeocoding.searchPlace(query, i18n.language);
       
-      setResults(nominatimResults.map(result => ({
+      const mappedResults = nominatimResults.map(result => ({
         name: result.city || result.displayName.split(',')[0],
         address: result.displayName,
         lat: result.lat,
         lng: result.lng,
-      })));
+      }));
+      
+      // Cache results
+      searchCacheRef.current.set(cacheKey, mappedResults);
+      setResults(mappedResults);
     } catch (error) {
       console.error('City search error:', error);
       setResults([]);
@@ -122,7 +141,7 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-lg z-[3000] flex flex-col" onClick={onClose}>
       {/* Header with integrated search */}
-      <div className="bg-white px-4 pt-[calc(env(safe-area-inset-top)+1.875rem)] pb-3 flex items-center gap-3 shadow-lg" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white px-4 pt-[calc(env(safe-area-inset-top)+2.1875rem)] pb-3 flex items-center gap-3 shadow-lg" onClick={(e) => e.stopPropagation()}>
         <button
           onClick={onClose}
           className="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
@@ -143,7 +162,7 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
+      <div className="flex-1 overflow-y-auto px-4 py-4 bg-white shadow-xl -mt-[0.3125rem]" onClick={(e) => e.stopPropagation()}>
         {!query.trim() && (
           <div className="flex flex-wrap gap-2 mb-4">
             {(trendingCities.length ? trendingCities : popularCities.map(c => ({ name: c.name, count: 0, lat: c.lat, lng: c.lng }))).map((item) => {
