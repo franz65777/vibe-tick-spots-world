@@ -583,6 +583,7 @@ const resources = {
     },
     leaderboard: {
       leaderboard: 'Leaderboard',
+      weeklyLeaderboard: 'Weekly Leaderboard',
       topExplorersThisWeek: 'Top explorers this week',
       allCities: 'All Cities',
       allCategories: 'All Categories',
@@ -1158,6 +1159,21 @@ const resources = {
       failedCreateContent: 'Error al crear contenido',
       campaignLoaded: '¡Plantilla de campaña cargada! Personaliza y publica.',
       locationLockedToBusiness: 'La ubicación está bloqueada a tu negocio reclamado'
+    },
+    gamification: {
+      level: 'Nivel'
+    },
+    leaderboard: {
+      leaderboard: 'Tabla de Clasificación',
+      weeklyLeaderboard: 'Clasificación Semanal',
+      topExplorersThisWeek: 'Mejores exploradores esta semana',
+      allCities: 'Todas las Ciudades',
+      allCategories: 'Todas las Categorías',
+      noChampionsYet: 'Aún Sin Campeones',
+      beTheFirst: '¡Sé el primero en la clasificación!',
+      startExploring: 'Empezar a Explorar',
+      wantToJoin: '¿Quieres unirte a la clasificación?',
+      exploreAmazingPlaces: '¡Explora lugares increíbles, comparte tus descubrimientos y sube en la clasificación!'
     }
   },
 
@@ -1750,6 +1766,21 @@ const resources = {
       failedCreateContent: 'Impossibile creare contenuto',
       campaignLoaded: 'Modello di campagna caricato! Personalizza e pubblica.',
       locationLockedToBusiness: 'La posizione è bloccata alla tua attività rivendicata'
+    },
+    gamification: {
+      level: 'Livello'
+    },
+    leaderboard: {
+      leaderboard: 'Classifica',
+      weeklyLeaderboard: 'Classifica Settimanale',
+      topExplorersThisWeek: 'Migliori esploratori questa settimana',
+      allCities: 'Tutte le Città',
+      allCategories: 'Tutte le Categorie',
+      noChampionsYet: 'Nessun Campione Ancora',
+      beTheFirst: 'Sii il primo a entrare in classifica!',
+      startExploring: 'Inizia a Esplorare',
+      wantToJoin: 'Vuoi entrare in classifica?',
+      exploreAmazingPlaces: 'Esplora luoghi fantastici, condividi le tue scoperte e scala la classifica!'
     }
   },
 
@@ -2261,6 +2292,7 @@ const resources = {
     },
     leaderboard: {
       leaderboard: 'Classement',
+      weeklyLeaderboard: 'Classement Hebdomadaire',
       topExplorersThisWeek: 'Meilleurs explorateurs cette semaine',
       allCities: 'Toutes les Villes',
       allCategories: 'Toutes les Catégories',
@@ -2682,6 +2714,7 @@ const resources = {
     },
     leaderboard: {
       leaderboard: 'Bestenliste',
+      weeklyLeaderboard: 'Wöchentliche Bestenliste',
       topExplorersThisWeek: 'Top-Entdecker dieser Woche',
       allCities: 'Alle Städte',
       allCategories: 'Alle Kategorien',
@@ -3107,6 +3140,7 @@ const resources = {
     },
     leaderboard: {
       leaderboard: 'Classificação',
+      weeklyLeaderboard: 'Classificação Semanal',
       topExplorersThisWeek: 'Principais exploradores desta semana',
       allCities: 'Todas as Cidades',
       allCategories: 'Todas as Categorias',

@@ -389,52 +389,6 @@ const ExplorePage = () => {
                       </div>
                     )}
 
-                    {/* Follow Suggestions */}
-                    {suggestions.length > 0 && (
-                      <div>
-                        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                          <Users className="w-4 h-4" />
-                          {t('suggestedForYou', { ns: 'explore' })}
-                        </h3>
-                        <div className="space-y-2">
-                          {suggestions.slice(0, 5).map((suggestedUser) => (
-                            <div
-                              key={suggestedUser.id}
-                              className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors"
-                            >
-                              <div 
-                                className="flex items-center gap-3 flex-1 cursor-pointer"
-                                onClick={() => handleUserClick(suggestedUser.id)}
-                              >
-                                <Avatar className="h-12 w-12">
-                                  <AvatarImage src={suggestedUser.avatar_url || undefined} />
-                                  <AvatarFallback>
-                                    {suggestedUser.username?.[0]?.toUpperCase() || 'U'}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-semibold text-foreground truncate">
-                                    {suggestedUser.username}
-                                  </div>
-                                   <div className="text-sm text-muted-foreground">
-                                     {suggestedUser.follower_count || 0} {t('followers', { ns: 'common' })}
-                                     {suggestedUser.mutual_followers ? ` • ${suggestedUser.mutual_followers} ${t('mutual', { ns: 'common' })}` : ''}
-                                   </div>
-                                </div>
-                              </div>
-                               <Button
-                                 variant={suggestedUser.is_following ? 'outline' : 'default'}
-                                 size="sm"
-                                 onClick={() => handleFollowUser(suggestedUser.id)}
-                               >
-                                 {suggestedUser.is_following ? t('following', { ns: 'common' }) : t('follow', { ns: 'common' })}
-                               </Button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    
                     {/* Weekly Leaderboard */}
                     {champions.length > 0 && (
                       <CommunityChampions 

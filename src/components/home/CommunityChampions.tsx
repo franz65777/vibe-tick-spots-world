@@ -34,12 +34,7 @@ const CommunityChampions = ({
   return <Card className="bg-card border-border shadow-sm overflow-hidden rounded-xl">
       <div className="px-4 py-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-              <Trophy className="w-4 h-4 text-primary" />
-            </div>
-            <h3 className="text-base font-bold text-foreground">{t('weeklyLeaderboard', { ns: 'home' })}</h3>
-          </div>
+          <h3 className="text-base font-bold text-foreground">{t('weeklyLeaderboard', { ns: 'leaderboard' })}</h3>
           <Button
             onClick={() => navigate('/leaderboard')}
             variant="outline"
