@@ -117,7 +117,7 @@ const NotificationsPage = () => {
         <div className="py-3 flex items-center justify-between px-4">
           <div className="flex items-center gap-3">
             <Button
-              onClick={() => navigate(-1)}
+              onClick={() => navigate('/')}
               variant="ghost"
               size="icon"
               className="rounded-full"
