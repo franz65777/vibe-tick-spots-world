@@ -354,11 +354,21 @@ const LeafletMapSetup = ({
       )}
 
       {/* Show post modal when post is selected from pin */}
-      {selectedPostFromPin && (
+      {selectedPostFromPin && selectedPlace && (
         <PostDetailModalMobile
           postId={selectedPostFromPin}
+          locationId={selectedPlace.id}
           isOpen={true}
-          onClose={() => setSelectedPostFromPin(null)}
+          onClose={() => {
+            setSelectedPostFromPin(null);
+            // Force map re-render by temporarily hiding and showing
+            const container = containerRef.current;
+            if (container && mapRef.current) {
+              setTimeout(() => {
+                mapRef.current?.invalidateSize();
+              }, 100);
+            }
+          }}
         />
       )}
     </>
