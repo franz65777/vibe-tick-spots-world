@@ -287,10 +287,32 @@ const ExplorePage = () => {
     }
   };
 
-  const handleHistoryAvatarClick = (item: any) => {
-    if (item.has_active_story && item.target_user_id) {
+  const handleHistoryAvatarClick = async (item: any) => {
+    if (!item.target_user_id) return;
+
+    // Re-save to bump this user on top and avoid duplicates
+    if (user) {
+      try {
+        await supabase
+          .from('search_history')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('target_user_id', item.target_user_id);
+        await supabase.from('search_history').insert({
+          user_id: user.id,
+          search_query: item.username || item.search_query,
+          search_type: 'users',
+          target_user_id: item.target_user_id
+        });
+        await fetchSearchHistory();
+      } catch (e) {
+        console.error('Failed to update history order:', e);
+      }
+    }
+
+    if (item.has_active_story) {
       openStoriesForUser(item.target_user_id, item.username || item.search_query, item.avatar_url);
-    } else if (item.target_user_id) {
+    } else {
       navigate(`/profile/${item.target_user_id}`, { 
         state: { 
           from: 'explore',
@@ -401,7 +423,7 @@ const ExplorePage = () => {
                         <div className="flex items-center justify-between mb-3">
                           <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                             <Search className="w-4 h-4" />
-                            {t('recent', { ns: 'common' })}
+                            {t('recent', { ns: 'explore' })}
                           </h3>
                           <Button
                             variant="ghost"
