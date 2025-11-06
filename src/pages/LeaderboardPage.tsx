@@ -130,7 +130,7 @@ const LeaderboardPage = () => {
               variant="outline"
               className="mt-4 rounded-full"
             >
-              {t('reset', { ns: 'explore' })}
+              {t('resetFilters', { ns: 'leaderboard' })}
             </Button>
           </div>
         ) : (

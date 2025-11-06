@@ -41,7 +41,7 @@ const CitySelectionModal = ({
     <div className="fixed inset-0 bg-background z-50 flex flex-col">
       {/* Header */}
       <div className="sticky top-0 bg-background border-b border-border">
-        <div className="flex items-center gap-3 px-4 py-4">
+        <div className="flex items-center gap-3 px-4 pt-6 pb-4">
           <Button
             onClick={onClose}
             variant="ghost"

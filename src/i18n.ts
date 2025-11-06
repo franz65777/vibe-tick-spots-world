@@ -605,7 +605,8 @@ const resources = {
       selectCity: 'Select City',
       searchCity: 'Search city...',
       noCitiesAvailable: 'No cities available',
-      noResultsTryDifferentFilter: 'No results. Try different filter or city'
+      noResultsTryDifferentFilter: 'No results. Try different filter or city',
+      resetFilters: 'Reset'
     }
   },
   es: {
