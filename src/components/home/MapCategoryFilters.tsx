@@ -14,7 +14,8 @@ import {
   Star,
   Search,
   X,
-  Plus
+  Plus,
+  Croissant
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMapFilter } from '@/contexts/MapFilterContext';
@@ -35,7 +36,7 @@ export const categoryFilters: CategoryFilter[] = [
   { id: 'restaurant', name: 'Restaurants', icon: Utensils, color: 'bg-orange-500' },
   { id: 'bar', name: 'Bars & Pubs', icon: Wine, color: 'bg-purple-500' },
   { id: 'cafe', name: 'Cafés', icon: Coffee, color: 'bg-amber-500' },
-  { id: 'bakery', name: 'Bakeries', icon: Coffee, color: 'bg-yellow-500' },
+  { id: 'bakery', name: 'Bakeries', icon: Croissant, color: 'bg-yellow-500' },
   { id: 'hotel', name: 'Hotels', icon: Building, color: 'bg-indigo-500' },
   { id: 'museum', name: 'Museums', icon: Museum, color: 'bg-blue-500' },
   { id: 'entertainment', name: 'Entertainment', icon: Star, color: 'bg-pink-500' }
