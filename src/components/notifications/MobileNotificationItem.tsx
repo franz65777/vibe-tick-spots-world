@@ -430,12 +430,13 @@ const MobileNotificationItem = ({
   return (
     <div
       onClick={handleClick}
-      className={`w-full flex items-start gap-2.5 px-4 py-3 cursor-pointer active:bg-accent/50 transition-colors ${
+      className={`w-full cursor-pointer active:bg-accent/50 transition-colors ${
         !notification.is_read ? 'bg-accent/20' : 'bg-background'
       }`}
     >
-      {/* User Avatar(s) */}
-      {renderAvatars()}
+      <div className="flex items-start gap-2.5 py-3 px-4">
+        {/* User Avatar(s) */}
+        {renderAvatars()}
 
       {/* Notification Text and Time */}
       <div className="flex-1 min-w-0">
@@ -491,6 +492,7 @@ const MobileNotificationItem = ({
         {!notification.is_read && (
           <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
         )}
+      </div>
       </div>
     </div>
   );

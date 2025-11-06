@@ -44,13 +44,16 @@ const NotificationsPage = () => {
         break;
       case 'like':
         if (notification.data?.post_id) {
-          // Navigate to own profile to see the liked post
-          navigate(`/profile`);
+          // Open the post directly
+          navigate(`/profile`, { state: { openPostId: notification.data.post_id } });
         }
         break;
       case 'story_like':
+        // Open own profile to see your stories
+        navigate(`/profile`);
+        break;
       case 'story_reply':
-        // For story notifications, open messages with that user
+        // For story replies, open messages with that user
         if (notification.data?.user_id) {
           navigate('/messages', { state: { initialUserId: notification.data.user_id } });
         }
@@ -64,7 +67,7 @@ const NotificationsPage = () => {
     <div className="h-screen w-full bg-background flex flex-col overflow-hidden">
       {/* Header */}
       <header className="shrink-0 bg-background w-full">
-        <div className="px-4 py-3 flex items-center justify-between">
+        <div className="py-3 flex items-center justify-between px-4">
           <div className="flex items-center gap-3">
             <Button
               onClick={() => navigate(-1)}

@@ -26,11 +26,21 @@ export const useStories = () => {
   const fetchStories = async () => {
     try {
       console.log('Fetching stories...');
-      const { data, error } = await supabase
+      
+      // Fetch active stories and user's own stories (even if expired)
+      let query = supabase
         .from('stories')
         .select('*')
-        .gt('expires_at', new Date().toISOString())
         .order('created_at', { ascending: false });
+      
+      // If user is authenticated, include their expired stories too
+      if (user) {
+        query = query.or(`expires_at.gt.${new Date().toISOString()},user_id.eq.${user.id}`);
+      } else {
+        query = query.gt('expires_at', new Date().toISOString());
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching stories:', error);
@@ -49,7 +59,7 @@ export const useStories = () => {
 
   useEffect(() => {
     fetchStories();
-  }, []);
+  }, [user]);
 
   const uploadStory = async (
     file: File,
