@@ -652,6 +652,7 @@ const MessagesPage = () => {
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
+    const diffWeeks = Math.floor(diffDays / 7);
 
     // Get the current language from i18n
     const currentLang = i18n.language || 'en';
@@ -665,8 +666,25 @@ const MessagesPage = () => {
     if (diffHours < 24) {
       return `${diffHours}${currentLang === 'it' ? 'h' : 'h'}`;
     }
-    // Days
-    return `${diffDays}${currentLang === 'it' ? 'g' : currentLang === 'es' ? 'd' : 'd'}`;
+    
+    // Less than 6 days: show days (1g, 2g, etc.)
+    if (diffDays < 6) {
+      return `${diffDays}${currentLang === 'it' ? 'g' : currentLang === 'es' ? 'd' : 'd'}`;
+    }
+    
+    // 6 days to 4 weeks: show weeks (1 settimana, 2 settimane, etc.)
+    if (diffWeeks < 4) {
+      return diffWeeks === 1 
+        ? `1 ${t('week', { ns: 'common' })}`
+        : `${diffWeeks} ${t('weeks', { ns: 'common' })}`;
+    }
+    
+    // Over 4 weeks: show date as "12 nov"
+    const day = date.getDate();
+    const month = date.getMonth();
+    const monthAbbr = t(`monthsAbbr.${month}`, { ns: 'common' });
+    
+    return `${day} ${monthAbbr}`;
   };
 
   return (
@@ -741,9 +759,9 @@ const MessagesPage = () => {
                   }}
                   variant="ghost"
                   size="icon"
-                  className="flex-shrink-0 h-9 w-9"
+                  className="flex-shrink-0 h-10 w-10"
                 >
-                  <img src={pinIcon} alt="Pin" className="w-7 h-7" />
+                  <img src={pinIcon} alt="Pin" className="w-9 h-9" />
                 </Button>
               </div>
             ) : null}

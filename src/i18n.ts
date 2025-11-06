@@ -121,7 +121,23 @@ const resources = {
         9: 'October',
         10: 'November',
         11: 'December'
-      }
+      },
+      monthsAbbr: {
+        0: 'Jan',
+        1: 'Feb',
+        2: 'Mar',
+        3: 'Apr',
+        4: 'May',
+        5: 'Jun',
+        6: 'Jul',
+        7: 'Aug',
+        8: 'Sep',
+        9: 'Oct',
+        10: 'Nov',
+        11: 'Dec'
+      },
+      week: 'week',
+      weeks: 'weeks',
     },
     navigation: {
       explore: 'Explore',
@@ -679,7 +695,23 @@ const resources = {
         9: 'Octubre',
         10: 'Noviembre',
         11: 'Diciembre'
-      }
+      },
+      monthsAbbr: {
+        0: 'Ene',
+        1: 'Feb',
+        2: 'Mar',
+        3: 'Abr',
+        4: 'May',
+        5: 'Jun',
+        6: 'Jul',
+        7: 'Ago',
+        8: 'Sep',
+        9: 'Oct',
+        10: 'Nov',
+        11: 'Dic'
+      },
+      week: 'semana',
+      weeks: 'semanas',
     },
     navigation: {
       explore: 'Explorar',
@@ -1230,7 +1262,23 @@ const resources = {
         9: 'Ottobre',
         10: 'Novembre',
         11: 'Dicembre'
-      }
+      },
+      monthsAbbr: {
+        0: 'Gen',
+        1: 'Feb',
+        2: 'Mar',
+        3: 'Apr',
+        4: 'Mag',
+        5: 'Giu',
+        6: 'Lug',
+        7: 'Ago',
+        8: 'Set',
+        9: 'Ott',
+        10: 'Nov',
+        11: 'Dic'
+      },
+      week: 'settimana',
+      weeks: 'settimane',
     },
     navigation: {
       explore: 'Esplora',
@@ -1771,7 +1819,23 @@ const resources = {
         9: 'Octobre',
         10: 'Novembre',
         11: 'Décembre'
-      }
+      },
+      monthsAbbr: {
+        0: 'Jan',
+        1: 'Fév',
+        2: 'Mar',
+        3: 'Avr',
+        4: 'Mai',
+        5: 'Juin',
+        6: 'Juil',
+        7: 'Aoû',
+        8: 'Sep',
+        9: 'Oct',
+        10: 'Nov',
+        11: 'Déc'
+      },
+      week: 'semaine',
+      weeks: 'semaines',
     },
     navigation: {
       explore: 'Explorer',
@@ -2674,7 +2738,23 @@ const resources = {
         9: 'Outubro',
         10: 'Novembro',
         11: 'Dezembro'
-      }
+      },
+      monthsAbbr: {
+        0: 'Jan',
+        1: 'Fev',
+        2: 'Mar',
+        3: 'Abr',
+        4: 'Mai',
+        5: 'Jun',
+        6: 'Jul',
+        7: 'Ago',
+        8: 'Set',
+        9: 'Out',
+        10: 'Nov',
+        11: 'Dez'
+      },
+      week: 'semana',
+      weeks: 'semanas',
     },
     navigation: {
       explore: 'Explorar',
