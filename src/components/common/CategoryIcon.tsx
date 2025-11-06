@@ -25,12 +25,12 @@ export const CategoryIcon: React.FC<CategoryIconProps> = ({ category, className 
       case 'museum':
         return { src: museum, scale: 1 };
       case 'hotel':
-        return { src: hotel, scale: 1.2 };
+        return { src: hotel, scale: 1.08 };
       case 'cafe':
       case 'café':
         return { src: cafe, scale: 1 };
       case 'restaurant':
-        return { src: restaurant, scale: 1.4 };
+        return { src: restaurant, scale: 1.26 };
       case 'entertainment':
         return { src: entertainment, scale: 1 };
       default:
