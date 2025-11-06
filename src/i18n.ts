@@ -3977,6 +3977,9 @@ const resources = {
       feedEmpty: '피드가 비어있습니다.',
       startFollowing: '새로운 장소를 저장하여 프로모션, 이벤트, 할인 등을 발견하세요',
       exploreUsers: '사용자 탐색',
+      week: '주',
+      weeks: '주',
+      leaderboard: '리더보드',
     },
     navigation: {
       explore: '탐색',
@@ -4347,6 +4350,9 @@ const resources = {
       feedEmpty: 'خلاصتك فارغة.',
       startFollowing: 'ابدأ بحفظ أماكن جديدة لاكتشاف العروض والفعاليات والخصومات والمزيد',
       exploreUsers: 'استكشاف المستخدمين',
+      week: 'أسبوع',
+      weeks: 'أسابيع',
+      leaderboard: 'لوحة المتصدرين',
     },
     navigation: {
       explore: 'استكشاف',
@@ -4716,6 +4722,9 @@ const resources = {
       feedEmpty: 'आपकी फ़ीड खाली है।',
       startFollowing: 'प्रचार, कार्यक्रम, छूट और बहुत कुछ खोजने के लिए नए स्थान सहेजना शुरू करें',
       exploreUsers: 'उपयोगकर्ताओं का अन्वेषण करें',
+      week: 'सप्ताह',
+      weeks: 'सप्ताह',
+      leaderboard: 'लीडरबोर्ड',
     },
     navigation: {
       explore: 'खोजें',
@@ -5086,6 +5095,9 @@ const resources = {
       feedEmpty: 'Ваша лента пуста.',
       startFollowing: 'Начните сохранять новые места, чтобы открывать акции, события, скидки и многое другое',
       exploreUsers: 'Исследовать пользователей',
+      week: 'неделя',
+      weeks: 'недели',
+      leaderboard: 'Таблица лидеров',
     },
     navigation: {
       explore: 'Обзор',

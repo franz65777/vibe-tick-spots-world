@@ -460,15 +460,7 @@ const ExplorePage = () => {
                 {/* Search History & Follow Suggestions - Only in People mode */}
                 {!isSearchActive && (
                   <div className="px-1 py-2 space-y-4">
-                    {/* Weekly Leaderboard - shown first, closer to search bar */}
-                    {champions.length > 0 && (
-                      <CommunityChampions 
-                        champions={champions} 
-                        onUserClick={handleUserClick}
-                      />
-                    )}
-
-                    {/* Search History */}
+                    {/* Search History - moved up */}
                     {localSearchHistory.length > 0 && (
                       <div>
                         <div className="flex items-center justify-between mb-3">
@@ -630,6 +622,18 @@ const ExplorePage = () => {
         onClose={handleCloseLocationModal}
         place={selectedLocation}
       />
+
+      {/* Leaderboard Button - fixed at bottom above navigation */}
+      {searchMode === 'users' && !isSearchActive && champions.length > 0 && (
+        <div className="fixed bottom-20 left-0 right-0 px-4 pb-2 bg-gradient-to-t from-background via-background to-transparent pointer-events-none">
+          <div className="pointer-events-auto">
+            <CommunityChampions 
+              champions={champions} 
+              onUserClick={handleUserClick}
+            />
+          </div>
+        </div>
+      )}
     </div>;
 };
 
