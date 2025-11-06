@@ -23,6 +23,7 @@ import AdminBusinessRequestsPage from '@/pages/AdminBusinessRequestsPage';
 import NotificationsPage from '@/pages/NotificationsPage';
 import MessagesPage from '@/pages/MessagesPage';
 import DiscoverPage from '@/pages/DiscoverPage';
+import PostPage from '@/pages/PostPage';
 
 import BusinessAnalyticsPage from '@/pages/business/BusinessAnalyticsPage';
 import BusinessAddPage from '@/pages/business/BusinessAddPage';
@@ -96,6 +97,7 @@ function AppContent() {
         <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/post/:postId" element={<PostPage />} />
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/business" element={<BusinessOverviewPageV2 />} />
         <Route path="/business/analytics" element={<BusinessAnalyticsPage />} />

@@ -125,7 +125,7 @@ const MobileNotificationItem = ({
   const handleClick = () => {
     // Handle grouped likes - navigate to post
     if (notification.type === 'like' && notification.data?.post_id) {
-      navigate(`/profile`, { state: { openPostId: notification.data.post_id } });
+      navigate(`/post/${notification.data.post_id}`);
       return;
     }
     onAction(notification);
@@ -155,7 +155,7 @@ const MobileNotificationItem = ({
   const handlePostClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (notification.data?.post_id) {
-      navigate(`/profile`, { state: { openPostId: notification.data.post_id } });
+      navigate(`/post/${notification.data.post_id}`);
     }
   };
 

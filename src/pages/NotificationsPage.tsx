@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -45,7 +45,7 @@ const NotificationsPage = () => {
       case 'like':
         if (notification.data?.post_id) {
           // Open the post directly
-          navigate(`/profile`, { state: { openPostId: notification.data.post_id } });
+          navigate(`/post/${notification.data.post_id}`);
         }
         break;
       case 'story_like':
@@ -62,6 +62,53 @@ const NotificationsPage = () => {
         break;
     }
   };
+
+  // Group notifications: likes by post, dedupe identical ones
+  const groupedNotifications = useMemo(() => {
+    const likeGroups = new Map<string, any>();
+    const others: any[] = [];
+
+    for (const n of notifications) {
+      if (n.type === 'like' && n.data?.post_id) {
+        const key = `like:${n.data.post_id}`;
+        const userInfo = {
+          id: n.data?.user_id || '',
+          name: n.data?.user_name || n.data?.username || 'User',
+          avatar: n.data?.user_avatar || n.data?.avatar_url || ''
+        };
+        const existing = likeGroups.get(key);
+        if (existing) {
+          if (userInfo.id && !existing.data.grouped_users.find((u: any) => u.id === userInfo.id)) {
+            existing.data.grouped_users.push(userInfo);
+          }
+          existing.data.total_count += 1;
+          if (new Date(n.created_at) > new Date(existing.created_at)) existing.created_at = n.created_at;
+          existing.is_read = existing.is_read && n.is_read;
+        } else {
+          likeGroups.set(key, {
+            ...n,
+            id: key,
+            data: {
+              ...n.data,
+              grouped_users: [userInfo],
+              total_count: 1
+            }
+          });
+        }
+      } else {
+        // dedupe exact duplicates
+        const dupKey = `${n.type}:${n.data?.user_id || ''}:${n.data?.post_id || ''}:${n.data?.comment_id || ''}:${n.message}`;
+        if (!others.find(o => (o as any).__dupKey === dupKey)) {
+          (n as any).__dupKey = dupKey;
+          others.push(n);
+        }
+      }
+    }
+
+    const grouped = [...Array.from(likeGroups.values()), ...others];
+    grouped.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    return grouped;
+  }, [notifications]);
 
   return (
     <div className="h-screen w-full bg-background flex flex-col overflow-hidden">
@@ -113,7 +160,7 @@ const NotificationsPage = () => {
           </div>
         ) : (
           <div className="w-full">
-            {notifications.map((notification) => (
+            {groupedNotifications.map((notification) => (
               <MobileNotificationItem
                 key={notification.id}
                 notification={notification}
