@@ -238,12 +238,12 @@ export const ShareModal = ({ isOpen, onClose, onShare, postId }: ShareModalProps
                   </div>
                     ) : (
                       <>
-                        {!query && frequentContacts.length > 0 && (
+                         {!query && frequentContacts.length > 0 && (
                            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 px-1 mt-6">
                              Tutti i contatti
                            </h4>
                          )}
-                         <div className="grid grid-cols-4 gap-4 py-4">
+                         <div className="grid grid-cols-4 gap-4 pb-4">
                           {filteredUsers.map((u) => (
                       <button
                         key={u.id}

@@ -324,7 +324,7 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
     <>
       <div className="fixed inset-0 z-[3000] bg-background overflow-y-auto scrollbar-hide">
         {/* Top safe area padding */}
-        <div className="h-16 bg-background sticky top-0 z-20 flex items-center px-4 mt-2">
+        <div className="h-16 bg-background sticky top-0 z-20 flex items-center px-4 mt-4">
           {(locationId || userId) && (
             <button
               onClick={onClose}
