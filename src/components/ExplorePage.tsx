@@ -307,13 +307,20 @@ const ExplorePage = () => {
           .eq('target_user_id', item.target_user_id);
 
         if (item.username) {
+          // Case-insensitive match on username for legacy rows
           await supabase
             .from('search_history')
             .delete()
             .eq('user_id', user.id)
-            .eq('search_type', 'users')
-            .eq('search_query', item.username);
+            .ilike('search_query', item.username);
         }
+
+        // Legacy: rows saved with UUID string in search_query
+        await supabase
+          .from('search_history')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('search_query', item.target_user_id);
 
         // Insert new record (most recent) so it appears at the top
         await supabase.from('search_history').insert({
@@ -494,22 +501,20 @@ const ExplorePage = () => {
                                   setLocalSearchHistory(prev => prev.filter(h => h.target_user_id !== item.target_user_id));
                                   if (user) {
                                     try {
-                                      // Remove entries by target id
+                                      // Remove entries by target id (any search_type)
                                       await supabase
                                         .from('search_history')
                                         .delete()
                                         .eq('user_id', user.id)
-                                        .eq('search_type', 'users')
                                         .eq('target_user_id', item.target_user_id);
 
-                                      // Legacy: rows saved with username only
+                                      // Legacy: rows saved with username only (case-insensitive)
                                       if (item.username) {
                                         await supabase
                                           .from('search_history')
                                           .delete()
                                           .eq('user_id', user.id)
-                                          .eq('search_type', 'users')
-                                          .eq('search_query', item.username);
+                                          .ilike('search_query', item.username);
                                       }
 
                                       // Legacy: rows saved with UUID string in search_query
@@ -517,7 +522,6 @@ const ExplorePage = () => {
                                         .from('search_history')
                                         .delete()
                                         .eq('user_id', user.id)
-                                        .eq('search_type', 'users')
                                         .eq('search_query', item.target_user_id);
 
                                       await fetchSearchHistory();

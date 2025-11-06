@@ -122,15 +122,13 @@ export const useUserSearchHistory = () => {
           .from('search_history')
           .delete()
           .eq('user_id', user.id)
-          .eq('search_type', 'users')
           .eq('target_user_id', targetUserId);
 
-        // Legacy: username-based rows (best-effort, only within users type)
+        // Legacy: UUID string stored in search_query
         await supabase
           .from('search_history')
           .delete()
           .eq('user_id', user.id)
-          .eq('search_type', 'users')
           .eq('search_query', targetUserId);
       } else {
         await supabase
