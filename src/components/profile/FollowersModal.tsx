@@ -1,10 +1,12 @@
-import { UserCheck, UserMinus, X } from 'lucide-react';
+import { UserCheck, UserMinus, UserPlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 
 interface FollowersModalProps {
   isOpen: boolean;
@@ -13,11 +15,19 @@ interface FollowersModalProps {
   userId?: string;
 }
 
+interface UserWithFollowStatus {
+  id: string;
+  username: string;
+  avatar_url: string | null;
+  isFollowing?: boolean;
+}
+
 const FollowersModal = ({ isOpen, onClose, type, userId }: FollowersModalProps) => {
   const { t } = useTranslation();
   const { user: currentUser } = useAuth();
+  const navigate = useNavigate();
   const targetUserId = userId || currentUser?.id;
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<UserWithFollowStatus[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -53,7 +63,27 @@ const FollowersModal = ({ isOpen, onClose, type, userId }: FollowersModalProps) 
           setUsers([]);
         } else {
           const followUsers = data?.map((item: any) => item.profiles).filter(Boolean) || [];
-          setUsers(followUsers);
+          
+          // Check follow status for each user
+          if (currentUser) {
+            const userIds = followUsers.map((u: any) => u.id);
+            const { data: followsData } = await supabase
+              .from('follows')
+              .select('following_id')
+              .eq('follower_id', currentUser.id)
+              .in('following_id', userIds);
+            
+            const followingIds = new Set(followsData?.map(f => f.following_id) || []);
+            
+            const usersWithStatus = followUsers.map((u: any) => ({
+              ...u,
+              isFollowing: followingIds.has(u.id)
+            }));
+            
+            setUsers(usersWithStatus);
+          } else {
+            setUsers(followUsers);
+          }
         }
       } catch (error) {
         console.error('Error fetching follow data:', error);
@@ -66,7 +96,28 @@ const FollowersModal = ({ isOpen, onClose, type, userId }: FollowersModalProps) 
     if (isOpen) {
       fetchFollowData();
     }
-  }, [targetUserId, type, isOpen]);
+  }, [targetUserId, type, isOpen, currentUser]);
+
+  const followUser = async (targetId: string) => {
+    if (!currentUser) return;
+
+    try {
+      const { error } = await supabase
+        .from('follows')
+        .insert({
+          follower_id: currentUser.id,
+          following_id: targetId,
+        });
+
+      if (!error) {
+        setUsers(prev => prev.map(u => 
+          u.id === targetId ? { ...u, isFollowing: true } : u
+        ));
+      }
+    } catch (error) {
+      console.error('Error following user:', error);
+    }
+  };
 
   const unfollowUser = async (targetId: string) => {
     if (!currentUser) return;
@@ -79,7 +130,13 @@ const FollowersModal = ({ isOpen, onClose, type, userId }: FollowersModalProps) 
         .eq('following_id', targetId);
 
       if (!error) {
-        setUsers(prev => prev.filter(u => u.id !== targetId));
+        if (type === 'following') {
+          setUsers(prev => prev.filter(u => u.id !== targetId));
+        } else {
+          setUsers(prev => prev.map(u => 
+            u.id === targetId ? { ...u, isFollowing: false } : u
+          ));
+        }
       }
     } catch (error) {
       console.error('Error unfollowing user:', error);
@@ -137,28 +194,44 @@ const FollowersModal = ({ isOpen, onClose, type, userId }: FollowersModalProps) 
             ) : (
               users.map((user) => (
                 <div key={user.id} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-                      {user.avatar_url ? (
-                        <img 
-                          src={user.avatar_url} 
-                          alt={user.username || 'User'} 
-                          className="w-full h-full rounded-full object-cover" 
-                        />
-                      ) : (
-                        <span className="text-sm font-semibold text-muted-foreground">
-                          {getInitials(user.username || 'User')}
-                        </span>
-                      )}
-                    </div>
-                    <div>
+                  <button
+                    onClick={() => navigate(`/profile/${user.id}`)}
+                    className="flex items-center gap-3 flex-1 hover:opacity-70 transition-opacity"
+                  >
+                    <Avatar className="w-12 h-12">
+                      <AvatarImage src={user.avatar_url || undefined} />
+                      <AvatarFallback>
+                        {getInitials(user.username || 'User')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="text-left">
                       <p className="font-medium text-foreground">{user.username || 'Unknown User'}</p>
                       <p className="text-sm text-muted-foreground">@{user.username}</p>
                     </div>
-                  </div>
+                  </button>
                   
-                  {isOwnProfile && (
-                    type === 'following' ? (
+                  {currentUser?.id !== user.id && (
+                    isOwnProfile && type === 'following' ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => unfollowUser(user.id)}
+                        className="flex items-center gap-2"
+                      >
+                        <UserCheck className="w-4 h-4" />
+                        {t('following', { ns: 'common' })}
+                      </Button>
+                    ) : isOwnProfile && type === 'followers' ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => removeFollower(user.id)}
+                        className="flex items-center gap-2 text-destructive hover:bg-destructive/10"
+                      >
+                        <UserMinus className="w-4 h-4" />
+                        {t('remove', { ns: 'common' })}
+                      </Button>
+                    ) : user.isFollowing ? (
                       <Button
                         size="sm"
                         variant="outline"
@@ -171,12 +244,11 @@ const FollowersModal = ({ isOpen, onClose, type, userId }: FollowersModalProps) 
                     ) : (
                       <Button
                         size="sm"
-                        variant="outline"
-                        onClick={() => removeFollower(user.id)}
-                        className="flex items-center gap-2 text-destructive hover:bg-destructive/10"
+                        onClick={() => followUser(user.id)}
+                        className="flex items-center gap-2"
                       >
-                        <UserMinus className="w-4 h-4" />
-                        {t('remove', { ns: 'common' })}
+                        <UserPlus className="w-4 h-4" />
+                        {t('follow', { ns: 'common' })}
                       </Button>
                     )
                   )}

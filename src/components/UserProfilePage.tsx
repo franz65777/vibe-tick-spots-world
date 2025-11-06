@@ -138,7 +138,7 @@ const UserProfilePage = () => {
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Header - Instagram Style */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+      <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3 flex-1">
           <button 
             onClick={handleBack}
@@ -263,19 +263,28 @@ const UserProfilePage = () => {
           <div className="flex items-center gap-2 mb-4">
             <div className="flex -space-x-2">
               {mutualFollowers.map((follower) => (
-                <Avatar key={follower.id} className="w-6 h-6 border-2 border-background">
-                  <AvatarImage src={follower.avatar_url || undefined} />
-                  <AvatarFallback className="text-[8px]">
-                    {follower.username?.substring(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+                <button
+                  key={follower.id}
+                  onClick={() => navigate(`/profile/${follower.id}`)}
+                  className="cursor-pointer hover:opacity-80 transition-opacity"
+                >
+                  <Avatar className="w-6 h-6 border-2 border-background">
+                    <AvatarImage src={follower.avatar_url || undefined} />
+                    <AvatarFallback className="text-[8px]">
+                      {follower.username?.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
               ))}
             </div>
             <p className="text-xs text-muted-foreground">
               {t('userProfile.followedBy', { ns: 'common' })}{' '}
-              <span className="font-semibold text-foreground">
+              <button
+                onClick={() => navigate(`/profile/${mutualFollowers[0]?.id}`)}
+                className="font-semibold text-foreground hover:opacity-70 transition-opacity"
+              >
                 {mutualFollowers[0]?.username}
-              </span>
+              </button>
               {totalCount > 1 && (
                 <span> {t('userProfile.andOthers', { ns: 'common', count: totalCount - 1 })}</span>
               )}
