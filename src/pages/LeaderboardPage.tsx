@@ -9,10 +9,12 @@ import { useTranslation } from 'react-i18next';
 import { useLeaderboardMetrics, LeaderboardMetric, LeaderboardFilter } from '@/hooks/useLeaderboardMetrics';
 import CitySelectionModal from '@/components/explore/CitySelectionModal';
 import { translateCityName } from '@/utils/cityTranslations';
+import { useAuth } from '@/contexts/AuthContext';
 
 const LeaderboardPage = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
   const [metric, setMetric] = useState<LeaderboardMetric>('saved');
   const [filter, setFilter] = useState<LeaderboardFilter>('all');
   const [city, setCity] = useState<string>('all');
@@ -137,39 +139,46 @@ const LeaderboardPage = () => {
           </div>
         ) : (
           <div className="space-y-2">
-            {users.map((user) => (
-              <div
-                key={user.id}
-                onClick={() => navigate(`/profile/${user.id}`)}
-                className="flex items-center gap-3 py-3 cursor-pointer hover:bg-muted/30 transition-colors rounded-lg"
-              >
-                {/* Rank */}
-                <div className="w-8 text-center flex-shrink-0">
-                  <span className="text-base font-semibold text-muted-foreground">
-                    {user.rank}
-                  </span>
-                </div>
+            {users.map((item) => {
+              const isSelf = currentUser?.id === item.id;
+              const rowClasses = `flex items-center gap-3 py-3 transition-colors rounded-lg ${isSelf ? 'cursor-default' : 'cursor-pointer hover:bg-muted/30'}`;
+              const handleClick = () => { if (!isSelf) navigate(`/profile/${item.id}`); };
+              return (
+                <div
+                  key={item.id}
+                  onClick={handleClick}
+                  aria-disabled={isSelf}
+                  role={isSelf ? 'listitem' : 'button'}
+                  className={rowClasses}
+                >
+                  {/* Rank */}
+                  <div className="w-8 text-center flex-shrink-0">
+                    <span className="text-base font-semibold text-muted-foreground">
+                      {item.rank}
+                    </span>
+                  </div>
 
-                {/* Avatar + Username aligned left */}
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <Avatar className="w-12 h-12 flex-shrink-0">
-                    <AvatarImage src={user.avatar_url} />
-                    <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                      {user.username.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
+                  {/* Avatar + Username aligned left */}
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <Avatar className="w-12 h-12 flex-shrink-0">
+                      <AvatarImage src={item.avatar_url} />
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                        {item.username.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
 
-                  <p className="font-semibold text-foreground truncate text-left">
-                    @{user.username}
-                  </p>
-                </div>
+                    <p className="font-semibold text-foreground truncate text-left">
+                      @{item.username}
+                    </p>
+                  </div>
 
-                {/* Score */}
-                <div className="text-right flex-shrink-0">
-                  <span className="text-xl font-bold text-foreground">{user.score}</span>
+                  {/* Score */}
+                  <div className="text-right flex-shrink-0">
+                    <span className="text-xl font-bold text-foreground">{item.score}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
         </div>
