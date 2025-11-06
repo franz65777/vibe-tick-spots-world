@@ -58,7 +58,34 @@ export const PostActions = ({
     };
     
     checkIfSaved();
-  }, [locationId, user]);
+
+    // Set up realtime listener for this location
+    if (!locationId || !user) return;
+
+    const channel = supabase
+      .channel(`location-saves-${locationId}-${postId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_saved_locations',
+          filter: `location_id=eq.${locationId}`
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT' && payload.new.user_id === user.id) {
+            setIsLocationSaved(true);
+          } else if (payload.eventType === 'DELETE' && payload.old.user_id === user.id) {
+            setIsLocationSaved(false);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [locationId, user, postId]);
 
   // Listen for global save changes
   useEffect(() => {
