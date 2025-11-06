@@ -101,7 +101,7 @@ const FeedPage = () => {
     }
   };
 
-  const handleLocationClick = (locationId: string, latitude: number, longitude: number, locationName: string | null, e: React.MouseEvent) => {
+  const handleLocationClick = (postId: string, locationId: string, latitude: number, longitude: number, locationName: string | null, e: React.MouseEvent) => {
     e.stopPropagation();
     navigate('/', {
       state: {
@@ -115,7 +115,8 @@ const FeedPage = () => {
           id: locationId,
           name: locationName || '',
           lat: latitude,
-          lng: longitude
+          lng: longitude,
+          sourcePostId: postId
         }
       }
     });
@@ -397,7 +398,7 @@ const FeedPage = () => {
                         </button>
                         {locationName && locationId && location?.latitude && location?.longitude && (
                           <button
-                            onClick={(e) => handleLocationClick(locationId, location.latitude, location.longitude, locationName, e)}
+                            onClick={(e) => handleLocationClick(postId, locationId, location.latitude, location.longitude, locationName, e)}
                             className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 truncate"
                           >
                             <MapPin className="w-3 h-3 shrink-0" />

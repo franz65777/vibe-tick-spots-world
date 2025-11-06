@@ -44,6 +44,9 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
   const [locationDetails, setLocationDetails] = useState<any>(null);
   const [viewStartTime] = useState<number>(Date.now());
   const [savedByOpen, setSavedByOpen] = useState(false);
+  
+  // Source post ID - if the pin was opened from a post
+  const sourcePostId = place.sourcePostId;
   const { cityLabel } = useNormalizedCity({
     id: place.google_place_id || place.id,
     city: locationDetails?.city || place.city,
@@ -252,17 +255,19 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
           <div className="bg-background px-4 pt-3 pb-2 cursor-grab active:cursor-grabbing">
             <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-3" />
             <div className="flex items-center gap-3 pb-2">
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onClose();
-                }}
-                size="icon"
-                variant="ghost"
-                className="shrink-0 h-10 w-10 rounded-full"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </Button>
+              {sourcePostId && (
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedPostId(sourcePostId);
+                  }}
+                  size="icon"
+                  variant="ghost"
+                  className="shrink-0 h-10 w-10 rounded-full"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </Button>
+              )}
               <div className="shrink-0">
                 <CategoryIcon category={place.category || 'place'} className="w-10 h-10" />
               </div>

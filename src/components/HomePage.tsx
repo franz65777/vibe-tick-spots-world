@@ -99,7 +99,8 @@ const HomePage = () => {
         isFollowing: false,
         isNew: false,
         likes: 0,
-        visitors: []
+        visitors: [],
+        sourcePostId: pin.sourcePostId // Pass sourcePostId if exists
       };
       setInitialPinToShow(placeToShow);
       usedState = true;
