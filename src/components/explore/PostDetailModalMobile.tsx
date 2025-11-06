@@ -19,6 +19,8 @@ interface PostDetailModalMobileProps {
   userId?: string;
   isOpen: boolean;
   onClose: () => void;
+  showBackButton?: boolean;
+  backLabel?: string;
 }
 
 interface PostData {
@@ -47,7 +49,7 @@ interface PostData {
   } | null;
 }
 
-export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onClose }: PostDetailModalMobileProps) => {
+export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onClose, showBackButton, backLabel }: PostDetailModalMobileProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
@@ -325,7 +327,7 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
       <div className="fixed inset-0 z-[3000] bg-background overflow-y-auto scrollbar-hide">
         {/* Top safe area padding */}
         <div className="h-16 bg-background sticky top-0 z-20 flex items-center px-4 mt-4">
-          {(locationId || userId) && (
+          {(locationId || userId || showBackButton) && (
             <button
               onClick={onClose}
               className="flex items-center gap-2 text-foreground hover:opacity-70 transition-opacity"
@@ -333,7 +335,9 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M19 12H5M12 19l-7-7 7-7"/>
               </svg>
-              <span className="font-semibold">{locationId ? t('location', { ns: 'common' }) : t('profile', { ns: 'common' })}</span>
+              <span className="font-semibold">
+                {backLabel || (locationId ? t('location', { ns: 'common' }) : t('profile', { ns: 'common' }))}
+              </span>
             </button>
           )}
         </div>
