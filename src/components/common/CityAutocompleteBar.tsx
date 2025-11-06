@@ -152,8 +152,20 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
   const handleCurrentLocation = async () => {
     try {
       console.log('🌍 Geolocation button clicked');
+      
+      // If we already have a location, immediately update the map
+      if (location && location.city && location.city !== 'Unknown City') {
+        console.log('📍 Using existing location:', location.city);
+        onCitySelect(location.city, { 
+          lat: location.latitude, 
+          lng: location.longitude 
+        });
+        onSearchChange(location.city);
+      }
+      
+      // Always fetch fresh location to update if user moved
       getCurrentLocation();
-      // UI updates happen when location state changes
+      // UI updates happen when location state changes via useEffect
     } catch (error) {
       console.error('Error getting current location:', error);
     }
