@@ -43,7 +43,7 @@ const ExplorePage = () => {
   const [currentCity, setCurrentCity] = useState<string>('Unknown City');
   const [selectedCategory, setSelectedCategory] = useState<AllowedCategory | null>(null);
   const { champions } = useCommunityChampions(currentCity);
-  const { searchHistory, deleteSearchHistoryItem } = useUserSearchHistory();
+  const { searchHistory, deleteSearchHistoryItem, fetchSearchHistory } = useUserSearchHistory();
   const { suggestions, fetchSuggestions } = useFollowSuggestions();
   const [viewingStories, setViewingStories] = useState<any[]>([]);
   const [viewingStoriesIndex, setViewingStoriesIndex] = useState(0);
@@ -173,18 +173,26 @@ const ExplorePage = () => {
     console.log('Comment on place:', place.name);
   };
   const handleUserClick = async (userId: string) => {
-    // Find the clicked user's username and save to search history
-    const clickedUser = filteredUsers.find(u => u.id === userId) || 
-                       suggestions.find(u => u.id === userId);
-    
-    if (clickedUser?.username && user) {
-      // Save to search history when user actually clicks a profile
-      await supabase.from('search_history').insert({
-        user_id: user.id,
-        search_query: clickedUser.username,
-        search_type: 'users',
-        target_user_id: userId
-      });
+    // Save to search history when user clicks a profile
+    if (user) {
+      try {
+        // Find the clicked user's username from any source
+        const clickedUser = filteredUsers.find(u => u.id === userId) || 
+                           suggestions.find(u => u.id === userId) ||
+                           champions.find(c => c.id === userId);
+        
+        await supabase.from('search_history').insert({
+          user_id: user.id,
+          search_query: clickedUser?.username || userId,
+          search_type: 'users',
+          target_user_id: userId
+        });
+
+        // Refresh search history to show the new entry
+        await fetchSearchHistory();
+      } catch (error) {
+        console.error('Error saving search history:', error);
+      }
     }
     
     navigate(`/profile/${userId}`, { 
