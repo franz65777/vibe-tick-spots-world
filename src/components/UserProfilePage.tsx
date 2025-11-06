@@ -2,6 +2,12 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, MessageCircle, Bell, BellOff, MoreHorizontal, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useMutualFollowers } from '@/hooks/useMutualFollowers';
 import { useNotificationMuting } from '@/hooks/useNotificationMuting';
@@ -19,8 +25,10 @@ import ShareProfileModal from './profile/ShareProfileModal';
 import MessagesModal from './MessagesModal';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useTranslation } from 'react-i18next';
 
 const UserProfilePage = () => {
+  const { t } = useTranslation();
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -36,6 +44,7 @@ const UserProfilePage = () => {
   const [isLocationsListOpen, setIsLocationsListOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
+  const [showBadgesModal, setShowBadgesModal] = useState(false);
 
   // Recording visits for search history is handled in ExplorePage only to avoid duplicates
   useEffect(() => {
@@ -139,34 +148,38 @@ const UserProfilePage = () => {
           </button>
           <h1 className="text-lg font-semibold">{displayUsername}</h1>
         </div>
-{!isOwnProfile && (
+        {!isOwnProfile && (
           <div className="flex items-center gap-3">
             <Button
               onClick={toggleMute}
               variant="ghost"
               size="icon"
-              className="h-8 w-8 rounded-full"
-              title={isMuted ? 'Unmute notifications' : 'Mute notifications'}
+              className="h-9 w-9 rounded-full"
+              title={isMuted ? t('userProfile.unmute', { ns: 'common' }) : t('userProfile.mute', { ns: 'common' })}
             >
               {isMuted ? (
-                <BellOff className="w-5 h-5" />
+                <BellOff className="w-6 h-6" />
               ) : (
-                <Bell className="w-5 h-5" />
+                <Bell className="w-6 h-6" />
               )}
             </Button>
-            <Button
-              onClick={() => setIsShareModalOpen(true)}
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-full"
-              title="Share profile"
-            >
-              <MoreHorizontal className="w-5 h-5" />
-            </Button>
-            {/* Badge positioned in header */}
-            <div className="scale-90">
-              <BadgeDisplay userId={userId} />
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 rounded-full"
+                  title={t('userProfile.moreOptions', { ns: 'common' })}
+                >
+                  <MoreHorizontal className="w-6 h-6" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setIsShareModalOpen(true)}>
+                  {t('userProfile.shareProfile', { ns: 'common' })}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         )}
       </div>
@@ -177,11 +190,11 @@ const UserProfilePage = () => {
         <div className="flex items-start gap-4 mb-4">
           {/* Smaller Avatar */}
           <div className="relative shrink-0">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-primary/60 p-0.5">
+            <div className="w-[72px] h-[72px] rounded-full bg-gradient-to-br from-primary to-primary/60 p-0.5">
               <div className="w-full h-full rounded-full bg-background p-0.5">
                 <Avatar className="w-full h-full">
                   <AvatarImage src={profile.avatar_url || undefined} alt={displayUsername} />
-                  <AvatarFallback className="text-lg font-semibold">
+                  <AvatarFallback className="text-base font-semibold">
                     {getInitials()}
                   </AvatarFallback>
                 </Avatar>
@@ -191,9 +204,13 @@ const UserProfilePage = () => {
 
           {/* Username and Stats Column */}
           <div className="flex-1 flex flex-col gap-3">
-            {/* Username */}
+            {/* Username with Badges */}
             <div className="flex items-center gap-2">
               <h2 className="text-base font-semibold">{displayUsername}</h2>
+              <BadgeDisplay 
+                userId={userId} 
+                onBadgesClick={() => setShowBadgesModal(true)} 
+              />
             </div>
 
             {/* Stats Row - Followers, Following, Saved */}
@@ -203,7 +220,7 @@ const UserProfilePage = () => {
                 className="hover:opacity-70 transition-opacity"
               >
                 <span className="font-bold">{profile.followers_count || 0}</span>{' '}
-                <span className="text-muted-foreground">Followers</span>
+                <span className="text-muted-foreground">{t('common.followers')}</span>
               </button>
               
               <button 
@@ -211,7 +228,7 @@ const UserProfilePage = () => {
                 className="hover:opacity-70 transition-opacity"
               >
                 <span className="font-bold">{profile.following_count || 0}</span>{' '}
-                <span className="text-muted-foreground">Following</span>
+                <span className="text-muted-foreground">{t('common.following')}</span>
               </button>
               
               <button 
@@ -219,7 +236,7 @@ const UserProfilePage = () => {
                 className="hover:opacity-70 transition-opacity"
               >
                 <span className="font-bold">{profile.places_visited || 0}</span>{' '}
-                <span className="text-muted-foreground">Saved</span>
+                <span className="text-muted-foreground">{t('profile.saved')}</span>
               </button>
             </div>
           </div>
@@ -255,12 +272,12 @@ const UserProfilePage = () => {
               ))}
             </div>
             <p className="text-xs text-muted-foreground">
-              Followed by{' '}
+              {t('userProfile.followedBy', { ns: 'common' })}{' '}
               <span className="font-semibold text-foreground">
                 {mutualFollowers[0]?.username}
               </span>
               {totalCount > 1 && (
-                <span> and {totalCount - 1} other{totalCount > 2 ? 's' : ''}</span>
+                <span> {t('userProfile.andOthers', { ns: 'common', count: totalCount - 1 })}</span>
               )}
             </p>
           </div>
@@ -276,11 +293,11 @@ const UserProfilePage = () => {
             >
               {profile.is_following ? (
                 <>
-                  Following
+                  {t('common.following')}
                   <ChevronDown className="w-4 h-4 ml-1" />
                 </>
               ) : (
-                'Follow'
+                t('common.follow')
               )}
             </Button>
             <Button 
@@ -288,7 +305,7 @@ const UserProfilePage = () => {
               size="icon"
               className="rounded-lg h-9 w-9"
               onClick={() => setIsMessagesOpen(true)}
-              title="Send message"
+              title={t('userProfile.sendMessage', { ns: 'common' })}
             >
               <MessageCircle className="w-4 h-4" />
             </Button>
@@ -327,6 +344,10 @@ const UserProfilePage = () => {
         isOpen={isMessagesOpen}
         onClose={() => setIsMessagesOpen(false)}
         initialUserId={userId}
+      />
+
+      <Achievements 
+        userId={userId}
       />
     </div>
   );

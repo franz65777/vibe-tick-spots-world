@@ -51,7 +51,7 @@ const Achievements = ({ userId }: AchievementsProps) => {
           <span className="text-sm text-blue-600 font-medium">{earned}/{total} {t('earned', { ns: 'profile' })}</span>
         </div>
         
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 max-h-[400px] overflow-y-auto scrollbar-hide">
           {displayBadges.map((badge) => (
             <div 
               key={badge.id} 

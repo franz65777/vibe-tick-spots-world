@@ -140,6 +140,17 @@ const resources = {
       week: 'week',
       weeks: 'weeks',
       leaderboard: 'Leaderboard',
+      userProfile: {
+        mute: 'Mute notifications',
+        unmute: 'Unmute notifications',
+        block: 'Block User',
+        unblock: 'Unblock User',
+        shareProfile: 'Share Profile',
+        sendMessage: 'Send message',
+        moreOptions: 'More options',
+        followedBy: 'Followed by',
+        andOthers: 'and {{count}} other'
+      }
     },
     navigation: {
       explore: 'Explore',
@@ -1344,6 +1355,17 @@ const resources = {
       week: 'settimana',
       weeks: 'settimane',
       leaderboard: 'Classifica',
+      userProfile: {
+        mute: 'Silenzia notifiche',
+        unmute: 'Riattiva notifiche',
+        block: 'Blocca Utente',
+        unblock: 'Sblocca Utente',
+        shareProfile: 'Condividi Profilo',
+        sendMessage: 'Invia messaggio',
+        moreOptions: 'Altre opzioni',
+        followedBy: 'Seguito da',
+        andOthers: 'e altri {{count}}'
+      }
     },
     navigation: {
       explore: 'Esplora',
@@ -1932,6 +1954,17 @@ const resources = {
       week: 'semaine',
       weeks: 'semaines',
       leaderboard: 'Classement',
+      userProfile: {
+        mute: 'Désactiver les notifications',
+        unmute: 'Activer les notifications',
+        block: 'Bloquer l\'utilisateur',
+        unblock: 'Débloquer l\'utilisateur',
+        shareProfile: 'Partager le profil',
+        sendMessage: 'Envoyer un message',
+        moreOptions: 'Plus d\'options',
+        followedBy: 'Suivi par',
+        andOthers: 'et {{count}} autre'
+      }
     },
     navigation: {
       explore: 'Explorer',
@@ -2894,6 +2927,17 @@ const resources = {
       week: 'semana',
       weeks: 'semanas',
       leaderboard: 'Classificação',
+      userProfile: {
+        mute: 'Silenciar notificações',
+        unmute: 'Ativar notificações',
+        block: 'Bloquear Usuário',
+        unblock: 'Desbloquear Usuário',
+        shareProfile: 'Compartilhar Perfil',
+        sendMessage: 'Enviar mensagem',
+        moreOptions: 'Mais opções',
+        followedBy: 'Seguido por',
+        andOthers: 'e mais {{count}}'
+      }
     },
     navigation: {
       explore: 'Explorar',
