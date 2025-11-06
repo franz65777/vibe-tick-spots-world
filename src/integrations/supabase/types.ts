@@ -1680,6 +1680,9 @@ export type Database = {
           following_count: number | null
           full_name: string | null
           id: string
+          invite_code: string | null
+          invited_by: string | null
+          invited_users_count: number | null
           is_business_user: boolean | null
           language: string
           places_visited: number | null
@@ -1703,6 +1706,9 @@ export type Database = {
           following_count?: number | null
           full_name?: string | null
           id: string
+          invite_code?: string | null
+          invited_by?: string | null
+          invited_users_count?: number | null
           is_business_user?: boolean | null
           language?: string
           places_visited?: number | null
@@ -1726,6 +1732,9 @@ export type Database = {
           following_count?: number | null
           full_name?: string | null
           id?: string
+          invite_code?: string | null
+          invited_by?: string | null
+          invited_users_count?: number | null
           is_business_user?: boolean | null
           language?: string
           places_visited?: number | null
@@ -1737,7 +1746,15 @@ export type Database = {
           user_type?: Database["public"]["Enums"]["user_type"] | null
           username?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       promoted_posts: {
         Row: {
@@ -2664,6 +2681,7 @@ export type Database = {
       cleanup_sensitive_data: { Args: never; Returns: undefined }
       enforce_data_retention: { Args: never; Returns: undefined }
       generate_confirmation_code: { Args: never; Returns: string }
+      generate_invite_code: { Args: never; Returns: string }
       get_anonymized_analytics: {
         Args: { target_user_id: string }
         Returns: {
