@@ -48,6 +48,8 @@ export const CategoryIcon: React.FC<CategoryIconProps> = ({ category, className 
         alt={category}
         className="w-full h-full object-contain"
         style={style as any}
+        loading="eager"
+        fetchPriority="high"
       />
     </div>
   );

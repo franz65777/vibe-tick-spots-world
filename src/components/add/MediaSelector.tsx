@@ -44,17 +44,14 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
               const radian = (angle * Math.PI) / 180;
               const x = Math.cos(radian) * radius;
               const y = Math.sin(radian) * radius;
-              const delay = index * 0.15;
               
               return (
                 <div
                   key={category}
-                  className="absolute opacity-60 animate-bounce"
+                  className="absolute opacity-70 transition-opacity hover:opacity-100"
                   style={{
                     top: `calc(50% + ${y}px - 1.75rem)`,
-                    left: `calc(50% + ${x}px - 1.75rem)`,
-                    animationDelay: `${delay}s`,
-                    animationDuration: '2.5s'
+                    left: `calc(50% + ${x}px - 1.75rem)`
                   }}
                 >
                   <CategoryIcon category={category} className="w-14 h-14 drop-shadow-lg" />
