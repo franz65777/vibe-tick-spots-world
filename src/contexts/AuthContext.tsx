@@ -60,9 +60,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    // Set up auth state listener
+    // Set up auth state listener (sync only to avoid deadlocks)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('AuthProvider: Auth state changed:', event, session?.user?.email);
         
         if (event === 'TOKEN_REFRESHED') {
@@ -77,19 +77,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(session?.user ?? null);
         }
         
-        // If user just signed in, ensure profile exists with timeout
+        // If user just signed in, defer profile creation to avoid async work in callback
         if (event === 'SIGNED_IN' && session?.user) {
-          console.log('AuthProvider: User signed in, ensuring profile exists...');
-          try {
-            await Promise.race([
-              ensureProfileExists(session.user),
-              new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Profile creation timeout')), 5000)
-              )
-            ]);
-          } catch (error) {
-            console.warn('AuthProvider: Profile creation failed or timed out, continuing anyway:', error);
-          }
+          console.log('AuthProvider: User signed in, scheduling profile ensure...');
+          setTimeout(() => {
+            ensureProfileExists(session.user!).catch((error) => {
+              console.warn('AuthProvider: Profile ensure failed (non-blocking):', error);
+            });
+          }, 0);
         }
         
         console.log('AuthProvider: Setting loading to false');
