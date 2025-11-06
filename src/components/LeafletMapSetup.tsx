@@ -137,6 +137,18 @@ const LeafletMapSetup = ({
     map.setView([mapCenter.lat, mapCenter.lng], 15, { animate: true });
   }, [mapCenter.lat, mapCenter.lng, preventCenterUpdate]);
 
+  // Center map when a place is selected from navigation (e.g., from feed)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !selectedPlace) return;
+    
+    console.log('🗺️ Centering map to selected place:', selectedPlace.name);
+    map.setView([selectedPlace.coordinates.lat, selectedPlace.coordinates.lng], 16, { 
+      animate: true,
+      duration: 0.8 
+    });
+  }, [selectedPlace]);
+
   // Ensure tiles recalc when toggling fullscreen to avoid white map
   useEffect(() => {
     const map = mapRef.current;
