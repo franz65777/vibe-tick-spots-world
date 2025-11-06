@@ -4,6 +4,7 @@ import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
 import { useCityEngagement } from '@/hooks/useCityEngagement';
 import CityEngagementCard from './CityEngagementCard';
 import { useTranslation } from 'react-i18next';
+import { translateCityName } from '@/utils/cityTranslations';
 interface UnifiedSearchOverlayProps {
   isOpen: boolean;
   onClose: () => void;
@@ -121,7 +122,7 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-lg z-[3000] flex flex-col" onClick={onClose}>
       {/* Header with integrated search */}
-      <div className="bg-white px-4 pt-[calc(env(safe-area-inset-top)+1.25rem)] pb-3 flex items-center gap-3 shadow-lg" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white px-4 pt-[calc(env(safe-area-inset-top)+1.875rem)] pb-3 flex items-center gap-3 shadow-lg" onClick={(e) => e.stopPropagation()}>
         <button
           onClick={onClose}
           className="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
@@ -145,24 +146,27 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
       <div className="flex-1 overflow-y-auto px-4 py-4 bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
         {!query.trim() && (
           <div className="flex flex-wrap gap-2 mb-4">
-            {(trendingCities.length ? trendingCities : popularCities.map(c => ({ name: c.name, count: 0, lat: c.lat, lng: c.lng }))).map((item) => (
-              <CityEngagementCard
-                key={item.name}
-                cityName={item.name}
-                coords={'lat' in item && 'lng' in item ? { lat: (item as any).lat, lng: (item as any).lng } : undefined}
-                onClick={() => {
-                  if ('lat' in item && 'lng' in item) {
-                    // Direct selection with coordinates
-                    handleCitySelect({
-                      name: item.name,
-                      lat: (item as any).lat,
-                      lng: (item as any).lng
-                    });
-                  }
-                }}
-                baseCount={'count' in item ? (item as any).count : 0}
-              />
-            ))}
+            {(trendingCities.length ? trendingCities : popularCities.map(c => ({ name: c.name, count: 0, lat: c.lat, lng: c.lng }))).map((item) => {
+              const translatedName = translateCityName(item.name, i18n.language);
+              return (
+                <CityEngagementCard
+                  key={item.name}
+                  cityName={translatedName}
+                  coords={'lat' in item && 'lng' in item ? { lat: (item as any).lat, lng: (item as any).lng } : undefined}
+                  onClick={() => {
+                    if ('lat' in item && 'lng' in item) {
+                      // Direct selection with coordinates - use English name
+                      handleCitySelect({
+                        name: item.name,
+                        lat: (item as any).lat,
+                        lng: (item as any).lng
+                      });
+                    }
+                  }}
+                  baseCount={'count' in item ? (item as any).count : 0}
+                />
+              );
+            })}
           </div>
         )}
 
