@@ -5,6 +5,7 @@ import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useMutedLocations } from '@/hooks/useMutedLocations';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { locationInteractionService } from '@/services/locationInteractionService';
 import { supabase } from '@/integrations/supabase/client';
 import VisitedModal from './VisitedModal';
@@ -28,6 +29,7 @@ interface PinDetailCardProps {
 
 const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { mutedLocations, muteLocation, unmuteLocation, isMuting } = useMutedLocations(user?.id);
   const { t } = useTranslation();
   const [isLiked, setIsLiked] = useState(false);
@@ -259,12 +261,12 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                 <Button
                   onClick={(e) => {
                     e.stopPropagation();
-                    setSelectedPostId(sourcePostId);
+                    navigate(-1); // Torna alla pagina di provenienza (feed, profilo, ecc.)
                   }}
                   size="icon"
                   variant="ghost"
                   className="shrink-0 h-10 w-10 rounded-full animate-fade-in"
-                  aria-label="Torna al post"
+                  aria-label="Torna alla pagina precedente"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </Button>
