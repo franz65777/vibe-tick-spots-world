@@ -61,37 +61,59 @@ export const useSavedPlaces = () => {
       }
 
       try {
-        // Fetch from saved_places table (Google places)
-        const { data: savedPlacesData, error: savedPlacesError } = await supabase
-          .from('saved_places')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
+        // Helper to run both queries
+        const runQueries = async () => {
+          const savedRes = await supabase
+            .from('saved_places')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
 
-        if (savedPlacesError) console.error('Error fetching saved_places:', savedPlacesError);
+          const userSavedRes = await supabase
+            .from('user_saved_locations')
+            .select(`
+              id,
+              created_at,
+              locations (
+                id,
+                name,
+                category,
+                city,
+                latitude,
+                longitude,
+                google_place_id,
+                address
+              )
+            `)
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+
+          return { savedRes, userSavedRes };
+        };
+
+        let { savedRes, userSavedRes } = await runQueries();
+
+        const isBadJwt = (err?: any) => !!err && (err.code === 'PGRST303' || /JWT expired|bad_jwt/i.test(err.message || ''));
+        if (isBadJwt(savedRes.error) || isBadJwt(userSavedRes.error)) {
+          console.warn('🔁 Saved places query received bad_jwt, attempting refresh...');
+          const { error: refreshErr } = await supabase.auth.refreshSession();
+          if (refreshErr) {
+            console.error('❌ Refresh failed, signing out:', refreshErr);
+            await supabase.auth.signOut();
+            setSavedPlaces({});
+            setLoading(false);
+            return;
+          }
+          ({ savedRes, userSavedRes } = await runQueries());
+        }
+
+        const savedPlacesData = savedRes.data || [];
+        const userSavedLocations = (userSavedRes.data || []) as any[];
+
+        if (savedRes.error) console.error('Error fetching saved_places:', savedRes.error);
         console.log('useSavedPlaces: Found', savedPlacesData?.length || 0, 'saved_places entries');
 
-        // Fetch from user_saved_locations table (internal locations)
-        const { data: userSavedLocations, error: userSavedError } = await supabase
-          .from('user_saved_locations')
-          .select(`
-            id,
-            created_at,
-            locations (
-              id,
-              name,
-              category,
-              city,
-              latitude,
-              longitude,
-              google_place_id,
-              address
-            )
-          `)
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (userSavedError) console.error('Error fetching user_saved_locations:', userSavedError);
+        if (userSavedRes.error) console.error('Error fetching user_saved_locations:', userSavedRes.error);
         console.log('useSavedPlaces: Found', userSavedLocations?.length || 0, 'user_saved_locations entries');
 
         // Combine and group by city

@@ -48,11 +48,30 @@ export const useProfile = () => {
 
       console.log('🔍 Fetching profile for user:', user.id);
 
-      const { data, error: fetchError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+      const runFetch = async () => {
+        return await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+      };
+
+      let { data, error: fetchError } = await runFetch();
+
+      // Handle expired JWT once with refresh + retry
+      if (fetchError && (fetchError.code === 'PGRST303' || /JWT expired/i.test(fetchError.message || ''))) {
+        console.warn('🔁 Profile fetch received bad_jwt, attempting refresh...');
+        const { error: refreshErr } = await supabase.auth.refreshSession();
+        if (refreshErr) {
+          console.error('❌ Refresh failed, signing out:', refreshErr);
+          await supabase.auth.signOut();
+          setError('Session expired');
+          setLoading(false);
+          setProfile(null);
+          return;
+        }
+        ({ data, error: fetchError } = await runFetch());
+      }
 
       if (fetchError) {
         if (fetchError.code === 'PGRST116') {
