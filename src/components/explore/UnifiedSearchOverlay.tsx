@@ -77,18 +77,25 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
   }, [isOpen]);
 
   useEffect(() => {
-    if (query.trim()) {
-      setLoading(true);
+    const cacheKey = `${query.toLowerCase().trim()}-${i18n.language}`;
+    
+    if (!query.trim()) {
+      setResults([]);
+      setLoading(false);
+      return;
     }
     
+    // Check cache first - show immediately without debounce
+    if (searchCacheRef.current.has(cacheKey)) {
+      setResults(searchCacheRef.current.get(cacheKey)!);
+      setLoading(false);
+      return;
+    }
+    
+    setLoading(true);
     const timer = setTimeout(() => {
-      if (query.trim()) {
-        searchCities();
-      } else {
-        setResults([]);
-        setLoading(false);
-      }
-    }, 150);
+      searchCities();
+    }, 100);
 
     return () => clearTimeout(timer);
   }, [query]);
@@ -156,8 +163,11 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t('searchCities', { ns: 'explore' })}
-            className="w-full pl-10 pr-4 py-3 text-base bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
+            className="w-full pl-10 pr-12 py-3 text-base bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
           />
+          {loading && (
+            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-600 animate-spin" />
+          )}
         </div>
       </div>
 
@@ -189,13 +199,6 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
           </div>
         )}
 
-        {loading && (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
-            <span className="ml-2 text-white">{t('searching', { ns: 'common' })}</span>
-          </div>
-        )}
-
         {results.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {Array.from(new Map(results.map(r => [r.name.split(',')[0].trim().toLowerCase(), r])).values()).map((city, index) => (
@@ -209,7 +212,7 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
           </div>
         )}
 
-        {query.trim() && !loading && results.length === 0 && (
+        {query.trim() && !loading && results.length === 0 && !searchCacheRef.current.has(`${query.toLowerCase().trim()}-${i18n.language}`) && (
           <div className="flex flex-col items-center justify-center py-16 text-white">
             <MapPin className="w-16 h-16 mb-3 opacity-50" />
             <p className="text-lg font-medium">{t('noCitiesFound', { ns: 'explore' })}</p>
