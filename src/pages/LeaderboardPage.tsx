@@ -8,8 +8,10 @@ import { useCommunityChampions } from '@/hooks/useCommunityChampions';
 import AuthenticatedLayout from '@/components/AuthenticatedLayout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from 'react-i18next';
 
 const LeaderboardPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [filterCity, setFilterCity] = useState<string>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
@@ -40,8 +42,8 @@ const LeaderboardPage = () => {
                 <Trophy className="w-7 h-7" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold">Leaderboard</h1>
-                <p className="text-primary-foreground/80 text-sm mt-0.5">Top explorers this week</p>
+                <h1 className="text-3xl font-bold">{t('leaderboard', { ns: 'leaderboard' })}</h1>
+                <p className="text-primary-foreground/80 text-sm mt-0.5">{t('topExplorersThisWeek', { ns: 'leaderboard' })}</p>
               </div>
             </div>
           </div>
@@ -55,10 +57,10 @@ const LeaderboardPage = () => {
               <div className="flex gap-3 flex-1">
                 <Select value={filterCity} onValueChange={setFilterCity}>
                   <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="All Cities" />
+                    <SelectValue placeholder={t('allCities', { ns: 'leaderboard' })} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Cities</SelectItem>
+                    <SelectItem value="all">{t('allCities', { ns: 'leaderboard' })}</SelectItem>
                     <SelectItem value="dublin">Dublin</SelectItem>
                     <SelectItem value="paris">Paris</SelectItem>
                     <SelectItem value="london">London</SelectItem>
@@ -68,14 +70,14 @@ const LeaderboardPage = () => {
 
                 <Select value={filterCategory} onValueChange={setFilterCategory}>
                   <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="All Categories" />
+                    <SelectValue placeholder={t('allCategories', { ns: 'leaderboard' })} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    <SelectItem value="restaurants">Restaurants</SelectItem>
-                    <SelectItem value="culture">Culture</SelectItem>
-                    <SelectItem value="nightlife">Nightlife</SelectItem>
-                    <SelectItem value="outdoors">Outdoors</SelectItem>
+                    <SelectItem value="all">{t('allCategories', { ns: 'leaderboard' })}</SelectItem>
+                    <SelectItem value="restaurants">{t('restaurants', { ns: 'categories' })}</SelectItem>
+                    <SelectItem value="culture">{t('culture', { ns: 'categories' })}</SelectItem>
+                    <SelectItem value="nightlife">{t('nightlife', { ns: 'categories' })}</SelectItem>
+                    <SelectItem value="outdoors">{t('outdoors', { ns: 'categories' })}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -103,9 +105,9 @@ const LeaderboardPage = () => {
           ) : champions.length === 0 ? (
             <Card className="p-12 text-center">
               <Trophy className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No Champions Yet</h3>
-              <p className="text-muted-foreground mb-4">Be the first to make the leaderboard!</p>
-              <Button onClick={() => navigate('/explore')}>Start Exploring</Button>
+              <h3 className="text-xl font-semibold mb-2">{t('noChampionsYet', { ns: 'leaderboard' })}</h3>
+              <p className="text-muted-foreground mb-4">{t('beTheFirst', { ns: 'leaderboard' })}</p>
+              <Button onClick={() => navigate('/explore')}>{t('startExploring', { ns: 'leaderboard' })}</Button>
             </Card>
           ) : (
             champions.map((champion) => (
@@ -137,10 +139,10 @@ const LeaderboardPage = () => {
                       <div className="flex items-center gap-3 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <MapPin className="w-3.5 h-3.5" />
-                          {champion.posts_count} places
+                          {champion.posts_count} {t('places', { ns: 'explore' })}
                         </span>
                         <span>•</span>
-                        <span>{champion.follower_count} followers</span>
+                        <span>{champion.follower_count} {t('followers', { ns: 'common' })}</span>
                       </div>
                     </div>
 
@@ -150,10 +152,10 @@ const LeaderboardPage = () => {
                         <span className="text-2xl font-bold text-primary">{champion.weekly_likes}</span>
                         <span className="text-xl">❤️</span>
                       </div>
-                      <div className="text-xs text-muted-foreground font-medium">this week</div>
+                      <div className="text-xs text-muted-foreground font-medium">{t('thisWeek', { ns: 'common' })}</div>
                       {champion.rank <= 3 && (
                         <Badge variant="secondary" className="mt-2 text-xs">
-                          Level {Math.floor(champion.posts_count / 10) + 1}
+                          {t('level', { ns: 'gamification' })} {Math.floor(champion.posts_count / 10) + 1}
                         </Badge>
                       )}
                     </div>
@@ -170,16 +172,16 @@ const LeaderboardPage = () => {
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent mx-auto mb-4 flex items-center justify-center">
               <Trophy className="w-8 h-8 text-primary-foreground" />
             </div>
-            <h3 className="text-xl font-bold mb-2 text-foreground">Want to join the leaderboard?</h3>
+            <h3 className="text-xl font-bold mb-2 text-foreground">{t('wantToJoin', { ns: 'leaderboard' })}</h3>
             <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
-              Explore amazing places, share your discoveries, and climb the ranks!
+              {t('exploreAmazingPlaces', { ns: 'leaderboard' })}
             </p>
             <Button 
               onClick={() => navigate('/explore')} 
               size="lg"
               className="rounded-xl font-semibold"
             >
-              Start Exploring
+              {t('startExploring', { ns: 'leaderboard' })}
             </Button>
           </Card>
         </div>

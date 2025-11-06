@@ -202,6 +202,7 @@ const resources = {
       findingSpots: 'Finding popular spots',
       noPopularSpots: 'No popular spots found in',
       topContributors: 'Top Contributors',
+      weeklyLeaderboard: 'Weekly Leaderboard',
       viewFullLeaderboard: 'View Full Leaderboard',
       yourStory: 'Your Story',
       searchCities: 'Search any city worldwide',
@@ -575,6 +576,20 @@ const resources = {
       dealMasterDesc: 'Create 10+ discounts',
       trendingNow: 'Trending Now',
       trendingNowDesc: 'Get 100 shares'
+    },
+    gamification: {
+      level: 'Level'
+    },
+    leaderboard: {
+      leaderboard: 'Leaderboard',
+      topExplorersThisWeek: 'Top explorers this week',
+      allCities: 'All Cities',
+      allCategories: 'All Categories',
+      noChampionsYet: 'No Champions Yet',
+      beTheFirst: 'Be the first to make the leaderboard!',
+      startExploring: 'Start Exploring',
+      wantToJoin: 'Want to join the leaderboard?',
+      exploreAmazingPlaces: 'Explore amazing places, share your discoveries, and climb the ranks!'
     }
   },
   es: {
@@ -5270,7 +5285,7 @@ i18n
   .init({
     resources,
     fallbackLng: 'en',
-    ns: ['common', 'notifications', 'categories', 'profile', 'mapFilters', 'navigation', 'business', 'search', 'badges', 'gamification', 'messages', 'settings'],
+    ns: ['common', 'notifications', 'categories', 'profile', 'mapFilters', 'navigation', 'business', 'search', 'badges', 'gamification', 'messages', 'settings', 'leaderboard', 'home', 'explore', 'add'],
     defaultNS: 'common',
     interpolation: {
       escapeValue: false,
