@@ -3,6 +3,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Place } from '@/types/place';
 import PinDetailCard from './explore/PinDetailCard';
+import { PostDetailModalMobile } from './explore/PostDetailModalMobile';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { createCurrentLocationMarker, createLeafletCustomMarker } from '@/utils/leafletMarkerCreator';
 import { useAnalytics } from '@/hooks/useAnalytics';
@@ -289,17 +290,22 @@ const LeafletMapSetup = ({
     fetchCampaigns();
   }, [places, isDarkMode, onPinClick, trackEvent]);
 
+  const [selectedPostFromPin, setSelectedPostFromPin] = useState<string | null>(null);
+
   return (
     <>
-      <div
-        ref={containerRef}
-        className={
-          fullScreen
-            ? 'relative w-full h-full rounded-2xl overflow-hidden bg-background'
-            : 'relative w-full min-h-[60vh] rounded-lg overflow-hidden'
-        }
-        style={{ minHeight: fullScreen ? '100%' : '60vh' }}
-      />
+      {/* Hide map when viewing a post */}
+      {!selectedPostFromPin && (
+        <div
+          ref={containerRef}
+          className={
+            fullScreen
+              ? 'relative w-full h-full rounded-2xl overflow-hidden bg-background'
+              : 'relative w-full min-h-[60vh] rounded-lg overflow-hidden'
+          }
+          style={{ minHeight: fullScreen ? '100%' : '60vh' }}
+        />
+      )}
 
       <style>{`
         @keyframes bounce {
@@ -329,8 +335,8 @@ const LeafletMapSetup = ({
         }
       `}</style>
 
-      {/* Location detail card */}
-      {selectedPlace && (
+      {/* Location detail card - hide when viewing post */}
+      {selectedPlace && !selectedPostFromPin && (
         <PinDetailCard
           place={{
             id: selectedPlace.id,
@@ -343,6 +349,16 @@ const LeafletMapSetup = ({
             sourcePostId: (selectedPlace as any).sourcePostId,
           }}
           onClose={() => onCloseSelectedPlace?.()}
+          onPostSelected={(postId) => setSelectedPostFromPin(postId)}
+        />
+      )}
+
+      {/* Show post modal when post is selected from pin */}
+      {selectedPostFromPin && (
+        <PostDetailModalMobile
+          postId={selectedPostFromPin}
+          isOpen={true}
+          onClose={() => setSelectedPostFromPin(null)}
         />
       )}
     </>

@@ -25,9 +25,10 @@ import MarketingCampaignBanner from './MarketingCampaignBanner';
 interface PinDetailCardProps {
   place: any;
   onClose: () => void;
+  onPostSelected?: (postId: string) => void;
 }
 
-const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
+const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { mutedLocations, muteLocation, unmuteLocation, isMuting } = useMutedLocations(user?.id);
@@ -433,7 +434,11 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
                         key={post.id} 
                         onClick={(e) => {
                           e.stopPropagation();
-                          setSelectedPostId(post.id);
+                          if (onPostSelected) {
+                            onPostSelected(post.id);
+                          } else {
+                            setSelectedPostId(post.id);
+                          }
                         }}
                         className="relative rounded-xl overflow-hidden bg-card shadow-sm hover:shadow-md transition-shadow"
                       >
@@ -526,7 +531,7 @@ const PinDetailCard = ({ place, onClose }: PinDetailCardProps) => {
         }}
       />
 
-      {selectedPostId && (
+      {!onPostSelected && selectedPostId && (
         <PostDetailModal
           postId={selectedPostId}
           isOpen={true}

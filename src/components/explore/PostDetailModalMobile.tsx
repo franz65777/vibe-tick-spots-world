@@ -230,16 +230,19 @@ export const PostDetailModalMobile = ({ postId, isOpen, onClose }: PostDetailMod
 
   return (
     <>
-      <div className="fixed inset-0 z-50 bg-background overflow-y-auto">
+      <div className="fixed inset-0 z-[3000] bg-background overflow-y-auto">
+        {/* Top safe area padding */}
+        <div className="h-12 bg-background" />
+        
         {/* Close button */}
         <button
           onClick={onClose}
-          className="fixed top-4 right-4 z-10 w-10 h-10 rounded-full bg-background border border-border flex items-center justify-center hover:bg-muted"
+          className="fixed top-16 right-4 z-10 w-10 h-10 rounded-full bg-background border border-border flex items-center justify-center hover:bg-muted"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <article className="post-compact min-h-screen pb-20">
+        <article className="post-compact pb-20">
           {/* Header */}
           <div className="post-compact-header flex items-center justify-between border-b border-border">
             <div className="flex items-center gap-3 flex-1 min-w-0">
