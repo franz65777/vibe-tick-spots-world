@@ -139,6 +139,7 @@ const resources = {
       },
       week: 'week',
       weeks: 'weeks',
+      leaderboard: 'Leaderboard',
     },
     navigation: {
       explore: 'Explore',
@@ -734,6 +735,7 @@ const resources = {
       },
       week: 'semana',
       weeks: 'semanas',
+      leaderboard: 'Tabla de Clasificación',
     },
     navigation: {
       explore: 'Explorar',
@@ -1321,6 +1323,7 @@ const resources = {
       },
       week: 'settimana',
       weeks: 'settimane',
+      leaderboard: 'Classifica',
     },
     navigation: {
       explore: 'Esplora',
@@ -1898,6 +1901,7 @@ const resources = {
       },
       week: 'semaine',
       weeks: 'semaines',
+      leaderboard: 'Classement',
     },
     navigation: {
       explore: 'Explorer',
@@ -2405,7 +2409,10 @@ const resources = {
         9: 'Oktober',
         10: 'November',
         11: 'Dezember'
-      }
+      },
+      week: 'Woche',
+      weeks: 'Wochen',
+      leaderboard: 'Bestenliste',
     },
     navigation: {
       explore: 'Erkunden',
@@ -2836,6 +2843,7 @@ const resources = {
       },
       week: 'semana',
       weeks: 'semanas',
+      leaderboard: 'Classificação',
     },
     navigation: {
       explore: 'Explorar',
