@@ -75,19 +75,43 @@ const RecentUserSearches = () => {
         .eq('user_id', user.id)
         .eq('search_type', 'users')
         .order('searched_at', { ascending: false })
-        .limit(10);
+        .limit(50);
 
       if (!nameHistory || nameHistory.length === 0) {
         setRecentUsers([]);
         return;
       }
 
-      const usernames = [...new Set(nameHistory.map(s => s.search_query))];
-      const { data: profiles } = await supabase
+      // Normalize queries (strip @, trim, lower)
+      const rawQueries = [...new Set(nameHistory.map(s => s.search_query))];
+      const normalizedMap = new Map<string, string>();
+      rawQueries.forEach(q => {
+        const norm = (q || '').replace(/^@/, '').trim();
+        if (norm) normalizedMap.set(norm.toLowerCase(), norm);
+      });
+      const normalizedUnique = Array.from(normalizedMap.values());
+
+      // Exact matches first
+      const { data: profilesExact } = await supabase
         .from('profiles')
         .select('id, username, avatar_url')
-        .in('username', usernames)
-        .limit(10);
+        .in('username', normalizedUnique);
+
+      const foundUsernames = new Set((profilesExact || []).map(p => (p.username || '').toLowerCase()));
+      const remaining = normalizedUnique.filter(u => !foundUsernames.has(u.toLowerCase()));
+
+      // Fallback: try ilike one-by-one for remaining
+      const fallbackResults: any[] = [];
+      for (const query of remaining.slice(0, 10)) { // cap to 10 extra calls
+        const { data: fallback } = await supabase
+          .from('profiles')
+          .select('id, username, avatar_url')
+          .ilike('username', `%${query}%`)
+          .limit(1);
+        if (fallback && fallback.length > 0) fallbackResults.push(fallback[0]);
+      }
+
+      const profiles = [...(profilesExact || []), ...fallbackResults];
 
       const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
       const { data: stories } = await supabase
@@ -98,7 +122,7 @@ const RecentUserSearches = () => {
       const userIdsWithStories = new Set(stories?.map(s => s.user_id) || []);
 
       const usersWithData = (profiles || []).map(profile => {
-        const searchRecord = nameHistory.find(s => s.search_query === profile.username);
+        const searchRecord = nameHistory.find(s => (s.search_query || '').replace(/^@/, '').trim().toLowerCase() === (profile.username || '').toLowerCase());
         return {
           ...profile,
           searched_at: searchRecord?.searched_at || new Date().toISOString(),

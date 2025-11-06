@@ -44,98 +44,53 @@ const CitySelectionModal = ({
 
   const fetchAvailableCities = async () => {
     if (!user) return;
-    
+
     setLoading(true);
     try {
-      // Get all profiles with city data
-      let profilesQuery = supabase
-        .from('profiles')
-        .select('id, current_city')
-        .not('current_city', 'is', null);
-
-      // Apply following filter if needed
+      // Build optional following list
+      let followingIds: string[] = [];
       if (filter === 'following') {
         const { data: following } = await supabase
           .from('follows')
           .select('following_id')
           .eq('follower_id', user.id);
-        
-        if (!following || following.length === 0) {
+        followingIds = following?.map(f => f.following_id) || [];
+        if (followingIds.length === 0) {
           setCities([]);
           setLoading(false);
           return;
         }
-
-        const followingIds = following.map(f => f.following_id);
-        profilesQuery = profilesQuery.in('id', followingIds);
       }
 
-      const { data: profiles } = await profilesQuery;
-      if (!profiles || profiles.length === 0) {
-        setCities([]);
-        setLoading(false);
-        return;
-      }
+      // 1) Saved Google places with explicit city
+      const { data: sp } = await supabase
+        .from('saved_places')
+        .select('city, user_id')
+        .not('city', 'is', null)
+        .in('user_id', (filter === 'following' ? followingIds : [] as string[]) || undefined);
 
-      // Count users per city who have data for ANY metric
+      // 2) Internal saved locations joined to locations to get city
+      const { data: uslWithCity } = await supabase
+        .from('user_saved_locations')
+        .select('user_id, locations:location_id(city)')
+        .in('user_id', (filter === 'following' ? followingIds : [] as string[]) || undefined);
+
       const cityCounts: Record<string, Set<string>> = {};
-      
-      for (const profile of profiles) {
-        if (!profile.current_city) continue;
-        
-        let hasDataAnyMetric = false;
-        
-        // Check all 4 metrics - user should have data in at least one
-        const checks = await Promise.all([
-          // Saved (both tables)
-          supabase
-            .from('user_saved_locations')
-            .select('id', { count: 'exact', head: true })
-            .eq('user_id', profile.id)
-            .limit(1),
-          supabase
-            .from('saved_places')
-            .select('id', { count: 'exact', head: true })
-            .eq('user_id', profile.id)
-            .limit(1),
-          // Invited
-          supabase
-            .from('profiles')
-            .select('id', { count: 'exact', head: true })
-            .eq('invited_by', profile.id)
-            .limit(1),
-          // Posts
-          supabase
-            .from('posts')
-            .select('id', { count: 'exact', head: true })
-            .eq('user_id', profile.id)
-            .not('location_id', 'is', null)
-            .limit(1),
-          // Reviews
-          supabase
-            .from('post_reviews')
-            .select('id', { count: 'exact', head: true })
-            .eq('user_id', profile.id)
-            .limit(1)
-        ]);
 
-        // If user has data in at least one metric
-        hasDataAnyMetric = checks.some(check => (check.count || 0) > 0);
-        
-        if (hasDataAnyMetric) {
-          if (!cityCounts[profile.current_city]) {
-            cityCounts[profile.current_city] = new Set();
-          }
-          cityCounts[profile.current_city].add(profile.id);
-        }
-      }
+      const addCity = (rawCity: string | null | undefined, userId: string | null | undefined) => {
+        if (!rawCity || !userId) return;
+        const cleaned = (rawCity || '').trim().replace(/\s+\d+$/, '');
+        if (!cleaned) return;
+        const key = cleaned.toLowerCase();
+        if (!cityCounts[key]) cityCounts[key] = new Set();
+        cityCounts[key].add(userId);
+      };
 
-      // Convert to array and sort
+      (sp || []).forEach(row => addCity(row.city as any, row.user_id as any));
+      (uslWithCity || []).forEach((row: any) => addCity(row.locations?.city, row.user_id));
+
       const cityData: CityData[] = Object.entries(cityCounts)
-        .map(([city, userIds]) => ({
-          city,
-          count: userIds.size
-        }))
+        .map(([city, userIds]) => ({ city, count: userIds.size }))
         .filter(c => c.count > 0)
         .sort((a, b) => b.count - a.count);
 
