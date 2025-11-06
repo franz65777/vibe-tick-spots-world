@@ -1,105 +1,105 @@
 import React, { useState } from 'react';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Trophy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from 'react-i18next';
 import { useLeaderboardMetrics, LeaderboardMetric, LeaderboardFilter } from '@/hooks/useLeaderboardMetrics';
+import CitySelectionModal from '@/components/explore/CitySelectionModal';
+import { translateCityName } from '@/utils/cityTranslations';
 
 const LeaderboardPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [metric, setMetric] = useState<LeaderboardMetric>('saved');
   const [filter, setFilter] = useState<LeaderboardFilter>('all');
   const [city, setCity] = useState<string>('all');
+  const [isCityModalOpen, setIsCityModalOpen] = useState(false);
   const { users, loading } = useLeaderboardMetrics(metric, filter, city === 'all' ? undefined : city);
 
-  const getMetricLabel = (metric: LeaderboardMetric) => {
-    switch (metric) {
-      case 'saved': return t('savedPlaces', { ns: 'leaderboard' });
-      case 'invited': return t('invitedUsers', { ns: 'leaderboard' });
-      case 'posts': return t('postsWithLocation', { ns: 'leaderboard' });
-      case 'reviews': return t('reviewsLeft', { ns: 'leaderboard' });
-    }
+  const getCityDisplayName = () => {
+    if (city === 'all') return t('allCities', { ns: 'leaderboard' });
+    return translateCityName(
+      city.charAt(0).toUpperCase() + city.slice(1).replace('-', ' '),
+      i18n.language
+    );
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      {/* Minimal Header */}
-      <div className="sticky top-0 z-10 bg-background border-b border-border py-4">
-        <div className="px-4">
-          <div className="flex items-center gap-3 mb-4">
-            <Button
-              onClick={() => navigate('/explore', { state: { searchMode: 'users' } })}
-              variant="ghost"
-              size="icon"
-              className="rounded-full"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </Button>
-            <h1 className="text-2xl font-bold text-foreground">{t('leaderboard', { ns: 'common' })}</h1>
+    <>
+      <CitySelectionModal
+        isOpen={isCityModalOpen}
+        onClose={() => setIsCityModalOpen(false)}
+        selectedCity={city}
+        onSelectCity={setCity}
+      />
+
+      <div className="min-h-screen bg-background pb-20">
+        {/* Minimal Header */}
+        <div className="sticky top-0 z-10 bg-background border-b border-border py-4">
+          <div className="px-4">
+            <div className="flex items-center gap-3 mb-4">
+              <Button
+                onClick={() => navigate('/explore', { state: { searchMode: 'users' } })}
+                variant="ghost"
+                size="icon"
+                className="rounded-full"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+              <h1 className="text-2xl font-bold text-foreground">{t('leaderboard', { ns: 'common' })}</h1>
+            </div>
+
+            {/* Top Filters */}
+            <div className="flex gap-2 mb-3">
+              <button
+                onClick={() => setFilter(filter === 'all' ? 'following' : 'all')}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm font-medium hover:bg-muted/50 transition-colors text-left"
+              >
+                {filter === 'all' ? t('allMembers', { ns: 'leaderboard' }) : t('following', { ns: 'common' })}
+              </button>
+
+              <button
+                onClick={() => setIsCityModalOpen(true)}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm font-medium hover:bg-muted/50 transition-colors text-left"
+              >
+                {getCityDisplayName()}
+              </button>
+            </div>
+
+            {/* Metric Tabs */}
+            <Tabs value={metric} onValueChange={(v) => setMetric(v as LeaderboardMetric)} className="w-full">
+              <TabsList className="w-full grid grid-cols-4 h-auto bg-muted/50 p-1 rounded-xl">
+                <TabsTrigger 
+                  value="saved" 
+                  className="rounded-lg py-2 px-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  {t('saved', { ns: 'leaderboard' })}
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="invited" 
+                  className="rounded-lg py-2 px-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  {t('invited', { ns: 'leaderboard' })}
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="posts" 
+                  className="rounded-lg py-2 px-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  {t('posts', { ns: 'leaderboard' })}
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="reviews" 
+                  className="rounded-lg py-2 px-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  {t('reviews', { ns: 'leaderboard' })}
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
-
-          {/* Top Filters */}
-          <div className="flex gap-2 mb-3">
-            <Select value={filter} onValueChange={(v) => setFilter(v as LeaderboardFilter)}>
-              <SelectTrigger className="flex-1 rounded-xl border-border bg-background">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Members</SelectItem>
-                <SelectItem value="following">Following</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={city} onValueChange={setCity}>
-              <SelectTrigger className="flex-1 rounded-xl border-border bg-background">
-                <SelectValue placeholder="Select city" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Cities</SelectItem>
-                <SelectItem value="dublin">Dublin</SelectItem>
-                <SelectItem value="paris">Paris</SelectItem>
-                <SelectItem value="london">London</SelectItem>
-                <SelectItem value="new-york">New York</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Metric Tabs */}
-          <Tabs value={metric} onValueChange={(v) => setMetric(v as LeaderboardMetric)} className="w-full">
-            <TabsList className="w-full grid grid-cols-4 h-auto bg-muted/50 p-1 rounded-xl">
-              <TabsTrigger 
-                value="saved" 
-                className="rounded-lg py-2 px-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
-              >
-                Saved
-              </TabsTrigger>
-              <TabsTrigger 
-                value="invited" 
-                className="rounded-lg py-2 px-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
-              >
-                Invited
-              </TabsTrigger>
-              <TabsTrigger 
-                value="posts" 
-                className="rounded-lg py-2 px-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
-              >
-                Posts
-              </TabsTrigger>
-              <TabsTrigger 
-                value="reviews" 
-                className="rounded-lg py-2 px-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
-              >
-                Reviews
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
         </div>
-      </div>
 
       {/* Leaderboard List */}
       <div className="pt-4 px-4">
@@ -118,13 +118,19 @@ const LeaderboardPage = () => {
           </div>
         ) : users.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-muted-foreground text-sm">No data available for this metric</p>
+            <Trophy className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+            <p className="text-muted-foreground text-sm mb-2">
+              {t('noResultsTryDifferentFilter', { ns: 'leaderboard' })}
+            </p>
             <Button 
-              onClick={() => navigate('/explore', { state: { searchMode: 'users' } })} 
+              onClick={() => {
+                setFilter('all');
+                setCity('all');
+              }} 
               variant="outline"
               className="mt-4 rounded-full"
             >
-              Start Exploring
+              {t('reset', { ns: 'explore' })}
             </Button>
           </div>
         ) : (
@@ -164,8 +170,9 @@ const LeaderboardPage = () => {
             ))}
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

@@ -596,7 +596,16 @@ const resources = {
       beTheFirst: 'Be the first to make the leaderboard!',
       startExploring: 'Start Exploring',
       wantToJoin: 'Want to join the leaderboard?',
-      exploreAmazingPlaces: 'Explore amazing places, share your discoveries, and climb the ranks!'
+      exploreAmazingPlaces: 'Explore amazing places, share your discoveries, and climb the ranks!',
+      saved: 'Saved',
+      invited: 'Invited',
+      posts: 'Posts',
+      reviews: 'Reviews',
+      allMembers: 'All Members',
+      selectCity: 'Select City',
+      searchCity: 'Search city...',
+      noCitiesAvailable: 'No cities available',
+      noResultsTryDifferentFilter: 'No results. Try different filter or city'
     }
   },
   es: {
