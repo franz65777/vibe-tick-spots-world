@@ -468,7 +468,7 @@ const ExplorePage = () => {
 
                 {/* User Results */}
                 {displayUsers.length > 0 ? (
-                  <div className="space-y-3 px-1 pb-6">
+                  <div className="space-y-1 px-1 pb-6">
                     {displayUsers.map(user => (
                       <UserCard
                         key={user.id}
@@ -476,6 +476,8 @@ const ExplorePage = () => {
                         onUserClick={() => handleUserClick(user.id)}
                         onFollowUser={handleFollowUser}
                         onMessageUser={handleMessageUser}
+                        searchQuery={searchQuery}
+                        searchMode={searchMode}
                       />
                     ))}
                   </div>

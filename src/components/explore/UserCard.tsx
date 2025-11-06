@@ -16,6 +16,8 @@ interface UserCardProps {
   onFollowUser: (userId: string) => void;
   onMessageUser: (userId: string) => void;
   sortBy?: SortBy;
+  searchQuery?: string;
+  searchMode?: 'locations' | 'users';
 }
 
 const UserCard = ({
@@ -23,7 +25,9 @@ const UserCard = ({
   onUserClick,
   onFollowUser,
   onMessageUser,
-  sortBy
+  sortBy,
+  searchQuery = '',
+  searchMode = 'users'
 }: UserCardProps) => {
   const { t } = useTranslation();
   const { user: currentUser } = useAuth();
@@ -83,10 +87,22 @@ const UserCard = ({
       
       if (stories && stories.length > 0) {
         console.log('Open stories for user:', user.id);
-        navigate(`/profile/${user.id}`, { state: { from: 'explore' } });
+        navigate(`/profile/${user.id}`, { 
+          state: { 
+            from: 'explore',
+            searchQuery: searchQuery,
+            searchMode: searchMode
+          } 
+        });
       }
     } else {
-      navigate(`/profile/${user.id}`, { state: { from: 'explore' } });
+      navigate(`/profile/${user.id}`, { 
+        state: { 
+          from: 'explore',
+          searchQuery: searchQuery,
+          searchMode: searchMode
+        } 
+      });
     }
   };
 
@@ -95,7 +111,13 @@ const UserCard = ({
     if (target.closest('button') || target.closest('.avatar-clickable')) {
       return;
     }
-    navigate(`/profile/${user.id}`, { state: { from: 'explore' } });
+    navigate(`/profile/${user.id}`, { 
+      state: { 
+        from: 'explore',
+        searchQuery: searchQuery,
+        searchMode: searchMode
+      } 
+    });
   };
 
   const getInitials = (name: string) => {
@@ -124,7 +146,7 @@ const UserCard = ({
 
   return (
     <div 
-      className="flex items-center justify-between py-3 px-1 hover:bg-gray-50/50 transition-colors cursor-pointer"
+      className="flex items-center justify-between py-2 px-1 hover:bg-gray-50/50 transition-colors cursor-pointer"
       onClick={handleRowClick}
     >
       <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -132,7 +154,7 @@ const UserCard = ({
           className="avatar-clickable cursor-pointer relative"
           onClick={handleAvatarClick}
         >
-          <Avatar className={`w-14 h-14 ${hasActiveStory ? 'ring-2 ring-primary ring-offset-2' : ''}`}>
+          <Avatar className={`w-12 h-12 ${hasActiveStory ? 'ring-2 ring-primary ring-offset-2' : ''}`}>
             <AvatarImage src={user.avatar} alt={user.name} />
             <AvatarFallback className={`${getAvatarColor(user.name)} text-white font-semibold`}>
               {getInitials(user.name)}
@@ -140,7 +162,7 @@ const UserCard = ({
           </Avatar>
         </div>
         
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 text-left">
           <p className="font-bold text-foreground truncate text-[15px]">
             {user.name || user.username}
           </p>
@@ -148,12 +170,12 @@ const UserCard = ({
           {/* Mutual followers display */}
           {mutualFollowers.length > 0 ? (
             <p className="text-xs text-muted-foreground truncate mt-0.5">
-              {t('followers', { ns: 'common' })}: {mutualFollowers.slice(0, 2).map(f => f.username).join(', ')}
-              {totalCount > 2 && ` + ${totalCount - 2} ${t('more', { ns: 'common' })}`}
+              {t('followers')}: {mutualFollowers.slice(0, 2).map(f => f.username).join(', ')}
+              {totalCount > 2 && ` + ${totalCount - 2} ${t('more')}`}
             </p>
           ) : user.follower_count > 0 ? (
             <p className="text-xs text-muted-foreground truncate mt-0.5">
-              {user.follower_count} {t('followers', { ns: 'common' })}
+              {user.follower_count} {t('followers')}
             </p>
           ) : (
             <p className="text-xs text-muted-foreground truncate mt-0.5">
@@ -174,14 +196,14 @@ const UserCard = ({
               ? 'bg-secondary text-secondary-foreground hover:bg-secondary/80' 
               : 'bg-primary text-primary-foreground hover:bg-primary/90'
           }`}
-          aria-label={isOptimisticFollowing ? t('following', { ns: 'common' }) : t('follow', { ns: 'common' })}
+          aria-label={isOptimisticFollowing ? t('following') : t('follow')}
         >
           {isFollowLoading ? (
             <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
           ) : isOptimisticFollowing ? (
-            t('following', { ns: 'common' })
+            t('following')
           ) : (
-            t('follow', { ns: 'common' })
+            t('follow')
           )}
         </Button>
       </div>
