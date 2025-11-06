@@ -34,6 +34,8 @@ const LeaderboardPage = () => {
         onClose={() => setIsCityModalOpen(false)}
         selectedCity={city}
         onSelectCity={setCity}
+        metric={metric}
+        filter={filter}
       />
 
       <div className="min-h-screen bg-background pb-20">

@@ -1193,7 +1193,17 @@ const resources = {
       beTheFirst: '¡Sé el primero en la clasificación!',
       startExploring: 'Empezar a Explorar',
       wantToJoin: '¿Quieres unirte a la clasificación?',
-      exploreAmazingPlaces: '¡Explora lugares increíbles, comparte tus descubrimientos y sube en la clasificación!'
+      exploreAmazingPlaces: '¡Explora lugares increíbles, comparte tus descubrimientos y sube en la clasificación!',
+      saved: 'Guardados',
+      invited: 'Invitados',
+      posts: 'Publicaciones',
+      reviews: 'Reseñas',
+      allMembers: 'Todos los Miembros',
+      selectCity: 'Seleccionar Ciudad',
+      searchCity: 'Buscar ciudad...',
+      noCitiesAvailable: 'No hay ciudades disponibles',
+      noResultsTryDifferentFilter: 'Sin resultados. Prueba con otro filtro o ciudad',
+      resetFilters: 'Restablecer'
     }
   },
 
@@ -1805,7 +1815,17 @@ const resources = {
       beTheFirst: 'Sii il primo a entrare in classifica!',
       startExploring: 'Inizia a Esplorare',
       wantToJoin: 'Vuoi entrare in classifica?',
-      exploreAmazingPlaces: 'Esplora luoghi fantastici, condividi le tue scoperte e scala la classifica!'
+      exploreAmazingPlaces: 'Esplora luoghi fantastici, condividi le tue scoperte e scala la classifica!',
+      saved: 'Salvati',
+      invited: 'Invitati',
+      posts: 'Post',
+      reviews: 'Recensioni',
+      allMembers: 'Tutti i Membri',
+      selectCity: 'Seleziona Città',
+      searchCity: 'Cerca città...',
+      noCitiesAvailable: 'Nessuna città disponibile',
+      noResultsTryDifferentFilter: 'Nessun risultato. Prova con un altro filtro o città',
+      resetFilters: 'Ripristina'
     }
   },
 
@@ -2330,7 +2350,17 @@ const resources = {
       beTheFirst: 'Soyez le premier au classement!',
       startExploring: 'Commencer à Explorer',
       wantToJoin: 'Voulez-vous rejoindre le classement?',
-      exploreAmazingPlaces: 'Explorez des endroits incroyables, partagez vos découvertes et grimpez les rangs!'
+      exploreAmazingPlaces: 'Explorez des endroits incroyables, partagez vos découvertes et grimpez les rangs!',
+      saved: 'Sauvegardés',
+      invited: 'Invités',
+      posts: 'Publications',
+      reviews: 'Avis',
+      allMembers: 'Tous les Membres',
+      selectCity: 'Sélectionner Ville',
+      searchCity: 'Rechercher ville...',
+      noCitiesAvailable: 'Aucune ville disponible',
+      noResultsTryDifferentFilter: 'Aucun résultat. Essayez un autre filtre ou ville',
+      resetFilters: 'Réinitialiser'
     }
   },
 
@@ -2759,7 +2789,17 @@ const resources = {
       beTheFirst: 'Sei der Erste auf der Bestenliste!',
       startExploring: 'Entdecken Beginnen',
       wantToJoin: 'Möchtest du der Bestenliste beitreten?',
-      exploreAmazingPlaces: 'Entdecke erstaunliche Orte, teile deine Entdeckungen und klettere die Ränge hinauf!'
+      exploreAmazingPlaces: 'Entdecke erstaunliche Orte, teile deine Entdeckungen und klettere die Ränge hinauf!',
+      saved: 'Gespeichert',
+      invited: 'Eingeladen',
+      posts: 'Beiträge',
+      reviews: 'Bewertungen',
+      allMembers: 'Alle Mitglieder',
+      selectCity: 'Stadt Auswählen',
+      searchCity: 'Stadt suchen...',
+      noCitiesAvailable: 'Keine Städte verfügbar',
+      noResultsTryDifferentFilter: 'Keine Ergebnisse. Versuchen Sie einen anderen Filter oder Stadt',
+      resetFilters: 'Zurücksetzen'
     }
   },
 
@@ -3190,7 +3230,17 @@ const resources = {
       beTheFirst: 'Seja o primeiro na classificação!',
       startExploring: 'Começar a Explorar',
       wantToJoin: 'Quer entrar para a classificação?',
-      exploreAmazingPlaces: 'Explore lugares incríveis, compartilhe suas descobertas e suba nos rankings!'
+      exploreAmazingPlaces: 'Explore lugares incríveis, compartilhe suas descobertas e suba nos rankings!',
+      saved: 'Salvos',
+      invited: 'Convidados',
+      posts: 'Publicações',
+      reviews: 'Avaliações',
+      allMembers: 'Todos os Membros',
+      selectCity: 'Selecionar Cidade',
+      searchCity: 'Pesquisar cidade...',
+      noCitiesAvailable: 'Nenhuma cidade disponível',
+      noResultsTryDifferentFilter: 'Sem resultados. Tente outro filtro ou cidade',
+      resetFilters: 'Redefinir'
     }
   },
 
