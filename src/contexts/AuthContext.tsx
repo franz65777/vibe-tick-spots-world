@@ -111,18 +111,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (session?.expires_at) {
         const expiryTime = session.expires_at * 1000;
         const now = Date.now();
+        const fiveMinutes = 5 * 60 * 1000;
         
-        if (expiryTime <= now) {
-          console.log('AuthProvider: Token expired, refreshing...');
-          const { data, error } = await supabase.auth.refreshSession();
-          if (error) {
-            console.error('AuthProvider: Error refreshing expired session:', error);
+        // If token is expired or expiring within 5 minutes, refresh it
+        if (expiryTime - now < fiveMinutes) {
+          console.log('AuthProvider: Token expired or expiring soon, forcing refresh...');
+          try {
+            const { data, error } = await supabase.auth.refreshSession();
+            if (error) {
+              console.error('AuthProvider: Error refreshing expired session, forcing logout:', error);
+              await supabase.auth.signOut();
+              setSession(null);
+              setUser(null);
+              setLoading(false);
+              return;
+            } else {
+              console.log('AuthProvider: Token refreshed successfully');
+              setSession(data.session);
+              setUser(data.session?.user ?? null);
+            }
+          } catch (err) {
+            console.error('AuthProvider: Exception during refresh, forcing logout:', err);
             await supabase.auth.signOut();
             setSession(null);
             setUser(null);
-          } else {
-            setSession(data.session);
-            setUser(data.session?.user ?? null);
+            setLoading(false);
+            return;
           }
         } else {
           setSession(session);
@@ -135,7 +149,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       setLoading(false);
     }).catch((error) => {
-      console.warn('AuthProvider: Session check failed or timed out:', error);
+      console.warn('AuthProvider: Session check failed or timed out, clearing session:', error);
+      setSession(null);
+      setUser(null);
       setLoading(false);
     });
 
