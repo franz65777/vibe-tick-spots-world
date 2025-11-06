@@ -80,9 +80,16 @@ const MapSection = ({
     selectedFollowedUserIds
   });
 
+  // Track sourcePostId separately to preserve it
+  const [sourcePostId, setSourcePostId] = useState<string | undefined>(undefined);
+
   // Handle initial selected place from navigation
   useEffect(() => {
     if (initialSelectedPlace) {
+      // Preserve sourcePostId if it exists
+      if (initialSelectedPlace.sourcePostId) {
+        setSourcePostId(initialSelectedPlace.sourcePostId);
+      }
       setSelectedPlace(initialSelectedPlace);
       onClearInitialPlace?.();
     }
@@ -148,6 +155,8 @@ const MapSection = ({
 
   const handlePinClick = (place: Place) => {
     console.log('Pin clicked:', place);
+    // Clear sourcePostId when clicking a pin from the map
+    setSourcePostId(undefined);
     setSelectedPlace(place);
   };
 
@@ -184,8 +193,8 @@ const MapSection = ({
             onPinClick={handlePinClick}
             onPinShare={handlePinShare}
             mapCenter={mapCenter}
-            selectedPlace={selectedPlace}
-            onCloseSelectedPlace={() => setSelectedPlace(null)}
+            selectedPlace={selectedPlace ? { ...selectedPlace, sourcePostId } : null}
+            onCloseSelectedPlace={() => { setSelectedPlace(null); setSourcePostId(undefined); }}
             onMapRightClick={handleMapRightClick}
             onMapClick={handleMapClick}
             activeFilter={activeFilter}
