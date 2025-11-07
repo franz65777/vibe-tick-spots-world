@@ -1,5 +1,5 @@
 
-import { Heart, MessageCircle, Grid3X3, Trash2, Star, ChevronDown } from 'lucide-react';
+import { Heart, MessageCircle, Grid3X3, Trash2, Star, ChevronDown, MapPin } from 'lucide-react';
 import { useState } from 'react';
 import PostDetailModalMobile from '../explore/PostDetailModalMobile';
 import LocationPostLibrary from '../explore/LocationPostLibrary';
@@ -252,73 +252,114 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                 </>
               ) : (
                 /* Review Card */
-                <div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-4 flex items-start gap-3">
-                  {/* Category Icon */}
-                  <div className="w-14 h-14 rounded-full bg-background/60 flex items-center justify-center flex-shrink-0">
-                    {(() => {
-                      const CategoryIcon = post.locations?.category ? getCategoryIcon(post.locations.category) : Star;
-                      return <CategoryIcon className="w-7 h-7 text-primary" />;
-                    })()}
-                  </div>
+                <div className="w-full h-full bg-background border border-border rounded-xl p-3 flex items-center gap-3">
+                  {/* Avatar with category icon */}
+                  <button
+                    onClick={(e) => {
+                      if (post.locations) {
+                        e.stopPropagation();
+                        setSelectedLocation({
+                          id: post.locations.id,
+                          name: post.locations.name,
+                          category: post.locations.category || 'restaurant',
+                          city: post.locations.city,
+                          coordinates: {
+                            lat: post.locations.latitude,
+                            lng: post.locations.longitude,
+                          },
+                          address: post.locations.address,
+                        });
+                      }
+                    }}
+                    className="shrink-0 relative"
+                  >
+                    <Avatar className="h-10 w-10">
+                      {post.locations?.category ? (
+                        <div className="w-full h-full bg-primary/10 flex items-center justify-center">
+                          {(() => {
+                            const CategoryIcon = getCategoryIcon(post.locations.category);
+                            return <CategoryIcon className="w-5 h-5 text-primary" />;
+                          })()}
+                        </div>
+                      ) : (
+                        <AvatarFallback className="bg-primary/10">
+                          <Star className="w-5 h-5 text-primary" />
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                  </button>
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    {/* Location name and rating on same line */}
-                    <div className="flex items-center gap-2 mb-1">
-                      {post.locations ? (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedLocation({
-                              id: post.locations.id,
-                              name: post.locations.name,
-                              category: post.locations.category || 'restaurant',
-                              city: post.locations.city,
-                              coordinates: {
-                                lat: post.locations.latitude,
-                                lng: post.locations.longitude,
-                              },
-                              address: post.locations.address,
-                            });
-                          }}
-                          className="font-bold text-base text-foreground hover:text-primary transition-colors text-left truncate"
-                        >
-                          {post.locations.name}
-                        </button>
-                      ) : (
-                        <p className="font-bold text-base text-muted-foreground truncate">
-                          {t('unknownLocation', { ns: 'common', defaultValue: 'Unknown Location' })}
-                        </p>
-                      )}
-                      
-                      {/* Rating inline */}
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
-                        <span className="text-base font-bold text-foreground">{post.rating}</span>
-                      </div>
-                    </div>
-
-                    {/* Date */}
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(post.created_at).toLocaleDateString(undefined, { 
-                        day: 'numeric',
-                        month: 'short'
-                      })}
-                    </p>
+                    {post.locations ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedLocation({
+                            id: post.locations.id,
+                            name: post.locations.name,
+                            category: post.locations.category || 'restaurant',
+                            city: post.locations.city,
+                            coordinates: {
+                              lat: post.locations.latitude,
+                              lng: post.locations.longitude,
+                            },
+                            address: post.locations.address,
+                          });
+                        }}
+                        className="font-semibold text-sm hover:opacity-70 block truncate text-left"
+                      >
+                        {post.locations.name}
+                      </button>
+                    ) : (
+                      <p className="font-semibold text-sm text-muted-foreground truncate">
+                        {t('unknownLocation', { ns: 'common', defaultValue: 'Unknown Location' })}
+                      </p>
+                    )}
+                    {post.locations && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedLocation({
+                            id: post.locations.id,
+                            name: post.locations.name,
+                            category: post.locations.category || 'restaurant',
+                            city: post.locations.city,
+                            coordinates: {
+                              lat: post.locations.latitude,
+                              lng: post.locations.longitude,
+                            },
+                            address: post.locations.address,
+                          });
+                        }}
+                        className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 truncate"
+                      >
+                        <MapPin className="w-3 h-3 shrink-0" />
+                        <span className="truncate">{post.locations.address || post.locations.city}</span>
+                      </button>
+                    )}
                   </div>
+
+                  {/* Rating */}
+                  {post.rating && (
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
+                      <span className="text-sm font-semibold">{post.rating}</span>
+                    </div>
+                  )}
 
                   {/* Delete button for reviews */}
                   {isOwnProfile && (
                     <button
                       onClick={(e) => handleDeletePost(post.id, e)}
                       disabled={deleting}
-                      className="absolute top-2 right-2 w-8 h-8 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-10"
+                      className="absolute top-2 right-2 w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-10"
                       title="Delete review"
                     >
                       {deleting ? (
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       ) : (
-                        <Trash2 className="w-4 h-4 text-white" />
+                        <Trash2 className="w-3 h-3 text-white" />
                       )}
                     </button>
                   )}
