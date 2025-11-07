@@ -124,13 +124,13 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
       }
       
       if (locationId) {
-        const limit = 10; // Increased limit for posts with photos
+        const limit = 1000; // Load all posts at once
         const offset = (page - 1) * limit;
         
         // Filter for posts with media only (not reviews)
         const { data: postRows, error } = await supabase
           .from('posts')
-          .select('id, user_id, caption, media_urls, created_at, location_id')
+          .select('id, user_id, caption, media_urls, created_at, location_id, rating')
           .eq('location_id', locationId)
           .not('media_urls', 'is', null)
           .order('created_at', { ascending: false })

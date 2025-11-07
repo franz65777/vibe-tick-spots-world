@@ -22,6 +22,23 @@ import { useMutedLocations } from '@/hooks/useMutedLocations';
 import { useMarketingCampaign } from '@/hooks/useMarketingCampaign';
 import MarketingCampaignBanner from './MarketingCampaignBanner';
 import { cn } from '@/lib/utils';
+import { formatDistanceToNow, Locale } from 'date-fns';
+import { it, es, pt, fr, de, ja, ko, ar, hi, ru, zhCN } from 'date-fns/locale';
+
+const localeMap: Record<string, Locale> = {
+  en: undefined as any, // English is the default
+  it,
+  es,
+  pt,
+  fr,
+  de,
+  ja,
+  ko,
+  ar,
+  hi,
+  ru,
+  'zh-CN': zhCN,
+};
 interface LocationPost {
   id: string;
   user_id: string;
@@ -60,7 +77,7 @@ const LocationPostLibrary = ({
   isOpen,
   onClose
 }: LocationPostLibraryProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const {
     user
   } = useAuth();
@@ -101,6 +118,9 @@ const LocationPostLibrary = ({
   );
   const { campaign } = useMarketingCampaign(place?.id, place?.google_place_id);
   const [isCampaignExpanded, setIsCampaignExpanded] = useState(false);
+  
+  // Get the current locale for date formatting
+  const currentLocale = localeMap[i18n.language] || localeMap['en'];
 
   // All hooks MUST be called before any early returns
   useEffect(() => {
@@ -202,7 +222,7 @@ const LocationPostLibrary = ({
         setLoading(false);
         return;
       }
-      const limit = 20;
+      const limit = 1000; // Load all posts at once
       const offset = (page - 1) * limit;
       
       // Build query based on active tab
@@ -352,11 +372,26 @@ const LocationPostLibrary = ({
     }
   };
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 1) {
+      return t('now', { ns: 'common', defaultValue: 'Now' });
+    } else if (diffDays === 1) {
+      return '1d ago';
+    } else if (diffDays < 7) {
+      return `${diffDays}d ago`;
+    } else if (diffDays < 30) {
+      return `${Math.floor(diffDays / 7)}w ago`;
+    } else {
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: diffDays > 365 ? 'numeric' : undefined
+      });
+    }
   };
   const handleSaveLocation = async () => {
     if (!user) {
@@ -638,56 +673,67 @@ const LocationPostLibrary = ({
               </div>
             ) : (
               <div className="p-3">
-                <div className="grid grid-cols-2 gap-3">
-                  {posts.map(post => (
-                    <div 
-                      key={post.id} 
-                      className="relative aspect-square bg-muted rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition shadow-sm" 
-                      onClick={() => setSelectedPostId(post.id)}
-                    >
-                      {activeTab === 'posts' && post.media_urls && post.media_urls.length > 0 ? (
-                        <>
-                          <img src={post.media_urls[0]} alt="Post" className="w-full h-full object-cover" loading="lazy" decoding="async" />
-                          {/* User Avatar Overlay */}
-                          <div className="absolute top-2 left-2">
-                            <Avatar className="w-8 h-8 border-2 border-white shadow-lg">
-                              <AvatarImage src={post.profiles?.avatar_url} />
-                              <AvatarFallback className="text-xs bg-primary text-primary-foreground">
-                                {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
-                              </AvatarFallback>
-                            </Avatar>
-                          </div>
-                          {post.media_urls.length > 1 && (
-                            <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium">
-                              +{post.media_urls.length - 1}
-                            </div>
-                          )}
-                        </>
-                      ) : activeTab === 'reviews' && post.rating ? (
-                        <div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/5 flex flex-col items-center justify-center p-4">
-                          <Avatar className="w-12 h-12 mb-2 border-2 border-primary/20">
+                {activeTab === 'posts' ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    {posts.map(post => (
+                      <div 
+                        key={post.id} 
+                        className="relative aspect-square bg-muted rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition shadow-sm" 
+                        onClick={() => setSelectedPostId(post.id)}
+                      >
+                        <img src={post.media_urls[0]} alt="Post" className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                        {/* User Avatar Overlay */}
+                        <div className="absolute top-2 left-2">
+                          <Avatar className="w-8 h-8 border-2 border-white shadow-lg">
                             <AvatarImage src={post.profiles?.avatar_url} />
-                            <AvatarFallback className="bg-primary text-primary-foreground">
+                            <AvatarFallback className="text-xs bg-primary text-primary-foreground">
                               {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
                             </AvatarFallback>
                           </Avatar>
-                          <div className="flex items-center gap-1.5 mb-2">
-                            <Star className="w-5 h-5 fill-amber-500 text-amber-500" />
-                            <span className="text-2xl font-bold text-foreground">{post.rating}</span>
-                            <span className="text-sm text-muted-foreground">/10</span>
+                        </div>
+                        {post.media_urls && post.media_urls.length > 1 && (
+                          <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium">
+                            +{post.media_urls.length - 1}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-4 pb-4">
+                    {posts.map((post) => (
+                      <div 
+                        key={post.id} 
+                        className="flex gap-3 pb-4 border-b border-border last:border-0 cursor-pointer hover:bg-muted/30 transition-colors p-3 rounded-lg"
+                        onClick={() => setSelectedPostId(post.id)}
+                      >
+                        <Avatar className="w-10 h-10 shrink-0">
+                          <AvatarImage src={post.profiles?.avatar_url || ''} />
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="font-semibold text-sm">{post.profiles?.username || 'User'}</p>
+                            <div className="flex items-center gap-1">
+                              <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+                              <span className="text-sm font-medium">{post.rating}</span>
+                            </div>
                           </div>
                           {post.caption && (
-                            <p className="text-xs text-center text-muted-foreground line-clamp-3 mt-2">
-                              {post.caption}
-                            </p>
+                            <p className="text-sm text-muted-foreground mb-1">{post.caption}</p>
                           )}
+                          <p className="text-xs text-muted-foreground">
+                            {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: currentLocale })}
+                          </p>
                         </div>
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 
-                {/* Load More Button */}
+                {/* Load More Button - Hidden since we load all */}
                 {hasMorePosts && (
                   <div className="mt-4 flex justify-center pb-4">
                     <Button onClick={loadMorePosts} disabled={loading} variant="outline" size="sm">
