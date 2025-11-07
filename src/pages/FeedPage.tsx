@@ -41,25 +41,25 @@ const FeedPage = () => {
     queryKey: ['promotions-feed', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      
-      // Carica post con content_type (marketing posts) creati da business accounts
-      const { data: posts, error } = await supabase
+      // Carica post marketing e includi profili business (left join), filtrando client-side
+      const { data: posts, error } = await (supabase as any)
         .from('posts')
         .select(`
           *,
           profiles:user_id (id, username, avatar_url, full_name),
-          locations:location_id (id, name, address, city, latitude, longitude)
+          locations:location_id (id, name, address, city, latitude, longitude),
+          business_profiles:user_id (verification_status)
         `)
         .not('content_type', 'is', null)
+        .in('content_type', ['event', 'discount', 'promotion', 'announcement'])
         .order('created_at', { ascending: false })
         .limit(50);
-      
       if (error) {
         console.error('Promotions feed error:', error);
         return [];
       }
-      
-      return posts || [];
+      const filtered = (posts as any[] | null) || [];
+      return filtered.filter((p: any) => !!p.business_profiles);
     },
     enabled: !!user?.id && feedType === 'promotions',
     staleTime: 5 * 60 * 1000,

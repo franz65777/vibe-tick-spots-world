@@ -53,6 +53,15 @@ export const PostEditor: React.FC<PostEditorProps> = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
   
+  // Hide bottom navigation while editing (after media selected)
+  React.useEffect(() => {
+    const editing = selectedFiles.length > 0;
+    window.dispatchEvent(new CustomEvent(editing ? 'ui:overlay-open' : 'ui:overlay-close'));
+    return () => {
+      window.dispatchEvent(new CustomEvent('ui:overlay-close'));
+    };
+  }, [selectedFiles.length]);
+  
   const canSubmit = 
     selectedFiles.length > 0 && 
     selectedLocation !== null && 
