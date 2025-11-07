@@ -1300,7 +1300,7 @@ const MessagesPage = () => {
            </div>
 
           {/* Message Input */}
-          <div className="shrink-0 p-3 pb-[env(safe-area-inset-bottom)] bg-background">
+          <div className="shrink-0 p-3 pb-[env(safe-area-inset-bottom)] bg-background -mb-5">
             <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
