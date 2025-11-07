@@ -1016,7 +1016,7 @@ const MessagesPage = () => {
 
       {/* Chat View */}
       {view === 'chat' && (
-        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col pb-[env(safe-area-inset-bottom)]">
           <div ref={chatViewportWrapperRef} className="flex-1 min-h-0 overflow-hidden">
             <ScrollArea className="h-full p-4 [&>div>div]:!overflow-y-auto [&>div>div]:scrollbar-hide">
             {loading ? (
@@ -1300,7 +1300,7 @@ const MessagesPage = () => {
            </div>
 
           {/* Message Input */}
-          <div className="shrink-0 p-3 pb-[env(safe-area-inset-bottom)] bg-background">
+          <div className="shrink-0 p-3 bg-background">
             <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
