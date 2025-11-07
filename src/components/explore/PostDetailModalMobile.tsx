@@ -11,6 +11,9 @@ import { PostActions } from '@/components/feed/PostActions';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { getPostComments, addPostComment, deletePostComment, type Comment } from '@/services/socialEngagementService';
 import { useTranslation } from 'react-i18next';
+import { getCategoryIcon } from '@/utils/categoryIcons';
+import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
+import { cn } from '@/lib/utils';
 
 interface PostDetailModalMobileProps {
   postId: string;
@@ -378,8 +381,11 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
                 </div>
                 {post.rating && post.rating > 0 && (
                   <div className="flex items-center gap-1 shrink-0">
-                    <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
-                    <span className="text-sm font-semibold">{post.rating}</span>
+                    {(() => {
+                      const CategoryIcon = post.locations?.category ? getCategoryIcon(post.locations.category) : Star;
+                      return <CategoryIcon className={cn("w-4 h-4", getRatingFillColor(post.rating), getRatingColor(post.rating))} />;
+                    })()}
+                    <span className={cn("text-sm font-semibold", getRatingColor(post.rating))}>{post.rating}</span>
                   </div>
                 )}
               </div>

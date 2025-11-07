@@ -23,6 +23,8 @@ import { messageService } from '@/services/messageService';
 import { toast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useQueryClient } from '@tanstack/react-query';
+import { getCategoryIcon } from '@/utils/categoryIcons';
+import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
 
 const FeedPage = () => {
   const { user } = useAuth();
@@ -440,8 +442,11 @@ const FeedPage = () => {
                     </div>
                     {rating && rating > 0 && (
                       <div className="flex items-center gap-1 shrink-0">
-                        <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
-                        <span className="text-sm font-semibold">{rating}</span>
+                        {(() => {
+                          const CategoryIcon = location?.category ? getCategoryIcon(location.category) : Star;
+                          return <CategoryIcon className={cn("w-4 h-4", getRatingFillColor(rating), getRatingColor(rating))} />;
+                        })()}
+                        <span className={cn("text-sm font-semibold", getRatingColor(rating))}>{rating}</span>
                       </div>
                     )}
                   </div>

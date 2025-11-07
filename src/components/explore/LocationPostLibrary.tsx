@@ -20,6 +20,9 @@ import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow, Locale } from 'date-fns';
 import { it, es, pt, fr, de, ja, ko, ar, hi, ru, zhCN } from 'date-fns/locale';
+import { getCategoryIcon } from '@/utils/categoryIcons';
+import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
+import { cn } from '@/lib/utils';
 
 const localeMap: Record<string, Locale> = {
   en: undefined as any, // English is the default
@@ -642,8 +645,11 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
                             <div className="flex items-center gap-2 mb-1">
                               <p className="font-semibold text-sm">{post.profiles?.username || 'User'}</p>
                               <div className="flex items-center gap-1">
-                                <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
-                                <span className="text-sm font-medium">{post.rating}</span>
+                                {(() => {
+                                  const CategoryIcon = place.category ? getCategoryIcon(place.category) : Star;
+                                  return <CategoryIcon className={cn("w-4 h-4", getRatingFillColor(post.rating), getRatingColor(post.rating))} />;
+                                })()}
+                                <span className={cn("text-sm font-medium", getRatingColor(post.rating))}>{post.rating}</span>
                               </div>
                             </div>
                             {post.caption && (

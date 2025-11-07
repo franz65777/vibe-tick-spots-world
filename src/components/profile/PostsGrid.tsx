@@ -14,6 +14,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { getCategoryIcon } from '@/utils/categoryIcons';
+import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
 
 interface Post {
   id: string;
@@ -318,26 +319,10 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                   )}
 
                   {post.locations && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedLocation({
-                          id: post.locations.id,
-                          name: post.locations.name,
-                          category: post.locations.category || 'restaurant',
-                          city: post.locations.city,
-                          coordinates: {
-                            lat: post.locations.latitude,
-                            lng: post.locations.longitude,
-                          },
-                          address: post.locations.address,
-                        });
-                      }}
-                      className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 truncate"
-                    >
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
                       <MapPin className="w-3 h-3 shrink-0" />
-                      <span className="truncate">{post.locations.address || post.locations.city}</span>
-                    </button>
+                      <span className="truncate">{post.locations.city || 'Unknown'}</span>
+                    </p>
                   )}
 
                   {post.caption && (
@@ -349,8 +334,11 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
 
                 {post.rating && (
                   <div className="flex items-center gap-1 shrink-0">
-                    <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
-                    <span className="text-sm font-semibold">{post.rating}</span>
+                    {(() => {
+                      const CategoryIcon = post.locations?.category ? getCategoryIcon(post.locations.category) : Star;
+                      return <CategoryIcon className={cn("w-4 h-4", getRatingFillColor(post.rating), getRatingColor(post.rating))} />;
+                    })()}
+                    <span className={cn("text-sm font-semibold", getRatingColor(post.rating))}>{post.rating}</span>
                   </div>
                 )}
 
