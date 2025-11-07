@@ -174,11 +174,11 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 w-full">
           {displayedPosts.map((post) => (
             <div
               key={post.id}
-              className="relative aspect-square bg-gray-100 rounded-xl overflow-hidden cursor-pointer group hover:scale-[1.02] transition-transform duration-200"
+              className="relative aspect-square bg-muted rounded-xl overflow-hidden cursor-pointer group hover:scale-[1.02] transition-transform duration-200"
               onClick={() => handlePostClick(post.id)}
             >
               {postFilter === 'photos' ? (
