@@ -591,7 +591,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                     </div>
                   ) : (
                     <>
-                      <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2">
+                      <div className="grid grid-cols-2 gap-3">
                         {posts.map((post) => (
                           <button
                             key={post.id} 
@@ -603,11 +603,11 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                                 setSelectedPostId(post.id);
                               }
                             }}
-                            className="relative rounded-xl overflow-hidden bg-card shadow-sm hover:shadow-md transition-shadow snap-center flex-shrink-0 w-[85vw] max-w-[400px]"
+                            className="relative rounded-xl overflow-hidden bg-card shadow-sm hover:shadow-md transition-shadow"
                           >
                             {/* Post Image */}
                             {post.media_urls?.[0] && (
-                              <div className="relative w-full h-72">
+                              <div className="relative w-full h-48">
                                 <img 
                                   src={post.media_urls[0]} 
                                   alt="Post image" 
