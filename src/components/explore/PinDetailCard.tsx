@@ -68,6 +68,9 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
   const [activeTab, setActiveTab] = useState<'posts' | 'reviews'>('posts');
   const [reviews, setReviews] = useState<any[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [showActionButtons, setShowActionButtons] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   // Source post ID - if the pin was opened from a post
   const sourcePostId = place.sourcePostId;
@@ -120,13 +123,14 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
       }
       
       if (locationId) {
-        const limit = 10;
+        const limit = 2; // Limit to 2 posts for pin detail cards
         const offset = (page - 1) * limit;
         
         const { data: postRows, error } = await supabase
           .from('posts')
           .select('id, user_id, caption, media_urls, created_at, location_id')
           .eq('location_id', locationId)
+          .not('media_urls', 'is', null) // Filter out posts without media
           .order('created_at', { ascending: false })
           .range(offset, offset + limit - 1);
         
@@ -140,10 +144,13 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
               .in('id', userIds);
             profilesMap = new Map((profilesData || []).map((p: any) => [p.id, { username: p.username, avatar_url: p.avatar_url }]));
           }
-          const mapped = postRows.map((p: any) => ({
-            ...p,
-            profiles: profilesMap.get(p.user_id) || null,
-          }));
+          // Filter out posts with empty media_urls array
+          const mapped = postRows
+            .filter((p: any) => p.media_urls && p.media_urls.length > 0)
+            .map((p: any) => ({
+              ...p,
+              profiles: profilesMap.get(p.user_id) || null,
+            }));
           if (page === 1) {
             setPosts(mapped);
           } else {
@@ -405,8 +412,12 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="bg-background px-4 pb-4">
+          {/* Action Buttons - Hidden when scrolling down */}
+          <div 
+            className={`bg-background px-4 pb-4 transition-all duration-300 ${
+              showActionButtons ? 'opacity-100 max-h-32' : 'opacity-0 max-h-0 overflow-hidden pb-0'
+            }`}
+          >
             <div className="flex items-center gap-1.5">
               <div className="grid grid-cols-4 gap-1.5 flex-1">
                 <Button
@@ -540,7 +551,29 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
             </div>
 
             {/* Tab Content */}
-            <div className="flex-1 overflow-y-auto max-h-[calc(90vh-280px)]">
+            <div 
+              ref={scrollContainerRef}
+              className="flex-1 overflow-y-auto max-h-[calc(90vh-280px)]"
+              onScroll={(e) => {
+                const currentScrollY = e.currentTarget.scrollTop;
+                
+                // Show buttons when scrolling up, hide when scrolling down
+                if (currentScrollY > lastScrollY && currentScrollY > 50) {
+                  // Scrolling down
+                  setShowActionButtons(false);
+                } else if (currentScrollY < lastScrollY) {
+                  // Scrolling up
+                  setShowActionButtons(true);
+                }
+                
+                // Show buttons if at the top
+                if (currentScrollY < 10) {
+                  setShowActionButtons(true);
+                }
+                
+                setLastScrollY(currentScrollY);
+              }}
+            >
               {activeTab === 'posts' ? (
                 <div className="px-4 py-4">
                   {postsLoading && posts.length === 0 ? (
@@ -558,7 +591,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                     </div>
                   ) : (
                     <>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2">
                         {posts.map((post) => (
                           <button
                             key={post.id} 
@@ -570,11 +603,11 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                                 setSelectedPostId(post.id);
                               }
                             }}
-                            className="relative rounded-xl overflow-hidden bg-card shadow-sm hover:shadow-md transition-shadow"
+                            className="relative rounded-xl overflow-hidden bg-card shadow-sm hover:shadow-md transition-shadow snap-center flex-shrink-0 w-[85vw] max-w-[400px]"
                           >
                             {/* Post Image */}
                             {post.media_urls?.[0] && (
-                              <div className="relative w-full h-48">
+                              <div className="relative w-full h-72">
                                 <img 
                                   src={post.media_urls[0]} 
                                   alt="Post image" 
@@ -610,20 +643,6 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                           </button>
                         ))}
                       </div>
-                      
-                      {/* Load More Button */}
-                      {hasMorePosts && (
-                        <div className="mt-4 flex justify-center">
-                          <Button
-                            onClick={loadMorePosts}
-                            disabled={postsLoading}
-                            variant="outline"
-                            size="sm"
-                          >
-                            {postsLoading ? t('loading', { ns: 'common', defaultValue: 'Loading...' }) : t('loadMore', { ns: 'common', defaultValue: 'Load More' })}
-                          </Button>
-                        </div>
-                      )}
                     </>
                   )}
                 </div>
