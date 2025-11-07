@@ -130,7 +130,6 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
           .from('posts')
           .select('id, user_id, caption, media_urls, created_at, location_id')
           .eq('location_id', locationId)
-          .not('media_urls', 'is', null) // Filter out posts without media
           .order('created_at', { ascending: false })
           .range(offset, offset + limit - 1);
         
