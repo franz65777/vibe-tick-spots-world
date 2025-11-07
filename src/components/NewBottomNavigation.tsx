@@ -151,7 +151,7 @@ const NewBottomNavigation = () => {
                       "transition-colors duration-200 flex items-center justify-center",
                       isActive ? 'text-primary' : 'text-muted-foreground'
                     )}>
-                      <Avatar className="w-6 h-6">
+                      <Avatar className="w-7 h-7">
                         <AvatarImage src={profile?.avatar_url || ''} />
                         <AvatarFallback className={cn(
                           "text-xs font-semibold",
