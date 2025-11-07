@@ -253,51 +253,13 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
             {displayedPosts.map((post) => (
               <div
                 key={post.id}
-                className="relative bg-background border border-border rounded-xl p-3 flex items-start gap-3 cursor-pointer animate-fade-in"
+                className="relative bg-background border border-border rounded-xl p-3 cursor-pointer animate-fade-in group"
                 onClick={() => handlePostClick(post.id)}
               >
-                <button
-                  onClick={(e) => {
-                    if (post.locations) {
-                      e.stopPropagation();
-                      setSelectedLocation({
-                        id: post.locations.id,
-                        name: post.locations.name,
-                        category: post.locations.category || 'restaurant',
-                        city: post.locations.city,
-                        coordinates: {
-                          lat: post.locations.latitude,
-                          lng: post.locations.longitude,
-                        },
-                        address: post.locations.address,
-                      });
-                    }
-                  }}
-                  className="shrink-0"
-                >
-                  <Avatar className="h-10 w-10">
-                    {post.locations?.category ? (
-                      <div className="w-full h-full bg-primary/10 flex items-center justify-center">
-                        {(() => {
-                          const CategoryIcon = getCategoryIcon(post.locations.category);
-                          return <CategoryIcon className="w-5 h-5 text-primary" />;
-                        })()}
-                      </div>
-                  ) : (
-                    <AvatarFallback className="bg-primary/10">
-                      {(() => {
-                        const CategoryIcon = getCategoryIcon('restaurant');
-                        return <CategoryIcon className="w-5 h-5 text-primary" />;
-                      })()}
-                    </AvatarFallback>
-                  )}
-                  </Avatar>
-                </button>
-
-                <div className="flex-1 min-w-0">
-                  {post.locations ? (
-                    <button
-                      onClick={(e) => {
+                <div className="flex items-start gap-3">
+                  <button
+                    onClick={(e) => {
+                      if (post.locations) {
                         e.stopPropagation();
                         setSelectedLocation({
                           id: post.locations.id,
@@ -310,40 +272,77 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                           },
                           address: post.locations.address,
                         });
-                      }}
-                      className="font-semibold text-sm hover:opacity-70 block truncate text-left"
-                    >
-                      {post.locations.name}
-                    </button>
-                  ) : (
-                    <p className="font-semibold text-sm text-muted-foreground truncate">
-                      {t('unknownLocation', { ns: 'common', defaultValue: 'Unknown Location' })}
-                    </p>
-                  )}
+                      }
+                    }}
+                    className="shrink-0"
+                  >
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage 
+                        src={`/src/assets/category-${post.locations?.category || 'restaurant'}-3d-new.png`}
+                        alt={post.locations?.category || 'restaurant'}
+                      />
+                      <AvatarFallback className="bg-primary/10">
+                        {(() => {
+                          const CategoryIcon = getCategoryIcon(post.locations?.category || 'restaurant');
+                          return <CategoryIcon className="w-6 h-6 text-primary" />;
+                        })()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </button>
 
-                  {post.locations && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
-                      <MapPin className="w-3 h-3 shrink-0" />
-                      <span className="truncate">{post.locations.city || 'Unknown'}</span>
-                    </p>
-                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      {post.locations ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedLocation({
+                              id: post.locations.id,
+                              name: post.locations.name,
+                              category: post.locations.category || 'restaurant',
+                              city: post.locations.city,
+                              coordinates: {
+                                lat: post.locations.latitude,
+                                lng: post.locations.longitude,
+                              },
+                              address: post.locations.address,
+                            });
+                          }}
+                          className="font-semibold text-sm hover:opacity-70 text-left flex-1"
+                        >
+                          {post.locations.name}
+                        </button>
+                      ) : (
+                        <p className="font-semibold text-sm text-muted-foreground flex-1">
+                          {t('unknownLocation', { ns: 'common', defaultValue: 'Unknown Location' })}
+                        </p>
+                      )}
 
-                  {post.caption && (
-                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                      {post.caption}
-                    </p>
-                  )}
-                </div>
+                      {post.rating && (
+                        <div className="flex items-center gap-1 shrink-0">
+                          {(() => {
+                            const CategoryIcon = post.locations?.category ? getCategoryIcon(post.locations.category) : Star;
+                            return <CategoryIcon className={cn("w-4 h-4", getRatingFillColor(post.rating), getRatingColor(post.rating))} />;
+                          })()}
+                          <span className={cn("text-sm font-semibold", getRatingColor(post.rating))}>{post.rating}</span>
+                        </div>
+                      )}
+                    </div>
 
-                {post.rating && (
-                  <div className="flex items-center gap-1 shrink-0">
-                    {(() => {
-                      const CategoryIcon = post.locations?.category ? getCategoryIcon(post.locations.category) : Star;
-                      return <CategoryIcon className={cn("w-4 h-4", getRatingFillColor(post.rating), getRatingColor(post.rating))} />;
-                    })()}
-                    <span className={cn("text-sm font-semibold", getRatingColor(post.rating))}>{post.rating}</span>
+                    {post.locations && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1 mb-2">
+                        <MapPin className="w-3 h-3 shrink-0" />
+                        <span>{post.locations.city || 'Unknown'}</span>
+                      </p>
+                    )}
+
+                    {post.caption && (
+                      <p className="text-sm text-foreground text-left">
+                        {post.caption}
+                      </p>
+                    )}
                   </div>
-                )}
+                </div>
 
                 {isOwnProfile && (
                   <button
