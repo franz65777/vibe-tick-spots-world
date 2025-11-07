@@ -29,7 +29,7 @@ const BusinessAddPage = () => {
                 className={cn(
                   'flex items-center gap-2 px-5 py-2 rounded-full font-semibold transition-all duration-300 text-sm',
                   activeMode === 'post'
-                    ? 'bg-primary text-primary-foreground shadow-lg scale-105'
+                    ? 'bg-primary text-primary-foreground scale-105'
                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 )}
               >
@@ -41,7 +41,7 @@ const BusinessAddPage = () => {
                 className={cn(
                   'flex items-center gap-2 px-5 py-2 rounded-full font-semibold transition-all duration-300 text-sm',
                   activeMode === 'marketing'
-                    ? 'bg-accent text-accent-foreground shadow-lg scale-105'
+                    ? 'bg-accent text-accent-foreground scale-105'
                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 )}
               >

@@ -196,14 +196,24 @@
     -webkit-tap-highlight-color: transparent;
   }
   
-  /* Hide scrollbars while keeping scroll functionality */
-  .scrollbar-hide {
+  /* Hide all scrollbars globally while keeping scroll functionality */
+  * {
     -ms-overflow-style: none;  /* Internet Explorer 10+ */
     scrollbar-width: none;  /* Firefox */
   }
   
-  .scrollbar-hide::-webkit-scrollbar { 
+  *::-webkit-scrollbar { 
     display: none;  /* Safari and Chrome */
+  }
+  
+  /* Hide scrollbars while keeping scroll functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar { 
+    display: none;
   }
 
   /* Glass morphism effect */

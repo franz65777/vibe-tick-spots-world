@@ -200,54 +200,96 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
         ))}
       </div>
 
-      {/* Form Fields - No scroll */}
-      <div className="flex-1 min-h-0 space-y-3 overflow-hidden flex flex-col">
-        {/* Title */}
-        <div className="flex-shrink-0">
-          <label className="text-base font-medium mb-1 block">{t('title', { ns: 'business' })}</label>
-          <Input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder={`${t(contentType, { ns: 'business' })} ${t('titlePlaceholder', { ns: 'business' })}`}
-            className="h-10 text-base"
-          />
-        </div>
+      {/* Form Fields - Scrollable content */}
+      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">
+        <div className="space-y-3 pb-4">
+          {/* Image Upload - Moved to top */}
+          <div className="flex-shrink-0">
+            <label className="text-sm font-medium mb-2 block">{t('imagesUpTo3', { ns: 'business' })}</label>
+            <div className="space-y-2">
+              {selectedFiles.length < 3 && (
+                <label className="flex items-center justify-center gap-2 p-3 border-2 border-dashed rounded-lg cursor-pointer hover:border-primary transition-colors">
+                  <ImagePlus className="w-4 h-4" />
+                  <span className="text-sm">{t('addImages', { ns: 'business' })}</span>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={(e) => e.target.files && handleFilesSelect(e.target.files)}
+                    className="hidden"
+                  />
+                </label>
+              )}
 
-        {/* Description */}
-        <div className="flex-shrink-0">
-          <label className="text-base font-medium mb-1 block">{t('description', { ns: 'business' })}</label>
-          <Textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder={`${t('descriptionPlaceholder', { ns: 'business' })} ${t(contentType, { ns: 'business' })}...`}
-            className="min-h-[56px] text-base resize-none"
-            rows={2}
-          />
-        </div>
-
-        {/* Conditional Fields */}
-        {contentType === 'event' && (
-          <div className="grid grid-cols-2 gap-2 flex-shrink-0">
-            <div>
-              <label className="text-base font-medium mb-1 block">{t('start', { ns: 'business' })}</label>
-              <Input
-                type="datetime-local"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="h-10 text-base"
-              />
-            </div>
-            <div>
-              <label className="text-base font-medium mb-1 block">{t('end', { ns: 'business' })}</label>
-              <Input
-                type="datetime-local"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="h-10 text-base"
-              />
+              {/* Preview Images */}
+              {previewUrls.length > 0 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {previewUrls.map((url, index) => (
+                    <div key={index} className="relative aspect-square rounded-lg overflow-hidden group">
+                      <img
+                        src={url}
+                        alt={`Preview ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        onClick={() => handleRemoveFile(index)}
+                        className="absolute top-1 right-1 p-1 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
-        )}
+
+          {/* Title */}
+          <div className="flex-shrink-0">
+            <label className="text-base font-medium mb-1 block">{t('title', { ns: 'business' })}</label>
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder={`${t(contentType, { ns: 'business' })} ${t('titlePlaceholder', { ns: 'business' })}`}
+              className="h-10 text-base"
+            />
+          </div>
+
+          {/* Description */}
+          <div className="flex-shrink-0">
+            <label className="text-base font-medium mb-1 block">{t('description', { ns: 'business' })}</label>
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder={`${t('descriptionPlaceholder', { ns: 'business' })} ${t(contentType, { ns: 'business' })}...`}
+              className="min-h-[56px] text-base resize-none"
+              rows={2}
+            />
+          </div>
+
+          {/* Conditional Fields */}
+          {contentType === 'event' && (
+            <div className="space-y-2 flex-shrink-0">
+              <div>
+                <label className="text-sm font-medium mb-1 block">{t('start', { ns: 'business' })}</label>
+                <Input
+                  type="datetime-local"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="h-11 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">{t('end', { ns: 'business' })}</label>
+                <Input
+                  type="datetime-local"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="h-11 text-sm"
+                />
+              </div>
+            </div>
+          )}
 
         {contentType === 'discount' && (
           <div className="flex-shrink-0">
@@ -264,79 +306,39 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
           </div>
         )}
 
-        {(contentType === 'discount' || contentType === 'promotion') && (
-          <div className="flex-shrink-0">
-            <label className="text-base font-medium mb-1 block">{t('terms', { ns: 'business' })}</label>
-            <Textarea
-              value={terms}
-              onChange={(e) => setTerms(e.target.value)}
-              placeholder={t('termsPlaceholder', { ns: 'business' })}
-              className="min-h-[50px] text-base resize-none"
-              rows={2}
-            />
+          {(contentType === 'discount' || contentType === 'promotion') && (
+            <div className="flex-shrink-0">
+              <label className="text-base font-medium mb-1 block">{t('terms', { ns: 'business' })}</label>
+              <Textarea
+                value={terms}
+                onChange={(e) => setTerms(e.target.value)}
+                placeholder={t('termsPlaceholder', { ns: 'business' })}
+                className="min-h-[50px] text-base resize-none"
+                rows={2}
+              />
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <div className="flex-shrink-0 pt-2">
+            <Button
+              onClick={handleSubmit}
+              disabled={isSubmitting || !title.trim()}
+              className="w-full h-11 text-sm rounded-xl"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  {t('publishing', { ns: 'business' })}
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  {t('publishCampaign', { ns: 'business' })}
+                </>
+              )}
+            </Button>
           </div>
-        )}
-
-        {/* Image Upload */}
-        <div className="flex-shrink-0">
-          <label className="text-sm font-medium mb-1 block">{t('imagesUpTo3', { ns: 'business' })}</label>
-          <div className="space-y-2">
-            {selectedFiles.length < 3 && (
-              <label className="flex items-center justify-center gap-2 p-3 border-2 border-dashed rounded-lg cursor-pointer hover:border-primary transition-colors">
-                <ImagePlus className="w-4 h-4" />
-                <span className="text-sm">{t('addImages', { ns: 'business' })}</span>
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={(e) => e.target.files && handleFilesSelect(e.target.files)}
-                  className="hidden"
-                />
-              </label>
-            )}
-
-            {/* Preview Images */}
-            {previewUrls.length > 0 && (
-              <div className="grid grid-cols-3 gap-2">
-                {previewUrls.map((url, index) => (
-                  <div key={index} className="relative aspect-square rounded-lg overflow-hidden group">
-                    <img
-                      src={url}
-                      alt={`Preview ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                    <button
-                      onClick={() => handleRemoveFile(index)}
-                      className="absolute top-1 right-1 p-1 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Submit Button */}
-        <div className="flex-shrink-0 pt-3">
-          <Button
-            onClick={handleSubmit}
-            disabled={isSubmitting || !title.trim()}
-            className="w-full h-10 text-sm"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                {t('publishing', { ns: 'business' })}
-              </>
-            ) : (
-              <>
-                <Send className="w-4 h-4 mr-2" />
-                {t('publishCampaign', { ns: 'business' })}
-              </>
-            )}
-          </Button>
         </div>
       </div>
     </div>
