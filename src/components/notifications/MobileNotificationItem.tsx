@@ -7,6 +7,7 @@ import { Heart } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import StoriesViewer from '@/components/StoriesViewer';
 
 interface MobileNotificationItemProps {
   notification: {
@@ -52,6 +53,8 @@ const MobileNotificationItem = ({
   const [avatarOverride, setAvatarOverride] = useState<string | null>(null);
   const [hasActiveStory, setHasActiveStory] = useState(false);
   const [commentLiked, setCommentLiked] = useState(false);
+  const [showStories, setShowStories] = useState(false);
+  const [userStories, setUserStories] = useState<any[]>([]);
 
   // Resolve target user (id and avatar), check follow status, and check for active stories
   useEffect(() => {
@@ -94,14 +97,44 @@ const MobileNotificationItem = ({
             .maybeSingle();
           setIsFollowing(!!data);
 
-          // Check if user has active stories
+          // Check if user has active stories and fetch them
           const { data: stories } = await supabase
             .from('stories')
-            .select('id')
+            .select('id, user_id, media_url, media_type, created_at, location_id, location_name, location_address, metadata')
             .eq('user_id', uid)
             .gt('expires_at', new Date().toISOString())
-            .limit(1);
-          setHasActiveStory(!!stories && stories.length > 0);
+            .order('created_at', { ascending: false });
+          
+          if (stories && stories.length > 0) {
+            setHasActiveStory(true);
+            // Get profile data
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('username, avatar_url')
+              .eq('id', uid)
+              .single();
+            
+            // Transform stories to the format expected by StoriesViewer
+            const transformedStories = stories.map(story => ({
+              id: story.id,
+              userId: story.user_id,
+              userName: profileData?.username || 'User',
+              userAvatar: profileData?.avatar_url || '',
+              mediaUrl: story.media_url,
+              mediaType: story.media_type as 'image' | 'video',
+              locationId: story.location_id || '',
+              locationName: story.location_name || '',
+              locationAddress: story.location_address || '',
+              locationCategory: (story.metadata as any)?.category,
+              timestamp: story.created_at,
+              isViewed: false,
+              bookingUrl: (story.metadata as any)?.booking_url
+            }));
+            setUserStories(transformedStories);
+          } else {
+            setHasActiveStory(false);
+            setUserStories([]);
+          }
         }
 
         // Check if comment is liked (for comment notifications)
@@ -136,9 +169,8 @@ const MobileNotificationItem = ({
     if (!targetUserId) return;
 
     // If user has active story, open story viewer
-    if (hasActiveStory) {
-      // TODO: Open story viewer with this user's stories
-      navigate(`/profile/${targetUserId}`);
+    if (hasActiveStory && userStories.length > 0) {
+      setShowStories(true);
     } else {
       // Open profile
       navigate(`/profile/${targetUserId}`);
@@ -428,73 +460,85 @@ const MobileNotificationItem = ({
   };
 
   return (
-    <div
-      onClick={handleClick}
-      className={`w-full cursor-pointer active:bg-accent/50 transition-colors ${
-        !notification.is_read ? 'bg-accent/20' : 'bg-background'
-      }`}
-    >
-      <div className="flex items-start gap-2.5 py-3 px-4">
-        {/* User Avatar(s) */}
-        {renderAvatars()}
+    <>
+      <div
+        onClick={handleClick}
+        className={`w-full cursor-pointer active:bg-accent/50 transition-colors ${
+          !notification.is_read ? 'bg-accent/20' : 'bg-background'
+        }`}
+      >
+        <div className="flex items-start gap-2.5 py-3 px-4">
+          {/* User Avatar(s) */}
+          {renderAvatars()}
 
-      {/* Notification Text and Time */}
-      <div className="flex-1 min-w-0">
-        <div className="text-left">
-          {getNotificationText()}
-          <span className="text-muted-foreground text-[12px] ml-1.5">
-            {getRelativeTime(notification.created_at)}
-          </span>
+        {/* Notification Text and Time */}
+        <div className="flex-1 min-w-0">
+          <div className="text-left">
+            {getNotificationText()}
+            <span className="text-muted-foreground text-[12px] ml-1.5">
+              {getRelativeTime(notification.created_at)}
+            </span>
+          </div>
+        </div>
+
+        {/* Right Side - Follow Button, Post Thumbnail, or Comment Actions */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {notification.type === 'follow' ? (
+            <Button
+              onClick={handleFollowClick}
+              disabled={isLoading}
+              size="sm"
+              variant={isFollowing ? 'outline' : 'default'}
+              className={`px-4 h-7 text-[12px] font-semibold rounded-lg ${
+                isFollowing 
+                  ? 'border-border hover:bg-accent' 
+                  : 'bg-primary hover:bg-primary/90'
+              }`}
+            >
+              {isFollowing ? t('following', { ns: 'common' }) : t('follow', { ns: 'common' })}
+            </Button>
+          ) : notification.type === 'comment' ? (
+            <Button
+              onClick={handleCommentLike}
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-full"
+            >
+              <Heart 
+                className={`w-5 h-5 ${commentLiked ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`}
+              />
+            </Button>
+          ) : notification.data?.post_image ? (
+            <div 
+              className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 border border-border cursor-pointer"
+              onClick={handlePostClick}
+            >
+              <img
+                src={notification.data.post_image}
+                alt="Post"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ) : null}
+
+          {/* Unread Indicator */}
+          {!notification.is_read && (
+            <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+          )}
+        </div>
         </div>
       </div>
 
-      {/* Right Side - Follow Button, Post Thumbnail, or Comment Actions */}
-      <div className="flex items-center gap-1.5 flex-shrink-0">
-        {notification.type === 'follow' ? (
-          <Button
-            onClick={handleFollowClick}
-            disabled={isLoading}
-            size="sm"
-            variant={isFollowing ? 'outline' : 'default'}
-            className={`px-4 h-7 text-[12px] font-semibold rounded-lg ${
-              isFollowing 
-                ? 'border-border hover:bg-accent' 
-                : 'bg-primary hover:bg-primary/90'
-            }`}
-          >
-            {isFollowing ? t('following', { ns: 'common' }) : t('follow', { ns: 'common' })}
-          </Button>
-        ) : notification.type === 'comment' ? (
-          <Button
-            onClick={handleCommentLike}
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 rounded-full"
-          >
-            <Heart 
-              className={`w-5 h-5 ${commentLiked ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`}
-            />
-          </Button>
-        ) : notification.data?.post_image ? (
-          <div 
-            className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 border border-border cursor-pointer"
-            onClick={handlePostClick}
-          >
-            <img
-              src={notification.data.post_image}
-              alt="Post"
-              className="w-full h-full object-cover"
-            />
-          </div>
-        ) : null}
-
-        {/* Unread Indicator */}
-        {!notification.is_read && (
-          <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
-        )}
-      </div>
-      </div>
-    </div>
+      {/* Stories Viewer */}
+      {showStories && userStories.length > 0 && (
+        <StoriesViewer
+          stories={userStories}
+          initialStoryIndex={0}
+          onClose={() => setShowStories(false)}
+          onStoryViewed={() => {}}
+        />
+      )}
+    </>
   );
 };
 

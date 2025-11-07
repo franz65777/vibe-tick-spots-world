@@ -14,6 +14,8 @@ import { useNotificationMuting } from '@/hooks/useNotificationMuting';
 import { useUserBlocking } from '@/hooks/useUserBlocking';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
+import { useStories } from '@/hooks/useStories';
+import StoriesViewer from './StoriesViewer';
 import ProfileTabs from './profile/ProfileTabs';
 import PostsGrid from './profile/PostsGrid';
 import TripsGrid from './profile/TripsGrid';
@@ -47,6 +49,8 @@ const UserProfilePage = () => {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
   const [showBadgesModal, setShowBadgesModal] = useState(false);
+  const [showStories, setShowStories] = useState(false);
+  const { stories: allStories } = useStories();
 
   // Recording visits for search history is handled in ExplorePage only to avoid duplicates
   useEffect(() => {
@@ -115,6 +119,29 @@ const UserProfilePage = () => {
       await unblockUser();
     } else {
       await blockUser();
+    }
+  };
+
+  const handleAvatarClick = () => {
+    if (!userId) return;
+
+    const userStoriesData = allStories.filter(story => story.user_id === userId);
+    if (userStoriesData.length > 0) {
+      const transformedStories = userStoriesData.map(story => ({
+        id: story.id,
+        userId: story.user_id,
+        userName: profile?.username || 'User',
+        userAvatar: profile?.avatar_url || '',
+        mediaUrl: story.media_url,
+        mediaType: story.media_type as 'image' | 'video',
+        locationId: story.location_id || '',
+        locationName: story.location_name || '',
+        locationAddress: story.location_address || '',
+        locationCategory: story.metadata?.category,
+        timestamp: story.created_at,
+        isViewed: false
+      }));
+      setShowStories(true);
     }
   };
 
@@ -217,7 +244,14 @@ const UserProfilePage = () => {
         <div className="flex items-start gap-4 mb-4">
           {/* Smaller Avatar */}
           <div className="relative shrink-0">
-            <div className="w-[72px] h-[72px] rounded-full bg-gradient-to-br from-primary to-primary/60 p-0.5">
+            <div 
+              className={`w-[72px] h-[72px] rounded-full p-0.5 cursor-pointer ${
+                allStories.filter(s => s.user_id === userId).length > 0 
+                  ? 'bg-gradient-to-br from-primary to-primary/60' 
+                  : 'bg-gradient-to-br from-primary/20 to-primary/10'
+              }`}
+              onClick={handleAvatarClick}
+            >
               <div className="w-full h-full rounded-full bg-background p-0.5">
                 <Avatar className="w-full h-full">
                   <AvatarImage src={profile.avatar_url || undefined} alt={displayUsername} />
@@ -399,6 +433,29 @@ const UserProfilePage = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Stories Viewer */}
+      {showStories && allStories.filter(s => s.user_id === userId).length > 0 && (
+        <StoriesViewer
+          stories={allStories.filter(s => s.user_id === userId).map(story => ({
+            id: story.id,
+            userId: story.user_id,
+            userName: profile?.username || 'User',
+            userAvatar: profile?.avatar_url || '',
+            mediaUrl: story.media_url,
+            mediaType: story.media_type as 'image' | 'video',
+            locationId: story.location_id || '',
+            locationName: story.location_name || '',
+            locationAddress: story.location_address || '',
+            locationCategory: (story.metadata as any)?.category,
+            timestamp: story.created_at,
+            isViewed: false
+          }))}
+          initialStoryIndex={0}
+          onClose={() => setShowStories(false)}
+          onStoryViewed={() => {}}
+        />
       )}
     </div>
   );

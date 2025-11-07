@@ -10,6 +10,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { messageService, MessageThread } from '@/services/messageService';
+import StoriesViewer from '@/components/StoriesViewer';
 
 interface Message {
   id: string;
@@ -31,6 +32,9 @@ const BusinessMessagesPage = () => {
   const { businessProfile } = useBusinessProfile();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasActiveStory, setHasActiveStory] = useState<Record<string, boolean>>({});
+  const [showStories, setShowStories] = useState(false);
+  const [currentUserStories, setCurrentUserStories] = useState<any[]>([]);
 
   useEffect(() => {
     if (user && businessProfile) {
@@ -60,11 +64,70 @@ const BusinessMessagesPage = () => {
       }));
 
       setMessages(messagesWithProfiles);
+
+      // Check for active stories for each user
+      const storyStatus: Record<string, boolean> = {};
+      for (const msg of messagesWithProfiles) {
+        const { data: stories } = await supabase
+          .from('stories')
+          .select('id')
+          .eq('user_id', msg.sender_id)
+          .gt('expires_at', new Date().toISOString())
+          .limit(1);
+        storyStatus[msg.sender_id] = !!stories && stories.length > 0;
+      }
+      setHasActiveStory(storyStatus);
     } catch (error) {
       console.error('Error fetching business messages:', error);
       toast.error(t('failedLoadMessages', { ns: 'business' }));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAvatarClick = async (userId: string) => {
+    if (!hasActiveStory[userId]) {
+      navigate(`/profile/${userId}`);
+      return;
+    }
+
+    try {
+      // Fetch user's stories
+      const { data: stories } = await supabase
+        .from('stories')
+        .select('id, user_id, media_url, media_type, created_at, location_id, location_name, location_address, metadata')
+        .eq('user_id', userId)
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false });
+      
+      if (stories && stories.length > 0) {
+        // Get profile data
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('username, avatar_url')
+          .eq('id', userId)
+          .single();
+        
+        const transformedStories = stories.map(story => ({
+          id: story.id,
+          userId: story.user_id,
+          userName: profileData?.username || 'User',
+          userAvatar: profileData?.avatar_url || '',
+          mediaUrl: story.media_url,
+          mediaType: story.media_type as 'image' | 'video',
+          locationId: story.location_id || '',
+          locationName: story.location_name || '',
+          locationAddress: story.location_address || '',
+          locationCategory: (story.metadata as any)?.category,
+          timestamp: story.created_at,
+          isViewed: false
+        }));
+        setCurrentUserStories(transformedStories);
+        setShowStories(true);
+      }
+    } catch (error) {
+      console.error('Error loading stories:', error);
+      navigate(`/profile/${userId}`);
     }
   };
 
@@ -153,6 +216,19 @@ const BusinessMessagesPage = () => {
           )}
         </div>
       </div>
+
+      {/* Stories Viewer */}
+      {showStories && currentUserStories.length > 0 && (
+        <StoriesViewer
+          stories={currentUserStories}
+          initialStoryIndex={0}
+          onClose={() => {
+            setShowStories(false);
+            setCurrentUserStories([]);
+          }}
+          onStoryViewed={() => {}}
+        />
+      )}
     </div>
   );
 };

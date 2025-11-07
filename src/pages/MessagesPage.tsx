@@ -61,6 +61,7 @@ const MessagesPage = () => {
   const [selectedPlaceToShare, setSelectedPlaceToShare] = useState<any>(null);
   const [userSelectLoading, setUserSelectLoading] = useState(false);
   const [otherUserProfile, setOtherUserProfile] = useState<any>(null);
+  const [hasActiveStoryInThread, setHasActiveStoryInThread] = useState<Record<string, boolean>>({});
   const lastTapRef = useRef<number>(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<any>(null);
@@ -171,16 +172,27 @@ const MessagesPage = () => {
       const data = await messageService.getMessageThreads(false);
       setThreads(data || []);
       
-      // Load unread counts for each thread
+      // Load unread counts and check for active stories for each thread
       const counts: Record<string, number> = {};
+      const storyStatus: Record<string, boolean> = {};
       for (const thread of data || []) {
         const otherUser = getOtherParticipant(thread);
         if (otherUser) {
           const count = await messageService.getUnreadCount(otherUser.id);
           counts[otherUser.id] = count;
+          
+          // Check if user has active stories
+          const { data: stories } = await supabase
+            .from('stories')
+            .select('id')
+            .eq('user_id', otherUser.id)
+            .gt('expires_at', new Date().toISOString())
+            .limit(1);
+          storyStatus[otherUser.id] = !!stories && stories.length > 0;
         }
       }
       setUnreadCounts(counts);
+      setHasActiveStoryInThread(storyStatus);
     } catch (error) {
       console.error('Error loading threads:', error);
     } finally {
@@ -547,6 +559,35 @@ const MessagesPage = () => {
       setOtherUserProfile(data);
     } catch (error) {
       console.error('Error loading other user profile:', error);
+    }
+  };
+
+  const handleAvatarClickInThread = (thread: MessageThread) => {
+    const otherUser = getOtherParticipant(thread);
+    if (!otherUser) return;
+
+    const userStoriesData = allStories.filter(story => story.user_id === otherUser.id);
+    if (userStoriesData.length > 0 && hasActiveStoryInThread[otherUser.id]) {
+      // Transform and show stories
+      const transformedStories = userStoriesData.map(story => ({
+        id: story.id,
+        userId: story.user_id,
+        userName: otherUser.username,
+        userAvatar: otherUser.avatar_url,
+        mediaUrl: story.media_url,
+        mediaType: story.media_type as 'image' | 'video',
+        locationId: story.location_id || '',
+        locationName: story.location_name || '',
+        locationAddress: story.location_address || '',
+        locationCategory: (story.metadata as any)?.category,
+        timestamp: story.created_at,
+        isViewed: false
+      }));
+      setInitialStoryIndex(0);
+      setShowStories(true);
+    } else {
+      // Navigate to profile if no stories
+      navigate(`/profile/${otherUser.id}`);
     }
   };
 
@@ -977,7 +1018,17 @@ const MessagesPage = () => {
                     onClick={() => handleThreadSelect(thread)}
                     className="w-full flex items-center gap-3 p-4 hover:bg-accent transition-colors"
                   >
-                    <Avatar className="w-14 h-14">
+                    <Avatar 
+                      className={`w-14 h-14 border-2 ${
+                        hasActiveStoryInThread[otherParticipant.id] 
+                          ? 'border-primary cursor-pointer' 
+                          : 'border-background'
+                      }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAvatarClickInThread(thread);
+                      }}
+                    >
                       <AvatarImage src={otherParticipant.avatar_url} />
                       <AvatarFallback>{otherParticipant.username?.[0]?.toUpperCase()}</AvatarFallback>
                     </Avatar>
