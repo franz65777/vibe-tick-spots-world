@@ -183,7 +183,7 @@ const BusinessMessagesPage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <div className="max-w-screen-sm mx-auto">
+      
         {/* Header */}
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm">
           <div className="flex items-center gap-3 p-4 pb-2">
@@ -296,7 +296,6 @@ const BusinessMessagesPage = () => {
               </div>
             ))
           )}
-        </div>
       </div>
 
       {/* Stories Viewer */}

@@ -115,8 +115,8 @@ const BusinessBottomNavigation = () => {
         role="navigation"
         aria-label="Business navigation"
       >
-        <div className="max-w-screen-sm mx-auto">
-          <div className="bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.08)] border-t border-gray-100 px-2 h-16 flex items-center justify-around">
+        <div className="w-full px-0 bg-white border-t border-gray-100">
+          <div className="h-16 flex items-center justify-around px-2 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]">
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
               const isProfileTab = item.path === '/business/profile';
