@@ -242,8 +242,20 @@ const FeedPage = () => {
   const renderCaption = (caption: string | null, postId: string, username: string, userId: string) => {
     if (!caption) return null;
     const isExpanded = expandedCaptions.has(postId);
+
+    const firstLine = caption.split('\n')[0];
+    const MAX_FIRST_LINE_LENGTH = 80;
     
-    const shouldTruncate = caption.length > 100;
+    // Show "altro/meno" if there are multiple lines OR if first line is too long
+    const hasMultipleLines = caption.trim().length > firstLine.trim().length;
+    const firstLineIsTooLong = firstLine.length > MAX_FIRST_LINE_LENGTH;
+    const hasMoreContent = hasMultipleLines || firstLineIsTooLong;
+    
+    // Truncate first line for display
+    const displayFirstLine = firstLineIsTooLong && !isExpanded 
+      ? firstLine.substring(0, MAX_FIRST_LINE_LENGTH)
+      : firstLine;
+
     const moreLabel = t('more');
     const lessLabel = t('less');
 
@@ -260,27 +272,28 @@ const FeedPage = () => {
             {username}
           </button>
           {' '}
-          {isExpanded ? (
-            <>
-              <span className="whitespace-pre-wrap">{caption}</span>
-              {' '}
-              {shouldTruncate && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleCaption(postId);
-                  }}
-                  className="text-muted-foreground hover:text-foreground font-medium"
-                >
-                  {lessLabel}
-                </button>
-              )}
-            </>
-          ) : (
-            <span className="line-clamp-2 inline">
-              {shouldTruncate ? (
-                <>
-                  {caption}{' '}
+          <span className="inline">
+            {isExpanded ? (
+              <>
+                <span className="whitespace-pre-wrap">{caption}</span>
+                {' '}
+                {hasMoreContent && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleCaption(postId);
+                    }}
+                    className="text-muted-foreground hover:text-foreground font-medium"
+                  >
+                    {lessLabel}
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                <span>{displayFirstLine}</span>
+                {hasMoreContent && '... '}
+                {hasMoreContent && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -290,12 +303,10 @@ const FeedPage = () => {
                   >
                     {moreLabel}
                   </button>
-                </>
-              ) : (
-                caption
-              )}
-            </span>
-          )}
+                )}
+              </>
+            )}
+          </span>
         </span>
       </div>
     );

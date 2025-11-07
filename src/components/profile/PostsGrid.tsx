@@ -350,32 +350,15 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
 
                       {post.caption && (
                         <div className="relative">
-                          {isExpanded ? (
-                            <>
-                              <p className="text-sm text-foreground text-left whitespace-pre-wrap">
-                                {post.caption}
-                              </p>
-                              {shouldTruncate && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setExpandedCaptions(prev => {
-                                      const newSet = new Set(prev);
-                                      newSet.delete(post.id);
-                                      return newSet;
-                                    });
-                                  }}
-                                  className="text-xs text-primary hover:opacity-70 mt-1 font-medium"
-                                >
-                                  {t('less', { ns: 'common' })}
-                                </button>
-                              )}
-                            </>
-                          ) : (
-                            <p className="text-sm text-foreground text-left line-clamp-2">
-                              {shouldTruncate ? (
+                          <p className="text-sm text-foreground text-left">
+                            {isExpanded ? (
+                              <span className="whitespace-pre-wrap">{post.caption}</span>
+                            ) : (
+                              shouldTruncate ? (
                                 <>
-                                  {post.caption}{' '}
+                                  <span className="line-clamp-2">
+                                    {post.caption.slice(0, 80)}...{' '}
+                                  </span>
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -385,15 +368,30 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                                         return newSet;
                                       });
                                     }}
-                                    className="text-primary hover:opacity-70 font-medium"
+                                    className="text-primary hover:opacity-70 font-medium inline-block"
                                   >
                                     {t('more', { ns: 'common' })}
                                   </button>
                                 </>
                               ) : (
-                                post.caption
-                              )}
-                            </p>
+                                <span className="line-clamp-2">{post.caption}</span>
+                              )
+                            )}
+                          </p>
+                          {isExpanded && shouldTruncate && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedCaptions(prev => {
+                                  const newSet = new Set(prev);
+                                  newSet.delete(post.id);
+                                  return newSet;
+                                });
+                              }}
+                              className="text-xs text-primary hover:opacity-70 mt-1 font-medium"
+                            >
+                              {t('less', { ns: 'common' })}
+                            </button>
                           )}
                         </div>
                       )}
