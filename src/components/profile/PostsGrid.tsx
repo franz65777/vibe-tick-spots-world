@@ -185,7 +185,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
           </p>
         </div>
       ) : (
-        {postFilter === 'photos' ? (
+        postFilter === 'photos' ? (
           <div className="grid grid-cols-2 gap-3 w-full">
             {displayedPosts.map((post) => (
               <div
@@ -371,8 +371,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
               </div>
             ))}
           </div>
-        )}
-
+        )
       )}
 
       {selectedPostId && (
