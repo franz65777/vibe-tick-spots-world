@@ -146,10 +146,18 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
               .in('id', userIds);
             profilesMap = new Map((profilesData || []).map((p: any) => [p.id, { username: p.username, avatar_url: p.avatar_url }]));
           }
-          const mapped = postRows.map((p: any) => ({
+          let mapped = postRows.map((p: any) => ({
             ...p,
             profiles: profilesMap.get(p.user_id) || null,
-          })).filter((p: any) => p.media_urls && Array.isArray(p.media_urls) && p.media_urls.length > 0);
+          }));
+          
+          // Filter to ensure only posts with valid media_urls are shown
+          mapped = mapped.filter((p: any) => 
+            p.media_urls && 
+            Array.isArray(p.media_urls) && 
+            p.media_urls.length > 0 &&
+            p.media_urls[0] // Ensure first element exists and is not empty
+          );
           if (page === 1) {
             setPosts(mapped);
           } else {

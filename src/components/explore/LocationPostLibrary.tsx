@@ -234,10 +234,19 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
           console.error('Error fetching profiles:', profilesError);
         }
 
-        const postsWithProfiles = postsData.map(post => ({
+        let postsWithProfiles = postsData.map(post => ({
           ...post,
           profiles: profilesData?.find(profile => profile.id === post.user_id) || null
         }));
+
+        // Filter out posts without valid media_urls for Posts tab
+        if (activeTab === 'posts') {
+          postsWithProfiles = postsWithProfiles.filter(post => 
+            post.media_urls && 
+            Array.isArray(post.media_urls) && 
+            post.media_urls.length > 0
+          );
+        }
 
         if (page === 1) {
           setPosts(postsWithProfiles);
