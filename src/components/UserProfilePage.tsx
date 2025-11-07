@@ -56,8 +56,21 @@ const UserProfilePage = () => {
   const isOwnProfile = currentUser?.id === userId;
 
   const handleBack = () => {
-    const state = location.state as { from?: string; searchQuery?: string; searchMode?: 'locations' | 'users' } | null;
-    if (state?.from === 'explore') {
+    const state = location.state as { 
+      from?: string; 
+      searchQuery?: string; 
+      searchMode?: 'locations' | 'users';
+      returnTo?: string;
+      chatUserId?: string;
+    } | null;
+    
+    if (state?.returnTo === 'chat' && state?.chatUserId) {
+      // Return to chat with specific user
+      navigate('/messages', { 
+        state: { initialUserId: state.chatUserId },
+        replace: true
+      });
+    } else if (state?.from === 'explore') {
       // Return to explore with preserved search state
       navigate('/explore', { 
         state: { 

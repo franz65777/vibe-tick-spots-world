@@ -747,7 +747,12 @@ const MessagesPage = () => {
                   </Avatar>
                 </button>
                 <button
-                  onClick={() => navigate(`/profile/${otherParticipant.id}`)}
+                  onClick={() => navigate(`/profile/${otherParticipant.id}`, {
+                    state: {
+                      returnTo: 'chat',
+                      chatUserId: otherParticipant.id
+                    }
+                  })}
                   className="min-w-0 text-left hover:opacity-80 transition-opacity"
                 >
                   <h1 className="font-semibold text-base text-foreground truncate">
@@ -1243,7 +1248,10 @@ const MessagesPage = () => {
                                 <PostMessageCard postData={message.shared_content} />
                               )}
                               {message.message_type === 'profile_share' && (
-                                <ProfileMessageCard profileData={message.shared_content} />
+                                <ProfileMessageCard 
+                                  profileData={message.shared_content} 
+                                  currentChatUserId={otherParticipant?.id}
+                                />
                               )}
                               {messageReactions[message.id]?.length > 0 && (
                                 <div className="absolute -bottom-2 left-2 flex gap-0.5 bg-background/95 rounded-full px-1.5 py-0.5 shadow-sm border border-border">
@@ -1313,7 +1321,7 @@ const MessagesPage = () => {
            </div>
 
           {/* Message Input */}
-          <div className="shrink-0 p-3 bg-background pb-20">
+          <div className="shrink-0 p-3 bg-background pb-16">
             <div className="flex items-center gap-2">
               <Button
                 variant="ghost"

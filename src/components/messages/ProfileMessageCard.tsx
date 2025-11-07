@@ -14,9 +14,10 @@ interface ProfileMessageCardProps {
     avatar_url?: string;
     bio?: string;
   };
+  currentChatUserId?: string;
 }
 
-const ProfileMessageCard = ({ profileData }: ProfileMessageCardProps) => {
+const ProfileMessageCard = ({ profileData, currentChatUserId }: ProfileMessageCardProps) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
@@ -55,7 +56,12 @@ const ProfileMessageCard = ({ profileData }: ProfileMessageCardProps) => {
   }, [profileData?.id]);
 
   const handleViewProfile = () => {
-    navigate(`/profile/${profileData.id}`);
+    navigate(`/profile/${profileData.id}`, {
+      state: {
+        returnTo: 'chat',
+        chatUserId: currentChatUserId
+      }
+    });
   };
 
   // Remove @ from username if present
@@ -86,15 +92,15 @@ const ProfileMessageCard = ({ profileData }: ProfileMessageCardProps) => {
       {/* Stats */}
       <div className="flex gap-6 text-sm">
         <div className="flex items-center gap-2">
-          <img src={cameraIcon3d} alt="Foto caricate" className="w-5 h-5" loading="lazy" />
+          <img src={cameraIcon3d} alt="Foto caricate" className="w-5 h-5 object-contain" loading="lazy" />
           <span className="font-bold text-foreground">{photosCount ?? '—'}</span>
         </div>
         <div className="flex items-center gap-2">
-          <img src={pinLocationIcon3d} alt="Luoghi salvati" className="w-5 h-5" loading="lazy" />
+          <img src={pinLocationIcon3d} alt="Luoghi salvati" className="w-5 h-5 object-contain" loading="lazy" />
           <span className="font-bold text-foreground">{savedCount ?? '—'}</span>
         </div>
         <div className="flex items-center gap-2">
-          <img src={starIcon3d} alt="Recensioni lasciate" className="w-5 h-5" loading="lazy" />
+          <img src={starIcon3d} alt="Recensioni lasciate" className="w-5 h-5 object-contain" loading="lazy" />
           <span className="font-bold text-foreground">{reviewsCount ?? '—'}</span>
         </div>
       </div>
