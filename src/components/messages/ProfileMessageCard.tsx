@@ -24,17 +24,25 @@ const ProfileMessageCard = ({ profileData }: ProfileMessageCardProps) => {
     navigate(`/profile/${profileData.id}`);
   };
 
+  // Remove @ from username if present
+  const displayUsername = profileData.username?.startsWith('@') 
+    ? profileData.username.slice(1) 
+    : profileData.username;
+
   return (
-    <div className="p-4 bg-background">
+    <div 
+      className="p-4 bg-muted/30 rounded-2xl cursor-pointer hover:bg-muted/50 transition-colors"
+      onClick={handleViewProfile}
+    >
       <div className="flex items-center gap-3 mb-3">
-        <Avatar className="h-14 w-14">
+        <Avatar className="h-12 w-12">
           <AvatarImage src={profileData.avatar_url} />
-          <AvatarFallback className="bg-primary/10 text-primary text-lg">
+          <AvatarFallback className="bg-primary/10 text-primary">
             {profileData.username?.charAt(0).toUpperCase()}
           </AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-foreground">@{profileData.username}</p>
+          <p className="font-bold text-foreground text-base">{displayUsername}</p>
           {profileData.bio && (
             <p className="text-xs text-muted-foreground truncate">{profileData.bio}</p>
           )}
@@ -42,7 +50,13 @@ const ProfileMessageCard = ({ profileData }: ProfileMessageCardProps) => {
       </div>
 
       {/* Stats */}
-      <div className="flex gap-4 text-sm mb-3">
+      <div className="flex gap-4 text-sm">
+        {profileData.posts_count !== undefined && (
+          <div>
+            <span className="font-bold text-foreground">{profileData.posts_count}</span>{' '}
+            <span className="text-muted-foreground">{t('userProfile.photos', { ns: 'common' })}</span>
+          </div>
+        )}
         {profileData.places_visited !== undefined && (
           <div>
             <span className="font-bold text-foreground">{profileData.places_visited}</span>{' '}
@@ -55,36 +69,7 @@ const ProfileMessageCard = ({ profileData }: ProfileMessageCardProps) => {
             <span className="text-muted-foreground">{t('userProfile.cities', { ns: 'common' })}</span>
           </div>
         )}
-        {profileData.posts_count !== undefined && (
-          <div>
-            <span className="font-bold text-foreground">{profileData.posts_count}</span>{' '}
-            <span className="text-muted-foreground">{t('userProfile.photos', { ns: 'common' })}</span>
-          </div>
-        )}
       </div>
-
-      {/* Recent Photos */}
-      {profileData.recent_photos && profileData.recent_photos.length > 0 && (
-        <div className="grid grid-cols-3 gap-1 mb-3">
-          {profileData.recent_photos.slice(0, 3).map((photoUrl, index) => (
-            <div key={index} className="aspect-square rounded-lg overflow-hidden bg-muted">
-              <img 
-                src={photoUrl} 
-                alt={`Recent photo ${index + 1}`}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          ))}
-        </div>
-      )}
-
-      <Button 
-        onClick={handleViewProfile}
-        className="w-full rounded-lg font-semibold"
-        size="sm"
-      >
-        {t('viewProfile', { ns: 'messages' })}
-      </Button>
     </div>
   );
 };

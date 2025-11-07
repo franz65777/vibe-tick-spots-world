@@ -1009,7 +1009,7 @@ const MessagesPage = () => {
                 <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
               </div>
             ) : (
-              <div className="space-y-3 pb-24">
+              <div className="space-y-3 pb-32">
                  {messages.filter(m => !hiddenMessageIds.includes(m.id)).map((message) => {
                    const isOwn = message.sender_id === user?.id;
                    return (
@@ -1285,7 +1285,7 @@ const MessagesPage = () => {
            </div>
 
           {/* Message Input */}
-          <div className="shrink-0 p-3 bg-background border-t border-border">
+          <div className="shrink-0 p-3 bg-background">
             <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
