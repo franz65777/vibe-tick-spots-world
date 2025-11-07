@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, MapPin, Calendar, Users, Heart, MessageCircle, Share2, Bookmark, X, Navigation, Star, Bell, BellOff } from 'lucide-react';
+import { ChevronLeft, MapPin, Calendar, Users, Heart, MessageCircle, Share2, Bookmark, X, Navigation, Star, Bell, BellOff, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 
@@ -21,6 +21,7 @@ import { useLocationStats } from '@/hooks/useLocationStats';
 import { useMutedLocations } from '@/hooks/useMutedLocations';
 import { useMarketingCampaign } from '@/hooks/useMarketingCampaign';
 import MarketingCampaignBanner from './MarketingCampaignBanner';
+import { cn } from '@/lib/utils';
 interface LocationPost {
   id: string;
   user_id: string;
@@ -31,6 +32,7 @@ interface LocationPost {
   saves_count: number;
   created_at: string;
   metadata: any;
+  rating?: number;
   profiles?: {
     username: string;
     avatar_url: string;
@@ -75,6 +77,7 @@ const LocationPostLibrary = ({
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
   const [showSavedBy, setShowSavedBy] = useState(false);
+  const [activeTab, setActiveTab] = useState<'posts' | 'reviews'>('posts');
   const { posts: userPosts } = useUserPosts(user?.id);
   const { cityLabel: displayCity } = useNormalizedCity({
     id: place?.google_place_id || place?.id,
@@ -102,12 +105,13 @@ const LocationPostLibrary = ({
   // All hooks MUST be called before any early returns
   useEffect(() => {
     if (!place?.id) return;
-    fetchLocationPosts();
+    setPostsPage(1);
+    fetchLocationPosts(1);
     if (user) {
       fetchUserInteractions();
       checkIfLocationSaved();
     }
-  }, [place?.id, user]);
+  }, [place?.id, user, activeTab]);
 
   // Listen for global save changes
   useEffect(() => {
@@ -198,12 +202,11 @@ const LocationPostLibrary = ({
         setLoading(false);
         return;
       }
-      const limit = 8;
+      const limit = 20;
       const offset = (page - 1) * limit;
-      const {
-        data: postsData,
-        error: postsError
-      } = await supabase.from('posts').select(`
+      
+      // Build query based on active tab
+      let query = supabase.from('posts').select(`
           id,
           user_id,
           caption,
@@ -213,8 +216,23 @@ const LocationPostLibrary = ({
           saves_count,
           created_at,
           metadata,
-          location_id
-        `).in('location_id', locationIds).order('created_at', {
+          location_id,
+          rating
+        `).in('location_id', locationIds);
+      
+      // Filter based on tab
+      if (activeTab === 'posts') {
+        // Posts: only those with media_urls
+        query = query.not('media_urls', 'is', null);
+      } else {
+        // Reviews: only those with rating
+        query = query.not('rating', 'is', null).gt('rating', 0);
+      }
+      
+      const {
+        data: postsData,
+        error: postsError
+      } = await query.order('created_at', {
         ascending: false
       }).range(offset, offset + limit - 1);
       if (postsError) {
@@ -537,15 +555,54 @@ const LocationPostLibrary = ({
             </div>
           )}
 
+          {/* Filter Tabs */}
+          <div className="bg-white px-4 py-3">
+            <div className="flex bg-muted rounded-xl p-1">
+              <button
+                onClick={() => setActiveTab('posts')}
+                className={cn(
+                  "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all",
+                  activeTab === 'posts'
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground"
+                )}
+              >
+                {t('postsTab', { ns: 'explore', defaultValue: 'Posts' })}
+              </button>
+              <button
+                onClick={() => setActiveTab('reviews')}
+                className={cn(
+                  "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all",
+                  activeTab === 'reviews'
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground"
+                )}
+              >
+                {t('reviewsTab', { ns: 'explore', defaultValue: 'Reviews' })}
+              </button>
+            </div>
+          </div>
+
           {/* Posts Library - vertical grid with scrolling */}
           <div className="flex-1 overflow-y-auto scrollbar-hide bg-white">
             {posts.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center px-8">
-                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
-                  <MapPin className="w-10 h-10 text-gray-400" />
+                <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-6">
+                  {activeTab === 'posts' ? (
+                    <Camera className="w-10 h-10 text-muted-foreground" />
+                  ) : (
+                    <Star className="w-10 h-10 text-muted-foreground" />
+                  )}
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('noPosts', { ns: 'explore', defaultValue: 'No posts yet' })}</h3>
-                <p className="text-gray-600 mb-6">{t('beFirstToShare', { ns: 'explore', defaultValue: 'Be the first to share your experience at' })} {detailedAddress}!</p>
+                <h3 className="text-xl font-semibold text-foreground mb-2">
+                  {activeTab === 'posts' 
+                    ? t('noPosts', { ns: 'explore', defaultValue: 'No posts yet' })
+                    : t('noReviewsYet', { ns: 'common', defaultValue: 'No reviews yet' })
+                  }
+                </h3>
+                <p className="text-muted-foreground mb-6">
+                  {t('beFirstToShare', { ns: 'explore', defaultValue: 'Be the first to share your experience at' })} {detailedAddress}!
+                </p>
                 
                 {/* Show user's posts from their profile - only for this location */}
                 {userPosts && userPosts.filter(post => post.location_id === place.id || post.locations?.id === place.id).length > 0 && (
@@ -585,10 +642,10 @@ const LocationPostLibrary = ({
                   {posts.map(post => (
                     <div 
                       key={post.id} 
-                      className="relative h-48 bg-gray-200 rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition shadow-sm" 
+                      className="relative aspect-square bg-muted rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition shadow-sm" 
                       onClick={() => setSelectedPostId(post.id)}
                     >
-                      {post.media_urls && post.media_urls.length > 0 && (
+                      {activeTab === 'posts' && post.media_urls && post.media_urls.length > 0 ? (
                         <>
                           <img src={post.media_urls[0]} alt="Post" className="w-full h-full object-cover" loading="lazy" decoding="async" />
                           {/* User Avatar Overlay */}
@@ -600,13 +657,32 @@ const LocationPostLibrary = ({
                               </AvatarFallback>
                             </Avatar>
                           </div>
+                          {post.media_urls.length > 1 && (
+                            <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium">
+                              +{post.media_urls.length - 1}
+                            </div>
+                          )}
                         </>
-                      )}
-                      {post.media_urls && post.media_urls.length > 1 && (
-                        <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium">
-                          +{post.media_urls.length - 1}
+                      ) : activeTab === 'reviews' && post.rating ? (
+                        <div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/5 flex flex-col items-center justify-center p-4">
+                          <Avatar className="w-12 h-12 mb-2 border-2 border-primary/20">
+                            <AvatarImage src={post.profiles?.avatar_url} />
+                            <AvatarFallback className="bg-primary text-primary-foreground">
+                              {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex items-center gap-1.5 mb-2">
+                            <Star className="w-5 h-5 fill-amber-500 text-amber-500" />
+                            <span className="text-2xl font-bold text-foreground">{post.rating}</span>
+                            <span className="text-sm text-muted-foreground">/10</span>
+                          </div>
+                          {post.caption && (
+                            <p className="text-xs text-center text-muted-foreground line-clamp-3 mt-2">
+                              {post.caption}
+                            </p>
+                          )}
                         </div>
-                      )}
+                      ) : null}
                     </div>
                   ))}
                 </div>
