@@ -253,11 +253,17 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
           <div className="w-full space-y-3">
             {displayedPosts.map((post) => {
               const isExpanded = expandedCaptions.has(post.id);
+              const hasMedia = post.media_urls && post.media_urls.length > 0;
+              const shouldTruncate = post.caption && post.caption.length > 100;
+              
               return (
                 <div
                   key={post.id}
-                  className="relative bg-background border border-border rounded-xl p-3 cursor-pointer animate-fade-in group"
-                  onClick={() => handlePostClick(post.id)}
+                  className={cn(
+                    "relative bg-background border border-border rounded-xl p-3 animate-fade-in group",
+                    hasMedia && "cursor-pointer"
+                  )}
+                  onClick={hasMedia ? () => handlePostClick(post.id) : undefined}
                 >
                   <div className="flex items-start gap-3">
                     <button
@@ -299,18 +305,20 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                         {post.locations ? (
                           <button
                             onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedLocation({
-                                id: post.locations.id,
-                                name: post.locations.name,
-                                category: post.locations.category || 'restaurant',
-                                city: post.locations.city,
-                                coordinates: {
-                                  lat: post.locations.latitude,
-                                  lng: post.locations.longitude,
-                                },
-                                address: post.locations.address,
-                              });
+                              if (!hasMedia) {
+                                e.stopPropagation();
+                                setSelectedLocation({
+                                  id: post.locations.id,
+                                  name: post.locations.name,
+                                  category: post.locations.category || 'restaurant',
+                                  city: post.locations.city,
+                                  coordinates: {
+                                    lat: post.locations.latitude,
+                                    lng: post.locations.longitude,
+                                  },
+                                  address: post.locations.address,
+                                });
+                              }
                             }}
                             className="font-semibold text-sm hover:opacity-70 text-left flex-1"
                           >
@@ -342,25 +350,30 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
 
                       {post.caption && (
                         <div className="relative">
-                          <p className={cn("text-sm text-foreground text-left", !isExpanded && "line-clamp-2")}>
-                            {post.caption}
-                            {post.caption.length > 100 && !isExpanded && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setExpandedCaptions(prev => {
-                                    const newSet = new Set(prev);
-                                    newSet.add(post.id);
-                                    return newSet;
-                                  });
-                                }}
-                                className="text-xs text-primary hover:opacity-70 ml-1 font-medium"
-                              >
-                                {t('more', { ns: 'common' })}
-                              </button>
+                          <p className="text-sm text-foreground text-left whitespace-pre-wrap">
+                            {isExpanded ? post.caption : (
+                              shouldTruncate ? (
+                                <>
+                                  {post.caption.slice(0, 150).split('\n').slice(0, 2).join('\n')}
+                                  {post.caption.length > 150 && '... '}
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setExpandedCaptions(prev => {
+                                        const newSet = new Set(prev);
+                                        newSet.add(post.id);
+                                        return newSet;
+                                      });
+                                    }}
+                                    className="text-primary hover:opacity-70 font-medium inline"
+                                  >
+                                    {t('more', { ns: 'common' })}
+                                  </button>
+                                </>
+                              ) : post.caption
                             )}
                           </p>
-                          {post.caption.length > 100 && isExpanded && (
+                          {isExpanded && shouldTruncate && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
