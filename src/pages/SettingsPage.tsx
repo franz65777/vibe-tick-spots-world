@@ -180,7 +180,7 @@ const SettingsPage: React.FC = () => {
             {isAdmin && (
               <button
                 onClick={() => navigate('/admin/business-requests')}
-                className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors border-t"
+                className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <Shield className="w-5 h-5 text-muted-foreground" />
@@ -199,7 +199,7 @@ const SettingsPage: React.FC = () => {
       </div>
 
       {/* Logout Button */}
-      <div className="p-4 border-t border-border bg-background">
+      <div className="px-4 pb-4 bg-background" style={{ marginTop: '-20px' }}>
         <Button
           onClick={handleLogout}
           variant="outline"
