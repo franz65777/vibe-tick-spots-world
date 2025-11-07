@@ -690,7 +690,7 @@ const MessagesPage = () => {
   return (
     <div className="h-screen w-full bg-background flex flex-col overflow-hidden">
       {/* Header */}
-      <header className={`shrink-0 bg-background w-full ${view === 'chat' ? 'border-b border-border' : ''}`}>
+      <header className="shrink-0 bg-background w-full">
         <div className="px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <Button
@@ -1003,13 +1003,13 @@ const MessagesPage = () => {
       {view === 'chat' && (
         <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
           <div className="flex-1 min-h-0 overflow-hidden">
-            <ScrollArea className="h-full p-4 bg-muted/30">
+            <ScrollArea className="h-full p-4 [&>div>div]:!overflow-y-auto [&>div>div]:scrollbar-hide">
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
               </div>
             ) : (
-              <div className="space-y-3 pb-4">
+              <div className="space-y-3 pb-24">
                  {messages.filter(m => !hiddenMessageIds.includes(m.id)).map((message) => {
                    const isOwn = message.sender_id === user?.id;
                    return (
@@ -1169,9 +1169,9 @@ const MessagesPage = () => {
                               {formatMessageTime(message.created_at)}
                             </p>
                           </div>
-                        ) : ['place_share', 'post_share', 'profile_share'].includes(message.message_type) &&
+                         ) : ['place_share', 'post_share', 'profile_share'].includes(message.message_type) &&
                         message.shared_content ? (
-                          <div className={`max-w-[85%] ${isOwn ? 'ml-auto' : ''}`}>
+                          <div className={`w-full max-w-[280px] ${isOwn ? 'ml-auto' : ''}`}>
                             {message.content && (
                               <div
                                 className={`rounded-2xl px-4 py-3 mb-2 relative ${
