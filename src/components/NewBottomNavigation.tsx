@@ -30,8 +30,8 @@ const NewBottomNavigation = () => {
     };
   }, []);
 
-  // Hide navigation on messages and notifications pages, or when overlays are open
-  if (hideNav || location.pathname === '/messages' || location.pathname === '/notifications') {
+  // Hide navigation on messages, notifications, and add post pages, or when overlays are open
+  if (hideNav || location.pathname === '/messages' || location.pathname === '/notifications' || location.pathname === '/add') {
     return null;
   }
 

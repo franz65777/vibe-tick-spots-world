@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOptimizedFeed } from '@/hooks/useOptimizedFeed';
+import { useQuery } from '@tanstack/react-query';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MapPin, Star, ChevronDown } from 'lucide-react';
@@ -30,17 +31,43 @@ const FeedPage = () => {
   const { t, i18n } = useTranslation();
   const dfnsLocale = i18n.language.startsWith('it') ? itLocale : i18n.language.startsWith('es') ? esLocale : enUS;
   
-  // Usa React Query per feed - dati cached istantanei
-  const { posts: allFeedItems, loading: feedLoading } = useOptimizedFeed();
   const [feedType, setFeedType] = useState<'forYou' | 'promotions'>('forYou');
   
-  // Filtra i post in base al tipo di feed con fallback se vuoto
-  const feedItems = (() => {
-    const filtered = feedType === 'promotions'
-      ? allFeedItems.filter((item: any) => item.is_business_post === true)
-      : allFeedItems.filter((item: any) => item.is_business_post === false || item.is_business_post == null);
-    return filtered.length ? filtered : allFeedItems;
-  })();
+  // Usa React Query per feed "Per te" - post degli utenti seguiti
+  const { posts: forYouFeed, loading: feedLoading } = useOptimizedFeed();
+  
+  // Query separata per le promozioni - carica i post marketing con content_type
+  const { data: promotionsFeed = [], isLoading: promotionsLoading } = useQuery({
+    queryKey: ['promotions-feed', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      // Carica post con content_type (marketing posts) creati da business accounts
+      const { data: posts, error } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          profiles:user_id (id, username, avatar_url, full_name),
+          locations:location_id (id, name, address, city, latitude, longitude)
+        `)
+        .not('content_type', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      
+      if (error) {
+        console.error('Promotions feed error:', error);
+        return [];
+      }
+      
+      return posts || [];
+    },
+    enabled: !!user?.id && feedType === 'promotions',
+    staleTime: 5 * 60 * 1000,
+  });
+  
+  // Seleziona il feed appropriato in base al tipo
+  const feedItems = feedType === 'promotions' ? promotionsFeed : forYouFeed;
+  const loading = feedType === 'promotions' ? promotionsLoading : feedLoading;
   
   const [expandedCaptions, setExpandedCaptions] = useState<Set<string>>(new Set());
   const [storiesViewerOpen, setStoriesViewerOpen] = useState(false);
@@ -322,7 +349,7 @@ const FeedPage = () => {
 
         {/* Feed Content */}
         <div className="flex-1 overflow-y-scroll pb-24 scrollbar-hide bg-background">
-          {feedItems.length === 0 && feedLoading ? (
+          {feedItems.length === 0 && loading ? (
             <div className="py-4">
               {[1,2,3].map((i) => (
                 <div key={i} className="space-y-3">
