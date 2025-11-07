@@ -115,8 +115,12 @@ const FeedPage = () => {
 
   const handleAvatarClick = (userId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    // Filter only this user's stories
-    const userStories = stories.filter(s => s.user_id === userId);
+    // Filter only this user's active (non-expired) stories
+    const now = new Date().toISOString();
+    const userStories = stories.filter(s => 
+      s.user_id === userId && 
+      new Date(s.expires_at).toISOString() > now
+    );
     
     if (userStories.length > 0) {
       // Set filtered stories to only this user's stories
