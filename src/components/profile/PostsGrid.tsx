@@ -127,12 +127,12 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
   return (
     <div className="px-4">
       {/* Filter Dropdown */}
-      <div className="mb-4">
+      <div className="mb-4 flex justify-start">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button 
               variant="ghost" 
-              className="h-auto p-0 hover:bg-transparent font-semibold text-base gap-1.5 -ml-2 justify-start text-left"
+              className="h-auto p-0 hover:bg-transparent font-semibold text-base gap-1.5 justify-start text-left"
             >
               {postFilter === 'photos' 
                 ? t('posts', { ns: 'profile', defaultValue: 'Posts' })
