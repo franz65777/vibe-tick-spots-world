@@ -4,8 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBusinessProfile } from '@/hooks/useBusinessProfile';
 import { Button } from '@/components/ui/button';
+import MobileNotificationItem from '@/components/notifications/MobileNotificationItem';
 import { ArrowLeft, Bell, Check, MapPin, Star, Users, TrendingUp } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 
@@ -116,7 +116,7 @@ const BusinessNotificationsPage = () => {
     <div className="min-h-screen bg-background pb-24">
       <div className="max-w-screen-sm mx-auto">
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b">
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
               <Button
@@ -161,46 +161,12 @@ const BusinessNotificationsPage = () => {
             </div>
           ) : (
             notifications.map((notification) => (
-              <div
+              <MobileNotificationItem
                 key={notification.id}
-                onClick={() => !notification.is_read && markAsRead(notification.id)}
-                className={`w-full cursor-pointer active:bg-accent/50 transition-colors ${
-                  !notification.is_read ? 'bg-accent/20' : 'bg-background'
-                }`}
-              >
-                <div className="flex items-start gap-3 py-3 px-4">
-                  {/* Icon */}
-                  <div className={`p-2 rounded-full flex-shrink-0 ${
-                    !notification.is_read ? 'bg-primary/10' : 'bg-muted'
-                  }`}>
-                    {getNotificationIcon(notification.type)}
-                  </div>
-                  
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-foreground text-[13px] leading-tight">
-                          {notification.title}
-                        </h4>
-                        <p className="text-muted-foreground text-[12px] mt-0.5 line-clamp-2">
-                          {notification.message}
-                        </p>
-                        <p className="text-muted-foreground text-[12px] mt-1">
-                          {formatDistanceToNow(new Date(notification.created_at), {
-                            addSuffix: true,
-                          })}
-                        </p>
-                      </div>
-                      
-                      {/* Unread indicator */}
-                      {!notification.is_read && (
-                        <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-1.5" />
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
+                notification={notification as any}
+                onMarkAsRead={(id) => markAsRead(id)}
+                onAction={(n) => !n.is_read && markAsRead(n.id)}
+              />
             ))
           )}
         </div>

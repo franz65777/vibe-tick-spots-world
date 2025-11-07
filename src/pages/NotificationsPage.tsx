@@ -135,7 +135,7 @@ const NotificationsPage = () => {
               size="sm"
               className="text-sm font-medium"
             >
-              Mark all read
+              {t('markAllRead', { ns: 'notifications' })}
             </Button>
           )}
         </div>
