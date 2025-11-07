@@ -590,30 +590,36 @@ const LocationPostLibrary = ({
             </div>
           )}
 
-          {/* Filter Tabs */}
-          <div className="bg-white px-4 py-3">
-            <div className="flex bg-muted rounded-xl p-1">
+          {/* Filter Tabs - Horizontal Scroll */}
+          <div className="bg-white border-b border-border">
+            <div className="flex overflow-x-auto scrollbar-hide px-4">
               <button
                 onClick={() => setActiveTab('posts')}
                 className={cn(
-                  "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all",
+                  "flex-shrink-0 py-3 px-4 text-base font-medium transition-colors relative",
                   activeTab === 'posts'
-                    ? "bg-primary text-primary-foreground shadow-sm"
+                    ? "text-primary"
                     : "text-muted-foreground"
                 )}
               >
-                {t('postsTab', { ns: 'explore', defaultValue: 'Posts' })}
+                {t('postsTab', { ns: 'explore', defaultValue: 'Post' })}
+                {activeTab === 'posts' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+                )}
               </button>
               <button
                 onClick={() => setActiveTab('reviews')}
                 className={cn(
-                  "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all",
+                  "flex-shrink-0 py-3 px-4 text-base font-medium transition-colors relative",
                   activeTab === 'reviews'
-                    ? "bg-primary text-primary-foreground shadow-sm"
+                    ? "text-primary"
                     : "text-muted-foreground"
                 )}
               >
-                {t('reviewsTab', { ns: 'explore', defaultValue: 'Reviews' })}
+                {t('reviewsTab', { ns: 'explore', defaultValue: 'Recensioni' })}
+                {activeTab === 'reviews' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+                )}
               </button>
             </div>
           </div>
