@@ -1,13 +1,15 @@
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useStories } from '@/hooks/useStories';
+import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
 import StoriesViewer from '../StoriesViewer';
 import { cn } from '@/lib/utils';
 
@@ -30,9 +32,11 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
   const { user: currentUser } = useAuth();
   const navigate = useNavigate();
   const targetUserId = userId || currentUser?.id;
+  const { profile: targetProfile } = useOptimizedProfile(targetUserId);
   const [activeTab, setActiveTab] = useState<'followers' | 'following'>(initialTab);
   const [users, setUsers] = useState<UserWithFollowStatus[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   const { stories } = useStories();
   const [isStoriesViewerOpen, setIsStoriesViewerOpen] = useState(false);
   const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
@@ -174,6 +178,10 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
 
   const isOwnProfile = currentUser?.id === targetUserId;
 
+  const filteredUsers = users.filter(user => 
+    user.username?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const handleAvatarClick = (user: UserWithFollowStatus) => {
     const now = new Date();
     const userStories = stories.filter(s => 
@@ -194,20 +202,23 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
 
   return (
     <>
-      <div className="fixed inset-0 bg-background z-50 flex flex-col">
+      <div className="fixed inset-0 bg-background z-[60] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border">
+        <div className="flex items-center p-4 pb-0">
           <button onClick={onClose} className="p-2 -ml-2">
             <ArrowLeft className="w-6 h-6 text-foreground" />
           </button>
-          <h2 className="text-lg font-semibold text-foreground flex-1 text-center">
-            {currentUser?.user_metadata?.username || 'User'}
+        </div>
+
+        {/* Username */}
+        <div className="px-4 py-3">
+          <h2 className="text-xl font-bold text-foreground">
+            {targetProfile?.username || 'User'}
           </h2>
-          <div className="w-10" />
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-border overflow-x-auto">
+        <div className="flex overflow-x-auto px-4 mb-4">
           <button
             onClick={() => setActiveTab('followers')}
             className={cn(
@@ -237,6 +248,20 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
             )}
           </button>
         </div>
+
+        {/* Search Bar */}
+        <div className="px-4 pb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder={t('search', { ns: 'common' })}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+        </div>
         
         {/* Content */}
         <ScrollArea className="flex-1">
@@ -245,12 +270,12 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
               <div className="flex items-center justify-center py-8">
                 <div className="w-6 h-6 border-2 border-primary/20 border-t-primary rounded-full animate-spin"></div>
               </div>
-            ) : users.length === 0 ? (
+            ) : filteredUsers.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                {activeTab === 'followers' ? t('noFollowers', { ns: 'profile' }) : t('noFollowing', { ns: 'profile' })}
+                {searchQuery ? t('noResults', { ns: 'common' }) : activeTab === 'followers' ? t('noFollowers', { ns: 'profile' }) : t('noFollowing', { ns: 'profile' })}
               </div>
             ) : (
-              users.map((user) => {
+              filteredUsers.map((user) => {
                 const now = new Date();
                 const userHasStories = stories.some(s => 
                   s.user_id === user.id && 
