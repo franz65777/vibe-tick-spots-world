@@ -165,6 +165,15 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
       
       // Always fetch fresh location to update if user moved
       getCurrentLocation();
+      
+      // Show helpful message if there's an error
+      if (!location || !location.city || location.city === 'Unknown City') {
+        setTimeout(() => {
+          if (!location || !location.city) {
+            console.log('💡 Suggesting manual search');
+          }
+        }, 1000);
+      }
       // UI updates happen when location state changes via useEffect
     } catch (error) {
       console.error('Error getting current location:', error);

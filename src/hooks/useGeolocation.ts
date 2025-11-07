@@ -17,8 +17,23 @@ interface UseGeolocationReturn {
   getCityFromCoordinates: (lat: number, lng: number) => Promise<string>;
 }
 
+const STORAGE_KEY = 'last_known_location';
+
 export const useGeolocation = (): UseGeolocationReturn => {
-  const [location, setLocation] = useState<GeolocationData | null>(null);
+  const [location, setLocation] = useState<GeolocationData | null>(() => {
+    // Try to load last known location from localStorage
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        console.log('📍 Loaded location from localStorage:', parsed);
+        return parsed;
+      }
+    } catch (err) {
+      console.error('Error loading stored location:', err);
+    }
+    return null;
+  });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -139,6 +154,13 @@ export const useGeolocation = (): UseGeolocationReturn => {
             accuracy
           };
           
+          // Save to localStorage for future use
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(newLocation));
+          } catch (err) {
+            console.error('Error saving location to localStorage:', err);
+          }
+          
           setLocation(newLocation);
           console.log('✅ Location state updated:', newLocation);
         } catch (err) {
@@ -157,19 +179,31 @@ export const useGeolocation = (): UseGeolocationReturn => {
         
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            errorMessage = 'Location permission denied';
+            errorMessage = 'Location permission denied. Please use the search bar to find your city.';
             break;
           case error.POSITION_UNAVAILABLE:
-            errorMessage = 'Location information unavailable';
+            errorMessage = 'Location unavailable in this environment. Use search to select your city.';
             break;
           case error.TIMEOUT:
-            errorMessage = 'Location request timed out';
+            errorMessage = 'Location request timed out. Try searching for your city instead.';
             break;
         }
         
         setError(errorMessage);
         setLoading(false);
         console.error('Geolocation error:', errorMessage);
+        
+        // If we don't have a stored location, set a default fallback
+        if (!location) {
+          console.log('🌍 Setting fallback location to San Francisco');
+          const fallbackLocation = {
+            latitude: 37.7749,
+            longitude: -122.4194,
+            city: 'San Francisco',
+            accuracy: 0
+          };
+          setLocation(fallbackLocation);
+        }
       },
       {
         enableHighAccuracy: true,
