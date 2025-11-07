@@ -185,15 +185,15 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 w-full">
-          {displayedPosts.map((post) => (
-            <div
-              key={post.id}
-              className="relative aspect-square bg-muted rounded-xl overflow-hidden cursor-pointer group hover:scale-[1.02] transition-transform duration-200"
-              onClick={() => handlePostClick(post.id)}
-            >
-              {postFilter === 'photos' ? (
-                /* Photo Post */
+        {postFilter === 'photos' ? (
+          <div className="grid grid-cols-2 gap-3 w-full">
+            {displayedPosts.map((post) => (
+              <div
+                key={post.id}
+                className="relative aspect-square bg-muted rounded-xl overflow-hidden cursor-pointer group hover:scale-[1.02] transition-transform duration-200"
+                onClick={() => handlePostClick(post.id)}
+              >
+                {/* Photo Post */}
                 <>
                   <img
                     src={post.media_urls[0]}
@@ -206,8 +206,6 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                       target.src = '/placeholder.svg';
                     }}
                   />
-                  
-                  {/* Multiple images indicator */}
                   {post.media_urls.length > 1 && (
                     <div className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm rounded-full px-2 py-1">
                       <span className="text-xs text-white font-medium">
@@ -215,8 +213,6 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                       </span>
                     </div>
                   )}
-
-                  {/* Delete button - only show for own posts */}
                   {isOwnProfile && (
                     <button
                       onClick={(e) => handleDeletePost(post.id, e)}
@@ -231,8 +227,6 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                       )}
                     </button>
                   )}
-                  
-                  {/* Overlay with stats */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-end">
                     <div className="p-3 w-full">
                       <div className="flex justify-between items-center">
@@ -250,13 +244,56 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                     </div>
                   </div>
                 </>
-              ) : (
-                /* Review Card */
-                <div className="w-full h-full bg-background border border-border rounded-xl p-3 flex items-center gap-3">
-                  {/* Avatar with category icon */}
-                  <button
-                    onClick={(e) => {
-                      if (post.locations) {
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="w-full space-y-3">
+            {displayedPosts.map((post) => (
+              <div
+                key={post.id}
+                className="relative bg-background border border-border rounded-xl p-3 flex items-start gap-3 cursor-pointer animate-fade-in"
+                onClick={() => handlePostClick(post.id)}
+              >
+                <button
+                  onClick={(e) => {
+                    if (post.locations) {
+                      e.stopPropagation();
+                      setSelectedLocation({
+                        id: post.locations.id,
+                        name: post.locations.name,
+                        category: post.locations.category || 'restaurant',
+                        city: post.locations.city,
+                        coordinates: {
+                          lat: post.locations.latitude,
+                          lng: post.locations.longitude,
+                        },
+                        address: post.locations.address,
+                      });
+                    }
+                  }}
+                  className="shrink-0"
+                >
+                  <Avatar className="h-10 w-10">
+                    {post.locations?.category ? (
+                      <div className="w-full h-full bg-primary/10 flex items-center justify-center">
+                        {(() => {
+                          const CategoryIcon = getCategoryIcon(post.locations.category);
+                          return <CategoryIcon className="w-5 h-5 text-primary" />;
+                        })()}
+                      </div>
+                    ) : (
+                      <AvatarFallback className="bg-primary/10">
+                        <Star className="w-5 h-5 text-primary" />
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                </button>
+
+                <div className="flex-1 min-w-0">
+                  {post.locations ? (
+                    <button
+                      onClick={(e) => {
                         e.stopPropagation();
                         setSelectedLocation({
                           id: post.locations.id,
@@ -269,105 +306,73 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                           },
                           address: post.locations.address,
                         });
-                      }
-                    }}
-                    className="shrink-0 relative"
-                  >
-                    <Avatar className="h-10 w-10">
-                      {post.locations?.category ? (
-                        <div className="w-full h-full bg-primary/10 flex items-center justify-center">
-                          {(() => {
-                            const CategoryIcon = getCategoryIcon(post.locations.category);
-                            return <CategoryIcon className="w-5 h-5 text-primary" />;
-                          })()}
-                        </div>
-                      ) : (
-                        <AvatarFallback className="bg-primary/10">
-                          <Star className="w-5 h-5 text-primary" />
-                        </AvatarFallback>
-                      )}
-                    </Avatar>
-                  </button>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    {post.locations ? (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedLocation({
-                            id: post.locations.id,
-                            name: post.locations.name,
-                            category: post.locations.category || 'restaurant',
-                            city: post.locations.city,
-                            coordinates: {
-                              lat: post.locations.latitude,
-                              lng: post.locations.longitude,
-                            },
-                            address: post.locations.address,
-                          });
-                        }}
-                        className="font-semibold text-sm hover:opacity-70 block truncate text-left"
-                      >
-                        {post.locations.name}
-                      </button>
-                    ) : (
-                      <p className="font-semibold text-sm text-muted-foreground truncate">
-                        {t('unknownLocation', { ns: 'common', defaultValue: 'Unknown Location' })}
-                      </p>
-                    )}
-                    {post.locations && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedLocation({
-                            id: post.locations.id,
-                            name: post.locations.name,
-                            category: post.locations.category || 'restaurant',
-                            city: post.locations.city,
-                            coordinates: {
-                              lat: post.locations.latitude,
-                              lng: post.locations.longitude,
-                            },
-                            address: post.locations.address,
-                          });
-                        }}
-                        className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 truncate"
-                      >
-                        <MapPin className="w-3 h-3 shrink-0" />
-                        <span className="truncate">{post.locations.address || post.locations.city}</span>
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Rating */}
-                  {post.rating && (
-                    <div className="flex items-center gap-1 shrink-0">
-                      <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
-                      <span className="text-sm font-semibold">{post.rating}</span>
-                    </div>
+                      }}
+                      className="font-semibold text-sm hover:opacity-70 block truncate text-left"
+                    >
+                      {post.locations.name}
+                    </button>
+                  ) : (
+                    <p className="font-semibold text-sm text-muted-foreground truncate">
+                      {t('unknownLocation', { ns: 'common', defaultValue: 'Unknown Location' })}
+                    </p>
                   )}
 
-                  {/* Delete button for reviews */}
-                  {isOwnProfile && (
+                  {post.locations && (
                     <button
-                      onClick={(e) => handleDeletePost(post.id, e)}
-                      disabled={deleting}
-                      className="absolute top-2 right-2 w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-10"
-                      title="Delete review"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedLocation({
+                          id: post.locations.id,
+                          name: post.locations.name,
+                          category: post.locations.category || 'restaurant',
+                          city: post.locations.city,
+                          coordinates: {
+                            lat: post.locations.latitude,
+                            lng: post.locations.longitude,
+                          },
+                          address: post.locations.address,
+                        });
+                      }}
+                      className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 truncate"
                     >
-                      {deleting ? (
-                        <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      ) : (
-                        <Trash2 className="w-3 h-3 text-white" />
-                      )}
+                      <MapPin className="w-3 h-3 shrink-0" />
+                      <span className="truncate">{post.locations.address || post.locations.city}</span>
                     </button>
                   )}
+
+                  {post.caption && (
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                      {post.caption}
+                    </p>
+                  )}
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
+
+                {post.rating && (
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
+                    <span className="text-sm font-semibold">{post.rating}</span>
+                  </div>
+                )}
+
+                {isOwnProfile && (
+                  <button
+                    onClick={(e) => handleDeletePost(post.id, e)}
+                    disabled={deleting}
+                    className="absolute top-2 right-2 w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-10"
+                    title="Delete review"
+                  >
+                    {deleting ? (
+                      <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <Trash2 className="w-3 h-3 text-white" />
+                    )}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
       )}
 
       {selectedPostId && (
