@@ -199,7 +199,7 @@ const SettingsPage: React.FC = () => {
       </div>
 
       {/* Logout Button */}
-      <div className="px-4 pb-4 bg-background" style={{ marginTop: '-40px' }}>
+      <div className="px-4 pb-4 bg-background" style={{ marginTop: '-70px' }}>
         <Button
           onClick={handleLogout}
           variant="outline"
