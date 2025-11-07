@@ -584,12 +584,12 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                         <Camera className="w-8 h-8 text-muted-foreground" />
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {t('noPostsYet', { ns: 'common', defaultValue: 'No posts yet' })}
+                        {t('noPosts', { ns: 'explore', defaultValue: 'No posts yet' })}
                       </p>
                     </div>
                   ) : (
                     <>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-2 gap-3 w-full auto-rows-[1fr]">
                         {posts
                           .filter((post) => post.media_urls && post.media_urls.length > 0)
                           .map((post) => (
@@ -603,9 +603,9 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                                 setSelectedPostId(post.id);
                               }
                             }}
-                            className="relative rounded-xl overflow-hidden bg-card shadow-sm hover:shadow-md transition-shadow"
+                            className="relative block aspect-square rounded-xl overflow-hidden bg-card shadow-sm hover:shadow-md transition-shadow"
                           >
-                            <div className="relative w-full h-48">
+                            <div className="absolute inset-0">
                               <img 
                                 src={post.media_urls[0]} 
                                 alt="Post image" 
