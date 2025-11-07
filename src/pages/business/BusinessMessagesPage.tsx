@@ -182,12 +182,24 @@ const BusinessMessagesPage = () => {
               >
                 <div className="flex items-center gap-3 py-3 px-4">
                   {/* Avatar */}
-                  <Avatar className="w-12 h-12 flex-shrink-0 border-2 border-background">
-                    <AvatarImage src={message.profiles?.avatar_url} />
-                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
-                      {message.profiles?.username?.charAt(0).toUpperCase() || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAvatarClick(message.sender_id);
+                    }}
+                    className="flex-shrink-0"
+                  >
+                    <Avatar className={`w-12 h-12 border-2 ${
+                      hasActiveStory[message.sender_id] 
+                        ? 'border-primary' 
+                        : 'border-background'
+                    }`}>
+                      <AvatarImage src={message.profiles?.avatar_url} />
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
+                        {message.profiles?.username?.charAt(0).toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                  </button>
                   
                   {/* Content */}
                   <div className="flex-1 min-w-0">

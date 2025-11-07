@@ -62,6 +62,7 @@ const MessagesPage = () => {
   const [userSelectLoading, setUserSelectLoading] = useState(false);
   const [otherUserProfile, setOtherUserProfile] = useState<any>(null);
   const [hasActiveStoryInThread, setHasActiveStoryInThread] = useState<Record<string, boolean>>({});
+  const [storiesToShow, setStoriesToShow] = useState<any[]>([]);
   const lastTapRef = useRef<number>(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<any>(null);
@@ -562,31 +563,45 @@ const MessagesPage = () => {
     }
   };
 
-  const handleAvatarClickInThread = (thread: MessageThread) => {
+  const handleAvatarClickInThread = async (thread: MessageThread) => {
     const otherUser = getOtherParticipant(thread);
     if (!otherUser) return;
 
-    const userStoriesData = allStories.filter(story => story.user_id === otherUser.id);
-    if (userStoriesData.length > 0 && hasActiveStoryInThread[otherUser.id]) {
-      // Transform and show stories
-      const transformedStories = userStoriesData.map(story => ({
-        id: story.id,
-        userId: story.user_id,
-        userName: otherUser.username,
-        userAvatar: otherUser.avatar_url,
-        mediaUrl: story.media_url,
-        mediaType: story.media_type as 'image' | 'video',
-        locationId: story.location_id || '',
-        locationName: story.location_name || '',
-        locationAddress: story.location_address || '',
-        locationCategory: (story.metadata as any)?.category,
-        timestamp: story.created_at,
-        isViewed: false
-      }));
-      setInitialStoryIndex(0);
-      setShowStories(true);
-    } else {
-      // Navigate to profile if no stories
+    if (!hasActiveStoryInThread[otherUser.id]) {
+      navigate(`/profile/${otherUser.id}`);
+      return;
+    }
+
+    try {
+      // Fetch user's stories
+      const { data: stories } = await supabase
+        .from('stories')
+        .select('id, user_id, media_url, media_type, created_at, location_id, location_name, location_address, metadata')
+        .eq('user_id', otherUser.id)
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false });
+      
+      if (stories && stories.length > 0) {
+        const transformedStories = stories.map(story => ({
+          id: story.id,
+          userId: story.user_id,
+          userName: otherUser.username,
+          userAvatar: otherUser.avatar_url,
+          mediaUrl: story.media_url,
+          mediaType: story.media_type as 'image' | 'video',
+          locationId: story.location_id || '',
+          locationName: story.location_name || '',
+          locationAddress: story.location_address || '',
+          locationCategory: (story.metadata as any)?.category,
+          timestamp: story.created_at,
+          isViewed: false
+        }));
+        setStoriesToShow(transformedStories);
+        setInitialStoryIndex(0);
+        setShowStories(true);
+      }
+    } catch (error) {
+      console.error('Error loading stories:', error);
       navigate(`/profile/${otherUser.id}`);
     }
   };
@@ -1018,20 +1033,24 @@ const MessagesPage = () => {
                     onClick={() => handleThreadSelect(thread)}
                     className="w-full flex items-center gap-3 p-4 hover:bg-accent transition-colors"
                   >
-                    <Avatar 
-                      className={`w-14 h-14 border-2 ${
-                        hasActiveStoryInThread[otherParticipant.id] 
-                          ? 'border-primary cursor-pointer' 
-                          : 'border-background'
-                      }`}
+                    <button
                       onClick={(e) => {
                         e.stopPropagation();
                         handleAvatarClickInThread(thread);
                       }}
+                      className="flex-shrink-0"
                     >
-                      <AvatarImage src={otherParticipant.avatar_url} />
-                      <AvatarFallback>{otherParticipant.username?.[0]?.toUpperCase()}</AvatarFallback>
-                    </Avatar>
+                      <Avatar 
+                        className={`w-14 h-14 border-2 ${
+                          hasActiveStoryInThread[otherParticipant.id] 
+                            ? 'border-primary' 
+                            : 'border-background'
+                        }`}
+                      >
+                        <AvatarImage src={otherParticipant.avatar_url} />
+                        <AvatarFallback>{otherParticipant.username?.[0]?.toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                    </button>
                     <div className="flex-1 min-w-0 text-left">
                       <div className="flex justify-between items-end mb-1">
                         <p className="font-semibold text-base text-foreground truncate">
@@ -1610,11 +1629,14 @@ const MessagesPage = () => {
         </SheetContent>
       </Sheet>
 
-      {showStories && convertedStories && convertedStories.length > 0 && (
+      {showStories && (
         <StoriesViewer
-          stories={convertedStories}
+          stories={storiesToShow.length > 0 ? storiesToShow : convertedStories}
           initialStoryIndex={initialStoryIndex}
-          onClose={() => setShowStories(false)}
+          onClose={() => {
+            setShowStories(false);
+            setStoriesToShow([]);
+          }}
           onStoryViewed={() => {}}
           onReplyToStory={handleReplyToStory}
         />
