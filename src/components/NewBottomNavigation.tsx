@@ -7,12 +7,15 @@ import { toast } from 'sonner';
 import AccountSwitchModal from './AccountSwitchModal';
 import { useTranslation } from 'react-i18next';
 import { useBusinessProfile } from '@/hooks/useBusinessProfile';
+import { useProfile } from '@/hooks/useProfile';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const NewBottomNavigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { trackEvent } = useAnalytics();
   const { hasValidBusinessAccount } = useBusinessProfile();
+  const { profile } = useProfile();
   
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
@@ -143,12 +146,29 @@ const NewBottomNavigation = () => {
                   aria-label={item.label}
                   aria-current={isActive ? 'page' : undefined}
                 >
-                  <div className={cn(
-                    "transition-colors duration-200",
-                    isActive ? 'text-primary' : 'text-muted-foreground'
-                  )}>
-                    {item.icon}
-                  </div>
+                  {isProfileTab ? (
+                    <div className={cn(
+                      "transition-colors duration-200 flex items-center justify-center",
+                      isActive ? 'text-primary' : 'text-muted-foreground'
+                    )}>
+                      <Avatar className="w-6 h-6">
+                        <AvatarImage src={profile?.avatar_url || ''} />
+                        <AvatarFallback className={cn(
+                          "text-xs font-semibold",
+                          isActive ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                        )}>
+                          {profile?.username?.charAt(0).toUpperCase() || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                  ) : (
+                    <div className={cn(
+                      "transition-colors duration-200",
+                      isActive ? 'text-primary' : 'text-muted-foreground'
+                    )}>
+                      {item.icon}
+                    </div>
+                  )}
                   <span className={cn(
                     "text-[11px] font-medium transition-colors duration-200",
                     isActive ? 'text-primary' : 'text-muted-foreground'
