@@ -16,7 +16,7 @@ const EditProfilePage = () => {
   const navigate = useNavigate();
   const { profile, updateProfile, refetch } = useProfile();
   const { user } = useAuth();
-  const [username, setUsername] = useState(profile?.username || user?.user_metadata?.username || 'user');
+  const [username, setUsername] = useState(profile?.username || 'user');
   const [fullName, setFullName] = useState(profile?.full_name || '');
   const [bio, setBio] = useState(profile?.bio || '');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -262,7 +262,7 @@ const EditProfilePage = () => {
       </div>
 
       {/* Save Button - Fixed at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background">
         <Button
           onClick={handleSave}
           disabled={isLoading || isUploading || !username.trim() || !!usernameError}
