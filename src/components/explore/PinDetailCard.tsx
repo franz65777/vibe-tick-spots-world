@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { MapPin, Navigation, Heart, Bookmark, MessageSquare, ChevronLeft, Share2, Star, Bell, BellOff } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { MapPin, Navigation, Heart, Bookmark, MessageSquare, ChevronLeft, Share2, Star, Bell, BellOff, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -21,6 +21,8 @@ import SavedByModal from './SavedByModal';
 import { useTranslation } from 'react-i18next';
 import { useMarketingCampaign } from '@/hooks/useMarketingCampaign';
 import MarketingCampaignBanner from './MarketingCampaignBanner';
+import { formatDistanceToNow } from 'date-fns';
+import { PostDetailModalMobile } from './PostDetailModalMobile';
 
 interface PinDetailCardProps {
   place: any;
@@ -47,6 +49,9 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
   const [locationDetails, setLocationDetails] = useState<any>(null);
   const [viewStartTime] = useState<number>(Date.now());
   const [savedByOpen, setSavedByOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'posts' | 'reviews'>('posts');
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
   
   // Source post ID - if the pin was opened from a post
   const sourcePostId = place.sourcePostId;
@@ -157,11 +162,13 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
     // Reset state when place changes
     setLocationDetails(null);
     setPosts([]);
+    setReviews([]);
     setPostsPage(1);
     setHasMorePosts(true);
     
     checkInteractions();
     fetchPosts();
+    fetchReviews();
   }, [place.id, place.google_place_id, place.name]);
 
   useEffect(() => {
@@ -244,6 +251,57 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
       : `https://www.google.com/maps/dir/?api=1&destination=${coords}`;
     
     window.open(url, '_blank');
+  };
+
+  const fetchReviews = async () => {
+    setReviewsLoading(true);
+    try {
+      const locationId = locationDetails?.id || place.id;
+      
+      // Fetch reviews from posts table
+      const { data: postsData } = await supabase
+        .from('posts')
+        .select('user_id, rating, caption, created_at')
+        .eq('location_id', locationId)
+        .not('rating', 'is', null)
+        .gt('rating', 0);
+
+      if (!postsData || postsData.length === 0) {
+        setReviews([]);
+        setReviewsLoading(false);
+        return;
+      }
+
+      // Get unique user profiles
+      const userIds = [...new Set(postsData.map(p => p.user_id))];
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .in('id', userIds);
+
+      const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+
+      const formattedReviews = postsData
+        .map(p => {
+          const profile = profilesMap.get(p.user_id);
+          return {
+            id: `${p.user_id}-${p.created_at}`,
+            user_id: p.user_id,
+            username: profile?.username || 'User',
+            avatar_url: profile?.avatar_url || null,
+            rating: p.rating || 0,
+            comment: p.caption,
+            created_at: p.created_at,
+          };
+        })
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      setReviews(formattedReviews);
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+    } finally {
+      setReviewsLoading(false);
+    }
   };
 
   return (
@@ -417,93 +475,165 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
             </div>
           )}
 
-          {/* Community Posts - Vertical Grid with Scrolling */}
-          <div className="px-4 py-4 flex-1 overflow-y-auto max-h-[calc(90vh-240px)]">
-            <div className="flex items-center gap-2 mb-3">
-              <MessageSquare className="w-4 h-4 text-muted-foreground" />
-              <h4 className="font-semibold text-sm text-foreground">
-                {t('communityPosts', { ns: 'common' })} ({posts.length})
-              </h4>
+          {/* Tabs and Content */}
+          <div className="flex-1 overflow-hidden flex flex-col">
+            {/* Tab Navigation */}
+            <div className="flex-shrink-0 border-b border-border px-4">
+              <div className="flex gap-6">
+                <button
+                  onClick={() => setActiveTab('posts')}
+                  className={`py-3 px-1 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === 'posts'
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {t('postsTab')}
+                </button>
+                <button
+                  onClick={() => setActiveTab('reviews')}
+                  className={`py-3 px-1 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === 'reviews'
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {t('reviewsTab')}
+                </button>
+              </div>
             </div>
-              
-              {posts.length > 0 ? (
-                <>
-                  <div className="grid grid-cols-2 gap-3">
-                    {posts.map((post) => (
-                      <button
-                        key={post.id} 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (onPostSelected) {
-                            onPostSelected(post.id);
-                          } else {
-                            setSelectedPostId(post.id);
-                          }
-                        }}
-                        className="relative rounded-xl overflow-hidden bg-card shadow-sm hover:shadow-md transition-shadow"
-                      >
-                        {/* Post Image */}
-                        {post.media_urls?.[0] && (
-                          <div className="relative w-full h-48">
-                            <img 
-                              src={post.media_urls[0]} 
-                              alt="Post image" 
-                              className="w-full h-full object-cover"
-                              loading="lazy"
-                              decoding="async"
-                            />
-                            {/* User Avatar Overlay */}
-                            <div className="absolute top-2 left-2">
-                              <Avatar className="w-8 h-8 border-2 border-white shadow-lg">
-                                <AvatarImage src={post.profiles?.avatar_url} />
-                                <AvatarFallback className="text-xs bg-primary text-primary-foreground">
-                                  {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
-                                </AvatarFallback>
-                              </Avatar>
-                            </div>
-                            {/* Multiple images indicator */}
-                            {post.media_urls.length > 1 && (
-                              <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium">
-                                +{post.media_urls.length - 1}
+
+            {/* Tab Content */}
+            <div className="flex-1 overflow-y-auto max-h-[calc(90vh-280px)]">
+              {activeTab === 'posts' ? (
+                <div className="px-4 py-4">
+                  {postsLoading && posts.length === 0 ? (
+                    <div className="flex justify-center py-8">
+                      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : posts.length === 0 ? (
+                    <div className="py-8 text-center">
+                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+                        <Camera className="w-8 h-8 text-muted-foreground" />
+                      </div>
+                      <p className="text-sm text-muted-foreground">{t('noPosts', { ns: 'common', defaultValue: 'No posts yet' })}</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-2 gap-3">
+                        {posts.map((post) => (
+                          <button
+                            key={post.id} 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onPostSelected) {
+                                onPostSelected(post.id);
+                              } else {
+                                setSelectedPostId(post.id);
+                              }
+                            }}
+                            className="relative rounded-xl overflow-hidden bg-card shadow-sm hover:shadow-md transition-shadow"
+                          >
+                            {/* Post Image */}
+                            {post.media_urls?.[0] && (
+                              <div className="relative w-full h-48">
+                                <img 
+                                  src={post.media_urls[0]} 
+                                  alt="Post image" 
+                                  className="w-full h-full object-cover"
+                                  loading="lazy"
+                                  decoding="async"
+                                />
+                                {/* User Avatar Overlay */}
+                                <div className="absolute top-2 left-2">
+                                  <Avatar className="w-8 h-8 border-2 border-white shadow-lg">
+                                    <AvatarImage src={post.profiles?.avatar_url} />
+                                    <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                                      {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                </div>
+                                {/* Multiple images indicator */}
+                                {post.media_urls.length > 1 && (
+                                  <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium">
+                                    +{post.media_urls.length - 1}
+                                  </div>
+                                )}
                               </div>
                             )}
-                          </div>
-                        )}
-                        {/* Post Caption */}
-                        {post.caption && (
-                          <div className="p-2.5">
-                            <p className="text-xs text-foreground line-clamp-2 leading-relaxed">
-                              {post.caption}
+                            {/* Post Caption */}
+                            {post.caption && (
+                              <div className="p-2.5">
+                                <p className="text-xs text-foreground line-clamp-2 leading-relaxed">
+                                  {post.caption}
+                                </p>
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                      
+                      {/* Load More Button */}
+                      {hasMorePosts && (
+                        <div className="mt-4 flex justify-center">
+                          <Button
+                            onClick={loadMorePosts}
+                            disabled={postsLoading}
+                            variant="outline"
+                            size="sm"
+                          >
+                            {postsLoading ? t('loading', { ns: 'common', defaultValue: 'Loading...' }) : t('loadMore', { ns: 'common', defaultValue: 'Load More' })}
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div className="px-4 py-4">
+                  {reviewsLoading ? (
+                    <div className="flex justify-center py-8">
+                      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : reviews.length === 0 ? (
+                    <div className="py-8 text-center">
+                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+                        <Star className="w-8 h-8 text-muted-foreground" />
+                      </div>
+                      <p className="text-sm text-muted-foreground">{t('noReviews', { ns: 'common', defaultValue: 'No reviews yet' })}</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4 pb-4">
+                      {reviews.map((review) => (
+                        <div key={review.id} className="flex gap-3 pb-4 border-b border-border last:border-0">
+                          <Avatar className="w-10 h-10 shrink-0">
+                            <AvatarImage src={review.avatar_url || ''} />
+                            <AvatarFallback className="bg-primary/10 text-primary">
+                              {review.username?.[0]?.toUpperCase() || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-semibold text-sm">{review.username}</p>
+                              <div className="flex items-center gap-1">
+                                <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+                                <span className="text-sm font-medium">{review.rating}</span>
+                              </div>
+                            </div>
+                            {review.comment && (
+                              <p className="text-sm text-muted-foreground mb-1">{review.comment}</p>
+                            )}
+                            <p className="text-xs text-muted-foreground">
+                              {formatDistanceToNow(new Date(review.created_at), { addSuffix: true })}
                             </p>
                           </div>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                  
-                  {/* Load More Button */}
-                  {hasMorePosts && (
-                    <div className="mt-4 flex justify-center">
-                      <Button
-                        onClick={loadMorePosts}
-                        disabled={postsLoading}
-                        variant="outline"
-                        size="sm"
-                      >
-                        {postsLoading ? t('loading', { ns: 'common', defaultValue: 'Loading...' }) : t('loadMore', { ns: 'common', defaultValue: 'Load More' })}
-                      </Button>
+                        </div>
+                      ))}
                     </div>
                   )}
-                </>
-              ) : (
-                <div className="py-8 text-center">
-                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
-                    <MessageSquare className="w-8 h-8 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm text-muted-foreground">{t('noCommunityPostsYet', { ns: 'common' })}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{t('beFirstToShare', { ns: 'common' })}</p>
                 </div>
               )}
+            </div>
           </div>
         </DrawerContent>
       </Drawer>
