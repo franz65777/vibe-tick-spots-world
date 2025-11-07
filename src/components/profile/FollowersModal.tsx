@@ -208,7 +208,7 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
           <button onClick={onClose} className="p-2 -ml-2">
             <ArrowLeft className="w-6 h-6 text-foreground" />
           </button>
-          <h2 className="text-xl font-bold text-foreground">
+          <h2 className="text-xl font-bold text-foreground mt-5">
             {targetProfile?.username || 'User'}
           </h2>
         </div>
