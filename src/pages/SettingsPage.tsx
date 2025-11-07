@@ -199,11 +199,11 @@ const SettingsPage: React.FC = () => {
       </div>
 
       {/* Logout Button */}
-      <div className="px-4 pb-4 bg-background" style={{ marginTop: '-20px' }}>
+      <div className="px-4 pb-4 bg-background" style={{ marginTop: '-40px' }}>
         <Button
           onClick={handleLogout}
           variant="outline"
-          className="w-full rounded-xl py-6 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
+          className="w-full rounded-[20px] py-6 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
         >
           <LogOut className="w-5 h-5 mr-2" />
           {t('logout', { ns: 'common' })}
