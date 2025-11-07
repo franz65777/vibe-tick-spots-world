@@ -134,6 +134,17 @@ const MessagesPage = () => {
     }
   }, [view]);
 
+  // Keep chat stuck to the latest message when the viewport resizes (images, keyboard, etc.)
+  useEffect(() => {
+    if (view !== 'chat') return;
+    const wrapper = chatViewportWrapperRef.current;
+    const viewport = wrapper?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
+    if (!viewport) return;
+    const ro = new ResizeObserver(() => scrollToBottom('auto'));
+    ro.observe(viewport);
+    return () => ro.disconnect();
+  }, [view]);
+
   const scrollToBottom = (behavior: 'auto' | 'smooth' = 'smooth') => {
     const wrapper = chatViewportWrapperRef.current;
     const tryScroll = () => {
@@ -1300,7 +1311,7 @@ const MessagesPage = () => {
            </div>
 
           {/* Message Input */}
-          <div className="shrink-0 p-3 bg-background mb-8">
+          <div className="shrink-0 p-3 bg-background mb-20">
             <div className="flex items-center gap-2">
               <Button
                 variant="ghost"

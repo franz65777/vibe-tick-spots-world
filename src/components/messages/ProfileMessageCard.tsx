@@ -1,7 +1,8 @@
+import { useEffect, useState } from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProfileMessageCardProps {
   profileData: {
@@ -9,10 +10,6 @@ interface ProfileMessageCardProps {
     username: string;
     avatar_url?: string;
     bio?: string;
-    places_visited?: number;
-    cities_visited?: number;
-    posts_count?: number;
-    recent_photos?: string[];
   };
 }
 
@@ -20,17 +17,51 @@ const ProfileMessageCard = ({ profileData }: ProfileMessageCardProps) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
+  const [photosCount, setPhotosCount] = useState<number | null>(null);
+  const [savedCount, setSavedCount] = useState<number | null>(null);
+  const [reviewsCount, setReviewsCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const userId = profileData.id;
+
+        // Run all queries in parallel
+        const [postsRes, reviewsRes, savedPlacesRes, userSavedRes] = await Promise.all([
+          supabase.from('posts').select('id', { count: 'exact', head: true }).eq('user_id', userId),
+          supabase.from('post_reviews').select('id', { count: 'exact', head: true }).eq('user_id', userId),
+          supabase.from('saved_places').select('place_id').eq('user_id', userId),
+          supabase.from('user_saved_locations').select('location_id').eq('user_id', userId),
+        ]);
+
+        setPhotosCount(postsRes.count ?? 0);
+        setReviewsCount(reviewsRes.count ?? 0);
+
+        const sp = (savedPlacesRes.data || []) as { place_id: string }[];
+        const us = (userSavedRes.data || []) as { location_id: string }[];
+        const unique = new Set<string>();
+        sp.forEach(p => p.place_id && unique.add(String(p.place_id)));
+        us.forEach(p => p.location_id && unique.add(String(p.location_id)));
+        setSavedCount(unique.size);
+      } catch (e) {
+        console.error('Failed to load profile stats in ProfileMessageCard:', e);
+      }
+    };
+
+    if (profileData?.id) loadStats();
+  }, [profileData?.id]);
+
   const handleViewProfile = () => {
     navigate(`/profile/${profileData.id}`);
   };
 
   // Remove @ from username if present
-  const displayUsername = profileData.username?.startsWith('@') 
-    ? profileData.username.slice(1) 
+  const displayUsername = profileData.username?.startsWith('@')
+    ? profileData.username.slice(1)
     : profileData.username;
 
   return (
-    <div 
+    <div
       className="p-4 bg-muted/30 rounded-2xl cursor-pointer hover:bg-muted/50 transition-colors"
       onClick={handleViewProfile}
     >
@@ -51,24 +82,18 @@ const ProfileMessageCard = ({ profileData }: ProfileMessageCardProps) => {
 
       {/* Stats */}
       <div className="flex gap-4 text-sm">
-        {profileData.posts_count !== undefined && (
-          <div>
-            <span className="font-bold text-foreground">{profileData.posts_count}</span>{' '}
-            <span className="text-muted-foreground">{t('userProfile.photos', { ns: 'common' })}</span>
-          </div>
-        )}
-        {profileData.places_visited !== undefined && (
-          <div>
-            <span className="font-bold text-foreground">{profileData.places_visited}</span>{' '}
-            <span className="text-muted-foreground">{t('userProfile.saved', { ns: 'common' })}</span>
-          </div>
-        )}
-        {profileData.cities_visited !== undefined && (
-          <div>
-            <span className="font-bold text-foreground">{profileData.cities_visited}</span>{' '}
-            <span className="text-muted-foreground">{t('userProfile.cities', { ns: 'common' })}</span>
-          </div>
-        )}
+        <div>
+          <span className="font-bold text-foreground">{photosCount ?? '—'}</span>{' '}
+          <span className="text-muted-foreground">{t('userProfile.photos', { ns: 'common', defaultValue: 'Foto' })}</span>
+        </div>
+        <div>
+          <span className="font-bold text-foreground">{savedCount ?? '—'}</span>{' '}
+          <span className="text-muted-foreground">{t('userProfile.saved', { ns: 'common', defaultValue: 'Salvati' })}</span>
+        </div>
+        <div>
+          <span className="font-bold text-foreground">{reviewsCount ?? '—'}</span>{' '}
+          <span className="text-muted-foreground">{t('reviews', { ns: 'common', defaultValue: 'Recensioni' })}</span>
+        </div>
       </div>
     </div>
   );
