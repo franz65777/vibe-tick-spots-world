@@ -2,6 +2,8 @@
 import React from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
+import { useTranslation } from 'react-i18next';
+import { getDateFnsLocale } from '@/utils/dateFnsLocales';
 import PlaceMessageCard from './PlaceMessageCard';
 import PostMessageCard from './PostMessageCard';
 import { DirectMessage } from '@/services/messageService';
@@ -13,6 +15,7 @@ interface MessageBubbleProps {
 }
 
 const MessageBubble = ({ message, isOwnMessage, onViewPlace }: MessageBubbleProps) => {
+  const { i18n } = useTranslation();
   const handleViewPlace = (place: any) => {
     if (onViewPlace) {
       onViewPlace(place);
@@ -71,7 +74,7 @@ const MessageBubble = ({ message, isOwnMessage, onViewPlace }: MessageBubbleProp
         )}
         
         <span className="text-[11px] text-muted-foreground mt-1 px-1">
-          {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
+          {formatDistanceToNow(new Date(message.created_at), { addSuffix: true, locale: getDateFnsLocale(i18n.language) })}
         </span>
       </div>
     </div>

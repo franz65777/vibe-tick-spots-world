@@ -8,6 +8,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { messageService, MessageThread, DirectMessage } from '@/services/messageService';
 import { realtimeChatService } from '@/services/realtimeChatService';
 import { formatDistanceToNow } from 'date-fns';
+import { useTranslation } from 'react-i18next';
+import { getDateFnsLocale } from '@/utils/dateFnsLocales';
 import { supabase } from '@/integrations/supabase/client';
 import PlaceMessageCard from './messages/PlaceMessageCard';
 import PostMessageCard from './messages/PostMessageCard';
@@ -136,7 +138,8 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
   };
 
   const formatMessageTime = (timestamp: string) => {
-    return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
+    const { i18n } = useTranslation();
+    return formatDistanceToNow(new Date(timestamp), { addSuffix: true, locale: getDateFnsLocale(i18n.language) });
   };
 
   const handleBack = () => {

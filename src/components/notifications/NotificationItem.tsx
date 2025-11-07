@@ -1,5 +1,7 @@
 
 import { formatDistanceToNow } from 'date-fns';
+import { useTranslation } from 'react-i18next';
+import { getDateFnsLocale } from '@/utils/dateFnsLocales';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Heart, MessageCircle, UserPlus, MapPin, Gift, Star, Camera, Calendar, Tag, Megaphone, Sparkles } from 'lucide-react';
@@ -19,6 +21,7 @@ interface NotificationItemProps {
 }
 
 const NotificationItem = ({ notification, onMarkAsRead, onAction }: NotificationItemProps) => {
+  const { i18n } = useTranslation();
   const getNotificationStyle = () => {
     const styles = {
       like: {
@@ -199,7 +202,7 @@ const NotificationItem = ({ notification, onMarkAsRead, onAction }: Notification
           
           <div className="flex items-center justify-between mt-3">
             <p className="text-xs text-gray-400">
-              {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+              {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true, locale: getDateFnsLocale(i18n.language) })}
             </p>
             
             {/* Action buttons for friend requests */}

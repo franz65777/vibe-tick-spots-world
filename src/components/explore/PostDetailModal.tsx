@@ -11,6 +11,8 @@ import { usePostDeletion } from '@/hooks/usePostDeletion';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
+import { useTranslation } from 'react-i18next';
+import { getDateFnsLocale } from '@/utils/dateFnsLocales';
 import { useNavigate } from 'react-router-dom';
 import { CommentDrawer } from '@/components/social/CommentDrawer';
 import { ShareModal } from '@/components/social/ShareModal';
@@ -61,6 +63,7 @@ interface PostData {
 
 export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', openCommentsOnLoad, openShareOnLoad }: PostDetailModalProps) => {
   const { user } = useAuth();
+  const { i18n } = useTranslation();
   const navigate = useNavigate();
   const engagement = useSocialEngagement(postId);
   const { savePlace, isPlaceSaved } = useSavedPlaces();
@@ -470,7 +473,7 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', op
                   <div className="space-y-1">
                     <p className="text-sm leading-relaxed">{post.caption}</p>
                     <p className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                      {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: getDateFnsLocale(i18n.language) })}
                     </p>
                   </div>
                 )}

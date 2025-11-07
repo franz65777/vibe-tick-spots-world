@@ -9,6 +9,7 @@ import { formatDetailedAddress } from '@/utils/addressFormatter';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
+import { getDateFnsLocale } from '@/utils/dateFnsLocales';
 import {
   Drawer,
   DrawerContent,
@@ -57,7 +58,7 @@ interface Review {
 
 const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawerProps) => {
   const { user } = useAuth();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [posts, setPosts] = useState<Post[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(false);
@@ -459,7 +460,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
                             <p className="text-sm text-muted-foreground mb-1">{review.comment}</p>
                           )}
                           <p className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date(review.created_at), { addSuffix: true })}
+                            {formatDistanceToNow(new Date(review.created_at), { addSuffix: true, locale: getDateFnsLocale(i18n.language) })}
                           </p>
                         </div>
                       </div>

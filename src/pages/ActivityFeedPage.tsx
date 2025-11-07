@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Heart, MapPin, MessageCircle, ArrowLeft } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { useTranslation } from 'react-i18next';
+import { getDateFnsLocale } from '@/utils/dateFnsLocales';
 
 interface Activity {
   id: string;
@@ -23,6 +25,7 @@ interface Activity {
 
 const ActivityFeedPage = () => {
   const { user } = useAuth();
+  const { i18n } = useTranslation();
   const navigate = useNavigate();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -228,7 +231,7 @@ const ActivityFeedPage = () => {
                     )}
 
                     <p className="text-xs text-gray-400 dark:text-gray-500">
-                      {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
+                      {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true, locale: getDateFnsLocale(i18n.language) })}
                     </p>
                   </div>
                 </div>

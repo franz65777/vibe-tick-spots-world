@@ -8,6 +8,8 @@ import { Send, MessageCircle } from 'lucide-react';
 import { commentService } from '@/services/commentService';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
+import { useTranslation } from 'react-i18next';
+import { getDateFnsLocale } from '@/utils/dateFnsLocales';
 
 interface CommentModalProps {
   isOpen: boolean;
@@ -17,6 +19,7 @@ interface CommentModalProps {
 
 const CommentModal = ({ isOpen, onClose, place }: CommentModalProps) => {
   const { user } = useAuth();
+  const { i18n } = useTranslation();
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(false);
@@ -94,7 +97,7 @@ const CommentModal = ({ isOpen, onClose, place }: CommentModalProps) => {
                       {comment.user?.username || 'Anonymous'}
                     </span>
                     <span className="text-xs text-gray-500">
-                      {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                      {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: getDateFnsLocale(i18n.language) })}
                     </span>
                   </div>
                   <p className="text-sm text-gray-700 leading-relaxed">{comment.content}</p>

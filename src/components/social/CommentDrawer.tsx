@@ -8,6 +8,7 @@ import { Drawer } from 'vaul';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
 import { useTranslation } from 'react-i18next';
+import { getDateFnsLocale } from '@/utils/dateFnsLocales';
 import type { Comment } from '@/services/socialEngagementService';
 
 interface CommentDrawerProps {
@@ -26,7 +27,7 @@ export const CommentDrawer = ({
   onDeleteComment,
 }: CommentDrawerProps) => {
   const { user } = useAuth();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [newComment, setNewComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -102,7 +103,7 @@ export const CommentDrawer = ({
                       </div>
                       <div className="flex items-center gap-4 mt-1.5 px-3">
                         <p className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                          {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: getDateFnsLocale(i18n.language) })}
                         </p>
                         {user?.id === comment.user_id && (
                           <button

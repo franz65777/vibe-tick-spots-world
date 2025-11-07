@@ -146,17 +146,17 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
           <DropdownMenuContent align="start" className="w-48 bg-background z-50 rounded-lg">
             <DropdownMenuItem 
               onClick={() => setPostFilter('photos')}
-              className="cursor-pointer focus:bg-accent flex items-center gap-2"
+              className="cursor-pointer focus:bg-accent flex items-center gap-2 px-2"
             >
               <Image className="w-4 h-4" />
-              <span className="font-medium">{t('posts', { ns: 'profile', defaultValue: 'Posts' })}</span>
+              <span className="font-medium">{t('postsTab', { ns: 'explore', defaultValue: 'Posts' })}</span>
             </DropdownMenuItem>
             <DropdownMenuItem 
               onClick={() => setPostFilter('reviews')}
-              className="cursor-pointer focus:bg-accent flex items-center gap-2"
+              className="cursor-pointer focus:bg-accent flex items-center gap-2 px-2"
             >
               <Star className="w-4 h-4" />
-              <span className="font-medium">{t('reviews', { ns: 'leaderboard', defaultValue: 'Reviews' })}</span>
+              <span className="font-medium">{t('reviewsTab', { ns: 'explore', defaultValue: 'Reviews' })}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
