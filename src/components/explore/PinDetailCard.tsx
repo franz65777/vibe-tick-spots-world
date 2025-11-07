@@ -24,6 +24,7 @@ import MarketingCampaignBanner from './MarketingCampaignBanner';
 import { formatDistanceToNow, Locale } from 'date-fns';
 import { it, es, pt, fr, de, ja, ko, ar, hi, ru, zhCN } from 'date-fns/locale';
 import { PostDetailModalMobile } from './PostDetailModalMobile';
+import { cn } from '@/lib/utils';
 
 const localeMap: Record<string, Locale> = {
   en: undefined as any, // English is the default
@@ -66,6 +67,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
   const [viewStartTime] = useState<number>(Date.now());
   const [savedByOpen, setSavedByOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'posts' | 'reviews'>('posts');
+  const [postFilter, setPostFilter] = useState<'photos' | 'reviews'>('photos');
   const [reviews, setReviews] = useState<any[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [showActionButtons, setShowActionButtons] = useState(true);
@@ -573,23 +575,62 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
             >
               {activeTab === 'posts' ? (
                 <div className="px-4 py-4">
+                  {/* Filter Tabs */}
+                  <div className="flex bg-muted rounded-xl p-1 mb-4">
+                    <button
+                      onClick={() => setPostFilter('photos')}
+                      className={cn(
+                        "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all",
+                        postFilter === 'photos'
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "text-muted-foreground"
+                      )}
+                    >
+                      {t('photos', { ns: 'common', defaultValue: 'Photos' })}
+                    </button>
+                    <button
+                      onClick={() => setPostFilter('reviews')}
+                      className={cn(
+                        "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all",
+                        postFilter === 'reviews'
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "text-muted-foreground"
+                      )}
+                    >
+                      {t('reviews', { ns: 'common', defaultValue: 'Reviews' })}
+                    </button>
+                  </div>
+
                   {postsLoading && posts.length === 0 ? (
                     <div className="flex justify-center py-8">
                       <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
                     </div>
-                  ) : posts.length === 0 ? (
+                  ) : posts.filter((post) => 
+                      postFilter === 'photos' 
+                        ? post.media_urls && post.media_urls.length > 0
+                        : post.rating !== null && post.rating !== undefined
+                    ).length === 0 ? (
                     <div className="py-8 text-center">
                       <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
                         <Camera className="w-8 h-8 text-muted-foreground" />
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {t('noPostsYet', { ns: 'common', defaultValue: 'No posts yet' })}
+                        {postFilter === 'photos' 
+                          ? t('noPostsYet', { ns: 'common', defaultValue: 'No posts yet' })
+                          : t('noReviewsYet', { ns: 'common', defaultValue: 'No reviews yet' })
+                        }
                       </p>
                     </div>
                   ) : (
                     <>
                       <div className="grid grid-cols-2 gap-3">
-                        {posts.map((post) => (
+                        {posts
+                          .filter((post) => 
+                            postFilter === 'photos' 
+                              ? post.media_urls && post.media_urls.length > 0
+                              : post.rating !== null && post.rating !== undefined
+                          )
+                          .map((post) => (
                           <button
                             key={post.id} 
                             onClick={(e) => {
@@ -602,8 +643,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                             }}
                             className="relative rounded-xl overflow-hidden bg-card shadow-sm hover:shadow-md transition-shadow"
                           >
-                             {/* Post Image or Review Card */}
-                            {post.media_urls?.[0] ? (
+                            {postFilter === 'photos' ? (
+                              /* Photo Post */
                               <div className="relative w-full h-48">
                                 <img 
                                   src={post.media_urls[0]} 
@@ -627,9 +668,17 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                                     +{post.media_urls.length - 1}
                                   </div>
                                 )}
+                                {/* Post Caption */}
+                                {post.caption && (
+                                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2.5">
+                                    <p className="text-xs text-white line-clamp-2 leading-relaxed">
+                                      {post.caption}
+                                    </p>
+                                  </div>
+                                )}
                               </div>
                             ) : (
-                              /* Review without image */
+                              /* Review Card */
                               <div className="w-full h-48 bg-gradient-to-br from-primary/10 to-primary/5 flex flex-col items-center justify-center p-4">
                                 <Avatar className="w-12 h-12 mb-2 border-2 border-primary/20">
                                   <AvatarImage src={post.profiles?.avatar_url} />
@@ -637,24 +686,16 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                                     {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
                                   </AvatarFallback>
                                 </Avatar>
-                                {post.rating && (
-                                  <div className="flex items-center gap-1.5 mb-2">
-                                    <Star className="w-5 h-5 fill-amber-500 text-amber-500" />
-                                    <span className="text-2xl font-bold text-foreground">{post.rating}</span>
-                                    <span className="text-sm text-muted-foreground">/10</span>
-                                  </div>
+                                <div className="flex items-center gap-1.5 mb-2">
+                                  <Star className="w-5 h-5 fill-amber-500 text-amber-500" />
+                                  <span className="text-2xl font-bold text-foreground">{post.rating}</span>
+                                  <span className="text-sm text-muted-foreground">/10</span>
+                                </div>
+                                {post.caption && (
+                                  <p className="text-xs text-center text-muted-foreground line-clamp-3 mt-2">
+                                    {post.caption}
+                                  </p>
                                 )}
-                                <p className="text-xs text-center text-muted-foreground">
-                                  {t('review', { ns: 'common', defaultValue: 'Review' })}
-                                </p>
-                              </div>
-                            )}
-                            {/* Post Caption */}
-                            {post.caption && (
-                              <div className="p-2.5">
-                                <p className="text-xs text-foreground line-clamp-2 leading-relaxed">
-                                  {post.caption}
-                                </p>
                               </div>
                             )}
                           </button>
