@@ -341,27 +341,38 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                       )}
 
                       {post.caption && (
-                        <div>
+                        <div className="relative">
                           <p className={cn("text-sm text-foreground text-left", !isExpanded && "line-clamp-2")}>
                             {post.caption}
+                            {post.caption.length > 100 && !isExpanded && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setExpandedCaptions(prev => {
+                                    const newSet = new Set(prev);
+                                    newSet.add(post.id);
+                                    return newSet;
+                                  });
+                                }}
+                                className="text-xs text-primary hover:opacity-70 ml-1 font-medium"
+                              >
+                                {t('more', { ns: 'common' })}
+                              </button>
+                            )}
                           </p>
-                          {post.caption.length > 100 && (
+                          {post.caption.length > 100 && isExpanded && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setExpandedCaptions(prev => {
                                   const newSet = new Set(prev);
-                                  if (isExpanded) {
-                                    newSet.delete(post.id);
-                                  } else {
-                                    newSet.add(post.id);
-                                  }
+                                  newSet.delete(post.id);
                                   return newSet;
                                 });
                               }}
-                              className="text-xs text-primary hover:opacity-70 mt-1"
+                              className="text-xs text-primary hover:opacity-70 mt-1 font-medium"
                             >
-                              {isExpanded ? t('less', { ns: 'common' }) : t('more', { ns: 'common' })}
+                              {t('less', { ns: 'common' })}
                             </button>
                           )}
                         </div>
