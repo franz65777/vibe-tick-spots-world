@@ -66,6 +66,7 @@ const MessagesPage = () => {
   const channelRef = useRef<any>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const chatViewportWrapperRef = useRef<HTMLDivElement | null>(null);
 
   const { stories: allStories } = useStories();
   const { frequentContacts, loading: frequentLoading, refresh: refreshFrequent } = useFrequentContacts();
@@ -116,6 +117,7 @@ const MessagesPage = () => {
         loadHiddenMessages();
         setupRealtimeSubscription();
         loadOtherUserProfile(otherParticipant.id);
+        setTimeout(() => scrollToBottom('auto'), 50);
       }
     }
   }, [selectedThread, view]);
@@ -132,8 +134,20 @@ const MessagesPage = () => {
     }
   }, [view]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = (behavior: 'auto' | 'smooth' = 'smooth') => {
+    // Try to scroll the ScrollArea viewport if present
+    const wrapper = chatViewportWrapperRef.current;
+    const tryScroll = () => {
+      const viewport = wrapper?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
+      if (viewport) {
+        viewport.scrollTop = viewport.scrollHeight;
+      } else {
+        messagesEndRef.current?.scrollIntoView({ behavior });
+      }
+    };
+    tryScroll();
+    // Fallback after layout completes
+    setTimeout(tryScroll, 50);
   };
 
   const loadThreads = async () => {
@@ -165,6 +179,7 @@ const MessagesPage = () => {
       setLoading(true);
       const data = await messageService.getMessagesInThread(otherUserId);
       setMessages(data || []);
+      setTimeout(() => scrollToBottom('auto'), 0);
       
       // Mark messages as read
       if (user && data && data.length > 0) {
@@ -1002,14 +1017,14 @@ const MessagesPage = () => {
       {/* Chat View */}
       {view === 'chat' && (
         <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-          <div className="flex-1 min-h-0 overflow-hidden">
+          <div ref={chatViewportWrapperRef} className="flex-1 min-h-0 overflow-hidden">
             <ScrollArea className="h-full p-4 [&>div>div]:!overflow-y-auto [&>div>div]:scrollbar-hide">
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
               </div>
             ) : (
-              <div className="space-y-3 pb-32">
+              <div className="space-y-3">
                  {messages.filter(m => !hiddenMessageIds.includes(m.id)).map((message) => {
                    const isOwn = message.sender_id === user?.id;
                    return (
@@ -1285,7 +1300,7 @@ const MessagesPage = () => {
            </div>
 
           {/* Message Input */}
-          <div className="shrink-0 p-3 bg-background">
+          <div className="shrink-0 p-3 pb-[env(safe-area-inset-bottom)] bg-background">
             <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
