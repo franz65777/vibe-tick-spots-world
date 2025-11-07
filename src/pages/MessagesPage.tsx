@@ -135,19 +135,13 @@ const MessagesPage = () => {
   }, [view]);
 
   const scrollToBottom = (behavior: 'auto' | 'smooth' = 'smooth') => {
-    // Try to scroll the ScrollArea viewport if present
-    const wrapper = chatViewportWrapperRef.current;
-    const tryScroll = () => {
-      const viewport = wrapper?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
-      if (viewport) {
-        viewport.scrollTop = viewport.scrollHeight;
-      } else {
-        messagesEndRef.current?.scrollIntoView({ behavior });
-      }
+    const doScroll = () => {
+      messagesEndRef.current?.scrollIntoView({ behavior, block: 'end' });
     };
-    tryScroll();
-    // Fallback after layout completes
-    setTimeout(tryScroll, 50);
+    // Scroll now and again on next frame and after layout to ensure reliability
+    doScroll();
+    requestAnimationFrame(doScroll);
+    setTimeout(doScroll, 60);
   };
 
   const loadThreads = async () => {
@@ -1300,7 +1294,7 @@ const MessagesPage = () => {
            </div>
 
           {/* Message Input */}
-          <div className="shrink-0 p-3 bg-background">
+          <div className="shrink-0 p-3 bg-background mb-4">
             <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
