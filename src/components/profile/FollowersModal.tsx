@@ -202,10 +202,10 @@ const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: F
 
   return (
     <>
-      <div className="fixed inset-0 bg-background z-[60] flex flex-col">
+      <div className="fixed inset-0 bg-background z-[100] flex flex-col">
         {/* Header with Back Button and Username */}
         <div className="flex items-center gap-4 p-4">
-          <button onClick={onClose} className="p-2 -ml-2">
+          <button onClick={onClose} className="p-2 -ml-2 mt-5">
             <ArrowLeft className="w-6 h-6 text-foreground" />
           </button>
           <h2 className="text-xl font-bold text-foreground mt-5">
