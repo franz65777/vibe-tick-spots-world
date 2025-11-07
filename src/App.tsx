@@ -24,6 +24,7 @@ import NotificationsPage from '@/pages/NotificationsPage';
 import MessagesPage from '@/pages/MessagesPage';
 import DiscoverPage from '@/pages/DiscoverPage';
 import PostPage from '@/pages/PostPage';
+import EditProfilePage from '@/pages/EditProfilePage';
 
 import BusinessAnalyticsPage from '@/pages/business/BusinessAnalyticsPage';
 import BusinessAddPage from '@/pages/business/BusinessAddPage';
@@ -113,6 +114,7 @@ function AppContent() {
         <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
         <Route path="/admin/business-requests" element={<AdminBusinessRequestsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/edit-profile" element={<EditProfilePage />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

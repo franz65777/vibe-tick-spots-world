@@ -10,9 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import BusinessRequestModal from '@/components/BusinessRequestModal';
 import LanguageModal from '@/components/settings/LanguageModal';
 import MutedLocationsModal from '@/components/settings/MutedLocationsModal';
-import EditProfileModal from '@/components/profile/EditProfileModal';
 import { useAdminRole } from '@/hooks/useAdminRole';
-import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
 
 const languages = [
   { code: 'en', label: 'English', flag: '🇬🇧' },
@@ -34,13 +32,11 @@ const SettingsPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { isAdmin } = useAdminRole();
-  const { profile } = useOptimizedProfile();
   const [language, setLanguage] = useState('en');
   const [saving, setSaving] = useState(false);
   const [businessModalOpen, setBusinessModalOpen] = useState(false);
   const [languageModalOpen, setLanguageModalOpen] = useState(false);
   const [mutedLocationsModalOpen, setMutedLocationsModalOpen] = useState(false);
-  const [editProfileModalOpen, setEditProfileModalOpen] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -103,7 +99,7 @@ const SettingsPage: React.FC = () => {
           <CardContent className="p-0">
             {/* Edit Profile Setting */}
             <button
-              onClick={() => setEditProfileModalOpen(true)}
+              onClick={() => navigate('/edit-profile')}
               className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
@@ -192,11 +188,6 @@ const SettingsPage: React.FC = () => {
       </div>
 
       {/* Modals */}
-      <EditProfileModal
-        isOpen={editProfileModalOpen}
-        onClose={() => setEditProfileModalOpen(false)}
-        currentProfile={profile}
-      />
       <BusinessRequestModal 
         open={businessModalOpen} 
         onOpenChange={setBusinessModalOpen} 

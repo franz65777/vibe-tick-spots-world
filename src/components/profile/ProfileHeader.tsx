@@ -104,8 +104,9 @@ const ProfileHeader = ({
     locations: savedPlacesStats.places || 0
   };
 
-  // Get user's own stories
-  const myStories = stories.filter(s => s.user_id === user?.id);
+  // Get user's own active stories (not expired)
+  const now = new Date();
+  const myStories = stories.filter(s => s.user_id === user?.id && new Date(s.expires_at) > now);
   const hasMyStories = myStories.length > 0;
   const myStoriesAllViewed = myStories.every(s => s.created_at && new Date(s.created_at) < new Date(Date.now() - 24 * 60 * 60 * 1000));
 
