@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { useTranslation } from 'react-i18next';
 
 const reviewSchema = z.object({
   comment: z.string().trim().max(500, 'Comment must be 500 characters or less'),
@@ -25,18 +26,19 @@ interface LocationReviewModalProps {
 
 const LocationReviewModal = ({ isOpen, onClose, location }: LocationReviewModalProps) => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [rating, setRating] = useState<number | undefined>();
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async () => {
     if (!user) {
-      toast.error('You must be logged in to review');
+      toast.error(t('mustBeLoggedIn', { ns: 'explore', defaultValue: 'You must be logged in to review' }));
       return;
     }
 
     if (!rating && !comment.trim()) {
-      toast.error('Please provide a rating or comment');
+      toast.error(t('provideRatingOrComment', { ns: 'explore', defaultValue: 'Please provide a rating or comment' }));
       return;
     }
 
@@ -85,8 +87,22 @@ const LocationReviewModal = ({ isOpen, onClose, location }: LocationReviewModalP
         }
       }
 
-      // Create an interaction for the location with the rating as weight
-      if (rating && internalLocationId) {
+      // Create a post with the rating and optional caption
+      if (rating) {
+        const { error: postError } = await supabase.from('posts').insert({
+          user_id: user.id,
+          location_id: internalLocationId,
+          rating: rating,
+          caption: validation.data.comment || null,
+          media_urls: []
+        });
+
+        if (postError) {
+          console.error('Error creating post:', postError);
+          throw postError;
+        }
+
+        // Also create an interaction for analytics
         await supabase.from('interactions').insert({
           user_id: user.id,
           location_id: internalLocationId,
@@ -95,30 +111,43 @@ const LocationReviewModal = ({ isOpen, onClose, location }: LocationReviewModalP
         });
       }
 
-      // If there's a comment, add it to place_comments
-      if (validation.data.comment) {
-        const placeId = location.google_place_id || location.id;
-        await supabase.from('place_comments').insert({
-          user_id: user.id,
-          place_id: placeId,
-          content: validation.data.comment
-        });
+      // Show success message
+      if (rating && comment.trim()) {
+        toast.success(
+          t('ratedAndSharedExperience', { 
+            ns: 'explore', 
+            location: location.name, 
+            rating: rating,
+            defaultValue: `You rated ${location.name} ${rating}/10 and shared your experience!`
+          }),
+          { duration: 3000 }
+        );
+      } else if (rating) {
+        toast.success(
+          t('youRatedLocation', { 
+            ns: 'explore', 
+            location: location.name, 
+            rating: rating,
+            defaultValue: `You rated ${location.name} ${rating}/10`
+          }),
+          { duration: 3000 }
+        );
+      } else {
+        toast.success(
+          t('reviewPostedSuccess', { 
+            ns: 'explore', 
+            defaultValue: 'Your review has been posted successfully'
+          }),
+          { duration: 3000 }
+        );
       }
-
-      toast.success(rating 
-        ? `You rated ${location.name} ${rating}/10${comment.trim() ? ' and shared your experience' : ''}!` 
-        : 'Your review has been posted successfully',
-        {
-          duration: 3000,
-        }
-      );
       
       onClose();
       setRating(undefined);
       setComment('');
     } catch (error) {
       console.error('Error submitting review:', error);
-      toast.error('Failed to submit review');
+      toast.error(t('failedToSubmitReview', { ns: 'explore', defaultValue: 'Failed to submit review' }));
     } finally {
       setSubmitting(false);
     }
@@ -128,7 +157,9 @@ const LocationReviewModal = ({ isOpen, onClose, location }: LocationReviewModalP
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-background max-w-md rounded-3xl sm:rounded-3xl">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold">Review {location.name}</h2>
+          <h2 className="text-xl font-bold">
+            {t('reviewLocation', { ns: 'explore', location: location.name, defaultValue: `Review ${location.name}` })}
+          </h2>
           <button onClick={onClose} className="p-2 hover:bg-muted rounded-xl transition-colors">
             <X className="w-5 h-5" />
           </button>
@@ -137,7 +168,9 @@ const LocationReviewModal = ({ isOpen, onClose, location }: LocationReviewModalP
         <div className="space-y-6">
           {/* Rating */}
           <div className="space-y-3">
-            <label className="text-sm font-medium">Rating (optional)</label>
+            <label className="text-sm font-medium">
+              {t('ratingOptional', { ns: 'explore', defaultValue: 'Rating (optional)' })}
+            </label>
             <div className="flex gap-2 flex-wrap">
               {[...Array(10)].map((_, i) => (
                 <button
@@ -155,22 +188,26 @@ const LocationReviewModal = ({ isOpen, onClose, location }: LocationReviewModalP
               ))}
             </div>
             {rating && (
-              <p className="text-xs text-muted-foreground">You rated this {rating}/10</p>
+              <p className="text-xs text-muted-foreground">
+                {t('youRatedThis', { ns: 'explore', rating, defaultValue: `You rated this ${rating}/10` })}
+              </p>
             )}
           </div>
 
           {/* Comment */}
           <div className="space-y-3">
-            <label className="text-sm font-medium">Comment (optional)</label>
+            <label className="text-sm font-medium">
+              {t('commentOptional', { ns: 'explore', defaultValue: 'Comment (optional)' })}
+            </label>
             <Textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              placeholder="Share your experience..."
+              placeholder={t('shareYourExperience', { ns: 'explore', defaultValue: 'Share your experience...' })}
               className="min-h-[120px] rounded-2xl resize-none"
               maxLength={500}
             />
             <p className="text-xs text-muted-foreground">
-              {comment.length}/500 characters
+              {t('charactersCount', { ns: 'explore', count: comment.length, defaultValue: `${comment.length}/500 characters` })}
             </p>
           </div>
 
@@ -180,7 +217,10 @@ const LocationReviewModal = ({ isOpen, onClose, location }: LocationReviewModalP
             disabled={submitting || (!rating && !comment.trim())}
             className="w-full h-12 rounded-2xl font-semibold"
           >
-            {submitting ? 'Submitting...' : 'Submit Review'}
+            {submitting 
+              ? t('submitting', { ns: 'explore', defaultValue: 'Submitting...' })
+              : t('submitReview', { ns: 'explore', defaultValue: 'Submit Review' })
+            }
           </Button>
         </div>
       </DialogContent>
