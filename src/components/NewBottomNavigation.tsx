@@ -61,6 +61,14 @@ const NewBottomNavigation = () => {
     }
   };
 
+  const handleProfileClick = () => {
+    // For users without business account, navigate directly
+    if (!hasValidBusinessAccount) {
+      navigate('/profile');
+      trackEvent('nav_tab_clicked', { tab: 'profile' });
+    }
+  };
+
   const handleAccountSwitch = (mode: 'personal' | 'business') => {
     // Note: localStorage only used for UI preference, not authorization
     // Actual authorization is verified server-side via business_profiles table
@@ -125,12 +133,12 @@ const NewBottomNavigation = () => {
               return (
                 <button
                   key={item.path}
-                  onClick={isProfileTab ? undefined : () => handleNavClick(item.path, item.label)}
-                  onMouseDown={isProfileTab ? handleProfileLongPressStart : undefined}
-                  onMouseUp={isProfileTab ? handleProfileLongPressEnd : undefined}
-                  onMouseLeave={isProfileTab ? handleProfileLongPressEnd : undefined}
-                  onTouchStart={isProfileTab ? handleProfileLongPressStart : undefined}
-                  onTouchEnd={isProfileTab ? handleProfileLongPressEnd : undefined}
+                  onClick={isProfileTab && !hasValidBusinessAccount ? handleProfileClick : isProfileTab ? undefined : () => handleNavClick(item.path, item.label)}
+                  onMouseDown={isProfileTab && hasValidBusinessAccount ? handleProfileLongPressStart : undefined}
+                  onMouseUp={isProfileTab && hasValidBusinessAccount ? handleProfileLongPressEnd : undefined}
+                  onMouseLeave={isProfileTab && hasValidBusinessAccount ? handleProfileLongPressEnd : undefined}
+                  onTouchStart={isProfileTab && hasValidBusinessAccount ? handleProfileLongPressStart : undefined}
+                  onTouchEnd={isProfileTab && hasValidBusinessAccount ? handleProfileLongPressEnd : undefined}
                   className="flex flex-col items-center justify-center gap-1 min-w-[64px] py-2 transition-colors duration-200"
                   aria-label={item.label}
                   aria-current={isActive ? 'page' : undefined}
