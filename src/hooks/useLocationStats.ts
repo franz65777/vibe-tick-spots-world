@@ -38,9 +38,12 @@ export const useLocationStats = (locationId: string | null, googlePlaceId: strin
           savesCount += internalSaves || 0;
         }
 
-        // Fetch average rating from interactions (reviews)
+        // Fetch average rating from both interactions AND posts with ratings
         let avgRating = null;
+        const allRatings: number[] = [];
+        
         if (locationId) {
+          // Get ratings from interactions table
           const { data: interactionData } = await supabase
             .from('interactions')
             .select('weight')
@@ -50,44 +53,72 @@ export const useLocationStats = (locationId: string | null, googlePlaceId: strin
 
           if (interactionData && interactionData.length > 0) {
             const ratings = interactionData.map(i => Number(i.weight)).filter(r => r > 0);
-            if (ratings.length > 0) {
-              const sum = ratings.reduce((acc, r) => acc + r, 0);
-              avgRating = Math.round((sum / ratings.length) * 10) / 10; // Round to 1 decimal
-            }
+            allRatings.push(...ratings);
+          }
+
+          // Get ratings from posts table (posts with rating field)
+          const { data: postsData } = await supabase
+            .from('posts')
+            .select('rating')
+            .eq('location_id', locationId)
+            .not('rating', 'is', null)
+            .gt('rating', 0);
+
+          if (postsData && postsData.length > 0) {
+            const postRatings = postsData.map(p => Number(p.rating)).filter(r => r > 0);
+            allRatings.push(...postRatings);
+          }
+
+          // Calculate average from all ratings
+          if (allRatings.length > 0) {
+            const sum = allRatings.reduce((acc, r) => acc + r, 0);
+            avgRating = Math.round((sum / allRatings.length) * 10) / 10; // Round to 1 decimal
           }
         }
         
-        // Also check for Google Place ratings if available
+        // Also check for Google Place ratings if available (from both interactions and posts)
         if (!avgRating && googlePlaceId) {
-          const { data: googleInteractionData } = await supabase
-            .from('interactions')
-            .select('weight, location_id')
-            .eq('action_type', 'review')
-            .not('weight', 'is', null);
+          const googleRatings: number[] = [];
+          
+          // Get matching location IDs for this google_place_id
+          const { data: matchingLocations } = await supabase
+            .from('locations')
+            .select('id')
+            .eq('google_place_id', googlePlaceId);
 
-          // Filter by locations with matching google_place_id
-          if (googleInteractionData && googleInteractionData.length > 0) {
-            const locationIds = googleInteractionData.map(i => i.location_id).filter(Boolean);
+          if (matchingLocations && matchingLocations.length > 0) {
+            const matchingLocationIds = matchingLocations.map(l => l.id);
             
-            if (locationIds.length > 0) {
-              const { data: matchingLocations } = await supabase
-                .from('locations')
-                .select('id')
-                .eq('google_place_id', googlePlaceId)
-                .in('id', locationIds);
+            // Get ratings from interactions
+            const { data: googleInteractionData } = await supabase
+              .from('interactions')
+              .select('weight')
+              .in('location_id', matchingLocationIds)
+              .eq('action_type', 'review')
+              .not('weight', 'is', null);
 
-              if (matchingLocations && matchingLocations.length > 0) {
-                const matchingLocationIds = new Set(matchingLocations.map(l => l.id));
-                const ratings = googleInteractionData
-                  .filter(i => i.location_id && matchingLocationIds.has(i.location_id))
-                  .map(i => Number(i.weight))
-                  .filter(r => r > 0);
-                
-                if (ratings.length > 0) {
-                  const sum = ratings.reduce((acc, r) => acc + r, 0);
-                  avgRating = Math.round((sum / ratings.length) * 10) / 10; // Round to 1 decimal
-                }
-              }
+            if (googleInteractionData && googleInteractionData.length > 0) {
+              const ratings = googleInteractionData.map(i => Number(i.weight)).filter(r => r > 0);
+              googleRatings.push(...ratings);
+            }
+
+            // Get ratings from posts
+            const { data: googlePostsData } = await supabase
+              .from('posts')
+              .select('rating')
+              .in('location_id', matchingLocationIds)
+              .not('rating', 'is', null)
+              .gt('rating', 0);
+
+            if (googlePostsData && googlePostsData.length > 0) {
+              const postRatings = googlePostsData.map(p => Number(p.rating)).filter(r => r > 0);
+              googleRatings.push(...postRatings);
+            }
+
+            // Calculate average
+            if (googleRatings.length > 0) {
+              const sum = googleRatings.reduce((acc, r) => acc + r, 0);
+              avgRating = Math.round((sum / googleRatings.length) * 10) / 10;
             }
           }
         }
@@ -159,6 +190,24 @@ export const useLocationStats = (locationId: string | null, googlePlaceId: strin
         )
         .subscribe();
       channels.push(interactionsChannel);
+
+      // Listen for posts with ratings
+      const postsChannel = supabase
+        .channel(`posts_ratings_${locationId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'posts',
+            filter: `location_id=eq.${locationId}`
+          },
+          () => {
+            fetchStats();
+          }
+        )
+        .subscribe();
+      channels.push(postsChannel);
     }
 
     return () => {
