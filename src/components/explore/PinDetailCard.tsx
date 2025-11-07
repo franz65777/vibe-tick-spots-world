@@ -124,13 +124,15 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
       }
       
       if (locationId) {
-        const limit = 2; // Limit to 2 posts for pin detail cards
+        const limit = 10; // Increased limit for posts with photos
         const offset = (page - 1) * limit;
         
+        // Filter for posts with media only (not reviews)
         const { data: postRows, error } = await supabase
           .from('posts')
-          .select('id, user_id, caption, media_urls, created_at, location_id, rating')
+          .select('id, user_id, caption, media_urls, created_at, location_id')
           .eq('location_id', locationId)
+          .not('media_urls', 'is', null)
           .order('created_at', { ascending: false })
           .range(offset, offset + limit - 1);
         
@@ -147,7 +149,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
           const mapped = postRows.map((p: any) => ({
             ...p,
             profiles: profilesMap.get(p.user_id) || null,
-          }));
+          })).filter((p: any) => p.media_urls && Array.isArray(p.media_urls) && p.media_urls.length > 0);
           if (page === 1) {
             setPosts(mapped);
           } else {
@@ -578,7 +580,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                     <div className="flex justify-center py-8">
                       <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
                     </div>
-                  ) : posts.filter((post) => post.media_urls && post.media_urls.length > 0).length === 0 ? (
+                  ) : posts.length === 0 ? (
                     <div className="py-8 text-center">
                       <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
                         <Camera className="w-8 h-8 text-muted-foreground" />
@@ -590,9 +592,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                   ) : (
                     <>
                       <div className="grid grid-cols-2 gap-3 w-full auto-rows-[1fr]">
-                        {posts
-                          .filter((post) => post.media_urls && post.media_urls.length > 0)
-                          .map((post) => (
+                        {posts.map((post) => (
                           <button
                             key={post.id} 
                             onClick={(e) => {
