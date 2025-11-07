@@ -291,9 +291,8 @@ const BusinessOverviewPageV2 = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-muted/5 to-background pb-24">
-      <div className="max-w-screen-sm mx-auto">
-        {/* Sticky Header */}
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm">
           <div className="flex items-center justify-between p-3">
             <div className="flex items-center gap-3 flex-1">
               {/* Profile Image - Smaller Icon */}
@@ -472,7 +471,6 @@ const BusinessOverviewPageV2 = () => {
             <BusinessLocationPosts posts={posts} onPinToggle={handlePinToggle} />
           </div>
         )}
-      </div>
     </div>
   );
 };
