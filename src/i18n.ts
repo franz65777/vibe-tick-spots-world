@@ -280,6 +280,8 @@ const resources = {
       beFirstToShare: 'Be the first to share your experience at',
       shareExperience: 'Share Your Experience',
       yourPostsAt: 'Your Posts at',
+      postsTab: 'Posts',
+      reviewsTab: 'Reviews',
     },
     add: {
       newPost: 'New Post',
@@ -902,6 +904,8 @@ const resources = {
       beFirstToShare: 'Sé el primero en compartir tu experiencia en',
       shareExperience: 'Comparte tu Experiencia',
       yourPostsAt: 'Tus publicaciones en',
+      postsTab: 'Publicaciones',
+      reviewsTab: 'Reseñas',
     },
     add: {
       newPost: 'Nueva publicación',
@@ -1511,6 +1515,8 @@ const resources = {
       beFirstToShare: 'Sii il primo a condividere la tua esperienza a',
       shareExperience: 'Condividi la Tua Esperienza',
       yourPostsAt: 'I tuoi post a',
+      postsTab: 'Post',
+      reviewsTab: 'Recensioni',
     },
     add: {
       newPost: 'Nuovo Post',
@@ -2116,6 +2122,8 @@ const resources = {
       beFirstToShare: 'Soyez le premier à partager votre expérience à',
       shareExperience: 'Partagez Votre Expérience',
       yourPostsAt: 'Vos posts à',
+      postsTab: 'Publications',
+      reviewsTab: 'Avis',
     },
     add: {
       newPost: 'Nouveau post',
@@ -2654,6 +2662,8 @@ const resources = {
       beFirstToShare: 'Seien Sie der Erste, der Ihre Erfahrung teilt in',
       shareExperience: 'Teilen Sie Ihre Erfahrung',
       yourPostsAt: 'Ihre Beiträge in',
+      postsTab: 'Beiträge',
+      reviewsTab: 'Bewertungen',
     },
     add: {
       newPost: 'Neuer Beitrag',
@@ -3112,6 +3122,8 @@ const resources = {
       beFirstToShare: 'Seja o primeiro a compartilhar sua experiência em',
       shareExperience: 'Compartilhe Sua Experiência',
       yourPostsAt: 'Suas publicações em',
+      postsTab: 'Publicações',
+      reviewsTab: 'Avaliações',
     },
     add: {
       newPost: 'Nova publicação',
@@ -3509,6 +3521,8 @@ const resources = {
       confirmedByMultipleUsers: '多用户确认',
       hasPhotos: '有照片',
       locationsWithImages: '有图片的地点',
+      postsTab: '帖子',
+      reviewsTab: '评论',
     },
     add: {
       newPost: '新帖子',
@@ -3878,6 +3892,8 @@ const resources = {
       confirmedByMultipleUsers: '複数のユーザーが確認',
       hasPhotos: '写真あり',
       locationsWithImages: '画像付きの場所',
+      postsTab: '投稿',
+      reviewsTab: 'レビュー',
     },
     add: {
       newPost: '新しい投稿',
@@ -4268,6 +4284,8 @@ const resources = {
       confirmedByMultipleUsers: '여러 사용자 확인',
       hasPhotos: '사진 있음',
       locationsWithImages: '이미지 있는 장소',
+      postsTab: '게시물',
+      reviewsTab: '리뷰',
     },
     add: {
       newPost: '새 게시물',
@@ -4658,6 +4676,8 @@ const resources = {
       confirmedByMultipleUsers: 'تم التأكيد من قبل عدة مستخدمين',
       hasPhotos: 'يحتوي على صور',
       locationsWithImages: 'أماكن بها صور',
+      postsTab: 'المنشورات',
+      reviewsTab: 'التقييمات',
     },
     add: {
       newPost: 'منشور جديد',
@@ -5047,6 +5067,8 @@ const resources = {
       confirmedByMultipleUsers: 'कई उपयोगकर्ताओं द्वारा पुष्टि',
       hasPhotos: 'फोटो के साथ',
       locationsWithImages: 'छवियों के साथ स्थान',
+      postsTab: 'पोस्ट',
+      reviewsTab: 'समीक्षाएं',
     },
     add: {
       newPost: 'नई पोस्ट',
@@ -5437,6 +5459,8 @@ const resources = {
       confirmedByMultipleUsers: 'Подтверждено несколькими пользователями',
       hasPhotos: 'С фотографиями',
       locationsWithImages: 'Места с изображениями',
+      postsTab: 'Публикации',
+      reviewsTab: 'Отзывы',
     },
     add: {
       newPost: 'Новый пост',

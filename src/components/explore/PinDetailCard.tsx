@@ -477,28 +477,45 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
 
           {/* Tabs and Content */}
           <div className="flex-1 overflow-hidden flex flex-col">
-            {/* Tab Navigation */}
-            <div className="flex-shrink-0 border-b border-border px-4">
-              <div className="flex gap-6">
+            {/* Tab Navigation with Horizontal Scroll */}
+            <div 
+              className="flex-shrink-0 px-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory"
+              onScroll={(e) => {
+                const scrollLeft = e.currentTarget.scrollLeft;
+                const width = e.currentTarget.offsetWidth;
+                if (scrollLeft < width / 2) {
+                  setActiveTab('posts');
+                } else {
+                  setActiveTab('reviews');
+                }
+              }}
+            >
+              <div className="flex gap-0 min-w-full">
                 <button
                   onClick={() => setActiveTab('posts')}
-                  className={`py-3 px-1 text-sm font-medium border-b-2 transition-colors ${
+                  className={`py-3 px-4 text-sm font-medium transition-colors relative whitespace-nowrap snap-center flex-1 ${
                     activeTab === 'posts'
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-muted-foreground hover:text-foreground'
+                      ? 'text-primary'
+                      : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  {t('postsTab')}
+                  {t('postsTab', { ns: 'explore', defaultValue: 'Posts' })}
+                  {activeTab === 'posts' && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+                  )}
                 </button>
                 <button
                   onClick={() => setActiveTab('reviews')}
-                  className={`py-3 px-1 text-sm font-medium border-b-2 transition-colors ${
+                  className={`py-3 px-4 text-sm font-medium transition-colors relative whitespace-nowrap snap-center flex-1 ${
                     activeTab === 'reviews'
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-muted-foreground hover:text-foreground'
+                      ? 'text-primary'
+                      : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  {t('reviewsTab')}
+                  {t('reviewsTab', { ns: 'explore', defaultValue: 'Reviews' })}
+                  {activeTab === 'reviews' && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+                  )}
                 </button>
               </div>
             </div>
