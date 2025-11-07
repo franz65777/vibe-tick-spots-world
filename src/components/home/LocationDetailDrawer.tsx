@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Image } from 'lucide-react';
+import { MapPin, Image, Star } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { createLeafletCustomMarker } from '@/utils/leafletMarkerCreator';
 import { formatDetailedAddress } from '@/utils/addressFormatter';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useTranslation } from 'react-i18next';
+import { formatDistanceToNow } from 'date-fns';
 import {
   Drawer,
   DrawerContent,
@@ -42,12 +45,26 @@ interface Post {
   avatar_url: string;
 }
 
+interface Review {
+  id: string;
+  user_id: string;
+  username: string;
+  avatar_url: string | null;
+  rating: number;
+  comment?: string;
+  created_at: string;
+}
+
 const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawerProps) => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [posts, setPosts] = useState<Post[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(false);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
   const [fullAddress, setFullAddress] = useState<string>('');
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [activeTab, setActiveTab] = useState<'posts' | 'reviews'>('posts');
 
   // Leaflet (vanilla) map refs
   const mapDivRef = useRef<HTMLDivElement | null>(null);
@@ -140,6 +157,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
     if (!isOpen || !location) return;
     fetchLocationData();
     fetchLocationPosts();
+    fetchReviews();
   }, [isOpen, location?.place_id]);
 
   const fetchLocationData = async () => {
@@ -223,6 +241,71 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
     }
   };
 
+  const fetchReviews = async () => {
+    if (!location) return;
+    setReviewsLoading(true);
+    try {
+      // Resolve UUID from google_place_id
+      const { data: locationData } = await supabase
+        .from('locations')
+        .select('id')
+        .eq('google_place_id', location.place_id)
+        .maybeSingle();
+
+      if (!locationData) {
+        setReviews([]);
+        setReviewsLoading(false);
+        return;
+      }
+
+      const locationId = locationData.id;
+
+      // Fetch reviews from posts table only
+      const { data: postsData } = await supabase
+        .from('posts')
+        .select('user_id, rating, caption, created_at')
+        .eq('location_id', locationId)
+        .not('rating', 'is', null)
+        .gt('rating', 0);
+
+      if (!postsData || postsData.length === 0) {
+        setReviews([]);
+        setReviewsLoading(false);
+        return;
+      }
+
+      // Get unique user profiles
+      const userIds = [...new Set(postsData.map(p => p.user_id))];
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .in('id', userIds);
+
+      const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+
+      const formattedReviews: Review[] = postsData
+        .map(p => {
+          const profile = profilesMap.get(p.user_id);
+          return {
+            id: `${p.user_id}-${p.created_at}`,
+            user_id: p.user_id,
+            username: profile?.username || 'User',
+            avatar_url: profile?.avatar_url || null,
+            rating: p.rating || 0,
+            comment: p.caption,
+            created_at: p.created_at,
+          };
+        })
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      setReviews(formattedReviews);
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
   const c: any = location?.coordinates || {};
   const lat = Number(c.lat ?? c.latitude ?? 0);
   const lng = Number(c.lng ?? c.longitude ?? 0);
@@ -263,36 +346,104 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
           )}
         </div>
 
-        {/* Posts Section - Scrollable */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="p-4">
-            <h3 className="text-lg font-semibold mb-3 text-foreground sticky top-0 bg-background py-2 z-10">
-              Post degli utenti
-            </h3>
+        {/* Tabs and Content - Scrollable */}
+        <div className="flex-1 overflow-hidden flex flex-col">
+          {/* Tab Navigation */}
+          <div className="flex-shrink-0 border-b border-border px-4">
+            <div className="flex gap-6">
+              <button
+                onClick={() => setActiveTab('posts')}
+                className={`py-3 px-1 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'posts'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {t('postsTab')}
+              </button>
+              <button
+                onClick={() => setActiveTab('reviews')}
+                className={`py-3 px-1 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'reviews'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {t('reviewsTab')}
+              </button>
+            </div>
+          </div>
 
-            {loading ? (
-              <div className="flex justify-center py-8">
-                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-              </div>
-            ) : posts.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Image className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p>Nessun post ancora per questa location</p>
+          {/* Tab Content */}
+          <div className="flex-1 overflow-y-auto">
+            {activeTab === 'posts' ? (
+              <div className="p-4">
+                {loading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : posts.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Image className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p>Nessun post ancora per questa location</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 gap-2 pb-4">
+                    {posts.map((post) => (
+                      <div
+                        key={post.id}
+                        className="aspect-square rounded-lg overflow-hidden bg-muted relative"
+                      >
+                        <img
+                          src={post.media_url}
+                          alt={post.caption}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-2 pb-4">
-                {posts.map((post) => (
-                  <div
-                    key={post.id}
-                    className="aspect-square rounded-lg overflow-hidden bg-muted relative"
-                  >
-                    <img
-                      src={post.media_url}
-                      alt={post.caption}
-                      className="w-full h-full object-cover"
-                    />
+              <div className="p-4">
+                {reviewsLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
                   </div>
-                ))}
+                ) : reviews.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Star className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p>Nessuna recensione ancora</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4 pb-4">
+                    {reviews.map((review) => (
+                      <div key={review.id} className="flex gap-3 pb-4 border-b border-border last:border-0">
+                        <Avatar className="w-10 h-10 shrink-0">
+                          <AvatarImage src={review.avatar_url || ''} />
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            {review.username?.[0]?.toUpperCase() || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="font-semibold text-sm">{review.username}</p>
+                            <div className="flex items-center gap-1">
+                              <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+                              <span className="text-sm font-medium">{review.rating}</span>
+                            </div>
+                          </div>
+                          {review.comment && (
+                            <p className="text-sm text-muted-foreground mb-1">{review.comment}</p>
+                          )}
+                          <p className="text-xs text-muted-foreground">
+                            {formatDistanceToNow(new Date(review.created_at), { addSuffix: true })}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
