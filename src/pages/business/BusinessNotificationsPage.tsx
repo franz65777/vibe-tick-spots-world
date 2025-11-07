@@ -4,8 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBusinessProfile } from '@/hooks/useBusinessProfile';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Bell, Check, MapPin, Star, Users, TrendingUp } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
@@ -115,7 +113,7 @@ const BusinessNotificationsPage = () => {
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-24">
+    <div className="min-h-screen bg-background pb-24">
       <div className="max-w-screen-sm mx-auto">
         {/* Header */}
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b">
@@ -128,88 +126,81 @@ const BusinessNotificationsPage = () => {
               >
                 <ArrowLeft className="w-5 h-5" />
               </Button>
-              <div>
-                <h1 className="text-lg font-bold text-foreground">{t('businessNotifications', { ns: 'business' })}</h1>
-                {unreadCount > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    {unreadCount} {t('unreadNotifications', { count: unreadCount, ns: 'business' })}
-                  </p>
-                )}
-              </div>
+              <h1 className="text-lg font-bold text-foreground">{t('businessNotifications', { ns: 'business' })}</h1>
             </div>
             {unreadCount > 0 && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={markAllAsRead}
-                className="gap-2"
+                className="text-sm"
               >
-                <Check className="w-4 h-4" />
-                {t('markAllRead', { ns: 'business' })}
+                {t('markAllRead', { ns: 'notifications' })}
               </Button>
             )}
           </div>
         </div>
 
         {/* Notifications List */}
-        <div className="p-4 space-y-3">
+        <div>
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
           ) : notifications.length === 0 ? (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
-                  <Bell className="w-8 h-8 text-muted-foreground" />
-                </div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">
-                  {t('noNotificationsYet', { ns: 'business' })}
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  {t('notificationsDescription', { ns: 'business' })}
-                </p>
-              </CardContent>
-            </Card>
+            <div className="p-12 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                <Bell className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                {t('noNotificationsYet', { ns: 'business' })}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {t('notificationsDescription', { ns: 'business' })}
+              </p>
+            </div>
           ) : (
             notifications.map((notification) => (
-              <Card
+              <div
                 key={notification.id}
-                className={`cursor-pointer transition-all hover:shadow-md ${
-                  !notification.is_read ? 'border-l-4 border-l-primary bg-primary/5' : ''
-                }`}
                 onClick={() => !notification.is_read && markAsRead(notification.id)}
+                className={`w-full cursor-pointer active:bg-accent/50 transition-colors ${
+                  !notification.is_read ? 'bg-accent/20' : 'bg-background'
+                }`}
               >
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    <div className={`p-2 rounded-full ${
-                      !notification.is_read ? 'bg-primary/10' : 'bg-muted'
-                    }`}>
-                      {getNotificationIcon(notification.type)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2 mb-1">
-                        <h4 className="font-semibold text-foreground text-sm">
+                <div className="flex items-start gap-3 py-3 px-4">
+                  {/* Icon */}
+                  <div className={`p-2 rounded-full flex-shrink-0 ${
+                    !notification.is_read ? 'bg-primary/10' : 'bg-muted'
+                  }`}>
+                    {getNotificationIcon(notification.type)}
+                  </div>
+                  
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-foreground text-[13px] leading-tight">
                           {notification.title}
                         </h4>
-                        {!notification.is_read && (
-                          <Badge variant="secondary" className="text-xs">
-                            {t('new', { ns: 'messages' })}
-                          </Badge>
-                        )}
+                        <p className="text-muted-foreground text-[12px] mt-0.5 line-clamp-2">
+                          {notification.message}
+                        </p>
+                        <p className="text-muted-foreground text-[12px] mt-1">
+                          {formatDistanceToNow(new Date(notification.created_at), {
+                            addSuffix: true,
+                          })}
+                        </p>
                       </div>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {notification.message}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(notification.created_at), {
-                          addSuffix: true,
-                        })}
-                      </p>
+                      
+                      {/* Unread indicator */}
+                      {!notification.is_read && (
+                        <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-1.5" />
+                      )}
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))
           )}
         </div>
