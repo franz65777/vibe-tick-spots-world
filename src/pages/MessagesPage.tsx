@@ -1313,7 +1313,7 @@ const MessagesPage = () => {
            </div>
 
           {/* Message Input */}
-          <div className="shrink-0 p-3 bg-background">
+          <div className="shrink-0 p-3 bg-background pb-20">
             <div className="flex items-center gap-2">
               <Button
                 variant="ghost"

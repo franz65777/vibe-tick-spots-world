@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import cameraIcon3d from '@/assets/icon-camera-3d.png';
 import starIcon3d from '@/assets/icon-star-3d.png';
-import pinIcon from '@/assets/pin-icon.png';
+import pinLocationIcon3d from '@/assets/icon-pin-location-3d.png';
 
 interface ProfileMessageCardProps {
   profileData: {
@@ -69,13 +69,13 @@ const ProfileMessageCard = ({ profileData }: ProfileMessageCardProps) => {
       onClick={handleViewProfile}
     >
       <div className="flex items-center gap-3 mb-3">
-        <Avatar className="h-12 w-12">
+        <Avatar className="h-10 w-10">
           <AvatarImage src={profileData.avatar_url} />
           <AvatarFallback className="bg-primary/10 text-primary">
             {profileData.username?.charAt(0).toUpperCase()}
           </AvatarFallback>
         </Avatar>
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 text-left">
           <p className="font-bold text-foreground text-base">{displayUsername}</p>
           {profileData.bio && (
             <p className="text-xs text-muted-foreground truncate">{profileData.bio}</p>
@@ -90,7 +90,7 @@ const ProfileMessageCard = ({ profileData }: ProfileMessageCardProps) => {
           <span className="font-bold text-foreground">{photosCount ?? '—'}</span>
         </div>
         <div className="flex items-center gap-2">
-          <img src={pinIcon} alt="Luoghi salvati" className="w-5 h-5" loading="lazy" />
+          <img src={pinLocationIcon3d} alt="Luoghi salvati" className="w-5 h-5" loading="lazy" />
           <span className="font-bold text-foreground">{savedCount ?? '—'}</span>
         </div>
         <div className="flex items-center gap-2">
