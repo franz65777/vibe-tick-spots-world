@@ -1,5 +1,5 @@
 
-import { Heart, MessageCircle, Grid3X3, Trash2, Star } from 'lucide-react';
+import { Heart, MessageCircle, Grid3X3, Trash2, Star, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import PostDetailModalMobile from '../explore/PostDetailModalMobile';
 import { useOptimizedPosts } from '@/hooks/useOptimizedPosts';
@@ -10,6 +10,8 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 
 interface Post {
   id: string;
@@ -121,30 +123,36 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
 
   return (
     <div className="px-4">
-      {/* Filter Tabs */}
-      <div className="flex bg-muted rounded-xl p-1 mb-4">
-        <button
-          onClick={() => setPostFilter('photos')}
-          className={cn(
-            "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all",
-            postFilter === 'photos'
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground"
-          )}
-        >
-          {t('posts', { ns: 'profile', defaultValue: 'Posts' })}
-        </button>
-        <button
-          onClick={() => setPostFilter('reviews')}
-          className={cn(
-            "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all",
-            postFilter === 'reviews'
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground"
-          )}
-        >
-          {t('reviews', { ns: 'common', defaultValue: 'Reviews' })}
-        </button>
+      {/* Filter Dropdown */}
+      <div className="mb-4">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="ghost" 
+              className="h-auto p-0 hover:bg-transparent font-semibold text-base gap-1.5 -ml-2 justify-start text-left"
+            >
+              {postFilter === 'photos' 
+                ? t('posts', { ns: 'profile', defaultValue: 'Posts' })
+                : t('reviews', { ns: 'leaderboard', defaultValue: 'Reviews' })
+              }
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-48 bg-background z-50">
+            <DropdownMenuItem 
+              onClick={() => setPostFilter('photos')}
+              className="cursor-pointer focus:bg-accent"
+            >
+              <span className="font-medium">{t('posts', { ns: 'profile', defaultValue: 'Posts' })}</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => setPostFilter('reviews')}
+              className="cursor-pointer focus:bg-accent"
+            >
+              <span className="font-medium">{t('reviews', { ns: 'leaderboard', defaultValue: 'Reviews' })}</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {displayedPosts.length === 0 ? (
