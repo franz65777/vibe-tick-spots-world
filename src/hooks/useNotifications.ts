@@ -59,10 +59,12 @@ export const useNotifications = () => {
       
       const mutedUserIds = mutedSettings?.map(s => s.muted_user_id).filter(Boolean) || [];
       
+      // Exclude business-specific notification types from personal notifications
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
         .eq('user_id', user.id)
+        .not('type', 'in', '(business_post,business_review,location_save,business_mention)')
         .gt('expires_at', new Date().toISOString())
         .order('created_at', { ascending: false })
         .limit(50);

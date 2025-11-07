@@ -11,6 +11,7 @@ import { ArrowLeft, MessageSquare, Send } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { messageService, MessageThread } from '@/services/messageService';
 
 interface Message {
   id: string;
@@ -43,37 +44,18 @@ const BusinessMessagesPage = () => {
     try {
       setLoading(true);
       
-      // Fetch business-specific messages (messages related to the business location)
-      const { data: messagesData, error: messagesError } = await supabase
-        .from('direct_messages')
-        .select('*')
-        .eq('receiver_id', user?.id)
-        .eq('message_context', 'business')
-        .not('location_id', 'is', null)
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      if (messagesError) throw messagesError;
-
-      if (!messagesData || messagesData.length === 0) {
-        setMessages([]);
-        return;
-      }
-
-      // Fetch profiles for senders
-      const senderIds = [...new Set(messagesData.map(m => m.sender_id))];
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, username, avatar_url')
-        .in('id', senderIds);
-
-      if (profilesError) throw profilesError;
-
-      // Map profiles to messages
-      const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
-      const messagesWithProfiles = messagesData.map(message => ({
-        ...message,
-        profiles: profilesMap.get(message.sender_id) || {
+      // Fetch business-specific message threads using the service
+      const data = await messageService.getMessageThreads(true);
+      
+      // Transform to Message format with profiles
+      const messagesWithProfiles = data.map(thread => ({
+        id: thread.last_message?.id || '',
+        sender_id: thread.last_message?.sender_id || '',
+        receiver_id: thread.last_message?.receiver_id || '',
+        content: thread.last_message?.content || '',
+        is_read: thread.last_message?.is_read || false,
+        created_at: thread.last_message?.created_at || thread.last_message_at,
+        profiles: thread.other_user || {
           username: 'Unknown User',
           avatar_url: undefined
         }

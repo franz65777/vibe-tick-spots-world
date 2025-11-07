@@ -167,7 +167,8 @@ const MessagesPage = () => {
     if (!user) return;
     try {
       setLoading(true);
-      const data = await messageService.getMessageThreads();
+      // Get only personal (non-business) message threads
+      const data = await messageService.getMessageThreads(false);
       setThreads(data || []);
       
       // Load unread counts for each thread

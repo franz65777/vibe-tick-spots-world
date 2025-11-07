@@ -39,12 +39,13 @@ const BusinessNotificationsPage = () => {
     try {
       setLoading(true);
       
-      // Fetch notifications related to the business
+      // Fetch ONLY business-specific notifications
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
         .eq('user_id', user?.id)
-        .or(`type.eq.business_post,type.eq.business_review,type.eq.location_save,type.eq.business_mention`)
+        .in('type', ['business_post', 'business_review', 'location_save', 'business_mention'])
+        .gt('expires_at', new Date().toISOString())
         .order('created_at', { ascending: false })
         .limit(50);
 

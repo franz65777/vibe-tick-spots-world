@@ -209,12 +209,12 @@ class MessageService {
     }
   }
 
-  async getMessageThreads(): Promise<MessageThread[]> {
+  async getMessageThreads(isBusinessContext: boolean = false): Promise<MessageThread[]> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      const { data: threads, error } = await supabase
+      let query = supabase
         .from('message_threads')
         .select(`
           *,
@@ -225,17 +225,33 @@ class MessageService {
             created_at,
             is_read,
             sender_id,
-            receiver_id
+            receiver_id,
+            message_context
           )
         `)
-        .or(`participant_1_id.eq.${user.id},participant_2_id.eq.${user.id}`)
+        .or(`participant_1_id.eq.${user.id},participant_2_id.eq.${user.id}`);
+
+      // Filter by business context in the last message
+      if (isBusinessContext) {
+        // Business messages: only threads where last message has message_context = 'business'
+        query = query.eq('direct_messages.message_context', 'business');
+      }
+
+      const { data: threads, error } = await query
         .order('last_message_at', { ascending: false });
 
       if (error) throw error;
 
+      // Filter threads based on context after fetching
+      const filteredThreads = (threads || []).filter(thread => {
+        if (!thread.last_message) return false;
+        const context = (thread.last_message as any).message_context;
+        return isBusinessContext ? context === 'business' : context !== 'business';
+      });
+
       // Get other participant details for each thread
       const threadsWithUsers = await Promise.all(
-        (threads || []).map(async (thread) => {
+        filteredThreads.map(async (thread) => {
           const otherUserId = thread.participant_1_id === user.id 
             ? thread.participant_2_id 
             : thread.participant_1_id;

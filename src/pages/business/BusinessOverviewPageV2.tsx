@@ -89,11 +89,13 @@ const BusinessOverviewPageV2 = () => {
     if (!user) return;
     
     try {
+      // Count ONLY business-specific unread notifications
       const { count } = await supabase
         .from('notifications')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
-        .eq('is_read', false);
+        .eq('is_read', false)
+        .in('type', ['business_post', 'business_review', 'location_save', 'business_mention']);
       
       setUnreadNotifications(count || 0);
     } catch (error) {
