@@ -252,16 +252,19 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                 </>
               ) : (
                 /* Review Card */
-                <div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/5 flex flex-col items-start justify-between p-4">
-                  {/* Header with category icon and location name */}
-                  <div className="flex items-start gap-3 w-full">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      {(() => {
-                        const CategoryIcon = post.locations?.category ? getCategoryIcon(post.locations.category) : Star;
-                        return <CategoryIcon className="w-6 h-6 text-primary" />;
-                      })()}
-                    </div>
-                    <div className="flex-1 min-w-0">
+                <div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-4 flex items-start gap-3">
+                  {/* Category Icon */}
+                  <div className="w-14 h-14 rounded-full bg-background/60 flex items-center justify-center flex-shrink-0">
+                    {(() => {
+                      const CategoryIcon = post.locations?.category ? getCategoryIcon(post.locations.category) : Star;
+                      return <CategoryIcon className="w-7 h-7 text-primary" />;
+                    })()}
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    {/* Location name and rating on same line */}
+                    <div className="flex items-center gap-2 mb-1">
                       {post.locations ? (
                         <button
                           onClick={(e) => {
@@ -278,37 +281,31 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                               address: post.locations.address,
                             });
                           }}
-                          className="font-semibold text-sm text-foreground hover:text-primary transition-colors text-left line-clamp-2"
+                          className="font-bold text-base text-foreground hover:text-primary transition-colors text-left truncate"
                         >
                           {post.locations.name}
                         </button>
                       ) : (
-                        <p className="font-semibold text-sm text-muted-foreground line-clamp-2">
+                        <p className="font-bold text-base text-muted-foreground truncate">
                           {t('unknownLocation', { ns: 'common', defaultValue: 'Unknown Location' })}
                         </p>
                       )}
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {new Date(post.created_at).toLocaleDateString(undefined, { 
-                          month: 'short', 
-                          day: 'numeric' 
-                        })}
-                      </p>
+                      
+                      {/* Rating inline */}
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
+                        <span className="text-base font-bold text-foreground">{post.rating}</span>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Rating */}
-                  <div className="flex items-center gap-1.5">
-                    <Star className="w-5 h-5 fill-amber-500 text-amber-500" />
-                    <span className="text-2xl font-bold text-foreground">{post.rating}</span>
-                    <span className="text-sm text-muted-foreground">/10</span>
-                  </div>
-
-                  {/* Caption */}
-                  {post.caption && (
-                    <p className="text-xs text-muted-foreground line-clamp-2 w-full">
-                      {post.caption}
+                    {/* Date */}
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(post.created_at).toLocaleDateString(undefined, { 
+                        day: 'numeric',
+                        month: 'short'
+                      })}
                     </p>
-                  )}
+                  </div>
 
                   {/* Delete button for reviews */}
                   {isOwnProfile && (
