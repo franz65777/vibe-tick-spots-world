@@ -1,4 +1,4 @@
-import { UserCheck, UserMinus, UserPlus, X } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -7,11 +7,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { useStories } from '@/hooks/useStories';
+import StoriesViewer from '../StoriesViewer';
+import { cn } from '@/lib/utils';
 
 interface FollowersModalProps {
   isOpen: boolean;
   onClose: () => void;
-  type: 'followers' | 'following';
+  initialTab?: 'followers' | 'following';
   userId?: string;
 }
 
@@ -22,13 +25,17 @@ interface UserWithFollowStatus {
   isFollowing?: boolean;
 }
 
-const FollowersModal = ({ isOpen, onClose, type, userId }: FollowersModalProps) => {
+const FollowersModal = ({ isOpen, onClose, initialTab = 'followers', userId }: FollowersModalProps) => {
   const { t } = useTranslation();
   const { user: currentUser } = useAuth();
   const navigate = useNavigate();
   const targetUserId = userId || currentUser?.id;
+  const [activeTab, setActiveTab] = useState<'followers' | 'following'>(initialTab);
   const [users, setUsers] = useState<UserWithFollowStatus[]>([]);
   const [loading, setLoading] = useState(true);
+  const { stories } = useStories();
+  const [isStoriesViewerOpen, setIsStoriesViewerOpen] = useState(false);
+  const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
 
   useEffect(() => {
     const fetchFollowData = async () => {
@@ -42,15 +49,15 @@ const FollowersModal = ({ isOpen, onClose, type, userId }: FollowersModalProps) 
         let query = supabase
           .from('follows')
           .select(`
-            ${type === 'followers' ? 'follower_id' : 'following_id'},
-            profiles!${type === 'followers' ? 'follows_follower_id_fkey' : 'follows_following_id_fkey'} (
+            ${activeTab === 'followers' ? 'follower_id' : 'following_id'},
+            profiles!${activeTab === 'followers' ? 'follows_follower_id_fkey' : 'follows_following_id_fkey'} (
               id,
               username,
               avatar_url
             )
           `);
 
-        if (type === 'followers') {
+        if (activeTab === 'followers') {
           query = query.eq('following_id', targetUserId);
         } else {
           query = query.eq('follower_id', targetUserId);
@@ -96,7 +103,7 @@ const FollowersModal = ({ isOpen, onClose, type, userId }: FollowersModalProps) 
     if (isOpen) {
       fetchFollowData();
     }
-  }, [targetUserId, type, isOpen, currentUser]);
+  }, [targetUserId, activeTab, isOpen, currentUser]);
 
   const followUser = async (targetId: string) => {
     if (!currentUser) return;
@@ -130,7 +137,7 @@ const FollowersModal = ({ isOpen, onClose, type, userId }: FollowersModalProps) 
         .eq('following_id', targetId);
 
       if (!error) {
-        if (type === 'following') {
+        if (activeTab === 'following') {
           setUsers(prev => prev.filter(u => u.id !== targetId));
         } else {
           setUsers(prev => prev.map(u => 
@@ -167,21 +174,72 @@ const FollowersModal = ({ isOpen, onClose, type, userId }: FollowersModalProps) 
 
   const isOwnProfile = currentUser?.id === targetUserId;
 
+  const handleAvatarClick = (user: UserWithFollowStatus) => {
+    const now = new Date();
+    const userStories = stories.filter(s => 
+      s.user_id === user.id && 
+      new Date(s.expires_at) > now
+    );
+    
+    if (userStories.length > 0) {
+      const storyIndex = stories.findIndex(s => s.user_id === user.id);
+      setSelectedStoryIndex(storyIndex >= 0 ? storyIndex : 0);
+      setIsStoriesViewerOpen(true);
+    } else {
+      navigate(`/profile/${user.id}`);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
-      <div className="bg-background w-full h-[80vh] rounded-t-xl">
+    <>
+      <div className="fixed inset-0 bg-background z-50 flex flex-col">
+        {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
-          <h2 className="text-lg font-semibold text-foreground">
-            {type === 'followers' ? t('followers', { ns: 'common' }) : t('following', { ns: 'common' })}
+          <button onClick={onClose} className="p-2 -ml-2">
+            <ArrowLeft className="w-6 h-6 text-foreground" />
+          </button>
+          <h2 className="text-lg font-semibold text-foreground flex-1 text-center">
+            {currentUser?.user_metadata?.username || 'User'}
           </h2>
-          <button onClick={onClose}>
-            <X className="w-6 h-6 text-muted-foreground" />
+          <div className="w-10" />
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b border-border overflow-x-auto">
+          <button
+            onClick={() => setActiveTab('followers')}
+            className={cn(
+              "flex-1 py-3 text-sm font-medium transition-colors relative min-w-[120px]",
+              activeTab === 'followers' 
+                ? "text-foreground" 
+                : "text-muted-foreground"
+            )}
+          >
+            {t('followers', { ns: 'common' })}
+            {activeTab === 'followers' && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('following')}
+            className={cn(
+              "flex-1 py-3 text-sm font-medium transition-colors relative min-w-[120px]",
+              activeTab === 'following' 
+                ? "text-foreground" 
+                : "text-muted-foreground"
+            )}
+          >
+            {t('following', { ns: 'common' })}
+            {activeTab === 'following' && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+            )}
           </button>
         </div>
         
-        <ScrollArea className="h-[calc(80vh-80px)]">
+        {/* Content */}
+        <ScrollArea className="flex-1">
           <div className="p-4 space-y-4">
             {loading ? (
               <div className="flex items-center justify-center py-8">
@@ -189,76 +247,112 @@ const FollowersModal = ({ isOpen, onClose, type, userId }: FollowersModalProps) 
               </div>
             ) : users.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                {type === 'followers' ? t('noFollowers', { ns: 'profile' }) : t('noFollowing', { ns: 'profile' })}
+                {activeTab === 'followers' ? t('noFollowers', { ns: 'profile' }) : t('noFollowing', { ns: 'profile' })}
               </div>
             ) : (
-              users.map((user) => (
-                <div key={user.id} className="flex items-center justify-between">
-                  <button
-                    onClick={() => navigate(`/profile/${user.id}`)}
-                    className="flex items-center gap-3 flex-1 hover:opacity-70 transition-opacity"
-                  >
-                    <Avatar className="w-12 h-12">
-                      <AvatarImage src={user.avatar_url || undefined} />
-                      <AvatarFallback>
-                        {getInitials(user.username || 'User')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="text-left">
-                      <p className="font-medium text-foreground">{user.username || 'Unknown User'}</p>
-                      <p className="text-sm text-muted-foreground">@{user.username}</p>
+              users.map((user) => {
+                const now = new Date();
+                const userHasStories = stories.some(s => 
+                  s.user_id === user.id && 
+                  new Date(s.expires_at) > now
+                );
+
+                return (
+                  <div key={user.id} className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <button
+                        onClick={() => handleAvatarClick(user)}
+                        className="shrink-0"
+                      >
+                        <div className={cn(
+                          "rounded-full p-[2px]",
+                          userHasStories ? "bg-gradient-to-tr from-primary to-primary/50" : ""
+                        )}>
+                          <Avatar className="w-12 h-12 border-2 border-background">
+                            <AvatarImage src={user.avatar_url || undefined} />
+                            <AvatarFallback>
+                              {getInitials(user.username || 'User')}
+                            </AvatarFallback>
+                          </Avatar>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => navigate(`/profile/${user.id}`)}
+                        className="text-left min-w-0 flex-1"
+                      >
+                        <p className="font-medium text-foreground truncate">{user.username || 'Unknown User'}</p>
+                        <p className="text-sm text-muted-foreground truncate">@{user.username}</p>
+                      </button>
                     </div>
-                  </button>
-                  
-                  {currentUser?.id !== user.id && (
-                    isOwnProfile && type === 'following' ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => unfollowUser(user.id)}
-                        className="flex items-center gap-2"
-                      >
-                        <UserCheck className="w-4 h-4" />
-                        {t('following', { ns: 'common' })}
-                      </Button>
-                    ) : isOwnProfile && type === 'followers' ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => removeFollower(user.id)}
-                        className="flex items-center gap-2 text-destructive hover:bg-destructive/10"
-                      >
-                        <UserMinus className="w-4 h-4" />
-                        {t('remove', { ns: 'common' })}
-                      </Button>
-                    ) : user.isFollowing ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => unfollowUser(user.id)}
-                        className="flex items-center gap-2"
-                      >
-                        <UserCheck className="w-4 h-4" />
-                        {t('following', { ns: 'common' })}
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        onClick={() => followUser(user.id)}
-                        className="flex items-center gap-2"
-                      >
-                        <UserPlus className="w-4 h-4" />
-                        {t('follow', { ns: 'common' })}
-                      </Button>
-                    )
-                  )}
-                </div>
-              ))
+                    
+                    {currentUser?.id !== user.id && (
+                      isOwnProfile && activeTab === 'following' ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => unfollowUser(user.id)}
+                          className="rounded-full shrink-0"
+                        >
+                          {t('following', { ns: 'common' })}
+                        </Button>
+                      ) : isOwnProfile && activeTab === 'followers' ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => removeFollower(user.id)}
+                          className="rounded-full text-destructive hover:bg-destructive/10 shrink-0"
+                        >
+                          {t('remove', { ns: 'common' })}
+                        </Button>
+                      ) : user.isFollowing ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => unfollowUser(user.id)}
+                          className="rounded-full shrink-0"
+                        >
+                          {t('following', { ns: 'common' })}
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          onClick={() => followUser(user.id)}
+                          className="rounded-full shrink-0"
+                        >
+                          {t('follow', { ns: 'common' })}
+                        </Button>
+                      )
+                    )}
+                  </div>
+                );
+              })
             )}
           </div>
         </ScrollArea>
       </div>
-    </div>
+
+      {isStoriesViewerOpen && (
+        <StoriesViewer
+          onClose={() => setIsStoriesViewerOpen(false)}
+          stories={stories.map(s => ({
+            id: s.id,
+            userId: s.user_id,
+            userName: users.find(u => u.id === s.user_id)?.username || 'User',
+            userAvatar: users.find(u => u.id === s.user_id)?.avatar_url || '',
+            mediaUrl: s.media_url,
+            mediaType: s.media_type as 'image' | 'video',
+            locationId: s.location_id || '',
+            locationName: s.location_name || '',
+            locationAddress: s.location_address || '',
+            locationCategory: '',
+            timestamp: s.created_at,
+            isViewed: false
+          }))}
+          initialStoryIndex={selectedStoryIndex}
+          onStoryViewed={() => {}}
+        />
+      )}
+    </>
   );
 };
 

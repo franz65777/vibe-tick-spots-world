@@ -190,8 +190,15 @@ const ProfileHeader = ({
             </div>
           </div>
 
+          {/* Bio - only show if exists */}
+          {profile?.bio && (
+            <p className="text-sm text-foreground text-left line-clamp-2 mb-3">
+              {profile.bio}
+            </p>
+          )}
+
           {/* Stats Row (without Posts) */}
-          <div className="flex gap-4 mb-2">
+          <div className="flex gap-4">
             <button 
               className="text-center"
               onClick={onFollowersClick}
@@ -216,13 +223,6 @@ const ProfileHeader = ({
               <div className="text-xs text-muted-foreground">{t('saved', { ns: 'mapFilters' })}</div>
             </button>
           </div>
-
-          {/* Bio - only show if exists */}
-          {profile?.bio && (
-            <p className="text-sm text-foreground text-left line-clamp-2">
-              {profile.bio}
-            </p>
-          )}
         </div>
       </div>
 

@@ -393,7 +393,7 @@ const UserProfilePage = () => {
       <FollowersModal 
         isOpen={modalState.isOpen}
         onClose={closeModal}
-        type={modalState.type || 'followers'}
+        initialTab={modalState.type || 'followers'}
         userId={userId}
       />
 
