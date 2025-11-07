@@ -9,6 +9,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { useMarketingCampaign } from '@/hooks/useMarketingCampaign';
 import MarketingCampaignBanner from '@/components/explore/MarketingCampaignBanner';
+import { useLocationStats } from '@/hooks/useLocationStats';
+import { Star } from 'lucide-react';
 
 interface PlaceCardProps {
   place: Place;
@@ -46,6 +48,7 @@ const PlaceCard = ({
 
   const isMuted = mutedLocations?.some((m: any) => m.location_id === place.id);
   const { campaign } = useMarketingCampaign(place.id, place.google_place_id);
+  const { stats } = useLocationStats(place.id, place.google_place_id || null);
 
   const handleCommentClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -156,6 +159,12 @@ const PlaceCard = ({
               </svg>
               <span>{getSavesCount()} saved</span>
             </div>
+            {stats.averageRating && (
+              <div className="flex items-center gap-1">
+                <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                <span>{stats.averageRating.toFixed(1)}</span>
+              </div>
+            )}
             <div className="flex items-center gap-1">
               <Users className="w-4 h-4 text-blue-400" />
               <span>{getVisitorCount()} visited</span>
