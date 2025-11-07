@@ -76,6 +76,11 @@ export const PostEditor: React.FC<PostEditorProps> = ({
     isUploading,
     canSubmit
   });
+  
+  const handleBack = () => {
+    const targetPath = isBusinessAccount ? '/business/add' : '/add';
+    navigate(targetPath);
+  };
 
   if (selectedFiles.length === 0) {
     return (
@@ -94,7 +99,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background px-4 py-3 flex items-center justify-between">
         <button
-          onClick={() => navigate(-1)}
+          onClick={handleBack}
           className="p-2 hover:bg-muted rounded-lg transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
