@@ -1,27 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronLeft, MapPin, Calendar, Users, Heart, MessageCircle, Share2, Bookmark, X, Navigation, Star, Bell, BellOff, Camera } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { MapPin, Navigation, Bookmark, Share2, Star, Bell, BellOff, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useTranslation } from 'react-i18next';
-
+import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLocationInteraction } from '@/hooks/useLocationInteraction';
 import { locationInteractionService } from '@/services/locationInteractionService';
-import PlaceInteractionModal from '@/components/home/PlaceInteractionModal';
 import { LocationShareModal } from './LocationShareModal';
 import PostDetailModal from './PostDetailModal';
 import LocationReviewModal from './LocationReviewModal';
 import { toast } from 'sonner';
 import SavedByModal from './SavedByModal';
-import { useNormalizedCity } from '@/hooks/useNormalizedCity';
-import { useUserPosts } from '@/hooks/useUserPosts';
 import { useDetailedAddress } from '@/hooks/useDetailedAddress';
 import { useLocationStats } from '@/hooks/useLocationStats';
 import { useMutedLocations } from '@/hooks/useMutedLocations';
 import { useMarketingCampaign } from '@/hooks/useMarketingCampaign';
 import MarketingCampaignBanner from './MarketingCampaignBanner';
-import { cn } from '@/lib/utils';
+import { usePinEngagement } from '@/hooks/usePinEngagement';
+import { CategoryIcon } from '@/components/common/CategoryIcon';
+import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow, Locale } from 'date-fns';
 import { it, es, pt, fr, de, ja, ko, ar, hi, ru, zhCN } from 'date-fns/locale';
 
@@ -39,6 +36,7 @@ const localeMap: Record<string, Locale> = {
   ru,
   'zh-CN': zhCN,
 };
+
 interface LocationPost {
   id: string;
   user_id: string;
@@ -55,6 +53,7 @@ interface LocationPost {
     avatar_url: string;
   } | null;
 }
+
 interface LocationPostLibraryProps {
   place: {
     id: string;
@@ -72,22 +71,14 @@ interface LocationPostLibraryProps {
   isOpen: boolean;
   onClose: () => void;
 }
-const LocationPostLibrary = ({
-  place,
-  isOpen,
-  onClose
-}: LocationPostLibraryProps) => {
+
+const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProps) => {
   const { t, i18n } = useTranslation();
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
   const { mutedLocations, muteLocation, unmuteLocation, isMuting } = useMutedLocations(user?.id);
   const [posts, setPosts] = useState<LocationPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
-  const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
-  const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
-  const [showComments, setShowComments] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [postsPage, setPostsPage] = useState(1);
@@ -95,27 +86,27 @@ const LocationPostLibrary = ({
   const [isSaved, setIsSaved] = useState(false);
   const [showSavedBy, setShowSavedBy] = useState(false);
   const [activeTab, setActiveTab] = useState<'posts' | 'reviews'>('posts');
-  const { posts: userPosts } = useUserPosts(user?.id);
-  const { cityLabel: displayCity } = useNormalizedCity({
-    id: place?.google_place_id || place?.id,
-    city: place?.city,
-    coordinates: place?.coordinates,
-    address: place?.address
-  });
+  const [showActionButtons, setShowActionButtons] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
   const { detailedAddress } = useDetailedAddress({
     id: place?.google_place_id || place?.id,
     city: place?.city,
     coordinates: place?.coordinates,
     address: place?.address
   });
-  const {
-    trackSave,
-    trackVisit
-  } = useLocationInteraction();
+  
   const { stats, loading: statsLoading } = useLocationStats(
     place?.id || null,
     place?.google_place_id || null
   );
+  
+  const { engagement, loading: engagementLoading } = usePinEngagement(
+    place?.id || null,
+    place?.google_place_id || null
+  );
+  
   const { campaign } = useMarketingCampaign(place?.id, place?.google_place_id);
   const [isCampaignExpanded, setIsCampaignExpanded] = useState(false);
   
@@ -128,7 +119,6 @@ const LocationPostLibrary = ({
     setPostsPage(1);
     fetchLocationPosts(1);
     if (user) {
-      fetchUserInteractions();
       checkIfLocationSaved();
     }
   }, [place?.id, user, activeTab]);
@@ -137,7 +127,6 @@ const LocationPostLibrary = ({
   useEffect(() => {
     const handleSaveChanged = (event: CustomEvent) => {
       const { locationId, isSaved: newSavedState } = event.detail;
-      // Update if event matches either internal id or google_place_id
       if (locationId === place?.id || locationId === place?.google_place_id) {
         setIsSaved(newSavedState);
       }
@@ -152,9 +141,7 @@ const LocationPostLibrary = ({
   const checkIfLocationSaved = async () => {
     if (!user || !place?.id) return;
     try {
-      // Try with current id first
       let saved = await locationInteractionService.isLocationSaved(place.id);
-      // If not saved, try with google_place_id as fallback
       if (!saved && place.google_place_id && place.google_place_id !== place.id) {
         saved = await locationInteractionService.isLocationSaved(place.google_place_id);
       }
@@ -168,115 +155,91 @@ const LocationPostLibrary = ({
   if (!place) {
     return null;
   }
+
   const fetchLocationPosts = async (page: number = 1) => {
     try {
       setLoading(true);
-      console.log('🔍 FETCHING POSTS FOR LOCATION:', place.name, 'ID:', place.id, 'Page:', page);
       
-      // Find all internal location UUIDs that match this place
       let locationIds: string[] = [];
       
       if (place.google_place_id) {
-        console.log('📍 Finding locations with Google Place ID:', place.google_place_id);
-        // Find all locations with this google_place_id
         const { data: relatedLocations, error: locationError } = await supabase
           .from('locations')
           .select('id, name, google_place_id')
           .eq('google_place_id', place.google_place_id);
         
-        if (locationError) {
-          console.error('❌ Error finding related locations:', locationError);
-        } else if (relatedLocations && relatedLocations.length > 0) {
+        if (!locationError && relatedLocations && relatedLocations.length > 0) {
           locationIds = relatedLocations.map(loc => loc.id);
-          console.log('✅ Found location IDs by Google Place ID:', locationIds);
         }
       }
       
-      // If place.id looks like a UUID, add it
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       if (uuidRegex.test(place.id) && !locationIds.includes(place.id)) {
         locationIds.push(place.id);
       }
       
-      // If no location IDs found yet, try by name
       if (locationIds.length === 0) {
         const { data: nameMatchLocations, error: nameError } = await supabase
           .from('locations')
           .select('id, name')
           .ilike('name', place.name);
         
-        if (nameError) {
-          console.error('❌ Error finding locations by name:', nameError);
-        } else if (nameMatchLocations && nameMatchLocations.length > 0) {
+        if (!nameError && nameMatchLocations && nameMatchLocations.length > 0) {
           locationIds = nameMatchLocations.map(loc => loc.id);
-          console.log('✅ Found location IDs by name:', locationIds);
         }
       }
       
-      console.log('🎯 FINAL LOCATION IDs TO SEARCH (UUIDs only):', locationIds);
-      
-      // If no valid location IDs found, return empty
       if (locationIds.length === 0) {
-        console.log('❌ No valid location IDs found');
         setPosts([]);
         setLoading(false);
         return;
       }
-      const limit = 1000; // Load all posts at once
+
+      const limit = 1000;
       const offset = (page - 1) * limit;
       
-      // Build query based on active tab
       let query = supabase.from('posts').select(`
-          id,
-          user_id,
-          caption,
-          media_urls,
-          likes_count,
-          comments_count,
-          saves_count,
-          created_at,
-          metadata,
-          location_id,
-          rating
-        `).in('location_id', locationIds);
+        id,
+        user_id,
+        caption,
+        media_urls,
+        likes_count,
+        comments_count,
+        saves_count,
+        created_at,
+        metadata,
+        location_id,
+        rating
+      `).in('location_id', locationIds);
       
-      // Filter based on tab
       if (activeTab === 'posts') {
-        // Posts: only those with media_urls
         query = query.not('media_urls', 'is', null);
       } else {
-        // Reviews: only those with rating
         query = query.not('rating', 'is', null).gt('rating', 0);
       }
       
-      const {
-        data: postsData,
-        error: postsError
-      } = await query.order('created_at', {
-        ascending: false
-      }).range(offset, offset + limit - 1);
-      if (postsError) {
-        console.error('❌ Error fetching posts:', postsError);
-        throw postsError;
-      }
-      console.log('📊 RAW POSTS FOUND:', postsData?.length || 0);
+      const { data: postsData, error: postsError } = await query
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (postsError) throw postsError;
+
       if (postsData && postsData.length > 0) {
         const userIds = [...new Set(postsData.map(post => post.user_id))];
-        console.log('👥 Fetching profiles for users:', userIds);
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, username, avatar_url')
+          .in('id', userIds);
 
-        // SECURITY FIX: Only select safe profile fields  
-        const {
-          data: profilesData,
-          error: profilesError
-        } = await supabase.from('profiles').select('id, username, avatar_url').in('id', userIds);
         if (profilesError) {
-          console.error('❌ Error fetching profiles:', profilesError);
+          console.error('Error fetching profiles:', profilesError);
         }
+
         const postsWithProfiles = postsData.map(post => ({
           ...post,
           profiles: profilesData?.find(profile => profile.id === post.user_id) || null
         }));
-        console.log(`✅ FINAL POSTS COUNT: ${postsWithProfiles.length} for location: ${place.name}`);
+
         if (page === 1) {
           setPosts(postsWithProfiles);
         } else {
@@ -284,14 +247,13 @@ const LocationPostLibrary = ({
         }
         setHasMorePosts(postsData.length === limit);
       } else {
-        console.log('❌ No posts found for this location');
         if (page === 1) {
           setPosts([]);
         }
         setHasMorePosts(false);
       }
     } catch (error) {
-      console.error('❌ CRITICAL ERROR fetching location posts:', error);
+      console.error('Error fetching location posts:', error);
       if (page === 1) {
         setPosts([]);
       }
@@ -299,100 +261,7 @@ const LocationPostLibrary = ({
       setLoading(false);
     }
   };
-  const loadMorePosts = () => {
-    const nextPage = postsPage + 1;
-    setPostsPage(nextPage);
-    fetchLocationPosts(nextPage);
-  };
-  const fetchUserInteractions = async () => {
-    if (!user) return;
-    try {
-      const {
-        data: likes
-      } = await supabase.from('post_likes').select('post_id').eq('user_id', user.id);
-      const {
-        data: saves
-      } = await supabase.from('post_saves').select('post_id').eq('user_id', user.id);
-      setLikedPosts(new Set(likes?.map(l => l.post_id) || []));
-      setSavedPosts(new Set(saves?.map(s => s.post_id) || []));
-    } catch (error) {
-      console.error('Error fetching user interactions:', error);
-    }
-  };
-  const handleLike = async (postId: string) => {
-    if (!user) return;
-    try {
-      const isLiked = likedPosts.has(postId);
-      if (isLiked) {
-        await supabase.from('post_likes').delete().eq('user_id', user.id).eq('post_id', postId);
-        setLikedPosts(prev => {
-          const next = new Set(prev);
-          next.delete(postId);
-          return next;
-        });
-      } else {
-        await supabase.from('post_likes').insert({
-          user_id: user.id,
-          post_id: postId
-        });
-        setLikedPosts(prev => new Set([...prev, postId]));
-      }
-      setPosts(prev => prev.map(post => post.id === postId ? {
-        ...post,
-        likes_count: post.likes_count + (isLiked ? -1 : 1)
-      } : post));
-    } catch (error) {
-      console.error('Error toggling like:', error);
-    }
-  };
-  const handleSave = async (postId: string) => {
-    if (!user) return;
-    try {
-      const isSaved = savedPosts.has(postId);
-      if (isSaved) {
-        await supabase.from('post_saves').delete().eq('user_id', user.id).eq('post_id', postId);
-        setSavedPosts(prev => {
-          const next = new Set(prev);
-          next.delete(postId);
-          return next;
-        });
-      } else {
-        await supabase.from('post_saves').insert({
-          user_id: user.id,
-          post_id: postId
-        });
-        setSavedPosts(prev => new Set([...prev, postId]));
-      }
-      setPosts(prev => prev.map(post => post.id === postId ? {
-        ...post,
-        saves_count: post.saves_count + (isSaved ? -1 : 1)
-      } : post));
-    } catch (error) {
-      console.error('Error toggling save:', error);
-    }
-  };
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays < 1) {
-      return t('now', { ns: 'common', defaultValue: 'Now' });
-    } else if (diffDays === 1) {
-      return '1d ago';
-    } else if (diffDays < 7) {
-      return `${diffDays}d ago`;
-    } else if (diffDays < 30) {
-      return `${Math.floor(diffDays / 7)}w ago`;
-    } else {
-      return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: diffDays > 365 ? 'numeric' : undefined
-      });
-    }
-  };
+
   const handleSaveLocation = async () => {
     if (!user) {
       toast.error('Please log in to save locations');
@@ -400,11 +269,9 @@ const LocationPostLibrary = ({
     }
     try {
       if (isSaved) {
-        // Unsave the location
         await locationInteractionService.unsaveLocation(place.id);
         setIsSaved(false);
         toast.success('Location removed from saved');
-        // Emit global events for both identifiers
         window.dispatchEvent(new CustomEvent('location-save-changed', { 
           detail: { locationId: place.id, isSaved: false } 
         }));
@@ -414,7 +281,6 @@ const LocationPostLibrary = ({
           }));
         }
       } else {
-        // Save the location
         const locationData = {
           google_place_id: place.google_place_id || place.id,
           name: place.name,
@@ -428,7 +294,6 @@ const LocationPostLibrary = ({
         await locationInteractionService.saveLocation(place.id, locationData);
         setIsSaved(true);
         toast.success('Location saved successfully!');
-        // Emit global events for both identifiers
         window.dispatchEvent(new CustomEvent('location-save-changed', { 
           detail: { locationId: place.id, isSaved: true } 
         }));
@@ -444,82 +309,105 @@ const LocationPostLibrary = ({
     }
   };
   
-  const handleVisited = () => {
-    window.location.href = '/add';
-  };
-  
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-background z-50 flex flex-col">
-      {loading ? (
-        <div className="flex items-center justify-center h-full">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            <span className="text-gray-600 font-medium">Loading posts...</span>
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="bg-white px-4 py-4 pt-8 flex items-center gap-3 shadow-sm">
-            <Button variant="ghost" size="sm" onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
-              <ChevronLeft className="w-5 h-5" />
-            </Button>
-            
-            <div className="flex-1">
-              <div className="flex items-start gap-2 mb-1">
-                <h1 className="font-bold text-lg text-gray-900 text-left">{place.name}</h1>
-                {/* Pin Count & Rating */}
-                {!statsLoading && (
-            <div className="flex items-center gap-1.5">
-              {stats.totalSaves > 0 && (
-                <button
-                  onClick={() => setShowSavedBy(true)}
-                  className="flex items-center gap-1 bg-blue-50 px-2 py-0.5 rounded-full hover:bg-blue-100 transition-colors"
-                >
-                  <Bookmark className="w-3 h-3 fill-blue-600 text-blue-600" />
-                  <span className="text-xs font-semibold text-blue-600">{stats.totalSaves}</span>
-                </button>
+    <>
+      <Drawer 
+        open={!showSavedBy && isOpen}
+        modal={false}
+        dismissible={true}
+        onOpenChange={(open) => { if (!open) onClose(); }}
+      >
+        <DrawerContent className={`transition-all duration-300 h-auto max-h-[30vh] data-[state=open]:max-h-[90vh] ${isShareModalOpen ? 'z-[1000]' : 'z-[2000]'}`}>
+          {/* Draggable Header */}
+          <div className="bg-background px-4 pt-3 pb-2 cursor-grab active:cursor-grabbing">
+            <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-3" />
+            <div className="flex items-center gap-3 pb-2">
+              <div className="shrink-0">
+                <CategoryIcon category={place.category || 'place'} className="w-10 h-10" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="font-semibold text-base text-foreground truncate">{place.name}</h3>
+                  {!statsLoading && (
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {stats.totalSaves > 0 && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowSavedBy(true);
+                          }}
+                          className="flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded-full hover:bg-primary/20 transition-colors"
+                        >
+                          <Bookmark className="w-3 h-3 fill-primary text-primary" />
+                          <span className="text-xs font-semibold text-primary">{stats.totalSaves}</span>
+                        </button>
+                      )}
+                      {stats.averageRating && (
+                        <div className="flex items-center gap-1 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                          <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                          <span className="text-xs font-semibold text-amber-600">{stats.averageRating.toFixed(1)}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <MapPin className="w-3 h-3" />
+                  <span className="truncate">{detailedAddress}</span>
+                </div>
+              </div>
+              {!engagementLoading && engagement && engagement.followedUsers.length > 0 && (
+                <div className="flex items-center -space-x-2 flex-shrink-0">
+                  {engagement.followedUsers.slice(0, 2).map((user) => (
+                    <Avatar key={user.id} className="w-8 h-8 border-2 border-background">
+                      <AvatarImage src={user.avatar_url} />
+                      <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                        {user.username?.[0]?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                  ))}
+                  {engagement.followedUsers.length > 2 && (
+                    <div className="w-8 h-8 rounded-full bg-muted border-2 border-background flex items-center justify-center">
+                      <span className="text-xs font-medium">+{engagement.followedUsers.length - 2}</span>
+                    </div>
+                  )}
+                </div>
               )}
-                    {stats.averageRating && (
-                      <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-full">
-                        <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                        <span className="text-xs font-semibold text-amber-600">{stats.averageRating.toFixed(1)}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <MapPin className="w-4 h-4" />
-                <span className="text-left">{detailedAddress}</span>
-              </div>
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="bg-white px-4 py-2">
+          {/* Action Buttons */}
+          <div 
+            className={`bg-background px-4 pb-4 transition-all duration-300 ${
+              showActionButtons ? 'opacity-100 max-h-32' : 'opacity-0 max-h-0 overflow-hidden pb-0'
+            }`}
+          >
             <div className="flex items-center gap-1.5">
               <div className="grid grid-cols-4 gap-1.5 flex-1">
                 <Button
                   onClick={handleSaveLocation}
+                  disabled={loading}
                   size="sm"
                   variant="secondary"
                   className="flex-col h-auto py-3 gap-1 rounded-2xl"
                 >
                   <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
-                  <span className="text-xs">{t(isSaved ? 'saved' : 'save', { ns: 'common' })}</span>
+                  <span className="text-xs">{isSaved ? t('saved', { ns: 'common', defaultValue: 'Saved' }) : t('save', { ns: 'common', defaultValue: 'Save' })}</span>
                 </Button>
 
                 <Button
-                  onClick={() => setIsReviewModalOpen(true)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsReviewModalOpen(true);
+                  }}
                   size="sm"
                   variant="secondary"
                   className="flex-col h-auto py-3 gap-1 rounded-2xl"
                 >
                   <Star className="w-5 h-5" />
-                  <span className="text-xs">{t('review', { ns: 'explore' })}</span>
+                  <span className="text-xs">{t('review', { ns: 'common', defaultValue: 'Review' })}</span>
                 </Button>
 
                 <Button
@@ -536,7 +424,7 @@ const LocationPostLibrary = ({
                   className="flex-col h-auto py-3 gap-1 rounded-2xl"
                 >
                   <Navigation className="w-5 h-5" />
-                  <span className="text-xs">{t('directions', { ns: 'explore' })}</span>
+                  <span className="text-xs">{t('directions', { ns: 'common', defaultValue: 'Directions' })}</span>
                 </Button>
 
                 <Button
@@ -546,7 +434,7 @@ const LocationPostLibrary = ({
                   className="flex-col h-auto py-3 gap-1 rounded-2xl"
                 >
                   <Share2 className="w-5 h-5" />
-                  <span className="text-xs">{t('share', { ns: 'common' })}</span>
+                  <span className="text-xs">{t('share', { ns: 'common', defaultValue: 'Share' })}</span>
                 </Button>
               </div>
 
@@ -572,9 +460,9 @@ const LocationPostLibrary = ({
             </div>
           </div>
 
-          {/* Marketing Campaign - Expandable Section */}
+          {/* Marketing Campaign */}
           {campaign && (
-            <div className="bg-white px-4 pb-2">
+            <div className="px-4 pb-2">
               <button
                 onClick={(e) => { e.stopPropagation(); setIsCampaignExpanded(!isCampaignExpanded); }}
                 className="w-full px-3 py-2 flex items-center justify-between bg-background border-2 border-primary/20 hover:border-primary/40 rounded-xl transition-all"
@@ -590,209 +478,211 @@ const LocationPostLibrary = ({
             </div>
           )}
 
-          {/* Filter Tabs - Horizontal Scroll */}
-          <div className="bg-white border-b border-border">
-            <div className="flex overflow-x-auto scrollbar-hide px-4">
-              <button
-                onClick={() => setActiveTab('posts')}
-                className={cn(
-                  "flex-shrink-0 py-3 px-4 text-base font-medium transition-colors relative",
-                  activeTab === 'posts'
-                    ? "text-primary"
-                    : "text-muted-foreground"
-                )}
-              >
-                {t('postsTab', { ns: 'explore', defaultValue: 'Post' })}
-                {activeTab === 'posts' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-                )}
-              </button>
-              <button
-                onClick={() => setActiveTab('reviews')}
-                className={cn(
-                  "flex-shrink-0 py-3 px-4 text-base font-medium transition-colors relative",
-                  activeTab === 'reviews'
-                    ? "text-primary"
-                    : "text-muted-foreground"
-                )}
-              >
-                {t('reviewsTab', { ns: 'explore', defaultValue: 'Recensioni' })}
-                {activeTab === 'reviews' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Posts Library - vertical grid with scrolling */}
-          <div className="flex-1 overflow-y-auto scrollbar-hide bg-white">
-            {posts.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center px-8">
-                <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-6">
-                  {activeTab === 'posts' ? (
-                    <Camera className="w-10 h-10 text-muted-foreground" />
-                  ) : (
-                    <Star className="w-10 h-10 text-muted-foreground" />
+          {/* Tabs and Content */}
+          <div className="flex-1 overflow-hidden flex flex-col">
+            {/* Tab Navigation */}
+            <div 
+              className="flex-shrink-0 px-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory"
+              onScroll={(e) => {
+                const scrollLeft = e.currentTarget.scrollLeft;
+                const width = e.currentTarget.offsetWidth;
+                if (scrollLeft < width / 2) {
+                  setActiveTab('posts');
+                } else {
+                  setActiveTab('reviews');
+                }
+              }}
+            >
+              <div className="flex gap-0 min-w-full">
+                <button
+                  onClick={() => setActiveTab('posts')}
+                  className={`py-3 px-4 text-sm font-medium transition-colors relative whitespace-nowrap snap-center flex-1 ${
+                    activeTab === 'posts'
+                      ? 'text-primary'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {t('postsTab', { ns: 'explore', defaultValue: 'Posts' })}
+                  {activeTab === 'posts' && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
                   )}
-                </div>
-                <h3 className="text-xl font-semibold text-foreground mb-2">
-                  {activeTab === 'posts' 
-                    ? t('noPosts', { ns: 'explore', defaultValue: 'No posts yet' })
-                    : t('noReviewsYet', { ns: 'common', defaultValue: 'No reviews yet' })
-                  }
-                </h3>
-                <p className="text-muted-foreground mb-6">
-                  {t('beFirstToShare', { ns: 'explore', defaultValue: 'Be the first to share your experience at' })} {detailedAddress}!
-                </p>
+                </button>
+                <button
+                  onClick={() => setActiveTab('reviews')}
+                  className={`py-3 px-4 text-sm font-medium transition-colors relative whitespace-nowrap snap-center flex-1 ${
+                    activeTab === 'reviews'
+                      ? 'text-primary'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {t('reviewsTab', { ns: 'explore', defaultValue: 'Reviews' })}
+                  {activeTab === 'reviews' && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Tab Content */}
+            <div 
+              ref={scrollContainerRef}
+              className="flex-1 overflow-y-auto max-h-[calc(90vh-280px)]"
+              onScroll={(e) => {
+                const currentScrollY = e.currentTarget.scrollTop;
                 
-                {/* Show user's posts from their profile - only for this location */}
-                {userPosts && userPosts.filter(post => post.location_id === place.id || post.locations?.id === place.id).length > 0 && (
-                  <div className="w-full mt-6">
-                    <h4 className="text-sm font-medium text-gray-700 mb-3">{t('yourPostsAt', { ns: 'explore', defaultValue: 'Your Posts at' })} {place.name}</h4>
-                    <div className="grid grid-cols-2 gap-3">
-                      {userPosts
-                        .filter(post => post.location_id === place.id || post.locations?.id === place.id)
-                        .slice(0, 4)
-                        .map((post) => (
-                          <div 
-                            key={post.id} 
-                            className="relative h-32 bg-gray-200 rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition shadow-sm"
-                              onClick={() => setSelectedPostId(post.id)}
-                            >
-                            {post.media_urls && post.media_urls.length > 0 && (
-                              <img 
-                                src={post.media_urls[0]} 
-                                alt="Post" 
-                                className="w-full h-full object-cover" 
-                                loading="lazy" 
-                              />
+                if (currentScrollY > lastScrollY && currentScrollY > 50) {
+                  setShowActionButtons(false);
+                } else if (currentScrollY < lastScrollY) {
+                  setShowActionButtons(true);
+                }
+                
+                if (currentScrollY < 10) {
+                  setShowActionButtons(true);
+                }
+                
+                setLastScrollY(currentScrollY);
+              }}
+            >
+              {activeTab === 'posts' ? (
+                <div className="px-4 py-4">
+                  {loading && posts.length === 0 ? (
+                    <div className="flex justify-center py-8">
+                      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : posts.length === 0 ? (
+                    <div className="py-8 text-center">
+                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+                        <Camera className="w-8 h-8 text-muted-foreground" />
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {t('noPosts', { ns: 'explore', defaultValue: 'No posts yet' })}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3 w-full auto-rows-[1fr]">
+                      {posts.map((post) => (
+                        <button
+                          key={post.id} 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedPostId(post.id);
+                          }}
+                          className="relative block aspect-square rounded-xl overflow-hidden bg-card shadow-sm hover:shadow-md transition-shadow"
+                        >
+                          <div className="absolute inset-0">
+                            <img 
+                              src={post.media_urls[0]} 
+                              alt="Post image" 
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                              decoding="async"
+                            />
+                            <div className="absolute top-2 left-2">
+                              <Avatar className="w-8 h-8 border-2 border-white shadow-lg">
+                                <AvatarImage src={post.profiles?.avatar_url} />
+                                <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                                  {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
+                                </AvatarFallback>
+                              </Avatar>
+                            </div>
+                            {post.media_urls.length > 1 && (
+                              <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium">
+                                +{post.media_urls.length - 1}
+                              </div>
+                            )}
+                            {post.caption && (
+                              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2.5">
+                                <p className="text-xs text-white line-clamp-2 leading-relaxed">
+                                  {post.caption}
+                                </p>
+                              </div>
                             )}
                           </div>
-                        ))}
+                        </button>
+                      ))}
                     </div>
-                  </div>
-                )}
-                
-                <Button className="bg-blue-600 hover:bg-blue-700 mt-6" onClick={() => window.location.href = '/add'}>
-                  {t('shareExperience', { ns: 'explore', defaultValue: 'Share Your Experience' })}
-                </Button>
-              </div>
-            ) : (
-              <div className="p-3">
-                {activeTab === 'posts' ? (
-                  <div className="grid grid-cols-2 gap-3">
-                    {posts.map(post => (
-                      <div 
-                        key={post.id} 
-                        className="relative aspect-square bg-muted rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition shadow-sm" 
-                        onClick={() => setSelectedPostId(post.id)}
-                      >
-                        <img src={post.media_urls[0]} alt="Post" className="w-full h-full object-cover" loading="lazy" decoding="async" />
-                        {/* User Avatar Overlay */}
-                        <div className="absolute top-2 left-2">
-                          <Avatar className="w-8 h-8 border-2 border-white shadow-lg">
-                            <AvatarImage src={post.profiles?.avatar_url} />
-                            <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                  )}
+                </div>
+              ) : (
+                <div className="px-4 py-4">
+                  {loading ? (
+                    <div className="flex justify-center py-8">
+                      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : posts.length === 0 ? (
+                    <div className="py-8 text-center">
+                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+                        <Star className="w-8 h-8 text-muted-foreground" />
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {t('noReviewsYet', { ns: 'common', defaultValue: 'No reviews yet' })}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4 pb-4">
+                      {posts.map((post) => (
+                        <div key={post.id} className="flex gap-3 pb-4 border-b border-border last:border-0">
+                          <Avatar className="w-10 h-10 shrink-0">
+                            <AvatarImage src={post.profiles?.avatar_url || ''} />
+                            <AvatarFallback className="bg-primary/10 text-primary">
                               {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
                             </AvatarFallback>
                           </Avatar>
-                        </div>
-                        {post.media_urls && post.media_urls.length > 1 && (
-                          <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium">
-                            +{post.media_urls.length - 1}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="space-y-4 pb-4">
-                    {posts.map((post) => (
-                      <div 
-                        key={post.id} 
-                        className="flex gap-3 pb-4 border-b border-border last:border-0 cursor-pointer hover:bg-muted/30 transition-colors p-3 rounded-lg"
-                        onClick={() => setSelectedPostId(post.id)}
-                      >
-                        <Avatar className="w-10 h-10 shrink-0">
-                          <AvatarImage src={post.profiles?.avatar_url || ''} />
-                          <AvatarFallback className="bg-primary/10 text-primary">
-                            {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="font-semibold text-sm">{post.profiles?.username || 'User'}</p>
-                            <div className="flex items-center gap-1">
-                              <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
-                              <span className="text-sm font-medium">{post.rating}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-semibold text-sm">{post.profiles?.username || 'User'}</p>
+                              <div className="flex items-center gap-1">
+                                <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+                                <span className="text-sm font-medium">{post.rating}</span>
+                              </div>
                             </div>
+                            {post.caption && (
+                              <p className="text-sm text-muted-foreground mb-1">{post.caption}</p>
+                            )}
+                            <p className="text-xs text-muted-foreground">
+                              {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: currentLocale })}
+                            </p>
                           </div>
-                          {post.caption && (
-                            <p className="text-sm text-muted-foreground mb-1">{post.caption}</p>
-                          )}
-                          <p className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: currentLocale })}
-                          </p>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                
-                {/* Load More Button - Hidden since we load all */}
-                {hasMorePosts && (
-                  <div className="mt-4 flex justify-center pb-4">
-                    <Button onClick={loadMorePosts} disabled={loading} variant="outline" size="sm">
-                      {loading ? t('loading', { ns: 'common', defaultValue: 'Loading...' }) : t('loadMore', { ns: 'common', defaultValue: 'Load More' })}
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
+        </DrawerContent>
+      </Drawer>
 
-          {/* Visited -> comments modal */}
-          <PlaceInteractionModal isOpen={showComments} onClose={() => setShowComments(false)} mode="comments" place={{
-            id: place.id,
-            name: place.name,
-            category: place.category,
-            coordinates: place.coordinates
-          }} />
-
-          {/* Share modal */}
-          <LocationShareModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} place={place} />
-          
-          {/* Post Detail Modal */}
-          {selectedPostId && (
-            <PostDetailModal
-              postId={selectedPostId}
-              isOpen={true}
-              onClose={() => setSelectedPostId(null)}
-              source="pin"
-            />
-          )}
-          
-          {/* Review Modal */}
-          <LocationReviewModal
-            isOpen={isReviewModalOpen}
-            onClose={() => setIsReviewModalOpen(false)}
-            location={{
-              id: place.id,
-              name: place.name,
-              google_place_id: place.google_place_id
-            }}
-          />
-
-          {/* Saved By Modal */}
-          <SavedByModal
-            isOpen={showSavedBy}
-            onClose={() => setShowSavedBy(false)}
-            placeId={place.id}
-            googlePlaceId={place.google_place_id || null}
-          />
-        </div>
+      <LocationShareModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} place={place} />
+      
+      {selectedPostId && (
+        <PostDetailModal
+          postId={selectedPostId}
+          isOpen={true}
+          onClose={() => setSelectedPostId(null)}
+          source="pin"
+        />
       )}
-    </div>
+      
+      <LocationReviewModal
+        isOpen={isReviewModalOpen}
+        onClose={() => setIsReviewModalOpen(false)}
+        location={{
+          id: place.id,
+          name: place.name,
+          google_place_id: place.google_place_id
+        }}
+      />
+
+      <SavedByModal
+        isOpen={showSavedBy}
+        onClose={() => setShowSavedBy(false)}
+        placeId={place.id}
+        googlePlaceId={place.google_place_id || null}
+      />
+    </>
   );
 };
+
 export default LocationPostLibrary;
