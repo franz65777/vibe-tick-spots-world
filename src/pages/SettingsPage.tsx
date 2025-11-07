@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { useTranslation } from 'react-i18next';
-import { ChevronRight, Globe, Building2, BellOff, ArrowLeft, Shield } from 'lucide-react';
+import { ChevronRight, Globe, Building2, BellOff, ArrowLeft, Shield, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import BusinessRequestModal from '@/components/BusinessRequestModal';
 import LanguageModal from '@/components/settings/LanguageModal';
 import MutedLocationsModal from '@/components/settings/MutedLocationsModal';
+import EditProfileModal from '@/components/profile/EditProfileModal';
 import { useAdminRole } from '@/hooks/useAdminRole';
+import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
 
 const languages = [
   { code: 'en', label: 'English', flag: '🇬🇧' },
@@ -32,11 +34,13 @@ const SettingsPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { isAdmin } = useAdminRole();
+  const { profile } = useOptimizedProfile();
   const [language, setLanguage] = useState('en');
   const [saving, setSaving] = useState(false);
   const [businessModalOpen, setBusinessModalOpen] = useState(false);
   const [languageModalOpen, setLanguageModalOpen] = useState(false);
   const [mutedLocationsModalOpen, setMutedLocationsModalOpen] = useState(false);
+  const [editProfileModalOpen, setEditProfileModalOpen] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -97,6 +101,23 @@ const SettingsPage: React.FC = () => {
       <div className="flex-1 overflow-y-auto">
         <Card className="border-0 shadow-none rounded-none">
           <CardContent className="p-0">
+            {/* Edit Profile Setting */}
+            <button
+              onClick={() => setEditProfileModalOpen(true)}
+              className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <User className="w-5 h-5 text-muted-foreground" />
+                <div className="text-left">
+                  <div className="font-medium">{t('editProfile', { ns: 'settings' })}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {t('editProfileDesc', { ns: 'settings' })}
+                  </div>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </button>
+
             {/* Language Setting */}
             <button
               onClick={() => setLanguageModalOpen(true)}
@@ -171,6 +192,11 @@ const SettingsPage: React.FC = () => {
       </div>
 
       {/* Modals */}
+      <EditProfileModal
+        isOpen={editProfileModalOpen}
+        onClose={() => setEditProfileModalOpen(false)}
+        currentProfile={profile}
+      />
       <BusinessRequestModal 
         open={businessModalOpen} 
         onOpenChange={setBusinessModalOpen} 

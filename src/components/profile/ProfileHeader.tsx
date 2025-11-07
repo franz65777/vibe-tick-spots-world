@@ -1,5 +1,5 @@
 
-import { MoreHorizontal, Building2, Edit, LogOut, Camera, Settings } from 'lucide-react';
+import { MoreHorizontal, Building2, Edit, LogOut, Settings, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -8,17 +8,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
 import BadgeDisplay from './BadgeDisplay';
 import EditProfileModal from './EditProfileModal';
-import ProfilePictureEditor from '../ProfilePictureEditor';
 import { useOptimizedFollowStats } from '@/hooks/useOptimizedFollowStats';
 import { useOptimizedSavedPlaces } from '@/hooks/useOptimizedSavedPlaces';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useStories } from '@/hooks/useStories';
+import CreateStoryModal from '../CreateStoryModal';
+import StoriesViewer from '../StoriesViewer';
+import { cn } from '@/lib/utils';
 
 interface ProfileHeaderProps {
   onFollowersClick: () => void;
@@ -39,10 +43,13 @@ const ProfileHeader = ({
   const { profile, refetch } = useOptimizedProfile();
   const { user } = useAuth();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isProfilePictureEditorOpen, setIsProfilePictureEditorOpen] = useState(false);
+  const [isCreateStoryOpen, setIsCreateStoryOpen] = useState(false);
+  const [isStoriesViewerOpen, setIsStoriesViewerOpen] = useState(false);
+  const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
   const { stats } = useOptimizedFollowStats();
   const { getStats } = useOptimizedSavedPlaces();
   const navigate = useNavigate();
+  const { stories, refetch: refetchStories } = useStories();
 
   // Optimized realtime updates - only on specific changes, no polling
   useEffect(() => {
@@ -97,35 +104,78 @@ const ProfileHeader = ({
     locations: savedPlacesStats.places || 0
   };
 
+  // Get user's own stories
+  const myStories = stories.filter(s => s.user_id === user?.id);
+  const hasMyStories = myStories.length > 0;
+  const myStoriesAllViewed = myStories.every(s => s.created_at && new Date(s.created_at) < new Date(Date.now() - 24 * 60 * 60 * 1000));
+
+  const handleStoryClick = () => {
+    if (hasMyStories) {
+      const storyIndex = stories.findIndex(s => s.user_id === user?.id);
+      setSelectedStoryIndex(storyIndex >= 0 ? storyIndex : 0);
+      setIsStoriesViewerOpen(true);
+    } else {
+      setIsCreateStoryOpen(true);
+    }
+  };
+
   return (
     <div className="py-4 bg-background">
       <div className="flex gap-4 px-3">
-        {/* Profile Picture */}
+        {/* Profile Picture with Story */}
         <div className="relative shrink-0">
-          <button
-            onClick={() => setIsProfilePictureEditorOpen(true)}
-            className="relative w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/60 p-0.5 group"
-          >
-            <div className="w-full h-full rounded-full bg-background p-0.5">
-              <div className="w-full h-full rounded-full bg-muted flex items-center justify-center overflow-hidden">
-                {profile?.avatar_url ? (
-                  <img 
-                    src={profile.avatar_url} 
-                    alt={displayUsername}
-                    className="w-full h-full object-cover rounded-full"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                ) : (
-                  <span className="text-sm font-semibold text-muted-foreground">{getInitials()}</span>
-                )}
+          {hasMyStories ? (
+            <button
+              onClick={handleStoryClick}
+              className="relative flex-shrink-0"
+              aria-label="View your story"
+            >
+              <div className={cn(
+                "relative rounded-full p-[2px] border-2",
+                myStoriesAllViewed ? "border-gray-300 dark:border-gray-600" : "border-primary"
+              )}>
+                <Avatar className="w-16 h-16">
+                  <AvatarImage src={profile?.avatar_url} alt={displayUsername} />
+                  <AvatarFallback className="bg-muted text-foreground text-sm font-semibold">
+                    {getInitials()}
+                  </AvatarFallback>
+                </Avatar>
               </div>
-            </div>
-            
-            <div className="absolute bottom-0 right-0 w-5 h-5 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors shadow-md">
-              <Camera className="w-2.5 h-2.5 text-primary-foreground" />
-            </div>
-          </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsCreateStoryOpen(true);
+                }}
+                className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-primary border-2 border-background flex items-center justify-center hover:bg-primary/90 transition-colors"
+                aria-label="Add another story"
+              >
+                <Plus className="w-3 h-3 text-primary-foreground" />
+              </button>
+            </button>
+          ) : (
+            <button
+              onClick={handleStoryClick}
+              className="relative flex-shrink-0"
+              aria-label="Create new story"
+            >
+              <div className="relative">
+                <div className="w-16 h-16 rounded-full border-2 border-primary flex items-center justify-center bg-muted overflow-hidden">
+                  {profile?.avatar_url ? (
+                    <img 
+                      src={profile.avatar_url} 
+                      alt={displayUsername}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-sm font-semibold text-muted-foreground">{getInitials()}</span>
+                  )}
+                </div>
+                <div className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-primary border-2 border-background flex items-center justify-center">
+                  <Plus className="w-3 h-3 text-primary-foreground" />
+                </div>
+              </div>
+            </button>
+          )}
         </div>
 
         {/* Stats and Info */}
@@ -150,10 +200,6 @@ const ProfileHeader = ({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48 bg-background z-50">
-                  <DropdownMenuItem onClick={() => setIsEditModalOpen(true)}>
-                    <Edit className="w-4 h-4 mr-2" />
-                    {t('edit', { ns: 'common' })} {t('profile', { ns: 'navigation' })}
-                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/settings')}>
                     <Settings className="w-4 h-4 mr-2" />
                     {t('title', { ns: 'settings' })}
@@ -204,17 +250,38 @@ const ProfileHeader = ({
         </div>
       </div>
 
-      <EditProfileModal 
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        currentProfile={profile}
+      <CreateStoryModal
+        isOpen={isCreateStoryOpen}
+        onClose={() => {
+          setIsCreateStoryOpen(false);
+        }}
+        onStoryCreated={() => {
+          refetchStories();
+          setIsCreateStoryOpen(false);
+        }}
       />
 
-      <ProfilePictureEditor
-        isOpen={isProfilePictureEditorOpen}
-        onClose={() => setIsProfilePictureEditorOpen(false)}
-        currentAvatarUrl={profile?.avatar_url || undefined}
-      />
+      {isStoriesViewerOpen && (
+        <StoriesViewer
+          onClose={() => setIsStoriesViewerOpen(false)}
+          stories={stories.map(s => ({
+            id: s.id,
+            userId: s.user_id,
+            userName: displayUsername,
+            userAvatar: profile?.avatar_url || '',
+            mediaUrl: s.media_url,
+            mediaType: s.media_type as 'image' | 'video',
+            locationId: s.location_id || '',
+            locationName: s.location_name || '',
+            locationAddress: s.location_address || '',
+            locationCategory: '',
+            timestamp: s.created_at,
+            isViewed: false
+          }))}
+          initialStoryIndex={selectedStoryIndex}
+          onStoryViewed={() => {}}
+        />
+      )}
     </div>
   );
 };
