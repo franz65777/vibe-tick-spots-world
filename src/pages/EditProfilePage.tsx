@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Upload, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -24,6 +24,16 @@ const EditProfilePage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [usernameError, setUsernameError] = useState<string | null>(null);
+
+  // Update fields when profile loads
+  useEffect(() => {
+    if (profile) {
+      setUsername(profile.username || 'user');
+      setFullName(profile.full_name || '');
+      setBio(profile.bio || '');
+      setAvatarPreview(profile.avatar_url || null);
+    }
+  }, [profile]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -101,11 +111,11 @@ const EditProfilePage = () => {
     setUsernameError(null);
     
     if (newUsername.trim() === '') return;
-    if (newUsername === profile?.username) return;
+    if (newUsername.trim() === profile?.username) return;
     
     const isAvailable = await checkUsernameAvailability(newUsername.trim());
     if (!isAvailable) {
-      setUsernameError(t('usernameNotAvailable', { ns: 'settings' }));
+      setUsernameError(t('usernameAlreadyTaken', { ns: 'settings' }));
     }
   };
 
@@ -123,7 +133,7 @@ const EditProfilePage = () => {
       if (isUsernameChanging) {
         const isAvailable = await checkUsernameAvailability(username.trim());
         if (!isAvailable) {
-          toast.error(t('usernameNotAvailable', { ns: 'settings' }));
+          toast.error(t('usernameAlreadyTaken', { ns: 'settings' }));
           setIsLoading(false);
           return;
         }

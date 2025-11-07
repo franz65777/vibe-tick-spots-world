@@ -219,7 +219,7 @@ const ProfileHeader = ({
 
           {/* Bio - only show if exists */}
           {profile?.bio && (
-            <p className="text-sm text-foreground line-clamp-2">
+            <p className="text-sm text-foreground text-left line-clamp-2">
               {profile.bio}
             </p>
           )}
