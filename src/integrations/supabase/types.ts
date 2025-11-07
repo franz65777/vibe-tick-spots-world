@@ -1609,6 +1609,7 @@ export type Database = {
         Row: {
           caption: string | null
           comments_count: number | null
+          content_type: string | null
           created_at: string
           id: string
           is_business_post: boolean | null
@@ -1626,6 +1627,7 @@ export type Database = {
         Insert: {
           caption?: string | null
           comments_count?: number | null
+          content_type?: string | null
           created_at?: string
           id?: string
           is_business_post?: boolean | null
@@ -1643,6 +1645,7 @@ export type Database = {
         Update: {
           caption?: string | null
           comments_count?: number | null
+          content_type?: string | null
           created_at?: string
           id?: string
           is_business_post?: boolean | null
