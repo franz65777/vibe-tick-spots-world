@@ -653,7 +653,7 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
                               </div>
                             </div>
                             {post.caption && (
-                              <p className="text-sm text-muted-foreground mb-1">{post.caption}</p>
+                              <p className="text-sm text-muted-foreground mb-1 text-left">{post.caption}</p>
                             )}
                             <p className="text-xs text-muted-foreground text-left">
                               {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: currentLocale })}
