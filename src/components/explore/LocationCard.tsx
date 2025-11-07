@@ -18,6 +18,9 @@ import { useMutedLocations } from '@/hooks/useMutedLocations';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMarketingCampaign } from '@/hooks/useMarketingCampaign';
 import MarketingCampaignBanner from './MarketingCampaignBanner';
+import { getCategoryIcon } from '@/utils/categoryIcons';
+import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
+import { cn } from '@/lib/utils';
 
 interface LocationCardProps {
   place: Place;
@@ -176,9 +179,12 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
           {/* Rating badge (top right) */}
           {stats.averageRating && (
             <div className="absolute top-4 right-4">
-              <div className="bg-yellow-500/95 backdrop-blur-sm text-white px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg">
-                <Star className="w-4 h-4 fill-white" />
-                <span className="text-sm font-bold">{stats.averageRating.toFixed(1)}</span>
+              <div className={cn("backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg", getRatingFillColor(stats.averageRating) + "/20")}>
+                {(() => {
+                  const CategoryIcon = place.category ? getCategoryIcon(place.category) : Star;
+                  return <CategoryIcon className={cn("w-4 h-4", getRatingFillColor(stats.averageRating), getRatingColor(stats.averageRating))} />;
+                })()}
+                <span className={cn("text-sm font-bold", getRatingColor(stats.averageRating))}>{stats.averageRating.toFixed(1)}</span>
               </div>
             </div>
           )}

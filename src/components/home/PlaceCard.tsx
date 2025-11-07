@@ -11,6 +11,9 @@ import { useMarketingCampaign } from '@/hooks/useMarketingCampaign';
 import MarketingCampaignBanner from '@/components/explore/MarketingCampaignBanner';
 import { useLocationStats } from '@/hooks/useLocationStats';
 import { Star } from 'lucide-react';
+import { getCategoryIcon } from '@/utils/categoryIcons';
+import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
+import { cn } from '@/lib/utils';
 
 interface PlaceCardProps {
   place: Place;
@@ -161,8 +164,11 @@ const PlaceCard = ({
             </div>
             {stats.averageRating && (
               <div className="flex items-center gap-1">
-                <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                <span>{stats.averageRating.toFixed(1)}</span>
+                {(() => {
+                  const CategoryIcon = place.category ? getCategoryIcon(place.category) : Star;
+                  return <CategoryIcon className={cn("w-4 h-4", getRatingFillColor(stats.averageRating), getRatingColor(stats.averageRating))} />;
+                })()}
+                <span className={cn(getRatingColor(stats.averageRating))}>{stats.averageRating.toFixed(1)}</span>
               </div>
             )}
             <div className="flex items-center gap-1">

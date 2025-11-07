@@ -10,6 +10,9 @@ import { useNormalizedCity } from '@/hooks/useNormalizedCity';
 import { useLocationStats } from '@/hooks/useLocationStats';
 import { useMutedLocations } from '@/hooks/useMutedLocations';
 import { useAuth } from '@/contexts/AuthContext';
+import { getCategoryIcon } from '@/utils/categoryIcons';
+import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
+import { cn } from '@/lib/utils';
 
 interface EnhancedLocationCardProps {
   place: any;
@@ -159,9 +162,12 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
         {/* Rating badge (top right) */}
         {stats.averageRating && (
           <div className="absolute top-2 right-2">
-            <div className="bg-yellow-500/95 backdrop-blur-sm text-white px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg">
-              <Star className="w-3 h-3 fill-white" />
-              {stats.averageRating.toFixed(1)}
+            <div className={cn("backdrop-blur-sm px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg", getRatingFillColor(stats.averageRating) + "/20")}>
+              {(() => {
+                const CategoryIcon = place.category ? getCategoryIcon(place.category) : Star;
+                return <CategoryIcon className={cn("w-3 h-3", getRatingFillColor(stats.averageRating), getRatingColor(stats.averageRating))} />;
+              })()}
+              <span className={cn(getRatingColor(stats.averageRating))}>{stats.averageRating.toFixed(1)}</span>
             </div>
           </div>
         )}

@@ -12,12 +12,14 @@ import CommentModal from './CommentModal';
 import { LocationShareModal } from './LocationShareModal';
 import LocationReviewModal from './LocationReviewModal';
 import LocationPostLibrary from './LocationPostLibrary';
-import { getCategoryColor } from '@/utils/categoryIcons';
+import { getCategoryColor, getCategoryIcon } from '@/utils/categoryIcons';
 import { normalizeCity } from '@/utils/cityNormalization';
 import { useNormalizedCity } from '@/hooks/useNormalizedCity';
 import { useLocationStats } from '@/hooks/useLocationStats';
 import { useMutedLocations } from '@/hooks/useMutedLocations';
 import { useAuth } from '@/contexts/AuthContext';
+import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
+import { cn } from '@/lib/utils';
 
 interface CompactLocationCardProps {
   place: Place;
@@ -226,8 +228,12 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
                 </div>
                 
                 <div className="flex items-center gap-1 bg-black/40 backdrop-blur-sm px-2 py-1 rounded-full">
-                  <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                  <span className="font-semibold text-white">
+                  {(() => {
+                    const CategoryIcon = place.category ? getCategoryIcon(place.category) : Star;
+                    const rating = stats.averageRating || 0;
+                    return <CategoryIcon className={cn("w-3 h-3", getRatingFillColor(rating), getRatingColor(rating))} />;
+                  })()}
+                  <span className={cn("font-semibold text-white", stats.averageRating && getRatingColor(stats.averageRating))}>
                     {stats.averageRating ? stats.averageRating.toFixed(1) : '-'}
                   </span>
                 </div>

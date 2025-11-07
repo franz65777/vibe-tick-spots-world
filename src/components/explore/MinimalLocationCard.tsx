@@ -3,6 +3,9 @@ import { Star } from 'lucide-react';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import CityLabel from '@/components/common/CityLabel';
 import { useLocationStats } from '@/hooks/useLocationStats';
+import { getCategoryIcon } from '@/utils/categoryIcons';
+import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
+import { cn } from '@/lib/utils';
 interface MinimalLocationCardProps {
   place: {
     id: string;
@@ -48,9 +51,12 @@ const MinimalLocationCard = ({
               />
             </div>
             {stats.averageRating && (
-              <div className="flex items-center gap-1 bg-yellow-50 px-1.5 py-0.5 rounded-full shrink-0">
-                <Star className="w-2.5 h-2.5 fill-yellow-400 text-yellow-400" />
-                <span className="text-xs font-semibold text-yellow-700">{stats.averageRating.toFixed(1)}</span>
+              <div className={cn("flex items-center gap-1 px-1.5 py-0.5 rounded-full shrink-0", getRatingFillColor(stats.averageRating) + "/10")}>
+                {(() => {
+                  const CategoryIcon = place.category ? getCategoryIcon(place.category) : Star;
+                  return <CategoryIcon className={cn("w-2.5 h-2.5", getRatingFillColor(stats.averageRating), getRatingColor(stats.averageRating))} />;
+                })()}
+                <span className={cn("text-xs font-semibold", getRatingColor(stats.averageRating))}>{stats.averageRating.toFixed(1)}</span>
               </div>
             )}
           </div>

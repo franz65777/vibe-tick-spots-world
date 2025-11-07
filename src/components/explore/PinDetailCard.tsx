@@ -25,6 +25,8 @@ import { formatDistanceToNow, Locale } from 'date-fns';
 import { it, es, pt, fr, de, ja, ko, ar, hi, ru, zhCN } from 'date-fns/locale';
 import { PostDetailModalMobile } from './PostDetailModalMobile';
 import { cn } from '@/lib/utils';
+import { getCategoryIcon } from '@/utils/categoryIcons';
+import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
 
 const localeMap: Record<string, Locale> = {
   en: undefined as any, // English is the default
@@ -386,9 +388,12 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                         </button>
                       )}
                       {stats.averageRating && (
-                        <div className="flex items-center gap-1 bg-amber-500/10 px-2 py-0.5 rounded-full">
-                          <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                          <span className="text-xs font-semibold text-amber-600">{stats.averageRating.toFixed(1)}</span>
+                        <div className="flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded-full">
+                          {(() => {
+                            const CategoryIcon = place.category ? getCategoryIcon(place.category) : Star;
+                            return <CategoryIcon className={cn("w-3 h-3", getRatingFillColor(stats.averageRating), getRatingColor(stats.averageRating))} />;
+                          })()}
+                          <span className={cn("text-xs font-semibold", getRatingColor(stats.averageRating))}>{stats.averageRating.toFixed(1)}</span>
                         </div>
                       )}
                     </div>

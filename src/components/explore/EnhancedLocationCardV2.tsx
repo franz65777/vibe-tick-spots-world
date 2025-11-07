@@ -9,6 +9,9 @@ import { useNormalizedCity } from '@/hooks/useNormalizedCity';
 import { useLocationStats } from '@/hooks/useLocationStats';
 import { useMarketingCampaign } from '@/hooks/useMarketingCampaign';
 import MarketingCampaignBanner from './MarketingCampaignBanner';
+import { getCategoryIcon } from '@/utils/categoryIcons';
+import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
+import { cn } from '@/lib/utils';
 
 interface EnhancedLocationCardV2Props {
   place: any;
@@ -134,9 +137,12 @@ const EnhancedLocationCardV2 = ({ place, onCardClick }: EnhancedLocationCardV2Pr
 
         {/* Rating (Top Left) */}
         {stats.averageRating && (
-          <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-yellow-500/95 backdrop-blur-sm text-white px-2.5 py-1.5 rounded-full shadow-lg">
-            <Star className="w-4 h-4 fill-white" />
-            <span className="text-sm font-bold">{stats.averageRating.toFixed(1)}</span>
+          <div className={cn("absolute top-3 left-3 flex items-center gap-1.5 backdrop-blur-sm px-2.5 py-1.5 rounded-full shadow-lg", getRatingFillColor(stats.averageRating) + "/20")}>
+            {(() => {
+              const CategoryIcon = place.category ? getCategoryIcon(place.category) : Star;
+              return <CategoryIcon className={cn("w-4 h-4", getRatingFillColor(stats.averageRating), getRatingColor(stats.averageRating))} />;
+            })()}
+            <span className={cn("text-sm font-bold", getRatingColor(stats.averageRating))}>{stats.averageRating.toFixed(1)}</span>
           </div>
         )}
 
