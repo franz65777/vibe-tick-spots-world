@@ -128,7 +128,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
         
         const { data: postRows, error } = await supabase
           .from('posts')
-          .select('id, user_id, caption, media_urls, created_at, location_id')
+          .select('id, user_id, caption, media_urls, created_at, location_id, rating')
           .eq('location_id', locationId)
           .order('created_at', { ascending: false })
           .range(offset, offset + limit - 1);
@@ -143,13 +143,10 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
               .in('id', userIds);
             profilesMap = new Map((profilesData || []).map((p: any) => [p.id, { username: p.username, avatar_url: p.avatar_url }]));
           }
-          // Filter out posts with empty media_urls array
-          const mapped = postRows
-            .filter((p: any) => p.media_urls && p.media_urls.length > 0)
-            .map((p: any) => ({
-              ...p,
-              profiles: profilesMap.get(p.user_id) || null,
-            }));
+          const mapped = postRows.map((p: any) => ({
+            ...p,
+            profiles: profilesMap.get(p.user_id) || null,
+          }));
           if (page === 1) {
             setPosts(mapped);
           } else {
@@ -334,6 +331,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
       <Drawer 
         open={!savedByOpen}
         modal={false}
+        dismissible={true}
         onOpenChange={(open) => { if (!open) onClose(); }}
       >
         <DrawerContent className={`transition-all duration-300 h-auto max-h-[30vh] data-[state=open]:max-h-[90vh] ${shareOpen ? 'z-[1000]' : 'z-[2000]'}`}>
@@ -604,8 +602,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                             }}
                             className="relative rounded-xl overflow-hidden bg-card shadow-sm hover:shadow-md transition-shadow"
                           >
-                            {/* Post Image */}
-                            {post.media_urls?.[0] && (
+                             {/* Post Image or Review Card */}
+                            {post.media_urls?.[0] ? (
                               <div className="relative w-full h-48">
                                 <img 
                                   src={post.media_urls[0]} 
@@ -629,6 +627,26 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                                     +{post.media_urls.length - 1}
                                   </div>
                                 )}
+                              </div>
+                            ) : (
+                              /* Review without image */
+                              <div className="w-full h-48 bg-gradient-to-br from-primary/10 to-primary/5 flex flex-col items-center justify-center p-4">
+                                <Avatar className="w-12 h-12 mb-2 border-2 border-primary/20">
+                                  <AvatarImage src={post.profiles?.avatar_url} />
+                                  <AvatarFallback className="bg-primary text-primary-foreground">
+                                    {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
+                                  </AvatarFallback>
+                                </Avatar>
+                                {post.rating && (
+                                  <div className="flex items-center gap-1.5 mb-2">
+                                    <Star className="w-5 h-5 fill-amber-500 text-amber-500" />
+                                    <span className="text-2xl font-bold text-foreground">{post.rating}</span>
+                                    <span className="text-sm text-muted-foreground">/10</span>
+                                  </div>
+                                )}
+                                <p className="text-xs text-center text-muted-foreground">
+                                  {t('review', { ns: 'common', defaultValue: 'Review' })}
+                                </p>
                               </div>
                             )}
                             {/* Post Caption */}
