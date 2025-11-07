@@ -350,12 +350,15 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
 
                       {post.caption && (
                         <div className="relative">
-                          <p className="text-sm text-foreground text-left whitespace-pre-wrap">
-                            {isExpanded ? post.caption : (
+                          <p className="text-sm text-foreground text-left">
+                            {isExpanded ? (
+                              <span className="whitespace-pre-wrap">{post.caption}</span>
+                            ) : (
                               shouldTruncate ? (
                                 <>
-                                  {post.caption.slice(0, 150).split('\n').slice(0, 2).join('\n')}
-                                  {post.caption.length > 150 && '... '}
+                                  <span className="line-clamp-2">
+                                    {post.caption.slice(0, 80)}...{' '}
+                                  </span>
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -365,12 +368,14 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                                         return newSet;
                                       });
                                     }}
-                                    className="text-primary hover:opacity-70 font-medium inline"
+                                    className="text-primary hover:opacity-70 font-medium inline-block"
                                   >
                                     {t('more', { ns: 'common' })}
                                   </button>
                                 </>
-                              ) : post.caption
+                              ) : (
+                                <span className="line-clamp-2">{post.caption}</span>
+                              )
                             )}
                           </p>
                           {isExpanded && shouldTruncate && (
