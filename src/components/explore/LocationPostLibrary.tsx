@@ -321,7 +321,8 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
 
   return (
     <>
-      <div className="fixed inset-0 bg-background z-50 flex flex-col">
+      {!selectedPostId && (
+        <div className="fixed inset-0 bg-background z-50 flex flex-col">
         {/* Header */}
         <div className="bg-background px-4 pt-8 pb-2">
             <div className="flex items-center gap-3 pb-2">
@@ -661,6 +662,7 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
             </div>
           </div>
         </div>
+      )}
 
       <LocationShareModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} place={place} />
       
@@ -668,7 +670,9 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
         <PostDetailModal
           postId={selectedPostId}
           isOpen={true}
-          onClose={() => setSelectedPostId(null)}
+          onClose={() => {
+            setSelectedPostId(null);
+          }}
           source="pin"
         />
       )}
