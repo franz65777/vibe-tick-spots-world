@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Navigation, Bookmark, Share2, Star, Bell, BellOff, Camera } from 'lucide-react';
+import { MapPin, Navigation, Bookmark, Share2, Star, Bell, BellOff, Camera, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -313,17 +312,18 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
 
   return (
     <>
-      <Drawer 
-        open={!showSavedBy && isOpen}
-        modal={false}
-        dismissible={true}
-        onOpenChange={(open) => { if (!open) onClose(); }}
-      >
-        <DrawerContent className={`transition-all duration-300 h-auto max-h-[30vh] data-[state=open]:max-h-[90vh] ${isShareModalOpen ? 'z-[1000]' : 'z-[2000]'}`}>
-          {/* Draggable Header */}
-          <div className="bg-background px-4 pt-3 pb-2 cursor-grab active:cursor-grabbing">
-            <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-3" />
+      <div className="fixed inset-0 bg-background z-50 flex flex-col">
+        {/* Header */}
+        <div className="bg-background px-4 pt-8 pb-2">
             <div className="flex items-center gap-3 pb-2">
+              <Button
+                onClick={onClose}
+                size="icon"
+                variant="ghost"
+                className="shrink-0 h-10 w-10 rounded-full"
+              >
+                <X className="w-5 h-5" />
+              </Button>
               <div className="shrink-0">
                 <CategoryIcon category={place.category || 'place'} className="w-10 h-10" />
               </div>
@@ -651,8 +651,7 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
               )}
             </div>
           </div>
-        </DrawerContent>
-      </Drawer>
+        </div>
 
       <LocationShareModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} place={place} />
       
