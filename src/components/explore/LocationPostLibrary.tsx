@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, MapPin, Calendar, Users, Heart, MessageCircle, Share2, Bookmark, X, Navigation, Star, Bell, BellOff, Camera } from 'lucide-react';
+import { ChevronLeft, MapPin, Calendar, Users, Heart, MessageCircle, Share2, Bookmark, X, Navigation, Star, Bell, BellOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 
@@ -21,24 +21,6 @@ import { useLocationStats } from '@/hooks/useLocationStats';
 import { useMutedLocations } from '@/hooks/useMutedLocations';
 import { useMarketingCampaign } from '@/hooks/useMarketingCampaign';
 import MarketingCampaignBanner from './MarketingCampaignBanner';
-import { cn } from '@/lib/utils';
-import { formatDistanceToNow, Locale } from 'date-fns';
-import { it, es, pt, fr, de, ja, ko, ar, hi, ru, zhCN } from 'date-fns/locale';
-
-const localeMap: Record<string, Locale> = {
-  en: undefined as any, // English is the default
-  it,
-  es,
-  pt,
-  fr,
-  de,
-  ja,
-  ko,
-  ar,
-  hi,
-  ru,
-  'zh-CN': zhCN,
-};
 interface LocationPost {
   id: string;
   user_id: string;
@@ -49,7 +31,6 @@ interface LocationPost {
   saves_count: number;
   created_at: string;
   metadata: any;
-  rating?: number;
   profiles?: {
     username: string;
     avatar_url: string;
@@ -77,7 +58,7 @@ const LocationPostLibrary = ({
   isOpen,
   onClose
 }: LocationPostLibraryProps) => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const {
     user
   } = useAuth();
@@ -94,7 +75,6 @@ const LocationPostLibrary = ({
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
   const [showSavedBy, setShowSavedBy] = useState(false);
-  const [activeTab, setActiveTab] = useState<'posts' | 'reviews'>('posts');
   const { posts: userPosts } = useUserPosts(user?.id);
   const { cityLabel: displayCity } = useNormalizedCity({
     id: place?.google_place_id || place?.id,
@@ -118,20 +98,16 @@ const LocationPostLibrary = ({
   );
   const { campaign } = useMarketingCampaign(place?.id, place?.google_place_id);
   const [isCampaignExpanded, setIsCampaignExpanded] = useState(false);
-  
-  // Get the current locale for date formatting
-  const currentLocale = localeMap[i18n.language] || localeMap['en'];
 
   // All hooks MUST be called before any early returns
   useEffect(() => {
     if (!place?.id) return;
-    setPostsPage(1);
-    fetchLocationPosts(1);
+    fetchLocationPosts();
     if (user) {
       fetchUserInteractions();
       checkIfLocationSaved();
     }
-  }, [place?.id, user, activeTab]);
+  }, [place?.id, user]);
 
   // Listen for global save changes
   useEffect(() => {
@@ -222,11 +198,12 @@ const LocationPostLibrary = ({
         setLoading(false);
         return;
       }
-      const limit = 1000; // Load all posts at once
+      const limit = 8;
       const offset = (page - 1) * limit;
-      
-      // Build query based on active tab
-      let query = supabase.from('posts').select(`
+      const {
+        data: postsData,
+        error: postsError
+      } = await supabase.from('posts').select(`
           id,
           user_id,
           caption,
@@ -236,23 +213,8 @@ const LocationPostLibrary = ({
           saves_count,
           created_at,
           metadata,
-          location_id,
-          rating
-        `).in('location_id', locationIds);
-      
-      // Filter based on tab
-      if (activeTab === 'posts') {
-        // Posts: only those with media_urls
-        query = query.not('media_urls', 'is', null);
-      } else {
-        // Reviews: only those with rating
-        query = query.not('rating', 'is', null).gt('rating', 0);
-      }
-      
-      const {
-        data: postsData,
-        error: postsError
-      } = await query.order('created_at', {
+          location_id
+        `).in('location_id', locationIds).order('created_at', {
         ascending: false
       }).range(offset, offset + limit - 1);
       if (postsError) {
@@ -372,26 +334,11 @@ const LocationPostLibrary = ({
     }
   };
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays < 1) {
-      return t('now', { ns: 'common', defaultValue: 'Now' });
-    } else if (diffDays === 1) {
-      return '1d ago';
-    } else if (diffDays < 7) {
-      return `${diffDays}d ago`;
-    } else if (diffDays < 30) {
-      return `${Math.floor(diffDays / 7)}w ago`;
-    } else {
-      return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: diffDays > 365 ? 'numeric' : undefined
-      });
-    }
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
   };
   const handleSaveLocation = async () => {
     if (!user) {
@@ -590,60 +537,15 @@ const LocationPostLibrary = ({
             </div>
           )}
 
-          {/* Filter Tabs - Horizontal Scroll */}
-          <div className="bg-white border-b border-border">
-            <div className="flex overflow-x-auto scrollbar-hide px-4">
-              <button
-                onClick={() => setActiveTab('posts')}
-                className={cn(
-                  "flex-shrink-0 py-3 px-4 text-base font-medium transition-colors relative",
-                  activeTab === 'posts'
-                    ? "text-primary"
-                    : "text-muted-foreground"
-                )}
-              >
-                {t('postsTab', { ns: 'explore', defaultValue: 'Post' })}
-                {activeTab === 'posts' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-                )}
-              </button>
-              <button
-                onClick={() => setActiveTab('reviews')}
-                className={cn(
-                  "flex-shrink-0 py-3 px-4 text-base font-medium transition-colors relative",
-                  activeTab === 'reviews'
-                    ? "text-primary"
-                    : "text-muted-foreground"
-                )}
-              >
-                {t('reviewsTab', { ns: 'explore', defaultValue: 'Recensioni' })}
-                {activeTab === 'reviews' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-                )}
-              </button>
-            </div>
-          </div>
-
           {/* Posts Library - vertical grid with scrolling */}
           <div className="flex-1 overflow-y-auto scrollbar-hide bg-white">
             {posts.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center px-8">
-                <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-6">
-                  {activeTab === 'posts' ? (
-                    <Camera className="w-10 h-10 text-muted-foreground" />
-                  ) : (
-                    <Star className="w-10 h-10 text-muted-foreground" />
-                  )}
+                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+                  <MapPin className="w-10 h-10 text-gray-400" />
                 </div>
-                <h3 className="text-xl font-semibold text-foreground mb-2">
-                  {activeTab === 'posts' 
-                    ? t('noPosts', { ns: 'explore', defaultValue: 'No posts yet' })
-                    : t('noReviewsYet', { ns: 'common', defaultValue: 'No reviews yet' })
-                  }
-                </h3>
-                <p className="text-muted-foreground mb-6">
-                  {t('beFirstToShare', { ns: 'explore', defaultValue: 'Be the first to share your experience at' })} {detailedAddress}!
-                </p>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('noPosts', { ns: 'explore', defaultValue: 'No posts yet' })}</h3>
+                <p className="text-gray-600 mb-6">{t('beFirstToShare', { ns: 'explore', defaultValue: 'Be the first to share your experience at' })} {detailedAddress}!</p>
                 
                 {/* Show user's posts from their profile - only for this location */}
                 {userPosts && userPosts.filter(post => post.location_id === place.id || post.locations?.id === place.id).length > 0 && (
@@ -679,67 +581,37 @@ const LocationPostLibrary = ({
               </div>
             ) : (
               <div className="p-3">
-                {activeTab === 'posts' ? (
-                  <div className="grid grid-cols-2 gap-3">
-                    {posts.map(post => (
-                      <div 
-                        key={post.id} 
-                        className="relative aspect-square bg-muted rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition shadow-sm" 
-                        onClick={() => setSelectedPostId(post.id)}
-                      >
-                        <img src={post.media_urls[0]} alt="Post" className="w-full h-full object-cover" loading="lazy" decoding="async" />
-                        {/* User Avatar Overlay */}
-                        <div className="absolute top-2 left-2">
-                          <Avatar className="w-8 h-8 border-2 border-white shadow-lg">
-                            <AvatarImage src={post.profiles?.avatar_url} />
-                            <AvatarFallback className="text-xs bg-primary text-primary-foreground">
-                              {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
-                            </AvatarFallback>
-                          </Avatar>
-                        </div>
-                        {post.media_urls && post.media_urls.length > 1 && (
-                          <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium">
-                            +{post.media_urls.length - 1}
+                <div className="grid grid-cols-2 gap-3">
+                  {posts.map(post => (
+                    <div 
+                      key={post.id} 
+                      className="relative h-48 bg-gray-200 rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition shadow-sm" 
+                      onClick={() => setSelectedPostId(post.id)}
+                    >
+                      {post.media_urls && post.media_urls.length > 0 && (
+                        <>
+                          <img src={post.media_urls[0]} alt="Post" className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                          {/* User Avatar Overlay */}
+                          <div className="absolute top-2 left-2">
+                            <Avatar className="w-8 h-8 border-2 border-white shadow-lg">
+                              <AvatarImage src={post.profiles?.avatar_url} />
+                              <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                                {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
+                              </AvatarFallback>
+                            </Avatar>
                           </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="space-y-4 pb-4">
-                    {posts.map((post) => (
-                      <div 
-                        key={post.id} 
-                        className="flex gap-3 pb-4 border-b border-border last:border-0 cursor-pointer hover:bg-muted/30 transition-colors p-3 rounded-lg"
-                        onClick={() => setSelectedPostId(post.id)}
-                      >
-                        <Avatar className="w-10 h-10 shrink-0">
-                          <AvatarImage src={post.profiles?.avatar_url || ''} />
-                          <AvatarFallback className="bg-primary/10 text-primary">
-                            {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="font-semibold text-sm">{post.profiles?.username || 'User'}</p>
-                            <div className="flex items-center gap-1">
-                              <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
-                              <span className="text-sm font-medium">{post.rating}</span>
-                            </div>
-                          </div>
-                          {post.caption && (
-                            <p className="text-sm text-muted-foreground mb-1">{post.caption}</p>
-                          )}
-                          <p className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: currentLocale })}
-                          </p>
+                        </>
+                      )}
+                      {post.media_urls && post.media_urls.length > 1 && (
+                        <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium">
+                          +{post.media_urls.length - 1}
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      )}
+                    </div>
+                  ))}
+                </div>
                 
-                {/* Load More Button - Hidden since we load all */}
+                {/* Load More Button */}
                 {hasMorePosts && (
                   <div className="mt-4 flex justify-center pb-4">
                     <Button onClick={loadMorePosts} disabled={loading} variant="outline" size="sm">

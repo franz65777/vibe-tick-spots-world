@@ -65,7 +65,6 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
   const [fullAddress, setFullAddress] = useState<string>('');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'posts' | 'reviews'>('posts');
-  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
   // Leaflet (vanilla) map refs
   const mapDivRef = useRef<HTMLDivElement | null>(null);
@@ -212,7 +211,6 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
           user_id,
           caption,
           media_url,
-          media_urls,
           created_at,
           profiles:user_id (
             username,
@@ -220,23 +218,20 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
           )
         `)
         .eq('location_id', locationData.id)
-        .not('media_urls', 'is', null)
         .order('created_at', { ascending: false })
-        .limit(2);
+        .limit(20);
 
       if (error) throw error;
 
-      const formattedPosts = (data || [])
-        .filter((p: any) => (p.media_urls && p.media_urls.length > 0) || p.media_url)
-        .map((p: any) => ({
-          id: p.id,
-          user_id: p.user_id,
-          caption: p.caption || '',
-          media_url: p.media_url || (p.media_urls?.[0] || ''),
-          created_at: p.created_at,
-          username: p.profiles?.username || 'User',
-          avatar_url: p.profiles?.avatar_url || '',
-        }));
+      const formattedPosts = (data || []).map((p: any) => ({
+        id: p.id,
+        user_id: p.user_id,
+        caption: p.caption || '',
+        media_url: p.media_url,
+        created_at: p.created_at,
+        username: p.profiles?.username || 'User',
+        avatar_url: p.profiles?.avatar_url || '',
+      }));
 
       setPosts(formattedPosts);
     } catch (error) {
@@ -397,7 +392,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
           </div>
 
           {/* Tab Content */}
-          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto">
             {activeTab === 'posts' ? (
               <div className="p-4">
                 {loading ? (
@@ -410,11 +405,11 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
                     <p>Nessun post ancora per questa location</p>
                   </div>
                 ) : (
-                  <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4">
+                  <div className="grid grid-cols-3 gap-2 pb-4">
                     {posts.map((post) => (
                       <div
                         key={post.id}
-                        className="relative rounded-lg overflow-hidden bg-muted snap-center flex-shrink-0 w-[75vw] max-w-[350px] h-80"
+                        className="aspect-square rounded-lg overflow-hidden bg-muted relative"
                       >
                         <img
                           src={post.media_url}
@@ -435,7 +430,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
                 ) : reviews.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <Star className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>{t('noReviewsYet', { ns: 'common', defaultValue: 'No reviews yet' })}</p>
+                    <p>Nessuna recensione ancora</p>
                   </div>
                 ) : (
                   <div className="space-y-4 pb-4">

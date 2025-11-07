@@ -24,7 +24,6 @@ import MarketingCampaignBanner from './MarketingCampaignBanner';
 import { formatDistanceToNow, Locale } from 'date-fns';
 import { it, es, pt, fr, de, ja, ko, ar, hi, ru, zhCN } from 'date-fns/locale';
 import { PostDetailModalMobile } from './PostDetailModalMobile';
-import { cn } from '@/lib/utils';
 
 const localeMap: Record<string, Locale> = {
   en: undefined as any, // English is the default
@@ -69,9 +68,6 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
   const [activeTab, setActiveTab] = useState<'posts' | 'reviews'>('posts');
   const [reviews, setReviews] = useState<any[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
-  const [showActionButtons, setShowActionButtons] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   // Source post ID - if the pin was opened from a post
   const sourcePostId = place.sourcePostId;
@@ -124,15 +120,13 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
       }
       
       if (locationId) {
-        const limit = 1000; // Load all posts at once
+        const limit = 10;
         const offset = (page - 1) * limit;
         
-        // Filter for posts with media only (not reviews)
         const { data: postRows, error } = await supabase
           .from('posts')
-          .select('id, user_id, caption, media_urls, created_at, location_id, rating')
+          .select('id, user_id, caption, media_urls, created_at, location_id')
           .eq('location_id', locationId)
-          .not('media_urls', 'is', null)
           .order('created_at', { ascending: false })
           .range(offset, offset + limit - 1);
         
@@ -149,7 +143,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
           const mapped = postRows.map((p: any) => ({
             ...p,
             profiles: profilesMap.get(p.user_id) || null,
-          })).filter((p: any) => p.media_urls && Array.isArray(p.media_urls) && p.media_urls.length > 0);
+          }));
           if (page === 1) {
             setPosts(mapped);
           } else {
@@ -334,7 +328,6 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
       <Drawer 
         open={!savedByOpen}
         modal={false}
-        dismissible={true}
         onOpenChange={(open) => { if (!open) onClose(); }}
       >
         <DrawerContent className={`transition-all duration-300 h-auto max-h-[30vh] data-[state=open]:max-h-[90vh] ${shareOpen ? 'z-[1000]' : 'z-[2000]'}`}>
@@ -412,12 +405,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
             </div>
           </div>
 
-          {/* Action Buttons - Hidden when scrolling down */}
-          <div 
-            className={`bg-background px-4 pb-4 transition-all duration-300 ${
-              showActionButtons ? 'opacity-100 max-h-32' : 'opacity-0 max-h-0 overflow-hidden pb-0'
-            }`}
-          >
+          {/* Action Buttons */}
+          <div className="bg-background px-4 pb-4">
             <div className="flex items-center gap-1.5">
               <div className="grid grid-cols-4 gap-1.5 flex-1">
                 <Button
@@ -551,29 +540,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
             </div>
 
             {/* Tab Content */}
-            <div 
-              ref={scrollContainerRef}
-              className="flex-1 overflow-y-auto max-h-[calc(90vh-280px)]"
-              onScroll={(e) => {
-                const currentScrollY = e.currentTarget.scrollTop;
-                
-                // Show buttons when scrolling up, hide when scrolling down
-                if (currentScrollY > lastScrollY && currentScrollY > 50) {
-                  // Scrolling down
-                  setShowActionButtons(false);
-                } else if (currentScrollY < lastScrollY) {
-                  // Scrolling up
-                  setShowActionButtons(true);
-                }
-                
-                // Show buttons if at the top
-                if (currentScrollY < 10) {
-                  setShowActionButtons(true);
-                }
-                
-                setLastScrollY(currentScrollY);
-              }}
-            >
+            <div className="flex-1 overflow-y-auto max-h-[calc(90vh-280px)]">
               {activeTab === 'posts' ? (
                 <div className="px-4 py-4">
                   {postsLoading && posts.length === 0 ? (
@@ -586,12 +553,12 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                         <Camera className="w-8 h-8 text-muted-foreground" />
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {t('noPosts', { ns: 'explore', defaultValue: 'No posts yet' })}
+                        {t('noPostsYet', { ns: 'common', defaultValue: 'No posts yet' })}
                       </p>
                     </div>
                   ) : (
                     <>
-                      <div className="grid grid-cols-2 gap-3 w-full auto-rows-[1fr]">
+                      <div className="grid grid-cols-2 gap-3">
                         {posts.map((post) => (
                           <button
                             key={post.id} 
@@ -603,43 +570,60 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                                 setSelectedPostId(post.id);
                               }
                             }}
-                            className="relative block aspect-square rounded-xl overflow-hidden bg-card shadow-sm hover:shadow-md transition-shadow"
+                            className="relative rounded-xl overflow-hidden bg-card shadow-sm hover:shadow-md transition-shadow"
                           >
-                            <div className="absolute inset-0">
-                              <img 
-                                src={post.media_urls[0]} 
-                                alt="Post image" 
-                                className="w-full h-full object-cover"
-                                loading="lazy"
-                                decoding="async"
-                              />
-                              {/* User Avatar Overlay */}
-                              <div className="absolute top-2 left-2">
-                                <Avatar className="w-8 h-8 border-2 border-white shadow-lg">
-                                  <AvatarImage src={post.profiles?.avatar_url} />
-                                  <AvatarFallback className="text-xs bg-primary text-primary-foreground">
-                                    {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
-                                  </AvatarFallback>
-                                </Avatar>
+                            {/* Post Image */}
+                            {post.media_urls?.[0] && (
+                              <div className="relative w-full h-48">
+                                <img 
+                                  src={post.media_urls[0]} 
+                                  alt="Post image" 
+                                  className="w-full h-full object-cover"
+                                  loading="lazy"
+                                  decoding="async"
+                                />
+                                {/* User Avatar Overlay */}
+                                <div className="absolute top-2 left-2">
+                                  <Avatar className="w-8 h-8 border-2 border-white shadow-lg">
+                                    <AvatarImage src={post.profiles?.avatar_url} />
+                                    <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                                      {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                </div>
+                                {/* Multiple images indicator */}
+                                {post.media_urls.length > 1 && (
+                                  <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium">
+                                    +{post.media_urls.length - 1}
+                                  </div>
+                                )}
                               </div>
-                              {/* Multiple images indicator */}
-                              {post.media_urls.length > 1 && (
-                                <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium">
-                                  +{post.media_urls.length - 1}
-                                </div>
-                              )}
-                              {/* Post Caption */}
-                              {post.caption && (
-                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2.5">
-                                  <p className="text-xs text-white line-clamp-2 leading-relaxed">
-                                    {post.caption}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
+                            )}
+                            {/* Post Caption */}
+                            {post.caption && (
+                              <div className="p-2.5">
+                                <p className="text-xs text-foreground line-clamp-2 leading-relaxed">
+                                  {post.caption}
+                                </p>
+                              </div>
+                            )}
                           </button>
                         ))}
                       </div>
+                      
+                      {/* Load More Button */}
+                      {hasMorePosts && (
+                        <div className="mt-4 flex justify-center">
+                          <Button
+                            onClick={loadMorePosts}
+                            disabled={postsLoading}
+                            variant="outline"
+                            size="sm"
+                          >
+                            {postsLoading ? t('loading', { ns: 'common', defaultValue: 'Loading...' }) : t('loadMore', { ns: 'common', defaultValue: 'Load More' })}
+                          </Button>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
