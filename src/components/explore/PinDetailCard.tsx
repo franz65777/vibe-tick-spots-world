@@ -726,11 +726,11 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
       />
 
       {!onPostSelected && selectedPostId && (
-        <PostDetailModal
+        <PostDetailModalMobile
           postId={selectedPostId}
+          locationId={place.id}
           isOpen={true}
           onClose={() => setSelectedPostId(null)}
-          source="pin"
         />
       )}
 

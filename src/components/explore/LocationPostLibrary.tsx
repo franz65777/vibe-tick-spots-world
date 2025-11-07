@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { locationInteractionService } from '@/services/locationInteractionService';
 import { LocationShareModal } from './LocationShareModal';
-import PostDetailModal from './PostDetailModal';
+import { PostDetailModalMobile } from './PostDetailModalMobile';
 import LocationReviewModal from './LocationReviewModal';
 import { toast } from 'sonner';
 import SavedByModal from './SavedByModal';
@@ -667,13 +667,13 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
       <LocationShareModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} place={place} />
       
       {selectedPostId && (
-        <PostDetailModal
+        <PostDetailModalMobile
           postId={selectedPostId}
+          locationId={place.id}
           isOpen={true}
           onClose={() => {
             setSelectedPostId(null);
           }}
-          source="pin"
         />
       )}
       
