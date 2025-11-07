@@ -3,6 +3,9 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
+import cameraIcon3d from '@/assets/icon-camera-3d.png';
+import starIcon3d from '@/assets/icon-star-3d.png';
+import pinIcon from '@/assets/pin-icon.png';
 
 interface ProfileMessageCardProps {
   profileData: {
@@ -81,18 +84,18 @@ const ProfileMessageCard = ({ profileData }: ProfileMessageCardProps) => {
       </div>
 
       {/* Stats */}
-      <div className="flex gap-4 text-sm">
-        <div>
-          <span className="font-bold text-foreground">{photosCount ?? '—'}</span>{' '}
-          <span className="text-muted-foreground">{t('userProfile.photos', { ns: 'common', defaultValue: 'Foto' })}</span>
+      <div className="flex gap-6 text-sm">
+        <div className="flex items-center gap-2">
+          <img src={cameraIcon3d} alt="Foto caricate" className="w-5 h-5" loading="lazy" />
+          <span className="font-bold text-foreground">{photosCount ?? '—'}</span>
         </div>
-        <div>
-          <span className="font-bold text-foreground">{savedCount ?? '—'}</span>{' '}
-          <span className="text-muted-foreground">{t('userProfile.saved', { ns: 'common', defaultValue: 'Salvati' })}</span>
+        <div className="flex items-center gap-2">
+          <img src={pinIcon} alt="Luoghi salvati" className="w-5 h-5" loading="lazy" />
+          <span className="font-bold text-foreground">{savedCount ?? '—'}</span>
         </div>
-        <div>
-          <span className="font-bold text-foreground">{reviewsCount ?? '—'}</span>{' '}
-          <span className="text-muted-foreground">{t('reviews', { ns: 'common', defaultValue: 'Recensioni' })}</span>
+        <div className="flex items-center gap-2">
+          <img src={starIcon3d} alt="Recensioni lasciate" className="w-5 h-5" loading="lazy" />
+          <span className="font-bold text-foreground">{reviewsCount ?? '—'}</span>
         </div>
       </div>
     </div>

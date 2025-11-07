@@ -150,15 +150,17 @@ const MessagesPage = () => {
     const tryScroll = () => {
       const viewport = wrapper?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
       if (viewport) {
-        viewport.scrollTo({ top: viewport.scrollHeight, behavior });
-      } else {
-        messagesEndRef.current?.scrollIntoView({ behavior, block: 'end' });
+        // Jump to the very end of the viewport
+        viewport.scrollTop = viewport.scrollHeight;
       }
+      // Always ensure the last anchor is visible as a fallback
+      messagesEndRef.current?.scrollIntoView({ behavior, block: 'end' });
     };
     // attempt now, next frame, and after layout
     tryScroll();
     requestAnimationFrame(tryScroll);
     setTimeout(tryScroll, 80);
+    setTimeout(tryScroll, 220);
   };
 
   const loadThreads = async () => {
@@ -1311,7 +1313,7 @@ const MessagesPage = () => {
            </div>
 
           {/* Message Input */}
-          <div className="shrink-0 p-3 bg-background mb-20">
+          <div className="shrink-0 p-3 bg-background">
             <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
