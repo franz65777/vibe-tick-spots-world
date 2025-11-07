@@ -4,9 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBusinessProfile } from '@/hooks/useBusinessProfile';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ArrowLeft, MessageSquare, Send } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { ArrowLeft, MessageSquare, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { messageService, MessageThread } from '@/services/messageService';
@@ -35,12 +35,23 @@ const BusinessMessagesPage = () => {
   const [hasActiveStory, setHasActiveStory] = useState<Record<string, boolean>>({});
   const [showStories, setShowStories] = useState(false);
   const [currentUserStories, setCurrentUserStories] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredMessages, setFilteredMessages] = useState<Message[]>([]);
 
   useEffect(() => {
     if (user && businessProfile) {
       fetchBusinessMessages();
     }
   }, [user, businessProfile]);
+
+  useEffect(() => {
+    // Update filtered messages when messages change and no search query
+    if (!searchQuery.trim()) {
+      setFilteredMessages(messages);
+    } else {
+      handleSearch(searchQuery);
+    }
+  }, [messages]);
 
   const fetchBusinessMessages = async () => {
     try {
@@ -64,6 +75,7 @@ const BusinessMessagesPage = () => {
       }));
 
       setMessages(messagesWithProfiles);
+      setFilteredMessages(messagesWithProfiles);
 
       // Check for active stories for each user
       const storyStatus: Record<string, boolean> = {};
@@ -131,6 +143,42 @@ const BusinessMessagesPage = () => {
     }
   };
 
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    
+    if (!query.trim()) {
+      setFilteredMessages(messages);
+      return;
+    }
+
+    const lowercaseQuery = query.toLowerCase();
+    const filtered = messages.filter((msg) => {
+      const username = msg.profiles?.username?.toLowerCase() || '';
+      const content = msg.content?.toLowerCase() || '';
+      return username.includes(lowercaseQuery) || content.includes(lowercaseQuery);
+    });
+    
+    setFilteredMessages(filtered);
+  };
+
+  const getRelativeTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return t('justNow', { ns: 'notifications' });
+    if (diffInMinutes < 60) return t('minutesAgo', { ns: 'notifications', count: diffInMinutes });
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return t('hoursAgo', { ns: 'notifications', count: diffInHours });
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return t('daysAgo', { ns: 'notifications', count: diffInDays });
+    
+    const diffInWeeks = Math.floor(diffInDays / 7);
+    return t('weeksAgo', { ns: 'notifications', count: diffInWeeks });
+  };
+
   const unreadCount = messages.filter(m => !m.is_read).length;
 
   return (
@@ -138,7 +186,7 @@ const BusinessMessagesPage = () => {
       <div className="max-w-screen-sm mx-auto">
         {/* Header */}
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm">
-          <div className="flex items-center gap-3 p-4">
+          <div className="flex items-center gap-3 p-4 pb-2">
             <Button
               variant="ghost"
               size="sm"
@@ -147,6 +195,18 @@ const BusinessMessagesPage = () => {
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <h1 className="text-lg font-bold text-foreground">{t('businessMessages', { ns: 'business' })}</h1>
+          </div>
+          <div className="px-4 pb-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder={t('searchPlaceholder', { ns: 'messages' })}
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="pl-9 h-9 bg-muted/50 rounded-full"
+              />
+            </div>
           </div>
         </div>
 
@@ -168,8 +228,20 @@ const BusinessMessagesPage = () => {
                 {t('customerInquiries', { ns: 'business' })}
               </p>
             </div>
+          ) : filteredMessages.length === 0 ? (
+            <div className="p-12 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                <MessageSquare className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                {t('noResults', { ns: 'common' })}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {t('tryDifferentSearch', { ns: 'common' })}
+              </p>
+            </div>
           ) : (
-            messages.map((message) => (
+            filteredMessages.map((message) => (
               <div
                 key={message.id}
                 onClick={() => {
@@ -208,9 +280,7 @@ const BusinessMessagesPage = () => {
                         {message.profiles?.username || 'Unknown User'}
                       </h4>
                       <span className="text-muted-foreground text-[12px] flex-shrink-0">
-                        {formatDistanceToNow(new Date(message.created_at), {
-                          addSuffix: true,
-                        }).replace('about ', '')}
+                        {getRelativeTime(message.created_at)}
                       </span>
                     </div>
                     <p className="text-muted-foreground text-[13px] line-clamp-1">
