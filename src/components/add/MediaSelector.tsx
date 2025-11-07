@@ -31,7 +31,7 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
   if (selectedFiles.length === 0) {
     return (
       <div 
-        className="flex flex-col items-center justify-center bg-background p-6 relative overflow-hidden min-h-screen -mt-5"
+        className="flex flex-col items-center justify-center bg-background p-6 pt-0 relative overflow-hidden min-h-screen"
         data-photo-selection="true"
       >
         <div className="text-center space-y-6 max-w-sm relative z-10">

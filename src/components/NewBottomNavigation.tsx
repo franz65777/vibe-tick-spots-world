@@ -41,28 +41,12 @@ const NewBottomNavigation = () => {
   };
 
   const handleProfileClick = () => {
-    navigate('/profile');
-    trackEvent('nav_tab_clicked', { tab: 'profile' });
-  };
-
-  const handleProfileLongPress = () => {
-    // Only show modal on long press if user has a valid business account
+    // Only show modal if user has a valid business account, otherwise navigate directly
     if (hasValidBusinessAccount) {
       setShowSwitchModal(true);
-    }
-  };
-
-  const handleProfileTouchStart = () => {
-    const timer = setTimeout(() => {
-      handleProfileLongPress();
-    }, 500); // 500ms long press
-    setLongPressTimer(timer);
-  };
-
-  const handleProfileTouchEnd = () => {
-    if (longPressTimer) {
-      clearTimeout(longPressTimer);
-      setLongPressTimer(null);
+    } else {
+      navigate('/profile');
+      trackEvent('nav_tab_clicked', { tab: 'profile' });
     }
   };
 
@@ -131,9 +115,6 @@ const NewBottomNavigation = () => {
                 <button
                   key={item.path}
                   onClick={isProfileTab ? handleProfileClick : () => handleNavClick(item.path, item.label)}
-                  onTouchStart={isProfileTab ? handleProfileTouchStart : undefined}
-                  onTouchEnd={isProfileTab ? handleProfileTouchEnd : undefined}
-                  onTouchCancel={isProfileTab ? handleProfileTouchEnd : undefined}
                   className="flex flex-col items-center justify-center gap-1 min-w-[64px] py-2 transition-colors duration-200"
                   aria-label={item.label}
                   aria-current={isActive ? 'page' : undefined}
