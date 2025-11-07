@@ -283,11 +283,14 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                           return <CategoryIcon className="w-5 h-5 text-primary" />;
                         })()}
                       </div>
-                    ) : (
-                      <AvatarFallback className="bg-primary/10">
-                        <Star className="w-5 h-5 text-primary" />
-                      </AvatarFallback>
-                    )}
+                  ) : (
+                    <AvatarFallback className="bg-primary/10">
+                      {(() => {
+                        const CategoryIcon = getCategoryIcon('restaurant');
+                        return <CategoryIcon className="w-5 h-5 text-primary" />;
+                      })()}
+                    </AvatarFallback>
+                  )}
                   </Avatar>
                 </button>
 
