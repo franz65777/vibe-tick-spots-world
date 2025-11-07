@@ -2,10 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { useTranslation } from 'react-i18next';
-import { ChevronRight, Globe, Building2, BellOff, ArrowLeft, Shield, User } from 'lucide-react';
+import { ChevronRight, Globe, Building2, BellOff, ArrowLeft, Shield, User, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import BusinessRequestModal from '@/components/BusinessRequestModal';
 import LanguageModal from '@/components/settings/LanguageModal';
@@ -77,6 +78,16 @@ const SettingsPage: React.FC = () => {
       toast.error(e?.message || t('failedToSave', { ns: 'settings' }));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigate('/auth');
+    } catch (error) {
+      console.error('Error logging out:', error);
+      toast.error('Failed to logout');
     }
   };
 
@@ -185,6 +196,18 @@ const SettingsPage: React.FC = () => {
             )}
           </CardContent>
         </Card>
+      </div>
+
+      {/* Logout Button */}
+      <div className="p-4 border-t border-border bg-background">
+        <Button
+          onClick={handleLogout}
+          variant="outline"
+          className="w-full rounded-xl py-6 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
+        >
+          <LogOut className="w-5 h-5 mr-2" />
+          {t('logout', { ns: 'common' })}
+        </Button>
       </div>
 
       {/* Modals */}

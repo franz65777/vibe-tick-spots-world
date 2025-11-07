@@ -1,13 +1,6 @@
 
-import { MoreHorizontal, Building2, Edit, LogOut, Settings, Plus } from 'lucide-react';
+import { Building2, Settings, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
 import { useAuth } from '@/contexts/AuthContext';
@@ -84,14 +77,6 @@ const ProfileHeader = ({
       return profile.username.substring(0, 2).toUpperCase();
     }
     return 'U';
-  };
-
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-    } catch (error) {
-      console.error('Error logging out:', error);
-    }
   };
 
   const displayUsername = profile?.username || user?.user_metadata?.username || 'user';
@@ -194,24 +179,14 @@ const ProfileHeader = ({
             <div className="flex items-center gap-2 shrink-0">
               <BadgeDisplay userId={user?.id} onBadgesClick={onBadgesClick} />
               
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                    <MoreHorizontal className="w-5 h-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48 bg-background z-50">
-                  <DropdownMenuItem onClick={() => navigate('/settings')}>
-                    <Settings className="w-4 h-4 mr-2" />
-                    {t('title', { ns: 'settings' })}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="text-destructive">
-                    <LogOut className="w-4 h-4 mr-2" />
-                    {t('logout', { ns: 'common' })}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 p-0"
+                onClick={() => navigate('/settings')}
+              >
+                <Settings className="w-5 h-5" />
+              </Button>
             </div>
           </div>
 
