@@ -21,8 +21,24 @@ import SavedByModal from './SavedByModal';
 import { useTranslation } from 'react-i18next';
 import { useMarketingCampaign } from '@/hooks/useMarketingCampaign';
 import MarketingCampaignBanner from './MarketingCampaignBanner';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, Locale } from 'date-fns';
+import { it, es, pt, fr, de, ja, ko, ar, hi, ru, zhCN } from 'date-fns/locale';
 import { PostDetailModalMobile } from './PostDetailModalMobile';
+
+const localeMap: Record<string, Locale> = {
+  en: undefined as any, // English is the default
+  it,
+  es,
+  pt,
+  fr,
+  de,
+  ja,
+  ko,
+  ar,
+  hi,
+  ru,
+  'zh-CN': zhCN,
+};
 
 interface PinDetailCardProps {
   place: any;
@@ -34,7 +50,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
   const { user } = useAuth();
   const navigate = useNavigate();
   const { mutedLocations, muteLocation, unmuteLocation, isMuting } = useMutedLocations(user?.id);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -67,6 +83,9 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
     coordinates: place.coordinates,
     address: locationDetails?.address || place.address
   });
+  
+  // Get the current locale for date formatting
+  const currentLocale = localeMap[i18n.language] || localeMap['en'];
 
   const locationIdForEngagement = place.id || locationDetails?.id || null;
   const googlePlaceIdForEngagement = place.google_place_id || locationDetails?.google_place_id || null;
@@ -533,7 +552,9 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                       <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
                         <Camera className="w-8 h-8 text-muted-foreground" />
                       </div>
-                      <p className="text-sm text-muted-foreground">{t('noPosts', { ns: 'common', defaultValue: 'No posts yet' })}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {t('noPostsYet', { ns: 'common', defaultValue: 'No posts yet' })}
+                      </p>
                     </div>
                   ) : (
                     <>
@@ -617,7 +638,9 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                       <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
                         <Star className="w-8 h-8 text-muted-foreground" />
                       </div>
-                      <p className="text-sm text-muted-foreground">{t('noReviews', { ns: 'common', defaultValue: 'No reviews yet' })}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {t('noReviewsYet', { ns: 'common', defaultValue: 'No reviews yet' })}
+                      </p>
                     </div>
                   ) : (
                     <div className="space-y-4 pb-4">
@@ -641,7 +664,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                               <p className="text-sm text-muted-foreground mb-1">{review.comment}</p>
                             )}
                             <p className="text-xs text-muted-foreground">
-                              {formatDistanceToNow(new Date(review.created_at), { addSuffix: true })}
+                              {formatDistanceToNow(new Date(review.created_at), { addSuffix: true, locale: currentLocale })}
                             </p>
                           </div>
                         </div>
