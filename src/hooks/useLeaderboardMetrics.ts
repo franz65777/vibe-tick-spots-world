@@ -201,24 +201,49 @@ export const useLeaderboardMetrics = (
             }
 
             case 'reviews': {
-              // Count reviews
+              // Count reviews from both post_reviews table AND posts with ratings
               if (city && city !== 'all') {
-                // Get reviews for posts with locations in the selected city
+                // Get reviews from post_reviews table
                 const { data: reviewsData } = await supabase
                   .from('post_reviews')
                   .select('id, posts:post_id(location_id, locations:location_id(city))')
                   .eq('user_id', profile.id);
                 
-                score = (reviewsData || []).filter((row: any) => {
+                const reviewsCount = (reviewsData || []).filter((row: any) => {
                   const locCity = row.posts?.locations?.city;
                   return locCity && locCity.toLowerCase().includes(city.toLowerCase());
                 }).length;
+
+                // Get posts with ratings
+                const { data: postsWithRatings } = await supabase
+                  .from('posts')
+                  .select('id, location_id, locations:location_id(city)')
+                  .eq('user_id', profile.id)
+                  .not('rating', 'is', null)
+                  .gt('rating', 0);
+                
+                const ratedPostsCount = (postsWithRatings || []).filter((post: any) => {
+                  const locCity = post.locations?.city;
+                  return locCity && locCity.toLowerCase().includes(city.toLowerCase());
+                }).length;
+
+                score = reviewsCount + ratedPostsCount;
               } else {
-                const { count } = await supabase
+                // Count all reviews
+                const { count: reviewsCount } = await supabase
                   .from('post_reviews')
                   .select('id', { count: 'exact', head: true })
                   .eq('user_id', profile.id);
-                score = count || 0;
+                
+                // Count all posts with ratings
+                const { count: postsCount } = await supabase
+                  .from('posts')
+                  .select('id', { count: 'exact', head: true })
+                  .eq('user_id', profile.id)
+                  .not('rating', 'is', null)
+                  .gt('rating', 0);
+
+                score = (reviewsCount || 0) + (postsCount || 0);
               }
               break;
             }

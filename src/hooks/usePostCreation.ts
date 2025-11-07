@@ -167,6 +167,26 @@ export const usePostCreation = () => {
       console.log('✅ POST CREATED SUCCESSFULLY!');
       console.log('Post ID:', post.id, 'Location ID:', post.location_id);
       
+      // Create interaction for rating if provided
+      if (rating && locationId) {
+        console.log('⭐ Creating review interaction with rating:', rating);
+        const { error: interactionError } = await supabase
+          .from('interactions')
+          .insert({
+            user_id: user.id,
+            location_id: locationId,
+            action_type: 'review',
+            weight: rating
+          });
+        
+        if (interactionError) {
+          console.error('❌ Error creating review interaction:', interactionError);
+          // Don't throw - post is already created, just log the error
+        } else {
+          console.log('✅ Review interaction created successfully');
+        }
+      }
+      
       // VERIFICATION: Double-check the link was created correctly
       if (locationId && post.location_id === locationId) {
         console.log('✅ LOCATION LINK VERIFIED CORRECTLY');
