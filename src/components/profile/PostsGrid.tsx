@@ -2,6 +2,7 @@
 import { Heart, MessageCircle, Grid3X3, Trash2, Star, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import PostDetailModalMobile from '../explore/PostDetailModalMobile';
+import LocationPostLibrary from '../explore/LocationPostLibrary';
 import { useOptimizedPosts } from '@/hooks/useOptimizedPosts';
 import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { getCategoryIcon } from '@/utils/categoryIcons';
 
 interface Post {
   id: string;
@@ -49,6 +51,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
   const { deletePost, deleting } = usePostDeletion();
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [postFilter, setPostFilter] = useState<'photos' | 'reviews'>('photos');
+  const [selectedLocation, setSelectedLocation] = useState<any>(null);
 
   // Filter posts based on locationId, contentTypes, and excludeUserId
   const posts = allPosts.filter((post: any) => {
@@ -249,23 +252,64 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                 </>
               ) : (
                 /* Review Card */
-                <div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/5 flex flex-col items-center justify-center p-4">
-                  <Avatar className="w-12 h-12 mb-2 border-2 border-primary/20">
-                    <AvatarImage src={post.profiles?.avatar_url || undefined} />
-                    <AvatarFallback className="bg-primary text-primary-foreground">
-                      {post.profiles?.username?.[0]?.toUpperCase() || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex items-center gap-1.5 mb-2">
+                <div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/5 flex flex-col items-start justify-between p-4">
+                  {/* Header with category icon and location name */}
+                  <div className="flex items-start gap-3 w-full">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      {(() => {
+                        const CategoryIcon = post.locations?.category ? getCategoryIcon(post.locations.category) : Star;
+                        return <CategoryIcon className="w-6 h-6 text-primary" />;
+                      })()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      {post.locations ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedLocation({
+                              id: post.locations.id,
+                              name: post.locations.name,
+                              category: post.locations.category || 'restaurant',
+                              city: post.locations.city,
+                              coordinates: {
+                                lat: post.locations.latitude,
+                                lng: post.locations.longitude,
+                              },
+                              address: post.locations.address,
+                            });
+                          }}
+                          className="font-semibold text-sm text-foreground hover:text-primary transition-colors text-left line-clamp-2"
+                        >
+                          {post.locations.name}
+                        </button>
+                      ) : (
+                        <p className="font-semibold text-sm text-muted-foreground line-clamp-2">
+                          {t('unknownLocation', { ns: 'common', defaultValue: 'Unknown Location' })}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {new Date(post.created_at).toLocaleDateString(undefined, { 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Rating */}
+                  <div className="flex items-center gap-1.5">
                     <Star className="w-5 h-5 fill-amber-500 text-amber-500" />
                     <span className="text-2xl font-bold text-foreground">{post.rating}</span>
                     <span className="text-sm text-muted-foreground">/10</span>
                   </div>
+
+                  {/* Caption */}
                   {post.caption && (
-                    <p className="text-xs text-center text-muted-foreground line-clamp-3 mt-2">
+                    <p className="text-xs text-muted-foreground line-clamp-2 w-full">
                       {post.caption}
                     </p>
                   )}
+
                   {/* Delete button for reviews */}
                   {isOwnProfile && (
                     <button
@@ -299,6 +343,14 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
             const { queryClient } = await import('@/lib/queryClient');
             queryClient.invalidateQueries({ queryKey: ['posts', targetUserId] });
           }}
+        />
+      )}
+
+      {selectedLocation && (
+        <LocationPostLibrary
+          place={selectedLocation}
+          isOpen={true}
+          onClose={() => setSelectedLocation(null)}
         />
       )}
     </div>
