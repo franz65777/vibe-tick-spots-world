@@ -40,13 +40,24 @@ const NewBottomNavigation = () => {
     trackEvent('nav_tab_clicked', { tab: label.toLowerCase() });
   };
 
-  const handleProfileClick = () => {
-    // Only show modal if user has a valid business account, otherwise navigate directly
-    if (hasValidBusinessAccount) {
+  const handleProfileLongPressStart = () => {
+    // Only show switch modal if user has a business account
+    if (!hasValidBusinessAccount) return;
+    
+    const timer = setTimeout(() => {
       setShowSwitchModal(true);
-    } else {
-      navigate('/profile');
-      trackEvent('nav_tab_clicked', { tab: 'profile' });
+    }, 800); // 800ms long press
+    setLongPressTimer(timer);
+  };
+
+  const handleProfileLongPressEnd = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+      // Short tap - navigate to profile
+      if (!showSwitchModal) {
+        handleNavClick('/profile', 'Profile');
+      }
     }
   };
 
@@ -114,7 +125,12 @@ const NewBottomNavigation = () => {
               return (
                 <button
                   key={item.path}
-                  onClick={isProfileTab ? handleProfileClick : () => handleNavClick(item.path, item.label)}
+                  onClick={isProfileTab ? undefined : () => handleNavClick(item.path, item.label)}
+                  onMouseDown={isProfileTab ? handleProfileLongPressStart : undefined}
+                  onMouseUp={isProfileTab ? handleProfileLongPressEnd : undefined}
+                  onMouseLeave={isProfileTab ? handleProfileLongPressEnd : undefined}
+                  onTouchStart={isProfileTab ? handleProfileLongPressStart : undefined}
+                  onTouchEnd={isProfileTab ? handleProfileLongPressEnd : undefined}
                   className="flex flex-col items-center justify-center gap-1 min-w-[64px] py-2 transition-colors duration-200"
                   aria-label={item.label}
                   aria-current={isActive ? 'page' : undefined}
