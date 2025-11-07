@@ -1688,6 +1688,7 @@ export type Database = {
           invited_users_count: number | null
           is_business_user: boolean | null
           language: string
+          last_username_change_at: string | null
           places_visited: number | null
           posts_count: number | null
           subscription_status:
@@ -1696,6 +1697,7 @@ export type Database = {
           updated_at: string
           user_type: Database["public"]["Enums"]["user_type"] | null
           username: string | null
+          username_changes_count: number | null
         }
         Insert: {
           avatar_url?: string | null
@@ -1714,6 +1716,7 @@ export type Database = {
           invited_users_count?: number | null
           is_business_user?: boolean | null
           language?: string
+          last_username_change_at?: string | null
           places_visited?: number | null
           posts_count?: number | null
           subscription_status?:
@@ -1722,6 +1725,7 @@ export type Database = {
           updated_at?: string
           user_type?: Database["public"]["Enums"]["user_type"] | null
           username?: string | null
+          username_changes_count?: number | null
         }
         Update: {
           avatar_url?: string | null
@@ -1740,6 +1744,7 @@ export type Database = {
           invited_users_count?: number | null
           is_business_user?: boolean | null
           language?: string
+          last_username_change_at?: string | null
           places_visited?: number | null
           posts_count?: number | null
           subscription_status?:
@@ -1748,6 +1753,7 @@ export type Database = {
           updated_at?: string
           user_type?: Database["public"]["Enums"]["user_type"] | null
           username?: string | null
+          username_changes_count?: number | null
         }
         Relationships: [
           {
@@ -2636,6 +2642,45 @@ export type Database = {
             columns: ["location_id"]
             isOneToOne: false
             referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      username_changes: {
+        Row: {
+          changed_at: string
+          id: string
+          new_username: string
+          old_username: string
+          user_id: string
+        }
+        Insert: {
+          changed_at?: string
+          id?: string
+          new_username: string
+          old_username: string
+          user_id: string
+        }
+        Update: {
+          changed_at?: string
+          id?: string
+          new_username?: string
+          old_username?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_user_id"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "username_changes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

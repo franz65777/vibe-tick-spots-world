@@ -75,6 +75,27 @@ const EditProfilePage = () => {
     return !data && error?.code === 'PGRST116';
   };
 
+  const checkUsernameChangeLimit = async (): Promise<{ allowed: boolean; count: number }> => {
+    if (!user?.id) return { allowed: false, count: 0 };
+    
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const { data, error } = await supabase
+      .from('username_changes')
+      .select('id')
+      .eq('user_id', user.id)
+      .gte('changed_at', thirtyDaysAgo.toISOString());
+    
+    if (error) {
+      console.error('Error checking username changes:', error);
+      return { allowed: true, count: 0 };
+    }
+    
+    const count = data?.length || 0;
+    return { allowed: count < 2, count };
+  };
+
   const handleUsernameChange = async (newUsername: string) => {
     setUsername(newUsername);
     setUsernameError(null);
@@ -96,11 +117,23 @@ const EditProfilePage = () => {
 
     setIsLoading(true);
     try {
-      const isAvailable = await checkUsernameAvailability(username.trim());
-      if (!isAvailable) {
-        toast.error(t('usernameNotAvailable', { ns: 'settings' }));
-        setIsLoading(false);
-        return;
+      const isUsernameChanging = username.trim() !== profile?.username;
+      
+      // Check if username is changing and if user has reached the limit
+      if (isUsernameChanging) {
+        const isAvailable = await checkUsernameAvailability(username.trim());
+        if (!isAvailable) {
+          toast.error(t('usernameNotAvailable', { ns: 'settings' }));
+          setIsLoading(false);
+          return;
+        }
+
+        const { allowed, count } = await checkUsernameChangeLimit();
+        if (!allowed) {
+          toast.error(t('usernameChangeLimitReached', { ns: 'settings' }));
+          setIsLoading(false);
+          return;
+        }
       }
 
       let avatarUrl = profile?.avatar_url;
@@ -131,6 +164,17 @@ const EditProfilePage = () => {
         bio: bio.trim(),
         avatar_url: avatarUrl
       });
+
+      // Track username change if it changed
+      if (isUsernameChanging && user?.id && profile?.username) {
+        await supabase
+          .from('username_changes')
+          .insert({
+            user_id: user.id,
+            old_username: profile.username,
+            new_username: username.trim()
+          });
+      }
 
       await refetch();
       toast.success(t('profileUpdated', { ns: 'settings' }));
