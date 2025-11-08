@@ -341,6 +341,7 @@ const resources = {
       usernamePlaceholder: 'Enter username',
         usernameNotAvailable: 'Username not available',
         usernameAlreadyTaken: 'Username already taken',
+      checkingAvailability: 'Checking availability...',
       usernameChangeLimitReached: 'You can only change your username 2 times per month',
       bio: 'Bio',
       bioPlaceholder: 'Tell us about yourself...',
@@ -999,6 +1000,7 @@ const resources = {
       usernamePlaceholder: 'Ingresa tu nombre de usuario',
         usernameNotAvailable: 'Nombre de usuario no disponible',
         usernameAlreadyTaken: 'Nombre de usuario ya en uso',
+      checkingAvailability: 'Verificando disponibilidad...',
       usernameChangeLimitReached: 'Solo puedes cambiar tu nombre de usuario 2 veces al mes',
       bio: 'Biografía',
       bioPlaceholder: 'Cuéntanos sobre ti...',
@@ -1644,6 +1646,7 @@ const resources = {
       usernamePlaceholder: 'Inserisci il nome utente',
         usernameNotAvailable: 'Nome utente non disponibile',
         usernameAlreadyTaken: 'Nome utente già in uso',
+      checkingAvailability: 'Verifica disponibilità...',
       usernameChangeLimitReached: 'Puoi cambiare il tuo nome utente solo 2 volte al mese',
       bio: 'Biografia',
       bioPlaceholder: 'Raccontaci di te...',
@@ -2285,6 +2288,7 @@ const resources = {
       usernamePlaceholder: 'Entrez votre nom d\'utilisateur',
         usernameNotAvailable: 'Nom d\'utilisateur non disponible',
         usernameAlreadyTaken: 'Nom d\'utilisateur déjà pris',
+      checkingAvailability: 'Vérification de la disponibilité...',
       usernameChangeLimitReached: 'Vous ne pouvez changer votre nom d\'utilisateur que 2 fois par mois',
       bio: 'Biographie',
       bioPlaceholder: 'Parlez-nous de vous...',
@@ -2859,6 +2863,7 @@ const resources = {
       usernamePlaceholder: 'Benutzername eingeben',
         usernameNotAvailable: 'Benutzername nicht verfügbar',
         usernameAlreadyTaken: 'Benutzername bereits vergeben',
+      checkingAvailability: 'Verfügbarkeit prüfen...',
       usernameChangeLimitReached: 'Sie können Ihren Benutzernamen nur 2 Mal pro Monat ändern',
       bio: 'Biografie',
       bioPlaceholder: 'Erzähle uns von dir...',
@@ -3353,6 +3358,7 @@ const resources = {
       usernamePlaceholder: 'Digite o nome de usuário',
         usernameNotAvailable: 'Nome de usuário não disponível',
         usernameAlreadyTaken: 'Nome de usuário já em uso',
+      checkingAvailability: 'Verificando disponibilidade...',
       usernameChangeLimitReached: 'Você só pode alterar seu nome de usuário 2 vezes por mês',
       bio: 'Biografia',
       bioPlaceholder: 'Conte-nos sobre você...',
@@ -3770,6 +3776,7 @@ const resources = {
       usernamePlaceholder: '输入用户名',
         usernameNotAvailable: '用户名不可用',
         usernameAlreadyTaken: '用户名已被使用',
+      checkingAvailability: '检查可用性...',
       usernameChangeLimitReached: '您每月只能更改2次用户名',
       bio: '个人简介',
       bioPlaceholder: '告诉我们关于您的信息...',
@@ -4161,6 +4168,7 @@ const resources = {
       usernamePlaceholder: 'ユーザー名を入力',
         usernameNotAvailable: 'ユーザー名は利用できません',
         usernameAlreadyTaken: 'ユーザー名は既に使用されています',
+      checkingAvailability: '利用可能性を確認中...',
       usernameChangeLimitReached: 'ユーザー名の変更は月2回までです',
       bio: '自己紹介',
       bioPlaceholder: '自己紹介を入力...',
@@ -4573,6 +4581,7 @@ const resources = {
       usernamePlaceholder: '사용자 이름 입력',
         usernameNotAvailable: '사용자 이름을 사용할 수 없습니다',
         usernameAlreadyTaken: '사용자 이름이 이미 사용 중입니다',
+      checkingAvailability: '사용 가능 여부 확인 중...',
       usernameChangeLimitReached: '사용자 이름은 월 2회만 변경할 수 있습니다',
       bio: '소개',
       bioPlaceholder: '자기소개를 입력하세요...',
@@ -4985,6 +4994,7 @@ const resources = {
       usernamePlaceholder: 'أدخل اسم المستخدم',
         usernameNotAvailable: 'اسم المستخدم غير متاح',
         usernameAlreadyTaken: 'اسم المستخدم مستخدم بالفعل',
+      checkingAvailability: 'جاري التحقق من التوفر...',
       usernameChangeLimitReached: 'يمكنك تغيير اسم المستخدم مرتين فقط في الشهر',
       bio: 'السيرة الذاتية',
       bioPlaceholder: 'أخبرنا عن نفسك...',
@@ -5396,6 +5406,7 @@ const resources = {
       usernamePlaceholder: 'उपयोगकर्ता नाम दर्ज करें',
         usernameNotAvailable: 'उपयोगकर्ता नाम उपलब्ध नहीं है',
         usernameAlreadyTaken: 'उपयोगकर्ता नाम पहले से उपयोग में है',
+      checkingAvailability: 'उपलब्धता की जांच की जा रही है...',
       usernameChangeLimitReached: 'आप प्रति माह केवल 2 बार उपयोगकर्ता नाम बदल सकते हैं',
       bio: 'जीवनी',
       bioPlaceholder: 'हमें अपने बारे में बताएं...',
@@ -5808,6 +5819,7 @@ const resources = {
       usernamePlaceholder: 'Введите имя пользователя',
         usernameNotAvailable: 'Имя пользователя недоступно',
         usernameAlreadyTaken: 'Имя пользователя уже занято',
+      checkingAvailability: 'Проверка доступности...',
       usernameChangeLimitReached: 'Вы можете изменить имя пользователя только 2 раза в месяц',
       bio: 'Биография',
       bioPlaceholder: 'Расскажите о себе...',
@@ -6015,12 +6027,13 @@ Object.keys(authTranslationsExtended).forEach(lang => {
 });
 
 // Add Chinese (zh) as the 12th language
-resources.zh = {
+// Temporarily commented out due to TypeScript error - zh translations need to be added to main resources
+/* resources.zh = {
   ...authTranslationsExtended.zh,
   common: {
     ...resources.en.common  // Temporary: copy from English, will be translated later
   }
-};
+}; */
 
 i18n
   .use(LanguageDetector)

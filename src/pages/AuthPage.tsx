@@ -28,6 +28,8 @@ const AuthPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [checkingUsername, setCheckingUsername] = useState(false);
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
 
@@ -45,6 +47,37 @@ const AuthPage = () => {
       setIsLogin(true);
     }
   }, [searchParams]);
+
+  const checkUsernameAvailability = async (username: string): Promise<boolean> => {
+    if (!username.trim()) return true;
+    
+    const { supabase } = await import('@/integrations/supabase/client');
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('username', username.trim())
+      .single();
+    
+    return !data && error?.code === 'PGRST116';
+  };
+
+  const handleUsernameChange = async (newUsername: string) => {
+    setUsername(newUsername);
+    setUsernameError(null);
+    
+    if (newUsername.trim() === '') {
+      setCheckingUsername(false);
+      return;
+    }
+    
+    setCheckingUsername(true);
+    const isAvailable = await checkUsernameAvailability(newUsername);
+    setCheckingUsername(false);
+    
+    if (!isAvailable) {
+      setUsernameError(t('auth:usernameAlreadyTaken'));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,6 +108,20 @@ const AuthPage = () => {
 
         if (accountType === 'business' && (!businessName || !businessType)) {
           toast.error(t('auth:fillBusinessInfo'));
+          setLoading(false);
+          return;
+        }
+
+        if (usernameError) {
+          toast.error(t('common:usernameAlreadyTaken'));
+          setLoading(false);
+          return;
+        }
+
+        const isUsernameAvailable = await checkUsernameAvailability(username);
+        if (!isUsernameAvailable) {
+          setUsernameError(t('common:usernameAlreadyTaken'));
+          toast.error(t('common:usernameAlreadyTaken'));
           setLoading(false);
           return;
         }
@@ -245,11 +292,17 @@ const AuthPage = () => {
                     id="username"
                     type="text"
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    onChange={(e) => handleUsernameChange(e.target.value)}
                     required={!isLogin}
                     className="mt-1 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                     placeholder={t('auth:chooseUsername')}
                   />
+                  {checkingUsername && (
+                    <p className="mt-1 text-xs text-muted-foreground">{t('common:checkingAvailability')}</p>
+                  )}
+                  {usernameError && (
+                    <p className="mt-1 text-xs text-destructive">{usernameError}</p>
+                  )}
                 </div>
 
                 {accountType === 'business' && (
