@@ -1,6 +1,8 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
+import { authTranslations } from './i18n-auth';
+import { authTranslationsExtended } from './i18n-auth-extended';
 
 // Comprehensive resources for all languages
 const resources = {
@@ -5993,13 +5995,40 @@ const resources = {
   }
 };
 
+// Merge auth translations into resources
+Object.keys(authTranslations).forEach(lang => {
+  if (resources[lang]) {
+    resources[lang] = {
+      ...resources[lang],
+      ...authTranslations[lang]
+    };
+  }
+});
+
+Object.keys(authTranslationsExtended).forEach(lang => {
+  if (resources[lang]) {
+    resources[lang] = {
+      ...resources[lang],
+      ...authTranslationsExtended[lang]
+    };
+  }
+});
+
+// Add Chinese (zh) as the 12th language
+resources.zh = {
+  ...authTranslationsExtended.zh,
+  common: {
+    ...resources.en.common  // Temporary: copy from English, will be translated later
+  }
+};
+
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources,
     fallbackLng: 'en',
-    ns: ['common', 'notifications', 'categories', 'profile', 'mapFilters', 'navigation', 'business', 'search', 'badges', 'gamification', 'messages', 'settings', 'leaderboard', 'home', 'explore', 'add'],
+    ns: ['common', 'notifications', 'categories', 'profile', 'mapFilters', 'navigation', 'business', 'search', 'badges', 'gamification', 'messages', 'settings', 'leaderboard', 'home', 'explore', 'add', 'auth', 'terms', 'privacy'],
     defaultNS: 'common',
     interpolation: {
       escapeValue: false,

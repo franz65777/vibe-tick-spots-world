@@ -6,8 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Eye, EyeOff, MapPin, ArrowLeft, Building } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { authTranslations } from '@/i18n-auth';
+import { authTranslationsExtended } from '@/i18n-auth-extended';
 
 const AuthPage = () => {
+  const { t, i18n } = useTranslation(['auth']);
   const [searchParams] = useSearchParams();
   const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : 'login';
   const [isLogin, setIsLogin] = useState(initialMode === 'login');
@@ -20,7 +24,7 @@ const AuthPage = () => {
   const [businessName, setBusinessName] = useState('');
   const [businessType, setBusinessType] = useState('');
   const [loginEmail, setLoginEmail] = useState('');
-  const [language, setLanguage] = useState('en');
+  const [language, setLanguage] = useState(i18n.language || 'en');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -52,25 +56,25 @@ const AuthPage = () => {
         if (error) {
           toast.error(error.message);
         } else {
-          toast.success('Welcome back!');
+          toast.success(t('auth:welcomeBackMessage'));
           navigate('/');
         }
       } else {
         // Validation for signup
         if (password !== confirmPassword) {
-          toast.error('Passwords do not match');
+          toast.error(t('auth:passwordsNotMatch'));
           setLoading(false);
           return;
         }
-        
+
         if (password.length < 6) {
-          toast.error('Password must be at least 6 characters long');
+          toast.error(t('auth:passwordMinLength'));
           setLoading(false);
           return;
         }
 
         if (accountType === 'business' && (!businessName || !businessType)) {
-          toast.error('Please fill in all business information');
+          toast.error(t('auth:fillBusinessInfo'));
           setLoading(false);
           return;
         }
@@ -91,13 +95,13 @@ const AuthPage = () => {
           toast.error(error.message);
         } else {
           if (accountType === 'business') {
-            toast.success('Business account created! Redirecting to subscription setup...');
+            toast.success(t('auth:businessAccountCreated'));
             // Redirect to subscription page for business accounts
             setTimeout(() => {
               navigate('/subscription');
             }, 1500);
           } else {
-            toast.success('Account created! Please check your email to verify your account.');
+            toast.success(t('auth:accountCreated'));
           }
         }
       }
@@ -117,7 +121,7 @@ const AuthPage = () => {
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
         >
           <ArrowLeft size={20} />
-          Back
+          {t('auth:back')}
         </Button>
       </div>
 
@@ -135,12 +139,12 @@ const AuthPage = () => {
               </div>
             </div>
             <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-              {isLogin ? 'Welcome back' : 'Create your account'}
+              {isLogin ? t('auth:welcomeBack') : t('auth:createAccount')}
             </h2>
             <p className="text-gray-600">
-              {isLogin 
-                ? 'Sign in to discover amazing places' 
-                : 'Join SPOTT to start discovering amazing places'
+              {isLogin
+                ? t('auth:signInDiscover')
+                : t('auth:joinSpott')
               }
             </p>
           </div>
@@ -148,7 +152,7 @@ const AuthPage = () => {
           {/* Account type selector for signup */}
           {!isLogin && (
             <div className="space-y-4">
-              <Label className="text-sm font-medium text-gray-700">Account Type</Label>
+              <Label className="text-sm font-medium text-gray-700">{t('auth:accountType')}</Label>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
@@ -160,8 +164,8 @@ const AuthPage = () => {
                   }`}
                 >
                   <MapPin className="w-6 h-6 mx-auto mb-2" />
-                  <div className="text-sm font-medium">Free User</div>
-                  <div className="text-xs text-gray-500">Discover & share places</div>
+                  <div className="text-sm font-medium">{t('auth:freeUser')}</div>
+                  <div className="text-xs text-gray-500">{t('auth:discoverShare')}</div>
                 </button>
                 <button
                   type="button"
@@ -173,24 +177,28 @@ const AuthPage = () => {
                   }`}
                 >
                   <Building className="w-6 h-6 mx-auto mb-2" />
-                  <div className="text-sm font-medium">Business</div>
-                  <div className="text-xs text-gray-500">60 days free, then €29.99/mo</div>
+                  <div className="text-sm font-medium">{t('auth:business')}</div>
+                  <div className="text-xs text-gray-500">{t('auth:businessTrial')}</div>
                 </button>
               </div>
               {accountType === 'business' && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <p className="text-sm text-blue-700">
-                    <strong>Business Trial:</strong> Start with 60 days free! After your trial, continue for just €29.99/month or downgrade to a free account.
+                    {t('auth:businessTrialDesc')}
                   </p>
                 </div>
               )}
 
               {/* Language selection */}
               <div>
-                <Label className="text-sm font-medium text-gray-700">Language</Label>
+                <Label className="text-sm font-medium text-gray-700">{t('auth:language')}</Label>
                 <select
                   value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
+                  onChange={(e) => {
+                    const newLang = e.target.value;
+                    setLanguage(newLang);
+                    i18n.changeLanguage(newLang);
+                  }}
                   className="mt-1 h-12 w-full border border-gray-300 rounded-md px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
                 >
                   <option value="en">English</option>
@@ -199,6 +207,12 @@ const AuthPage = () => {
                   <option value="fr">Français</option>
                   <option value="de">Deutsch</option>
                   <option value="pt">Português</option>
+                  <option value="ja">日本語</option>
+                  <option value="ko">한국어</option>
+                  <option value="ar">العربية</option>
+                  <option value="hi">हिन्दी</option>
+                  <option value="ru">Русский</option>
+                  <option value="zh">中文</option>
                 </select>
               </div>
             </div>
@@ -210,7 +224,7 @@ const AuthPage = () => {
               <>
                 <div>
                   <Label htmlFor="fullName" className="text-sm font-medium text-gray-700">
-                    Full Name
+                    {t('auth:fullName')}
                   </Label>
                   <Input
                     id="fullName"
@@ -219,13 +233,13 @@ const AuthPage = () => {
                     onChange={(e) => setFullName(e.target.value)}
                     required={!isLogin}
                     className="mt-1 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                    placeholder="Enter your full name"
+                    placeholder={t('auth:enterFullName')}
                   />
                 </div>
 
                 <div>
                   <Label htmlFor="username" className="text-sm font-medium text-gray-700">
-                    Username
+                    {t('auth:username')}
                   </Label>
                   <Input
                     id="username"
@@ -234,7 +248,7 @@ const AuthPage = () => {
                     onChange={(e) => setUsername(e.target.value)}
                     required={!isLogin}
                     className="mt-1 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                    placeholder="Choose a username"
+                    placeholder={t('auth:chooseUsername')}
                   />
                 </div>
 
@@ -242,7 +256,7 @@ const AuthPage = () => {
                   <>
                     <div>
                       <Label htmlFor="businessName" className="text-sm font-medium text-gray-700">
-                        Business Name
+                        {t('auth:businessName')}
                       </Label>
                       <Input
                         id="businessName"
@@ -251,13 +265,13 @@ const AuthPage = () => {
                         onChange={(e) => setBusinessName(e.target.value)}
                         required={accountType === 'business'}
                         className="mt-1 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                        placeholder="Enter your business name"
+                        placeholder={t('auth:enterBusinessName')}
                       />
                     </div>
 
                     <div>
                       <Label htmlFor="businessType" className="text-sm font-medium text-gray-700">
-                        Business Type
+                        {t('auth:businessType')}
                       </Label>
                       <select
                         id="businessType"
@@ -266,14 +280,14 @@ const AuthPage = () => {
                         required={accountType === 'business'}
                         className="mt-1 h-12 w-full border border-gray-300 rounded-md px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
                       >
-                        <option value="">Select business type</option>
-                        <option value="restaurant">Restaurant</option>
-                        <option value="hotel">Hotel</option>
-                        <option value="cafe">Cafe</option>
-                        <option value="bar">Bar</option>
-                        <option value="shop">Shop</option>
-                        <option value="attraction">Attraction</option>
-                        <option value="other">Other</option>
+                        <option value="">{t('auth:selectBusinessType')}</option>
+                        <option value="restaurant">{t('auth:restaurant')}</option>
+                        <option value="hotel">{t('auth:hotel')}</option>
+                        <option value="cafe">{t('auth:cafe')}</option>
+                        <option value="bar">{t('auth:bar')}</option>
+                        <option value="shop">{t('auth:shop')}</option>
+                        <option value="attraction">{t('auth:attraction')}</option>
+                        <option value="other">{t('auth:other')}</option>
                       </select>
                     </div>
                   </>
@@ -281,7 +295,7 @@ const AuthPage = () => {
 
                 <div>
                   <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                    Email
+                    {t('auth:email')}
                   </Label>
                   <Input
                     id="email"
@@ -290,7 +304,7 @@ const AuthPage = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     required={!isLogin}
                     className="mt-1 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                    placeholder="Enter your email"
+                    placeholder={t('auth:enterEmail')}
                   />
                 </div>
               </>
@@ -299,7 +313,7 @@ const AuthPage = () => {
             {isLogin && (
               <div>
                 <Label htmlFor="loginEmail" className="text-sm font-medium text-gray-700">
-                  Email Address
+                  {t('auth:emailAddress')}
                 </Label>
                 <Input
                   id="loginEmail"
@@ -308,17 +322,17 @@ const AuthPage = () => {
                   onChange={(e) => setLoginEmail(e.target.value)}
                   required={isLogin}
                   className="mt-1 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                  placeholder="Enter your email address"
+                  placeholder={t('auth:enterEmailAddress')}
                 />
                 <p className="mt-1 text-xs text-gray-500">
-                  For security, please use your email address to sign in
+                  {t('auth:emailSecurity')}
                 </p>
               </div>
             )}
 
             <div>
               <Label htmlFor="password" className="text-sm font-medium text-gray-700">
-                Password
+                {t('auth:password')}
               </Label>
               <div className="relative mt-1">
                 <Input
@@ -328,7 +342,7 @@ const AuthPage = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   className="h-12 pr-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                  placeholder="Enter your password"
+                  placeholder={t('auth:enterPassword')}
                 />
                 <button
                   type="button"
@@ -347,7 +361,7 @@ const AuthPage = () => {
             {!isLogin && (
               <div>
                 <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
-                  Confirm Password
+                  {t('auth:confirmPassword')}
                 </Label>
                 <div className="relative mt-1">
                   <Input
@@ -357,7 +371,7 @@ const AuthPage = () => {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required={!isLogin}
                     className="h-12 pr-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                    placeholder="Confirm your password"
+                    placeholder={t('auth:confirmYourPassword')}
                   />
                   <button
                     type="button"
@@ -379,14 +393,14 @@ const AuthPage = () => {
               disabled={loading}
               className="w-full h-12 bg-gradient-to-r from-blue-800 via-blue-600 to-blue-400 hover:from-blue-900 hover:via-blue-700 hover:to-blue-500 text-white font-medium"
             >
-              {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
+              {loading ? t('auth:pleaseWait') : (isLogin ? t('auth:signIn') : t('auth:createAccountButton'))}
             </Button>
           </form>
 
           {/* Toggle between login and signup */}
           <div className="text-center">
             <p className="text-gray-600">
-              {isLogin ? "Don't have an account?" : 'Already have an account?'}
+              {isLogin ? t('auth:dontHaveAccount') : t('auth:alreadyHaveAccount')}
               <button
                 type="button"
                 onClick={() => {
@@ -395,26 +409,26 @@ const AuthPage = () => {
                 }}
                 className="ml-2 font-medium text-blue-600 hover:text-blue-500"
               >
-                {isLogin ? 'Sign up' : 'Sign in'}
+                {isLogin ? t('auth:signUp') : t('auth:signInButton')}
               </button>
             </p>
           </div>
 
           {/* Terms and Privacy */}
           <div className="text-center text-xs text-gray-500">
-            By continuing, you agree to our{' '}
-            <button 
+            {t('auth:byContinuing')}{' '}
+            <button
               onClick={() => navigate('/terms')}
               className="text-blue-600 hover:underline"
             >
-              Terms of Service
+              {t('auth:termsOfService')}
             </button>{' '}
-            and{' '}
-            <button 
+            {t('auth:and')}{' '}
+            <button
               onClick={() => navigate('/privacy')}
               className="text-blue-600 hover:underline"
             >
-              Privacy Policy
+              {t('auth:privacyPolicy')}
             </button>
           </div>
         </div>

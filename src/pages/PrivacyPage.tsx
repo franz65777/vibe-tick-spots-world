@@ -1,11 +1,12 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, MapPin } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const PrivacyPage = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation(['privacy']);
 
   return (
     <div className="min-h-screen bg-white">
@@ -18,7 +19,7 @@ const PrivacyPage = () => {
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
         >
           <ArrowLeft size={20} />
-          Back
+          {t('common:back', { defaultValue: 'Back' })}
         </Button>
       </div>
 
@@ -32,86 +33,86 @@ const PrivacyPage = () => {
               <MapPin className="w-3 h-3 text-blue-600 fill-blue-600 ml-1" />
             </h1>
           </div>
-          <h2 className="text-2xl font-semibold text-gray-900">Privacy Policy</h2>
-          <p className="text-gray-600 mt-2">Last updated: June 11, 2025</p>
+          <h2 className="text-2xl font-semibold text-gray-900">{t('privacy:title')}</h2>
+          <p className="text-gray-600 mt-2">{t('privacy:lastUpdated')}</p>
         </div>
 
         {/* Privacy content */}
         <div className="prose max-w-none">
           <section className="mb-8">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">1. Information We Collect</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">{t('privacy:section1Title')}</h3>
             <p className="text-gray-700 mb-4">
-              We collect information you provide directly to us, such as when you create an account, post content, or contact us. This includes your name, email address, username, and any content you share.
+              {t('privacy:section1Content')}
             </p>
           </section>
 
           <section className="mb-8">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">2. Location Information</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">{t('privacy:section2Title')}</h3>
             <p className="text-gray-700 mb-4">
-              With your permission, we may collect location information to help you discover places near you and to enhance your experience with location-based features.
+              {t('privacy:section2Content')}
             </p>
           </section>
 
           <section className="mb-8">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">3. How We Use Your Information</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">{t('privacy:section3Title')}</h3>
             <p className="text-gray-700 mb-4">
-              We use the information we collect to provide, maintain, and improve our services, communicate with you, and personalize your experience.
+              {t('privacy:section3Content')}
             </p>
           </section>
 
           <section className="mb-8">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">4. Information Sharing</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">{t('privacy:section4Title')}</h3>
             <p className="text-gray-700 mb-4">
-              We do not sell, trade, or otherwise transfer your personal information to third parties without your consent, except as described in this policy.
+              {t('privacy:section4Content')}
             </p>
           </section>
 
           <section className="mb-8">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">5. Business Account Data</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">{t('privacy:section5Title')}</h3>
             <p className="text-gray-700 mb-4">
-              For business accounts, we may collect additional information such as business name, type, and payment information for subscription billing purposes.
+              {t('privacy:section5Content')}
             </p>
           </section>
 
           <section className="mb-8">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">6. Data Security</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">{t('privacy:section6Title')}</h3>
             <p className="text-gray-700 mb-4">
-              We implement appropriate security measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.
+              {t('privacy:section6Content')}
             </p>
           </section>
 
           <section className="mb-8">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">7. Cookies and Tracking</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">{t('privacy:section7Title')}</h3>
             <p className="text-gray-700 mb-4">
-              We use cookies and similar tracking technologies to enhance your experience and analyze usage patterns on our platform.
+              {t('privacy:section7Content')}
             </p>
           </section>
 
           <section className="mb-8">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">8. Your Rights</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">{t('privacy:section8Title')}</h3>
             <p className="text-gray-700 mb-4">
-              You have the right to access, update, or delete your personal information. You may also opt out of certain communications from us.
+              {t('privacy:section8Content')}
             </p>
           </section>
 
           <section className="mb-8">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">9. Children's Privacy</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">{t('privacy:section9Title')}</h3>
             <p className="text-gray-700 mb-4">
-              Our service is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13.
+              {t('privacy:section9Content')}
             </p>
           </section>
 
           <section className="mb-8">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">10. Changes to Privacy Policy</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">{t('privacy:section10Title')}</h3>
             <p className="text-gray-700 mb-4">
-              We may update this privacy policy from time to time. We will notify you of any changes by posting the new policy on this page.
+              {t('privacy:section10Content')}
             </p>
           </section>
 
           <section className="mb-8">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">11. Contact Us</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">{t('privacy:section11Title')}</h3>
             <p className="text-gray-700 mb-4">
-              If you have any questions about this Privacy Policy, please contact us at privacy@spott.com.
+              {t('privacy:section11Content')}
             </p>
           </section>
         </div>
