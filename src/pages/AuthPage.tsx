@@ -52,26 +52,28 @@ const AuthPage = () => {
     if (!username.trim()) return true;
     
     const { supabase } = await import('@/integrations/supabase/client');
+    const normalizedUsername = username.trim().toLowerCase();
     const { data, error } = await supabase
       .from('profiles')
       .select('id')
-      .eq('username', username.trim())
-      .single();
+      .eq('username', normalizedUsername)
+      .maybeSingle();
     
-    return !data && error?.code === 'PGRST116';
+    return !data;
   };
 
   const handleUsernameChange = async (newUsername: string) => {
-    setUsername(newUsername);
+    const lowercaseUsername = newUsername.toLowerCase();
+    setUsername(lowercaseUsername);
     setUsernameError(null);
     
-    if (newUsername.trim() === '') {
+    if (lowercaseUsername.trim() === '') {
       setCheckingUsername(false);
       return;
     }
     
     setCheckingUsername(true);
-    const isAvailable = await checkUsernameAvailability(newUsername);
+    const isAvailable = await checkUsernameAvailability(lowercaseUsername);
     setCheckingUsername(false);
     
     if (!isAvailable) {
@@ -118,7 +120,8 @@ const AuthPage = () => {
           return;
         }
 
-        const isUsernameAvailable = await checkUsernameAvailability(username);
+        const normalizedUsername = username.trim().toLowerCase();
+        const isUsernameAvailable = await checkUsernameAvailability(normalizedUsername);
         if (!isUsernameAvailable) {
           setUsernameError(t('common:usernameAlreadyTaken'));
           toast.error(t('common:usernameAlreadyTaken'));
@@ -126,9 +129,10 @@ const AuthPage = () => {
           return;
         }
 
+        const normalizedUsernameForSignup = username.trim().toLowerCase();
         const metadata: any = {
           full_name: fullName,
-          username: username,
+          username: normalizedUsernameForSignup,
           account_type: accountType,
         };
 
@@ -137,7 +141,7 @@ const AuthPage = () => {
           metadata.business_type = businessType;
         }
 
-        const { error } = await signUp(email, password, fullName, username, language);
+        const { error } = await signUp(email, password, fullName, normalizedUsernameForSignup, language);
         if (error) {
           toast.error(error.message);
         } else {

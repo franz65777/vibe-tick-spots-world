@@ -9,7 +9,7 @@ const PrivacyPage = () => {
   const { t } = useTranslation(['privacy']);
 
   return (
-    <div className="min-h-screen bg-white flex flex-col overflow-hidden">
+    <div className="h-screen bg-white flex flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center p-4 border-b border-gray-100 flex-shrink-0">
         <Button
