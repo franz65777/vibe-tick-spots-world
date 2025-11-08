@@ -92,6 +92,11 @@ const SignupPassword: React.FC = () => {
         } catch {}
 
         toast.error(msg);
+        if (/telefono|phone/i.test(msg)) {
+          sessionStorage.setItem('signup_nav_back', 'true');
+          navigate('/signup/start');
+          return;
+        }
         if (/username/i.test(msg)) {
           sessionStorage.setItem('signup_nav_back', 'true');
           navigate('/signup/profile');
