@@ -53,13 +53,15 @@ const AuthPage = () => {
     
     const { supabase } = await import('@/integrations/supabase/client');
     const normalizedUsername = username.trim().toLowerCase();
-    const { data, error } = await supabase
+    const { count, error } = await supabase
       .from('profiles')
-      .select('id')
-      .eq('username', normalizedUsername)
-      .maybeSingle();
-    
-    return !data;
+      .select('id', { count: 'exact', head: true })
+      .eq('username', normalizedUsername);
+
+    if (error) {
+      return false; // fail-safe: consider taken when in doubt
+    }
+    return (count ?? 0) === 0;
   };
 
   const handleUsernameChange = async (newUsername: string) => {
@@ -162,7 +164,7 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col overflow-hidden">
+    <div className="h-screen bg-white flex flex-col overflow-hidden">
       {/* Header with back button */}
       <div className="flex items-center p-4 flex-shrink-0">
         <Button
@@ -177,7 +179,7 @@ const AuthPage = () => {
       </div>
 
       {/* Main content */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide px-6 py-8">
+      <div className="flex-1 overflow-y-auto scrollbar-hide px-6 py-8 overscroll-contain [-webkit-overflow-scrolling:touch]">
         <div className="w-full max-w-md mx-auto space-y-8">
           {/* Logo and title */}
           <div className="text-center">
@@ -300,6 +302,10 @@ const AuthPage = () => {
                     required={!isLogin}
                     className="mt-1 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                     placeholder={t('auth:chooseUsername')}
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    autoComplete="username"
                   />
                   {checkingUsername && (
                     <p className="mt-1 text-xs text-muted-foreground">{t('common:checkingAvailability')}</p>
