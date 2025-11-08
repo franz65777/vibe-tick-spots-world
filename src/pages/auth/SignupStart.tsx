@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { MapPin, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
+import spottLogo from '@/assets/spott-logo.png';
 
 const languages = [
   { code: 'en', label: 'English' },
@@ -45,26 +46,18 @@ const SignupStart: React.FC = () => {
   const sendCode = async () => {
     setLoading(true);
     try {
-      if (method === 'email') {
-        const { error } = await supabase.auth.signInWithOtp({
-          email: email.trim(),
-          options: {
-            shouldCreateUser: true,
-            emailRedirectTo: `${window.location.origin}/`,
-          },
-        });
-        if (error) throw error;
-        toast.success('Codice inviato alla tua email');
-        navigate(`/signup/verify?method=email&email=${encodeURIComponent(email.trim())}`);
-      } else {
-        const { error } = await supabase.auth.signInWithOtp({
-          phone: phone.trim(),
-          options: { shouldCreateUser: true },
-        });
-        if (error) throw error;
-        toast.success('Codice inviato al tuo numero di telefono');
-        navigate(`/signup/verify?method=phone&phone=${encodeURIComponent(phone.trim())}`);
-      }
+      const { data, error } = await supabase.functions.invoke('send-otp', {
+        body: {
+          method,
+          email: method === 'email' ? email.trim() : undefined,
+          phone: method === 'phone' ? phone.trim() : undefined,
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success(method === 'email' ? 'Codice inviato alla tua email' : 'Codice inviato al tuo telefono');
+      navigate(`/signup/verify?method=${method}&${method}=${encodeURIComponent(method === 'email' ? email.trim() : phone.trim())}`);
     } catch (e: any) {
       toast.error(e?.message || 'Impossibile inviare il codice');
     } finally {
@@ -81,10 +74,10 @@ const SignupStart: React.FC = () => {
         <div className="flex items-center gap-2">
           <div className="w-40">
             <Select value={i18n.language} onValueChange={(v) => i18n.changeLanguage(v)}>
-              <SelectTrigger className="h-9 rounded-md bg-background border border-input text-sm" aria-label="Language selector">
+              <SelectTrigger className="h-9 rounded-full bg-background border border-input text-sm" aria-label="Language selector">
                 <SelectValue placeholder="Language" />
               </SelectTrigger>
-              <SelectContent className="rounded-md bg-popover text-popover-foreground z-[99999]">
+              <SelectContent className="rounded-xl bg-popover text-popover-foreground z-[99999]">
                 {languages.map((l) => (
                   <SelectItem key={l.code} value={l.code}>{l.label}</SelectItem>
                 ))}
@@ -97,25 +90,23 @@ const SignupStart: React.FC = () => {
       <main className="flex-1 px-6 py-8 overflow-y-auto">
         <div className="w-full max-w-md mx-auto space-y-8">
           <div className="text-center">
-            <h1 className="text-4xl font-semibold bg-gradient-to-br from-primary to-primary/70 bg-clip-text text-transparent flex items-center justify-center gap-1">
-              SPOTT <MapPin className="w-4 h-4" />
-            </h1>
+            <img src={spottLogo} alt="Spott Logo" className="h-16 mx-auto mb-4" />
             <h2 className="mt-3 text-2xl font-semibold">Unisciti a Spott</h2>
             <p className="mt-1 text-muted-foreground">Inizia con la tua email o numero di telefono</p>
           </div>
 
-          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 justify-center snap-x snap-mandatory">
             <button
               type="button"
               onClick={() => setMethod('email')}
-              className={`snap-start px-4 py-2 text-sm rounded-full border border-input ${method === 'email' ? 'bg-accent text-accent-foreground' : 'bg-background text-foreground'}`}
+              className={`snap-center px-6 py-2 text-sm rounded-full border border-input transition-all ${method === 'email' ? 'bg-accent text-accent-foreground scale-105' : 'bg-background text-foreground'}`}
             >
               Email
             </button>
             <button
               type="button"
               onClick={() => setMethod('phone')}
-              className={`snap-start px-4 py-2 text-sm rounded-full border border-input ${method === 'phone' ? 'bg-accent text-accent-foreground' : 'bg-background text-foreground'}`}
+              className={`snap-center px-6 py-2 text-sm rounded-full border border-input transition-all ${method === 'phone' ? 'bg-accent text-accent-foreground scale-105' : 'bg-background text-foreground'}`}
             >
               Telefono
             </button>

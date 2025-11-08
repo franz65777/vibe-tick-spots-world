@@ -43,6 +43,15 @@ verify_jwt = false
 [functions.cleanup-duplicate-locations]
 verify_jwt = false
 
+[functions.send-otp]
+verify_jwt = false
+
+[functions.verify-otp]
+verify_jwt = false
+
+[functions.complete-signup]
+verify_jwt = false
+
 [db]
 # Port to use for the local database URL.
 port = 54322

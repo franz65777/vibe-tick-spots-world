@@ -1,25 +1,29 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Check, Loader2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { checkUsernameAvailability } from '@/utils/username';
-import { supabase } from '@/integrations/supabase/client';
 
 const SignupProfile: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
   const [checking, setChecking] = useState(false);
   const [available, setAvailable] = useState<boolean | null>(null);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => { document.title = 'Profilo - Spott'; }, []);
-  useEffect(() => { if (!user) navigate('/signup/start'); }, [user, navigate]);
+  
+  useEffect(() => {
+    const session = sessionStorage.getItem('signup_session');
+    if (!session) {
+      navigate('/signup/start');
+    }
+  }, [navigate]);
 
   // Debounce username check
   useEffect(() => {
@@ -35,29 +39,18 @@ const SignupProfile: React.FC = () => {
 
   const canContinue = useMemo(() => fullName.trim().length > 1 && !!available, [fullName, available]);
 
-  const onNext = async () => {
-    if (!user) return;
-    setLoading(true);
-    try {
-      const normalized = username.trim().toLowerCase();
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({ id: user.id, full_name: fullName.trim(), username: normalized }, { onConflict: 'id' });
-      if (error) throw error;
-      navigate('/signup/details');
-    } catch (e: any) {
-      const msg = e?.message || 'Errore durante il salvataggio';
-      toast.error(msg.includes('duplicate') ? 'Nome utente già in uso' : msg);
-    } finally {
-      setLoading(false);
-    }
+  const onNext = () => {
+    if (!canContinue) return;
+    sessionStorage.setItem('signup_fullname', fullName.trim());
+    sessionStorage.setItem('signup_username', username.trim().toLowerCase());
+    navigate('/signup/details');
   };
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <header className="p-4 flex items-center justify-between">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-          <ArrowLeft className="mr-2" /> Indietro
+          <ArrowLeft className="mr-2" /> {t('auth:back') || 'Indietro'}
         </Button>
       </header>
 
@@ -98,8 +91,8 @@ const SignupProfile: React.FC = () => {
             )}
           </div>
 
-          <Button disabled={!canContinue || loading} onClick={onNext} className="w-full h-12">
-            {loading ? 'Salvataggio...' : 'Continua'}
+          <Button disabled={!canContinue} onClick={onNext} className="w-full h-12">
+            Continua
           </Button>
 
           <div className="text-center text-sm text-muted-foreground">

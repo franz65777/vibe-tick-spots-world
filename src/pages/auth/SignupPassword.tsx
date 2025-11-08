@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +9,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
 const SignupPassword: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -16,16 +18,63 @@ const SignupPassword: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => { document.title = 'Crea password - Spott'; }, []);
+  
+  useEffect(() => {
+    const session = sessionStorage.getItem('signup_session');
+    if (!session) {
+      navigate('/signup/start');
+    }
+  }, [navigate]);
 
   const canCreate = useMemo(() => password.length >= 6 && password === confirm, [password, confirm]);
 
   const createAccount = async () => {
     if (!canCreate) return;
     setLoading(true);
+    
     try {
-      const { error } = await supabase.auth.updateUser({ password });
+      const sessionToken = sessionStorage.getItem('signup_session');
+      const fullName = sessionStorage.getItem('signup_fullname');
+      const username = sessionStorage.getItem('signup_username');
+      const dob = sessionStorage.getItem('signup_dob');
+      const gender = sessionStorage.getItem('signup_gender');
+      const method = sessionStorage.getItem('signup_method');
+      const contact = sessionStorage.getItem('signup_contact');
+
+      if (!sessionToken || !fullName || !username || !dob || !gender) {
+        throw new Error('Dati incompleti');
+      }
+
+      const { data, error } = await supabase.functions.invoke('complete-signup', {
+        body: {
+          sessionToken,
+          fullName,
+          username,
+          dateOfBirth: dob,
+          gender,
+          password,
+          [method === 'email' ? 'email' : 'phone']: contact,
+        }
+      });
+
       if (error) throw error;
-      toast.success('Account creato con successo');
+      if (!data?.success) throw new Error('Creazione account fallita');
+
+      // Auto-login with the returned session
+      if (data.session) {
+        await supabase.auth.setSession(data.session);
+      }
+
+      // Clear session storage
+      sessionStorage.removeItem('signup_session');
+      sessionStorage.removeItem('signup_fullname');
+      sessionStorage.removeItem('signup_username');
+      sessionStorage.removeItem('signup_dob');
+      sessionStorage.removeItem('signup_gender');
+      sessionStorage.removeItem('signup_method');
+      sessionStorage.removeItem('signup_contact');
+
+      toast.success('Account creato con successo!');
       navigate('/');
     } catch (e: any) {
       toast.error(e?.message || 'Errore nella creazione account');
@@ -38,7 +87,7 @@ const SignupPassword: React.FC = () => {
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <header className="p-4 flex items-center justify-between">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-          <ArrowLeft className="mr-2" /> Indietro
+          <ArrowLeft className="mr-2" /> {t('auth:back') || 'Indietro'}
         </Button>
       </header>
 

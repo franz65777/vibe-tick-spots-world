@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
-import { Label } from '@/components/ui/label';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
 const SignupVerify: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const method = (params.get('method') as 'email' | 'phone') || 'email';
@@ -15,26 +16,66 @@ const SignupVerify: React.FC = () => {
   const phone = params.get('phone') || '';
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   useEffect(() => {
     document.title = 'Verifica codice - Spott';
   }, []);
 
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
+
   const verify = async () => {
     if (code.length < 6) return;
     setLoading(true);
     try {
-      if (method === 'email') {
-        const { error } = await supabase.auth.verifyOtp({ email: email!, token: code, type: 'email' });
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.auth.verifyOtp({ phone: phone!, token: code, type: 'sms' });
-        if (error) throw error;
-      }
-      toast.success('Verifica completata');
+      const { data, error } = await supabase.functions.invoke('verify-otp', {
+        body: {
+          method,
+          email: method === 'email' ? email : undefined,
+          phone: method === 'phone' ? phone : undefined,
+          code,
+        }
+      });
+
+      if (error) throw error;
+      if (!data?.success || !data?.sessionToken) throw new Error('Verifica fallita');
+
+      // Store session token and contact info in sessionStorage
+      sessionStorage.setItem('signup_session', data.sessionToken);
+      sessionStorage.setItem('signup_contact', method === 'email' ? email : phone);
+      sessionStorage.setItem('signup_method', method);
+
+      toast.success('Codice verificato');
       navigate('/signup/profile');
     } catch (e: any) {
       toast.error(e?.message || 'Codice non valido');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resendCode = async () => {
+    if (resendCooldown > 0) return;
+    setLoading(true);
+    try {
+      const { error } = await supabase.functions.invoke('send-otp', {
+        body: {
+          method,
+          email: method === 'email' ? email : undefined,
+          phone: method === 'phone' ? phone : undefined,
+        }
+      });
+
+      if (error) throw error;
+      toast.success('Nuovo codice inviato');
+      setResendCooldown(60);
+    } catch (e: any) {
+      toast.error(e?.message || 'Errore nell\'invio');
     } finally {
       setLoading(false);
     }
@@ -44,7 +85,7 @@ const SignupVerify: React.FC = () => {
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <header className="p-4 flex items-center justify-between">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-          <ArrowLeft className="mr-2" /> Indietro
+          <ArrowLeft className="mr-2" /> {t('auth:back') || 'Indietro'}
         </Button>
       </header>
 
@@ -69,6 +110,16 @@ const SignupVerify: React.FC = () => {
 
           <Button disabled={code.length < 6 || loading} onClick={verify} className="w-full h-12">
             {loading ? 'Verifico...' : 'Verifica'}
+          </Button>
+
+          <Button 
+            variant="ghost" 
+            disabled={resendCooldown > 0 || loading} 
+            onClick={resendCode} 
+            className="w-full"
+          >
+            <RefreshCw className="mr-2 w-4 h-4" />
+            {resendCooldown > 0 ? `Reinvia tra ${resendCooldown}s` : 'Reinvia codice'}
           </Button>
 
           <div className="text-center text-sm text-muted-foreground">
