@@ -55,7 +55,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (method === 'email' && email) {
 
       // Send email via Resend
-      const emailResponse = await resend.emails.send({
+      const { data: emailData, error: emailError } = await resend.emails.send({
         from: "Spott <onboarding@resend.dev>",
         to: [email],
         subject: "Il tuo codice di verifica Spott",
@@ -72,7 +72,12 @@ const handler = async (req: Request): Promise<Response> => {
         `,
       });
 
-      console.log("Email OTP sent:", { email, success: true });
+      if (emailError) {
+        console.error("Resend error:", emailError);
+        throw new Error(emailError.message || "Email provider error");
+      }
+
+      console.log("Email OTP sent:", { email, success: true, id: emailData?.id });
       return new Response(JSON.stringify({ success: true }), {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },

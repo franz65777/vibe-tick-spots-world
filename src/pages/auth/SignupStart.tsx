@@ -33,17 +33,71 @@ const SignupStart: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const [checking, setChecking] = useState(false);
+  const [exists, setExists] = useState<null | boolean>(null);
+  const [existsMessage, setExistsMessage] = useState<string>('');
+
   useEffect(() => {
     document.title = 'Unisciti a Spott - Signup';
   }, []);
 
+  // Debounced availability check
+  useEffect(() => {
+    setExists(null);
+    setExistsMessage('');
+    if (method === 'email') {
+      const v = email.trim();
+      if (!/[^\s@]+@[^\s@]+\.[^\s@]+/.test(v)) return;
+      setChecking(true);
+      const id = setTimeout(async () => {
+        try {
+          const { data, error } = await supabase.functions.invoke('check-availability', {
+            body: { type: 'email', value: v }
+          });
+          if (error) throw error;
+          setExists(!!data?.exists);
+          setExistsMessage(!!data?.exists ? 'Email già registrata' : '');
+        } catch (e: any) {
+          setExists(null);
+        } finally {
+          setChecking(false);
+        }
+      }, 400);
+      return () => clearTimeout(id);
+    } else {
+      const v = phone.trim();
+      if (!/^\+?[0-9\s\-()]{7,15}$/.test(v)) return;
+      setChecking(true);
+      const id = setTimeout(async () => {
+        try {
+          const { data, error } = await supabase.functions.invoke('check-availability', {
+            body: { type: 'phone', value: v }
+          });
+          if (error) throw error;
+          setExists(!!data?.exists);
+          setExistsMessage(!!data?.exists ? 'Numero di telefono già registrato' : '');
+        } catch (e: any) {
+          setExists(null);
+        } finally {
+          setChecking(false);
+        }
+      }, 400);
+      return () => clearTimeout(id);
+    }
+  }, [method, email, phone, supabase]);
+
   const canContinue = useMemo(() => {
     const emailValid = /[^\s@]+@[^\s@]+\.[^\s@]+/.test(email.trim());
     const phoneValid = /^\+?[0-9\s\-()]{7,15}$/.test(phone.trim());
-    return method === 'email' ? emailValid : phoneValid;
-  }, [method, email, phone]);
+    const valid = method === 'email' ? emailValid : phoneValid;
+    return valid && !checking && exists === false; // disabilita se esiste o sta controllando
+  }, [method, email, phone, checking, exists]);
 
   const sendCode = async () => {
+    if (exists) {
+      toast.error(existsMessage || (method === 'email' ? 'Email già registrata' : 'Numero già registrato'));
+      return;
+    }
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('send-otp', {
@@ -116,17 +170,21 @@ const SignupStart: React.FC = () => {
             <div>
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nome@esempio.com" autoComplete="email" />
+              {checking && <p className="mt-1 text-xs text-muted-foreground">Controllo disponibilità...</p>}
+              {exists && <div className="mt-2 text-sm text-destructive">Questa email è già in uso. <button className="underline text-primary ml-1" onClick={() => navigate('/auth?mode=login')}>Accedi</button></div>}
             </div>
           ) : (
             <div>
               <Label htmlFor="phone">Numero di telefono</Label>
               <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+39 333 123 4567" autoComplete="tel" />
               <p className="mt-1 text-xs text-muted-foreground">Potrebbe richiedere la configurazione SMS su Supabase</p>
+              {checking && <p className="mt-1 text-xs text-muted-foreground">Controllo disponibilità...</p>}
+              {exists && <div className="mt-2 text-sm text-destructive">Questo numero è già in uso. <button className="underline text-primary ml-1" onClick={() => navigate('/auth?mode=login')}>Accedi</button></div>}
             </div>
           )}
 
           <Button disabled={!canContinue || loading} onClick={sendCode} className="w-full h-12">
-            {loading ? 'Invio in corso...' : 'Invia codice'}
+            {loading ? 'Invio in corso...' : exists ? (method === 'email' ? 'Email già in uso' : 'Numero già in uso') : 'Invia codice'}
           </Button>
 
           <div className="text-center text-sm text-muted-foreground">
