@@ -38,12 +38,14 @@ const SignupProfile: React.FC = () => {
   // Debounce username check
   useEffect(() => {
     if (!username.trim()) { setAvailable(null); return; }
+    // Reset availability immediately to avoid stale "true" on fast typing
+    setAvailable(null);
     setChecking(true);
     const id = setTimeout(async () => {
       const { available } = await checkUsernameAvailability(username);
       setAvailable(available);
       setChecking(false);
-    }, 500);
+    }, 400);
     return () => clearTimeout(id);
   }, [username]);
 
@@ -113,7 +115,7 @@ const SignupProfile: React.FC = () => {
             )}
           </div>
 
-          <Button disabled={!canContinue} onClick={onNext} className="w-full h-12 rounded-xl">
+          <Button disabled={!canContinue || checking} onClick={onNext} className="w-full h-12 rounded-xl">
             Continua
           </Button>
 

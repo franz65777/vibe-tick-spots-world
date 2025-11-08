@@ -78,9 +78,10 @@ const SignupDetails: React.FC = () => {
                   {dob ? format(dob, "d MMMM yyyy", { locale: it }) : <span>Seleziona data</span>}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 rounded-xl" align="start">
+              <PopoverContent className="w-[min(100vw-2rem,360px)] p-0 rounded-xl" align="center" side="bottom" sideOffset={8}>
                 <Calendar
                   mode="single"
+                  numberOfMonths={1}
                   selected={dob}
                   onSelect={setDob}
                   disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
@@ -90,6 +91,7 @@ const SignupDetails: React.FC = () => {
                   fromYear={1900}
                   toYear={new Date().getFullYear()}
                   locale={it}
+                  classNames={{ caption_label: 'sr-only' }}
                 />
               </PopoverContent>
             </Popover>
