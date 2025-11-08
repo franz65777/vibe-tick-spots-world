@@ -13,9 +13,6 @@ interface VerifyOTPRequest {
   code: string;
 }
 
-// In-memory OTP storage (shared with send-otp in production via Redis/DB)
-const otpStore = new Map<string, { code: string; expires: number }>();
-
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -29,42 +26,60 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Missing email or phone");
     }
 
-    // Check OTP
-    const stored = otpStore.get(identifier);
-    if (!stored) {
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Check OTP in database
+    const { data: otpRecord, error: fetchError } = await supabase
+      .from('otp_codes')
+      .select('*')
+      .eq('identifier', identifier)
+      .is('session_token', null)
+      .single();
+
+    if (fetchError || !otpRecord) {
       return new Response(
         JSON.stringify({ error: "Codice non trovato o scaduto" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    if (Date.now() > stored.expires) {
-      otpStore.delete(identifier);
+    // Check expiration
+    if (new Date(otpRecord.expires_at) < new Date()) {
+      await supabase.from('otp_codes').delete().eq('id', otpRecord.id);
       return new Response(
         JSON.stringify({ error: "Codice scaduto" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    if (stored.code !== code) {
+    // Verify code
+    if (otpRecord.code !== code) {
       return new Response(
         JSON.stringify({ error: "Codice non valido" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    // OTP verified - remove from store
-    otpStore.delete(identifier);
-
     // Create a temporary session token (expires in 30 min)
     const sessionToken = crypto.randomUUID();
-    const sessionExpires = Date.now() + 30 * 60 * 1000;
+    const sessionExpiresAt = new Date(Date.now() + 30 * 60 * 1000);
     
-    // Store session temporarily (in production, use database)
-    otpStore.set(`session:${sessionToken}`, { 
-      code: method === 'email' ? email! : phone!, 
-      expires: sessionExpires 
-    });
+    // Update OTP record with session token
+    const { error: updateError } = await supabase
+      .from('otp_codes')
+      .update({ 
+        session_token: sessionToken,
+        expires_at: sessionExpiresAt.toISOString()
+      })
+      .eq('id', otpRecord.id);
+
+    if (updateError) {
+      console.error("Failed to create session:", updateError);
+      throw new Error("Failed to create session");
+    }
 
     console.log("OTP verified successfully:", { identifier, sessionToken });
 
@@ -92,5 +107,3 @@ const handler = async (req: Request): Promise<Response> => {
 };
 
 serve(handler);
-
-export { otpStore };

@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.9";
 import { Resend } from "npm:resend@2.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
@@ -14,9 +15,6 @@ interface SendOTPRequest {
   phone?: string;
 }
 
-// In-memory storage for OTP codes (in production, use Redis or database)
-const otpStore = new Map<string, { code: string; expires: number }>();
-
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 const handler = async (req: Request): Promise<Response> => {
@@ -27,11 +25,34 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { method, email, phone }: SendOTPRequest = await req.json();
     const code = generateOTP();
-    const expires = Date.now() + 10 * 60 * 1000; // 10 minutes
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const identifier = email || phone;
+
+    if (!identifier) {
+      throw new Error("Missing email or phone");
+    }
+
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Delete any existing OTP for this identifier
+    await supabase.from('otp_codes').delete().eq('identifier', identifier);
+
+    // Store OTP in database
+    const { error: dbError } = await supabase.from('otp_codes').insert({
+      identifier,
+      code,
+      expires_at: expiresAt.toISOString()
+    });
+
+    if (dbError) {
+      console.error("Database error:", dbError);
+      throw new Error("Failed to store OTP");
+    }
 
     if (method === 'email' && email) {
-      // Store OTP
-      otpStore.set(email, { code, expires });
 
       // Send email via Resend
       const emailResponse = await resend.emails.send({
@@ -59,8 +80,6 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     if (method === 'phone' && phone) {
-      // Store OTP
-      otpStore.set(phone, { code, expires });
 
       // Send SMS via Vonage
       const vonageApiKey = Deno.env.get("VONAGE_API_KEY");
@@ -106,6 +125,3 @@ const handler = async (req: Request): Promise<Response> => {
 };
 
 serve(handler);
-
-// Export for verify-otp to access
-export { otpStore };

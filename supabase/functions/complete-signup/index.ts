@@ -17,9 +17,6 @@ interface CompleteSignupRequest {
   phone?: string;
 }
 
-// In-memory session storage (shared with verify-otp)
-const otpStore = new Map<string, { code: string; expires: number }>();
-
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -37,27 +34,33 @@ const handler = async (req: Request): Promise<Response> => {
       phone 
     }: CompleteSignupRequest = await req.json();
 
-    // Verify session token
-    const session = otpStore.get(`session:${sessionToken}`);
-    if (!session) {
+    // Initialize Supabase Admin Client
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Verify session token in database
+    const { data: sessionRecord, error: sessionError } = await supabase
+      .from('otp_codes')
+      .select('*')
+      .eq('session_token', sessionToken)
+      .single();
+
+    if (sessionError || !sessionRecord) {
       return new Response(
         JSON.stringify({ error: "Sessione non valida o scaduta" }),
         { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    if (Date.now() > session.expires) {
-      otpStore.delete(`session:${sessionToken}`);
+    // Check session expiration
+    if (new Date(sessionRecord.expires_at) < new Date()) {
+      await supabase.from('otp_codes').delete().eq('id', sessionRecord.id);
       return new Response(
         JSON.stringify({ error: "Sessione scaduta" }),
         { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
-
-    // Initialize Supabase Admin Client
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Create user account
     const signUpData: any = {
@@ -105,8 +108,8 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(profileError.message);
     }
 
-    // Clear session
-    otpStore.delete(`session:${sessionToken}`);
+    // Clear session from database
+    await supabase.from('otp_codes').delete().eq('id', sessionRecord.id);
 
     console.log("User created successfully:", { userId: authData.user.id, username });
 
