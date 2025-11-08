@@ -4,12 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, ArrowLeft } from 'lucide-react';
-import { format } from 'date-fns';
-import { it } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+import { ArrowLeft } from 'lucide-react';
+import { DatePicker } from '@/components/DatePicker';
 
 const SignupDetails: React.FC = () => {
   const { t } = useTranslation();
@@ -40,7 +36,10 @@ const SignupDetails: React.FC = () => {
 
   const onNext = () => {
     if (!canContinue || !dob) return;
-    sessionStorage.setItem('signup_dob', format(dob, 'yyyy-MM-dd'));
+    const year = dob.getFullYear();
+    const month = String(dob.getMonth() + 1).padStart(2, '0');
+    const day = String(dob.getDate()).padStart(2, '0');
+    sessionStorage.setItem('signup_dob', `${year}-${month}-${day}`);
     sessionStorage.setItem('signup_gender', gender);
     navigate('/signup/password');
   };
@@ -65,36 +64,7 @@ const SignupDetails: React.FC = () => {
 
           <div>
             <Label htmlFor="dob">Data di nascita</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal rounded-xl h-12",
-                    !dob && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dob ? format(dob, "d MMMM yyyy", { locale: it }) : <span>Seleziona data</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[min(100vw-2rem,360px)] p-0 rounded-xl" align="center" side="bottom" sideOffset={8}>
-                <Calendar
-                  mode="single"
-                  numberOfMonths={1}
-                  selected={dob}
-                  onSelect={setDob}
-                  disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                  initialFocus
-                  className="pointer-events-auto rounded-xl"
-                  captionLayout="dropdown"
-                  fromYear={1900}
-                  toYear={new Date().getFullYear()}
-                  locale={it}
-                  classNames={{ caption_label: 'sr-only' }}
-                />
-              </PopoverContent>
-            </Popover>
+            <DatePicker value={dob} onChange={setDob} minYear={1900} maxYear={new Date().getFullYear()} />
           </div>
 
           <div>
