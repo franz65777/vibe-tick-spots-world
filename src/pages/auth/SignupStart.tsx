@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Check, Loader2, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import spottLogo from '@/assets/spott-logo.png';
@@ -41,50 +41,68 @@ const SignupStart: React.FC = () => {
     document.title = 'Unisciti a Spott - Signup';
   }, []);
 
-  // Debounced availability check
+  // Reset exists state when switching methods
   useEffect(() => {
     setExists(null);
     setExistsMessage('');
-    if (method === 'email') {
-      const v = email.trim();
-      if (!/[^\s@]+@[^\s@]+\.[^\s@]+/.test(v)) return;
-      setChecking(true);
-      const id = setTimeout(async () => {
-        try {
-          const { data, error } = await supabase.functions.invoke('check-availability', {
-            body: { type: 'email', value: v }
-          });
-          if (error) throw error;
-          setExists(!!data?.exists);
-          setExistsMessage(!!data?.exists ? 'Email già registrata' : '');
-        } catch (e: any) {
-          setExists(null);
-        } finally {
-          setChecking(false);
-        }
-      }, 400);
-      return () => clearTimeout(id);
-    } else {
-      const v = phone.trim();
-      if (!/^\+?[0-9\s\-()]{7,15}$/.test(v)) return;
-      setChecking(true);
-      const id = setTimeout(async () => {
-        try {
-          const { data, error } = await supabase.functions.invoke('check-availability', {
-            body: { type: 'phone', value: v }
-          });
-          if (error) throw error;
-          setExists(!!data?.exists);
-          setExistsMessage(!!data?.exists ? 'Numero di telefono già registrato' : '');
-        } catch (e: any) {
-          setExists(null);
-        } finally {
-          setChecking(false);
-        }
-      }, 400);
-      return () => clearTimeout(id);
-    }
-  }, [method, email, phone, supabase]);
+    setChecking(false);
+  }, [method]);
+
+  // Debounced availability check for email
+  useEffect(() => {
+    const v = email.trim();
+    if (!v) { setExists(null); setExistsMessage(''); return; }
+    if (!/[^\s@]+@[^\s@]+\.[^\s@]+/.test(v)) { setExists(null); return; }
+    
+    setChecking(true);
+    setExists(null);
+    const id = setTimeout(async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('check-availability', {
+          body: { type: 'email', value: v }
+        });
+        if (error) throw error;
+        const emailExists = !!data?.exists;
+        setExists(emailExists);
+        setExistsMessage(emailExists ? 'Email già registrata' : '');
+      } catch (e: any) {
+        console.error('Email check error:', e);
+        setExists(null);
+        setExistsMessage('');
+      } finally {
+        setChecking(false);
+      }
+    }, 500);
+    return () => clearTimeout(id);
+  }, [email]);
+
+  // Debounced availability check for phone
+  useEffect(() => {
+    const v = phone.trim();
+    if (!v) { setExists(null); setExistsMessage(''); return; }
+    if (!/^\+?[0-9\s\-()]{7,15}$/.test(v)) { setExists(null); return; }
+    
+    setChecking(true);
+    setExists(null);
+    const id = setTimeout(async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('check-availability', {
+          body: { type: 'phone', value: v }
+        });
+        if (error) throw error;
+        const phoneExists = !!data?.exists;
+        setExists(phoneExists);
+        setExistsMessage(phoneExists ? 'Numero già registrato' : '');
+      } catch (e: any) {
+        console.error('Phone check error:', e);
+        setExists(null);
+        setExistsMessage('');
+      } finally {
+        setChecking(false);
+      }
+    }, 500);
+    return () => clearTimeout(id);
+  }, [phone]);
 
   const canContinue = useMemo(() => {
     const emailValid = /[^\s@]+@[^\s@]+\.[^\s@]+/.test(email.trim());
@@ -169,17 +187,53 @@ const SignupStart: React.FC = () => {
           {method === 'email' ? (
             <div>
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nome@esempio.com" autoComplete="email" />
-              {checking && <p className="mt-1 text-xs text-muted-foreground">Controllo disponibilità...</p>}
-              {exists && <div className="mt-2 text-sm text-destructive">Questa email è già in uso. <button className="underline text-primary ml-1" onClick={() => navigate('/auth?mode=login')}>Accedi</button></div>}
+              <div className="relative">
+                <Input 
+                  id="email" 
+                  type="email" 
+                  value={email} 
+                  onChange={(e) => setEmail(e.target.value)} 
+                  placeholder="nome@esempio.com" 
+                  autoComplete="email"
+                  className="pr-10"
+                />
+                <div className="absolute inset-y-0 right-2 flex items-center">
+                  {checking && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+                  {!checking && exists === false && <Check className="w-4 h-4 text-green-600" />}
+                  {!checking && exists === true && <X className="w-4 h-4 text-destructive" />}
+                </div>
+              </div>
+              {exists === true && (
+                <div className="mt-2 text-sm text-destructive">
+                  Questa email è già in uso. <button type="button" className="underline text-primary ml-1" onClick={() => navigate('/auth?mode=login')}>Accedi</button>
+                </div>
+              )}
             </div>
           ) : (
             <div>
               <Label htmlFor="phone">Numero di telefono</Label>
-              <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+39 333 123 4567" autoComplete="tel" />
+              <div className="relative">
+                <Input 
+                  id="phone" 
+                  type="tel" 
+                  value={phone} 
+                  onChange={(e) => setPhone(e.target.value)} 
+                  placeholder="+39 333 123 4567" 
+                  autoComplete="tel"
+                  className="pr-10"
+                />
+                <div className="absolute inset-y-0 right-2 flex items-center">
+                  {checking && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+                  {!checking && exists === false && <Check className="w-4 h-4 text-green-600" />}
+                  {!checking && exists === true && <X className="w-4 h-4 text-destructive" />}
+                </div>
+              </div>
               <p className="mt-1 text-xs text-muted-foreground">Potrebbe richiedere la configurazione SMS su Supabase</p>
-              {checking && <p className="mt-1 text-xs text-muted-foreground">Controllo disponibilità...</p>}
-              {exists && <div className="mt-2 text-sm text-destructive">Questo numero è già in uso. <button className="underline text-primary ml-1" onClick={() => navigate('/auth?mode=login')}>Accedi</button></div>}
+              {exists === true && (
+                <div className="mt-2 text-sm text-destructive">
+                  Questo numero è già in uso. <button type="button" className="underline text-primary ml-1" onClick={() => navigate('/auth?mode=login')}>Accedi</button>
+                </div>
+              )}
             </div>
           )}
 
