@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Check, Loader2, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { checkUsernameAvailability } from '@/utils/username';
+import { supabase } from '@/integrations/supabase/client';
 
 const SignupProfile: React.FC = () => {
   const { t } = useTranslation();
@@ -35,16 +35,25 @@ const SignupProfile: React.FC = () => {
     }
   }, [navigate]);
 
-  // Debounce username check
+  // Debounce username check (server-side)
   useEffect(() => {
-    if (!username.trim()) { setAvailable(null); return; }
-    // Reset availability immediately to avoid stale "true" on fast typing
+    const trimmed = username.trim().toLowerCase();
+    if (!trimmed) { setAvailable(null); return; }
     setAvailable(null);
     setChecking(true);
     const id = setTimeout(async () => {
-      const { available } = await checkUsernameAvailability(username);
-      setAvailable(available);
-      setChecking(false);
+      try {
+        const { data, error } = await supabase.functions.invoke('check-availability', {
+          body: { type: 'username', value: trimmed }
+        });
+        if (error) throw error;
+        setAvailable(!data?.exists); // se esiste -> not available
+      } catch (e) {
+        console.error('Username check error:', e);
+        setAvailable(null);
+      } finally {
+        setChecking(false);
+      }
     }, 400);
     return () => clearTimeout(id);
   }, [username]);
@@ -54,11 +63,20 @@ const SignupProfile: React.FC = () => {
   const onNext = async () => {
     if (!canContinue) return;
     
-    // Double-check username availability before proceeding
-    const { available: isAvailable } = await checkUsernameAvailability(username);
-    if (!isAvailable) {
-      toast.error('Nome utente non disponibile');
-      setAvailable(false);
+    // Double-check username availability before proceeding (server-side)
+    try {
+      const trimmed = username.trim().toLowerCase();
+      const { data, error } = await supabase.functions.invoke('check-availability', {
+        body: { type: 'username', value: trimmed }
+      });
+      if (error) throw error;
+      if (data?.exists) {
+        toast.error('Nome utente non disponibile');
+        setAvailable(false);
+        return;
+      }
+    } catch (e: any) {
+      toast.error(e?.message || 'Errore verifica username');
       return;
     }
     
