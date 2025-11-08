@@ -3,14 +3,18 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
-import { ArrowLeft } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { CalendarIcon, ArrowLeft } from 'lucide-react';
+import { format } from 'date-fns';
+import { it } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 const SignupDetails: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [dob, setDob] = useState('');
+  const [dob, setDob] = useState<Date | undefined>(undefined);
   const [gender, setGender] = useState('');
 
   useEffect(() => { document.title = 'Dettagli - Spott'; }, []);
@@ -19,14 +23,20 @@ const SignupDetails: React.FC = () => {
     const session = sessionStorage.getItem('signup_session');
     if (!session) {
       navigate('/signup/start');
+      return;
     }
+    // Restore form data if returning from next step
+    const savedDob = sessionStorage.getItem('signup_dob');
+    const savedGender = sessionStorage.getItem('signup_gender');
+    if (savedDob) setDob(new Date(savedDob));
+    if (savedGender) setGender(savedGender);
   }, [navigate]);
 
   const canContinue = useMemo(() => !!dob && !!gender, [dob, gender]);
 
   const onNext = () => {
-    if (!canContinue) return;
-    sessionStorage.setItem('signup_dob', dob);
+    if (!canContinue || !dob) return;
+    sessionStorage.setItem('signup_dob', format(dob, 'yyyy-MM-dd'));
     sessionStorage.setItem('signup_gender', gender);
     navigate('/signup/password');
   };
@@ -48,7 +58,33 @@ const SignupDetails: React.FC = () => {
 
           <div>
             <Label htmlFor="dob">Data di nascita</Label>
-            <Input id="dob" type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal rounded-xl h-12",
+                    !dob && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dob ? format(dob, "d MMMM yyyy", { locale: it }) : <span>Seleziona data</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 rounded-xl" align="start">
+                <Calendar
+                  mode="single"
+                  selected={dob}
+                  onSelect={setDob}
+                  disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                  initialFocus
+                  className="pointer-events-auto rounded-xl"
+                  captionLayout="dropdown"
+                  fromYear={1900}
+                  toYear={new Date().getFullYear()}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div>
@@ -66,7 +102,7 @@ const SignupDetails: React.FC = () => {
             </Select>
           </div>
 
-          <Button disabled={!canContinue} onClick={onNext} className="w-full h-12">
+          <Button disabled={!canContinue} onClick={onNext} className="w-full h-12 rounded-xl">
             Continua
           </Button>
 

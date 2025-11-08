@@ -23,7 +23,11 @@ const SignupPassword: React.FC = () => {
     const session = sessionStorage.getItem('signup_session');
     if (!session) {
       navigate('/signup/start');
+      return;
     }
+    // Restore password if returning (but not confirm for security)
+    const savedPassword = sessionStorage.getItem('signup_password');
+    if (savedPassword) setPassword(savedPassword);
   }, [navigate]);
 
   const canCreate = useMemo(() => password.length >= 6 && password === confirm, [password, confirm]);
@@ -41,24 +45,34 @@ const SignupPassword: React.FC = () => {
       const method = sessionStorage.getItem('signup_method');
       const contact = sessionStorage.getItem('signup_contact');
 
-      if (!sessionToken || !fullName || !username || !dob || !gender) {
+      if (!sessionToken || !fullName || !username || !dob || !gender || !method || !contact) {
         throw new Error('Dati incompleti');
       }
 
+      // Store password temporarily for back navigation
+      sessionStorage.setItem('signup_password', password);
+
+      const payload: any = {
+        sessionToken,
+        fullName,
+        username,
+        dateOfBirth: dob,
+        gender,
+        password,
+      };
+
+      if (method === 'email') {
+        payload.email = contact;
+      } else {
+        payload.phone = contact;
+      }
+
       const { data, error } = await supabase.functions.invoke('complete-signup', {
-        body: {
-          sessionToken,
-          fullName,
-          username,
-          dateOfBirth: dob,
-          gender,
-          password,
-          [method === 'email' ? 'email' : 'phone']: contact,
-        }
+        body: payload
       });
 
       if (error) throw error;
-      if (!data?.success) throw new Error('Creazione account fallita');
+      if (!data?.success) throw new Error(data?.error || 'Creazione account fallita');
 
       // Auto-login with the returned session
       if (data.session) {
@@ -73,6 +87,7 @@ const SignupPassword: React.FC = () => {
       sessionStorage.removeItem('signup_gender');
       sessionStorage.removeItem('signup_method');
       sessionStorage.removeItem('signup_contact');
+      sessionStorage.removeItem('signup_password');
 
       toast.success('Account creato con successo!');
       navigate('/');
@@ -118,7 +133,7 @@ const SignupPassword: React.FC = () => {
             </div>
           </div>
 
-          <Button disabled={!canCreate || loading} onClick={createAccount} className="w-full h-12">
+          <Button disabled={!canCreate || loading} onClick={createAccount} className="w-full h-12 rounded-xl">
             {loading ? 'Creazione...' : 'Crea account'}
           </Button>
 

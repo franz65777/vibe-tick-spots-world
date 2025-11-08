@@ -22,7 +22,13 @@ const SignupProfile: React.FC = () => {
     const session = sessionStorage.getItem('signup_session');
     if (!session) {
       navigate('/signup/start');
+      return;
     }
+    // Restore form data if returning from next step
+    const savedFullName = sessionStorage.getItem('signup_fullname');
+    const savedUsername = sessionStorage.getItem('signup_username');
+    if (savedFullName) setFullName(savedFullName);
+    if (savedUsername) setUsername(savedUsername);
   }, [navigate]);
 
   // Debounce username check
@@ -37,10 +43,19 @@ const SignupProfile: React.FC = () => {
     return () => clearTimeout(id);
   }, [username]);
 
-  const canContinue = useMemo(() => fullName.trim().length > 1 && !!available, [fullName, available]);
+  const canContinue = useMemo(() => fullName.trim().length > 1 && available === true, [fullName, available]);
 
-  const onNext = () => {
+  const onNext = async () => {
     if (!canContinue) return;
+    
+    // Double-check username availability before proceeding
+    const { available: isAvailable } = await checkUsernameAvailability(username);
+    if (!isAvailable) {
+      toast.error('Nome utente non disponibile');
+      setAvailable(false);
+      return;
+    }
+    
     sessionStorage.setItem('signup_fullname', fullName.trim());
     sessionStorage.setItem('signup_username', username.trim().toLowerCase());
     navigate('/signup/details');
@@ -91,7 +106,7 @@ const SignupProfile: React.FC = () => {
             )}
           </div>
 
-          <Button disabled={!canContinue} onClick={onNext} className="w-full h-12">
+          <Button disabled={!canContinue} onClick={onNext} className="w-full h-12 rounded-xl">
             Continua
           </Button>
 

@@ -62,6 +62,43 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Check for existing phone or email
+    if (phone) {
+      const { data: existingPhone } = await supabase.auth.admin.listUsers();
+      const phoneExists = existingPhone?.users?.some(u => u.phone === phone);
+      if (phoneExists) {
+        return new Response(
+          JSON.stringify({ error: "Numero di telefono già registrato" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+    }
+
+    if (email) {
+      const { data: existingEmail } = await supabase.auth.admin.listUsers();
+      const emailExists = existingEmail?.users?.some(u => u.email === email);
+      if (emailExists) {
+        return new Response(
+          JSON.stringify({ error: "Email già registrata" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+    }
+
+    // Check username uniqueness
+    const { data: existingUsername } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('username', username.toLowerCase())
+      .single();
+
+    if (existingUsername) {
+      return new Response(
+        JSON.stringify({ error: "Username già in uso" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     // Create user account
     const signUpData: any = {
       password,
