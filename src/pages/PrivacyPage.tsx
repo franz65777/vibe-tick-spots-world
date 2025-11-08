@@ -9,9 +9,9 @@ const PrivacyPage = () => {
   const { t } = useTranslation(['privacy']);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center p-4 border-b border-gray-100">
+      <div className="flex items-center p-4 border-b border-gray-100 flex-shrink-0">
         <Button
           variant="ghost"
           size="sm"
@@ -24,21 +24,22 @@ const PrivacyPage = () => {
       </div>
 
       {/* Content */}
-      <div className="max-w-4xl mx-auto px-6 py-8">
-        {/* Logo and title */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <h1 className="text-3xl font-semibold bg-gradient-to-br from-blue-800 via-blue-600 to-blue-400 bg-clip-text text-transparent flex items-baseline">
-              SPOTT
-              <MapPin className="w-3 h-3 text-blue-600 fill-blue-600 ml-1" />
-            </h1>
+      <div className="flex-1 overflow-y-auto scrollbar-hide">
+        <div className="max-w-4xl mx-auto px-6 py-8">
+          {/* Logo and title */}
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center mb-4">
+              <h1 className="text-3xl font-semibold bg-gradient-to-br from-blue-800 via-blue-600 to-blue-400 bg-clip-text text-transparent flex items-baseline">
+                SPOTT
+                <MapPin className="w-3 h-3 text-blue-600 fill-blue-600 ml-1" />
+              </h1>
+            </div>
+            <h2 className="text-2xl font-semibold text-gray-900">{t('privacy:title')}</h2>
+            <p className="text-gray-600 mt-2">{t('privacy:lastUpdated')}</p>
           </div>
-          <h2 className="text-2xl font-semibold text-gray-900">{t('privacy:title')}</h2>
-          <p className="text-gray-600 mt-2">{t('privacy:lastUpdated')}</p>
-        </div>
 
-        {/* Privacy content */}
-        <div className="prose max-w-none">
+          {/* Privacy content */}
+          <div className="prose max-w-none text-left">
           <section className="mb-8">
             <h3 className="text-xl font-semibold text-gray-900 mb-4">{t('privacy:section1Title')}</h3>
             <p className="text-gray-700 mb-4">
@@ -115,6 +116,7 @@ const PrivacyPage = () => {
               {t('privacy:section11Content')}
             </p>
           </section>
+          </div>
         </div>
       </div>
     </div>

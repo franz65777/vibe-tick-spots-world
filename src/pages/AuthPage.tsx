@@ -111,9 +111,9 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col overflow-hidden">
       {/* Header with back button */}
-      <div className="flex items-center p-4">
+      <div className="flex items-center p-4 flex-shrink-0">
         <Button
           variant="ghost"
           size="sm"
@@ -126,8 +126,8 @@ const AuthPage = () => {
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex items-center justify-center px-6 py-8">
-        <div className="w-full max-w-md space-y-8">
+      <div className="flex-1 overflow-y-auto scrollbar-hide px-6 py-8">
+        <div className="w-full max-w-md mx-auto space-y-8">
           {/* Logo and title */}
           <div className="text-center">
             <div className="flex items-center justify-center mb-4">
