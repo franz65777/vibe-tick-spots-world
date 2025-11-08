@@ -42,11 +42,13 @@ const AuthPage = () => {
   useEffect(() => {
     const mode = searchParams.get('mode');
     if (mode === 'signup') {
-      setIsLogin(false);
+      // Reindirizza al nuovo flusso progressivo di signup
+      navigate('/signup/start', { replace: true });
+      return;
     } else if (mode === 'login') {
       setIsLogin(true);
     }
-  }, [searchParams]);
+  }, [searchParams, navigate]);
 
   const checkUsernameAvailability = async (username: string): Promise<boolean> => {
     if (!username.trim()) return true;

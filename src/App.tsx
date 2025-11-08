@@ -25,6 +25,11 @@ import MessagesPage from '@/pages/MessagesPage';
 import DiscoverPage from '@/pages/DiscoverPage';
 import PostPage from '@/pages/PostPage';
 import EditProfilePage from '@/pages/EditProfilePage';
+import SignupStart from '@/pages/auth/SignupStart';
+import SignupVerify from '@/pages/auth/SignupVerify';
+import SignupProfile from '@/pages/auth/SignupProfile';
+import SignupDetails from '@/pages/auth/SignupDetails';
+import SignupPassword from '@/pages/auth/SignupPassword';
 
 import BusinessAnalyticsPage from '@/pages/business/BusinessAnalyticsPage';
 import BusinessAddPage from '@/pages/business/BusinessAddPage';
@@ -77,10 +82,15 @@ function AppContent() {
   }, [user?.id]);
 
   return (
-    <Routes>
-      <Route path="/auth" element={<AuthPage />} />
-      <Route path="/terms" element={<TermsPage />} />
-      <Route path="/privacy" element={<PrivacyPage />} />
+      <Routes>
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/signup/start" element={<SignupStart />} />
+        <Route path="/signup/verify" element={<SignupVerify />} />
+        <Route path="/signup/profile" element={<SignupProfile />} />
+        <Route path="/signup/details" element={<SignupDetails />} />
+        <Route path="/signup/password" element={<SignupPassword />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
 
       <Route
         element={
