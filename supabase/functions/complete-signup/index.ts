@@ -62,28 +62,9 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Check for existing phone or email
-    if (phone) {
-      const { data: existingPhone } = await supabase.auth.admin.listUsers();
-      const phoneExists = existingPhone?.users?.some(u => u.phone === phone);
-      if (phoneExists) {
-        return new Response(
-          JSON.stringify({ error: "Numero di telefono già registrato" }),
-          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-        );
-      }
-    }
-
-    if (email) {
-      const { data: existingEmail } = await supabase.auth.admin.listUsers();
-      const emailExists = existingEmail?.users?.some(u => u.email === email);
-      if (emailExists) {
-        return new Response(
-          JSON.stringify({ error: "Email già registrata" }),
-          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-        );
-      }
-    }
+    // Note: We cannot reliably check if phone/email exists beforehand
+    // because listUsers() has pagination limits. Instead, we'll handle
+    // the error when creating the user.
 
     // Check username uniqueness (case-insensitive)
     const { data: existingUsername, error: usernameCheckError } = await supabase
@@ -130,6 +111,22 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (authError) {
       console.error("Auth error:", authError);
+      
+      // Handle specific auth errors with user-friendly messages
+      if (authError.message?.includes('phone') || authError.message?.includes('Phone')) {
+        return new Response(
+          JSON.stringify({ error: "Numero di telefono già registrato" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+      
+      if (authError.message?.includes('email') || authError.message?.includes('Email')) {
+        return new Response(
+          JSON.stringify({ error: "Email già registrata" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+      
       throw new Error(authError.message);
     }
 
