@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { MapPin, Globe, ArrowLeft } from 'lucide-react';
+import { MapPin, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 
 const languages = [
   { code: 'en', label: 'English' },
@@ -14,6 +15,13 @@ const languages = [
   { code: 'es', label: 'Español' },
   { code: 'fr', label: 'Français' },
   { code: 'de', label: 'Deutsch' },
+  { code: 'pt', label: 'Português' },
+  { code: 'nl', label: 'Nederlands' },
+  { code: 'pl', label: 'Polski' },
+  { code: 'ru', label: 'Русский' },
+  { code: 'tr', label: 'Türkçe' },
+  { code: 'ja', label: '日本語' },
+  { code: 'zh', label: '中文' },
 ];
 
 const SignupStart: React.FC = () => {
@@ -29,7 +37,9 @@ const SignupStart: React.FC = () => {
   }, []);
 
   const canContinue = useMemo(() => {
-    return method === 'email' ? email.trim().length > 3 : phone.trim().length >= 6;
+    const emailValid = /[^\s@]+@[^\s@]+\.[^\s@]+/.test(email.trim());
+    const phoneValid = /^\+?[0-9\s\-()]{7,15}$/.test(phone.trim());
+    return method === 'email' ? emailValid : phoneValid;
   }, [method, email, phone]);
 
   const sendCode = async () => {
@@ -69,16 +79,18 @@ const SignupStart: React.FC = () => {
           <ArrowLeft className="mr-2" /> {t('auth:back') || 'Indietro'}
         </Button>
         <div className="flex items-center gap-2">
-          <Globe className="w-4 h-4" />
-          <select
-            value={i18n.language}
-            onChange={(e) => i18n.changeLanguage(e.target.value)}
-            className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-          >
-            {languages.map(l => (
-              <option key={l.code} value={l.code}>{l.label}</option>
-            ))}
-          </select>
+          <div className="w-40">
+            <Select value={i18n.language} onValueChange={(v) => i18n.changeLanguage(v)}>
+              <SelectTrigger className="h-9 rounded-md bg-background border border-input text-sm" aria-label="Language selector">
+                <SelectValue placeholder="Language" />
+              </SelectTrigger>
+              <SelectContent className="rounded-md bg-popover text-popover-foreground z-[99999]">
+                {languages.map((l) => (
+                  <SelectItem key={l.code} value={l.code}>{l.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </header>
 
@@ -92,18 +104,18 @@ const SignupStart: React.FC = () => {
             <p className="mt-1 text-muted-foreground">Inizia con la tua email o numero di telefono</p>
           </div>
 
-          <div className="grid grid-cols-2 rounded-md border border-input overflow-hidden">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
             <button
               type="button"
               onClick={() => setMethod('email')}
-              className={`py-2 text-sm ${method === 'email' ? 'bg-accent text-accent-foreground' : ''}`}
+              className={`snap-start px-4 py-2 text-sm rounded-full border border-input ${method === 'email' ? 'bg-accent text-accent-foreground' : 'bg-background text-foreground'}`}
             >
               Email
             </button>
             <button
               type="button"
               onClick={() => setMethod('phone')}
-              className={`py-2 text-sm ${method === 'phone' ? 'bg-accent text-accent-foreground' : ''}`}
+              className={`snap-start px-4 py-2 text-sm rounded-full border border-input ${method === 'phone' ? 'bg-accent text-accent-foreground' : 'bg-background text-foreground'}`}
             >
               Telefono
             </button>
