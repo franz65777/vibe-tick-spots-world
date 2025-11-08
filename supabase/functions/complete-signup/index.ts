@@ -111,23 +111,28 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (authError) {
       console.error("Auth error:", authError);
-      
-      // Handle specific auth errors with user-friendly messages
-      if (authError.message?.includes('phone') || authError.message?.includes('Phone')) {
+      const code = (authError as any).code || '';
+      const msg = (authError as any).message || '';
+      const status = (authError as any).status || 400;
+
+      if (code === 'phone_exists' || /phone/i.test(msg)) {
         return new Response(
           JSON.stringify({ error: "Numero di telefono già registrato" }),
           { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
       }
-      
-      if (authError.message?.includes('email') || authError.message?.includes('Email')) {
+
+      if (code === 'email_exists' || /email/i.test(msg)) {
         return new Response(
           JSON.stringify({ error: "Email già registrata" }),
           { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
       }
-      
-      throw new Error(authError.message);
+
+      return new Response(
+        JSON.stringify({ error: msg || 'Errore durante la creazione utente' }),
+        { status: status >= 400 && status < 600 ? status : 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
     if (!authData.user) {

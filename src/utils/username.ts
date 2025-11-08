@@ -8,7 +8,8 @@ export async function checkUsernameAvailability(rawUsername: string): Promise<{ 
     const { count, error } = await supabase
       .from('profiles')
       .select('id', { count: 'exact', head: true })
-      .eq('username', username);
+      .ilike('username', username);
+
 
     if (error) {
       return { available: false, error: error.message };
