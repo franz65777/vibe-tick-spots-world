@@ -78,16 +78,24 @@ const SignupPassword: React.FC = () => {
       if (error) {
         let msg = error.message || 'Errore nella creazione account';
         try {
-          // Supabase FunctionsHttpError: prova a leggere il body JSON
+          // Prova a estrarre l'errore dal body JSON se disponibile
           // @ts-ignore
           if (error.context?.json) {
             // @ts-ignore
             const body = await error.context.json();
             if (body?.error) msg = body.error;
+          } else {
+            // Talvolta il messaggio contiene un JSON serializzato
+            const parsed = JSON.parse(msg);
+            if (parsed?.error) msg = parsed.error;
           }
         } catch {}
 
         toast.error(msg);
+        if (/username/i.test(msg)) {
+          sessionStorage.setItem('signup_nav_back', 'true');
+          navigate('/signup/profile');
+        }
         return; // Ferma il flusso per evitare schermate bianche
       }
 
