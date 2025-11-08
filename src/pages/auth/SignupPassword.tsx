@@ -75,8 +75,26 @@ const SignupPassword: React.FC = () => {
         body: payload
       });
 
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Creazione account fallita');
+      if (error) {
+        let msg = error.message || 'Errore nella creazione account';
+        try {
+          // Supabase FunctionsHttpError: prova a leggere il body JSON
+          // @ts-ignore
+          if (error.context?.json) {
+            // @ts-ignore
+            const body = await error.context.json();
+            if (body?.error) msg = body.error;
+          }
+        } catch {}
+
+        toast.error(msg);
+        return; // Ferma il flusso per evitare schermate bianche
+      }
+
+      if (!data?.success) {
+        toast.error(data?.error || 'Creazione account fallita');
+        return;
+      }
 
       // Auto-login with the returned session
       if (data.session) {
