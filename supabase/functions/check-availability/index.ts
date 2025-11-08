@@ -54,19 +54,33 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     if (type === 'email') {
-      // Try to use listUsers with email filter (supported by GoTrue Admin API)
-      // Fallback: scan first page if filter not supported (sufficient for small projects)
+      console.log('Checking email availability:', normalized);
       let exists = false;
       try {
-        // @ts-ignore - some versions accept filter params
-        const { data } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1, email: normalized });
+        // List all users and check manually (most reliable approach)
+        const { data, error } = await supabase.auth.admin.listUsers();
+        if (error) {
+          console.error('listUsers error:', error);
+          throw error;
+        }
+        
         const users = (data as any)?.users || [];
-        exists = users.some((u: any) => (u.email || '').toLowerCase() === normalized.toLowerCase());
+        console.log(`Found ${users.length} total users`);
+        
+        // Check if email exists (case-insensitive)
+        exists = users.some((u: any) => {
+          const userEmail = (u.email || '').toLowerCase();
+          const match = userEmail === normalized.toLowerCase();
+          if (match) {
+            console.log('Email match found:', userEmail);
+          }
+          return match;
+        });
+        
+        console.log(`Email ${normalized} exists:`, exists);
       } catch (err) {
-        console.warn('listUsers email filter unsupported, falling back:', err);
-        const { data } = await supabase.auth.admin.listUsers({ page: 1, perPage: 100 });
-        const users = (data as any)?.users || [];
-        exists = users.some((u: any) => (u.email || '').toLowerCase() === normalized.toLowerCase());
+        console.error('Error checking email:', err);
+        throw err;
       }
 
       return new Response(
@@ -76,26 +90,34 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     if (type === 'phone') {
+      console.log('Checking phone availability:', normalized);
       let exists = false;
       try {
+        // List all users and check manually
+        const { data, error } = await supabase.auth.admin.listUsers();
+        if (error) {
+          console.error('listUsers error:', error);
+          throw error;
+        }
+        
+        const users = (data as any)?.users || [];
+        console.log(`Found ${users.length} total users`);
+        
         // Normalize phone by stripping non-digits for comparison
         const digits = normalized.replace(/\D/g, '');
-        // @ts-ignore - some versions accept filter params
-        const { data } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1, phone: normalized });
-        const users = (data as any)?.users || [];
-        exists = users.some((u: any) => (u.phone || '').replace(/\D/g, '') === digits);
-        if (!exists) {
-          // Fallback scan first page
-          const { data: data2 } = await supabase.auth.admin.listUsers({ page: 1, perPage: 100 });
-          const users2 = (data2 as any)?.users || [];
-          exists = users2.some((u: any) => (u.phone || '').replace(/\D/g, '') === digits);
-        }
+        exists = users.some((u: any) => {
+          const userPhone = (u.phone || '').replace(/\D/g, '');
+          const match = userPhone === digits;
+          if (match) {
+            console.log('Phone match found:', u.phone);
+          }
+          return match;
+        });
+        
+        console.log(`Phone ${normalized} exists:`, exists);
       } catch (err) {
-        console.warn('listUsers phone filter unsupported, falling back:', err);
-        const { data } = await supabase.auth.admin.listUsers({ page: 1, perPage: 100 });
-        const users = (data as any)?.users || [];
-        const digits = normalized.replace(/\D/g, '');
-        exists = users.some((u: any) => (u.phone || '').replace(/\D/g, '') === digits);
+        console.error('Error checking phone:', err);
+        throw err;
       }
 
       return new Response(
