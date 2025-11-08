@@ -25,9 +25,13 @@ const SignupPassword: React.FC = () => {
       navigate('/signup/start');
       return;
     }
-    // Restore password if returning (but not confirm for security)
-    const savedPassword = sessionStorage.getItem('signup_password');
-    if (savedPassword) setPassword(savedPassword);
+    // Only restore password when navigating back
+    const isNavigatingBack = sessionStorage.getItem('signup_nav_back');
+    if (isNavigatingBack === 'true') {
+      const savedPassword = sessionStorage.getItem('signup_password');
+      if (savedPassword) setPassword(savedPassword);
+      sessionStorage.removeItem('signup_nav_back');
+    }
   }, [navigate]);
 
   const canCreate = useMemo(() => password.length >= 6 && password === confirm, [password, confirm]);
@@ -101,7 +105,10 @@ const SignupPassword: React.FC = () => {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <header className="p-4 flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+        <Button variant="ghost" size="sm" onClick={() => {
+          sessionStorage.setItem('signup_nav_back', 'true');
+          navigate(-1);
+        }}>
           <ArrowLeft className="mr-2" /> {t('auth:back') || 'Indietro'}
         </Button>
       </header>

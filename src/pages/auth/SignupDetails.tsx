@@ -25,11 +25,15 @@ const SignupDetails: React.FC = () => {
       navigate('/signup/start');
       return;
     }
-    // Restore form data if returning from next step
-    const savedDob = sessionStorage.getItem('signup_dob');
-    const savedGender = sessionStorage.getItem('signup_gender');
-    if (savedDob) setDob(new Date(savedDob));
-    if (savedGender) setGender(savedGender);
+    // Only restore data when navigating back
+    const isNavigatingBack = sessionStorage.getItem('signup_nav_back');
+    if (isNavigatingBack === 'true') {
+      const savedDob = sessionStorage.getItem('signup_dob');
+      const savedGender = sessionStorage.getItem('signup_gender');
+      if (savedDob) setDob(new Date(savedDob));
+      if (savedGender) setGender(savedGender);
+      sessionStorage.removeItem('signup_nav_back');
+    }
   }, [navigate]);
 
   const canContinue = useMemo(() => !!dob && !!gender, [dob, gender]);
@@ -44,7 +48,10 @@ const SignupDetails: React.FC = () => {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <header className="p-4 flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+        <Button variant="ghost" size="sm" onClick={() => {
+          sessionStorage.setItem('signup_nav_back', 'true');
+          navigate(-1);
+        }}>
           <ArrowLeft className="mr-2" /> {t('auth:back') || 'Indietro'}
         </Button>
       </header>
@@ -82,6 +89,7 @@ const SignupDetails: React.FC = () => {
                   captionLayout="dropdown"
                   fromYear={1900}
                   toYear={new Date().getFullYear()}
+                  locale={it}
                 />
               </PopoverContent>
             </Popover>

@@ -24,11 +24,15 @@ const SignupProfile: React.FC = () => {
       navigate('/signup/start');
       return;
     }
-    // Restore form data if returning from next step
-    const savedFullName = sessionStorage.getItem('signup_fullname');
-    const savedUsername = sessionStorage.getItem('signup_username');
-    if (savedFullName) setFullName(savedFullName);
-    if (savedUsername) setUsername(savedUsername);
+    // Only restore data when navigating back
+    const isNavigatingBack = sessionStorage.getItem('signup_nav_back');
+    if (isNavigatingBack === 'true') {
+      const savedFullName = sessionStorage.getItem('signup_fullname');
+      const savedUsername = sessionStorage.getItem('signup_username');
+      if (savedFullName) setFullName(savedFullName);
+      if (savedUsername) setUsername(savedUsername);
+      sessionStorage.removeItem('signup_nav_back');
+    }
   }, [navigate]);
 
   // Debounce username check
@@ -64,7 +68,10 @@ const SignupProfile: React.FC = () => {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <header className="p-4 flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+        <Button variant="ghost" size="sm" onClick={() => {
+          sessionStorage.setItem('signup_nav_back', 'true');
+          navigate(-1);
+        }}>
           <ArrowLeft className="mr-2" /> {t('auth:back') || 'Indietro'}
         </Button>
       </header>

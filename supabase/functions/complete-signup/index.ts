@@ -85,12 +85,20 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    // Check username uniqueness
-    const { data: existingUsername } = await supabase
+    // Check username uniqueness (case-insensitive)
+    const { data: existingUsername, error: usernameCheckError } = await supabase
       .from('profiles')
       .select('id')
-      .eq('username', username.toLowerCase())
-      .single();
+      .ilike('username', username.toLowerCase())
+      .maybeSingle();
+
+    if (usernameCheckError) {
+      console.error("Error checking username:", usernameCheckError);
+      return new Response(
+        JSON.stringify({ error: "Errore controllo username" }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
 
     if (existingUsername) {
       return new Response(
@@ -142,6 +150,15 @@ const handler = async (req: Request): Promise<Response> => {
       console.error("Profile error:", profileError);
       // Rollback user creation
       await supabase.auth.admin.deleteUser(authData.user.id);
+      
+      // Check if it's a unique constraint violation (username already exists)
+      if (profileError.code === '23505') {
+        return new Response(
+          JSON.stringify({ error: "Username già in uso" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+      
       throw new Error(profileError.message);
     }
 
