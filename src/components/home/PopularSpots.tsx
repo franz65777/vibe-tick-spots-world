@@ -193,20 +193,20 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
 
   const getFilterLabel = () => {
     switch (filterType) {
-      case 'discount': return 'Con uno sconto';
-      case 'event': return 'Con un evento';
-      case 'promotion': return 'Promozione';
-      case 'new': return 'Novità';
-      default: return 'Più salvate';
+      case 'discount': return t('filters.discount', { ns: 'home' });
+      case 'event': return t('filters.event', { ns: 'home' });
+      case 'promotion': return t('filters.promotion', { ns: 'home' });
+      case 'new': return t('filters.new', { ns: 'home' });
+      default: return t('filters.mostSaved', { ns: 'home' });
     }
   };
 
   const filterOptions = [
-    { type: 'most_saved' as FilterType, label: 'Più salvate', icon: TrendingUp },
-    { type: 'discount' as FilterType, label: 'Con uno sconto', icon: Percent },
-    { type: 'event' as FilterType, label: 'Con un evento', icon: Calendar },
-    { type: 'promotion' as FilterType, label: 'Promozione', icon: Megaphone },
-    { type: 'new' as FilterType, label: 'Novità', icon: Sparkles },
+    { type: 'most_saved' as FilterType, label: t('filters.mostSaved', { ns: 'home' }), icon: TrendingUp },
+    { type: 'discount' as FilterType, label: t('filters.discount', { ns: 'home' }), icon: Percent },
+    { type: 'event' as FilterType, label: t('filters.event', { ns: 'home' }), icon: Calendar },
+    { type: 'promotion' as FilterType, label: t('filters.promotion', { ns: 'home' }), icon: Megaphone },
+    { type: 'new' as FilterType, label: t('filters.new', { ns: 'home' }), icon: Sparkles },
   ];
 
   return (
@@ -232,7 +232,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                       setFilterType(option.type);
                       setDropdownOpen(false);
                     }}
-                    className={`flex-shrink-0 flex flex-col items-center justify-center gap-0.5 p-1.5 rounded-lg transition-all min-w-[52px] ${
+                    className={`flex-shrink-0 flex flex-col items-center justify-center gap-0.5 p-1.5 rounded-lg transition-all w-[58px] ${
                       isActive 
                         ? 'bg-gradient-to-br from-orange-500 to-pink-500 text-white shadow-md' 
                         : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
@@ -253,8 +253,8 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
               <h3 className="text-sm font-semibold text-gray-900 truncate">
                 {loading ? t('loading', { ns: 'common' }) : `${getFilterLabel()}${currentCity ? ` in ${currentCity}` : ''}`}
               </h3>
-              <p className="text-xs text-gray-500 truncate">
-                {loading ? t('findingSpots', { ns: 'home' }) : `${popularSpots.length} luoghi trovati`}
+              <p className="text-xs text-gray-500 truncate text-left">
+                {loading ? t('findingSpots', { ns: 'home' }) : t('filters.placesFound', { ns: 'home', count: popularSpots.length })}
               </p>
             </div>
           )}

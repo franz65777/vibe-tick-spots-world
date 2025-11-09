@@ -233,7 +233,15 @@ const resources = {
       noPlacesToDiscover: 'No Places to Discover',
       followMorePeople: 'Follow more people to see their saved locations and discover amazing new places to explore',
       findPeopleToFollow: 'Find People to Follow',
-      tryAgain: 'Try Again'
+      tryAgain: 'Try Again',
+      filters: {
+        mostSaved: 'Most Saved',
+        discount: 'Discount',
+        event: 'Event',
+        promotion: 'Promotion',
+        new: 'New',
+        placesFound: '{{count}} places found'
+      }
     },
     explore: {
       places: 'Places',
@@ -892,7 +900,15 @@ const resources = {
       noPlacesToDiscover: 'No hay lugares para descubrir',
       followMorePeople: 'Sigue a más personas para ver sus lugares guardados y descubrir nuevos lugares increíbles para explorar',
       findPeopleToFollow: 'Buscar Personas para Seguir',
-      tryAgain: 'Intentar de nuevo'
+      tryAgain: 'Intentar de nuevo',
+      filters: {
+        mostSaved: 'Más guardadas',
+        discount: 'Descuento',
+        event: 'Evento',
+        promotion: 'Promoción',
+        new: 'Nuevo',
+        placesFound: '{{count}} lugares encontrados'
+      }
     },
     explore: {
       places: 'Lugares',
@@ -1538,7 +1554,15 @@ const resources = {
       topContributors: 'Top Contributori',
       viewFullLeaderboard: 'Vedi Classifica Completa',
       yourStory: 'La Tua Storia',
-      searchCities: 'Cerca qualsiasi città nel mondo'
+      searchCities: 'Cerca qualsiasi città nel mondo',
+      filters: {
+        mostSaved: 'Più salvate',
+        discount: 'Sconto',
+        event: 'Evento',
+        promotion: 'Promozione',
+        new: 'Novità',
+        placesFound: '{{count}} luoghi trovati'
+      }
     },
     explore: {
       places: 'Luoghi',
@@ -2180,7 +2204,15 @@ const resources = {
       topContributors: 'Meilleurs contributeurs',
       weeklyLeaderboard: 'Classement Hebdomadaire',
       viewFullLeaderboard: 'Voir le classement complet',
-      yourStory: 'Votre histoire'
+      yourStory: 'Votre histoire',
+      filters: {
+        mostSaved: 'Les plus enregistrés',
+        discount: 'Réduction',
+        event: 'Événement',
+        promotion: 'Promotion',
+        new: 'Nouveau',
+        placesFound: '{{count}} lieux trouvés'
+      }
     },
     explore: {
       places: 'Lieux',
@@ -2755,7 +2787,15 @@ const resources = {
       topContributors: 'Top-Beitragende',
       weeklyLeaderboard: 'Wöchentliche Bestenliste',
       viewFullLeaderboard: 'Gesamtrangliste anzeigen',
-      yourStory: 'Deine Geschichte'
+      yourStory: 'Deine Geschichte',
+      filters: {
+        mostSaved: 'Meist gespeichert',
+        discount: 'Rabatt',
+        event: 'Veranstaltung',
+        promotion: 'Aktion',
+        new: 'Neu',
+        placesFound: '{{count}} Orte gefunden'
+      }
     },
     explore: {
       places: 'Orte',
@@ -3250,7 +3290,15 @@ const resources = {
       topContributors: 'Principais colaboradores',
       weeklyLeaderboard: 'Classificação Semanal',
       viewFullLeaderboard: 'Ver classificação completa',
-      yourStory: 'Sua história'
+      yourStory: 'Sua história',
+      filters: {
+        mostSaved: 'Mais salvos',
+        discount: 'Desconto',
+        event: 'Evento',
+        promotion: 'Promoção',
+        new: 'Novo',
+        placesFound: '{{count}} locais encontrados'
+      }
     },
     explore: {
       places: 'Locais',
@@ -3690,7 +3738,15 @@ const resources = {
       noPopularSpots: '未找到热门地点于',
       topContributors: '顶级贡献者',
       viewFullLeaderboard: '查看完整排行榜',
-      yourStory: '你的故事'
+      yourStory: '你的故事',
+      filters: {
+        mostSaved: '最多保存',
+        discount: '折扣',
+        event: '活动',
+        promotion: '促销',
+        new: '新品',
+        placesFound: '找到{{count}}个地点'
+      }
     },
     explore: {
       places: '地点',
@@ -4082,7 +4138,15 @@ const resources = {
       noPopularSpots: '{{city}}で人気のスポットが見つかりません',
       topContributors: 'トップ貢献者',
       viewFullLeaderboard: 'ランキングを見る',
-      yourStory: 'あなたのストーリー'
+      yourStory: 'あなたのストーリー',
+      filters: {
+        mostSaved: '最も保存',
+        discount: '割引',
+        event: 'イベント',
+        promotion: 'プロモーション',
+        new: '新着',
+        placesFound: '{{count}}件の場所が見つかりました'
+      }
     },
     explore: {
       places: '場所',
@@ -4495,7 +4559,15 @@ const resources = {
       noPopularSpots: '{{city}}에서 인기 장소를 찾을 수 없음',
       topContributors: '최고 기여자',
       viewFullLeaderboard: '전체 순위 보기',
-      yourStory: '당신의 이야기'
+      yourStory: '당신의 이야기',
+      filters: {
+        mostSaved: '가장 많이 저장됨',
+        discount: '할인',
+        event: '이벤트',
+        promotion: '프로모션',
+        new: '신규',
+        placesFound: '{{count}}개 장소 발견'
+      }
     },
     explore: {
       places: '장소',
@@ -4908,7 +4980,15 @@ const resources = {
       noPopularSpots: 'لم يتم العثور على أماكن شعبية في',
       topContributors: 'أفضل المساهمين',
       viewFullLeaderboard: 'عرض الترتيب الكامل',
-      yourStory: 'قصتك'
+      yourStory: 'قصتك',
+      filters: {
+        mostSaved: 'الأكثر حفظاً',
+        discount: 'خصم',
+        event: 'حدث',
+        promotion: 'عرض',
+        new: 'جديد',
+        placesFound: 'تم العثور على {{count}} أماكن'
+      }
     },
     explore: {
       places: 'أماكن',
@@ -5320,7 +5400,15 @@ const resources = {
       noPopularSpots: '{{city}} में कोई लोकप्रिय स्थान नहीं मिला',
       topContributors: 'शीर्ष योगदानकर्ता',
       viewFullLeaderboard: 'पूर्ण लीडरबोर्ड देखें',
-      yourStory: 'आपकी कहानी'
+      yourStory: 'आपकी कहानी',
+      filters: {
+        mostSaved: 'सबसे अधिक सहेजे गए',
+        discount: 'छूट',
+        event: 'कार्यक्रम',
+        promotion: 'प्रचार',
+        new: 'नया',
+        placesFound: '{{count}} स्थान मिले'
+      }
     },
     explore: {
       places: 'स्थान',
@@ -5733,7 +5821,15 @@ const resources = {
       noPopularSpots: 'Популярных мест не найдено в',
       topContributors: 'Лучшие участники',
       viewFullLeaderboard: 'Посмотреть полный рейтинг',
-      yourStory: 'Ваша история'
+      yourStory: 'Ваша история',
+      filters: {
+        mostSaved: 'Самые сохранённые',
+        discount: 'Скидка',
+        event: 'Событие',
+        promotion: 'Акция',
+        new: 'Новое',
+        placesFound: 'Найдено мест: {{count}}'
+      }
     },
     explore: {
       places: 'Места',
