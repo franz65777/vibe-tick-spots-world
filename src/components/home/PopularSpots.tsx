@@ -222,9 +222,10 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
             </button>
             
             {dropdownOpen && (
-              <div className="absolute top-10 left-0 bg-white rounded-lg shadow-xl border border-gray-200 py-2 min-w-[180px] z-50">
+              <div className="absolute top-10 left-0 bg-white rounded-xl shadow-xl border border-gray-200 p-3 z-50 flex gap-2 overflow-x-auto max-w-[90vw]">
                 {filterOptions.map((option) => {
                   const Icon = option.icon;
+                  const isActive = filterType === option.type;
                   return (
                     <button
                       key={option.type}
@@ -232,12 +233,18 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                         setFilterType(option.type);
                         setDropdownOpen(false);
                       }}
-                      className={`w-full px-4 py-2 flex items-center gap-3 hover:bg-gray-50 transition-colors ${
-                        filterType === option.type ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
+                      className={`flex-shrink-0 flex flex-col items-center justify-center gap-2 p-3 rounded-xl transition-all min-w-[80px] ${
+                        isActive 
+                          ? 'bg-gradient-to-br from-orange-500 to-pink-500 text-white shadow-md' 
+                          : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
                       }`}
                     >
-                      <Icon className="w-4 h-4" />
-                      <span className="text-sm font-medium">{option.label}</span>
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                        isActive ? 'bg-white/20' : 'bg-white'
+                      }`}>
+                        <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-700'}`} />
+                      </div>
+                      <span className="text-xs font-medium text-center leading-tight">{option.label}</span>
                     </button>
                   );
                 })}
