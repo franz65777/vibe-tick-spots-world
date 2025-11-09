@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { TrendingUp, MapPin, Users } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { TrendingUp, MapPin, Users, ChevronDown, Percent, Calendar, Megaphone, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import fireIcon from '@/assets/fire-icon.png';
 import { useTranslation } from 'react-i18next';
+
+type FilterType = 'most_saved' | 'discount' | 'event' | 'promotion' | 'new';
 
 interface PopularSpot {
   id: string;
@@ -33,10 +35,24 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
   const { user } = useAuth();
   const [popularSpots, setPopularSpots] = useState<PopularSpot[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filterType, setFilterType] = useState<FilterType>('most_saved');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchPopularSpots();
-  }, [currentCity]);
+  }, [currentCity, filterType]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const fetchPopularSpots = async () => {
     if (!currentCity || currentCity === 'Unknown City') {
@@ -49,23 +65,41 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
       setLoading(true);
       const normalizedCity = currentCity.trim().toLowerCase();
 
-      // Parallel queries for performance
-      const [locationsResult, googleSavesResult] = await Promise.all([
-        supabase
-          .from('locations')
-          .select('id, name, category, city, address, google_place_id, latitude, longitude')
-          .or(`city.ilike.%${normalizedCity}%,address.ilike.%${normalizedCity}%`)
-          .limit(200),
-        supabase
-          .from('saved_places')
-          .select('place_id')
-          .ilike('city', `%${normalizedCity}%`)
-      ]);
+      // Base query for locations
+      const locationsQuery = supabase
+        .from('locations')
+        .select('id, name, category, city, address, google_place_id, latitude, longitude')
+        .or(`city.ilike.%${normalizedCity}%,address.ilike.%${normalizedCity}%`)
+        .limit(200);
 
+      const locationsResult = await locationsQuery;
       if (locationsResult.error) throw locationsResult.error;
 
       const locationsData = locationsResult.data || [];
       const locationIds = locationsData.map(l => l.id);
+
+      // If filter is not "most_saved", get active marketing campaigns
+      let campaignsMap = new Map<string, any>();
+      if (filterType !== 'most_saved') {
+        const campaignTypeMap = {
+          'discount': 'discount',
+          'event': 'event',
+          'promotion': 'promo',
+          'new': 'new_opening'
+        };
+
+        const { data: campaignsData } = await supabase
+          .from('marketing_campaigns')
+          .select('location_id, campaign_type, end_date')
+          .eq('campaign_type', campaignTypeMap[filterType])
+          .eq('is_active', true)
+          .gte('end_date', new Date().toISOString())
+          .in('location_id', locationIds);
+
+        campaignsData?.forEach(campaign => {
+          campaignsMap.set(campaign.location_id, campaign);
+        });
+      }
 
       // Get saves count for locations
       const { data: savesData } = await supabase
@@ -78,12 +112,18 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
         savesMap.set(save.location_id, (savesMap.get(save.location_id) || 0) + 1);
       });
 
+      // Get Google saves
+      const { data: googleSavesData } = await supabase
+        .from('saved_places')
+        .select('place_id')
+        .ilike('city', `%${normalizedCity}%`);
+
       const googleSavesMap = new Map<string, number>();
-      googleSavesResult.data?.forEach(save => {
+      googleSavesData?.forEach(save => {
         googleSavesMap.set(save.place_id, (googleSavesMap.get(save.place_id) || 0) + 1);
       });
 
-      // Process and filter locations by city
+      // Process and filter locations
       const locationMap = new Map<string, PopularSpot>();
 
       locationsData?.forEach((location) => {
@@ -94,11 +134,16 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
           return;
         }
 
+        // If filter is not "most_saved", only include locations with active campaigns
+        if (filterType !== 'most_saved' && !campaignsMap.has(location.id)) {
+          return;
+        }
+
         const key = location.google_place_id || location.id;
         const savesCount = (savesMap.get(location.id) || 0) + (location.google_place_id ? (googleSavesMap.get(location.google_place_id) || 0) : 0);
         
-        // Only include locations with at least 1 save
-        if (savesCount > 0) {
+        // Only include locations with at least 1 save or with active campaign
+        if (savesCount > 0 || campaignsMap.has(location.id)) {
           if (!locationMap.has(key) || (locationMap.get(key)?.savesCount || 0) < savesCount) {
             locationMap.set(key, {
               id: location.id,
@@ -136,19 +181,76 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
     onSpotSelect?.(spot);
   };
 
+  const getFilterIcon = () => {
+    switch (filterType) {
+      case 'discount': return <Percent className="w-4 h-4 text-white" />;
+      case 'event': return <Calendar className="w-4 h-4 text-white" />;
+      case 'promotion': return <Megaphone className="w-4 h-4 text-white" />;
+      case 'new': return <Sparkles className="w-4 h-4 text-white" />;
+      default: return <TrendingUp className="w-4 h-4 text-white" />;
+    }
+  };
+
+  const getFilterLabel = () => {
+    switch (filterType) {
+      case 'discount': return 'Con uno sconto';
+      case 'event': return 'Con un evento';
+      case 'promotion': return 'Promozione';
+      case 'new': return 'Novità';
+      default: return 'Più salvate';
+    }
+  };
+
+  const filterOptions = [
+    { type: 'most_saved' as FilterType, label: 'Più salvate', icon: TrendingUp },
+    { type: 'discount' as FilterType, label: 'Con uno sconto', icon: Percent },
+    { type: 'event' as FilterType, label: 'Con un evento', icon: Calendar },
+    { type: 'promotion' as FilterType, label: 'Promozione', icon: Megaphone },
+    { type: 'new' as FilterType, label: 'Novità', icon: Sparkles },
+  ];
+
   return (
     <div className="h-full px-1 py-3 bg-white/50">
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-pink-500 rounded-lg flex items-center justify-center shadow-sm">
-            <TrendingUp className="w-4 h-4 text-white" />
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              className="w-8 h-8 bg-gradient-to-br from-orange-500 to-pink-500 rounded-lg flex items-center justify-center shadow-sm hover:shadow-md transition-shadow"
+            >
+              {getFilterIcon()}
+            </button>
+            
+            {dropdownOpen && (
+              <div className="absolute top-10 left-0 bg-white rounded-lg shadow-xl border border-gray-200 py-2 min-w-[180px] z-50">
+                {filterOptions.map((option) => {
+                  const Icon = option.icon;
+                  return (
+                    <button
+                      key={option.type}
+                      onClick={() => {
+                        setFilterType(option.type);
+                        setDropdownOpen(false);
+                      }}
+                      className={`w-full px-4 py-2 flex items-center gap-3 hover:bg-gray-50 transition-colors ${
+                        filterType === option.type ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span className="text-sm font-medium">{option.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
-          <div className="flex flex-col">
-            <h3 className="text-sm font-semibold text-gray-900">
-              {loading ? t('loading', { ns: 'common' }) : `${t('topPinned', { ns: 'home' })}${currentCity ? ` ${t('in', { ns: 'common' })} ${currentCity}` : ''}`}
+          
+          <div className="flex flex-col min-w-0">
+            <h3 className="text-sm font-semibold text-gray-900 truncate">
+              {loading ? t('loading', { ns: 'common' }) : `${getFilterLabel()}${currentCity ? ` in ${currentCity}` : ''}`}
             </h3>
-            <p className="text-xs text-gray-500">
-              {loading ? t('findingSpots', { ns: 'home' }) : t('mostSavedLocations', { ns: 'home' })}
+            <p className="text-xs text-gray-500 truncate">
+              {loading ? t('findingSpots', { ns: 'home' }) : `${popularSpots.length} luoghi trovati`}
             </p>
           </div>
         </div>
