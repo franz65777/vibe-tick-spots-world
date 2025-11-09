@@ -253,13 +253,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error };
   };
 
-  const signIn = async (email: string, password: string) => {
-    // SECURITY FIX: Only allow email-based sign in to prevent user enumeration
-    // Users must sign in with their email address, not username
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email,
-      password,
-    });
+  const signIn = async (identifier: string, password: string) => {
+    // Support both email and phone sign in
+    // Detect if identifier is email or phone
+    const isEmail = identifier.includes('@');
+    
+    const { error } = await supabase.auth.signInWithPassword(
+      isEmail 
+        ? { email: identifier, password }
+        : { phone: identifier, password }
+    );
 
     // Track authentication attempts for rate limiting (anonymized)
     try {

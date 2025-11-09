@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import AuthenticatedLayout from '@/components/AuthenticatedLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import AuthPage from '@/pages/AuthPage';
+import SigninStart from '@/pages/auth/SigninStart';
 import Index from '@/pages/Index';
 import BusinessDashboardPage from '@/pages/BusinessDashboardPage';
 import SubscriptionPage from '@/pages/SubscriptionPage';
@@ -83,7 +83,7 @@ function AppContent() {
 
   return (
       <Routes>
-        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/auth" element={<SigninStart />} />
         <Route path="/signup/start" element={<SignupStart />} />
         <Route path="/signup/verify" element={<SignupVerify />} />
         <Route path="/signup/profile" element={<SignupProfile />} />
