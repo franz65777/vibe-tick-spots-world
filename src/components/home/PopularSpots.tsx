@@ -211,17 +211,17 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
 
   return (
     <div className="h-full px-1 py-2 bg-white/50">
-      <div className="flex items-center gap-1.5 mb-2">
-        <div className="relative flex items-center gap-1.5" ref={dropdownRef}>
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <div className="relative flex items-center gap-1.5 flex-1 min-w-0" ref={dropdownRef}>
           <button
             onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="w-8 h-8 bg-gradient-to-br from-orange-500 to-pink-500 rounded-lg flex items-center justify-center shadow-sm hover:shadow-md transition-shadow flex-shrink-0"
+            className="w-7 h-7 bg-gradient-to-br from-orange-500 to-pink-500 rounded-lg flex items-center justify-center shadow-sm hover:shadow-md transition-shadow flex-shrink-0"
           >
             {getFilterIcon()}
           </button>
           
-          {dropdownOpen && (
-            <div className="absolute top-10 left-0 bg-white rounded-xl shadow-xl border border-gray-200 p-2 z-50 flex gap-1.5">
+          {dropdownOpen ? (
+            <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
               {filterOptions.map((option) => {
                 const Icon = option.icon;
                 const isActive = filterType === option.type;
@@ -232,24 +232,43 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                       setFilterType(option.type);
                       setDropdownOpen(false);
                     }}
-                    className={`flex-shrink-0 flex flex-col items-center justify-center gap-1 p-2 rounded-lg transition-all min-w-[60px] ${
+                    className={`flex-shrink-0 flex flex-col items-center justify-center gap-0.5 p-1.5 rounded-lg transition-all min-w-[52px] ${
                       isActive 
                         ? 'bg-gradient-to-br from-orange-500 to-pink-500 text-white shadow-md' 
                         : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
                     }`}
                   >
-                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                    <div className={`w-6 h-6 rounded-md flex items-center justify-center ${
                       isActive ? 'bg-white/20' : 'bg-white'
                     }`}>
-                      <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-gray-700'}`} />
+                      <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-gray-700'}`} />
                     </div>
-                    <span className="text-[10px] font-medium text-center leading-tight">{option.label}</span>
+                    <span className="text-[9px] font-medium text-center leading-tight">{option.label}</span>
                   </button>
                 );
               })}
             </div>
+          ) : (
+            <div className="flex flex-col min-w-0">
+              <h3 className="text-sm font-semibold text-gray-900 truncate">
+                {loading ? t('loading', { ns: 'common' }) : `${getFilterLabel()}${currentCity ? ` in ${currentCity}` : ''}`}
+              </h3>
+              <p className="text-xs text-gray-500 truncate">
+                {loading ? t('findingSpots', { ns: 'home' }) : `${popularSpots.length} luoghi trovati`}
+              </p>
+            </div>
           )}
         </div>
+        
+        {!dropdownOpen && (
+          <button
+            onClick={onSwipeDiscoveryOpen}
+            className="w-8 h-8 flex items-center justify-center transition-all hover:scale-110 flex-shrink-0"
+            aria-label="Discover places"
+          >
+            <img src={fireIcon} alt="Discover" className="w-7 h-7" />
+          </button>
+        )}
       </div>
 
       {/* Horizontal chips */}
