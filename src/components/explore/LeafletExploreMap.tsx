@@ -60,14 +60,14 @@ const MapController = ({
   return null;
 };
 
-// Dark mode tile layer component
+// Dark mode tile layer component - uses soft dark_all for better visibility
 const DarkModeTileLayer = ({ isDarkMode }: { isDarkMode: boolean }) => {
   return (
     <TileLayer
       attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       url={isDarkMode 
-        ? 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
-        : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+        : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
       }
       maxZoom={19}
     />

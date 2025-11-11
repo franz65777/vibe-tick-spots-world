@@ -72,6 +72,7 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
   // Fetch nearby suggestions when modal opens with coordinates (immediate load)
   useEffect(() => {
     if (isOpen && coordinates) {
+      console.log('QuickAddPinModal opened with coordinates:', coordinates);
       // Immediate fetch on open (fast mode)
       fetchNearbySuggestions(true);
     } else {
@@ -130,9 +131,12 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
   // Debounced search as-you-type (only when user types, not on initial load)
   useEffect(() => {
     if (!isOpen || !coordinates || !searchQuery) return;
+    
+    console.log('Search query changed:', searchQuery);
     const t = setTimeout(() => {
+      console.log('Triggering search for:', searchQuery);
       fetchNearbySuggestions(true);
-    }, 80);
+    }, 300);
     return () => clearTimeout(t);
   }, [searchQuery]);
 

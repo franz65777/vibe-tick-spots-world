@@ -85,10 +85,10 @@ const LeafletMapSetup = ({
 
     mapRef.current = map;
 
-    // Use CartoDB Voyager for colorful parks and water
+    // Use CartoDB dark_all for soft dark mode, Voyager for light
     const url = isDarkMode
-      ? 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
-      : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+      : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 
     const tile = L.tileLayer(url, {
       maxZoom: 19,
@@ -119,8 +119,8 @@ const LeafletMapSetup = ({
     const map = mapRef.current;
     if (!map) return;
     const url = isDarkMode
-      ? 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
-      : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+      : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 
     if (tileLayerRef.current) {
       map.removeLayer(tileLayerRef.current);

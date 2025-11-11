@@ -97,10 +97,10 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
       try {
         if (!mapDivRef.current) return;
 
-        // Use same CartoDB tile style as home page
+        // Use same CartoDB dark_all tile style for soft dark mode
         const tileUrl = isDarkMode
-          ? 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
-          : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+          ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+          : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 
         if (mapRef.current) {
           mapRef.current.setView([lat, lng], 15);
