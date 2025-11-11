@@ -16,6 +16,7 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<CityResult[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const [trendingCities, setTrendingCities] = useState<{ name: string; count: number }[]>([]);
   const searchCacheRef = useRef<Map<string, CityResult[]>>(new Map());
@@ -148,35 +149,34 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-lg z-[3000] flex flex-col" onClick={onClose}>
       {/* Header with integrated search */}
-      <div className="bg-background px-4 pt-[calc(env(safe-area-inset-top)+2.1875rem)] pb-3 flex items-center gap-3 shadow-lg border-b border-border" onClick={(e) => e.stopPropagation()}>
-        <button
-          onClick={onClose}
-          className="p-2 hover:bg-accent rounded-full transition-colors flex-shrink-0"
-        >
-          <ArrowLeft className="w-5 h-5 text-foreground" />
-        </button>
-        <div className="relative flex-1">
+      <div className="bg-background px-4 pt-[calc(env(safe-area-inset-top)+2.1875rem)] pb-3 shadow-lg border-b border-border" onClick={(e) => e.stopPropagation()}>
+        <div className="relative w-full">
           <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
             placeholder={t('searchCities', { ns: 'explore' })}
             className="w-full pl-10 pr-24 py-3 text-base bg-muted/50 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground placeholder:text-muted-foreground"
           />
           {loading && (
             <Loader2 className="absolute right-16 top-1/2 -translate-y-1/2 w-5 h-5 text-primary animate-spin" />
           )}
-          <button
-            onClick={() => {
-              inputRef.current?.blur();
-              onClose();
-            }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-primary hover:text-primary/80 transition-colors px-2"
-          >
-            {t('cancel', { ns: 'common' })}
-          </button>
+          {isFocused && (
+            <button
+              onMouseDown={(e) => {
+                e.preventDefault();
+                inputRef.current?.blur();
+                onClose();
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-primary hover:text-primary/80 transition-colors px-2"
+            >
+              {t('cancel', { ns: 'common' })}
+            </button>
+          )}
         </div>
       </div>
 
