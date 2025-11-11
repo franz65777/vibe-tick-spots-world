@@ -235,12 +235,12 @@ const resources = {
       findPeopleToFollow: 'Find People to Follow',
       tryAgain: 'Try Again',
       filters: {
-        mostSaved: 'Most Saved',
+        trending: 'Trending',
         discount: 'Discount',
         event: 'Event',
         promotion: 'Promotion',
         new: 'New',
-        placesFound: '{{count}} places found'
+        placesFound: '{{count}} places'
       }
     },
     explore: {
@@ -902,12 +902,12 @@ const resources = {
       findPeopleToFollow: 'Buscar Personas para Seguir',
       tryAgain: 'Intentar de nuevo',
       filters: {
-        mostSaved: 'Más guardadas',
+        trending: 'Tendencias',
         discount: 'Descuento',
         event: 'Evento',
         promotion: 'Promoción',
         new: 'Nuevo',
-        placesFound: '{{count}} lugares encontrados'
+        placesFound: '{{count}} lugares'
       }
     },
     explore: {
@@ -1556,12 +1556,12 @@ const resources = {
       yourStory: 'La Tua Storia',
       searchCities: 'Cerca qualsiasi città nel mondo',
       filters: {
-        mostSaved: 'Più salvate',
+        trending: 'Tendenza',
         discount: 'Sconto',
         event: 'Evento',
         promotion: 'Promozione',
-        new: 'Novità',
-        placesFound: '{{count}} luoghi trovati'
+        new: 'Nuovo',
+        placesFound: '{{count}} luoghi'
       }
     },
     explore: {
@@ -2206,12 +2206,12 @@ const resources = {
       viewFullLeaderboard: 'Voir le classement complet',
       yourStory: 'Votre histoire',
       filters: {
-        mostSaved: 'Les plus enregistrés',
+        trending: 'Tendances',
         discount: 'Réduction',
         event: 'Événement',
         promotion: 'Promotion',
         new: 'Nouveau',
-        placesFound: '{{count}} lieux trouvés'
+        placesFound: '{{count}} lieux'
       }
     },
     explore: {
@@ -2789,12 +2789,12 @@ const resources = {
       viewFullLeaderboard: 'Gesamtrangliste anzeigen',
       yourStory: 'Deine Geschichte',
       filters: {
-        mostSaved: 'Meist gespeichert',
+        trending: 'Trending',
         discount: 'Rabatt',
         event: 'Veranstaltung',
         promotion: 'Aktion',
         new: 'Neu',
-        placesFound: '{{count}} Orte gefunden'
+        placesFound: '{{count}} Orte'
       }
     },
     explore: {
@@ -3292,12 +3292,12 @@ const resources = {
       viewFullLeaderboard: 'Ver classificação completa',
       yourStory: 'Sua história',
       filters: {
-        mostSaved: 'Mais salvos',
+        trending: 'Tendências',
         discount: 'Desconto',
         event: 'Evento',
         promotion: 'Promoção',
         new: 'Novo',
-        placesFound: '{{count}} locais encontrados'
+        placesFound: '{{count}} locais'
       }
     },
     explore: {
@@ -3740,12 +3740,12 @@ const resources = {
       viewFullLeaderboard: '查看完整排行榜',
       yourStory: '你的故事',
       filters: {
-        mostSaved: '最多保存',
+        trending: '热门',
         discount: '折扣',
         event: '活动',
         promotion: '促销',
-        new: '新品',
-        placesFound: '找到{{count}}个地点'
+        new: '新',
+        placesFound: '{{count}}个地点'
       }
     },
     explore: {
@@ -4140,12 +4140,12 @@ const resources = {
       viewFullLeaderboard: 'ランキングを見る',
       yourStory: 'あなたのストーリー',
       filters: {
-        mostSaved: '最も保存',
+        trending: 'トレンド',
         discount: '割引',
         event: 'イベント',
         promotion: 'プロモーション',
         new: '新着',
-        placesFound: '{{count}}件の場所が見つかりました'
+        placesFound: '{{count}}件'
       }
     },
     explore: {
@@ -4561,12 +4561,12 @@ const resources = {
       viewFullLeaderboard: '전체 순위 보기',
       yourStory: '당신의 이야기',
       filters: {
-        mostSaved: '가장 많이 저장됨',
+        trending: '트렌딩',
         discount: '할인',
         event: '이벤트',
         promotion: '프로모션',
-        new: '신규',
-        placesFound: '{{count}}개 장소 발견'
+        new: '새로운',
+        placesFound: '{{count}}개'
       }
     },
     explore: {
@@ -4982,12 +4982,12 @@ const resources = {
       viewFullLeaderboard: 'عرض الترتيب الكامل',
       yourStory: 'قصتك',
       filters: {
-        mostSaved: 'الأكثر حفظاً',
+        trending: 'الشائع',
         discount: 'خصم',
         event: 'حدث',
         promotion: 'عرض',
         new: 'جديد',
-        placesFound: 'تم العثور على {{count}} أماكن'
+        placesFound: '{{count}} أماكن'
       }
     },
     explore: {
@@ -5402,12 +5402,12 @@ const resources = {
       viewFullLeaderboard: 'पूर्ण लीडरबोर्ड देखें',
       yourStory: 'आपकी कहानी',
       filters: {
-        mostSaved: 'सबसे अधिक सहेजे गए',
+        trending: 'ट्रेंडिंग',
         discount: 'छूट',
         event: 'कार्यक्रम',
         promotion: 'प्रचार',
         new: 'नया',
-        placesFound: '{{count}} स्थान मिले'
+        placesFound: '{{count}} स्थान'
       }
     },
     explore: {
@@ -5823,12 +5823,12 @@ const resources = {
       viewFullLeaderboard: 'Посмотреть полный рейтинг',
       yourStory: 'Ваша история',
       filters: {
-        mostSaved: 'Самые сохранённые',
+        trending: 'В тренде',
         discount: 'Скидка',
         event: 'Событие',
         promotion: 'Акция',
         new: 'Новое',
-        placesFound: 'Найдено мест: {{count}}'
+        placesFound: '{{count}} мест'
       }
     },
     explore: {

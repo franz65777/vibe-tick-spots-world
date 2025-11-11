@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { TrendingUp, MapPin, Users, ChevronDown, Percent, Calendar, Megaphone, Sparkles } from 'lucide-react';
+import { TrendingUp, MapPin, Users, ChevronDown, Percent, Calendar, Megaphone, Sparkles, UserPlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import fireIcon from '@/assets/fire-icon.png';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 
 type FilterType = 'most_saved' | 'discount' | 'event' | 'promotion' | 'new';
 
@@ -20,6 +21,12 @@ interface PopularSpot {
   coordinates: {
     lat: number;
     lng: number;
+  };
+  campaign?: {
+    id: string;
+    type: string;
+    registrationsCount: number;
+    userRegistered?: boolean;
   };
 }
 
@@ -90,7 +97,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
 
         const { data: campaignsData } = await supabase
           .from('marketing_campaigns')
-          .select('location_id, campaign_type, end_date')
+          .select('id, location_id, campaign_type, end_date')
           .eq('campaign_type', campaignTypeMap[filterType])
           .eq('is_active', true)
           .gte('end_date', new Date().toISOString())
@@ -98,6 +105,25 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
 
         campaignsData?.forEach(campaign => {
           campaignsMap.set(campaign.location_id, campaign);
+        });
+      }
+
+      // Get event registrations if filter is event
+      let registrationsMap = new Map<string, { count: number; userRegistered: boolean }>();
+      if (filterType === 'event' && campaignsMap.size > 0) {
+        const campaignIds = Array.from(campaignsMap.values()).map(c => c.id);
+        
+        const { data: registrationsData } = await supabase
+          .from('event_registrations')
+          .select('campaign_id, user_id')
+          .in('campaign_id', campaignIds);
+
+        registrationsData?.forEach(reg => {
+          const current = registrationsMap.get(reg.campaign_id) || { count: 0, userRegistered: false };
+          registrationsMap.set(reg.campaign_id, {
+            count: current.count + 1,
+            userRegistered: current.userRegistered || (user && reg.user_id === user.id)
+          });
         });
       }
 
@@ -144,6 +170,9 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
         
         // Only include locations with at least 1 save or with active campaign
         if (savesCount > 0 || campaignsMap.has(location.id)) {
+          const campaign = campaignsMap.get(location.id);
+          const registrations = campaign ? registrationsMap.get(campaign.id) : undefined;
+
           if (!locationMap.has(key) || (locationMap.get(key)?.savesCount || 0) < savesCount) {
             locationMap.set(key, {
               id: location.id,
@@ -156,15 +185,26 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
               coordinates: {
                 lat: parseFloat(location.latitude?.toString() || '0'),
                 lng: parseFloat(location.longitude?.toString() || '0')
-              }
+              },
+              campaign: campaign ? {
+                id: campaign.id,
+                type: campaign.campaign_type,
+                registrationsCount: registrations?.count || 0,
+                userRegistered: registrations?.userRegistered || false
+              } : undefined
             });
           }
         }
       });
 
-      // Sort by saves count and get top 10
+      // Sort by registrations count if event filter, otherwise by saves count
       const topSpots = Array.from(locationMap.values())
-        .sort((a, b) => b.savesCount - a.savesCount)
+        .sort((a, b) => {
+          if (filterType === 'event' && a.campaign && b.campaign) {
+            return b.campaign.registrationsCount - a.campaign.registrationsCount;
+          }
+          return b.savesCount - a.savesCount;
+        })
         .slice(0, 10);
 
       setPopularSpots(topSpots);
@@ -179,6 +219,49 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
   const handleSpotClick = (spot: PopularSpot) => {
     onLocationClick?.(spot.coordinates);
     onSpotSelect?.(spot);
+  };
+
+  const handleEventRegistration = async (e: React.MouseEvent, spot: PopularSpot) => {
+    e.stopPropagation();
+    
+    if (!user) {
+      toast.error('Please log in to register for events');
+      return;
+    }
+
+    if (!spot.campaign) return;
+
+    try {
+      if (spot.campaign.userRegistered) {
+        // Unregister
+        const { error } = await supabase
+          .from('event_registrations')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('campaign_id', spot.campaign.id);
+
+        if (error) throw error;
+        toast.success('Registration cancelled');
+      } else {
+        // Register
+        const { error } = await supabase
+          .from('event_registrations')
+          .insert({
+            user_id: user.id,
+            campaign_id: spot.campaign.id,
+            location_id: spot.id
+          });
+
+        if (error) throw error;
+        toast.success('Registered for event!');
+      }
+      
+      // Refresh spots
+      fetchPopularSpots();
+    } catch (error) {
+      console.error('Error handling event registration:', error);
+      toast.error('Failed to update registration');
+    }
   };
 
   const getFilterIcon = () => {
@@ -197,12 +280,12 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
       case 'event': return t('filters.event', { ns: 'home' });
       case 'promotion': return t('filters.promotion', { ns: 'home' });
       case 'new': return t('filters.new', { ns: 'home' });
-      default: return t('filters.mostSaved', { ns: 'home' });
+      default: return t('filters.trending', { ns: 'home' });
     }
   };
 
   const filterOptions = [
-    { type: 'most_saved' as FilterType, label: t('filters.mostSaved', { ns: 'home' }), icon: TrendingUp },
+    { type: 'most_saved' as FilterType, label: t('filters.trending', { ns: 'home' }), icon: TrendingUp },
     { type: 'discount' as FilterType, label: t('filters.discount', { ns: 'home' }), icon: Percent },
     { type: 'event' as FilterType, label: t('filters.event', { ns: 'home' }), icon: Calendar },
     { type: 'promotion' as FilterType, label: t('filters.promotion', { ns: 'home' }), icon: Megaphone },
@@ -281,17 +364,36 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
       ) : popularSpots.length > 0 ? (
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
           {popularSpots.map((spot) => (
-            <button
-              key={spot.id}
-              onClick={() => handleSpotClick(spot)}
-              className="flex-shrink-0 px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 flex items-center gap-2 transition-all hover:shadow-md"
-              aria-label={`Zoom to ${spot.name}`}
-            >
-              <CategoryIcon category={spot.category} className="w-5 h-5" />
-              <span className="text-xs font-medium text-gray-900 line-clamp-1 max-w-[160px]">
-                {spot.name}
-              </span>
-            </button>
+            <div key={spot.id} className="flex-shrink-0 flex flex-col gap-1">
+              <button
+                onClick={() => handleSpotClick(spot)}
+                className="px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 flex items-center gap-2 transition-all hover:shadow-md"
+                aria-label={`Zoom to ${spot.name}`}
+              >
+                <CategoryIcon category={spot.category} className="w-5 h-5" />
+                <span className="text-xs font-medium text-gray-900 line-clamp-1 max-w-[160px]">
+                  {spot.name}
+                </span>
+              </button>
+              
+              {/* Event registration button */}
+              {spot.campaign?.type === 'event' && (
+                <button
+                  onClick={(e) => handleEventRegistration(e, spot)}
+                  className={`px-2 py-1 rounded-md text-[10px] font-medium flex items-center justify-center gap-1 transition-all ${
+                    spot.campaign.userRegistered
+                      ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                      : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                  }`}
+                >
+                  <UserPlus className="w-3 h-3" />
+                  {spot.campaign.userRegistered ? 'Registered' : 'Register'}
+                  {spot.campaign.registrationsCount > 0 && (
+                    <span className="ml-1">({spot.campaign.registrationsCount})</span>
+                  )}
+                </button>
+              )}
+            </div>
           ))}
         </div>
       ) : (

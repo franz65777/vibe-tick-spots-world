@@ -678,6 +678,48 @@ export type Database = {
         }
         Relationships: []
       }
+      event_registrations: {
+        Row: {
+          campaign_id: string
+          id: string
+          location_id: string
+          registered_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          campaign_id: string
+          id?: string
+          location_id: string
+          registered_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string
+          id?: string
+          location_id?: string
+          registered_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_registrations_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_registrations_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       follows: {
         Row: {
           created_at: string | null
