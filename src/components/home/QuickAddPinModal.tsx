@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { MapPin, Loader2, Search } from 'lucide-react';
 import { toast } from 'sonner';
@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from 'react-i18next';
 
 // Import category icons
 import restaurantIcon from '@/assets/category-restaurant-upload.png';
@@ -63,6 +64,8 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
   const [nearbySuggestions, setNearbySuggestions] = useState<NearbyPlace[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isFocused, setIsFocused] = useState(false);
+  const { t } = useTranslation();
 
   const categories: AllowedCategory[] = ['restaurant', 'bar', 'cafe', 'bakery', 'hotel', 'museum', 'entertainment'];
 
@@ -245,16 +248,16 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col p-0 rounded-3xl">
-        <DialogHeader className="px-6 pt-6 pb-3 border-b">
+    <Sheet open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+      <SheetContent side="bottom" className="rounded-t-3xl p-0 max-h-[85vh] flex flex-col">
+        <SheetHeader className="px-6 pt-6 pb-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
               <MapPin className="w-5 h-5 text-primary" />
             </div>
-            <DialogTitle className="text-2xl font-semibold">Save Location to Favorites</DialogTitle>
+            <SheetTitle className="text-2xl font-semibold">{t('saveLocation.title', { ns: 'common' })}</SheetTitle>
           </div>
-        </DialogHeader>
+        </SheetHeader>
 
         <div className="px-6 py-4 flex-shrink-0">
           {/* Search input */}
@@ -263,22 +266,29 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setTimeout(() => setIsFocused(false), 150)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   fetchNearbySuggestions(true);
                 }
               }}
-              placeholder="Filter results or type to search..."
-              className="pl-10 h-12 text-base border-2 rounded-xl"
+              placeholder={t('saveLocation.searchPlaceholder', { ns: 'common' })}
+              className="pl-10 pr-20 h-12 text-base rounded-xl bg-muted/50 border border-border focus:ring-2 focus:ring-primary focus:border-transparent"
             />
+            {isFocused && (
+              <button
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  // Minimizza la tastiera chiudendo il focus
+                  (e.currentTarget.parentElement?.querySelector('input') as HTMLInputElement | null)?.blur();
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-primary hover:text-primary/80 transition-colors px-2"
+              >
+                {t('cancel', { ns: 'common' })}
+              </button>
+            )}
           </div>
-          
-          {/* Helper text */}
-          {!isFetchingSuggestions && nearbySuggestions.length > 0 && (
-            <p className="text-sm text-muted-foreground mt-3">
-              Tap a suggestion below or keep typing to search:
-            </p>
-          )}
         </div>
 
         {/* Nearby suggestions scrollable list */}
@@ -288,14 +298,13 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
               <div className="flex items-center justify-center py-16">
                 <div className="text-center space-y-3">
                   <Loader2 className="w-10 h-10 animate-spin mx-auto text-primary" />
-                  <p className="text-sm text-muted-foreground">Finding nearby places...</p>
+                  <p className="text-sm text-muted-foreground">{t('searching', { ns: 'common' })}</p>
                 </div>
               </div>
             ) : nearbySuggestions.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <MapPin className="w-16 h-16 text-muted-foreground/30 mb-4" />
-                <p className="text-base font-medium text-foreground">No locations found nearby</p>
-                <p className="text-sm text-muted-foreground mt-2">Try searching or drop a pin elsewhere</p>
+                <p className="text-base font-medium text-foreground">{t('saveLocation.noPlacesFound', { ns: 'common' })}</p>
               </div>
             ) : (
               <div className="space-y-3 pb-4">
@@ -310,11 +319,11 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
                       className={`w-full p-4 rounded-2xl text-left transition-all group relative ${
                         isSelected
                           ? 'bg-primary/5 border-2 border-primary shadow-md'
-                          : 'bg-card border-2 border-border hover:border-primary/50 hover:shadow-md'
+                          : 'bg-muted/30 border-2 border-border hover:border-primary/50 hover:shadow-md'
                       }`}
                     >
                       <div className="flex items-start gap-4">
-                        {/* Icon - no background */}
+                        {/* Icon - transparent PNG */}
                         <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
                           <img 
                             src={categoryIcon} 
@@ -331,18 +340,16 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
                           <p className="text-sm text-muted-foreground line-clamp-1">
                             {suggestion.address}
                           </p>
-                          
-                          {/* Category and distance */}
+                          {/* Distance */}
                           <div className="flex items-center gap-2 mt-2">
                             <Badge variant="secondary" className="text-xs font-medium">
                               {categoryDisplayNames[suggestion.category]}
                             </Badge>
                             <span className="text-xs text-muted-foreground">
-                              {Math.round(suggestion.distance)}m away
+                              {Math.round(suggestion.distance)}m
                             </span>
                           </div>
                         </div>
-
                       </div>
                     </button>
                   );
@@ -352,8 +359,8 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
           </ScrollArea>
         </div>
 
-        {/* Footer actions - dynamic */}
-        <div className="px-6 pb-6 pt-2 border-t">
+        {/* Footer actions */}
+        <div className="px-6 pb-6 pt-2">
           {selectedPlace ? (
             <div className="grid grid-cols-2 gap-3">
               <Button
@@ -363,7 +370,7 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
                 className="rounded-xl h-12"
                 disabled={isLoading}
               >
-                Cancel
+                {t('cancel', { ns: 'common' })}
               </Button>
               <Button
                 onClick={handleSavePin}
@@ -374,7 +381,7 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
                 {isLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
-                  <span className="font-semibold">Save Location</span>
+                  <span className="font-semibold">{t('saveLocation.save', { ns: 'common' })}</span>
                 )}
               </Button>
             </div>
@@ -386,12 +393,12 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
               className="w-full rounded-xl h-12"
               disabled={isLoading}
             >
-              Cancel
+              {t('cancel', { ns: 'common' })}
             </Button>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 };
 
