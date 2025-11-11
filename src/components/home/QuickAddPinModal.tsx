@@ -113,12 +113,41 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
         return;
       }
       
-      if (data?.places) {
+      if (data?.places && data.places.length > 0) {
         setNearbySuggestions(data.places);
         console.log(`Found ${data.places.length} nearby suggestions`);
       } else {
-        console.warn('No places returned from Foursquare');
-        setNearbySuggestions([]);
+        console.warn('No places returned from Foursquare; trying OSM text search fallback');
+        if (searchQuery) {
+          try {
+            const results = await nominatimGeocoding.searchPlace(searchQuery);
+            const mapped = results.map((r) => ({
+              fsq_id: `osm_${r.lat}_${r.lng}`,
+              name: r.name,
+              category: ((): AllowedCategory => {
+                const n = r.name.toLowerCase();
+                if (n.includes('bar') || n.includes('pub')) return 'bar';
+                if (n.includes('cafe') || n.includes('coffee')) return 'cafe';
+                if (n.includes('bakery')) return 'bakery';
+                if (n.includes('hotel') || n.includes('hostel')) return 'hotel';
+                if (n.includes('museum')) return 'museum';
+                if (n.includes('cinema') || n.includes('theatre') || n.includes('theater')) return 'entertainment';
+                return 'restaurant';
+              })(),
+              address: r.displayName,
+              city: r.city || '',
+              lat: r.lat,
+              lng: r.lng,
+              distance: coordinates ? Math.round(Math.hypot(r.lat - coordinates.lat, r.lng - coordinates.lng) * 111000) : 0,
+            } as NearbyPlace));
+            setNearbySuggestions(mapped);
+          } catch (e) {
+            console.error('OSM fallback failed:', e);
+            setNearbySuggestions([]);
+          }
+        } else {
+          setNearbySuggestions([]);
+        }
       }
     } catch (error: any) {
       console.error('Error fetching nearby suggestions:', error);
