@@ -3,7 +3,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import AuthenticatedLayout from '@/components/AuthenticatedLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import SigninStart from '@/pages/auth/SigninStart';
 import Index from '@/pages/Index';
 import BusinessDashboardPage from '@/pages/BusinessDashboardPage';
 import SubscriptionPage from '@/pages/SubscriptionPage';
@@ -24,7 +23,7 @@ import NotificationsPage from '@/pages/NotificationsPage';
 import MessagesPage from '@/pages/MessagesPage';
 import DiscoverPage from '@/pages/DiscoverPage';
 import PostPage from '@/pages/PostPage';
-import EditProfilePage from '@/pages/EditProfilePage';
+import SigninStart from '@/pages/auth/SigninStart';
 import SignupStart from '@/pages/auth/SignupStart';
 import SignupVerify from '@/pages/auth/SignupVerify';
 import SignupProfile from '@/pages/auth/SignupProfile';
@@ -126,7 +125,6 @@ function AppContent() {
         <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
         <Route path="/admin/business-requests" element={<AdminBusinessRequestsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/edit-profile" element={<EditProfilePage />} />
         <Route path="/share-location" element={<ShareLocationPage />} />
         <Route path="*" element={<NotFound />} />
       </Route>

@@ -6,8 +6,31 @@ import MinimalApp from './components/MinimalApp.tsx'
 import 'leaflet/dist/leaflet.css'
 import './index.css'
 import './i18n'
+import { useEffect } from 'react'
 
 console.log('🚀 Starting full app with dependencies fixed...');
+
+// Dark mode system preference handler
+const DarkModeHandler = ({ children }: { children: React.ReactNode }) => {
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    
+    const updateTheme = (e: MediaQueryListEvent | MediaQueryList) => {
+      const isDark = e.matches;
+      document.documentElement.classList.toggle('dark', isDark);
+    };
+    
+    // Set initial theme
+    updateTheme(mediaQuery);
+    
+    // Listen for changes
+    mediaQuery.addEventListener('change', updateTheme);
+    
+    return () => mediaQuery.removeEventListener('change', updateTheme);
+  }, []);
+  
+  return <>{children}</>;
+};
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {
@@ -21,7 +44,9 @@ console.log('✅ React root created');
 const safeBoot = location.search.includes('safe=1') || localStorage.getItem('SAFE_BOOT') === '1';
 root.render(
   <QueryClientProvider client={queryClient}>
-    {safeBoot ? <MinimalApp /> : <App />}
+    <DarkModeHandler>
+      {safeBoot ? <MinimalApp /> : <App />}
+    </DarkModeHandler>
   </QueryClientProvider>
 );
 console.log('✅ Full App render called');

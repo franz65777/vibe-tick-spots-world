@@ -13,6 +13,7 @@ import LanguageModal from '@/components/settings/LanguageModal';
 import MutedLocationsModal from '@/components/settings/MutedLocationsModal';
 import CloseFriendsModal from '@/components/settings/CloseFriendsModal';
 import AdminBusinessRequestsModal from '@/components/settings/AdminBusinessRequestsModal';
+import EditProfileModal from '@/components/settings/EditProfileModal';
 import { useAdminRole } from '@/hooks/useAdminRole';
 
 const languages = [
@@ -42,6 +43,7 @@ const SettingsPage: React.FC = () => {
   const [mutedLocationsModalOpen, setMutedLocationsModalOpen] = useState(false);
   const [closeFriendsModalOpen, setCloseFriendsModalOpen] = useState(false);
   const [adminModalOpen, setAdminModalOpen] = useState(false);
+  const [editProfileModalOpen, setEditProfileModalOpen] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -114,7 +116,7 @@ const SettingsPage: React.FC = () => {
           <CardContent className="p-0">
             {/* Edit Profile Setting */}
             <button
-              onClick={() => navigate('/edit-profile')}
+              onClick={() => setEditProfileModalOpen(true)}
               className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
@@ -254,6 +256,10 @@ const SettingsPage: React.FC = () => {
       <AdminBusinessRequestsModal
         open={adminModalOpen}
         onOpenChange={setAdminModalOpen}
+      />
+      <EditProfileModal
+        open={editProfileModalOpen}
+        onOpenChange={setEditProfileModalOpen}
       />
     </div>
   );

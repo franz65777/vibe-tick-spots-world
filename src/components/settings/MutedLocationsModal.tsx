@@ -65,7 +65,7 @@ const MutedLocationsModal: React.FC<MutedLocationsModalProps> = ({ open, onOpenC
       <SheetContent side="bottom" className="h-full p-0 [&>button]:hidden">
         <div className="h-full flex flex-col">
           <SheetHeader className="p-4">
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => onOpenChange(false)}
                 className="p-2 hover:bg-muted rounded-full transition-colors"
@@ -77,7 +77,9 @@ const MutedLocationsModal: React.FC<MutedLocationsModalProps> = ({ open, onOpenC
                 {t('mutedLocations', { ns: 'settings' })}
               </SheetTitle>
             </div>
-            
+          </SheetHeader>
+
+          <div className="p-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
@@ -88,9 +90,9 @@ const MutedLocationsModal: React.FC<MutedLocationsModalProps> = ({ open, onOpenC
                 className="pl-10 rounded-full"
               />
             </div>
-          </SheetHeader>
+          </div>
 
-        <div className="flex-1 overflow-y-auto space-y-3 p-4">
+          <div className="flex-1 overflow-y-auto space-y-3 p-4">
           {isLoading ? (
             <>
               {[1, 2, 3].map((i) => (
