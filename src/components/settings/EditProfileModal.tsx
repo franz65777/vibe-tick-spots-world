@@ -218,7 +218,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
             </div>
           </SheetHeader>
 
-          <div className="flex-1 overflow-y-auto pb-24">
+          <div className="flex-1 overflow-y-auto pb-4">
             <div className="max-w-2xl mx-auto p-4 space-y-6">
               {/* Avatar Section */}
               <div className="flex flex-col items-center gap-4 py-6">
@@ -322,7 +322,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
           </div>
 
           {/* Save Button - Fixed at bottom */}
-          <div className="p-4 bg-background border-t">
+          <div className="p-4 bg-background">
             <Button
               onClick={handleSave}
               disabled={isLoading || isUploading || !username.trim() || !!usernameError}

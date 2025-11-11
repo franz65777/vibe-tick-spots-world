@@ -222,7 +222,7 @@ const SettingsPage: React.FC = () => {
       </div>
 
       {/* Logout Button */}
-      <div className="px-4 pb-24 bg-background">
+      <div className="p-4 pb-24 bg-background">
         <Button
           onClick={handleLogout}
           variant="outline"
