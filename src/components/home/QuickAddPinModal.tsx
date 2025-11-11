@@ -248,134 +248,134 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
   };
 
   return (
-    <Sheet open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <SheetContent side="bottom" className="rounded-t-3xl p-0 max-h-[85vh] flex flex-col">
-        <SheetHeader className="px-6 pt-6 pb-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <MapPin className="w-5 h-5 text-primary" />
+    <>
+      {/* Overlay per nascondere la mappa */}
+      {isOpen && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9998]" />
+      )}
+      
+      <Sheet open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+        <SheetContent 
+          side="bottom" 
+          className="rounded-t-3xl p-0 max-h-[85vh] flex flex-col z-[9999]"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
+          <SheetHeader className="px-6 pt-6 pb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <MapPin className="w-5 h-5 text-primary" />
+              </div>
+              <SheetTitle className="text-2xl font-semibold">{t('saveLocation.title', { ns: 'common' })}</SheetTitle>
             </div>
-            <SheetTitle className="text-2xl font-semibold">{t('saveLocation.title', { ns: 'common' })}</SheetTitle>
-          </div>
-        </SheetHeader>
+          </SheetHeader>
 
-        <div className="px-6 py-4 flex-shrink-0">
-          {/* Search input */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setTimeout(() => setIsFocused(false), 150)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  fetchNearbySuggestions(true);
-                }
-              }}
-              placeholder={t('saveLocation.searchPlaceholder', { ns: 'common' })}
-              className="pl-10 pr-20 h-12 text-base rounded-xl bg-muted/50 border border-border focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
-            {isFocused && (
-              <button
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  // Minimizza la tastiera chiudendo il focus
-                  (e.currentTarget.parentElement?.querySelector('input') as HTMLInputElement | null)?.blur();
+          <div className="px-6 py-4 flex-shrink-0">
+            {/* Search input */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setTimeout(() => setIsFocused(false), 150)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    fetchNearbySuggestions(true);
+                  }
                 }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-primary hover:text-primary/80 transition-colors px-2"
-              >
-                {t('cancel', { ns: 'common' })}
-              </button>
-            )}
+                placeholder={t('saveLocation.searchPlaceholder', { ns: 'common' })}
+                className="pl-10 pr-20 h-12 text-base rounded-xl bg-muted/50 border border-border focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+              {isFocused && (
+                <button
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    // Minimizza la tastiera chiudendo il focus
+                    (e.currentTarget.parentElement?.querySelector('input') as HTMLInputElement | null)?.blur();
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-primary hover:text-primary/80 transition-colors px-2"
+                >
+                  {t('cancel', { ns: 'common' })}
+                </button>
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* Nearby suggestions scrollable list */}
-        <div className="flex-1 min-h-0 overflow-hidden px-6 pb-6">
-          <ScrollArea className="h-[55vh] max-h-[55vh]">
-            {isFetchingSuggestions ? (
-              <div className="flex items-center justify-center py-16">
-                <div className="text-center space-y-3">
-                  <Loader2 className="w-10 h-10 animate-spin mx-auto text-primary" />
-                  <p className="text-sm text-muted-foreground">{t('searching', { ns: 'common' })}</p>
+          {/* Nearby suggestions scrollable list */}
+          <div className="flex-1 min-h-0 overflow-hidden px-6 pb-6">
+            <ScrollArea className="h-[55vh] max-h-[55vh]">
+              {isFetchingSuggestions ? (
+                <div className="flex items-center justify-center py-16">
+                  <div className="text-center space-y-3">
+                    <Loader2 className="w-10 h-10 animate-spin mx-auto text-primary" />
+                    <p className="text-sm text-muted-foreground">{t('searching', { ns: 'common' })}</p>
+                  </div>
                 </div>
-              </div>
-            ) : nearbySuggestions.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-center">
-                <MapPin className="w-16 h-16 text-muted-foreground/30 mb-4" />
-                <p className="text-base font-medium text-foreground">{t('saveLocation.noPlacesFound', { ns: 'common' })}</p>
-              </div>
-            ) : (
-              <div className="space-y-3 pb-4">
-                {nearbySuggestions.map((suggestion) => {
-                  const categoryIcon = getCategoryIconImage(suggestion.category);
-                  const isSelected = selectedPlace?.name === suggestion.name && selectedPlace?.lat === suggestion.lat;
-                  
-                  return (
-                    <button
-                      key={suggestion.fsq_id}
-                      onClick={() => handleSuggestionSelect(suggestion)}
-                      className={`w-full p-4 rounded-2xl text-left transition-all group relative ${
-                        isSelected
-                          ? 'bg-primary/5 border-2 border-primary shadow-md'
-                          : 'bg-muted/30 border-2 border-border hover:border-primary/50 hover:shadow-md'
-                      }`}
-                    >
-                      <div className="flex items-start gap-4">
-                        {/* Icon - transparent PNG */}
-                        <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
-                          <img 
-                            src={categoryIcon} 
-                            alt={suggestion.category}
-                            className="w-9 h-9 object-contain"
-                          />
-                        </div>
-                        
-                        {/* Content */}
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-base text-foreground mb-1">
-                            {suggestion.name}
-                          </h4>
-                          <p className="text-sm text-muted-foreground line-clamp-1">
-                            {suggestion.address}
-                          </p>
-                          {/* Distance */}
-                          <div className="flex items-center gap-2 mt-2">
-                            <Badge variant="secondary" className="text-xs font-medium">
-                              {categoryDisplayNames[suggestion.category]}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {Math.round(suggestion.distance)}m
-                            </span>
+              ) : nearbySuggestions.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <MapPin className="w-16 h-16 text-muted-foreground/30 mb-4" />
+                  <p className="text-base font-medium text-foreground">{t('saveLocation.noPlacesFound', { ns: 'common' })}</p>
+                </div>
+              ) : (
+                <div className="space-y-3 pb-4">
+                  {nearbySuggestions.map((suggestion) => {
+                    const categoryIcon = getCategoryIconImage(suggestion.category);
+                    const isSelected = selectedPlace?.name === suggestion.name && selectedPlace?.lat === suggestion.lat;
+                    
+                    return (
+                      <button
+                        key={suggestion.fsq_id}
+                        onClick={() => handleSuggestionSelect(suggestion)}
+                        className={`w-full p-4 rounded-2xl text-left transition-all group relative ${
+                          isSelected
+                            ? 'bg-primary/5 border-2 border-primary shadow-md'
+                            : 'bg-muted/30 border-2 border-border hover:border-primary/50 hover:shadow-md'
+                        }`}
+                      >
+                        <div className="flex items-start gap-4">
+                          {/* Icon - transparent PNG */}
+                          <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <img 
+                              src={categoryIcon} 
+                              alt={suggestion.category}
+                              className="w-9 h-9 object-contain"
+                            />
+                          </div>
+                          
+                          {/* Content */}
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-base text-foreground mb-1">
+                              {suggestion.name}
+                            </h4>
+                            <p className="text-sm text-muted-foreground line-clamp-1">
+                              {suggestion.address}
+                            </p>
+                            {/* Distance */}
+                            <div className="flex items-center gap-2 mt-2">
+                              <Badge variant="secondary" className="text-xs font-medium">
+                                {categoryDisplayNames[suggestion.category]}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {Math.round(suggestion.distance)}m
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </ScrollArea>
-        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </ScrollArea>
+          </div>
 
-        {/* Footer actions */}
-        <div className="px-6 pb-6 pt-2">
-          {selectedPlace ? (
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                onClick={handleClose}
-                variant="outline"
-                size="lg"
-                className="rounded-xl h-12"
-                disabled={isLoading}
-              >
-                {t('cancel', { ns: 'common' })}
-              </Button>
+          {/* Footer actions - solo quando c'è un luogo selezionato */}
+          {selectedPlace && (
+            <div className="px-6 pb-6 pt-2">
               <Button
                 onClick={handleSavePin}
                 size="lg"
-                className="rounded-xl h-12"
+                className="w-full rounded-xl h-12"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -385,20 +385,10 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
                 )}
               </Button>
             </div>
-          ) : (
-            <Button
-              onClick={handleClose}
-              variant="outline"
-              size="lg"
-              className="w-full rounded-xl h-12"
-              disabled={isLoading}
-            >
-              {t('cancel', { ns: 'common' })}
-            </Button>
           )}
-        </div>
-      </SheetContent>
-    </Sheet>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 };
 
