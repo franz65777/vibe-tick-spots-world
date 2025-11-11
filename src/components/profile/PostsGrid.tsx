@@ -363,7 +363,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                         )}
 
                         {post.rating && (
-                          <div className="flex flex-col items-end gap-0.5 shrink-0">
+                          <div className="flex flex-col items-end gap-0.5 shrink-0 self-start">
                             <div className="flex items-center gap-1">
                               {(() => {
                                 const CategoryIcon = post.locations?.category ? getCategoryIcon(post.locations.category) : Star;
