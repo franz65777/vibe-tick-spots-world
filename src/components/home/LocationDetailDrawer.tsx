@@ -97,10 +97,15 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
       try {
         if (!mapDivRef.current) return;
 
-        // Use CartoDB only for stable rendering
-        const tileUrl = isDarkMode
-          ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-          : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+        // Prefer Mapbox when token present; fallback to CartoDB
+        const mapboxToken = (import.meta as any).env?.VITE_MAPBOX_TOKEN as string | undefined;
+        const tileUrl = mapboxToken
+          ? (isDarkMode
+              ? `https://api.mapbox.com/styles/v1/mapbox/navigation-night-v1/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`
+              : `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`)
+          : (isDarkMode
+              ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+              : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png');
 
         if (mapRef.current) {
           mapRef.current.setView([lat, lng], 15);
@@ -117,8 +122,10 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
           
           L.tileLayer(tileUrl, {
             maxZoom: 19,
-            attribution: '&copy; OpenStreetMap, &copy; CartoDB',
-            subdomains: 'abcd',
+            attribution: mapboxToken ? '&copy; OpenStreetMap, &copy; Mapbox' : '&copy; OpenStreetMap, &copy; CartoDB',
+            tileSize: mapboxToken ? 512 : undefined,
+            zoomOffset: mapboxToken ? -1 : undefined,
+            subdomains: mapboxToken ? undefined as any : 'abcd',
           }).addTo(map);
 
           // Use the same custom marker as home page

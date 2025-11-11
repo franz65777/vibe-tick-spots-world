@@ -60,17 +60,24 @@ const MapController = ({
   return null;
 };
 
-// Dark mode tile layer component - CartoDB only (stable)
+// Dark mode tile layer component - prefers Mapbox if token is set
 const DarkModeTileLayer = ({ isDarkMode }: { isDarkMode: boolean }) => {
-  const url = isDarkMode
-    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-    : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+  const mapboxToken = (import.meta as any).env?.VITE_MAPBOX_TOKEN as string | undefined;
+  const url = mapboxToken
+    ? (isDarkMode
+        ? `https://api.mapbox.com/styles/v1/mapbox/navigation-night-v1/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`
+        : `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`)
+    : (isDarkMode
+        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+        : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png');
   return (
     <TileLayer
-      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; CartoDB'
+      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; Mapbox, &copy; CartoDB'
       url={url}
       maxZoom={19}
-      subdomains="abcd"
+      tileSize={mapboxToken ? 512 : undefined}
+      zoomOffset={mapboxToken ? -1 : undefined}
+      subdomains={mapboxToken ? undefined as any : 'abcd'}
     />
   );
 };
