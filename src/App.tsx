@@ -49,7 +49,6 @@ import { supabase } from '@/integrations/supabase/client';
 import i18n from '@/i18n';
 
 import ShareLocationPage from '@/pages/ShareLocationPage';
-import CloseFriendsPage from '@/pages/CloseFriendsPage';
 
 // Initialize analytics cleanup service for data privacy compliance
 import '@/services/analyticsCleanupService';
@@ -129,7 +128,6 @@ function AppContent() {
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/edit-profile" element={<EditProfilePage />} />
         <Route path="/share-location" element={<ShareLocationPage />} />
-        <Route path="/close-friends" element={<CloseFriendsPage />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

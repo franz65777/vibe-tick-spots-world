@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import BusinessRequestModal from '@/components/BusinessRequestModal';
 import LanguageModal from '@/components/settings/LanguageModal';
 import MutedLocationsModal from '@/components/settings/MutedLocationsModal';
+import CloseFriendsModal from '@/components/settings/CloseFriendsModal';
 import { useAdminRole } from '@/hooks/useAdminRole';
 
 const languages = [
@@ -38,6 +39,7 @@ const SettingsPage: React.FC = () => {
   const [businessModalOpen, setBusinessModalOpen] = useState(false);
   const [languageModalOpen, setLanguageModalOpen] = useState(false);
   const [mutedLocationsModalOpen, setMutedLocationsModalOpen] = useState(false);
+  const [closeFriendsModalOpen, setCloseFriendsModalOpen] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -178,7 +180,7 @@ const SettingsPage: React.FC = () => {
 
             {/* Close Friends Setting */}
             <button
-              onClick={() => navigate('/close-friends')}
+              onClick={() => setCloseFriendsModalOpen(true)}
               className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
@@ -242,6 +244,10 @@ const SettingsPage: React.FC = () => {
       <MutedLocationsModal
         open={mutedLocationsModalOpen}
         onOpenChange={setMutedLocationsModalOpen}
+      />
+      <CloseFriendsModal
+        open={closeFriendsModalOpen}
+        onOpenChange={setCloseFriendsModalOpen}
       />
     </div>
   );

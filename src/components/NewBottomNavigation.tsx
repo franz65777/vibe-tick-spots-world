@@ -21,6 +21,7 @@ const NewBottomNavigation = () => {
   const [showSwitchModal, setShowSwitchModal] = useState(false);
   const { t } = useTranslation();
   const [hideNav, setHideNav] = useState(false);
+  const [longPressActivated, setLongPressActivated] = useState(false);
 
   useEffect(() => {
     const handleOpen = () => setHideNav(true);
@@ -86,7 +87,9 @@ const NewBottomNavigation = () => {
   };
 
   const handleExploreLongPressStart = () => {
+    setLongPressActivated(false);
     const timer = setTimeout(() => {
+      setLongPressActivated(true);
       navigate('/share-location');
     }, 800); // 800ms long press
     setLongPressTimer(timer);
@@ -96,6 +99,12 @@ const NewBottomNavigation = () => {
     if (longPressTimer) {
       clearTimeout(longPressTimer);
       setLongPressTimer(null);
+    }
+    
+    // Only navigate to home if long press was not activated
+    if (!longPressActivated) {
+      navigate('/');
+      trackEvent('nav_tab_clicked', { tab: 'explore' });
     }
   };
 
@@ -154,8 +163,7 @@ const NewBottomNavigation = () => {
                   key={item.path}
                   onClick={
                     isProfileTab && !hasValidBusinessAccount ? handleProfileClick : 
-                    isProfileTab ? undefined : 
-                    isExploreTab ? undefined :
+                    isProfileTab || isExploreTab ? undefined : 
                     () => handleNavClick(item.path, item.label)
                   }
                   onMouseDown={
