@@ -398,7 +398,7 @@ const HomePage = () => {
   return (
     <MapFilterProvider>
       <div 
-        className="h-screen w-full bg-white dark:bg-gray-900 flex flex-col overflow-hidden" 
+        className="h-screen w-full bg-background flex flex-col overflow-hidden"
         data-map-expanded={isMapExpanded}
         onTouchStart={(e) => {
           // Start long press timer

@@ -151,7 +151,7 @@ const NewBottomNavigation = () => {
         role="navigation"
         aria-label="Main navigation"
       >
-        <div className="w-full px-0 pb-[env(safe-area-inset-bottom)] bg-white border-t border-gray-100">
+        <div className="w-full px-0 pb-[env(safe-area-inset-bottom)] bg-background border-t border-border">
           <div className="h-16 flex items-center justify-around px-2">
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;

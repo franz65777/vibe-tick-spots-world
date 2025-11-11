@@ -31,7 +31,7 @@ const Header = ({
 
   return (
     <>
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-40 shadow-sm">
+      <header className="bg-background border-b border-border sticky top-0 z-40 shadow-sm">
         <div className="flex items-center justify-between pl-1 pr-0 py-3 gap-1">
           {/* Left: City Selection - Now with more space */}
           <div className="flex-1 min-w-0">
@@ -50,7 +50,7 @@ const Header = ({
             {/* Notifications Button */}
             <button 
               onClick={() => navigate('/notifications')} 
-              className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all duration-200 active:scale-95"
+              className="relative p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-full transition-all duration-200 active:scale-95"
             >
               <div className="relative">
                 <Bell className="w-6 h-6" />
@@ -67,7 +67,7 @@ const Header = ({
             {/* Messages Button */}
             <button 
               onClick={() => navigate('/messages')} 
-              className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all duration-200 active:scale-95"
+              className="relative p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-full transition-all duration-200 active:scale-95"
               aria-label="Open messages"
             >
               <div className="relative">

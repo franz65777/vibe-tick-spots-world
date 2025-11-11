@@ -293,7 +293,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
   ];
 
   return (
-    <div className="h-full px-1 py-2 bg-white/50">
+    <div className="h-full px-1 py-2 bg-background/50">
       <div className="flex items-center justify-between gap-2 mb-2">
         <div className="relative flex items-center gap-1.5 flex-1 min-w-0" ref={dropdownRef}>
           <button
@@ -315,16 +315,16 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                       setFilterType(option.type);
                       setDropdownOpen(false);
                     }}
-                    className={`flex-shrink-0 flex flex-col items-center justify-center gap-0.5 p-1.5 rounded-lg transition-all w-[58px] ${
+                     className={`flex-shrink-0 flex flex-col items-center justify-center gap-0.5 p-1.5 rounded-lg transition-all w-[58px] ${
                       isActive 
                         ? 'bg-gradient-to-br from-orange-500 to-pink-500 text-white shadow-md' 
-                        : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+                        : 'bg-muted hover:bg-accent text-foreground'
                     }`}
                   >
-                    <div className={`w-6 h-6 rounded-md flex items-center justify-center ${
-                      isActive ? 'bg-white/20' : 'bg-white'
+                     <div className={`w-6 h-6 rounded-md flex items-center justify-center ${
+                      isActive ? 'bg-white/20' : 'bg-background'
                     }`}>
-                      <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-gray-700'}`} />
+                      <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-foreground'}`} />
                     </div>
                     <span className="text-[9px] font-medium text-center leading-tight">{option.label}</span>
                   </button>
@@ -333,10 +333,10 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
             </div>
           ) : (
             <div className="flex flex-col min-w-0">
-              <h3 className="text-sm font-semibold text-gray-900 truncate">
+              <h3 className="text-sm font-semibold text-foreground truncate">
                 {loading ? t('loading', { ns: 'common' }) : `${getFilterLabel()}${currentCity ? ` in ${currentCity}` : ''}`}
               </h3>
-              <p className="text-xs text-gray-500 truncate text-left">
+              <p className="text-xs text-muted-foreground truncate text-left">
                 {loading ? t('findingSpots', { ns: 'home' }) : t('filters.placesFound', { ns: 'home', count: popularSpots.length })}
               </p>
             </div>
@@ -365,13 +365,13 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
           {popularSpots.map((spot) => (
             <div key={spot.id} className="flex-shrink-0 flex flex-col gap-1">
-              <button
+                <button
                 onClick={() => handleSpotClick(spot)}
-                className="px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 flex items-center gap-2 transition-all hover:shadow-md"
+                className="px-3 py-2 rounded-lg border border-border bg-card hover:bg-accent flex items-center gap-2 transition-all hover:shadow-md"
                 aria-label={`Zoom to ${spot.name}`}
               >
                 <CategoryIcon category={spot.category} className="w-5 h-5" />
-                <span className="text-xs font-medium text-gray-900 line-clamp-1 max-w-[160px]">
+                <span className="text-xs font-medium text-foreground line-clamp-1 max-w-[160px]">
                   {spot.name}
                 </span>
               </button>
@@ -397,7 +397,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
           ))}
         </div>
       ) : (
-        <p className="text-xs text-gray-500 text-center py-4">
+        <p className="text-xs text-muted-foreground text-center py-4">
           {t('noPopularSpots', { ns: 'home' })} {currentCity || t('thisArea', { ns: 'common' })}
         </p>
       )}

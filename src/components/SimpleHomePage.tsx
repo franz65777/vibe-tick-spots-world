@@ -55,17 +55,17 @@ const SimpleHomePage = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Welcome!</h2>
-          <p className="text-gray-600 mb-4">Please sign in to explore amazing places</p>
+          <h2 className="text-xl font-semibold text-foreground mb-2">Welcome!</h2>
+          <p className="text-muted-foreground mb-4">Please sign in to explore amazing places</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header 
         searchQuery={searchQuery}
         currentCity={currentCity}
@@ -85,18 +85,18 @@ const SimpleHomePage = () => {
           hasFollowedUsers={hasFollowedUsers}
         />
         
-        <div className="flex-1 p-4">
+        <div className="flex-1 p-4 overflow-y-auto">
           {loading ? (
             <div className="text-center py-8">
-              <div className="animate-spin w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
-              <p className="text-gray-500 mt-2">Loading amazing places...</p>
+              <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mx-auto"></div>
+              <p className="text-muted-foreground mt-2">Loading amazing places...</p>
             </div>
           ) : error ? (
             <div className="text-center py-8">
-              <p className="text-red-500">Error loading places: {error}</p>
+              <p className="text-destructive">Error loading places: {error}</p>
               <button 
                 onClick={() => refreshPins()} 
-                className="mt-2 px-4 py-2 bg-blue-600 text-white rounded"
+                className="mt-2 px-4 py-2 bg-primary text-primary-foreground rounded"
               >
                 Retry
               </button>
@@ -112,11 +112,11 @@ const SimpleHomePage = () => {
               {places.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {places.map(place => (
-                    <div key={place.id} className="bg-white rounded-lg p-4 shadow">
-                      <h4 className="font-semibold">{place.name}</h4>
-                      <p className="text-gray-600 text-sm">{place.category}</p>
-                      <p className="text-gray-500 text-xs">{place.address}</p>
-                      <div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
+                    <div key={place.id} className="bg-card rounded-lg p-4 shadow border border-border">
+                      <h4 className="font-semibold text-foreground">{place.name}</h4>
+                      <p className="text-muted-foreground text-sm">{place.category}</p>
+                      <p className="text-muted-foreground text-xs">{place.address}</p>
+                      <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
                         <span>❤️ {place.likes}</span>
                         <span>📍 {place.totalSaves} saves</span>
                       </div>
@@ -125,9 +125,9 @@ const SimpleHomePage = () => {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-gray-500">No places found</p>
+                  <p className="text-muted-foreground">No places found</p>
                   {activeFilter === 'following' && (
-                    <p className="text-gray-400 text-sm mt-2">
+                    <p className="text-muted-foreground/70 text-sm mt-2">
                       Follow some users to see their favorite places here
                     </p>
                   )}
