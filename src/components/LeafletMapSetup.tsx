@@ -85,11 +85,11 @@ const LeafletMapSetup = ({
 
     mapRef.current = map;
 
-    // Prefer Mapbox Navigation Night when token present; fallback to CartoDB
+    // Prefer Mapbox Dark (similar to Apple Maps Dark) when token present; fallback to CartoDB Dark Matter
     const mapboxToken = (import.meta as any).env?.VITE_MAPBOX_TOKEN as string | undefined;
     const url = mapboxToken
       ? (isDarkMode
-          ? `https://api.mapbox.com/styles/v1/mapbox/navigation-night-v1/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`
+          ? `https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`
           : `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`)
       : (isDarkMode
           ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
@@ -133,7 +133,7 @@ const LeafletMapSetup = ({
     const mapboxToken = (import.meta as any).env?.VITE_MAPBOX_TOKEN as string | undefined;
     const url = mapboxToken
       ? (isDarkMode
-          ? `https://api.mapbox.com/styles/v1/mapbox/navigation-night-v1/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`
+          ? `https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`
           : `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`)
       : (isDarkMode
           ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
@@ -390,24 +390,24 @@ const LeafletMapSetup = ({
           50% { transform: translateY(-5px); }
           75% { transform: translateY(-8px); }
         }
-        .leaflet-container { 
-          background: ${isDarkMode ? '#1a2332' : '#f8fafc'}; 
+        .leaflet-container {
+          background: ${isDarkMode ? '#1e293b' : '#f8fafc'};
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
         .custom-leaflet-icon { background: transparent; border: none; }
-        .leaflet-control-attribution { 
-          background: rgba(255,255,255,0.9); 
-          padding: 4px 8px; 
+        .leaflet-control-attribution {
+          background: rgba(255,255,255,0.9);
+          padding: 4px 8px;
           font-size: 9px;
           border-radius: 4px;
           margin: 8px;
         }
-        .dark .leaflet-control-attribution { 
-          background: rgba(0,0,0,0.7); 
-          color: rgba(255,255,255,0.8); 
+        .dark .leaflet-control-attribution {
+          background: rgba(30, 41, 59, 0.8);
+          color: rgba(148, 163, 184, 0.9);
         }
-        .leaflet-tile { 
-          filter: ${isDarkMode ? 'brightness(1.15) contrast(1.05) saturate(1.1)' : 'brightness(1.02) contrast(0.98)'}; 
+        .leaflet-tile {
+          filter: ${isDarkMode ? 'brightness(0.95) contrast(1.1) saturate(1.2) hue-rotate(5deg)' : 'brightness(1.02) contrast(0.98)'};
         }
       `}</style>
 

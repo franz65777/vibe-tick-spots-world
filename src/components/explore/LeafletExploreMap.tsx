@@ -60,12 +60,12 @@ const MapController = ({
   return null;
 };
 
-// Dark mode tile layer component - prefers Mapbox if token is set
+// Dark mode tile layer component - prefers Mapbox Dark style (similar to Apple Maps Dark)
 const DarkModeTileLayer = ({ isDarkMode }: { isDarkMode: boolean }) => {
   const mapboxToken = (import.meta as any).env?.VITE_MAPBOX_TOKEN as string | undefined;
   const url = mapboxToken
     ? (isDarkMode
-        ? `https://api.mapbox.com/styles/v1/mapbox/navigation-night-v1/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`
+        ? `https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`
         : `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`)
     : (isDarkMode
         ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
