@@ -1,11 +1,11 @@
 import L from 'leaflet';
-import hotel from '@/assets/category-hotel-upload.png';
-import cafe from '@/assets/category-cafe-upload.png';
-import bar from '@/assets/category-bar-upload.png';
-import restaurant from '@/assets/category-restaurant-upload.png';
-import entertainment from '@/assets/category-entertainment-upload.png';
-import bakery from '@/assets/category-bakery-upload.png';
-import museum from '@/assets/category-museum-upload.png';
+import hotel from '@/assets/category-hotel-transparent.png';
+import cafe from '@/assets/category-cafe-transparent.png';
+import bar from '@/assets/category-bar-transparent.png';
+import restaurant from '@/assets/category-restaurant-transparent.png';
+import entertainment from '@/assets/category-entertainment-transparent.png';
+import bakery from '@/assets/category-bakery-transparent.png';
+import museum from '@/assets/category-museum-transparent.png';
 
 interface MarkerOptions {
   category: string;
