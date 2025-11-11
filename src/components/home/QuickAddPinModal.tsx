@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from 'react-i18next';
+import { nominatimGeocoding } from '@/lib/nominatimGeocoding';
 
 // Import category icons
 import restaurantIcon from '@/assets/category-restaurant-upload.png';
@@ -123,9 +124,9 @@ const QuickAddPinModal = ({ isOpen, onClose, coordinates, onPinAdded, allowedCat
             const results = await nominatimGeocoding.searchPlace(searchQuery);
             const mapped = results.map((r) => ({
               fsq_id: `osm_${r.lat}_${r.lng}`,
-              name: r.name,
+              name: r.displayName,
               category: ((): AllowedCategory => {
-                const n = r.name.toLowerCase();
+                const n = r.displayName.toLowerCase();
                 if (n.includes('bar') || n.includes('pub')) return 'bar';
                 if (n.includes('cafe') || n.includes('coffee')) return 'cafe';
                 if (n.includes('bakery')) return 'bakery';
