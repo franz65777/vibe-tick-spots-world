@@ -55,17 +55,34 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
   const [postFilter, setPostFilter] = useState<'photos' | 'reviews'>('photos');
   const [selectedLocation, setSelectedLocation] = useState<any>(null);
   const [expandedCaptions, setExpandedCaptions] = useState<Set<string>>(new Set());
-  const [locationReviewCounts, setLocationReviewCounts] = useState<Record<string, number>>({});
+  const [reviewOrder, setReviewOrder] = useState<Record<string, number>>({});
 
-  // Count reviews per location for the target user
+  // Assign progressive order to reviews for each location
   React.useEffect(() => {
-    const counts: Record<string, number> = {};
+    const locationReviews: Record<string, any[]> = {};
+    
+    // Group reviews by location
     allPosts.forEach((post: any) => {
       if (post.location_id && post.rating !== null && post.rating !== undefined) {
-        counts[post.location_id] = (counts[post.location_id] || 0) + 1;
+        if (!locationReviews[post.location_id]) {
+          locationReviews[post.location_id] = [];
+        }
+        locationReviews[post.location_id].push(post);
       }
     });
-    setLocationReviewCounts(counts);
+
+    // Sort by date and assign order
+    const orderMap: Record<string, number> = {};
+    Object.entries(locationReviews).forEach(([locationId, reviews]) => {
+      const sorted = reviews.sort((a, b) => 
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+      sorted.forEach((review, index) => {
+        orderMap[review.id] = index + 1;
+      });
+    });
+
+    setReviewOrder(orderMap);
   }, [allPosts]);
 
   // Filter posts based on locationId, contentTypes, and excludeUserId
@@ -346,7 +363,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                         )}
 
                         {post.rating && (
-                          <div className="flex items-center gap-1.5 shrink-0">
+                          <div className="flex flex-col items-end gap-0.5 shrink-0">
                             <div className="flex items-center gap-1">
                               {(() => {
                                 const CategoryIcon = post.locations?.category ? getCategoryIcon(post.locations.category) : Star;
@@ -354,11 +371,11 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                               })()}
                               <span className={cn("text-sm font-semibold", getRatingColor(post.rating))}>{post.rating}</span>
                             </div>
-                            {post.location_id && locationReviewCounts[post.location_id] > 1 && (
+                            {reviewOrder[post.id] > 1 && (
                               <div className="flex items-center gap-0.5 bg-primary/10 rounded-full px-1.5 py-0.5">
                                 <RefreshCw className="w-2.5 h-2.5 text-primary" />
                                 <span className="text-[10px] font-semibold text-primary">
-                                  {locationReviewCounts[post.location_id]}
+                                  {reviewOrder[post.id]}
                                 </span>
                               </div>
                             )}
