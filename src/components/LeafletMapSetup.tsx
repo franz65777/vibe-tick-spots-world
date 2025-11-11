@@ -8,6 +8,7 @@ import { useGeolocation } from '@/hooks/useGeolocation';
 import { createCurrentLocationMarker, createLeafletCustomMarker } from '@/utils/leafletMarkerCreator';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { supabase } from '@/integrations/supabase/client';
+import { useLocationShares } from '@/hooks/useLocationShares';
 
 interface LeafletMapSetupProps {
   places: Place[];
@@ -47,6 +48,7 @@ const LeafletMapSetup = ({
 
   const { location } = useGeolocation();
   const { trackEvent } = useAnalytics();
+  const { shares } = useLocationShares();
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   // Detect dark mode
@@ -286,11 +288,57 @@ const LeafletMapSetup = ({
         }
         marker.setIcon(icon);
         marker.setLatLng([place.coordinates.lat, place.coordinates.lng]);
+
+        // Add user avatars for this location
+        const usersHere = shares.filter(share => {
+          const latDiff = Math.abs(parseFloat(share.latitude.toString()) - place.coordinates.lat);
+          const lngDiff = Math.abs(parseFloat(share.longitude.toString()) - place.coordinates.lng);
+          return latDiff < 0.001 && lngDiff < 0.001;
+        });
+
+        usersHere.slice(0, 3).forEach((share, index) => {
+          const avatarMarkerId = `avatar-${share.id}`;
+          let avatarMarker = markersRef.current.get(avatarMarkerId);
+          
+          if (!avatarMarker) {
+            const avatarIcon = L.divIcon({
+              className: 'custom-user-avatar',
+              html: `
+                <div style="
+                  width: 32px;
+                  height: 32px;
+                  border-radius: 50%;
+                  border: 2px solid white;
+                  background: white;
+                  overflow: hidden;
+                  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                ">
+                  ${share.user?.avatar_url 
+                    ? `<img src="${share.user.avatar_url}" style="width: 100%; height: 100%; object-fit: cover;" alt="${share.user.username}" />` 
+                    : `<div style="width: 100%; height: 100%; background: #4F46E5; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: bold;">${share.user?.username?.[0]?.toUpperCase() || 'U'}</div>`
+                  }
+                </div>
+              `,
+              iconSize: [32, 32],
+              iconAnchor: [16, 16]
+            });
+
+            avatarMarker = L.marker([
+              place.coordinates.lat + (0.0005 * (index + 1)),
+              place.coordinates.lng + (0.0005 * (index + 1))
+            ], {
+              icon: avatarIcon,
+              zIndexOffset: 3000 + index
+            }).addTo(map);
+
+            markersRef.current.set(avatarMarkerId, avatarMarker);
+          }
+        });
       });
     };
 
     fetchCampaigns();
-  }, [places, isDarkMode, onPinClick, trackEvent]);
+  }, [places, isDarkMode, onPinClick, trackEvent, shares]);
 
   const [selectedPostFromPin, setSelectedPostFromPin] = useState<string | null>(null);
 

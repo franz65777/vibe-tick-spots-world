@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { useTranslation } from 'react-i18next';
-import { ChevronRight, Globe, Building2, BellOff, ArrowLeft, Shield, User, LogOut } from 'lucide-react';
+import { ChevronRight, Globe, Building2, BellOff, ArrowLeft, Shield, User, LogOut, UserCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import BusinessRequestModal from '@/components/BusinessRequestModal';
 import LanguageModal from '@/components/settings/LanguageModal';
@@ -170,6 +170,23 @@ const SettingsPage: React.FC = () => {
                   <div className="font-medium">{t('mutedLocations', { ns: 'settings' })}</div>
                   <div className="text-sm text-muted-foreground">
                     {t('manageMutedLocations', { ns: 'settings' })}
+                  </div>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </button>
+
+            {/* Close Friends Setting */}
+            <button
+              onClick={() => navigate('/close-friends')}
+              className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <UserCheck className="w-5 h-5 text-muted-foreground" />
+                <div className="text-left">
+                  <div className="font-medium">Amici Stretti</div>
+                  <div className="text-sm text-muted-foreground">
+                    Gestisci la tua lista di amici stretti
                   </div>
                 </div>
               </div>

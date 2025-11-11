@@ -71,6 +71,10 @@ const HomePage = () => {
   const [currentCity, setCurrentCity] = useState('');
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
 
+  // Long press state
+  const longPressTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+  const [isLongPressing, setIsLongPressing] = useState(false);
+
   // Logo state - show only on first login (this session)
   const [showLogo, setShowLogo] = useState(() => {
     const hasShownLogo = sessionStorage.getItem('hasShownSpottLogo');
@@ -130,7 +134,7 @@ const HomePage = () => {
           {
             enableHighAccuracy: true,
             timeout: 10000,
-            maximumAge: 300000
+            maximumAge: 0 // Always get fresh location
           }
         );
       } else {
@@ -393,7 +397,32 @@ const HomePage = () => {
 
   return (
     <MapFilterProvider>
-      <div className="h-screen w-full bg-white dark:bg-gray-900 flex flex-col overflow-hidden" data-map-expanded={isMapExpanded}>
+      <div 
+        className="h-screen w-full bg-white dark:bg-gray-900 flex flex-col overflow-hidden" 
+        data-map-expanded={isMapExpanded}
+        onTouchStart={(e) => {
+          // Start long press timer
+          longPressTimerRef.current = setTimeout(() => {
+            setIsLongPressing(true);
+            navigate('/share-location');
+          }, 800); // 800ms for long press
+        }}
+        onTouchEnd={() => {
+          // Cancel long press timer
+          if (longPressTimerRef.current) {
+            clearTimeout(longPressTimerRef.current);
+            longPressTimerRef.current = null;
+          }
+          setIsLongPressing(false);
+        }}
+        onTouchMove={() => {
+          // Cancel if user moves finger
+          if (longPressTimerRef.current) {
+            clearTimeout(longPressTimerRef.current);
+            longPressTimerRef.current = null;
+          }
+        }}
+      >
         {/* Fixed Header - ~60px */}
         {!isCreateStoryModalOpen && (
           <Header

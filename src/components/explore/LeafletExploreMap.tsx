@@ -6,6 +6,8 @@ import { createLeafletCustomMarker, createCurrentLocationMarker } from '@/utils/
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { Loader2 } from 'lucide-react';
+import { useLocationShares } from '@/hooks/useLocationShares';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 export interface MapPin {
   id: string;
@@ -84,6 +86,7 @@ const LeafletExploreMap = ({
   const [error, setError] = useState<string | null>(null);
   const { location } = useGeolocation();
   const { trackEvent } = useAnalytics();
+  const { shares } = useLocationShares();
   const markerRefs = useRef<Map<string, L.Marker>>(new Map());
 
   // Filter pins by category
@@ -195,20 +198,61 @@ const LeafletExploreMap = ({
             isDarkMode,
           });
 
+          // Find users at this location
+          const usersHere = shares.filter(share => {
+            const latDiff = Math.abs(parseFloat(share.latitude.toString()) - pin.coordinates.lat);
+            const lngDiff = Math.abs(parseFloat(share.longitude.toString()) - pin.coordinates.lng);
+            return latDiff < 0.001 && lngDiff < 0.001; // Within ~100m
+          });
+
           return (
-            <Marker
-              key={pin.id}
-              position={[pin.coordinates.lat, pin.coordinates.lng]}
-              icon={icon}
-              eventHandlers={{
-                click: () => handleMarkerClick(pin),
-              }}
-              ref={(ref) => {
-                if (ref) {
-                  markerRefs.current.set(pin.id, ref);
-                }
-              }}
-            />
+            <React.Fragment key={pin.id}>
+              <Marker
+                position={[pin.coordinates.lat, pin.coordinates.lng]}
+                icon={icon}
+                eventHandlers={{
+                  click: () => handleMarkerClick(pin),
+                }}
+                ref={(ref) => {
+                  if (ref) {
+                    markerRefs.current.set(pin.id, ref);
+                  }
+                }}
+              />
+              
+              {/* User avatars near the pin */}
+              {usersHere.slice(0, 3).map((share, index) => (
+                <Marker
+                  key={`user-${share.id}`}
+                  position={[
+                    pin.coordinates.lat + (0.0005 * (index + 1)), // Offset slightly
+                    pin.coordinates.lng + (0.0005 * (index + 1))
+                  ]}
+                  icon={L.divIcon({
+                    className: 'custom-user-avatar',
+                    html: `
+                      <div style="
+                        width: 32px;
+                        height: 32px;
+                        border-radius: 50%;
+                        border: 2px solid white;
+                        background: white;
+                        overflow: hidden;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                      ">
+                        ${share.user?.avatar_url 
+                          ? `<img src="${share.user.avatar_url}" style="width: 100%; height: 100%; object-fit: cover;" />` 
+                          : `<div style="width: 100%; height: 100%; background: #4F46E5; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: bold;">${share.user?.username?.[0]?.toUpperCase() || 'U'}</div>`
+                        }
+                      </div>
+                    `,
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 16]
+                  })}
+                  zIndexOffset={3000 + index}
+                />
+              ))}
+            </React.Fragment>
           );
         })}
       </MapContainer>

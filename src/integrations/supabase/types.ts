@@ -506,6 +506,27 @@ export type Database = {
         }
         Relationships: []
       }
+      close_friends: {
+        Row: {
+          created_at: string
+          friend_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          friend_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          friend_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       comment_likes: {
         Row: {
           comment_id: string
@@ -2453,6 +2474,59 @@ export type Database = {
           },
         ]
       }
+      user_location_shares: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          latitude: number
+          location_address: string | null
+          location_id: string | null
+          location_name: string
+          longitude: number
+          share_type: string
+          shared_with_user_ids: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          latitude: number
+          location_address?: string | null
+          location_id?: string | null
+          location_name: string
+          longitude: number
+          share_type: string
+          shared_with_user_ids?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          latitude?: number
+          location_address?: string | null
+          location_id?: string | null
+          location_name?: string
+          longitude?: number
+          share_type?: string
+          shared_with_user_ids?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_location_shares_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_locations: {
         Row: {
           city: string | null
@@ -2814,6 +2888,7 @@ export type Database = {
       }
       clean_city_name: { Args: { city_input: string }; Returns: string }
       cleanup_expired_cache: { Args: never; Returns: undefined }
+      cleanup_expired_location_shares: { Args: never; Returns: undefined }
       cleanup_expired_otps: { Args: never; Returns: undefined }
       cleanup_expired_stories: { Args: never; Returns: undefined }
       cleanup_old_analytics: { Args: never; Returns: undefined }
