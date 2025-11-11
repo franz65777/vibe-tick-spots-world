@@ -384,10 +384,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                       </div>
 
                       {post.locations && (
-                        <p className={cn(
-                          "text-xs text-muted-foreground flex items-center gap-1",
-                          post.caption ? "mb-0.5" : "mb-0"
-                        )}>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 mb-2">
                           <MapPin className="w-3 h-3 shrink-0" />
                           <span>{post.locations.city || 'Unknown'}</span>
                         </p>
