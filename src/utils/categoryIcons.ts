@@ -1,13 +1,13 @@
 import { Utensils, Building, Coffee, ShoppingBag, MapPin, Music, Camera, Dumbbell, GraduationCap, Heart } from 'lucide-react';
 
-// Category image assets (transparent variants without white background)
-import imgRestaurant from '@/assets/category-restaurant-transparent.png';
-import imgBar from '@/assets/category-bar-transparent.png';
-import imgCafe from '@/assets/category-cafe-transparent.png';
-import imgHotel from '@/assets/category-hotel-transparent.png';
-import imgEntertainment from '@/assets/category-entertainment-transparent.png';
-import imgMuseum from '@/assets/category-museum-transparent.png';
-import imgBakery from '@/assets/category-bakery-transparent.png';
+// Category image assets (3D variants for vibrant categories)
+import imgRestaurant from '@/assets/category-restaurant-3d-new.png';
+import imgBar from '@/assets/category-bar-3d-new.png';
+import imgCafe from '@/assets/category-cafe-3d-new.png';
+import imgHotel from '@/assets/category-hotel-3d-new.png';
+import imgEntertainment from '@/assets/category-entertainment-3d-new.png';
+import imgMuseum from '@/assets/category-museum-3d-new.png';
+import imgBakery from '@/assets/category-bakery-3d-new.png';
 
 export const getCategoryIcon = (category: string) => {
   const categoryLower = category?.toLowerCase?.() || '';
