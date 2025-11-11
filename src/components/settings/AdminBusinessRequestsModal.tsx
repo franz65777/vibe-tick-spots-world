@@ -206,7 +206,7 @@ const AdminBusinessRequestsModal: React.FC<AdminBusinessRequestsModalProps> = ({
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
-              <SheetTitle className="text-lg font-semibold">
+              <SheetTitle className="text-2xl font-bold">
                 {t('adminPanel', { ns: 'settings' })}
               </SheetTitle>
             </div>

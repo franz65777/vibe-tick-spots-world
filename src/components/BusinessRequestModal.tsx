@@ -225,8 +225,8 @@ const BusinessRequestModal: React.FC<BusinessRequestModalProps> = ({ open, onOpe
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div className="text-left">
-                <SheetTitle className="flex items-center gap-2">
-                  <Building2 className="w-5 h-5" />
+                <SheetTitle className="text-2xl font-bold flex items-center gap-2">
+                  <Building2 className="w-6 h-6" />
                   {t('businessRequest', { ns: 'settings' })}
                 </SheetTitle>
                 <SheetDescription>
