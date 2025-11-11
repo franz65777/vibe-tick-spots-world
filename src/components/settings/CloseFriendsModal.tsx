@@ -150,7 +150,7 @@ const CloseFriendsModal: React.FC<CloseFriendsModalProps> = ({ open, onOpenChang
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
-              <SheetTitle className="text-2xl font-bold">
+              <SheetTitle className="text-lg font-semibold">
                 {t('closeFriends', { ns: 'settings' })}
               </SheetTitle>
             </div>

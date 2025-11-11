@@ -47,8 +47,8 @@ const LanguageModal: React.FC<LanguageModalProps> = ({
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
-              <SheetTitle className="text-2xl font-bold flex items-center gap-2">
-                <Globe className="w-6 h-6" />
+              <SheetTitle className="flex items-center gap-2">
+                <Globe className="w-5 h-5" />
                 {t('language', { ns: 'settings' })}
               </SheetTitle>
             </div>

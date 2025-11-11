@@ -212,7 +212,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
-              <SheetTitle className="text-2xl font-bold">
+              <SheetTitle className="text-lg font-semibold">
                 {t('editProfile', { ns: 'settings' })}
               </SheetTitle>
             </div>
@@ -322,7 +322,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
           </div>
 
           {/* Save Button - Fixed at bottom */}
-          <div className="px-4 pt-4 pb-24 bg-background">
+          <div className="p-4 bg-background">
             <Button
               onClick={handleSave}
               disabled={isLoading || isUploading || !username.trim() || !!usernameError}

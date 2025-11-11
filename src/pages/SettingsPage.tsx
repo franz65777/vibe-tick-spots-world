@@ -112,8 +112,8 @@ const SettingsPage: React.FC = () => {
 
       {/* Settings content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="border-0 shadow-none rounded-none">
-          <div className="p-0">
+        <Card className="border-0 shadow-none rounded-none">
+          <CardContent className="p-0">
             {/* Edit Profile Setting */}
             <button
               onClick={() => setEditProfileModalOpen(true)}
@@ -217,8 +217,8 @@ const SettingsPage: React.FC = () => {
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
               </button>
             )}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Logout Button */}
