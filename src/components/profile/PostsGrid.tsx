@@ -333,7 +333,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                     </button>
 
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2 mb-0.5">
+                      <div className="flex items-start justify-between gap-2 mb-1">
                         {post.locations ? (
                           <button
                             onClick={(e) => {
