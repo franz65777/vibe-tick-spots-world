@@ -148,31 +148,40 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-lg z-[3000] flex flex-col" onClick={onClose}>
       {/* Header with integrated search */}
-      <div className="bg-white px-4 pt-[calc(env(safe-area-inset-top)+2.1875rem)] pb-3 flex items-center gap-3 shadow-lg" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-background px-4 pt-[calc(env(safe-area-inset-top)+2.1875rem)] pb-3 flex items-center gap-3 shadow-lg border-b border-border" onClick={(e) => e.stopPropagation()}>
         <button
           onClick={onClose}
-          className="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
+          className="p-2 hover:bg-accent rounded-full transition-colors flex-shrink-0"
         >
-          <ArrowLeft className="w-5 h-5 text-gray-700" />
+          <ArrowLeft className="w-5 h-5 text-foreground" />
         </button>
         <div className="relative flex-1">
-          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t('searchCities', { ns: 'explore' })}
-            className="w-full pl-10 pr-12 py-3 text-base bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
+            className="w-full pl-10 pr-24 py-3 text-base bg-muted/50 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground placeholder:text-muted-foreground"
           />
           {loading && (
-            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-600 animate-spin" />
+            <Loader2 className="absolute right-16 top-1/2 -translate-y-1/2 w-5 h-5 text-primary animate-spin" />
           )}
+          <button
+            onClick={() => {
+              inputRef.current?.blur();
+              onClose();
+            }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-primary hover:text-primary/80 transition-colors px-2"
+          >
+            {t('cancel', { ns: 'common' })}
+          </button>
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 bg-white shadow-xl -mt-[0.3125rem]" onClick={(e) => e.stopPropagation()}>
+      <div className="flex-1 overflow-y-auto px-4 py-4 bg-background shadow-xl -mt-[0.3125rem]" onClick={(e) => e.stopPropagation()}>
         {!query.trim() && (
           <div className="flex flex-wrap gap-2 mb-4">
             {(trendingCities.length ? trendingCities : popularCities.map(c => ({ name: c.name, count: 0, lat: c.lat, lng: c.lng }))).map((item) => {
@@ -213,7 +222,7 @@ const UnifiedSearchOverlay = ({ isOpen, onClose, onCitySelect }: UnifiedSearchOv
         )}
 
         {query.trim() && !loading && results.length === 0 && !searchCacheRef.current.has(`${query.toLowerCase().trim()}-${i18n.language}`) && (
-          <div className="flex flex-col items-center justify-center py-16 text-white">
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
             <MapPin className="w-16 h-16 mb-3 opacity-50" />
             <p className="text-lg font-medium">{t('noCitiesFound', { ns: 'explore' })}</p>
             <p className="text-sm opacity-75 mt-1">{t('tryDifferentSearch', { ns: 'explore' })}</p>

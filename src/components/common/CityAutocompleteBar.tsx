@@ -205,15 +205,26 @@ const CityAutocompleteBar: React.FC<CityAutocompleteBarProps> = ({
               setResults([]);
             }, 200);
           }}
-          className="w-full h-11 pl-11 pr-12 rounded-full bg-white border-2 border-blue-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-all placeholder:text-gray-500 text-sm font-medium text-gray-900"
+          className="w-full h-11 pl-11 pr-28 rounded-full bg-muted/50 dark:bg-muted border-2 border-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all placeholder:text-muted-foreground text-sm font-medium text-foreground"
         />
+        {searchQuery && (
+          <button
+            onClick={() => {
+              onSearchChange('');
+              inputRef.current?.blur();
+            }}
+            className="absolute right-14 top-1/2 -translate-y-1/2 text-xs font-medium text-primary hover:text-primary/80 transition-colors px-2"
+          >
+            {t('cancel', { ns: 'common' })}
+          </button>
+        )}
         <button
           onClick={handleCurrentLocation}
           disabled={geoLoading}
-          className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50"
+          className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-accent rounded-full transition-colors disabled:opacity-50"
           aria-label={t('currentLocation', { ns: 'common' })}
         >
-          <Locate className="w-4 h-4 text-blue-600" />
+          <Locate className="w-4 h-4 text-primary" />
         </button>
       </div>
 

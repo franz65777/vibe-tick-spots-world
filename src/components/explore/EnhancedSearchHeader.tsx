@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import SmartAutocomplete from './SmartAutocomplete';
 import SearchFilters from './SearchFilters';
+import { useTranslation } from 'react-i18next';
 
 type SearchMode = 'locations' | 'users';
 type SortBy = 'proximity' | 'likes' | 'saves' | 'following' | 'recent';
@@ -35,6 +36,7 @@ const EnhancedSearchHeader = ({
   onFiltersChange
 }: EnhancedSearchHeaderProps) => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [showFilters, setShowFilters] = useState(false);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -96,14 +98,14 @@ const EnhancedSearchHeader = ({
   };
 
   return (
-    <div className="bg-white/95 backdrop-blur-lg px-4 py-4 shadow-sm border-b border-gray-100 sticky top-16 z-20">
+    <div className="bg-background/95 backdrop-blur-lg px-4 py-4 shadow-sm border-b border-border sticky top-16 z-20">
       <div className="max-w-2xl mx-auto">
         {/* Search Mode Toggle */}
-        <div className="flex bg-gray-100 rounded-xl p-1 mb-4">
+        <div className="flex bg-muted rounded-xl p-1 mb-4">
           <button 
             onClick={() => onSearchModeChange('locations')} 
             className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all min-h-[44px] ${
-              searchMode === 'locations' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
+              searchMode === 'locations' ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'
             }`}
             aria-pressed={searchMode === 'locations'}
             aria-label="Search for locations"
@@ -114,7 +116,7 @@ const EnhancedSearchHeader = ({
           <button 
             onClick={() => onSearchModeChange('users')} 
             className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all min-h-[44px] ${
-              searchMode === 'users' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-800'
+              searchMode === 'users' ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'
             }`}
             aria-pressed={searchMode === 'users'}
             aria-label="Search for users"
@@ -127,7 +129,7 @@ const EnhancedSearchHeader = ({
         {/* Search Bar */}
         <form onSubmit={handleSearch} className="relative" role="search">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" aria-hidden="true" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" aria-hidden="true" />
             <Input 
               ref={searchInputRef} 
               type="text" 
@@ -137,9 +139,23 @@ const EnhancedSearchHeader = ({
               onFocus={handleInputFocus} 
               onBlur={handleInputBlur}
               onKeyDown={handleKeyDown}
-              className="pl-10 pr-20 h-12 bg-white border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 rounded-xl text-base" 
+              className="pl-10 pr-32 h-12 bg-muted/50 border-border focus:border-primary focus:ring-primary/20 rounded-xl text-base text-foreground placeholder:text-muted-foreground" 
               aria-label={`Search for ${searchMode}`}
             />
+            
+            {/* Cancel button */}
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  onSearchQueryChange('');
+                  searchInputRef.current?.blur();
+                }}
+                className="absolute right-12 top-1/2 transform -translate-y-1/2 text-sm font-medium text-primary hover:text-primary/80 transition-colors px-2"
+              >
+                {user ? t('cancel', { ns: 'common' }) : 'Cancel'}
+              </button>
+            )}
             
             {/* Clear button */}
             {searchQuery && (
@@ -148,7 +164,7 @@ const EnhancedSearchHeader = ({
                 variant="ghost"
                 size="sm"
                 onClick={clearSearch}
-                className="absolute right-12 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100 rounded-full"
+                className="absolute right-24 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-accent rounded-full"
                 aria-label="Clear search"
               >
                 <X className="w-4 h-4" />
