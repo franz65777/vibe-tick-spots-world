@@ -1,5 +1,6 @@
 
-import { Heart, MessageCircle, Grid3X3, Trash2, Star, ChevronDown, MapPin, Image } from 'lucide-react';
+import { Heart, MessageCircle, Grid3X3, Trash2, Star, ChevronDown, MapPin, Image, RefreshCw } from 'lucide-react';
+import React from 'react';
 import { useState } from 'react';
 import PostDetailModalMobile from '../explore/PostDetailModalMobile';
 import LocationPostLibrary from '../explore/LocationPostLibrary';
@@ -54,6 +55,18 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
   const [postFilter, setPostFilter] = useState<'photos' | 'reviews'>('photos');
   const [selectedLocation, setSelectedLocation] = useState<any>(null);
   const [expandedCaptions, setExpandedCaptions] = useState<Set<string>>(new Set());
+  const [locationReviewCounts, setLocationReviewCounts] = useState<Record<string, number>>({});
+
+  // Count reviews per location for the target user
+  React.useEffect(() => {
+    const counts: Record<string, number> = {};
+    allPosts.forEach((post: any) => {
+      if (post.location_id && post.rating !== null && post.rating !== undefined) {
+        counts[post.location_id] = (counts[post.location_id] || 0) + 1;
+      }
+    });
+    setLocationReviewCounts(counts);
+  }, [allPosts]);
 
   // Filter posts based on locationId, contentTypes, and excludeUserId
   const posts = allPosts.filter((post: any) => {
@@ -333,12 +346,22 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                         )}
 
                         {post.rating && (
-                          <div className="flex items-center gap-1 shrink-0">
-                            {(() => {
-                              const CategoryIcon = post.locations?.category ? getCategoryIcon(post.locations.category) : Star;
-                              return <CategoryIcon className={cn("w-4 h-4", getRatingFillColor(post.rating), getRatingColor(post.rating))} />;
-                            })()}
-                            <span className={cn("text-sm font-semibold", getRatingColor(post.rating))}>{post.rating}</span>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <div className="flex items-center gap-1">
+                              {(() => {
+                                const CategoryIcon = post.locations?.category ? getCategoryIcon(post.locations.category) : Star;
+                                return <CategoryIcon className={cn("w-4 h-4", getRatingFillColor(post.rating), getRatingColor(post.rating))} />;
+                              })()}
+                              <span className={cn("text-sm font-semibold", getRatingColor(post.rating))}>{post.rating}</span>
+                            </div>
+                            {post.location_id && locationReviewCounts[post.location_id] > 1 && (
+                              <div className="flex items-center gap-0.5 bg-primary/10 rounded-full px-1.5 py-0.5">
+                                <RefreshCw className="w-2.5 h-2.5 text-primary" />
+                                <span className="text-[10px] font-semibold text-primary">
+                                  {locationReviewCounts[post.location_id]}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
