@@ -12,6 +12,7 @@ import BusinessRequestModal from '@/components/BusinessRequestModal';
 import LanguageModal from '@/components/settings/LanguageModal';
 import MutedLocationsModal from '@/components/settings/MutedLocationsModal';
 import CloseFriendsModal from '@/components/settings/CloseFriendsModal';
+import AdminBusinessRequestsModal from '@/components/settings/AdminBusinessRequestsModal';
 import { useAdminRole } from '@/hooks/useAdminRole';
 
 const languages = [
@@ -40,6 +41,7 @@ const SettingsPage: React.FC = () => {
   const [languageModalOpen, setLanguageModalOpen] = useState(false);
   const [mutedLocationsModalOpen, setMutedLocationsModalOpen] = useState(false);
   const [closeFriendsModalOpen, setCloseFriendsModalOpen] = useState(false);
+  const [adminModalOpen, setAdminModalOpen] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -96,7 +98,7 @@ const SettingsPage: React.FC = () => {
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Header with back button */}
-      <div className="flex items-center gap-3 p-4 border-b bg-background sticky top-0 z-10">
+      <div className="flex items-center gap-3 p-4 bg-background sticky top-0 z-10">
         <button
           onClick={() => navigate('/profile')}
           className="p-2 hover:bg-muted rounded-full transition-colors"
@@ -198,7 +200,7 @@ const SettingsPage: React.FC = () => {
             {/* Admin Panel - Only visible to admins */}
             {isAdmin && (
               <button
-                onClick={() => navigate('/admin/business-requests')}
+                onClick={() => setAdminModalOpen(true)}
                 className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
               >
                 <div className="flex items-center gap-3">
@@ -248,6 +250,10 @@ const SettingsPage: React.FC = () => {
       <CloseFriendsModal
         open={closeFriendsModalOpen}
         onOpenChange={setCloseFriendsModalOpen}
+      />
+      <AdminBusinessRequestsModal
+        open={adminModalOpen}
+        onOpenChange={setAdminModalOpen}
       />
     </div>
   );
