@@ -184,9 +184,9 @@ const SettingsPage: React.FC = () => {
               <div className="flex items-center gap-3">
                 <UserCheck className="w-5 h-5 text-muted-foreground" />
                 <div className="text-left">
-                  <div className="font-medium">Amici Stretti</div>
+                  <div className="font-medium">{t('closeFriends', { ns: 'settings' })}</div>
                   <div className="text-sm text-muted-foreground">
-                    Gestisci la tua lista di amici stretti
+                    {t('manageCloseFriends', { ns: 'settings' })}
                   </div>
                 </div>
               </div>

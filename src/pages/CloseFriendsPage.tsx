@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, UserPlus, UserMinus, Loader2, Search } from 'lucide-react';
+import { ArrowLeft, Loader2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -92,11 +92,11 @@ const CloseFriendsPage = () => {
 
       if (error) throw error;
 
-      toast.success('Aggiunto agli amici stretti');
+      toast.success(t('addedToCloseFriends', { ns: 'settings' }));
       fetchData();
     } catch (error) {
       console.error('Error adding close friend:', error);
-      toast.error('Errore durante l\'aggiunta');
+      toast.error(t('errorAdding', { ns: 'settings' }));
     } finally {
       setActionLoading(null);
     }
@@ -115,11 +115,11 @@ const CloseFriendsPage = () => {
 
       if (error) throw error;
 
-      toast.success('Rimosso dagli amici stretti');
+      toast.success(t('removedFromCloseFriends', { ns: 'settings' }));
       fetchData();
     } catch (error) {
       console.error('Error removing close friend:', error);
-      toast.error('Errore durante la rimozione');
+      toast.error(t('errorRemoving', { ns: 'settings' }));
     } finally {
       setActionLoading(null);
     }
@@ -146,37 +146,39 @@ const CloseFriendsPage = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-50 bg-background border-b border-border">
-        <div className="flex items-center justify-between p-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+        <div className="flex items-center gap-3 p-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 hover:bg-muted rounded-full transition-colors"
+          >
             <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-lg font-semibold">Amici Stretti</h1>
-          <div className="w-10" />
+          </button>
+          <h1 className="text-lg font-semibold">{t('closeFriends', { ns: 'settings' })}</h1>
         </div>
       </div>
 
       <div className="p-4 space-y-6">
         {/* Search */}
         <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input
-            placeholder="Cerca..."
+            placeholder={t('searchPlaceholder', { ns: 'settings' })}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-10 rounded-full"
           />
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
         </div>
 
         {/* Close Friends List */}
         {filteredCloseFriends.length > 0 && (
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium text-muted-foreground">
-              Amici Stretti ({closeFriends.length})
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium text-muted-foreground px-1">
+              {t('closeFriends', { ns: 'settings' })} ({closeFriends.length})
             </h3>
             {filteredCloseFriends.map((friend) => (
               <div
                 key={friend.id}
-                className="flex items-center justify-between p-3 rounded-lg border border-border"
+                className="flex items-center justify-between p-3 hover:bg-muted/50 transition-colors rounded-lg"
               >
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10">
@@ -186,15 +188,16 @@ const CloseFriendsPage = () => {
                   <p className="font-medium">{friend.username}</p>
                 </div>
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   onClick={() => removeCloseFriend(friend.id)}
                   disabled={actionLoading === friend.id}
+                  className="rounded-full"
                 >
                   {actionLoading === friend.id ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <UserMinus className="h-4 w-4" />
+                    t('remove', { ns: 'common' })
                   )}
                 </Button>
               </div>
@@ -204,14 +207,14 @@ const CloseFriendsPage = () => {
 
         {/* Followers List */}
         {filteredFollowers.length > 0 && (
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium text-muted-foreground">
-              Aggiungi dai tuoi follower
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium text-muted-foreground px-1">
+              {t('addFromFollowers', { ns: 'settings' })}
             </h3>
             {filteredFollowers.map((follower) => (
               <div
                 key={follower.id}
-                className="flex items-center justify-between p-3 rounded-lg border border-border"
+                className="flex items-center justify-between p-3 hover:bg-muted/50 transition-colors rounded-lg"
               >
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10">
@@ -221,15 +224,16 @@ const CloseFriendsPage = () => {
                   <p className="font-medium">{follower.username}</p>
                 </div>
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   onClick={() => addCloseFriend(follower.id)}
                   disabled={actionLoading === follower.id}
+                  className="rounded-full"
                 >
                   {actionLoading === follower.id ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <UserPlus className="h-4 w-4" />
+                    t('add', { ns: 'common' })
                   )}
                 </Button>
               </div>
@@ -238,8 +242,8 @@ const CloseFriendsPage = () => {
         )}
 
         {filteredFollowers.length === 0 && filteredCloseFriends.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            {searchQuery ? 'Nessun risultato' : 'Nessun follower disponibile'}
+          <div className="text-center py-12 text-muted-foreground">
+            {searchQuery ? t('noResults', { ns: 'common' }) : t('noFollowersAvailable', { ns: 'settings' })}
           </div>
         )}
       </div>

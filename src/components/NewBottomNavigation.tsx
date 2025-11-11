@@ -85,11 +85,26 @@ const NewBottomNavigation = () => {
     }
   };
 
+  const handleExploreLongPressStart = () => {
+    const timer = setTimeout(() => {
+      navigate('/share-location');
+    }, 800); // 800ms long press
+    setLongPressTimer(timer);
+  };
+
+  const handleExploreLongPressEnd = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+  };
+
   const navItems = [
     { 
       icon: <Map size={24} strokeWidth={2} />, 
       label: t('navigation:explore'), 
-      path: '/'
+      path: '/',
+      longPress: true
     },
     { 
       icon: <Search size={24} strokeWidth={2} />, 
@@ -132,16 +147,47 @@ const NewBottomNavigation = () => {
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
               const isProfileTab = item.path === '/profile';
+              const isExploreTab = item.path === '/';
               
               return (
                 <button
                   key={item.path}
-                  onClick={isProfileTab && !hasValidBusinessAccount ? handleProfileClick : isProfileTab ? undefined : () => handleNavClick(item.path, item.label)}
-                  onMouseDown={isProfileTab && hasValidBusinessAccount ? handleProfileLongPressStart : undefined}
-                  onMouseUp={isProfileTab && hasValidBusinessAccount ? handleProfileLongPressEnd : undefined}
-                  onMouseLeave={isProfileTab && hasValidBusinessAccount ? handleProfileLongPressEnd : undefined}
-                  onTouchStart={isProfileTab && hasValidBusinessAccount ? handleProfileLongPressStart : undefined}
-                  onTouchEnd={isProfileTab && hasValidBusinessAccount ? handleProfileLongPressEnd : undefined}
+                  onClick={
+                    isProfileTab && !hasValidBusinessAccount ? handleProfileClick : 
+                    isProfileTab ? undefined : 
+                    isExploreTab ? undefined :
+                    () => handleNavClick(item.path, item.label)
+                  }
+                  onMouseDown={
+                    isProfileTab && hasValidBusinessAccount ? handleProfileLongPressStart : 
+                    isExploreTab ? handleExploreLongPressStart : 
+                    undefined
+                  }
+                  onMouseUp={
+                    isProfileTab && hasValidBusinessAccount ? handleProfileLongPressEnd : 
+                    isExploreTab ? handleExploreLongPressEnd : 
+                    undefined
+                  }
+                  onMouseLeave={
+                    isProfileTab && hasValidBusinessAccount ? handleProfileLongPressEnd : 
+                    isExploreTab ? handleExploreLongPressEnd : 
+                    undefined
+                  }
+                  onTouchStart={
+                    isProfileTab && hasValidBusinessAccount ? handleProfileLongPressStart : 
+                    isExploreTab ? handleExploreLongPressStart : 
+                    undefined
+                  }
+                  onTouchEnd={
+                    isProfileTab && hasValidBusinessAccount ? handleProfileLongPressEnd : 
+                    isExploreTab ? handleExploreLongPressEnd : 
+                    undefined
+                  }
+                  onTouchCancel={
+                    isProfileTab && hasValidBusinessAccount ? handleProfileLongPressEnd : 
+                    isExploreTab ? handleExploreLongPressEnd : 
+                    undefined
+                  }
                   className="flex flex-col items-center justify-center gap-1 min-w-[64px] py-2 transition-colors duration-200"
                   aria-label={item.label}
                   aria-current={isActive ? 'page' : undefined}
