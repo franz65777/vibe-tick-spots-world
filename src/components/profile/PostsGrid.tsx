@@ -14,8 +14,9 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { getCategoryIcon } from '@/utils/categoryIcons';
+import { getCategoryIcon, getCategoryImage } from '@/utils/categoryIcons';
 import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
+import { translateCityName } from '@/utils/cityTranslations';
 
 interface Post {
   id: string;
@@ -45,7 +46,7 @@ interface PostsGridProps {
 }
 
 const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGridProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const { profile } = useOptimizedProfile();
   const targetUserId = userId || profile?.id;
@@ -319,7 +320,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                     >
                       <Avatar className="h-10 w-10">
                         <AvatarImage 
-                          src={`/src/assets/category-${post.locations?.category || 'restaurant'}-3d-new.png`}
+                          src={getCategoryImage(post.locations?.category || 'restaurant')}
                           alt={post.locations?.category || 'restaurant'}
                           className="object-contain p-1"
                         />
@@ -333,7 +334,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                     </button>
 
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2 mb-0.5">
+                      <div className="flex items-start gap-2 mb-0 pr-12">
                         {post.locations ? (
                           <button
                             onClick={(e) => {
@@ -363,7 +364,7 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                         )}
 
                         {post.rating && (
-                          <div className="flex flex-col items-end gap-0.5 shrink-0 self-start">
+                          <div className="absolute top-2 right-2 flex flex-col items-end gap-0.5">
                             <div className="flex items-center gap-1">
                               {(() => {
                                 const CategoryIcon = post.locations?.category ? getCategoryIcon(post.locations.category) : Star;
@@ -384,12 +385,9 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
                       </div>
 
                       {post.locations && (
-                        <p className={cn(
-                          "text-xs text-muted-foreground flex items-center gap-1",
-                          post.caption ? "mb-0.5" : "mb-0"
-                        )}>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 mb-0">
                           <MapPin className="w-3 h-3 shrink-0" />
-                          <span>{post.locations.city || 'Unknown'}</span>
+                          <span>{translateCityName(post.locations.city || 'Unknown', i18n.language)}</span>
                         </p>
                       )}
 
