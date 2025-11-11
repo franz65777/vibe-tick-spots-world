@@ -85,21 +85,15 @@ const LeafletMapSetup = ({
 
     mapRef.current = map;
 
-    // Choose tile style: Mapbox Navigation Night (if token) or CartoDB
-    const mapboxToken = (import.meta as any).env?.VITE_MAPBOX_TOKEN as string | undefined;
+    // Choose tile style: CartoDB dark/light only (stable)
     const url = isDarkMode
-      ? (mapboxToken 
-          ? `https://api.mapbox.com/styles/v1/mapbox/navigation-night-v1/tiles/512/{z}/{x}/{y}@2x?access_token=${mapboxToken}`
-          : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png')
-      : (mapboxToken 
-          ? `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/512/{z}/{x}/{y}@2x?access_token=${mapboxToken}`
-          : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png');
+      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+      : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 
     const tile = L.tileLayer(url, {
       maxZoom: 19,
-      attribution: '&copy; OpenStreetMap, &copy; Mapbox, &copy; CartoDB',
-      tileSize: mapboxToken ? 512 : undefined,
-      zoomOffset: mapboxToken ? -1 : undefined,
+      attribution: '&copy; OpenStreetMap, &copy; CartoDB',
+      subdomains: 'abcd',
     });
     tile.addTo(map);
     tileLayerRef.current = tile;
@@ -126,23 +120,17 @@ const LeafletMapSetup = ({
     const map = mapRef.current;
     if (!map) return;
 
-    const mapboxToken = (import.meta as any).env?.VITE_MAPBOX_TOKEN as string | undefined;
     const url = isDarkMode
-      ? (mapboxToken 
-          ? `https://api.mapbox.com/styles/v1/mapbox/navigation-night-v1/tiles/512/{z}/{x}/{y}@2x?access_token=${mapboxToken}`
-          : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png')
-      : (mapboxToken 
-          ? `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/512/{z}/{x}/{y}@2x?access_token=${mapboxToken}`
-          : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png');
+      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+      : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 
     if (tileLayerRef.current) {
       map.removeLayer(tileLayerRef.current);
     }
     const tile = L.tileLayer(url, {
       maxZoom: 19,
-      attribution: '&copy; OpenStreetMap, &copy; Mapbox, &copy; CartoDB',
-      tileSize: mapboxToken ? 512 : undefined,
-      zoomOffset: mapboxToken ? -1 : undefined,
+      attribution: '&copy; OpenStreetMap, &copy; CartoDB',
+      subdomains: 'abcd',
     });
     tile.addTo(map);
     tileLayerRef.current = tile;
