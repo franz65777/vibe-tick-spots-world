@@ -775,17 +775,19 @@ const MessagesPage = () => {
   return (
     <div className="h-screen w-full bg-background flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="shrink-0 bg-background w-full">
+      <header className="shrink-0 bg-background w-full border-b-0">
         <div className="px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            <Button
-              onClick={handleBack}
-              variant="ghost"
-              size="icon"
-              className="rounded-full flex-shrink-0 h-8 w-8"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
+            {view !== 'search' && (
+              <Button
+                onClick={handleBack}
+                variant="ghost"
+                size="icon"
+                className="rounded-full flex-shrink-0 h-8 w-8"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+            )}
             
             {view === 'chat' && otherParticipant ? (
               <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -818,17 +820,30 @@ const MessagesPage = () => {
                 </button>
               </div>
             ) : view === 'search' ? (
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder={t('searchPlaceholder', { ns: 'messages' })}
-                  value={searchQuery}
-                  onChange={(e) => handleSearch(e.target.value)}
-                  className="pl-9 h-9 bg-muted/50 rounded-full"
-                  autoFocus
-                />
-              </div>
+              <>
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder={t('searchPlaceholder', { ns: 'messages' })}
+                    value={searchQuery}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    className="pl-9 h-9 bg-muted/50 rounded-full"
+                    autoFocus
+                  />
+                </div>
+                <Button
+                  onClick={() => {
+                    setView('threads');
+                    setSearchQuery('');
+                    setSearchResults([]);
+                  }}
+                  variant="ghost"
+                  className="text-sm font-medium text-primary hover:text-primary/80 px-3"
+                >
+                  {t('cancel', { ns: 'common' })}
+                </Button>
+              </>
             ) : view === 'threads' ? (
               <div className="flex-1 flex items-center gap-2">
                 <div className="relative flex-1">
