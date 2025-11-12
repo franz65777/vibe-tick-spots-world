@@ -14,7 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import i18n from '@/i18n';
 
 // Lazy load pages for better initial load performance
-const Index = lazy(() => import('@/pages/Index'));
+import Index from '@/pages/Index';
 const ExplorePage = lazy(() => import('@/components/ExplorePage'));
 const ProfilePage = lazy(() => import('@/components/ProfilePage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
