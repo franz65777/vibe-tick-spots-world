@@ -62,18 +62,6 @@ const PageLoader = () => (
   </div>
 );
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // Cache for 5 minutes (was 1 minute)
-      gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes (was 5)
-      retry: 1,
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: false,
-    },
-  },
-});
-
 function AppContent() {
   console.log('🔄 AppContent rendering...');
   const { user } = useAuth();
