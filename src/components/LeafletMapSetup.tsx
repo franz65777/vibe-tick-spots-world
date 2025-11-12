@@ -365,6 +365,9 @@ const LeafletMapSetup = ({
           }
         });
       });
+      } catch (error) {
+        console.error('Error fetching campaigns:', error);
+      }
     };
 
     fetchCampaigns();
