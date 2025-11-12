@@ -92,7 +92,7 @@ const LeafletMapSetup = ({
           ? `https://api.mapbox.com/styles/v1/mapbox/navigation-night-v1/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`
           : `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`)
       : (isDarkMode
-          ? 'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png'
+          ? 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
           : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png');
 
     const tile = L.tileLayer(url, mapboxToken ? {
@@ -136,7 +136,7 @@ const LeafletMapSetup = ({
           ? `https://api.mapbox.com/styles/v1/mapbox/navigation-night-v1/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`
           : `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`)
       : (isDarkMode
-          ? 'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png'
+          ? 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
           : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png');
 
     if (tileLayerRef.current) {
@@ -417,7 +417,7 @@ const LeafletMapSetup = ({
           color: rgba(148, 163, 184, 0.9);
         }
         .leaflet-tile {
-          filter: ${isDarkMode ? 'brightness(1.05) contrast(1.15) saturate(1.3)' : 'brightness(1.02) contrast(0.98)'};
+          filter: ${isDarkMode ? 'brightness(0.6) contrast(1.1) saturate(1.2)' : 'brightness(1.02) contrast(0.98)'};
         }
       `}</style>
 

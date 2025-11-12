@@ -72,12 +72,12 @@ const DarkModeTileLayer = ({ isDarkMode }: { isDarkMode: boolean }) => {
         : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png');
   return (
     <TileLayer
-      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://stadiamaps.com/">Stadia Maps</a>'
+      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>'
       url={url}
       maxZoom={19}
       tileSize={mapboxToken ? 512 : undefined}
       zoomOffset={mapboxToken ? -1 : undefined}
-      subdomains={mapboxToken ? undefined as any : (isDarkMode ? undefined as any : 'abcd')}
+      subdomains={mapboxToken ? undefined as any : 'abcd'}
     />
   );
 };
@@ -311,7 +311,7 @@ const LeafletExploreMap = ({
         }
         
         .leaflet-tile {
-          filter: ${isDarkMode ? 'brightness(1.05) contrast(1.15) saturate(1.3)' : 'brightness(1.0)'};
+          filter: ${isDarkMode ? 'brightness(0.6) contrast(1.1) saturate(1.2)' : 'brightness(1.0)'};
         }
       `}</style>
     </div>
