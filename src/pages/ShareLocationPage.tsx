@@ -61,16 +61,17 @@ const ShareLocationPage = () => {
     if (!location) return;
     
     try {
+      // Fetch many more locations to properly filter by distance
       const { data, error } = await supabase
         .from('locations')
         .select('*')
         .not('latitude', 'is', null)
         .not('longitude', 'is', null)
-        .limit(5);
+        .limit(100);
 
       if (error) throw error;
 
-      // Calculate distance and sort
+      // Calculate distance for all locations
       const withDistance = data?.map(loc => {
         const lat = typeof loc.latitude === 'string' ? parseFloat(loc.latitude) : loc.latitude;
         const lng = typeof loc.longitude === 'string' ? parseFloat(loc.longitude) : loc.longitude;
@@ -85,11 +86,18 @@ const ShareLocationPage = () => {
           name: loc.name,
           address: loc.address || loc.city || '',
           distance,
-          coordinates: { lat, lng }
+          coordinates: { lat, lng },
+          category: loc.category
         };
-      }).sort((a, b) => a.distance - b.distance).slice(0, 5) || [];
+      }) || [];
 
-      setNearbyLocations(withDistance);
+      // Sort by distance and take only closest 5 within reasonable range (e.g., 20km)
+      const nearby = withDistance
+        .filter(loc => loc.distance <= 20) // Only show locations within 20km
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, 5);
+
+      setNearbyLocations(nearby);
     } catch (error) {
       console.error('Error fetching nearby locations:', error);
     }
@@ -150,12 +158,70 @@ const ShareLocationPage = () => {
   };
 
   const searchLocations = async (query: string) => {
-    if (!query.trim() || !location) return;
+    if (!query.trim()) return;
     
     setSearching(true);
     try {
-      const results = await nominatimGeocoding.searchPlace(query, 'en');
-      setSearchResults(results || []);
+      // First search in existing app locations
+      const { data: appLocations, error } = await supabase
+        .from('locations')
+        .select('*')
+        .or(`name.ilike.%${query}%,address.ilike.%${query}%,city.ilike.%${query}%`)
+        .not('latitude', 'is', null)
+        .not('longitude', 'is', null)
+        .limit(20);
+
+      if (error) throw error;
+
+      // Calculate distance and sort by proximity
+      let results: any[] = [];
+      
+      if (location?.latitude && location?.longitude) {
+        results = appLocations?.map(loc => {
+          const lat = typeof loc.latitude === 'string' ? parseFloat(loc.latitude) : loc.latitude;
+          const lng = typeof loc.longitude === 'string' ? parseFloat(loc.longitude) : loc.longitude;
+          const distance = calculateDistance(location.latitude!, location.longitude!, lat, lng);
+          
+          return {
+            id: loc.id,
+            name: loc.name,
+            address: loc.address || loc.city || '',
+            lat,
+            lng,
+            distance,
+            category: loc.category,
+            isExisting: true
+          };
+        }).sort((a, b) => a.distance - b.distance) || [];
+      } else {
+        results = appLocations?.map(loc => ({
+          id: loc.id,
+          name: loc.name,
+          address: loc.address || loc.city || '',
+          lat: typeof loc.latitude === 'string' ? parseFloat(loc.latitude) : loc.latitude,
+          lng: typeof loc.longitude === 'string' ? parseFloat(loc.longitude) : loc.longitude,
+          category: loc.category,
+          isExisting: true
+        })) || [];
+      }
+
+      // If not enough results, supplement with Nominatim
+      if (results.length < 5) {
+        const nominatimResults = await nominatimGeocoding.searchPlace(query, 'en');
+        const externalResults = nominatimResults?.map(r => ({
+          ...r,
+          isExisting: false,
+          distance: location?.latitude && location?.longitude 
+            ? calculateDistance(location.latitude, location.longitude, r.lat, r.lng)
+            : Infinity
+        })).filter(r => !results.some(existing => 
+          Math.abs(existing.lat - r.lat) < 0.001 && Math.abs(existing.lng - r.lng) < 0.001
+        )) || [];
+        
+        results = [...results, ...externalResults].sort((a, b) => a.distance - b.distance);
+      }
+
+      setSearchResults(results);
     } catch (error) {
       console.error('Error searching locations:', error);
       toast.error('Errore durante la ricerca');
@@ -181,11 +247,34 @@ const ShareLocationPage = () => {
     
     setLoading(true);
     try {
+      let locationId = selectedLocation.id;
+
+      // If location doesn't exist in the app, create it first
+      if (!locationId) {
+        const { data: newLocation, error: createError } = await supabase
+          .from('locations')
+          .insert({
+            name: selectedLocation.name,
+            address: selectedLocation.address,
+            latitude: selectedLocation.coordinates.lat,
+            longitude: selectedLocation.coordinates.lng,
+            category: selectedLocation.category || 'restaurant',
+            city: selectedLocation.address?.split(',')[0] || '',
+            created_by: user.id,
+            pioneer_user_id: user.id
+          })
+          .select()
+          .single();
+
+        if (createError) throw createError;
+        locationId = newLocation.id;
+      }
+
       const { error } = await supabase
         .from('user_location_shares')
         .insert({
           user_id: user.id,
-          location_id: selectedLocation.id || null,
+          location_id: locationId,
           location_name: selectedLocation.name,
           location_address: selectedLocation.address,
           latitude: selectedLocation.coordinates.lat,
@@ -248,20 +337,32 @@ const ShareLocationPage = () => {
             <h3 className="text-sm font-medium text-muted-foreground">Risultati ricerca</h3>
             {searchResults.map((result, index) => (
               <button
-                key={index}
+                key={result.id || index}
                 onClick={() => {
                   setSelectedLocation({
+                    id: result.id,
                     name: result.name,
                     address: result.address,
-                    coordinates: { lat: result.lat, lng: result.lng }
+                    coordinates: { lat: result.lat, lng: result.lng },
+                    category: result.category
                   });
                   setSearchQuery('');
                   setSearchResults([]);
                 }}
                 className="w-full text-left p-3 rounded-lg border border-border hover:bg-accent transition-colors"
               >
-                <p className="font-medium">{result.name}</p>
-                <p className="text-sm text-muted-foreground">{result.address}</p>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <p className="font-medium">{result.name}</p>
+                    <p className="text-sm text-muted-foreground">{result.address}</p>
+                  </div>
+                  {result.distance !== undefined && result.distance !== Infinity && (
+                    <p className="text-xs text-muted-foreground ml-2">{result.distance.toFixed(1)} km</p>
+                  )}
+                </div>
+                {!result.isExisting && (
+                  <p className="text-xs text-primary mt-1">Nuovo luogo - verrà aggiunto all'app</p>
+                )}
               </button>
             ))}
           </div>
