@@ -4298,6 +4298,10 @@ const resources = {
       hoursAgo: '{{count}}小时',
       daysAgo: '{{count}}天',
       weeksAgo: '{{count}}周',
+      onMyWay: '我在路上',
+      onMyWayMessage: '我正在前往{{location}}！一会儿见 👋',
+      messageSent: '消息已发送！',
+      isAtLocation: '在',
     },
     messages: {
       messages: '消息',

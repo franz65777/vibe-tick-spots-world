@@ -300,13 +300,14 @@ const MobileNotificationItem = ({
         location: notification.data.location_name 
       });
 
+      // Send message using direct insert (simple approach)
       const { error } = await supabase
-        .from('messages')
+        .from('chat_messages')
         .insert({
           sender_id: user.id,
-          recipient_id: targetUserId,
-          content: message,
-          type: 'text'
+          receiver_id: targetUserId,
+          message: message,
+          created_at: new Date().toISOString()
         });
 
       if (error) throw error;
