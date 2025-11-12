@@ -260,35 +260,39 @@ const LeafletMapSetup = ({
     // Fetch active campaigns for all locations
     const fetchCampaigns = async () => {
       const locationIds = places.map(p => p.id).filter(Boolean);
-      if (locationIds.length === 0) return;
+      if (locationIds.length === 0) {
+        // No places, render empty markers
+        return;
+      }
 
-      const { data: campaigns } = await supabase
-        .from('marketing_campaigns')
-        .select('location_id')
-        .in('location_id', locationIds)
-        .eq('is_active', true)
-        .gt('end_date', new Date().toISOString());
+      try {
+        const { data: campaigns } = await supabase
+          .from('marketing_campaigns')
+          .select('location_id')
+          .in('location_id', locationIds)
+          .eq('is_active', true)
+          .gt('end_date', new Date().toISOString());
 
-      const campaignLocationIds = new Set(campaigns?.map(c => c.location_id) || []);
+        const campaignLocationIds = new Set(campaigns?.map(c => c.location_id) || []);
 
-      // Add / update markers
-      places.forEach((place) => {
-        if (!place.coordinates?.lat || !place.coordinates?.lng) return;
+        // Add / update markers
+        places.forEach((place) => {
+          if (!place.coordinates?.lat || !place.coordinates?.lng) return;
 
-        const hasCampaign = campaignLocationIds.has(place.id);
-        
-        console.log('Creating marker for:', place.name, 'sharedByUser:', place.sharedByUser);
+          const hasCampaign = campaignLocationIds.has(place.id);
+          
+          console.log('Creating marker for:', place.name, 'sharedByUser:', place.sharedByUser);
 
-        const icon = createLeafletCustomMarker({
-          category: place.category || 'attraction',
-          isSaved: place.isSaved,
-          isRecommended: place.isRecommended,
-          recommendationScore: place.recommendationScore,
-          friendAvatars: [],
-          isDarkMode,
-          hasCampaign,
-          sharedByUserAvatar: place.sharedByUser?.avatar_url || null,
-        });
+          const icon = createLeafletCustomMarker({
+            category: place.category || 'attraction',
+            isSaved: place.isSaved,
+            isRecommended: place.isRecommended,
+            recommendationScore: place.recommendationScore,
+            friendAvatars: [],
+            isDarkMode,
+            hasCampaign,
+            sharedByUserAvatar: place.sharedByUser?.avatar_url || null,
+          });
 
         let marker = markersRef.current.get(place.id);
         if (!marker) {
