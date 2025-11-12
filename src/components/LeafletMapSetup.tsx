@@ -276,6 +276,8 @@ const LeafletMapSetup = ({
         if (!place.coordinates?.lat || !place.coordinates?.lng) return;
 
         const hasCampaign = campaignLocationIds.has(place.id);
+        
+        console.log('Creating marker for:', place.name, 'sharedByUser:', place.sharedByUser);
 
         const icon = createLeafletCustomMarker({
           category: place.category || 'attraction',

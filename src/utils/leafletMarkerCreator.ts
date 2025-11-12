@@ -84,16 +84,16 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
     <!-- User avatar badge -->
     <div style="
       position: absolute;
-      top: -4px;
-      right: -4px;
-      width: 18px;
-      height: 18px;
+      top: -6px;
+      right: -6px;
+      width: 24px;
+      height: 24px;
       border-radius: 50%;
-      border: 2px solid white;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      border: 3px solid white;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.4);
       overflow: hidden;
       background: white;
-      z-index: 10;
+      z-index: 20;
     ">
       <img 
         src="${sharedByUserAvatar}" 
@@ -103,7 +103,7 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
           height: 100%;
           object-fit: cover;
         "
-        onerror="this.style.display='none'"
+        onerror="this.parentElement.style.background='#9333EA'; this.style.display='none';"
       />
     </div>
   ` : '';
