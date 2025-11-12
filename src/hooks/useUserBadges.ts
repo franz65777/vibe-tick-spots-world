@@ -160,10 +160,10 @@ const fetchUserStats = async (hasCache: boolean = false) => {
         category: 'explorer',
         level: 'silver',
         gradient: 'from-blue-400 to-purple-500',
-        earned: stats.citiesCount >= 10,
+        earned: stats.citiesCount >= 20,
         progress: stats.citiesCount,
-        maxProgress: 10,
-        earnedDate: stats.citiesCount >= 10 ? new Date().toISOString() : undefined,
+        maxProgress: 20,
+        earnedDate: stats.citiesCount >= 20 ? new Date().toISOString() : undefined,
         nextBadgeId: 'world-explorer'
       },
       {
@@ -174,10 +174,24 @@ const fetchUserStats = async (hasCache: boolean = false) => {
         category: 'explorer',
         level: 'gold',
         gradient: 'from-yellow-400 to-orange-500',
-        earned: stats.citiesCount >= 25,
+        earned: stats.citiesCount >= 100,
         progress: stats.citiesCount,
-        maxProgress: 25,
-        earnedDate: stats.citiesCount >= 25 ? new Date().toISOString() : undefined
+        maxProgress: 100,
+        earnedDate: stats.citiesCount >= 100 ? new Date().toISOString() : undefined,
+        nextBadgeId: 'continental-explorer'
+      },
+      {
+        id: 'continental-explorer',
+        name: t('continentalExplorer', { ns: 'badges' }),
+        description: t('continentalExplorerDesc', { ns: 'badges' }),
+        icon: '🌐',
+        category: 'explorer',
+        level: 'platinum',
+        gradient: 'from-cyan-400 to-blue-600',
+        earned: stats.citiesCount >= 250,
+        progress: stats.citiesCount,
+        maxProgress: 250,
+        earnedDate: stats.citiesCount >= 250 ? new Date().toISOString() : undefined
       },
 
       // Progressive Trip Planner Badges
@@ -260,10 +274,24 @@ const fetchUserStats = async (hasCache: boolean = false) => {
         category: 'milestone',
         level: 'gold',
         gradient: 'from-yellow-400 to-orange-600',
-        earned: stats.savedPlacesCount >= 150,
+        earned: stats.savedPlacesCount >= 200,
         progress: stats.savedPlacesCount,
-        maxProgress: 150,
-        earnedDate: stats.savedPlacesCount >= 150 ? new Date().toISOString() : undefined
+        maxProgress: 200,
+        earnedDate: stats.savedPlacesCount >= 200 ? new Date().toISOString() : undefined,
+        nextBadgeId: 'legendary-collector'
+      },
+      {
+        id: 'legendary-collector',
+        name: t('legendaryCollector', { ns: 'badges' }),
+        description: t('legendaryCollectorDesc', { ns: 'badges' }),
+        icon: '👑',
+        category: 'milestone',
+        level: 'platinum',
+        gradient: 'from-purple-400 to-pink-600',
+        earned: stats.savedPlacesCount >= 500,
+        progress: stats.savedPlacesCount,
+        maxProgress: 500,
+        earnedDate: stats.savedPlacesCount >= 500 ? new Date().toISOString() : undefined
       },
 
       // Progressive Social Badges
