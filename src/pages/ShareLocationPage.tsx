@@ -306,6 +306,16 @@ const ShareLocationPage = () => {
 
       if (error) throw error;
 
+      // Fetch user profile for correct username and avatar
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('username, avatar_url')
+        .eq('id', user.id)
+        .single();
+
+      const username = userProfile?.username || 'Un amico';
+      const avatarUrl = userProfile?.avatar_url || null;
+
       // Send notifications for close_friends and specific_users shares
       if (shareType === 'close_friends' && closeFriends.length > 0) {
         // Create notifications for all close friends
@@ -313,14 +323,14 @@ const ShareLocationPage = () => {
           user_id: friendId,
           type: 'location_share',
           title: 'Posizione condivisa',
-          message: `${user.user_metadata?.username || 'Un amico'} si trova ora presso ${selectedLocation.name}`,
+          message: `${username} si trova ora presso ${selectedLocation.name}`,
           data: {
             location_id: locationId,
             location_name: selectedLocation.name,
             location_address: selectedLocation.address,
             shared_by_user_id: user.id,
-            shared_by_username: user.user_metadata?.username || 'Unknown',
-            shared_by_avatar: user.user_metadata?.avatar_url || null
+            shared_by_username: username,
+            shared_by_avatar: avatarUrl
           }
         }));
 
@@ -335,14 +345,14 @@ const ShareLocationPage = () => {
           user_id: userId,
           type: 'location_share',
           title: 'Posizione condivisa',
-          message: `${user.user_metadata?.username || 'Un amico'} si trova ora presso ${selectedLocation.name}`,
+          message: `${username} si trova ora presso ${selectedLocation.name}`,
           data: {
             location_id: locationId,
             location_name: selectedLocation.name,
             location_address: selectedLocation.address,
             shared_by_user_id: user.id,
-            shared_by_username: user.user_metadata?.username || 'Unknown',
-            shared_by_avatar: user.user_metadata?.avatar_url || null
+            shared_by_username: username,
+            shared_by_avatar: avatarUrl
           }
         }));
 
@@ -713,7 +723,7 @@ const ShareLocationPage = () => {
             {/* Share Button */}
             <Button
               onClick={handleShareLocation}
-              disabled={loading || (shareType === 'specific_users' && selectedUsers.length === 0)}
+              disabled={loading || isEditingShareType || (shareType === 'specific_users' && selectedUsers.length === 0)}
               className="w-full"
               size="lg"
             >

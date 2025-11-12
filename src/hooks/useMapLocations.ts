@@ -102,8 +102,22 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
 
       switch (mapFilter) {
         case 'shared': {
-          // Fetch locations shared with the user
-          const { data: sharedWithMe, error: sharedError } = await supabase
+          // Fetch current user's followers and close friends
+          const { data: followData } = await supabase
+            .from('follows')
+            .select('follower_id')
+            .eq('following_id', user.id);
+          
+          const { data: closeFriendData } = await supabase
+            .from('close_friends')
+            .select('friend_id')
+            .eq('user_id', user.id);
+
+          const followerIds = followData?.map(f => f.follower_id) || [];
+          const closeFriendIds = closeFriendData?.map(cf => cf.friend_id) || [];
+
+          // Fetch ALL location shares
+          const { data: allShares, error: sharedError } = await supabase
             .from('user_location_shares')
             .select(`
               id,
@@ -115,17 +129,41 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               share_type,
               created_at,
               user_id,
-              profiles!user_location_shares_user_id_fkey(id, username, avatar_url)
+              shared_with_user_ids
             `)
-            .or(`share_type.eq.all_followers,shared_with_user_ids.cs.{${user.id}}`)
             .order('created_at', { ascending: false })
-            .limit(100);
+            .limit(200);
 
           if (sharedError) {
             console.error('Error fetching shared locations:', sharedError);
           }
 
-          finalLocations = (sharedWithMe || []).map(share => ({
+          // Filter shares based on visibility rules
+          const visibleShares = (allShares || []).filter(share => {
+            // Can't see own shares
+            if (share.user_id === user.id) return false;
+            
+            // Check visibility based on share_type
+            if (share.share_type === 'all_followers') {
+              return followerIds.includes(share.user_id);
+            } else if (share.share_type === 'close_friends') {
+              return closeFriendIds.includes(share.user_id);
+            } else if (share.share_type === 'specific_users') {
+              return share.shared_with_user_ids?.includes(user.id);
+            }
+            return false;
+          });
+
+          // Fetch profiles for all visible shares
+          const userIds = [...new Set(visibleShares.map(s => s.user_id))];
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, username, avatar_url')
+            .in('id', userIds);
+
+          const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+
+          finalLocations = visibleShares.map(share => ({
             id: share.location_id || share.id,
             name: share.location_name,
             category: 'restaurant', // Default category for shared locations
@@ -138,11 +176,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             user_id: share.user_id,
             created_at: share.created_at,
             isFollowing: true,
-            sharedByUser: share.profiles ? {
-              id: (share.profiles as any).id,
-              username: (share.profiles as any).username,
-              avatar_url: (share.profiles as any).avatar_url
-            } : undefined
+            sharedByUser: profileMap.get(share.user_id) || undefined
           })).filter(loc => {
             // Apply category filter if any
             if (selectedCategories.length > 0 && !selectedCategories.includes(loc.category)) return false;
