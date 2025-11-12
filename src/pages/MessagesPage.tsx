@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Search, Send, X, MessageSquare, Image, Mic, Trash2, Smile } from 'lucide-react';
-import pinIcon from '@/assets/pin-icon.png';
+import pinIcon from '@/assets/swipe-pin-clean.png';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
