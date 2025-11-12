@@ -35,4 +35,9 @@ export interface Place {
     avatar: string;
   }>;
   sourcePostId?: string; // ID of the post that opened this place (if applicable)
+  sharedByUser?: {
+    id: string;
+    username: string;
+    avatar_url: string | null;
+  };
 }
