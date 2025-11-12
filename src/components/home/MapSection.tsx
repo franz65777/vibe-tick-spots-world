@@ -112,7 +112,8 @@ const MapSection = ({
     likes: 0,
     visitors: [],
     createdBy: location.user_id,
-    createdAt: location.created_at
+    createdAt: location.created_at,
+    sharedByUser: location.sharedByUser
   }));
 
   const handleMapRightClick = (coords: { lat: number; lng: number }) => {
