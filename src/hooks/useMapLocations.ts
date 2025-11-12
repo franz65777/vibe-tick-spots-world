@@ -20,6 +20,11 @@ interface MapLocation {
   recommendationScore?: number;
   user_id: string;
   created_at: string;
+  sharedByUser?: {
+    id: string;
+    username: string;
+    avatar_url: string | null;
+  };
 }
 
 interface UseMapLocationsProps {
@@ -110,7 +115,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               share_type,
               created_at,
               user_id,
-              profiles!user_location_shares_user_id_fkey(username, avatar_url)
+              profiles!user_location_shares_user_id_fkey(id, username, avatar_url)
             `)
             .or(`share_type.eq.all_followers,shared_with_user_ids.cs.{${user.id}}`)
             .order('created_at', { ascending: false })
@@ -132,7 +137,12 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             },
             user_id: share.user_id,
             created_at: share.created_at,
-            isFollowing: true
+            isFollowing: true,
+            sharedByUser: share.profiles ? {
+              id: (share.profiles as any).id,
+              username: (share.profiles as any).username,
+              avatar_url: (share.profiles as any).avatar_url
+            } : undefined
           })).filter(loc => {
             // Apply category filter if any
             if (selectedCategories.length > 0 && !selectedCategories.includes(loc.category)) return false;

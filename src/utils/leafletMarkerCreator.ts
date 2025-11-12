@@ -15,6 +15,7 @@ interface MarkerOptions {
   friendAvatars?: string[];
   isDarkMode?: boolean;
   hasCampaign?: boolean;
+  sharedByUserAvatar?: string | null;
 }
 
 // Get category image path
@@ -57,22 +58,55 @@ const getCategoryImage = (category: string): string => {
 };
 
 export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => {
-  const { category, isSaved, isRecommended, recommendationScore = 0, isDarkMode, hasCampaign } = options;
+  const { category, isSaved, isRecommended, recommendationScore = 0, isDarkMode, hasCampaign, sharedByUserAvatar } = options;
   
   // Get category image
   const categoryImg = getCategoryImage(category);
   
-  // Determine pin color based on state - red for popular, blue for following, green for saved
+  // Determine pin color based on state
   let pinColor = '#EF4444'; // red for popular (default)
   let ringColor = 'rgba(239, 68, 68, 0.3)';
   
-  if (isSaved) {
+  // Purple for shared locations
+  if (sharedByUserAvatar) {
+    pinColor = '#9333EA'; // purple for shared
+    ringColor = 'rgba(147, 51, 234, 0.3)';
+  } else if (isSaved) {
     pinColor = '#10B981'; // green for saved
     ringColor = 'rgba(16, 185, 129, 0.3)';
   } else if (isRecommended) {
     pinColor = '#3B82F6'; // blue for following/recommended
     ringColor = 'rgba(59, 130, 246, 0.3)';
   }
+  
+  // User avatar overlay for shared locations
+  const avatarOverlay = sharedByUserAvatar ? `
+    <!-- User avatar badge -->
+    <div style="
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      overflow: hidden;
+      background: white;
+      z-index: 10;
+    ">
+      <img 
+        src="${sharedByUserAvatar}" 
+        alt="User"
+        style="
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        "
+        onerror="this.style.display='none'"
+      />
+    </div>
+  ` : '';
   
   // Campaign sparkle effect - 5 sparkles max, closer to pin
   const campaignEffect = hasCampaign ? `
@@ -158,6 +192,7 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
   // Create custom marker HTML with larger icon and subtle design
   const markerHtml = `
     <div class="custom-leaflet-marker" style="position: relative; width: 36px; height: 44px;">
+      ${avatarOverlay}
       ${campaignEffect}
       
       <!-- Subtle shadow ring -->
