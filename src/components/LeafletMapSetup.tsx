@@ -85,14 +85,14 @@ const LeafletMapSetup = ({
 
     mapRef.current = map;
 
-    // Prefer Mapbox Dark (similar to Apple Maps Dark) when token present; fallback to CartoDB Dark Matter
+    // Use navigation style for dark mode with better colors (gray base, dark blue water, green parks)
     const mapboxToken = (import.meta as any).env?.VITE_MAPBOX_TOKEN as string | undefined;
     const url = mapboxToken
       ? (isDarkMode
-          ? `https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`
+          ? `https://api.mapbox.com/styles/v1/mapbox/navigation-night-v1/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`
           : `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`)
       : (isDarkMode
-          ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+          ? 'https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png'
           : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png');
 
     const tile = L.tileLayer(url, mapboxToken ? {
@@ -133,10 +133,10 @@ const LeafletMapSetup = ({
     const mapboxToken = (import.meta as any).env?.VITE_MAPBOX_TOKEN as string | undefined;
     const url = mapboxToken
       ? (isDarkMode
-          ? `https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`
+          ? `https://api.mapbox.com/styles/v1/mapbox/navigation-night-v1/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`
           : `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`)
       : (isDarkMode
-          ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+          ? 'https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png'
           : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png');
 
     if (tileLayerRef.current) {
@@ -401,7 +401,7 @@ const LeafletMapSetup = ({
           75% { transform: translateY(-8px); }
         }
         .leaflet-container {
-          background: ${isDarkMode ? '#1e293b' : '#f8fafc'};
+          background: ${isDarkMode ? '#2a2f3a' : '#f8fafc'};
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
         .custom-leaflet-icon { background: transparent; border: none; }
@@ -413,11 +413,11 @@ const LeafletMapSetup = ({
           margin: 8px;
         }
         .dark .leaflet-control-attribution {
-          background: rgba(30, 41, 59, 0.8);
+          background: rgba(42, 47, 58, 0.8);
           color: rgba(148, 163, 184, 0.9);
         }
         .leaflet-tile {
-          filter: ${isDarkMode ? 'brightness(0.95) contrast(1.1) saturate(1.2) hue-rotate(5deg)' : 'brightness(1.02) contrast(0.98)'};
+          filter: ${isDarkMode ? 'brightness(1.05) contrast(1.15) saturate(1.3)' : 'brightness(1.02) contrast(0.98)'};
         }
       `}</style>
 

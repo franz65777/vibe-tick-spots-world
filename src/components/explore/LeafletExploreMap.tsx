@@ -60,15 +60,15 @@ const MapController = ({
   return null;
 };
 
-// Dark mode tile layer component - prefers Mapbox Dark style (similar to Apple Maps Dark)
+// Dark mode tile layer with gray base, dark blue water, and green parks
 const DarkModeTileLayer = ({ isDarkMode }: { isDarkMode: boolean }) => {
   const mapboxToken = (import.meta as any).env?.VITE_MAPBOX_TOKEN as string | undefined;
   const url = mapboxToken
     ? (isDarkMode
-        ? `https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`
+        ? `https://api.mapbox.com/styles/v1/mapbox/navigation-night-v1/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`
         : `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`)
     : (isDarkMode
-        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+        ? 'https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png'
         : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png');
   return (
     <TileLayer
@@ -291,7 +291,7 @@ const LeafletExploreMap = ({
         }
         
         .leaflet-container {
-          background: ${isDarkMode ? '#1a1a1a' : '#f0f0f0'};
+          background: ${isDarkMode ? '#2a2f3a' : '#f0f0f0'};
         }
         
         .custom-leaflet-icon {
@@ -306,8 +306,12 @@ const LeafletExploreMap = ({
         }
         
         .dark .leaflet-control-attribution {
-          background: rgba(0, 0, 0, 0.8);
-          color: white;
+          background: rgba(42, 47, 58, 0.8);
+          color: rgba(148, 163, 184, 0.9);
+        }
+        
+        .leaflet-tile {
+          filter: ${isDarkMode ? 'brightness(1.05) contrast(1.15) saturate(1.3)' : 'brightness(1.0)'};
         }
       `}</style>
     </div>
