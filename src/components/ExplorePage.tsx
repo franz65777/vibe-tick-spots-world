@@ -402,7 +402,9 @@ const ExplorePage = memo(() => {
   const isSearchActive = searchQuery.trim().length > 0;
   const displayUsers = filteredUsers;
   const displayedHistory = showAllHistory ? localSearchHistory : localSearchHistory.slice(0, 10);
-  return <div className="flex flex-col h-full">
+  
+  return (
+    <div className="flex flex-col h-full">
       {/* Simplified Header */}
       <div className="bg-background pt-safe">
         <div className="px-1 py-4 pt-2">
@@ -628,6 +630,7 @@ const ExplorePage = memo(() => {
         )}
       </div>
 
+      {/* Stories Viewer */}
       {viewingStories.length > 0 && (
         <StoriesViewer
           stories={viewingStories}
@@ -637,17 +640,23 @@ const ExplorePage = memo(() => {
         />
       )}
 
-      {/* Stories Viewer */}
-      {viewingStories.length > 0 && (
-        <StoriesViewer
-          stories={viewingStories}
-          initialIndex={viewingStoriesIndex}
-          isOpen={viewingStories.length > 0}
-          onClose={() => {
-            setViewingStories([]);
-            setViewingStoriesIndex(0);
-          }}
-        />
+      {/* Location Post Library */}
+      <LocationPostLibrary
+        isOpen={isLocationModalOpen}
+        onClose={handleCloseLocationModal}
+        place={selectedLocation}
+      />
+
+      {/* Leaderboard Button - fixed at bottom above navigation */}
+      {searchMode === 'users' && !isSearchActive && champions.length > 0 && (
+        <div className="fixed bottom-20 left-0 right-0 px-4 pb-2 bg-gradient-to-t from-background via-background to-transparent pointer-events-none">
+          <div className="pointer-events-auto">
+            <CommunityChampions 
+              champions={champions} 
+              onUserClick={handleUserClick}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
