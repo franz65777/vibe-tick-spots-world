@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, memo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOptimizedFeed } from '@/hooks/useOptimizedFeed';
 import { useQuery } from '@tanstack/react-query';
+import { useTabPrefetch } from '@/hooks/useTabPrefetch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MapPin, Star, ChevronDown } from 'lucide-react';
@@ -26,12 +27,15 @@ import { useQueryClient } from '@tanstack/react-query';
 import { getCategoryIcon } from '@/utils/categoryIcons';
 import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
 
-const FeedPage = () => {
+const FeedPage = memo(() => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { t, i18n } = useTranslation();
   const dfnsLocale = i18n.language.startsWith('it') ? itLocale : i18n.language.startsWith('es') ? esLocale : enUS;
+  
+  // Prefetch altre tab per transizioni istantanee
+  useTabPrefetch('feed');
   
   const [feedType, setFeedType] = useState<'forYou' | 'promotions'>('forYou');
   
@@ -651,6 +655,8 @@ const FeedPage = () => {
       </div>
     </div>
   );
-};
+});
+
+FeedPage.displayName = 'FeedPage';
 
 export default FeedPage;

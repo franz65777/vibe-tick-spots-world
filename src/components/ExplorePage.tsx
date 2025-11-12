@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, memo } from 'react';
 import { Search, MapPin, Users, UserPlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,6 +6,7 @@ import { searchService } from '@/services/searchService';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTabPrefetch } from '@/hooks/useTabPrefetch';
 import NoResults from './explore/NoResults';
 import UserCard from './explore/UserCard';
 import LocationPostLibrary from './explore/LocationPostLibrary';
@@ -34,7 +35,7 @@ const RecentMutualFollowers = ({ userId }: { userId: string }) => {
   );
 };
 
-const ExplorePage = () => {
+const ExplorePage = memo(() => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -74,6 +75,9 @@ const ExplorePage = () => {
       return new Set();
     }
   });
+
+  // Prefetch altre tab per transizioni istantanee
+  useTabPrefetch('explore');
 
   // Persist hiddenUserIds to sessionStorage
   useEffect(() => {
@@ -633,25 +637,22 @@ const ExplorePage = () => {
         />
       )}
 
-      {/* Location Post Library */}
-      <LocationPostLibrary
-        isOpen={isLocationModalOpen}
-        onClose={handleCloseLocationModal}
-        place={selectedLocation}
-      />
-
-      {/* Leaderboard Button - fixed at bottom above navigation */}
-      {searchMode === 'users' && !isSearchActive && champions.length > 0 && (
-        <div className="fixed bottom-20 left-0 right-0 px-4 pb-2 bg-gradient-to-t from-background via-background to-transparent pointer-events-none">
-          <div className="pointer-events-auto">
-            <CommunityChampions 
-              champions={champions} 
-              onUserClick={handleUserClick}
-            />
-          </div>
-        </div>
+      {/* Stories Viewer */}
+      {viewingStories.length > 0 && (
+        <StoriesViewer
+          stories={viewingStories}
+          initialIndex={viewingStoriesIndex}
+          isOpen={viewingStories.length > 0}
+          onClose={() => {
+            setViewingStories([]);
+            setViewingStoriesIndex(0);
+          }}
+        />
       )}
-    </div>;
-};
+    </div>
+  );
+});
+
+ExplorePage.displayName = 'ExplorePage';
 
 export default ExplorePage;

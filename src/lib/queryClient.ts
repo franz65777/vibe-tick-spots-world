@@ -3,17 +3,16 @@ import { QueryClient } from '@tanstack/react-query';
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Cache per 10 minuti per performance migliori
-      staleTime: 10 * 60 * 1000,
-      // Mantieni in cache per 15 minuti
-      gcTime: 15 * 60 * 1000,
-      // Mostra dati cached immediatamente, rivalida in background
+      // Cache AGGRESSIVO per transizioni istantanee
+      staleTime: 30 * 60 * 1000, // 30 minuti - dati considerati freschi
+      gcTime: 60 * 60 * 1000, // 1 ora - mantieni in memoria
+      // Mostra sempre dati cached, NO refetch automatici
       refetchOnWindowFocus: false,
       refetchOnMount: false,
       refetchOnReconnect: false,
-      // Retry automatico solo 1 volta
+      // Retry solo 1 volta, veloce
       retry: 1,
-      retryDelay: 1000,
+      retryDelay: 500,
     },
   },
 });

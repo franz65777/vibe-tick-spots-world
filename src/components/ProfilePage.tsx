@@ -1,9 +1,10 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useTabPrefetch } from '@/hooks/useTabPrefetch';
 import ProfileHeader from './profile/ProfileHeader';
 import ProfileStats from './profile/ProfileStats';
 import ProfileTabs from './profile/ProfileTabs';
@@ -17,11 +18,14 @@ import { useUserBadges } from '@/hooks/useUserBadges';
 import { ThemeToggle } from './ThemeToggle';
 import ProfileSkeleton from './ProfileSkeleton';
 
-const ProfilePage = () => {
+const ProfilePage = memo(() => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const { profile, loading, error } = useOptimizedProfile();
   const navigate = useNavigate();
+  
+  // Prefetch altre tab per transizioni istantanee
+  useTabPrefetch('profile');
   const [activeTab, setActiveTab] = useState('posts');
   const [modalState, setModalState] = useState<{ isOpen: boolean; type: 'followers' | 'following' | null }>({
     isOpen: false,
@@ -139,6 +143,8 @@ const ProfilePage = () => {
       />
     </div>
   );
-};
+});
+
+ProfilePage.displayName = 'ProfilePage';
 
 export default ProfilePage;

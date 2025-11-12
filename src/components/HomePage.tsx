@@ -1,7 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTabPrefetch } from '@/hooks/useTabPrefetch';
 import { MapFilterProvider } from '@/contexts/MapFilterContext';
 import { Place } from '@/types/place';
 import { Crown, Heart, MapPin, Activity, MessageCircle, Trophy } from 'lucide-react';
@@ -38,10 +39,13 @@ interface LocalPlace {
   address?: string;
 }
 
-const HomePage = () => {
+const HomePage = memo(() => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  
+  // Prefetch altre tab per transizioni istantanee
+  useTabPrefetch('home');
   const [selectedCity, setSelectedCity] = useState('');
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>(() => {
@@ -602,6 +606,8 @@ const HomePage = () => {
       </div>
     </MapFilterProvider>
   );
-};
+});
+
+HomePage.displayName = 'HomePage';
 
 export default HomePage;
