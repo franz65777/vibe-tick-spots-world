@@ -161,6 +161,11 @@ const MobileNotificationItem = ({
       navigate(`/post/${notification.data.post_id}`, { state: { fromNotifications: true } });
       return;
     }
+    // Handle location_share - open location detail
+    if (notification.type === 'location_share' && notification.data?.location_id) {
+      navigate(`/`, { state: { openLocationId: notification.data.location_id } });
+      return;
+    }
     onAction(notification);
   };
 
@@ -282,11 +287,52 @@ const MobileNotificationItem = ({
     return t('weeksAgo', { ns: 'notifications', count: diffInWeeks });
   };
 
+  const handleOnMyWayClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user || !targetUserId || !notification.data?.location_name) return;
+
+    try {
+      const message = t('onMyWayMessage', { 
+        ns: 'notifications', 
+        location: notification.data.location_name 
+      });
+
+      const { error } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: user.id,
+          recipient_id: targetUserId,
+          content: message,
+          type: 'text'
+        });
+
+      if (error) throw error;
+      toast.success(t('messageSent', { ns: 'notifications' }));
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast.error('Failed to send message');
+    }
+  };
+
   const getNotificationText = () => {
     // Support both field name formats from database
     const username = notification.data?.user_name || notification.data?.username || notification.title || 'Someone';
+    const locationName = notification.data?.location_name || '';
     
     switch (notification.type) {
+      case 'location_share':
+        return (
+          <span className="text-foreground text-[13px] leading-tight">
+            <span 
+              className="font-semibold cursor-pointer hover:underline" 
+              onClick={handleUsernameClick}
+            >
+              {username}
+            </span>
+            {' '}{t('isAtLocation', { ns: 'notifications' })}{' '}
+            <span className="font-semibold">{locationName}</span>
+          </span>
+        );
       case 'like':
         // Check if this is a grouped notification
         if (notification.data?.grouped_users && notification.data.grouped_users.length > 0) {
@@ -481,9 +527,19 @@ const MobileNotificationItem = ({
           </div>
         </div>
 
-        {/* Right Side - Follow Button, Post Thumbnail, or Comment Actions */}
+        {/* Right Side - Follow Button, Post Thumbnail, Comment Actions, or On My Way Button */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
-          {notification.type === 'follow' ? (
+          {notification.type === 'location_share' ? (
+            <Button
+              onClick={handleOnMyWayClick}
+              disabled={isLoading}
+              size="sm"
+              variant="default"
+              className="px-4 h-7 text-[12px] font-semibold rounded-lg bg-primary hover:bg-primary/90"
+            >
+              {t('onMyWay', { ns: 'notifications' })}
+            </Button>
+          ) : notification.type === 'follow' ? (
             <Button
               onClick={handleFollowClick}
               disabled={isLoading}
