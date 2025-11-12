@@ -1,22 +1,20 @@
 
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, useEffect, memo, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTabPrefetch } from '@/hooks/useTabPrefetch';
 import { MapFilterProvider } from '@/contexts/MapFilterContext';
 import { Place } from '@/types/place';
-import { Crown, Heart, MapPin, Activity, MessageCircle, Trophy } from 'lucide-react';
 import Header from './home/Header';
-import StoriesSection from './home/StoriesSection';
-import MapSection from './home/MapSection';
 import ModalsManager from './home/ModalsManager';
-import CommunityHighlights from './home/CommunityHighlights';
-// Google Maps no longer needed - using Leaflet + OSM
 import { supabase } from '@/integrations/supabase/client';
-import { ThemeToggle } from './ThemeToggle';
-import { Button } from './ui/button';
 import UnifiedSearchOverlay from './explore/UnifiedSearchOverlay';
 import SpottLogo from './common/SpottLogo';
+
+// Lazy load heavy components
+const HomeStoriesSection = lazy(() => import('./home/HomeStoriesSection'));
+const HomeDiscoverSection = lazy(() => import('./home/HomeDiscoverSection'));
+const HomeMapContainer = lazy(() => import('./home/HomeMapContainer'));
 
 // Local interface for modal components that expect simpler Place structure
 interface LocalPlace {
@@ -474,8 +472,8 @@ const HomePage = memo(() => {
       <main className="flex-1 flex flex-col overflow-x-hidden">
         {/* Stories Section - 90px with overflow visible */}
         {!isCreateStoryModalOpen && !isStoriesViewerOpen && (
-          <div className="h-[90px] flex-shrink-0">
-            <StoriesSection
+          <Suspense fallback={<div className="h-[90px] flex-shrink-0" />}>
+            <HomeStoriesSection
               stories={stories}
               onCreateStory={() => setIsCreateStoryModalOpen(true)}
               onStoryClick={(index) => {
@@ -483,13 +481,13 @@ const HomePage = memo(() => {
                 setIsStoriesViewerOpen(true);
               }}
             />
-          </div>
+          </Suspense>
         )}
         
         {/* Discover Section - 110px */}
         {!isCreateStoryModalOpen && !isStoriesViewerOpen && (
-          <div className="h-[110px] flex-shrink-0">
-            <CommunityHighlights
+          <Suspense fallback={<div className="h-[110px] flex-shrink-0" />}>
+            <HomeDiscoverSection
               currentCity={currentCity}
               userLocation={userLocation}
               onLocationClick={(locationId: string, coordinates?: { lat: number; lng: number }) => {
@@ -517,22 +515,23 @@ const HomePage = memo(() => {
                 });
               }}
             />
-          </div>
+          </Suspense>
         )}
         
         {/* Map Section - fills remaining space and extends under bottom nav */}
         {!isCreateStoryModalOpen && !isStoriesViewerOpen && (
-          <div className={isMapExpanded ? "fixed inset-0 z-50" : isSearchOverlayOpen ? "hidden" : "flex-1 relative overflow-hidden"}>
-            <MapSection
+          <Suspense fallback={<div className="flex-1 relative" />}>
+            <HomeMapContainer
               mapCenter={mapCenter}
               currentCity={currentCity}
               isExpanded={isMapExpanded}
+              isSearchOverlayOpen={isSearchOverlayOpen}
               onToggleExpand={() => setIsMapExpanded(!isMapExpanded)}
               initialSelectedPlace={initialPinToShow}
               onClearInitialPlace={() => setInitialPinToShow(null)}
               recenterToken={recenterToken}
             />
-          </div>
+          </Suspense>
         )}
       </main>
 

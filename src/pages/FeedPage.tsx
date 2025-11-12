@@ -1,19 +1,13 @@
-import React, { useEffect, useState, memo } from 'react';
+import React, { useEffect, useState, memo, lazy, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOptimizedFeed } from '@/hooks/useOptimizedFeed';
 import { useQuery } from '@tanstack/react-query';
 import { useTabPrefetch } from '@/hooks/useTabPrefetch';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MapPin, Star, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { PostActions } from '@/components/feed/PostActions';
-import { formatDistanceToNow } from 'date-fns';
-import { it as itLocale, es as esLocale, enUS } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import { cn } from '@/lib/utils';
 import { useStories } from '@/hooks/useStories';
 import StoriesViewer from '@/components/StoriesViewer';
 import { getPostLikesWithUsers, PostLikeUser, getPostComments, addPostComment, deletePostComment, Comment } from '@/services/socialEngagementService';
@@ -24,15 +18,15 @@ import { messageService } from '@/services/messageService';
 import { toast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useQueryClient } from '@tanstack/react-query';
-import { getCategoryIcon } from '@/utils/categoryIcons';
-import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
+
+// Lazy load heavy component
+const FeedPostItem = lazy(() => import('@/components/feed/FeedPostItem'));
 
 const FeedPage = memo(() => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { t, i18n } = useTranslation();
-  const dfnsLocale = i18n.language.startsWith('it') ? itLocale : i18n.language.startsWith('es') ? esLocale : enUS;
+  const { t } = useTranslation();
   
   // Prefetch altre tab per transizioni istantanee
   useTabPrefetch('feed');
@@ -243,79 +237,6 @@ const FeedPage = memo(() => {
     }
   };
 
-  const renderCaption = (caption: string | null, postId: string, username: string, userId: string) => {
-    if (!caption) return null;
-    const isExpanded = expandedCaptions.has(postId);
-
-    const firstLine = caption.split('\n')[0];
-    const MAX_FIRST_LINE_LENGTH = 80;
-    
-    // Show "altro/meno" if there are multiple lines OR if first line is too long
-    const hasMultipleLines = caption.trim().length > firstLine.trim().length;
-    const firstLineIsTooLong = firstLine.length > MAX_FIRST_LINE_LENGTH;
-    const hasMoreContent = hasMultipleLines || firstLineIsTooLong;
-    
-    // Truncate first line for display
-    const displayFirstLine = firstLineIsTooLong && !isExpanded 
-      ? firstLine.substring(0, MAX_FIRST_LINE_LENGTH)
-      : firstLine;
-
-    const moreLabel = t('more');
-    const lessLabel = t('less');
-
-    return (
-      <div className="text-sm text-left">
-        <span className="text-foreground">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/profile/${userId}`);
-            }}
-            className="font-semibold hover:opacity-70"
-          >
-            {username}
-          </button>
-          {' '}
-          <span className="inline">
-            {isExpanded ? (
-              <>
-                <span className="whitespace-pre-wrap">{caption}</span>
-                {' '}
-                {hasMoreContent && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleCaption(postId);
-                    }}
-                    className="text-muted-foreground hover:text-foreground font-medium"
-                  >
-                    {lessLabel}
-                  </button>
-                )}
-              </>
-            ) : (
-              <>
-                <span>{displayFirstLine}</span>
-                {hasMoreContent && '... '}
-                {hasMoreContent && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleCaption(postId);
-                    }}
-                    className="text-muted-foreground hover:text-foreground font-medium"
-                  >
-                    {moreLabel}
-                  </button>
-                )}
-              </>
-            )}
-          </span>
-        </span>
-      </div>
-    );
-  };
-
 
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
@@ -389,219 +310,29 @@ const FeedPage = memo(() => {
            ) : (
             <div className="space-y-0 bg-background">
               {feedItems.map((item) => {
-              const profile = item.profiles as any;
-              const username = profile?.username || 'Unknown';
-              const avatarUrl = profile?.avatar_url;
-              const userId = item.user_id;
-              const postId = item.id;
-              const mediaUrls = item.media_urls || [];
-              const hasMultipleMedia = mediaUrls.length > 1;
-              const userHasStory = stories.some(s => s.user_id === userId);
-              const location = item.locations as any;
-              const locationName = location?.name;
-              const locationId = item.location_id;
-              const caption = item.caption;
-              const rating = item.rating;
-              const createdAt = item.created_at;
+                const profile = item.profiles as any;
+                const userId = item.user_id;
+                const userHasStory = stories.some(s => s.user_id === userId);
 
-              return (
-                <article key={item.id} className="post-compact bg-background">
-                  {/* Post Header */}
-                  <div className="post-compact-header flex items-center justify-between">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <button 
-                        onClick={(e) => handleAvatarClick(userId, e)}
-                        className="shrink-0 relative"
-                      >
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage src={avatarUrl || undefined} />
-                          <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
-                            {username.slice(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        {userHasStory && (
-                          <div className="absolute inset-0 rounded-full ring-2 ring-blue-500 ring-offset-2 ring-offset-background pointer-events-none" />
-                        )}
-                      </button>
-                      <div className="flex-1 min-w-0">
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/profile/${userId}`);
-                          }}
-                          className="font-semibold text-sm hover:opacity-70 block truncate text-left"
-                        >
-                          {username}
-                        </button>
-                        {locationName && locationId && location?.latitude && location?.longitude && (
-                          <button
-                            onClick={(e) => handleLocationClick(postId, locationId, location.latitude, location.longitude, locationName, e)}
-                            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 truncate"
-                          >
-                            <MapPin className="w-3 h-3 shrink-0" />
-                            <span className="truncate">{locationName}</span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    {rating && rating > 0 && (
-                      <div className="flex items-center gap-1 shrink-0">
-                        {(() => {
-                          const CategoryIcon = location?.category ? getCategoryIcon(location.category) : Star;
-                          return <CategoryIcon className={cn("w-4 h-4", getRatingFillColor(rating), getRatingColor(rating))} />;
-                        })()}
-                        <span className={cn("text-sm font-semibold", getRatingColor(rating))}>{rating}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Post Media */}
-                  {mediaUrls.length > 0 && (
-                    <div className="post-compact-media relative">
-                      {hasMultipleMedia ? (
-                        <Carousel className="w-full" gutter={false}>
-                          <CarouselContent className="-ml-0">
-                            {mediaUrls.map((url, idx) => {
-                              const isVideo = url.includes('.mp4') || url.includes('.mov') || url.includes('.webm');
-                              return (
-                                <CarouselItem key={idx} className="pl-0">
-                                  <div className="aspect-square w-full">
-                                    {isVideo ? (
-                                      <video
-                                        src={url}
-                                        className="w-full h-full object-cover block touch-pinch-zoom"
-                                        controls
-                                        playsInline
-                                        loop
-                                      />
-                                     ) : (
-                                      <img
-                                        src={url}
-                                        alt={`Post ${idx + 1}`}
-                                        className="w-full h-full object-cover block touch-pinch-zoom"
-                                        loading="lazy"
-                                        decoding="async"
-                                        style={{ touchAction: 'pinch-zoom' }}
-                                      />
-                                    )}
-                                  </div>
-                                </CarouselItem>
-                              );
-                            })}
-                          </CarouselContent>
-                          <CarouselPrevious className="left-2" />
-                          <CarouselNext className="right-2" />
-                        </Carousel>
-                      ) : (() => {
-                        const isVideo = mediaUrls[0].includes('.mp4') || mediaUrls[0].includes('.mov') || mediaUrls[0].includes('.webm');
-                        return (
-                          <div className="aspect-square w-full">
-                            {isVideo ? (
-                              <video
-                                src={mediaUrls[0]}
-                                className="w-full h-full object-cover block touch-pinch-zoom"
-                                controls
-                                playsInline
-                                loop
-                              />
-                            ) : (
-                              <img
-                                src={mediaUrls[0]}
-                                alt="Post"
-                                className="w-full h-full object-cover block touch-pinch-zoom"
-                                loading="lazy"
-                                decoding="async"
-                                style={{ touchAction: 'pinch-zoom' }}
-                              />
-                            )}
-                          </div>
-                        );
-                      })()}
-                      {hasMultipleMedia && (
-                        <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1">
-                          {mediaUrls.map((_, idx) => (
-                            <div 
-                              key={idx} 
-                              className="w-1.5 h-1.5 rounded-full bg-white/80"
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Post Actions */}
-                  <div className="post-compact-actions space-y-2.5">
-                    <PostActions
-                      postId={postId}
-                      likesCount={item.likes_count || 0}
-                      commentsCount={item.comments_count || 0}
-                      sharesCount={item.shares_count || 0}
-                      locationId={locationId}
-                      locationName={locationName}
-                      onCommentClick={() => handleCommentClick(postId)}
-                      onShareClick={() => handleShareClick(postId)}
+                return (
+                  <Suspense key={item.id} fallback={<Skeleton className="h-96 w-full" />}>
+                    <FeedPostItem
+                      item={item}
+                      profile={profile}
+                      userHasStory={userHasStory}
+                      postLikes={postLikes}
+                      expandedCaptions={expandedCaptions}
+                      onAvatarClick={handleAvatarClick}
+                      onLocationClick={handleLocationClick}
+                      onCommentClick={handleCommentClick}
+                      onShareClick={handleShareClick}
+                      onToggleCaption={toggleCaption}
                     />
-
-                    {/* Likes Section */}
-                    {item.likes_count > 0 && (
-                      <div className="flex items-center gap-2 text-left">
-                        {postLikes.get(postId) && postLikes.get(postId)!.length > 0 && (
-                          <>
-                            <div className="flex -space-x-2">
-                              {postLikes.get(postId)!.slice(0, 3).map((like) => (
-                                <button
-                                  key={like.user_id}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigate(`/profile/${like.user_id}`);
-                                  }}
-                                  className="relative"
-                                >
-                                  <Avatar className="h-6 w-6 border-2 border-background">
-                                    <AvatarImage src={like.avatar_url || undefined} />
-                                    <AvatarFallback className="text-xs bg-primary/10">
-                                      {like.username.slice(0, 2).toUpperCase()}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                </button>
-                              ))}
-                            </div>
-                            <div className="text-sm">
-                              <span className="text-foreground">{t('likedBy')} </span>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate(`/profile/${postLikes.get(postId)![0].user_id}`);
-                                }}
-                                className="font-semibold hover:opacity-70"
-                              >
-                                {postLikes.get(postId)![0].username}
-                              </button>
-                              {item.likes_count > 1 && (
-                                <span className="text-foreground">
-                                  {' '}{t('notifications:andOthers', { count: item.likes_count - 1 })}
-                                </span>
-                              )}
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Caption */}
-                    {caption && renderCaption(caption, item.id, username, userId)}
-
-                     {/* Timestamp */}
-                    <p className="text-xs text-muted-foreground uppercase text-left">
-                      {formatDistanceToNow(new Date(createdAt), { addSuffix: true, locale: dfnsLocale })}
-                    </p>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
+                  </Suspense>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Comment Drawer */}

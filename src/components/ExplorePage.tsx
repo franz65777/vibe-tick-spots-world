@@ -1,19 +1,11 @@
-import React, { useState, useEffect, useRef, memo } from 'react';
+import React, { useState, useEffect, useRef, memo, lazy, Suspense } from 'react';
 import { Search, MapPin, Users, UserPlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { searchService } from '@/services/searchService';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTabPrefetch } from '@/hooks/useTabPrefetch';
-import NoResults from './explore/NoResults';
-import UserCard from './explore/UserCard';
-import LocationPostLibrary from './explore/LocationPostLibrary';
-import LocationGrid from './explore/LocationGrid';
-import CommunityChampions from './home/CommunityChampions';
-import { useCommunityChampions } from '@/hooks/useCommunityChampions';
-import SimpleCategoryFilter from './explore/SimpleCategoryFilter';
 import { AllowedCategory } from '@/utils/allowedCategories';
 import { useUserSearchHistory } from '@/hooks/useUserSearchHistory';
 import { useFollowSuggestions } from '@/hooks/useFollowSuggestions';
@@ -22,6 +14,15 @@ import { toast } from 'sonner';
 import StoriesViewer from './StoriesViewer';
 import { useTranslation } from 'react-i18next';
 import { useMutualFollowers } from '@/hooks/useMutualFollowers';
+import { useCommunityChampions } from '@/hooks/useCommunityChampions';
+
+// Lazy load heavy components
+const ExploreHeaderBar = lazy(() => import('./explore/ExploreHeaderBar'));
+const ExploreResults = lazy(() => import('./explore/ExploreResults'));
+const NoResults = lazy(() => import('./explore/NoResults'));
+const UserCard = lazy(() => import('./explore/UserCard'));
+const LocationPostLibrary = lazy(() => import('./explore/LocationPostLibrary'));
+const CommunityChampions = lazy(() => import('./home/CommunityChampions'));
 
 // Small component to render mutual followers line for recent items
 const RecentMutualFollowers = ({ userId }: { userId: string }) => {
@@ -405,210 +406,152 @@ const ExplorePage = memo(() => {
   
   return (
     <div className="flex flex-col h-full">
-      {/* Simplified Header */}
-      <div className="bg-background pt-safe">
-        <div className="px-1 py-4 pt-2">
-          {/* Search Mode Toggle */}
-          <div className="flex bg-muted rounded-xl p-1 mb-4">
-            <button onClick={() => setSearchMode('locations')} className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all ${searchMode === 'locations' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>
-              <MapPin className="w-4 h-4" />
-              {t('places', { ns: 'explore' })}
-            </button>
-            <button onClick={() => setSearchMode('users')} className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all ${searchMode === 'users' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>
-              <Users className="w-4 h-4" />
-              {t('people', { ns: 'explore' })}
-            </button>
-          </div>
-
-          {/* Search Bar */}
-          <div className="relative flex items-center gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
-              <Input
-                ref={searchInputRef}
-                type="text"
-                placeholder={searchMode === 'locations' ? t('searchPlaces', { ns: 'explore' }) : t('searchPeople', { ns: 'explore' })}
-                value={searchQuery}
-                onChange={e => handleSearch(e.target.value)}
-                onFocus={() => setInputFocused(true)}
-                onBlur={() => setTimeout(() => setInputFocused(false), 100)}
-                className="pl-12 pr-4 h-12 bg-muted/50 border-border focus:bg-background rounded-xl"
-              />
-              {searchQuery && <Button onClick={clearSearch} variant="ghost" size="sm" className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-muted rounded-full">
-                  ×
-                </Button>}
-            </div>
-            {(inputFocused || searchQuery) && (
-              <Button
-                onClick={() => searchInputRef.current?.blur()}
-                variant="ghost"
-                className="text-sm font-medium text-primary hover:text-primary/80 px-3 shrink-0"
-              >
-                {t('cancel', { ns: 'common' })}
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
+      {/* Header */}
+      <Suspense fallback={<div className="h-32" />}>
+        <ExploreHeaderBar
+          searchMode={searchMode}
+          searchQuery={searchQuery}
+          inputFocused={inputFocused}
+          searchInputRef={searchInputRef}
+          onSearchModeChange={setSearchMode}
+          onSearchChange={handleSearch}
+          onInputFocus={setInputFocused}
+          onClearSearch={clearSearch}
+        />
+      </Suspense>
 
       {/* Results */}
       <div className="flex-1 overflow-y-auto scrollbar-hide pb-16">
-        {loading || isSearching ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-gray-600 font-medium">
-                {isSearching ? t('searching', { ns: 'common' }) : t('loading', { ns: 'common' })}
-              </span>
-            </div>
-          </div>
-        ) : (
-          <>
-            {searchMode === 'locations' ? (
-              <>
-                {/* Category Filter - No container padding, let grid handle it */}
-                <SimpleCategoryFilter
-                  selectedCategory={selectedCategory}
-                  onCategorySelect={setSelectedCategory}
-                />
-
-                {/* Location Grid */}
-                <LocationGrid
-                  searchQuery={searchQuery}
-                  selectedCategory={selectedCategory}
-                />
-              </>
-            ) : (
-              <>
-                {/* Search History & Follow Suggestions - Only in People mode */}
-                {!isSearchActive && (
-                  <div className="px-1 py-2 space-y-4">
-                    {/* Search History - moved up */}
-                    {localSearchHistory.length > 0 && (
-                      <div>
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                            <Search className="w-4 h-4" />
-                            {t('recent', { ns: 'explore' })}
-                          </h3>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={async () => {
-                              // Optimistic clear
-                              setLocalSearchHistory([]);
-                              await clearAllHistory();
-                            }}
-                            className="text-xs text-muted-foreground hover:text-destructive h-7"
-                          >
-                            {t('clearHistory', { ns: 'common' })}
-                          </Button>
-                        </div>
-                        <div className="space-y-2">
-                          {displayedHistory.map((item) => (
-                            <div
-                              key={item.id}
-                              className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors animate-fade-in"
-                            >
-                              <div
-                                className="relative flex-shrink-0 cursor-pointer"
-                                onClick={() => handleHistoryAvatarClick(item)}
-                              >
-                                <Avatar className="h-10 w-10">
-                                  <AvatarImage src={item.avatar_url || undefined} />
-                                  <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white">
-                                    {item.username?.[0]?.toUpperCase() || 'U'}
-                                  </AvatarFallback>
-                                </Avatar>
-                                {item.has_active_story && (
-                                  <div className="absolute inset-0 rounded-full ring-2 ring-primary" />
-                                )}
-                              </div>
-                              <div
-                                className="flex-1 min-w-0 cursor-pointer text-left"
-                                onClick={() => handleHistoryAvatarClick(item)}
-                              >
-                                <p className="text-sm font-medium text-foreground truncate text-left">
-                                  {item.username || 'User'}
-                                </p>
-                                {item.target_user_id && (
-                                  <RecentMutualFollowers userId={item.target_user_id} />
-                                )}
-                              </div>
-                              <button
-                                onClick={async (e) => {
-                                  e.stopPropagation();
-                                  // Optimistic update
-                                  setLocalSearchHistory(prev => prev.filter(h => h.target_user_id !== item.target_user_id));
-                                  if (item.target_user_id) {
-                                    setHiddenUserIds(prev => {
-                                      const n = new Set(prev);
-                                      n.add(item.target_user_id as string);
-                                      return n;
-                                    });
-                                  }
-                                  if (user) {
-                                    try {
-                                      // Remove entries by target id (any search_type)
-                                      await supabase
-                                        .from('search_history')
-                                        .delete()
-                                        .eq('user_id', user.id)
-                                        .eq('target_user_id', item.target_user_id);
-
-                                      // Legacy: rows saved with username only (case-insensitive)
-                                      if (item.username) {
-                                        await supabase
-                                          .from('search_history')
-                                          .delete()
-                                          .eq('user_id', user.id)
-                                          .ilike('search_query', item.username);
-                                      }
-
-                                      // Legacy: rows saved with UUID string in search_query
-                                      await supabase
-                                        .from('search_history')
-                                        .delete()
-                                        .eq('user_id', user.id)
-                                        .eq('search_query', item.target_user_id);
-
-                                      await fetchSearchHistory();
-                                    } catch (err) {
-                                      console.error('Error deleting history item:', err);
-                                      // Re-sync
-                                      await fetchSearchHistory();
-                                    }
-                                  }
-                                }}
-                                className="p-1 hover:bg-muted rounded-full"
-                              >
-                                <X className="w-4 h-4 text-muted-foreground" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                        {localSearchHistory.length > 10 && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setShowAllHistory(!showAllHistory)}
-                            className="w-full mt-2 text-xs text-primary hover:text-primary/80"
-                          >
-                            {showAllHistory ? t('less', { ns: 'common' }) : t('showAll', { ns: 'common' })}
-                          </Button>
-                        )}
+        <Suspense fallback={<div className="py-20 flex justify-center"><div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>}>
+          <ExploreResults
+            searchMode={searchMode}
+            loading={loading}
+            isSearching={isSearching}
+            searchQuery={searchQuery}
+            selectedCategory={selectedCategory}
+            onCategorySelect={setSelectedCategory}
+          >
+            {/* User Results - passed as children */}
+            <>
+              {!isSearchActive && (
+                <div className="px-1 py-2 space-y-4">
+                  {/* Search History */}
+                  {localSearchHistory.length > 0 && (
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                          <Search className="w-4 h-4" />
+                          {t('recent', { ns: 'explore' })}
+                        </h3>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={async () => {
+                            setLocalSearchHistory([]);
+                            await clearAllHistory();
+                          }}
+                          className="text-xs text-muted-foreground hover:text-destructive h-7"
+                        >
+                          {t('clearHistory', { ns: 'common' })}
+                        </Button>
                       </div>
-                    )}
-                  </div>
-                )}
+                      <div className="space-y-2">
+                        {displayedHistory.map((item) => (
+                          <div
+                            key={item.id}
+                            className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors animate-fade-in"
+                          >
+                            <div
+                              className="relative flex-shrink-0 cursor-pointer"
+                              onClick={() => handleHistoryAvatarClick(item)}
+                            >
+                              <Avatar className="h-10 w-10">
+                                <AvatarImage src={item.avatar_url || undefined} />
+                                <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white">
+                                  {item.username?.[0]?.toUpperCase() || 'U'}
+                                </AvatarFallback>
+                              </Avatar>
+                              {item.has_active_story && (
+                                <div className="absolute inset-0 rounded-full ring-2 ring-primary" />
+                              )}
+                            </div>
+                            <div
+                              className="flex-1 min-w-0 cursor-pointer text-left"
+                              onClick={() => handleHistoryAvatarClick(item)}
+                            >
+                              <p className="text-sm font-medium text-foreground truncate text-left">
+                                {item.username || 'User'}
+                              </p>
+                              {item.target_user_id && (
+                                <RecentMutualFollowers userId={item.target_user_id} />
+                              )}
+                            </div>
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                setLocalSearchHistory(prev => prev.filter(h => h.target_user_id !== item.target_user_id));
+                                if (item.target_user_id) {
+                                  setHiddenUserIds(prev => {
+                                    const n = new Set(prev);
+                                    n.add(item.target_user_id as string);
+                                    return n;
+                                  });
+                                }
+                                if (user) {
+                                  try {
+                                    await supabase
+                                      .from('search_history')
+                                      .delete()
+                                      .eq('user_id', user.id)
+                                      .eq('target_user_id', item.target_user_id);
+                                    if (item.username) {
+                                      await supabase
+                                        .from('search_history')
+                                        .delete()
+                                        .eq('user_id', user.id)
+                                        .ilike('search_query', item.username);
+                                    }
+                                    await supabase
+                                      .from('search_history')
+                                      .delete()
+                                      .eq('user_id', user.id)
+                                      .eq('search_query', item.target_user_id);
+                                    await fetchSearchHistory();
+                                  } catch (err) {
+                                    console.error('Error deleting history item:', err);
+                                    await fetchSearchHistory();
+                                  }
+                                }
+                              }}
+                              className="p-1 hover:bg-muted rounded-full"
+                            >
+                              <X className="w-4 h-4 text-muted-foreground" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      {localSearchHistory.length > 10 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowAllHistory(!showAllHistory)}
+                          className="w-full mt-2 text-xs text-primary hover:text-primary/80"
+                        >
+                          {showAllHistory ? t('less', { ns: 'common' }) : t('showAll', { ns: 'common' })}
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
-                {/* User Results - show only when an actual search is active */}
-                {isSearchActive && (
-                  displayUsers.length > 0 ? (
-                    <div className="space-y-1 px-1 pb-6">
-                      {displayUsers.map(user => (
+              {/* User Search Results */}
+              {isSearchActive && (
+                displayUsers.length > 0 ? (
+                  <div className="space-y-1 px-1 pb-6">
+                    {displayUsers.map(user => (
+                      <Suspense key={user.id} fallback={<div className="h-16" />}>
                         <UserCard
-                          key={user.id}
                           user={user}
                           onUserClick={() => handleUserClick(user.id)}
                           onFollowUser={handleFollowUser}
@@ -616,18 +559,20 @@ const ExplorePage = memo(() => {
                           searchQuery={searchQuery}
                           searchMode={searchMode}
                         />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="px-1 py-8">
+                      </Suspense>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="px-1 py-8">
+                    <Suspense fallback={<div />}>
                       <NoResults searchMode="users" searchQuery={searchQuery} />
-                    </div>
-                  )
-                )}
-              </>
-            )}
-          </>
-        )}
+                    </Suspense>
+                  </div>
+                )
+              )}
+            </>
+          </ExploreResults>
+        </Suspense>
       </div>
 
       {/* Stories Viewer */}
@@ -641,20 +586,24 @@ const ExplorePage = memo(() => {
       )}
 
       {/* Location Post Library */}
-      <LocationPostLibrary
-        isOpen={isLocationModalOpen}
-        onClose={handleCloseLocationModal}
-        place={selectedLocation}
-      />
+      <Suspense fallback={<div />}>
+        <LocationPostLibrary
+          isOpen={isLocationModalOpen}
+          onClose={handleCloseLocationModal}
+          place={selectedLocation}
+        />
+      </Suspense>
 
-      {/* Leaderboard Button - fixed at bottom above navigation */}
+      {/* Leaderboard Button */}
       {searchMode === 'users' && !isSearchActive && champions.length > 0 && (
         <div className="fixed bottom-20 left-0 right-0 px-4 pb-2 bg-gradient-to-t from-background via-background to-transparent pointer-events-none">
           <div className="pointer-events-auto">
-            <CommunityChampions 
-              champions={champions} 
-              onUserClick={handleUserClick}
-            />
+            <Suspense fallback={<div />}>
+              <CommunityChampions 
+                champions={champions} 
+                onUserClick={handleUserClick}
+              />
+            </Suspense>
           </div>
         </div>
       )}
