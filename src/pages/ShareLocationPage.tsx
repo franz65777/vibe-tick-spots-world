@@ -39,9 +39,12 @@ const ShareLocationPage = () => {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [followers, setFollowers] = useState<FollowerUser[]>([]);
   const [closeFriends, setCloseFriends] = useState<string[]>([]);
+  const [closeFriendsProfiles, setCloseFriendsProfiles] = useState<FollowerUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [isUserSearchFocused, setIsUserSearchFocused] = useState(false);
 
   // Fetch nearby locations
   useEffect(() => {
@@ -92,9 +95,9 @@ const ShareLocationPage = () => {
         };
       }) || [];
 
-      // Sort by distance and take only closest 5 within reasonable range (e.g., 20km)
+      // Sort by distance and take only closest 5 within 500km
       const nearby = withDistance
-        .filter(loc => loc.distance <= 20) // Only show locations within 20km
+        .filter(loc => loc.distance <= 500) // Only show locations within 500km
         .sort((a, b) => a.distance - b.distance)
         .slice(0, 5);
 
@@ -152,7 +155,19 @@ const ShareLocationPage = () => {
         .eq('user_id', user.id);
 
       if (error) throw error;
-      setCloseFriends(data?.map(cf => cf.friend_id) || []);
+      const friendIds = data?.map(cf => cf.friend_id) || [];
+      setCloseFriends(friendIds);
+
+      // Fetch profiles for close friends
+      if (friendIds.length > 0) {
+        const { data: profiles, error: profileError } = await supabase
+          .from('profiles')
+          .select('id, username, avatar_url')
+          .in('id', friendIds);
+
+        if (profileError) throw profileError;
+        setCloseFriendsProfiles(profiles || []);
+      }
     } catch (error) {
       console.error('Error fetching close friends:', error);
     }
@@ -307,7 +322,7 @@ const ShareLocationPage = () => {
   return (
     <div className="min-h-screen bg-background overflow-y-auto scrollbar-hide">
       {/* Header */}
-      <div className="sticky top-0 z-50 bg-background border-b border-border">
+      <div className="sticky top-0 z-50 bg-background">
         <div className="flex items-center justify-between p-4">
           <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
             <ArrowLeft className="h-5 w-5" />
@@ -355,36 +370,39 @@ const ShareLocationPage = () => {
         {searchResults.length > 0 && (
           <div className="space-y-2">
             <h3 className="text-sm font-medium text-muted-foreground">Risultati ricerca</h3>
-            {searchResults.map((result, index) => (
-              <button
-                key={result.id || index}
-                onClick={() => {
-                  setSelectedLocation({
-                    id: result.id,
-                    name: result.name,
-                    address: result.address,
-                    coordinates: { lat: result.lat, lng: result.lng },
-                    category: result.category
-                  });
-                  setSearchQuery('');
-                  setSearchResults([]);
-                }}
-                className="w-full text-left p-3 rounded-lg border border-border hover:bg-accent transition-colors"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="font-medium">{result.name}</p>
-                    <p className="text-sm text-muted-foreground">{result.address}</p>
+            <div className="max-h-80 overflow-y-auto space-y-2 scrollbar-hide">
+              {searchResults.map((result, index) => (
+                <button
+                  key={result.id || index}
+                  onClick={() => {
+                    setSelectedLocation({
+                      id: result.id,
+                      name: result.name,
+                      address: result.address,
+                      coordinates: { lat: result.lat, lng: result.lng },
+                      category: result.category
+                    });
+                    setSearchQuery('');
+                    setSearchResults([]);
+                    setIsSearchFocused(false);
+                  }}
+                  className="w-full text-left p-3 rounded-lg border border-border hover:bg-accent transition-colors"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="font-medium">{result.name}</p>
+                      <p className="text-sm text-muted-foreground">{result.address}</p>
+                    </div>
+                    {result.distance !== undefined && result.distance !== Infinity && (
+                      <p className="text-xs text-muted-foreground ml-2">{result.distance.toFixed(1)} km</p>
+                    )}
                   </div>
-                  {result.distance !== undefined && result.distance !== Infinity && (
-                    <p className="text-xs text-muted-foreground ml-2">{result.distance.toFixed(1)} km</p>
+                  {!result.isExisting && (
+                    <p className="text-xs text-primary mt-1">Nuovo luogo - verrà aggiunto all'app</p>
                   )}
-                </div>
-                {!result.isExisting && (
-                  <p className="text-xs text-primary mt-1">Nuovo luogo - verrà aggiunto all'app</p>
-                )}
-              </button>
-            ))}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -392,17 +410,19 @@ const ShareLocationPage = () => {
         {!searchQuery && !selectedLocation && nearbyLocations.length > 0 && (
           <div className="space-y-2">
             <h3 className="text-sm font-medium text-muted-foreground">Luoghi nelle vicinanze</h3>
-            {nearbyLocations.map((loc) => (
-              <button
-                key={loc.id}
-                onClick={() => setSelectedLocation(loc)}
-                className="w-full text-left p-3 rounded-lg border border-border hover:bg-accent transition-colors"
-              >
-                <p className="font-medium">{loc.name}</p>
-                <p className="text-sm text-muted-foreground">{loc.address}</p>
-                <p className="text-xs text-muted-foreground mt-1">{loc.distance.toFixed(1)} km</p>
-              </button>
-            ))}
+            <div className="max-h-80 overflow-y-auto space-y-2 scrollbar-hide">
+              {nearbyLocations.map((loc) => (
+                <button
+                  key={loc.id}
+                  onClick={() => setSelectedLocation(loc)}
+                  className="w-full text-left p-3 rounded-lg border border-border hover:bg-accent transition-colors"
+                >
+                  <p className="font-medium">{loc.name}</p>
+                  <p className="text-sm text-muted-foreground">{loc.address}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{loc.distance.toFixed(1)} km</p>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -410,8 +430,20 @@ const ShareLocationPage = () => {
         {selectedLocation && (
           <div className="space-y-4">
             <div className="p-4 rounded-lg bg-primary/5 border border-primary">
-              <p className="font-medium">{selectedLocation.name}</p>
-              <p className="text-sm text-muted-foreground">{selectedLocation.address}</p>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="font-medium">{selectedLocation.name}</p>
+                  <p className="text-sm text-muted-foreground">{selectedLocation.address}</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedLocation(null)}
+                  className="ml-2"
+                >
+                  Modifica
+                </Button>
+              </div>
             </div>
 
             {/* Share Type Selection */}
@@ -427,59 +459,152 @@ const ShareLocationPage = () => {
                 <Users className="h-5 w-5" />
                 <div className="flex-1 text-left">
                   <p className="font-medium">Tutti i follower</p>
-                  <p className="text-sm text-muted-foreground">Visibile a tutti</p>
+                  {shareType !== 'all_followers' && (
+                    <p className="text-sm text-muted-foreground">Visibile a tutti</p>
+                  )}
                 </div>
               </button>
 
-              <button
-                onClick={() => setShareType('close_friends')}
-                className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-colors ${
-                  shareType === 'close_friends' ? 'border-primary bg-primary/5' : 'border-border hover:bg-accent'
-                }`}
-              >
-                <UserCheck className="h-5 w-5" />
-                <div className="flex-1 text-left">
-                  <p className="font-medium">Amici stretti</p>
-                  <p className="text-sm text-muted-foreground">Solo amici stretti ({closeFriends.length})</p>
-                </div>
-              </button>
+              {shareType !== 'all_followers' && (
+                <>
+                  <button
+                    onClick={() => setShareType('close_friends')}
+                    className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-colors ${
+                      shareType === 'close_friends' ? 'border-primary bg-primary/5' : 'border-border hover:bg-accent'
+                    }`}
+                  >
+                    <UserCheck className="h-5 w-5" />
+                    <div className="flex-1 text-left">
+                      <p className="font-medium">Amici stretti</p>
+                      {shareType !== 'close_friends' && (
+                        <p className="text-sm text-muted-foreground">Solo amici stretti ({closeFriends.length})</p>
+                      )}
+                    </div>
+                  </button>
 
-              <button
-                onClick={() => setShareType('specific_users')}
-                className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-colors ${
-                  shareType === 'specific_users' ? 'border-primary bg-primary/5' : 'border-border hover:bg-accent'
-                }`}
-              >
-                <User className="h-5 w-5" />
-                <div className="flex-1 text-left">
-                  <p className="font-medium">Utenti specifici</p>
-                  <p className="text-sm text-muted-foreground">Scegli manualmente</p>
-                </div>
-              </button>
+                  <button
+                    onClick={() => setShareType('specific_users')}
+                    className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-colors ${
+                      shareType === 'specific_users' ? 'border-primary bg-primary/5' : 'border-border hover:bg-accent'
+                    }`}
+                  >
+                    <User className="h-5 w-5" />
+                    <div className="flex-1 text-left">
+                      <p className="font-medium">Utenti specifici</p>
+                      {shareType !== 'specific_users' && (
+                        <p className="text-sm text-muted-foreground">Scegli manualmente</p>
+                      )}
+                    </div>
+                  </button>
+                </>
+              )}
             </div>
+
+            {/* Close Friends Avatars */}
+            {shareType === 'close_friends' && closeFriendsProfiles.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium">Amici stretti ({closeFriendsProfiles.length})</h3>
+                <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
+                  {closeFriendsProfiles.map((friend) => (
+                    <div key={friend.id} className="flex flex-col items-center gap-1 min-w-fit">
+                      <Avatar className="h-12 w-12 border-2 border-primary">
+                        <AvatarImage src={friend.avatar_url || undefined} />
+                        <AvatarFallback>{friend.username[0].toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <p className="text-xs text-center max-w-[60px] truncate">{friend.username}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* User Selection for specific users */}
             {shareType === 'specific_users' && (
               <div className="space-y-2">
                 <h3 className="text-sm font-medium">Seleziona utenti</h3>
-                <div className="max-h-64 overflow-y-auto space-y-2">
-                  {followers.map((follower) => (
-                    <button
-                      key={follower.id}
-                      onClick={() => toggleUserSelection(follower.id)}
-                      className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-colors ${
-                        selectedUsers.includes(follower.id) 
-                          ? 'border-primary bg-primary/5' 
-                          : 'border-border hover:bg-accent'
-                      }`}
+                
+                {/* User Search Bar */}
+                <div className="relative flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      placeholder="Cerca utenti..."
+                      value={userSearchQuery}
+                      onChange={(e) => setUserSearchQuery(e.target.value)}
+                      onFocus={() => setIsUserSearchFocused(true)}
+                      className="pl-3"
+                    />
+                    {userSearchQuery && (
+                      <button
+                        onClick={() => setUserSearchQuery('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                  {isUserSearchFocused && (
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setUserSearchQuery('');
+                        setIsUserSearchFocused(false);
+                        if (document.activeElement instanceof HTMLElement) {
+                          document.activeElement.blur();
+                        }
+                      }}
                     >
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={follower.avatar_url || undefined} />
-                        <AvatarFallback>{follower.username[0].toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <p className="font-medium">{follower.username}</p>
-                    </button>
-                  ))}
+                      Annulla
+                    </Button>
+                  )}
+                </div>
+
+                {/* Selected Users Avatars */}
+                {selectedUsers.length > 0 && (
+                  <div className="flex gap-2 flex-wrap">
+                    {selectedUsers.map((userId) => {
+                      const user = followers.find(f => f.id === userId);
+                      if (!user) return null;
+                      return (
+                        <div key={userId} className="relative">
+                          <Avatar className="h-12 w-12 border-2 border-primary">
+                            <AvatarImage src={user.avatar_url || undefined} />
+                            <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <button
+                            onClick={() => toggleUserSelection(userId)}
+                            className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-xs"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* User List */}
+                <div className="max-h-64 overflow-y-auto space-y-2 scrollbar-hide">
+                  {followers
+                    .filter(follower => 
+                      follower.username.toLowerCase().includes(userSearchQuery.toLowerCase())
+                    )
+                    .map((follower) => (
+                      <button
+                        key={follower.id}
+                        onClick={() => toggleUserSelection(follower.id)}
+                        className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-colors ${
+                          selectedUsers.includes(follower.id) 
+                            ? 'border-primary bg-primary/5' 
+                            : 'border-border hover:bg-accent'
+                        }`}
+                      >
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={follower.avatar_url || undefined} />
+                          <AvatarFallback>{follower.username[0].toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <p className="font-medium">{follower.username}</p>
+                      </button>
+                    ))}
                 </div>
               </div>
             )}
