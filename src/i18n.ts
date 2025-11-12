@@ -445,9 +445,12 @@ const resources = {
       emptyFeedDescription: 'Start following people to see their latest discoveries and activities',
       discoverPeople: 'Discover People'
     },
-    badges: {
-      cityWanderer: 'City Wanderer',
-      cityWandererDesc: 'Save locations in 3 different cities',
+      badges: {
+        newBadgeUnlocked: 'New Badge Unlocked',
+        previouslyEarned: 'Previously Earned',
+        rewards: 'Rewards',
+        cityWanderer: 'City Wanderer',
+        cityWandererDesc: 'Save locations in 3 different cities',
       globeTrotter: 'Globe Trotter',
       globeTrotterDesc: 'Save locations in 20 different cities',
       worldExplorer: 'World Explorer',
@@ -483,8 +486,7 @@ const resources = {
       prolificPoster: 'Prolific Poster',
       prolificPosterDesc: 'Create 25+ posts',
       contentMaster: 'Content Master',
-      contentMasterDesc: 'Create 100+ posts',
-      newBadgeUnlocked: 'New Badge Unlocked'
+      contentMasterDesc: 'Create 100+ posts'
     },
     notifications: {
       title: 'Notifications',
@@ -3628,9 +3630,12 @@ const resources = {
       emptyFeedDescription: 'Comece a seguir pessoas para ver suas últimas descobertas e atividades',
       discoverPeople: 'Descobrir pessoas'
     },
-    badges: {
-      cityWanderer: 'Viajante da Cidade',
-      cityWandererDesc: 'Salve locais em 3 cidades diferentes',
+      badges: {
+        newBadgeUnlocked: 'Novo Badge Desbloqueado',
+        previouslyEarned: 'Ganhos Anteriormente',
+        rewards: 'Recompensas',
+        cityWanderer: 'Viajante da Cidade',
+        cityWandererDesc: 'Salve locais em 3 cidades diferentes',
       globeTrotter: 'Globetrotter',
       globeTrotterDesc: 'Salve locais em 20 cidades diferentes',
       worldExplorer: 'Explorador Mundial',
@@ -3666,8 +3671,7 @@ const resources = {
       prolificPoster: 'Postador Prolífico',
       prolificPosterDesc: 'Crie 25+ publicações',
       contentMaster: 'Mestre de Conteúdo',
-      contentMasterDesc: 'Crie 100+ publicações',
-      newBadgeUnlocked: 'Novo badge desbloqueado'
+      contentMasterDesc: 'Crie 100+ publicações'
     },
     notifications: {
       title: 'Notificações',
@@ -5876,9 +5880,12 @@ const resources = {
       emptyFeedDescription: 'उन लोगों को फॉलो करना शुरू करें जिन्हें आप देखना चाहते हैं',
       discoverPeople: 'लोगों को खोजें'
     },
-    badges: {
-      cityWanderer: 'शहर घुमक्कड़',
-      cityWandererDesc: '3 अलग-अलग शहरों में स्थान सहेजें',
+      badges: {
+        newBadgeUnlocked: 'नया बैज अनलॉक हुआ',
+        previouslyEarned: 'पहले अर्जित किया',
+        rewards: 'पुरस्कार',
+        cityWanderer: 'शहर घुमक्कड़',
+        cityWandererDesc: '3 अलग-अलग शहरों में स्थान सहेजें',
       globeTrotter: 'ग्लोब ट्रॉटर',
       globeTrotterDesc: '20 अलग-अलग शहरों में स्थान सहेजें',
       worldExplorer: 'विश्व अन्वेषक',
@@ -5914,8 +5921,7 @@ const resources = {
       prolificPoster: 'प्रचुर पोस्टर',
       prolificPosterDesc: '25+ पोस्ट बनाएं',
       contentMaster: 'सामग्री मास्टर',
-      contentMasterDesc: '100+ पोस्ट बनाएं',
-      newBadgeUnlocked: 'नई बैज अनलॉक हुई'
+      contentMasterDesc: '100+ पोस्ट बनाएं'
     },
     notifications: {
       title: 'सूचनाएं',

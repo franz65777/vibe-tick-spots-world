@@ -1,35 +1,56 @@
 
 import { useState } from 'react';
-import { X, MapPin, Trophy, Target, Calendar } from 'lucide-react';
+import { X, MapPin, Trophy, Target, Calendar, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { useTranslation } from 'react-i18next';
 
 interface Badge {
   id: string;
   name: string;
   description: string;
   icon: string;
-  category: 'explorer' | 'social' | 'foodie' | 'engagement' | 'streak' | 'milestone';
+  category: 'explorer' | 'social' | 'foodie' | 'engagement' | 'streak' | 'milestone' | 'planner';
   level: 'bronze' | 'silver' | 'gold' | 'platinum';
   gradient: string;
   earned: boolean;
   progress?: number;
   maxProgress?: number;
   earnedDate?: string;
+  nextBadgeId?: string;
 }
 
 interface AchievementDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   badge: Badge | null;
+  allBadges?: Badge[];
 }
 
-const AchievementDetailModal = ({ isOpen, onClose, badge }: AchievementDetailModalProps) => {
+const AchievementDetailModal = ({ isOpen, onClose, badge, allBadges = [] }: AchievementDetailModalProps) => {
+  const { t } = useTranslation();
+  
   if (!isOpen || !badge) return null;
 
   const progressPercentage = badge.progress && badge.maxProgress 
     ? (badge.progress / badge.maxProgress) * 100 
     : badge.earned ? 100 : 0;
+
+  // Find previous earned badges in the same category
+  const getPreviousBadges = () => {
+    if (!badge.earned) return [];
+    
+    const categoryBadges = allBadges.filter(b => 
+      b.category === badge.category && 
+      b.earned && 
+      b.id !== badge.id
+    );
+    
+    const levelOrder = { bronze: 1, silver: 2, gold: 3, platinum: 4 };
+    return categoryBadges
+      .filter(b => levelOrder[b.level] < levelOrder[badge.level])
+      .sort((a, b) => levelOrder[a.level] - levelOrder[b.level]);
+  };
 
   const getNextSteps = () => {
     if (badge.earned) return [];
@@ -174,11 +195,33 @@ const AchievementDetailModal = ({ isOpen, onClose, badge }: AchievementDetailMod
             </div>
           )}
 
+          {/* Previous Badges */}
+          {badge.earned && getPreviousBadges().length > 0 && (
+            <div className="mb-6">
+              <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-3">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                {t('previouslyEarned', { ns: 'badges' })}
+              </h3>
+              <div className="space-y-2">
+                {getPreviousBadges().map((prevBadge) => (
+                  <div key={prevBadge.id} className={`flex items-center gap-3 p-3 bg-gradient-to-r ${prevBadge.gradient} bg-opacity-10 rounded-xl`}>
+                    <span className="text-2xl">{prevBadge.icon}</span>
+                    <div className="flex-1">
+                      <span className="text-sm font-medium text-gray-900 block">{prevBadge.name}</span>
+                      <span className="text-xs text-gray-600">{prevBadge.description}</span>
+                    </div>
+                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Rewards */}
           <div>
             <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-3">
               <Trophy className="w-5 h-5 text-yellow-600" />
-              Rewards
+              {t('rewards', { ns: 'badges' })}
             </h3>
             <div className="space-y-2">
               {getRewards().map((reward, index) => (

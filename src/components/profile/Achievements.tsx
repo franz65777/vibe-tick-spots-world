@@ -25,9 +25,9 @@ const Achievements = ({ userId }: AchievementsProps) => {
 
   if (loading) {
     return (
-      <div className="px-4 py-4 bg-background border-b border-border">
+      <div className="px-4 py-4 bg-[#5c6b7d]">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-foreground">{t('achievements', { ns: 'profile' })}</h2>
+          <h2 className="text-lg font-semibold text-white">{t('achievements', { ns: 'profile' })}</h2>
           <div className="w-16 h-4 bg-muted rounded animate-pulse"></div>
         </div>
         
@@ -45,10 +45,10 @@ const Achievements = ({ userId }: AchievementsProps) => {
 
   return (
     <>
-      <div className="px-4 py-4 bg-background border-b border-border">
+      <div className="px-4 py-4 bg-[#5c6b7d]">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-foreground">{t('achievements', { ns: 'profile' })}</h2>
-          <span className="text-sm text-primary font-medium">{earned}/{total} {t('earned', { ns: 'profile' })}</span>
+          <h2 className="text-lg font-semibold text-white">{t('achievements', { ns: 'profile' })}</h2>
+          <span className="text-sm text-white/80 font-medium">{earned}/{total} {t('earned', { ns: 'profile' })}</span>
         </div>
         
         <div className="grid grid-cols-2 gap-4 overflow-y-auto scrollbar-hide">
@@ -111,6 +111,7 @@ const Achievements = ({ userId }: AchievementsProps) => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         badge={selectedBadge}
+        allBadges={badges}
       />
     </>
   );
