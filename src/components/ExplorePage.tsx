@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Search, MapPin, Users, UserPlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +38,7 @@ const ExplorePage = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState(() => {
     const state = location.state as { searchQuery?: string } | null;
@@ -375,6 +376,7 @@ const ExplorePage = () => {
   const clearSearch = () => {
     setSearchQuery('');
     setFilteredUsers([]);
+    searchInputRef.current?.blur(); // Hide mobile keyboard
   };
   
   const clearAllHistory = async () => {
@@ -416,6 +418,7 @@ const ExplorePage = () => {
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
               <Input
+                ref={searchInputRef}
                 type="text"
                 placeholder={searchMode === 'locations' ? t('searchPlaces', { ns: 'explore' }) : t('searchPeople', { ns: 'explore' })}
                 value={searchQuery}
