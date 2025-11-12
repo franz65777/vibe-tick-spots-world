@@ -96,6 +96,51 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
       let finalLocations: MapLocation[] = [];
 
       switch (mapFilter) {
+        case 'shared': {
+          // Fetch locations shared with the user
+          const { data: sharedWithMe, error: sharedError } = await supabase
+            .from('user_location_shares')
+            .select(`
+              id,
+              location_id,
+              location_name,
+              location_address,
+              latitude,
+              longitude,
+              share_type,
+              created_at,
+              user_id,
+              profiles!user_location_shares_user_id_fkey(username, avatar_url)
+            `)
+            .or(`share_type.eq.all_followers,shared_with_user_ids.cs.{${user.id}}`)
+            .order('created_at', { ascending: false })
+            .limit(100);
+
+          if (sharedError) {
+            console.error('Error fetching shared locations:', sharedError);
+          }
+
+          finalLocations = (sharedWithMe || []).map(share => ({
+            id: share.location_id || share.id,
+            name: share.location_name,
+            category: 'restaurant', // Default category for shared locations
+            address: share.location_address,
+            city: '',
+            coordinates: {
+              lat: Number(share.latitude) || 0,
+              lng: Number(share.longitude) || 0
+            },
+            user_id: share.user_id,
+            created_at: share.created_at,
+            isFollowing: true
+          })).filter(loc => {
+            // Apply category filter if any
+            if (selectedCategories.length > 0 && !selectedCategories.includes(loc.category)) return false;
+            return true;
+          });
+          break;
+        }
+
         case 'following': {
           // Fetch locations saved by people the user follows from both internal locations and Google saved places
           const [locRes, placesRes] = await Promise.all([

@@ -98,6 +98,12 @@ class AnalyticsService {
     try {
       const userId = await this.getCurrentUserId();
       if (!userId) return; // Skip tracking if no user
+      
+      // Validate event_type exists
+      if (!event.event_type || event.event_type.trim() === '') {
+        console.warn('⚠️ Skipping analytics event: event_type is required');
+        return;
+      }
 
       // Use secure analytics service with anonymization
       const rawSessionId = event.session_id || this.getSessionId();

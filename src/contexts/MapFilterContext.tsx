@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-export type MapFilter = 'following' | 'popular' | 'recommended' | 'saved';
+export type MapFilter = 'following' | 'popular' | 'recommended' | 'saved' | 'shared';
 
 interface MapFilterContextType {
   activeFilter: MapFilter;

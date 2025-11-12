@@ -29,29 +29,44 @@ export const usePinEngagement = (locationId: string | null, googlePlaceId: strin
       setLoading(true);
       try {
         console.log('🔍 Fetching pin engagement for:', { locationId, googlePlaceId });
-        const { data, error } = await supabase.rpc('get_pin_engagement', {
-          p_location_id: locationId || null,
-          p_google_place_id: googlePlaceId || null
-        } as any);
         
-        if (error) {
-          console.error('❌ RPC error:', error);
-          throw error;
+        // Fallback to direct queries instead of RPC if it fails
+        let totalSaves = 0;
+        let followedUsers: Array<{ id: string; username: string; avatar_url: string | null }> = [];
+
+        try {
+          const { data, error } = await supabase.rpc('get_pin_engagement', {
+            p_location_id: locationId || null,
+            p_google_place_id: googlePlaceId || null
+          } as any);
+          
+          if (error) throw error;
+
+          totalSaves = Number(data?.[0]?.total_saves) || 0;
+          followedUsers = ((data?.[0]?.followed_users as any) || []);
+        } catch (rpcError: any) {
+          // Fallback: count saves directly
+          console.warn('⚠️ RPC failed, using fallback queries:', rpcError.message);
+          
+          if (locationId) {
+            const { count } = await supabase
+              .from('user_saved_locations')
+              .select('*', { count: 'exact', head: true })
+              .eq('location_id', locationId);
+            totalSaves = count || 0;
+          } else if (googlePlaceId) {
+            const { count } = await supabase
+              .from('saved_places')
+              .select('*', { count: 'exact', head: true })
+              .eq('place_id', googlePlaceId);
+            totalSaves = count || 0;
+          }
         }
-
-        console.log('📊 Pin engagement raw data:', data);
-
-        const totalSaves = Number(data?.[0]?.total_saves) || 0;
-        const followedUsers = ((data?.[0]?.followed_users as any) || []) as Array<{
-          id: string;
-          username: string;
-          avatar_url: string | null;
-        }>;
 
         setEngagement({ totalSaves, followedUsers });
       } catch (error) {
         console.error('❌ Error fetching pin engagement:', error);
-        setEngagement(null);
+        setEngagement({ totalSaves: 0, followedUsers: [] });
       } finally {
         setLoading(false);
       }
@@ -76,8 +91,8 @@ export const usePinEngagement = (locationId: string | null, googlePlaceId: strin
       console.warn('Realtime subscription failed, using polling only.', e);
     }
 
-    // Poll every 30s as a fallback
-    intervalId = setInterval(fetchEngagement, 30000);
+    // Poll every 60s to reduce load
+    intervalId = setInterval(fetchEngagement, 60000);
 
     return () => {
       if (channel) supabase.removeChannel(channel);
