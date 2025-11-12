@@ -67,28 +67,33 @@ const MobileNotificationItem = ({
         const uname = notification.data?.user_name || notification.data?.username || null;
         let avatar = notification.data?.user_avatar || notification.data?.avatar_url || null;
 
-        // Resolve missing id or avatar from profiles
-        if (!uid && uname) {
-          const { data: profileByUsername } = await supabase
-            .from('profiles')
-            .select('id, avatar_url')
-            .eq('username', uname)
-            .maybeSingle();
-          if (profileByUsername) {
-            uid = profileByUsername.id;
-            if (!avatar) avatar = profileByUsername.avatar_url ?? null;
-          }
-        } else if (uid && !avatar) {
+        // Always fetch from profiles to ensure we have the latest data
+        if (uid) {
           const { data: profileById } = await supabase
             .from('profiles')
-            .select('avatar_url')
+            .select('id, username, avatar_url')
             .eq('id', uid)
             .maybeSingle();
-          if (profileById?.avatar_url) avatar = profileById.avatar_url;
+          
+          if (profileById) {
+            avatar = profileById.avatar_url ?? avatar;
+          }
+        } else if (uname) {
+          // Resolve by username if no user_id
+          const { data: profileByUsername } = await supabase
+            .from('profiles')
+            .select('id, username, avatar_url')
+            .eq('username', uname)
+            .maybeSingle();
+          
+          if (profileByUsername) {
+            uid = profileByUsername.id;
+            avatar = profileByUsername.avatar_url ?? avatar;
+          }
         }
 
         setTargetUserId(uid);
-        if (avatar) setAvatarOverride(avatar);
+        setAvatarOverride(avatar);
 
         // Check follow status when we have both current user and target
         if (user?.id && uid) {
@@ -164,9 +169,17 @@ const MobileNotificationItem = ({
       navigate(`/post/${notification.data.post_id}`, { state: { fromNotifications: true } });
       return;
     }
-    // Handle location_share - open location detail
-    if (notification.type === 'location_share' && notification.data?.location_id) {
-      navigate(`/`, { state: { openLocationId: notification.data.location_id } });
+    // Handle location_share - open location detail card
+    if (notification.type === 'location_share') {
+      if (notification.data?.location_id) {
+        // Navigate to home with specific location to open
+        navigate('/', { 
+          state: { 
+            openLocationId: notification.data.location_id,
+            fromNotifications: true 
+          } 
+        });
+      }
       return;
     }
     onAction(notification);
@@ -292,29 +305,44 @@ const MobileNotificationItem = ({
 
   const handleOnMyWayClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!user || !targetUserId || !notification.data?.location_name) return;
+    if (!user || !targetUserId || !notification.data?.location_name) {
+      console.log('Missing data for on my way:', { user: !!user, targetUserId, locationName: notification.data?.location_name });
+      return;
+    }
 
+    setIsLoading(true);
     try {
       const message = t('onMyWayMessage', { 
         ns: 'notifications', 
         location: notification.data.location_name 
       });
 
+      console.log('Sending message:', { from: user.id, to: targetUserId, message });
+
       // Send message using direct_messages table
-      const { error } = await supabase
+      const { error, data } = await supabase
         .from('direct_messages')
         .insert({
           sender_id: user.id,
           receiver_id: targetUserId,
           content: message,
           message_type: 'text'
-        });
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      
+      console.log('Message sent successfully:', data);
       toast.success(t('messageSent', { ns: 'notifications' }));
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Failed to send message');
+    } finally {
+      setIsLoading(false);
     }
   };
 
