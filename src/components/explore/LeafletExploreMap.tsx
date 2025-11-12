@@ -72,7 +72,7 @@ const DarkModeTileLayer = ({ isDarkMode }: { isDarkMode: boolean }) => {
         : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png');
   return (
     <TileLayer
-      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>'
+      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://stadiamaps.com/">Stadia Maps</a>'
       url={url}
       maxZoom={19}
       tileSize={mapboxToken ? 512 : undefined}
