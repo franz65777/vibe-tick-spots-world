@@ -17,7 +17,15 @@ interface Badge {
   progress?: number;
   maxProgress?: number;
   earnedDate?: string;
-  nextBadgeId?: string; // For progressive badges
+  nextBadgeId?: string;
+  currentLevel?: number;
+  levels?: {
+    level: number;
+    name: string;
+    requirement: number;
+    earned: boolean;
+    earnedDate?: string;
+  }[];
 }
 
 interface UserStats {
@@ -28,6 +36,7 @@ interface UserStats {
   savedPlacesCount: number;
   likesReceived: number;
   tripsCount: number;
+  reviewsCount: number;
 }
 
 export const useUserBadges = (userId?: string) => {
@@ -42,7 +51,8 @@ export const useUserBadges = (userId?: string) => {
     citiesCount: 0,
     savedPlacesCount: 0,
     likesReceived: 0,
-    tripsCount: 0
+    tripsCount: 0,
+    reviewsCount: 0
   });
   const [loading, setLoading] = useState(true);
 const previousEarnedBadges = useRef<Set<string>>(new Set());
@@ -114,6 +124,13 @@ const fetchUserStats = async (hasCache: boolean = false) => {
       // In a real implementation, you'd create a trips table and count user's trips
       const tripsCount = Math.floor(uniqueCities / 2); // Placeholder logic
 
+      // Count reviews (posts with ratings)
+      const { count: reviewsCount } = await supabase
+        .from('posts')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', targetUserId)
+        .not('rating', 'is', null);
+
       const stats: UserStats = {
         postsCount: profile?.posts_count || 0,
         followersCount: profile?.follower_count || 0,
@@ -121,7 +138,8 @@ const fetchUserStats = async (hasCache: boolean = false) => {
         citiesCount: uniqueCities,
         savedPlacesCount: savedPlaces?.length || 0,
         likesReceived: totalLikes,
-        tripsCount: tripsCount
+        tripsCount: tripsCount,
+        reviewsCount: reviewsCount || 0
       };
 
       setUserStats(stats);
@@ -134,12 +152,21 @@ const fetchUserStats = async (hasCache: boolean = false) => {
     }
   };
 
+  const calculateLevel = (progress: number, levels: { requirement: number }[]) => {
+    for (let i = levels.length - 1; i >= 0; i--) {
+      if (progress >= levels[i].requirement) {
+        return i + 1;
+      }
+    }
+    return 0;
+  };
+
   const calculateProgressiveBadges = (stats: UserStats) => {
     const currentEarnedIds = new Set<string>();
     const allBadges: Badge[] = [
-      // Progressive Explorer Badges (City-based)
+      // Progressive Explorer Badge
       {
-        id: 'city-wanderer',
+        id: 'explorer',
         name: t('cityWanderer', { ns: 'badges' }),
         description: t('cityWandererDesc', { ns: 'badges' }),
         icon: '🌍',
@@ -148,264 +175,108 @@ const fetchUserStats = async (hasCache: boolean = false) => {
         gradient: 'from-green-400 to-teal-500',
         earned: stats.citiesCount >= 3,
         progress: stats.citiesCount,
-        maxProgress: 3,
-        earnedDate: stats.citiesCount >= 3 ? new Date().toISOString() : undefined,
-        nextBadgeId: 'globe-trotter'
-      },
-      {
-        id: 'globe-trotter',
-        name: t('globeTrotter', { ns: 'badges' }),
-        description: t('globeTrotterDesc', { ns: 'badges' }),
-        icon: '🌎',
-        category: 'explorer',
-        level: 'silver',
-        gradient: 'from-blue-400 to-purple-500',
-        earned: stats.citiesCount >= 20,
-        progress: stats.citiesCount,
-        maxProgress: 20,
-        earnedDate: stats.citiesCount >= 20 ? new Date().toISOString() : undefined,
-        nextBadgeId: 'world-explorer'
-      },
-      {
-        id: 'world-explorer',
-        name: t('worldExplorer', { ns: 'badges' }),
-        description: t('worldExplorerDesc', { ns: 'badges' }),
-        icon: '🗺️',
-        category: 'explorer',
-        level: 'gold',
-        gradient: 'from-yellow-400 to-orange-500',
-        earned: stats.citiesCount >= 100,
-        progress: stats.citiesCount,
-        maxProgress: 100,
-        earnedDate: stats.citiesCount >= 100 ? new Date().toISOString() : undefined,
-        nextBadgeId: 'continental-explorer'
-      },
-      {
-        id: 'continental-explorer',
-        name: t('continentalExplorer', { ns: 'badges' }),
-        description: t('continentalExplorerDesc', { ns: 'badges' }),
-        icon: '🌐',
-        category: 'explorer',
-        level: 'platinum',
-        gradient: 'from-cyan-400 to-blue-600',
-        earned: stats.citiesCount >= 250,
-        progress: stats.citiesCount,
-        maxProgress: 250,
-        earnedDate: stats.citiesCount >= 250 ? new Date().toISOString() : undefined
+        currentLevel: calculateLevel(stats.citiesCount, [
+          { requirement: 3 },
+          { requirement: 10 },
+          { requirement: 25 }
+        ]),
+        levels: [
+          { level: 1, name: 'Bronze', requirement: 3, earned: stats.citiesCount >= 3, earnedDate: stats.citiesCount >= 3 ? new Date().toISOString() : undefined },
+          { level: 2, name: 'Silver', requirement: 10, earned: stats.citiesCount >= 10, earnedDate: stats.citiesCount >= 10 ? new Date().toISOString() : undefined },
+          { level: 3, name: 'Gold', requirement: 25, earned: stats.citiesCount >= 25, earnedDate: stats.citiesCount >= 25 ? new Date().toISOString() : undefined }
+        ]
       },
 
-      // Progressive Trip Planner Badges
-      {
-        id: 'trip-planner',
-        name: t('tripPlanner', { ns: 'badges' }),
-        description: t('tripPlannerDesc', { ns: 'badges' }),
-        icon: '📋',
-        category: 'planner',
-        level: 'bronze',
-        gradient: 'from-purple-400 to-pink-500',
-        earned: stats.tripsCount >= 1,
-        progress: stats.tripsCount,
-        maxProgress: 1,
-        earnedDate: stats.tripsCount >= 1 ? new Date().toISOString() : undefined,
-        nextBadgeId: 'master-planner'
-      },
-      {
-        id: 'master-planner',
-        name: t('masterPlanner', { ns: 'badges' }),
-        description: t('masterPlannerDesc', { ns: 'badges' }),
-        icon: '🗓️',
-        category: 'planner',
-        level: 'silver',
-        gradient: 'from-indigo-400 to-purple-600',
-        earned: stats.tripsCount >= 5,
-        progress: stats.tripsCount,
-        maxProgress: 5,
-        earnedDate: stats.tripsCount >= 5 ? new Date().toISOString() : undefined,
-        nextBadgeId: 'travel-architect'
-      },
-      {
-        id: 'travel-architect',
-        name: t('travelArchitect', { ns: 'badges' }),
-        description: t('travelArchitectDesc', { ns: 'badges' }),
-        icon: '🏛️',
-        category: 'planner',
-        level: 'gold',
-        gradient: 'from-yellow-500 to-red-500',
-        earned: stats.tripsCount >= 15,
-        progress: stats.tripsCount,
-        maxProgress: 15,
-        earnedDate: stats.tripsCount >= 15 ? new Date().toISOString() : undefined
-      },
-
-      // Progressive Milestone Badges (Places-based)
-      {
-        id: 'getting-started',
-        name: t('gettingStarted', { ns: 'badges' }),
-        description: t('gettingStartedDesc', { ns: 'badges' }),
-        icon: '🎯',
-        category: 'milestone',
-        level: 'bronze',
-        gradient: 'from-gray-400 to-gray-600',
-        earned: stats.savedPlacesCount >= 10,
-        progress: stats.savedPlacesCount,
-        maxProgress: 10,
-        earnedDate: stats.savedPlacesCount >= 10 ? new Date().toISOString() : undefined,
-        nextBadgeId: 'collector'
-      },
+      // Progressive Milestone Badge (Places-based)
       {
         id: 'collector',
         name: t('collector', { ns: 'badges' }),
         description: t('collectorDesc', { ns: 'badges' }),
         icon: '📍',
         category: 'milestone',
-        level: 'silver',
+        level: 'bronze',
         gradient: 'from-blue-500 to-indigo-600',
-        earned: stats.savedPlacesCount >= 50,
+        earned: stats.savedPlacesCount >= 10,
         progress: stats.savedPlacesCount,
-        maxProgress: 50,
-        earnedDate: stats.savedPlacesCount >= 50 ? new Date().toISOString() : undefined,
-        nextBadgeId: 'curator'
-      },
-      {
-        id: 'curator',
-        name: t('curator', { ns: 'badges' }),
-        description: t('curatorDesc', { ns: 'badges' }),
-        icon: '🏆',
-        category: 'milestone',
-        level: 'gold',
-        gradient: 'from-yellow-400 to-orange-600',
-        earned: stats.savedPlacesCount >= 200,
-        progress: stats.savedPlacesCount,
-        maxProgress: 200,
-        earnedDate: stats.savedPlacesCount >= 200 ? new Date().toISOString() : undefined,
-        nextBadgeId: 'legendary-collector'
-      },
-      {
-        id: 'legendary-collector',
-        name: t('legendaryCollector', { ns: 'badges' }),
-        description: t('legendaryCollectorDesc', { ns: 'badges' }),
-        icon: '👑',
-        category: 'milestone',
-        level: 'platinum',
-        gradient: 'from-purple-400 to-pink-600',
-        earned: stats.savedPlacesCount >= 500,
-        progress: stats.savedPlacesCount,
-        maxProgress: 500,
-        earnedDate: stats.savedPlacesCount >= 500 ? new Date().toISOString() : undefined
+        currentLevel: calculateLevel(stats.savedPlacesCount, [
+          { requirement: 10 },
+          { requirement: 50 },
+          { requirement: 150 }
+        ]),
+        levels: [
+          { level: 1, name: 'Bronze', requirement: 10, earned: stats.savedPlacesCount >= 10, earnedDate: stats.savedPlacesCount >= 10 ? new Date().toISOString() : undefined },
+          { level: 2, name: 'Silver', requirement: 50, earned: stats.savedPlacesCount >= 50, earnedDate: stats.savedPlacesCount >= 50 ? new Date().toISOString() : undefined },
+          { level: 3, name: 'Gold', requirement: 150, earned: stats.savedPlacesCount >= 150, earnedDate: stats.savedPlacesCount >= 150 ? new Date().toISOString() : undefined }
+        ]
       },
 
-      // Progressive Social Badges
-      {
-        id: 'social-starter',
-        name: t('socialStarter', { ns: 'badges' }),
-        description: t('socialStarterDesc', { ns: 'badges' }),
-        icon: '⭐',
-        category: 'social',
-        level: 'bronze',
-        gradient: 'from-pink-400 to-rose-500',
-        earned: stats.likesReceived >= 10,
-        progress: stats.likesReceived,
-        maxProgress: 10,
-        earnedDate: stats.likesReceived >= 10 ? new Date().toISOString() : undefined,
-        nextBadgeId: 'influencer'
-      },
+      // Progressive Social Badge
       {
         id: 'influencer',
         name: t('influencer', { ns: 'badges' }),
         description: t('influencerDesc', { ns: 'badges' }),
-        icon: '🌟',
+        icon: '⭐',
         category: 'social',
-        level: 'silver',
+        level: 'bronze',
         gradient: 'from-yellow-400 to-orange-500',
         earned: stats.likesReceived >= 50,
         progress: stats.likesReceived,
-        maxProgress: 50,
-        earnedDate: stats.likesReceived >= 50 ? new Date().toISOString() : undefined,
-        nextBadgeId: 'viral-creator'
-      },
-      {
-        id: 'viral-creator',
-        name: t('viralCreator', { ns: 'badges' }),
-        description: t('viralCreatorDesc', { ns: 'badges' }),
-        icon: '🔥',
-        category: 'social',
-        level: 'gold',
-        gradient: 'from-red-400 to-pink-600',
-        earned: stats.likesReceived >= 200,
-        progress: stats.likesReceived,
-        maxProgress: 200,
-        earnedDate: stats.likesReceived >= 200 ? new Date().toISOString() : undefined
+        currentLevel: calculateLevel(stats.likesReceived, [
+          { requirement: 50 },
+          { requirement: 200 },
+          { requirement: 500 }
+        ]),
+        levels: [
+          { level: 1, name: 'Bronze', requirement: 50, earned: stats.likesReceived >= 50, earnedDate: stats.likesReceived >= 50 ? new Date().toISOString() : undefined },
+          { level: 2, name: 'Silver', requirement: 200, earned: stats.likesReceived >= 200, earnedDate: stats.likesReceived >= 200 ? new Date().toISOString() : undefined },
+          { level: 3, name: 'Gold', requirement: 500, earned: stats.likesReceived >= 500, earnedDate: stats.likesReceived >= 500 ? new Date().toISOString() : undefined }
+        ]
       },
 
-      // Progressive Content Badges
+      // Progressive Post Creator Badge
       {
-        id: 'photographer',
-        name: t('photographer', { ns: 'badges' }),
-        description: t('photographerDesc', { ns: 'badges' }),
+        id: 'contentCreator',
+        name: t('contentCreator', { ns: 'badges' }),
+        description: t('contentCreatorDesc', { ns: 'badges' }),
         icon: '📸',
         category: 'engagement',
         level: 'bronze',
         gradient: 'from-indigo-400 to-purple-500',
         earned: stats.postsCount >= 10,
         progress: stats.postsCount,
-        maxProgress: 10,
-        earnedDate: stats.postsCount >= 10 ? new Date().toISOString() : undefined,
-        nextBadgeId: 'local-guide'
+        currentLevel: calculateLevel(stats.postsCount, [
+          { requirement: 10 },
+          { requirement: 30 },
+          { requirement: 100 }
+        ]),
+        levels: [
+          { level: 1, name: 'Bronze', requirement: 10, earned: stats.postsCount >= 10, earnedDate: stats.postsCount >= 10 ? new Date().toISOString() : undefined },
+          { level: 2, name: 'Silver', requirement: 30, earned: stats.postsCount >= 30, earnedDate: stats.postsCount >= 30 ? new Date().toISOString() : undefined },
+          { level: 3, name: 'Gold', requirement: 100, earned: stats.postsCount >= 100, earnedDate: stats.postsCount >= 100 ? new Date().toISOString() : undefined }
+        ]
       },
+
+      // Progressive Reviews Badge  
       {
-        id: 'local-guide',
+        id: 'localGuide',
         name: t('localGuide', { ns: 'badges' }),
         description: t('localGuideDesc', { ns: 'badges' }),
         icon: '🗺️',
         category: 'engagement',
-        level: 'silver',
+        level: 'bronze',
         gradient: 'from-green-400 to-emerald-500',
-        earned: stats.postsCount >= 20,
-        progress: stats.postsCount,
-        maxProgress: 20,
-        earnedDate: stats.postsCount >= 20 ? new Date().toISOString() : undefined,
-        nextBadgeId: 'content-creator'
-      },
-      {
-        id: 'content-creator',
-        name: t('contentCreator', { ns: 'badges' }),
-        description: t('contentCreatorDesc', { ns: 'badges' }),
-        icon: '🎥',
-        category: 'engagement',
-        level: 'gold',
-        gradient: 'from-purple-400 to-pink-500',
-        earned: stats.postsCount >= 30,
-        progress: stats.postsCount,
-        maxProgress: 30,
-        earnedDate: stats.postsCount >= 30 ? new Date().toISOString() : undefined,
-        nextBadgeId: 'prolific-poster'
-      },
-      {
-        id: 'prolific-poster',
-        name: t('prolificPoster', { ns: 'badges' }),
-        description: t('prolificPosterDesc', { ns: 'badges' }),
-        icon: '🎬',
-        category: 'engagement',
-        level: 'silver',
-        gradient: 'from-indigo-500 to-purple-600',
-        earned: stats.postsCount >= 25,
-        progress: stats.postsCount,
-        maxProgress: 25,
-        earnedDate: stats.postsCount >= 25 ? new Date().toISOString() : undefined,
-        nextBadgeId: 'content-master'
-      },
-      {
-        id: 'content-master',
-        name: t('contentMaster', { ns: 'badges' }),
-        description: t('contentMasterDesc', { ns: 'badges' }),
-        icon: '🎭',
-        category: 'engagement',
-        level: 'gold',
-        gradient: 'from-yellow-500 to-red-500',
-        earned: stats.postsCount >= 100,
-        progress: stats.postsCount,
-        maxProgress: 100,
-        earnedDate: stats.postsCount >= 100 ? new Date().toISOString() : undefined
+        earned: stats.reviewsCount >= 5,
+        progress: stats.reviewsCount,
+        currentLevel: calculateLevel(stats.reviewsCount, [
+          { requirement: 5 },
+          { requirement: 20 },
+          { requirement: 50 }
+        ]),
+        levels: [
+          { level: 1, name: 'Bronze', requirement: 5, earned: stats.reviewsCount >= 5, earnedDate: stats.reviewsCount >= 5 ? new Date().toISOString() : undefined },
+          { level: 2, name: 'Silver', requirement: 20, earned: stats.reviewsCount >= 20, earnedDate: stats.reviewsCount >= 20 ? new Date().toISOString() : undefined },
+          { level: 3, name: 'Gold', requirement: 50, earned: stats.reviewsCount >= 50, earnedDate: stats.reviewsCount >= 50 ? new Date().toISOString() : undefined }
+        ]
       }
     ];
 
@@ -452,40 +323,9 @@ const fetchUserStats = async (hasCache: boolean = false) => {
   };
 
   const filterProgressiveBadges = (allBadges: Badge[]): Badge[] => {
-    const badgeGroups: { [key: string]: Badge[] } = {};
-    
-    // Group badges by category
-    allBadges.forEach(badge => {
-      const key = badge.category;
-      if (!badgeGroups[key]) badgeGroups[key] = [];
-      badgeGroups[key].push(badge);
-    });
-
-    const filteredBadges: Badge[] = [];
-
-    // For each category, show earned badges AND the next unearned badge
-    Object.values(badgeGroups).forEach(categoryBadges => {
-      // Sort by level (bronze -> silver -> gold -> platinum)
-      const levelOrder = { bronze: 1, silver: 2, gold: 3, platinum: 4 };
-      categoryBadges.sort((a, b) => levelOrder[a.level] - levelOrder[b.level]);
-
-      let hasUnearned = false;
-      
-      for (let i = 0; i < categoryBadges.length; i++) {
-        const badge = categoryBadges[i];
-        
-        if (badge.earned) {
-          // Always show all earned badges
-          filteredBadges.push(badge);
-        } else if (!hasUnearned) {
-          // Show the first unearned badge (next goal)
-          filteredBadges.push(badge);
-          hasUnearned = true;
-        }
-      }
-    });
-
-    return filteredBadges;
+    // For progressive badges with levels, we show ALL badges (they contain their level info)
+    // No need to filter by earned/unearned since each badge has all 3 levels inside
+    return allBadges;
   };
 
   const getTopBadges = (count: number = 3) => {
