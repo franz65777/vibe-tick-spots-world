@@ -417,7 +417,7 @@ const LeafletMapSetup = ({
           color: rgba(148, 163, 184, 0.9);
         }
         .leaflet-tile {
-          filter: ${isDarkMode ? 'brightness(0.6) contrast(1.1) saturate(1.2)' : 'brightness(1.02) contrast(0.98)'};
+          filter: ${isDarkMode ? 'brightness(1.2) contrast(1.05) saturate(1.1)' : 'brightness(1.02) contrast(0.98)'};
         }
       `}</style>
 

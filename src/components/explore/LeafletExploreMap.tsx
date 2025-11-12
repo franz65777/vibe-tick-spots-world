@@ -311,7 +311,7 @@ const LeafletExploreMap = ({
         }
         
         .leaflet-tile {
-          filter: ${isDarkMode ? 'brightness(0.6) contrast(1.1) saturate(1.2)' : 'brightness(1.0)'};
+          filter: ${isDarkMode ? 'brightness(1.2) contrast(1.05) saturate(1.1)' : 'brightness(1.0)'};
         }
       `}</style>
     </div>
