@@ -18,6 +18,7 @@ interface NearbyLocation {
   address: string;
   distance: number;
   coordinates: { lat: number; lng: number };
+  category?: string;
 }
 
 interface FollowerUser {
@@ -374,7 +375,7 @@ const ShareLocationPage = () => {
         {searchResults.length > 0 && (
           <div className="space-y-2">
             <h3 className="text-sm font-medium text-muted-foreground">Risultati ricerca</h3>
-            <div className="max-h-80 overflow-y-auto space-y-2 scrollbar-hide">
+            <div className="max-h-[calc(100vh-280px)] overflow-y-auto space-y-2 scrollbar-hide">
               {searchResults.map((result, index) => (
                 <button
                   key={result.id || index}
@@ -393,9 +394,15 @@ const ShareLocationPage = () => {
                   className="w-full text-left p-4 rounded-lg border border-border hover:bg-accent transition-colors"
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{result.name}</p>
-                      <p className="text-sm text-muted-foreground truncate">{result.address}</p>
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      {result.category && (() => {
+                        const CategoryIcon = getCategoryIcon(result.category);
+                        return <CategoryIcon className="h-5 w-5 text-primary shrink-0" />;
+                      })()}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{result.name}</p>
+                        <p className="text-sm text-muted-foreground truncate">{result.address}</p>
+                      </div>
                     </div>
                     {result.distance !== undefined && result.distance !== Infinity && (
                       <p className="text-xs text-muted-foreground shrink-0">{result.distance.toFixed(1)} km</p>
@@ -414,21 +421,27 @@ const ShareLocationPage = () => {
         {!searchQuery && !selectedLocation && nearbyLocations.length > 0 && (
           <div className="space-y-2">
             <h3 className="text-sm font-medium text-muted-foreground">Luoghi nelle vicinanze</h3>
-            <div className="max-h-80 overflow-y-auto space-y-2 scrollbar-hide">
+            <div className="max-h-[calc(100vh-280px)] overflow-y-auto space-y-2 scrollbar-hide">
               {nearbyLocations.map((loc) => (
-                <button
-                  key={loc.id}
-                  onClick={() => setSelectedLocation(loc)}
-                  className="w-full text-left p-4 rounded-lg border border-border hover:bg-accent transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{loc.name}</p>
-                      <p className="text-sm text-muted-foreground truncate">{loc.address}</p>
+                  <button
+                    key={loc.id}
+                    onClick={() => setSelectedLocation(loc)}
+                    className="w-full text-left p-4 rounded-lg border border-border hover:bg-accent transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        {loc.category && (() => {
+                          const CategoryIcon = getCategoryIcon(loc.category);
+                          return <CategoryIcon className="h-5 w-5 text-primary shrink-0" />;
+                        })()}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{loc.name}</p>
+                          <p className="text-sm text-muted-foreground truncate">{loc.address}</p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground shrink-0">{loc.distance.toFixed(1)} km</p>
                     </div>
-                    <p className="text-xs text-muted-foreground shrink-0">{loc.distance.toFixed(1)} km</p>
-                  </div>
-                </button>
+                  </button>
               ))}
             </div>
           </div>
@@ -573,14 +586,6 @@ const ShareLocationPage = () => {
                       onFocus={() => setIsUserSearchFocused(true)}
                       className="pl-3"
                     />
-                    {userSearchQuery && (
-                      <button
-                        onClick={() => setUserSearchQuery('')}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
-                        ×
-                      </button>
-                    )}
                   </div>
                   {isUserSearchFocused && (
                     <Button
