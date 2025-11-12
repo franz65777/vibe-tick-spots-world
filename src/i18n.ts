@@ -4751,6 +4751,10 @@ const resources = {
       hoursAgo: '{{count}}時間',
       daysAgo: '{{count}}日',
       weeksAgo: '{{count}}週',
+      onMyWay: '向かっています',
+      onMyWayMessage: '{{location}}に向かっています！またね 👋',
+      messageSent: 'メッセージが送信されました！',
+      isAtLocation: 'にいます',
     },
     messages: {
       messages: 'メッセージ',
