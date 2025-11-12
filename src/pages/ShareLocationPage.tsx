@@ -45,6 +45,7 @@ const ShareLocationPage = () => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [isUserSearchFocused, setIsUserSearchFocused] = useState(false);
+  const [isEditingShareType, setIsEditingShareType] = useState(true);
 
   // Fetch nearby locations
   useEffect(() => {
@@ -448,55 +449,78 @@ const ShareLocationPage = () => {
 
             {/* Share Type Selection */}
             <div className="space-y-2">
-              <h3 className="text-sm font-medium">Condividi con</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium">Condividi con</h3>
+                {!isEditingShareType && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsEditingShareType(true)}
+                  >
+                    Modifica
+                  </Button>
+                )}
+              </div>
               
-              <button
-                onClick={() => setShareType('all_followers')}
-                className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-colors ${
-                  shareType === 'all_followers' ? 'border-primary bg-primary/5' : 'border-border hover:bg-accent'
-                }`}
-              >
-                <Users className="h-5 w-5" />
-                <div className="flex-1 text-left">
-                  <p className="font-medium">Tutti i follower</p>
-                  {shareType !== 'all_followers' && (
-                    <p className="text-sm text-muted-foreground">Visibile a tutti</p>
-                  )}
-                </div>
-              </button>
-
-              {shareType !== 'all_followers' && (
+              {isEditingShareType ? (
                 <>
                   <button
-                    onClick={() => setShareType('close_friends')}
-                    className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-colors ${
-                      shareType === 'close_friends' ? 'border-primary bg-primary/5' : 'border-border hover:bg-accent'
-                    }`}
+                    onClick={() => {
+                      setShareType('all_followers');
+                      setIsEditingShareType(false);
+                    }}
+                    className="w-full flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-accent transition-colors"
+                  >
+                    <Users className="h-5 w-5" />
+                    <div className="flex-1 text-left">
+                      <p className="font-medium">Tutti i follower</p>
+                      <p className="text-sm text-muted-foreground">Visibile a tutti</p>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setShareType('close_friends');
+                      setIsEditingShareType(false);
+                    }}
+                    className="w-full flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-accent transition-colors"
                   >
                     <UserCheck className="h-5 w-5" />
                     <div className="flex-1 text-left">
                       <p className="font-medium">Amici stretti</p>
-                      {shareType !== 'close_friends' && (
-                        <p className="text-sm text-muted-foreground">Solo amici stretti ({closeFriends.length})</p>
-                      )}
+                      <p className="text-sm text-muted-foreground">Solo amici stretti ({closeFriends.length})</p>
                     </div>
                   </button>
 
                   <button
-                    onClick={() => setShareType('specific_users')}
-                    className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-colors ${
-                      shareType === 'specific_users' ? 'border-primary bg-primary/5' : 'border-border hover:bg-accent'
-                    }`}
+                    onClick={() => {
+                      setShareType('specific_users');
+                      setIsEditingShareType(false);
+                    }}
+                    className="w-full flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-accent transition-colors"
                   >
                     <User className="h-5 w-5" />
                     <div className="flex-1 text-left">
                       <p className="font-medium">Utenti specifici</p>
-                      {shareType !== 'specific_users' && (
-                        <p className="text-sm text-muted-foreground">Scegli manualmente</p>
-                      )}
+                      <p className="text-sm text-muted-foreground">Scegli manualmente</p>
                     </div>
                   </button>
                 </>
+              ) : (
+                <div className="p-4 rounded-lg border border-primary bg-primary/5">
+                  <div className="flex items-center gap-3">
+                    {shareType === 'all_followers' && <Users className="h-5 w-5" />}
+                    {shareType === 'close_friends' && <UserCheck className="h-5 w-5" />}
+                    {shareType === 'specific_users' && <User className="h-5 w-5" />}
+                    <div className="flex-1">
+                      <p className="font-medium">
+                        {shareType === 'all_followers' && 'Tutti i follower'}
+                        {shareType === 'close_friends' && 'Amici stretti'}
+                        {shareType === 'specific_users' && 'Utenti specifici'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
 
