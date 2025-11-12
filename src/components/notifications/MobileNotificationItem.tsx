@@ -25,6 +25,9 @@ interface MobileNotificationItemProps {
       post_image?: string;
       comment_id?: string;
       comment_text?: string;
+      location_id?: string;
+      location_name?: string;
+      location_address?: string;
       grouped_users?: Array<{
         id: string;
         name: string;
