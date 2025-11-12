@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import StoriesViewer from '@/components/StoriesViewer';
+import { memo } from 'react';
 
 interface MobileNotificationItemProps {
   notification: {
@@ -62,6 +63,10 @@ const MobileNotificationItem = ({
   const [showStories, setShowStories] = useState(false);
   const [userStories, setUserStories] = useState<any[]>([]);
 
+  // Cache for profile data to avoid redundant queries
+  const profileCacheRef = useRef<Map<string, { avatar: string | null; username: string; timestamp: number }>>(new Map());
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
   // Resolve target user (id and avatar), check follow status, and check for active stories
   useEffect(() => {
     const resolveAndCheck = async () => {
@@ -77,34 +82,59 @@ const MobileNotificationItem = ({
           avatar = notification.data?.shared_by_avatar || avatar;
         }
 
-        // Always fetch from profiles to ensure we have the latest data
-        if (uid) {
-          const { data: profileById } = await supabase
-            .from('profiles')
-            .select('id, username, avatar_url')
-            .eq('id', uid)
-            .maybeSingle();
-          
-          if (profileById) {
-            avatar = profileById.avatar_url ?? avatar;
-            if (!uname) uname = profileById.username ?? uname;
-          }
-        } else if (uname) {
-          // Resolve by username if no user_id
-          const { data: profileByUsername } = await supabase
-            .from('profiles')
-            .select('id, username, avatar_url')
-            .eq('username', uname)
-            .maybeSingle();
-          
-          if (profileByUsername) {
-            uid = profileByUsername.id;
-            avatar = profileByUsername.avatar_url ?? avatar;
-          }
-        }
+        // Check cache first
+        const cached = uid ? profileCacheRef.current.get(uid) : null;
+        const isCacheValid = cached && (Date.now() - cached.timestamp < CACHE_DURATION);
 
-        setTargetUserId(uid);
-        setAvatarOverride(avatar);
+        if (isCacheValid && cached) {
+          avatar = cached.avatar ?? avatar;
+          if (!uname) uname = cached.username ?? uname;
+          setTargetUserId(uid);
+          setAvatarOverride(avatar);
+        } else {
+          // Fetch from database if not cached
+          if (uid) {
+            const { data: profileById } = await supabase
+              .from('profiles')
+              .select('id, username, avatar_url')
+              .eq('id', uid)
+              .maybeSingle();
+            
+            if (profileById) {
+              avatar = profileById.avatar_url ?? avatar;
+              if (!uname) uname = profileById.username ?? uname;
+              // Cache the result
+              profileCacheRef.current.set(uid, {
+                avatar: profileById.avatar_url,
+                username: profileById.username,
+                timestamp: Date.now()
+              });
+            }
+          } else if (uname) {
+            // Resolve by username if no user_id
+            const { data: profileByUsername } = await supabase
+              .from('profiles')
+              .select('id, username, avatar_url')
+              .eq('username', uname)
+              .maybeSingle();
+            
+            if (profileByUsername) {
+              uid = profileByUsername.id;
+              avatar = profileByUsername.avatar_url ?? avatar;
+              // Cache the result
+              if (uid) {
+                profileCacheRef.current.set(uid, {
+                  avatar: profileByUsername.avatar_url,
+                  username: profileByUsername.username,
+                  timestamp: Date.now()
+                });
+              }
+            }
+          }
+
+          setTargetUserId(uid);
+          setAvatarOverride(avatar);
+        }
 
         // Check follow status when we have both current user and target
         if (user?.id && uid) {
@@ -642,4 +672,11 @@ const MobileNotificationItem = ({
   );
 };
 
-export default MobileNotificationItem;
+export default memo(MobileNotificationItem, (prevProps, nextProps) => {
+  // Only re-render if notification data actually changed
+  return (
+    prevProps.notification.id === nextProps.notification.id &&
+    prevProps.notification.is_read === nextProps.notification.is_read &&
+    JSON.stringify(prevProps.notification.data) === JSON.stringify(nextProps.notification.data)
+  );
+});

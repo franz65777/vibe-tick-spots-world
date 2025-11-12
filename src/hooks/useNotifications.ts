@@ -50,31 +50,32 @@ export const useNotifications = () => {
     try {
       console.log('Fetching notifications for user:', user.id);
       
-      // Get muted users
-      const { data: mutedSettings } = await supabase
-        .from('user_mutes')
-        .select('muted_user_id')
-        .eq('muter_id', user.id)
-        .eq('is_muted', true);
+      // Fetch notifications and muted users in parallel for better performance
+      const [notificationsResult, mutedResult] = await Promise.all([
+        supabase
+          .from('notifications')
+          .select('*')
+          .eq('user_id', user.id)
+          .not('type', 'in', '(business_post,business_review,location_save,business_mention)')
+          .gt('expires_at', new Date().toISOString())
+          .order('created_at', { ascending: false })
+          .limit(50),
+        supabase
+          .from('user_mutes')
+          .select('muted_user_id')
+          .eq('muter_id', user.id)
+          .eq('is_muted', true)
+      ]);
       
-      const mutedUserIds = mutedSettings?.map(s => s.muted_user_id).filter(Boolean) || [];
-      
-      // Exclude business-specific notification types from personal notifications
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', user.id)
-        .not('type', 'in', '(business_post,business_review,location_save,business_mention)')
-        .gt('expires_at', new Date().toISOString())
-        .order('created_at', { ascending: false })
-        .limit(50);
+      const { data, error } = notificationsResult;
+      const mutedUserIds = mutedResult.data?.map(s => s.muted_user_id).filter(Boolean) || [];
       
       if (error) {
         console.error('Error fetching notifications:', error);
         setNotifications([]);
       } else {
         console.log('Notifications fetched successfully:', data?.length || 0);
-        // Transform and filter out notifications from muted users
+        // Transform and filter in a single pass for better performance
         const transformedData = (data || [])
           .map(item => {
             // Parse data if it's a string, otherwise use as-is

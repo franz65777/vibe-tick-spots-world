@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { MapFilter } from '@/contexts/MapFilterContext';
@@ -34,11 +34,16 @@ interface UseMapLocationsProps {
   selectedFollowedUserIds?: string[];
 }
 
+// Cache for map locations to avoid redundant queries
+const locationCache = new Map<string, { data: MapLocation[]; timestamp: number }>();
+const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
+
 export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, selectedFollowedUserIds = [] }: UseMapLocationsProps) => {
   const [locations, setLocations] = useState<MapLocation[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -46,28 +51,56 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
       return;
     }
     
-    fetchLocations();
+    // Debounce fetch to avoid too many calls
+    if (fetchTimeoutRef.current) {
+      clearTimeout(fetchTimeoutRef.current);
+    }
     
-    // Set up realtime subscription for map updates
+    fetchTimeoutRef.current = setTimeout(() => {
+      fetchLocations();
+    }, 300); // 300ms debounce
+    
+    // Set up realtime subscription for map updates with debouncing
+    let refreshTimeout: NodeJS.Timeout | null = null;
+    const debouncedRefresh = () => {
+      if (refreshTimeout) clearTimeout(refreshTimeout);
+      refreshTimeout = setTimeout(() => {
+        console.log('🔄 Map data changed, refreshing...');
+        fetchLocations();
+      }, 1000); // 1 second debounce for realtime
+    };
+    
     const channel = supabase
       .channel('map-locations-refresh')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'saved_places' }, () => {
-        console.log('🔄 Saved places changed, refreshing map...');
-        fetchLocations();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_saved_locations' }, () => {
-        console.log('🔄 User saved locations changed, refreshing map...');
-        fetchLocations();
-      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'saved_places' }, debouncedRefresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_saved_locations' }, debouncedRefresh)
       .subscribe();
     
     return () => {
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+      }
+      if (refreshTimeout) {
+        clearTimeout(refreshTimeout);
+      }
       supabase.removeChannel(channel);
     };
   }, [mapFilter, selectedCategories.join(','), currentCity, user?.id, selectedFollowedUserIds.join(',')]);
 
   const fetchLocations = async () => {
     if (!user) return;
+    
+    // Generate cache key
+    const cacheKey = `${mapFilter}-${selectedCategories.join(',')}-${currentCity}-${selectedFollowedUserIds.join(',')}`;
+    
+    // Check cache first
+    const cached = locationCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp < CACHE_DURATION)) {
+      console.log('🗺️ Using cached locations');
+      setLocations(cached.data);
+      setLoading(false);
+      return;
+    }
     
     setLoading(true);
     setError(null);
@@ -401,6 +434,14 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
       }
 
       console.log(`✅ Found ${finalLocations.length} ${mapFilter} locations (after dedupe)`);
+      
+      // Cache the results
+      const cacheKey = `${mapFilter}-${selectedCategories.join(',')}-${currentCity}-${selectedFollowedUserIds.join(',')}`;
+      locationCache.set(cacheKey, {
+        data: finalLocations,
+        timestamp: Date.now()
+      });
+      
       setLocations(finalLocations);
 
     } catch (err: any) {
