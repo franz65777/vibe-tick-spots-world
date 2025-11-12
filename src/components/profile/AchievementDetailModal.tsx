@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, MapPin, Trophy, Target, Calendar, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -37,6 +37,13 @@ interface AchievementDetailModalProps {
 
 const AchievementDetailModal = ({ isOpen, onClose, badge, allBadges = [] }: AchievementDetailModalProps) => {
   const { t } = useTranslation();
+  const [selectedLevel, setSelectedLevel] = useState<number>(1);
+  useEffect(() => {
+    if (badge) {
+      const next = (badge.levels || []).find(l => !l.earned);
+      setSelectedLevel(next ? next.level : (badge.currentLevel || 1));
+    }
+  }, [badge, isOpen]);
   
   if (!isOpen || !badge) return null;
 
@@ -45,43 +52,48 @@ const AchievementDetailModal = ({ isOpen, onClose, badge, allBadges = [] }: Achi
   const nextLevel = levels.find(l => !l.earned);
   const earnedLevels = levels.filter(l => l.earned);
   
-  const progressPercentage = nextLevel && badge.progress !== undefined
-    ? (badge.progress / nextLevel.requirement) * 100 
-    : 100;
+  const displayLevel = levels.find(l => l.level === selectedLevel) || nextLevel || earnedLevels[earnedLevels.length - 1];
+  const progressValue = badge.progress ?? 0;
+  const progressPercentage = displayLevel ? Math.min(100, (progressValue / displayLevel.requirement) * 100) : 100;
+  const unit = badge.id === 'explorer' ? t('cities', { ns: 'badges' }) :
+    badge.id === 'foodie' ? t('restaurants', { ns: 'badges' }) :
+    badge.id === 'streak' ? t('days', { ns: 'badges' }) : t('places', { ns: 'badges' });
+  const remaining = displayLevel ? Math.max(0, displayLevel.requirement - progressValue) : 0;
 
   const getNextSteps = () => {
-    if (!nextLevel) return [];
+    const activeLevel = levels.find(l => l.level === selectedLevel);
+    if (!activeLevel || activeLevel.earned) return [];
     
     switch (badge.id) {
       case 'explorer':
         return [
           t('exploreDifferentCities', { ns: 'badges' }),
           t('tryNewDestinations', { ns: 'badges' }),
-          `${t('currentProgress', { ns: 'badges' })}: ${badge.progress}/${nextLevel.requirement} ${t('cities', { ns: 'badges' })}`
+          `${t('currentProgress', { ns: 'badges' })}: ${badge.progress}/${activeLevel.requirement} ${t('cities', { ns: 'badges' })}`
         ];
       case 'foodie':
         return [
           t('saveMoreRestaurants', { ns: 'badges' }),
           t('tryDifferentCuisines', { ns: 'badges' }),
-          `${t('currentProgress', { ns: 'badges' })}: ${badge.progress}/${nextLevel.requirement} ${t('restaurants', { ns: 'badges' })}`
+          `${t('currentProgress', { ns: 'badges' })}: ${badge.progress}/${activeLevel.requirement} ${t('restaurants', { ns: 'badges' })}`
         ];
       case 'culture':
         return [
           t('saveMuseumsVenues', { ns: 'badges' }),
           t('visitGalleriesSites', { ns: 'badges' }),
-          `${t('currentProgress', { ns: 'badges' })}: ${badge.progress}/${nextLevel.requirement} ${t('venues', { ns: 'badges' })}`
+          `${t('currentProgress', { ns: 'badges' })}: ${badge.progress}/${activeLevel.requirement} ${t('venues', { ns: 'badges' })}`
         ];
       case 'collector':
         return [
           t('keepDiscovering', { ns: 'badges' }),
           t('buildCollection', { ns: 'badges' }),
-          `${t('currentProgress', { ns: 'badges' })}: ${badge.progress}/${nextLevel.requirement} ${t('places', { ns: 'badges' })}`
+          `${t('currentProgress', { ns: 'badges' })}: ${badge.progress}/${activeLevel.requirement} ${t('places', { ns: 'badges' })}`
         ];
       case 'streak':
         return [
           t('saveDaily', { ns: 'badges' }),
           t('makeItHabit', { ns: 'badges' }),
-          `${t('currentStreak', { ns: 'badges' })}: ${badge.progress}/${nextLevel.requirement} ${t('days', { ns: 'badges' })}`
+          `${t('currentStreak', { ns: 'badges' })}: ${badge.progress}/${activeLevel.requirement} ${t('days', { ns: 'badges' })}`
         ];
       default:
         return [t('keepExploring', { ns: 'badges' })];
@@ -142,69 +154,47 @@ const AchievementDetailModal = ({ isOpen, onClose, badge, allBadges = [] }: Achi
           )}
         </div>
 
-        {/* Progress Section */}
-        {nextLevel && badge.progress !== undefined && (
+          {/* Level Selector + Progress */}
           <div className="px-6 pb-4">
-            <div className="bg-muted/50 rounded-2xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-foreground">{t('progress', { ns: 'badges' })}</span>
-                <span className="text-sm font-bold text-primary">
-                  {badge.progress}/{nextLevel.requirement}
-                </span>
-              </div>
-              <Progress value={progressPercentage} className="h-2 mb-2" />
-              <p className="text-xs text-muted-foreground">
-                {Math.round(progressPercentage)}% {t('toLevel', { ns: 'badges' })} {nextLevel.level}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 pb-6">
-          {/* Earned Levels */}
-          {earnedLevels.length > 0 && (
-            <div className="mb-6">
-              <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground mb-3">
-                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
-                {t('earnedLevels', { ns: 'badges' })}
-              </h3>
-              <div className="space-y-2">
-                {earnedLevels.map((level) => (
-                  <div key={level.level} className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      level.level === 1 ? 'bg-orange-500' :
-                      level.level === 2 ? 'bg-gray-400' : 
-                      'bg-yellow-500'
-                    }`}>
-                      <Trophy className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <span className="text-sm font-medium text-foreground block">
-                        {t('level', { ns: 'badges' })} {level.level} - {level.name}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {level.requirement} {badge.id === 'explorer' ? t('cities', { ns: 'badges' }) : 
-                         badge.id === 'foodie' ? t('restaurants', { ns: 'badges' }) :
-                         badge.id === 'streak' ? t('days', { ns: 'badges' }) : t('places', { ns: 'badges' })}
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
-                      {level.earnedDate && (
-                        <span className="text-xs text-muted-foreground block mt-1">
-                          {new Date(level.earnedDate).toLocaleDateString()}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-foreground">{t('selectLevel', { ns: 'badges' })}</span>
+              <div className="inline-flex rounded-lg bg-muted p-1">
+                {[1,2,3].map((lvl) => (
+                  <button
+                    key={lvl}
+                    onClick={() => setSelectedLevel(lvl)}
+                    className={`px-3 py-1 rounded-md text-sm ${selectedLevel === lvl ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted/80'}`}
+                    aria-pressed={selectedLevel === lvl}
+                    aria-label={`${t('level', { ns: 'badges' })} ${lvl}`}
+                  >
+                    {lvl}
+                  </button>
                 ))}
               </div>
             </div>
-          )}
+            {displayLevel && (
+              <div className="bg-muted/50 rounded-2xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-medium text-foreground">{t('progress', { ns: 'badges' })}</span>
+                  <span className="text-sm font-bold text-primary">
+                    {badge.progress ?? 0}/{displayLevel.requirement}
+                  </span>
+                </div>
+                <Progress value={progressPercentage} className="h-2 mb-2" />
+                <p className="text-xs text-muted-foreground">
+                  {displayLevel.earned
+                    ? t('completed', { ns: 'badges' })
+                    : `${t('remaining', { ns: 'badges' })}: ${remaining} ${unit}`}
+                </p>
+              </div>
+            )}
+          </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto px-6 pb-6">
 
           {/* Next Level Goal */}
-          {nextLevel && (
+          {displayLevel && !displayLevel.earned && (
             <div className="mb-6">
               <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground mb-3">
                 <Target className="w-5 h-5 text-primary" />
