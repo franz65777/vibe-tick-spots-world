@@ -87,33 +87,64 @@ const HomePage = () => {
 
   // Handle navigation state for opening pin detail from posts
   useEffect(() => {
-    const state = location.state as any;
-    let usedState = false;
-    if (state?.centerMap) {
-      setMapCenter({ lat: state.centerMap.lat, lng: state.centerMap.lng });
-      usedState = true;
-    }
-    if (state?.openPinDetail) {
-      const pin = state.openPinDetail;
-      const placeToShow: Place = {
-        id: pin.id,
-        name: pin.name,
-        category: pin.category,
-        coordinates: { lat: pin.lat, lng: pin.lng },
-        address: '',
-        isFollowing: false,
-        isNew: false,
-        likes: 0,
-        visitors: [],
-        sourcePostId: pin.sourcePostId // Pass sourcePostId if exists
-      };
-      setInitialPinToShow(placeToShow);
-      usedState = true;
-    }
-    // Only clear navigation state if we actually consumed it
-    if (usedState) {
-      navigate(location.pathname, { replace: true });
-    }
+    const handleNavState = async () => {
+      const state = location.state as any;
+      let usedState = false;
+      if (state?.centerMap) {
+        setMapCenter({ lat: state.centerMap.lat, lng: state.centerMap.lng });
+        usedState = true;
+      }
+      if (state?.openPinDetail) {
+        const pin = state.openPinDetail;
+        const placeToShow: Place = {
+          id: pin.id,
+          name: pin.name,
+          category: pin.category,
+          coordinates: { lat: pin.lat, lng: pin.lng },
+          address: '',
+          isFollowing: false,
+          isNew: false,
+          likes: 0,
+          visitors: [],
+          sourcePostId: pin.sourcePostId // Pass sourcePostId if exists
+        };
+        setInitialPinToShow(placeToShow);
+        usedState = true;
+      }
+      // Open a specific location by id from notifications
+      if (state?.openLocationId) {
+        try {
+          const { data: loc } = await supabase
+            .from('locations')
+            .select('id, name, category, latitude, longitude, address')
+            .eq('id', state.openLocationId)
+            .maybeSingle();
+          if (loc) {
+            const placeToShow: Place = {
+              id: loc.id,
+              name: loc.name,
+              category: loc.category,
+              coordinates: { lat: Number(loc.latitude), lng: Number(loc.longitude) },
+              address: loc.address || '',
+              isFollowing: false,
+              isNew: false,
+              likes: 0,
+              visitors: []
+            };
+            setMapCenter(placeToShow.coordinates);
+            setInitialPinToShow(placeToShow);
+            usedState = true;
+          }
+        } catch (e) {
+          console.warn('Failed to open location from notification', e);
+        }
+      }
+      // Only clear navigation state if we actually consumed it
+      if (usedState) {
+        navigate(location.pathname, { replace: true });
+      }
+    };
+    handleNavState();
   }, [location.state, location.pathname, navigate]);
 
   // Get user's current location on component mount and when tab becomes visible

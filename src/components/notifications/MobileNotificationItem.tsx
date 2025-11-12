@@ -21,6 +21,9 @@ interface MobileNotificationItemProps {
       username?: string;
       user_avatar?: string;
       avatar_url?: string;
+      shared_by_user_id?: string;
+      shared_by_username?: string;
+      shared_by_avatar?: string;
       post_id?: string;
       post_image?: string;
       comment_id?: string;
@@ -64,8 +67,15 @@ const MobileNotificationItem = ({
     const resolveAndCheck = async () => {
       try {
         let uid = notification.data?.user_id ?? null;
-        const uname = notification.data?.user_name || notification.data?.username || null;
+        let uname = notification.data?.user_name || notification.data?.username || null;
         let avatar = notification.data?.user_avatar || notification.data?.avatar_url || null;
+
+        // For location_share notifications, prefer shared_by_* fields
+        if (notification.type === 'location_share') {
+          uid = notification.data?.shared_by_user_id ?? uid;
+          uname = notification.data?.shared_by_username || uname;
+          avatar = notification.data?.shared_by_avatar || avatar;
+        }
 
         // Always fetch from profiles to ensure we have the latest data
         if (uid) {
@@ -77,6 +87,7 @@ const MobileNotificationItem = ({
           
           if (profileById) {
             avatar = profileById.avatar_url ?? avatar;
+            if (!uname) uname = profileById.username ?? uname;
           }
         } else if (uname) {
           // Resolve by username if no user_id
@@ -353,13 +364,14 @@ const MobileNotificationItem = ({
     
     switch (notification.type) {
       case 'location_share':
+        const displayName = notification.data?.shared_by_username || notification.data?.user_name || notification.data?.username || notification.title || 'Someone';
         return (
           <span className="text-foreground text-[13px] leading-tight">
             <span 
               className="font-semibold cursor-pointer hover:underline" 
               onClick={handleUsernameClick}
             >
-              {username}
+              {displayName}
             </span>
             {' '}{t('isAtLocation', { ns: 'notifications' })}{' '}
             <span className="font-semibold">{locationName}</span>
@@ -490,8 +502,8 @@ const MobileNotificationItem = ({
   };
 
   // Get avatar URL - support both field name formats
-  const avatarUrl = notification.data?.user_avatar || notification.data?.avatar_url || '';
-  const username = notification.data?.user_name || notification.data?.username || 'User';
+  const avatarUrl = notification.data?.shared_by_avatar || notification.data?.user_avatar || notification.data?.avatar_url || '';
+  const username = notification.data?.shared_by_username || notification.data?.user_name || notification.data?.username || 'User';
   const computedAvatar = avatarOverride || avatarUrl;
 
   // For grouped likes, show multiple avatars
