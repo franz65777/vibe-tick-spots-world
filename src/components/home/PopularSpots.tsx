@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { TrendingUp, MapPin, Users, ChevronDown, Percent, Calendar, Megaphone, Sparkles, UserPlus } from 'lucide-react';
+import { TrendingUp, MapPin, Users, ChevronDown, Percent, Calendar, Megaphone, Sparkles, UserPlus, Flame } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
-import fireIcon from '@/assets/fire-icon.png';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
@@ -349,7 +348,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
             className="w-8 h-8 flex items-center justify-center transition-all hover:scale-110 flex-shrink-0"
             aria-label="Discover places"
           >
-            <img src={fireIcon} alt="Discover" className="w-7 h-7" />
+            <Flame className="w-7 h-7 text-orange-500" />
           </button>
         )}
       </div>
