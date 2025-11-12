@@ -41,6 +41,7 @@ const ShareLocationPage = () => {
   const [closeFriends, setCloseFriends] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   // Fetch nearby locations
   useEffect(() => {
@@ -304,9 +305,9 @@ const ShareLocationPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-y-auto scrollbar-hide">
       {/* Header */}
-      <div className="sticky top-0 z-50 bg-background">
+      <div className="sticky top-0 z-50 bg-background border-b border-border">
         <div className="flex items-center justify-between p-4">
           <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
             <ArrowLeft className="h-5 w-5" />
@@ -316,18 +317,37 @@ const ShareLocationPage = () => {
         </div>
       </div>
 
-      <div className="p-4 space-y-6">
+      <div className="p-4 space-y-6 pb-20">
         {/* Search Bar */}
-        <div className="relative">
-          <Input
-            placeholder="Cerca un luogo..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          {searching && (
-            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 animate-spin text-muted-foreground" />
+        <div className="relative flex items-center gap-2">
+          <div className="relative flex-1">
+            <Input
+              placeholder="Cerca un luogo..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setIsSearchFocused(true)}
+              className="pl-10"
+            />
+            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            {searching && (
+              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 animate-spin text-muted-foreground" />
+            )}
+          </div>
+          {isSearchFocused && (
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setSearchQuery('');
+                setSearchResults([]);
+                setIsSearchFocused(false);
+                // Blur active element to hide keyboard
+                if (document.activeElement instanceof HTMLElement) {
+                  document.activeElement.blur();
+                }
+              }}
+            >
+              Annulla
+            </Button>
           )}
         </div>
 
@@ -368,19 +388,15 @@ const ShareLocationPage = () => {
           </div>
         )}
 
-        {/* Nearby Locations */}
-        {!searchQuery && nearbyLocations.length > 0 && (
+        {/* Nearby Locations - Only show if no location is selected */}
+        {!searchQuery && !selectedLocation && nearbyLocations.length > 0 && (
           <div className="space-y-2">
             <h3 className="text-sm font-medium text-muted-foreground">Luoghi nelle vicinanze</h3>
             {nearbyLocations.map((loc) => (
               <button
                 key={loc.id}
                 onClick={() => setSelectedLocation(loc)}
-                className={`w-full text-left p-3 rounded-lg border transition-colors ${
-                  selectedLocation?.id === loc.id 
-                    ? 'border-primary bg-primary/5' 
-                    : 'border-border hover:bg-accent'
-                }`}
+                className="w-full text-left p-3 rounded-lg border border-border hover:bg-accent transition-colors"
               >
                 <p className="font-medium">{loc.name}</p>
                 <p className="text-sm text-muted-foreground">{loc.address}</p>
