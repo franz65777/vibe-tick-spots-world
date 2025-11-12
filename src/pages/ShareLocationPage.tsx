@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, MapPin, Loader2, Users, UserCheck, User } from 'lucide-react';
+import { getCategoryIcon } from '@/utils/categoryIcons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
@@ -46,6 +47,8 @@ const ShareLocationPage = () => {
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [isUserSearchFocused, setIsUserSearchFocused] = useState(false);
   const [isEditingShareType, setIsEditingShareType] = useState(true);
+  const [showCloseFriendsAvatars, setShowCloseFriendsAvatars] = useState(false);
+  const [showSpecificUsersSearch, setShowSpecificUsersSearch] = useState(false);
 
   // Fetch nearby locations
   useEffect(() => {
@@ -333,7 +336,7 @@ const ShareLocationPage = () => {
         </div>
       </div>
 
-      <div className="p-4 space-y-6 pb-20">
+      <div className="p-4 space-y-6 pb-32">
         {/* Search Bar */}
         <div className="relative flex items-center gap-2">
           <div className="relative flex-1">
@@ -387,15 +390,15 @@ const ShareLocationPage = () => {
                     setSearchResults([]);
                     setIsSearchFocused(false);
                   }}
-                  className="w-full text-left p-3 rounded-lg border border-border hover:bg-accent transition-colors"
+                  className="w-full text-left p-4 rounded-lg border border-border hover:bg-accent transition-colors"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <p className="font-medium">{result.name}</p>
-                      <p className="text-sm text-muted-foreground">{result.address}</p>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{result.name}</p>
+                      <p className="text-sm text-muted-foreground truncate">{result.address}</p>
                     </div>
                     {result.distance !== undefined && result.distance !== Infinity && (
-                      <p className="text-xs text-muted-foreground ml-2">{result.distance.toFixed(1)} km</p>
+                      <p className="text-xs text-muted-foreground shrink-0">{result.distance.toFixed(1)} km</p>
                     )}
                   </div>
                   {!result.isExisting && (
@@ -416,11 +419,15 @@ const ShareLocationPage = () => {
                 <button
                   key={loc.id}
                   onClick={() => setSelectedLocation(loc)}
-                  className="w-full text-left p-3 rounded-lg border border-border hover:bg-accent transition-colors"
+                  className="w-full text-left p-4 rounded-lg border border-border hover:bg-accent transition-colors"
                 >
-                  <p className="font-medium">{loc.name}</p>
-                  <p className="text-sm text-muted-foreground">{loc.address}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{loc.distance.toFixed(1)} km</p>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{loc.name}</p>
+                      <p className="text-sm text-muted-foreground truncate">{loc.address}</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground shrink-0">{loc.distance.toFixed(1)} km</p>
+                  </div>
                 </button>
               ))}
             </div>
@@ -431,16 +438,22 @@ const ShareLocationPage = () => {
         {selectedLocation && (
           <div className="space-y-4">
             <div className="p-4 rounded-lg bg-primary/5 border border-primary">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <p className="font-medium">{selectedLocation.name}</p>
-                  <p className="text-sm text-muted-foreground">{selectedLocation.address}</p>
+              <div className="flex items-center gap-3">
+                {selectedLocation.category && (() => {
+                  const CategoryIcon = getCategoryIcon(selectedLocation.category);
+                  return <CategoryIcon className="h-6 w-6 text-primary shrink-0" />;
+                })()}
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium truncate">{selectedLocation.name}</p>
+                  {!shareType || isEditingShareType ? (
+                    <p className="text-sm text-muted-foreground truncate">{selectedLocation.address}</p>
+                  ) : null}
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setSelectedLocation(null)}
-                  className="ml-2"
+                  className="shrink-0"
                 >
                   Modifica
                 </Button>
@@ -449,18 +462,7 @@ const ShareLocationPage = () => {
 
             {/* Share Type Selection */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium">Condividi con</h3>
-                {!isEditingShareType && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsEditingShareType(true)}
-                  >
-                    Modifica
-                  </Button>
-                )}
-              </div>
+              <h3 className="text-sm font-medium">Condividi con</h3>
               
               {isEditingShareType ? (
                 <>
@@ -468,10 +470,12 @@ const ShareLocationPage = () => {
                     onClick={() => {
                       setShareType('all_followers');
                       setIsEditingShareType(false);
+                      setShowCloseFriendsAvatars(false);
+                      setShowSpecificUsersSearch(false);
                     }}
                     className="w-full flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-accent transition-colors"
                   >
-                    <Users className="h-5 w-5" />
+                    <Users className="h-5 w-5 shrink-0" />
                     <div className="flex-1 text-left">
                       <p className="font-medium">Tutti i follower</p>
                       <p className="text-sm text-muted-foreground">Visibile a tutti</p>
@@ -482,10 +486,12 @@ const ShareLocationPage = () => {
                     onClick={() => {
                       setShareType('close_friends');
                       setIsEditingShareType(false);
+                      setShowCloseFriendsAvatars(true);
+                      setShowSpecificUsersSearch(false);
                     }}
                     className="w-full flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-accent transition-colors"
                   >
-                    <UserCheck className="h-5 w-5" />
+                    <UserCheck className="h-5 w-5 shrink-0" />
                     <div className="flex-1 text-left">
                       <p className="font-medium">Amici stretti</p>
                       <p className="text-sm text-muted-foreground">Solo amici stretti ({closeFriends.length})</p>
@@ -496,10 +502,12 @@ const ShareLocationPage = () => {
                     onClick={() => {
                       setShareType('specific_users');
                       setIsEditingShareType(false);
+                      setShowCloseFriendsAvatars(false);
+                      setShowSpecificUsersSearch(true);
                     }}
                     className="w-full flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-accent transition-colors"
                   >
-                    <User className="h-5 w-5" />
+                    <User className="h-5 w-5 shrink-0" />
                     <div className="flex-1 text-left">
                       <p className="font-medium">Utenti specifici</p>
                       <p className="text-sm text-muted-foreground">Scegli manualmente</p>
@@ -507,25 +515,33 @@ const ShareLocationPage = () => {
                   </button>
                 </>
               ) : (
-                <div className="p-4 rounded-lg border border-primary bg-primary/5">
-                  <div className="flex items-center gap-3">
-                    {shareType === 'all_followers' && <Users className="h-5 w-5" />}
-                    {shareType === 'close_friends' && <UserCheck className="h-5 w-5" />}
-                    {shareType === 'specific_users' && <User className="h-5 w-5" />}
-                    <div className="flex-1">
-                      <p className="font-medium">
+                <button
+                  onClick={() => {
+                    setIsEditingShareType(true);
+                    setShowCloseFriendsAvatars(false);
+                    setShowSpecificUsersSearch(false);
+                  }}
+                  className="w-full p-4 rounded-lg border border-primary bg-primary/5 hover:bg-primary/10 transition-colors"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 flex-1">
+                      {shareType === 'all_followers' && <Users className="h-5 w-5 shrink-0" />}
+                      {shareType === 'close_friends' && <UserCheck className="h-5 w-5 shrink-0" />}
+                      {shareType === 'specific_users' && <User className="h-5 w-5 shrink-0" />}
+                      <p className="font-medium text-left">
                         {shareType === 'all_followers' && 'Tutti i follower'}
                         {shareType === 'close_friends' && 'Amici stretti'}
                         {shareType === 'specific_users' && 'Utenti specifici'}
                       </p>
                     </div>
+                    <span className="text-sm text-primary shrink-0">Modifica</span>
                   </div>
-                </div>
+                </button>
               )}
             </div>
 
             {/* Close Friends Avatars */}
-            {shareType === 'close_friends' && closeFriendsProfiles.length > 0 && (
+            {shareType === 'close_friends' && showCloseFriendsAvatars && closeFriendsProfiles.length > 0 && (
               <div className="space-y-2">
                 <h3 className="text-sm font-medium">Amici stretti ({closeFriendsProfiles.length})</h3>
                 <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
@@ -543,7 +559,7 @@ const ShareLocationPage = () => {
             )}
 
             {/* User Selection for specific users */}
-            {shareType === 'specific_users' && (
+            {shareType === 'specific_users' && showSpecificUsersSearch && (
               <div className="space-y-2">
                 <h3 className="text-sm font-medium">Seleziona utenti</h3>
                 
