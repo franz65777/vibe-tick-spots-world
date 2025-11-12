@@ -18,6 +18,14 @@ interface Badge {
   maxProgress?: number;
   earnedDate?: string;
   nextBadgeId?: string;
+  currentLevel?: number;
+  levels?: {
+    level: number;
+    name: string;
+    requirement: number;
+    earned: boolean;
+    earnedDate?: string;
+  }[];
 }
 
 interface AchievementDetailModalProps {
@@ -32,74 +40,51 @@ const AchievementDetailModal = ({ isOpen, onClose, badge, allBadges = [] }: Achi
   
   if (!isOpen || !badge) return null;
 
-  const progressPercentage = badge.progress && badge.maxProgress 
-    ? (badge.progress / badge.maxProgress) * 100 
-    : badge.earned ? 100 : 0;
-
-  // Find previous earned badges in the same category
-  const getPreviousBadges = () => {
-    if (!badge.earned) return [];
-    
-    const categoryBadges = allBadges.filter(b => 
-      b.category === badge.category && 
-      b.earned && 
-      b.id !== badge.id
-    );
-    
-    const levelOrder = { bronze: 1, silver: 2, gold: 3, platinum: 4 };
-    return categoryBadges
-      .filter(b => levelOrder[b.level] < levelOrder[badge.level])
-      .sort((a, b) => levelOrder[a.level] - levelOrder[b.level]);
-  };
+  const currentLevel = badge.currentLevel || 0;
+  const levels = badge.levels || [];
+  const nextLevel = levels.find(l => !l.earned);
+  const earnedLevels = levels.filter(l => l.earned);
+  
+  const progressPercentage = nextLevel && badge.progress !== undefined
+    ? (badge.progress / nextLevel.requirement) * 100 
+    : 100;
 
   const getNextSteps = () => {
-    if (badge.earned) return [];
+    if (!nextLevel) return [];
     
     switch (badge.id) {
-      case 'city-wanderer':
+      case 'explorer':
         return [
-          'Save places in different cities',
-          'Explore new destinations',
-          `Current progress: ${badge.progress}/3 cities`
-        ];
-      case 'globe-trotter':
-        return [
-          'Save places in 5 different cities',
-          'Try exploring international destinations',
-          `Current progress: ${badge.progress}/5 cities`
+          t('exploreDifferentCities', { ns: 'badges' }),
+          t('tryNewDestinations', { ns: 'badges' }),
+          `${t('currentProgress', { ns: 'badges' })}: ${badge.progress}/${nextLevel.requirement} ${t('cities', { ns: 'badges' })}`
         ];
       case 'foodie':
         return [
-          'Save 10 restaurants to your profile',
-          'Try different cuisine types',
-          'Share your food discoveries'
+          t('saveMoreRestaurants', { ns: 'badges' }),
+          t('tryDifferentCuisines', { ns: 'badges' }),
+          `${t('currentProgress', { ns: 'badges' })}: ${badge.progress}/${nextLevel.requirement} ${t('restaurants', { ns: 'badges' })}`
         ];
-      case 'culture-vulture':
+      case 'culture':
         return [
-          'Save museums and cultural venues',
-          'Visit art galleries and historical sites',
-          `Current progress: ${badge.progress}/5 venues`
-        ];
-      case 'getting-started':
-        return [
-          'Continue saving places you love',
-          'Explore different categories',
-          `Current progress: ${badge.progress}/10 places`
+          t('saveMuseumsVenues', { ns: 'badges' }),
+          t('visitGalleriesSites', { ns: 'badges' }),
+          `${t('currentProgress', { ns: 'badges' })}: ${badge.progress}/${nextLevel.requirement} ${t('venues', { ns: 'badges' })}`
         ];
       case 'collector':
         return [
-          'Keep discovering new places',
-          'Build your travel collection',
-          `Current progress: ${badge.progress}/50 places`
+          t('keepDiscovering', { ns: 'badges' }),
+          t('buildCollection', { ns: 'badges' }),
+          `${t('currentProgress', { ns: 'badges' })}: ${badge.progress}/${nextLevel.requirement} ${t('places', { ns: 'badges' })}`
         ];
-      case 'daily-saver':
+      case 'streak':
         return [
-          'Save at least one place every day',
-          'Make it a daily habit',
-          `Current streak: ${badge.progress}/7 days`
+          t('saveDaily', { ns: 'badges' }),
+          t('makeItHabit', { ns: 'badges' }),
+          `${t('currentStreak', { ns: 'badges' })}: ${badge.progress}/${nextLevel.requirement} ${t('days', { ns: 'badges' })}`
         ];
       default:
-        return ['Keep exploring and saving places!'];
+        return [t('keepExploring', { ns: 'badges' })];
     }
   };
 
@@ -149,27 +134,27 @@ const AchievementDetailModal = ({ isOpen, onClose, badge, allBadges = [] }: Achi
           <h2 className="text-xl font-bold text-foreground mb-2">{badge.name}</h2>
           <p className="text-muted-foreground text-sm mb-4">{badge.description}</p>
 
-          {badge.earned && badge.earnedDate && (
+          {currentLevel > 0 && (
             <div className="flex items-center justify-center gap-2 text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-full px-4 py-2">
-              <Calendar className="w-4 h-4" />
-              <span>{t('earnedOn', { ns: 'badges' })} {new Date(badge.earnedDate).toLocaleDateString()}</span>
+              <Trophy className="w-4 h-4" />
+              <span>{t('level', { ns: 'badges' })} {currentLevel}/3 {t('completed', { ns: 'badges' })}</span>
             </div>
           )}
         </div>
 
         {/* Progress Section */}
-        {!badge.earned && badge.progress !== undefined && badge.maxProgress && (
+        {nextLevel && badge.progress !== undefined && (
           <div className="px-6 pb-4">
             <div className="bg-muted/50 rounded-2xl p-4">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-medium text-foreground">{t('progress', { ns: 'badges' })}</span>
                 <span className="text-sm font-bold text-primary">
-                  {badge.progress}/{badge.maxProgress}
+                  {badge.progress}/{nextLevel.requirement}
                 </span>
               </div>
               <Progress value={progressPercentage} className="h-2 mb-2" />
               <p className="text-xs text-muted-foreground">
-                {Math.round(progressPercentage)}% {t('complete', { ns: 'badges' })}
+                {Math.round(progressPercentage)}% {t('toLevel', { ns: 'badges' })} {nextLevel.level}
               </p>
             </div>
           </div>
@@ -177,8 +162,49 @@ const AchievementDetailModal = ({ isOpen, onClose, badge, allBadges = [] }: Achi
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-6 pb-6">
-          {/* Next Steps */}
-          {!badge.earned && (
+          {/* Earned Levels */}
+          {earnedLevels.length > 0 && (
+            <div className="mb-6">
+              <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground mb-3">
+                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+                {t('earnedLevels', { ns: 'badges' })}
+              </h3>
+              <div className="space-y-2">
+                {earnedLevels.map((level) => (
+                  <div key={level.level} className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      level.level === 1 ? 'bg-orange-500' :
+                      level.level === 2 ? 'bg-gray-400' : 
+                      'bg-yellow-500'
+                    }`}>
+                      <Trophy className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <span className="text-sm font-medium text-foreground block">
+                        {t('level', { ns: 'badges' })} {level.level} - {level.name}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {level.requirement} {badge.id === 'explorer' ? t('cities', { ns: 'badges' }) : 
+                         badge.id === 'foodie' ? t('restaurants', { ns: 'badges' }) :
+                         badge.id === 'streak' ? t('days', { ns: 'badges' }) : t('places', { ns: 'badges' })}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+                      {level.earnedDate && (
+                        <span className="text-xs text-muted-foreground block mt-1">
+                          {new Date(level.earnedDate).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Next Level Goal */}
+          {nextLevel && (
             <div className="mb-6">
               <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground mb-3">
                 <Target className="w-5 h-5 text-primary" />
@@ -192,64 +218,6 @@ const AchievementDetailModal = ({ isOpen, onClose, badge, allBadges = [] }: Achi
                   </div>
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* Previous Badges */}
-          {badge.earned && getPreviousBadges().length > 0 && (
-            <div className="mb-6">
-              <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground mb-3">
-                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
-                {t('previouslyEarned', { ns: 'badges' })}
-              </h3>
-              <div className="space-y-2">
-                {getPreviousBadges().map((prevBadge) => (
-                  <div key={prevBadge.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl">
-                    <span className="text-2xl">{prevBadge.icon}</span>
-                    <div className="flex-1">
-                      <span className="text-sm font-medium text-foreground block">{prevBadge.name}</span>
-                      <span className="text-xs text-muted-foreground">{prevBadge.description}</span>
-                    </div>
-                    <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Next Badge Goal - Shown when current badge is earned */}
-          {badge.earned && badge.nextBadgeId && (
-            <div className="mb-6">
-              <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground mb-3">
-                <Target className="w-5 h-5 text-primary" />
-                {t('nextGoal', { ns: 'badges' })}
-              </h3>
-              {(() => {
-                const nextBadge = allBadges.find(b => b.id === badge.nextBadgeId);
-                if (!nextBadge) return null;
-                return (
-                  <div className="p-4 bg-primary/10 rounded-xl border-2 border-primary/20">
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className="text-3xl">{nextBadge.icon}</span>
-                      <div className="flex-1">
-                        <span className="text-base font-semibold text-foreground block">{nextBadge.name}</span>
-                        <span className="text-sm text-muted-foreground">{nextBadge.description}</span>
-                      </div>
-                    </div>
-                    {nextBadge.progress !== undefined && nextBadge.maxProgress && (
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs text-muted-foreground">{t('progress', { ns: 'badges' })}</span>
-                          <span className="text-xs font-bold text-primary">
-                            {nextBadge.progress}/{nextBadge.maxProgress}
-                          </span>
-                        </div>
-                        <Progress value={(nextBadge.progress / nextBadge.maxProgress) * 100} className="h-2" />
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
             </div>
           )}
 
@@ -271,12 +239,12 @@ const AchievementDetailModal = ({ isOpen, onClose, badge, allBadges = [] }: Achi
         </div>
 
         {/* Footer */}
-        <div className="p-6">
+        <div className="p-6 pt-0">
           <Button 
             onClick={onClose}
             className="w-full bg-primary hover:bg-primary/90"
           >
-            {badge.earned ? t('awesome', { ns: 'badges' }) : t('keepGoing', { ns: 'badges' })}
+            {currentLevel === 3 ? t('awesome', { ns: 'badges' }) : t('keepGoing', { ns: 'badges' })}
           </Button>
         </div>
       </div>

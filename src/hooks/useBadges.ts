@@ -14,18 +14,35 @@ interface Badge {
   progress?: number;
   maxProgress?: number;
   earnedDate?: string;
+  currentLevel?: number; // 0 = not started, 1 = bronze, 2 = silver, 3 = gold
+  levels?: {
+    level: number;
+    name: string;
+    requirement: number;
+    earned: boolean;
+    earnedDate?: string;
+  }[];
 }
 
 export const useBadges = () => {
   const { getStats } = useSavedPlaces();
   const stats = getStats();
   
+  const calculateLevel = (progress: number, levels: { requirement: number }[]) => {
+    for (let i = levels.length - 1; i >= 0; i--) {
+      if (progress >= levels[i].requirement) {
+        return i + 1;
+      }
+    }
+    return 0;
+  };
+
   const [badges, setBadges] = useState<Badge[]>([
-    // Explorer Badges
+    // Explorer Badge - Progressive
     {
-      id: 'city-wanderer',
-      name: 'City Wanderer',
-      description: 'Save locations in 3 different cities',
+      id: 'explorer',
+      name: 'Explorer',
+      description: 'Save locations in different cities',
       icon: '🌍',
       category: 'explorer',
       level: 'bronze',
@@ -33,102 +50,136 @@ export const useBadges = () => {
       earned: stats.cities >= 3,
       progress: stats.cities,
       maxProgress: 3,
-      earnedDate: stats.cities >= 3 ? '2024-05-30' : undefined
-    },
-    {
-      id: 'globe-trotter',
-      name: 'Globe Trotter',
-      description: 'Save locations in 5 different cities',
-      icon: '✈️',
-      category: 'explorer',
-      level: 'silver',
-      gradient: 'from-blue-400 to-purple-500',
-      earned: stats.cities >= 5,
-      progress: stats.cities,
-      maxProgress: 5
+      currentLevel: calculateLevel(stats.cities, [
+        { requirement: 3 },
+        { requirement: 10 },
+        { requirement: 25 }
+      ]),
+      levels: [
+        { level: 1, name: 'Bronze', requirement: 3, earned: stats.cities >= 3, earnedDate: stats.cities >= 3 ? '2024-05-30' : undefined },
+        { level: 2, name: 'Silver', requirement: 10, earned: stats.cities >= 10 },
+        { level: 3, name: 'Gold', requirement: 25, earned: stats.cities >= 25 }
+      ]
     },
     
-    // Foodie Badges
+    // Foodie Badge - Progressive
     {
       id: 'foodie',
       name: 'Foodie',
-      description: 'Save 10+ restaurants',
+      description: 'Save restaurants',
       icon: '🍽️',
       category: 'foodie',
       level: 'bronze',
       gradient: 'from-orange-400 to-red-500',
-      earned: true, // Demo: user has earned this
+      earned: true,
       progress: 12,
       maxProgress: 10,
-      earnedDate: '2024-05-25'
+      currentLevel: calculateLevel(12, [
+        { requirement: 10 },
+        { requirement: 30 },
+        { requirement: 75 }
+      ]),
+      levels: [
+        { level: 1, name: 'Bronze', requirement: 10, earned: true, earnedDate: '2024-05-25' },
+        { level: 2, name: 'Silver', requirement: 30, earned: false },
+        { level: 3, name: 'Gold', requirement: 75, earned: false }
+      ]
     },
+    
+    // Culture Badge - Progressive
     {
-      id: 'culture-vulture',
+      id: 'culture',
       name: 'Culture Vulture',
-      description: 'Save 5+ museums or cultural venues',
+      description: 'Save museums and cultural venues',
       icon: '🏛️',
       category: 'foodie',
       level: 'bronze',
       gradient: 'from-purple-400 to-pink-500',
       earned: false,
       progress: 2,
-      maxProgress: 5
+      maxProgress: 5,
+      currentLevel: calculateLevel(2, [
+        { requirement: 5 },
+        { requirement: 15 },
+        { requirement: 40 }
+      ]),
+      levels: [
+        { level: 1, name: 'Bronze', requirement: 5, earned: false },
+        { level: 2, name: 'Silver', requirement: 15, earned: false },
+        { level: 3, name: 'Gold', requirement: 40, earned: false }
+      ]
     },
     
-    // Social Badges
+    // Social Badge - Progressive
     {
       id: 'influencer',
       name: 'Influencer',
-      description: 'Get 50+ likes on saved places',
+      description: 'Get likes on saved places',
       icon: '⭐',
       category: 'social',
       level: 'gold',
       gradient: 'from-yellow-400 to-orange-500',
-      earned: true, // Demo: user has earned this
+      earned: true,
       progress: 67,
       maxProgress: 50,
-      earnedDate: '2024-06-01'
+      currentLevel: calculateLevel(67, [
+        { requirement: 50 },
+        { requirement: 200 },
+        { requirement: 500 }
+      ]),
+      levels: [
+        { level: 1, name: 'Bronze', requirement: 50, earned: true, earnedDate: '2024-06-01' },
+        { level: 2, name: 'Silver', requirement: 200, earned: false },
+        { level: 3, name: 'Gold', requirement: 500, earned: false }
+      ]
     },
     
-    // Milestone Badges
-    {
-      id: 'getting-started',
-      name: 'Getting Started',
-      description: 'Save 10 places total',
-      icon: '🎯',
-      category: 'milestone',
-      level: 'bronze',
-      gradient: 'from-gray-400 to-gray-600',
-      earned: stats.places >= 10,
-      progress: stats.places,
-      maxProgress: 10,
-      earnedDate: stats.places >= 10 ? '2024-05-20' : undefined
-    },
+    // Milestone Badge - Progressive
     {
       id: 'collector',
       name: 'Collector',
-      description: 'Save 50 places total',
+      description: 'Save places total',
       icon: '📍',
       category: 'milestone',
-      level: 'silver',
+      level: 'bronze',
       gradient: 'from-blue-500 to-indigo-600',
-      earned: false,
+      earned: stats.places >= 10,
       progress: stats.places,
-      maxProgress: 50
+      maxProgress: 10,
+      currentLevel: calculateLevel(stats.places, [
+        { requirement: 10 },
+        { requirement: 50 },
+        { requirement: 150 }
+      ]),
+      levels: [
+        { level: 1, name: 'Bronze', requirement: 10, earned: stats.places >= 10, earnedDate: stats.places >= 10 ? '2024-05-20' : undefined },
+        { level: 2, name: 'Silver', requirement: 50, earned: stats.places >= 50 },
+        { level: 3, name: 'Gold', requirement: 150, earned: stats.places >= 150 }
+      ]
     },
     
-    // Streak Badges
+    // Streak Badge - Progressive
     {
-      id: 'daily-saver',
+      id: 'streak',
       name: 'Daily Saver',
-      description: 'Save places for 7 consecutive days',
+      description: 'Save places consecutively',
       icon: '🔥',
       category: 'streak',
       level: 'bronze',
       gradient: 'from-red-400 to-orange-500',
       earned: false,
       progress: 3,
-      maxProgress: 7
+      maxProgress: 7,
+      currentLevel: calculateLevel(3, [
+        { requirement: 7 },
+        { requirement: 30 },
+        { requirement: 100 }
+      ]),
+      levels: [
+        { level: 1, name: 'Bronze', requirement: 7, earned: false },
+        { level: 2, name: 'Silver', requirement: 30, earned: false },
+        { level: 3, name: 'Gold', requirement: 100, earned: false }
+      ]
     }
   ]);
 
