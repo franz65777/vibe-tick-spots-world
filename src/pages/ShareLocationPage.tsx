@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, MapPin, Loader2, Users, UserCheck, User } from 'lucide-react';
-import { getCategoryIcon } from '@/utils/categoryIcons';
+import { getCategoryImage } from '@/utils/categoryIcons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
@@ -395,10 +395,13 @@ const ShareLocationPage = () => {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      {result.category && (() => {
-                        const CategoryIcon = getCategoryIcon(result.category);
-                        return <CategoryIcon className="h-5 w-5 text-primary shrink-0" />;
-                      })()}
+                      {result.category && (
+                        <img 
+                          src={getCategoryImage(result.category)} 
+                          alt={result.category}
+                          className="h-8 w-8 shrink-0 object-contain"
+                        />
+                      )}
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{result.name}</p>
                         <p className="text-sm text-muted-foreground truncate">{result.address}</p>
@@ -430,10 +433,13 @@ const ShareLocationPage = () => {
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3 flex-1 min-w-0">
-                        {loc.category && (() => {
-                          const CategoryIcon = getCategoryIcon(loc.category);
-                          return <CategoryIcon className="h-5 w-5 text-primary shrink-0" />;
-                        })()}
+                        {loc.category && (
+                          <img 
+                            src={getCategoryImage(loc.category)} 
+                            alt={loc.category}
+                            className="h-8 w-8 shrink-0 object-contain"
+                          />
+                        )}
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate">{loc.name}</p>
                           <p className="text-sm text-muted-foreground truncate">{loc.address}</p>
@@ -452,10 +458,13 @@ const ShareLocationPage = () => {
           <div className="space-y-4">
             <div className="p-4 rounded-lg bg-primary/5 border border-primary">
               <div className="flex items-center gap-3">
-                {selectedLocation.category && (() => {
-                  const CategoryIcon = getCategoryIcon(selectedLocation.category);
-                  return <CategoryIcon className="h-6 w-6 text-primary shrink-0" />;
-                })()}
+                {selectedLocation.category && (
+                  <img 
+                    src={getCategoryImage(selectedLocation.category)} 
+                    alt={selectedLocation.category}
+                    className="h-10 w-10 shrink-0 object-contain"
+                  />
+                )}
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate">{selectedLocation.name}</p>
                   {!shareType || isEditingShareType ? (
