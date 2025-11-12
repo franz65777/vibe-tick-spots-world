@@ -274,7 +274,7 @@ const AchievementDetailModal = ({ isOpen, onClose, badge, allBadges = [] }: Achi
         <div className="p-6">
           <Button 
             onClick={onClose}
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+            className="w-full bg-primary hover:bg-primary/90"
           >
             {badge.earned ? t('awesome', { ns: 'badges' }) : t('keepGoing', { ns: 'badges' })}
           </Button>

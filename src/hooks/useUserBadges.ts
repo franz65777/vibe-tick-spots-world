@@ -463,25 +463,24 @@ const fetchUserStats = async (hasCache: boolean = false) => {
 
     const filteredBadges: Badge[] = [];
 
-    // For each category, show only the current level and next level
+    // For each category, show earned badges AND the next unearned badge
     Object.values(badgeGroups).forEach(categoryBadges => {
       // Sort by level (bronze -> silver -> gold -> platinum)
       const levelOrder = { bronze: 1, silver: 2, gold: 3, platinum: 4 };
       categoryBadges.sort((a, b) => levelOrder[a.level] - levelOrder[b.level]);
 
-      let currentBadgeAdded = false;
+      let hasUnearned = false;
       
       for (let i = 0; i < categoryBadges.length; i++) {
         const badge = categoryBadges[i];
         
         if (badge.earned) {
-          // Always show earned badges
+          // Always show all earned badges
           filteredBadges.push(badge);
-          currentBadgeAdded = true;
-        } else if (!currentBadgeAdded) {
+        } else if (!hasUnearned) {
           // Show the first unearned badge (next goal)
           filteredBadges.push(badge);
-          currentBadgeAdded = true;
+          hasUnearned = true;
         }
       }
     });

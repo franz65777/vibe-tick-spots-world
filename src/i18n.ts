@@ -3651,6 +3651,7 @@ const resources = {
         progress: 'Progresso',
         complete: 'completo',
         nextSteps: 'Próximos Passos',
+        nextGoal: 'Próximo Objetivo',
         awesome: 'Incrível!',
         keepGoing: 'Continue!',
         specialBronzeBadge: 'Badge de bronze especial',
@@ -4550,6 +4551,24 @@ const resources = {
       discoverPeople: '人を探す'
     },
     badges: {
+      newBadgeUnlocked: '新しいバッジをアンロック',
+      previouslyEarned: '以前に獲得',
+      rewards: '報酬',
+      earnedOn: '獲得日',
+      progress: '進捗',
+      complete: '完了',
+      nextSteps: '次のステップ',
+      nextGoal: '次の目標',
+      awesome: '素晴らしい！',
+      keepGoing: '頑張って！',
+      specialBronzeBadge: '特別ブロンズバッジ',
+      specialSilverBadge: '特別シルバーバッジ',
+      specialGoldBadge: '特別ゴールドバッジ',
+      specialPlatinumBadge: '特別プラチナバッジ',
+      profileBoost: 'プロフィールブースト',
+      featuredInDiscovery: 'ディスカバリーで特集',
+      earlyAccessFeatures: '新機能への早期アクセス',
+      exclusiveCommunityAccess: '限定コミュニティアクセス',
       cityWanderer: 'シティワンダラー',
       cityWandererDesc: '3つの異なる都市で場所を保存',
       globeTrotter: 'グローブトロッター',
@@ -4587,8 +4606,7 @@ const resources = {
       prolificPoster: '多作投稿者',
       prolificPosterDesc: '25以上の投稿を作成',
       contentMaster: 'コンテンツマスター',
-      contentMasterDesc: '100以上の投稿を作成',
-      newBadgeUnlocked: '新しいバッジを獲得'
+      contentMasterDesc: '100以上の投稿を作成'
     },
     notifications: {
       title: '通知',
