@@ -5208,6 +5208,10 @@ const resources = {
       hoursAgo: '{{count}}시간',
       daysAgo: '{{count}}일',
       weeksAgo: '{{count}}주',
+      onMyWay: '가는 중',
+      onMyWayMessage: '{{location}}로 가는 중입니다! 곧 만나요 👋',
+      messageSent: '메시지 전송됨!',
+      isAtLocation: '에 있습니다',
     },
     messages: {
       messages: '메시지',
@@ -6133,6 +6137,10 @@ const resources = {
       hoursAgo: '{{count}} घं',
       daysAgo: '{{count}} दिन',
       weeksAgo: '{{count}} सप्ताह',
+      onMyWay: 'मैं आ रहा हूँ',
+      onMyWayMessage: 'मैं {{location}} की ओर आ रहा हूँ! वहाँ मिलते हैं 👋',
+      messageSent: 'संदेश भेजा गया!',
+      isAtLocation: 'यहाँ है',
     },
     messages: {
       messages: 'संदेश',
@@ -6582,6 +6590,10 @@ const resources = {
       hoursAgo: '{{count}} ч',
       daysAgo: '{{count}} д',
       weeksAgo: '{{count}} нед',
+      onMyWay: 'Я еду',
+      onMyWayMessage: 'Я еду в {{location}}! Увидимся там 👋',
+      messageSent: 'Сообщение отправлено!',
+      isAtLocation: 'находится в',
     },
     messages: {
       messages: 'Сообщения',
