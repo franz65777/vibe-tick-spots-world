@@ -115,21 +115,21 @@ const AchievementDetailModal = ({ isOpen, onClose, badge, allBadges = [] }: Achi
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-[#5c6b7d] rounded-3xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+      <div className="bg-background rounded-3xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="relative p-6 text-center">
           <button 
             onClick={onClose}
-            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-black/10"
+            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted"
           >
-            <X className="w-5 h-5 text-white" />
+            <X className="w-5 h-5 text-foreground" />
           </button>
           
           {/* Badge Icon */}
           <div className={`w-24 h-24 mx-auto mb-4 rounded-3xl flex items-center justify-center text-4xl ${
             badge.earned 
               ? `bg-gradient-to-br ${badge.gradient} shadow-lg`
-              : 'bg-white/20'
+              : 'bg-muted'
           }`}>
             <span className={badge.earned ? 'filter-none' : 'filter grayscale opacity-60'}>
               {badge.icon}
@@ -146,11 +146,11 @@ const AchievementDetailModal = ({ isOpen, onClose, badge, allBadges = [] }: Achi
             )}
           </div>
 
-          <h2 className="text-xl font-bold text-white mb-2">{badge.name}</h2>
-          <p className="text-white/70 text-sm mb-4">{badge.description}</p>
+          <h2 className="text-xl font-bold text-foreground mb-2">{badge.name}</h2>
+          <p className="text-muted-foreground text-sm mb-4">{badge.description}</p>
 
           {badge.earned && badge.earnedDate && (
-            <div className="flex items-center justify-center gap-2 text-sm text-green-400 bg-green-900/20 rounded-full px-4 py-2">
+            <div className="flex items-center justify-center gap-2 text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-full px-4 py-2">
               <Calendar className="w-4 h-4" />
               <span>{t('earnedOn', { ns: 'badges' })} {new Date(badge.earnedDate).toLocaleDateString()}</span>
             </div>
@@ -160,15 +160,15 @@ const AchievementDetailModal = ({ isOpen, onClose, badge, allBadges = [] }: Achi
         {/* Progress Section */}
         {!badge.earned && badge.progress !== undefined && badge.maxProgress && (
           <div className="px-6 pb-4">
-            <div className="bg-white/10 rounded-2xl p-4">
+            <div className="bg-muted/50 rounded-2xl p-4">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-white">{t('progress', { ns: 'badges' })}</span>
-                <span className="text-sm font-bold text-green-400">
+                <span className="text-sm font-medium text-foreground">{t('progress', { ns: 'badges' })}</span>
+                <span className="text-sm font-bold text-primary">
                   {badge.progress}/{badge.maxProgress}
                 </span>
               </div>
               <Progress value={progressPercentage} className="h-2 mb-2" />
-              <p className="text-xs text-white/60">
+              <p className="text-xs text-muted-foreground">
                 {Math.round(progressPercentage)}% {t('complete', { ns: 'badges' })}
               </p>
             </div>
@@ -180,15 +180,15 @@ const AchievementDetailModal = ({ isOpen, onClose, badge, allBadges = [] }: Achi
           {/* Next Steps */}
           {!badge.earned && (
             <div className="mb-6">
-              <h3 className="flex items-center gap-2 text-lg font-semibold text-white mb-3">
-                <Target className="w-5 h-5 text-blue-400" />
+              <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground mb-3">
+                <Target className="w-5 h-5 text-primary" />
                 {t('nextSteps', { ns: 'badges' })}
               </h3>
               <div className="space-y-2">
                 {getNextSteps().map((step, index) => (
-                  <div key={index} className="flex items-start gap-3 p-3 bg-blue-900/20 rounded-xl">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
-                    <span className="text-sm text-white/80">{step}</span>
+                  <div key={index} className="flex items-start gap-3 p-3 bg-primary/10 rounded-xl">
+                    <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
+                    <span className="text-sm text-foreground/80">{step}</span>
                   </div>
                 ))}
               </div>
@@ -198,36 +198,72 @@ const AchievementDetailModal = ({ isOpen, onClose, badge, allBadges = [] }: Achi
           {/* Previous Badges */}
           {badge.earned && getPreviousBadges().length > 0 && (
             <div className="mb-6">
-              <h3 className="flex items-center gap-2 text-lg font-semibold text-white mb-3">
-                <CheckCircle className="w-5 h-5 text-green-400" />
+              <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground mb-3">
+                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
                 {t('previouslyEarned', { ns: 'badges' })}
               </h3>
               <div className="space-y-2">
                 {getPreviousBadges().map((prevBadge) => (
-                  <div key={prevBadge.id} className="flex items-center gap-3 p-3 bg-white/10 rounded-xl">
+                  <div key={prevBadge.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl">
                     <span className="text-2xl">{prevBadge.icon}</span>
                     <div className="flex-1">
-                      <span className="text-sm font-medium text-white block">{prevBadge.name}</span>
-                      <span className="text-xs text-white/60">{prevBadge.description}</span>
+                      <span className="text-sm font-medium text-foreground block">{prevBadge.name}</span>
+                      <span className="text-xs text-muted-foreground">{prevBadge.description}</span>
                     </div>
-                    <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                    <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
                   </div>
                 ))}
               </div>
             </div>
           )}
 
+          {/* Next Badge Goal - Shown when current badge is earned */}
+          {badge.earned && badge.nextBadgeId && (
+            <div className="mb-6">
+              <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground mb-3">
+                <Target className="w-5 h-5 text-primary" />
+                {t('nextGoal', { ns: 'badges' })}
+              </h3>
+              {(() => {
+                const nextBadge = allBadges.find(b => b.id === badge.nextBadgeId);
+                if (!nextBadge) return null;
+                return (
+                  <div className="p-4 bg-primary/10 rounded-xl border-2 border-primary/20">
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="text-3xl">{nextBadge.icon}</span>
+                      <div className="flex-1">
+                        <span className="text-base font-semibold text-foreground block">{nextBadge.name}</span>
+                        <span className="text-sm text-muted-foreground">{nextBadge.description}</span>
+                      </div>
+                    </div>
+                    {nextBadge.progress !== undefined && nextBadge.maxProgress && (
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs text-muted-foreground">{t('progress', { ns: 'badges' })}</span>
+                          <span className="text-xs font-bold text-primary">
+                            {nextBadge.progress}/{nextBadge.maxProgress}
+                          </span>
+                        </div>
+                        <Progress value={(nextBadge.progress / nextBadge.maxProgress) * 100} className="h-2" />
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
           {/* Rewards */}
           <div>
-            <h3 className="flex items-center gap-2 text-lg font-semibold text-white mb-3">
-              <Trophy className="w-5 h-5 text-yellow-400" />
+            <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground mb-3">
+              <Trophy className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
               {t('rewards', { ns: 'badges' })}
             </h3>
             <div className="space-y-2">
               {getRewards().map((reward, index) => (
-                <div key={index} className="flex items-center gap-3 p-3 bg-yellow-900/20 rounded-xl">
-                  <div className="w-2 h-2 bg-yellow-400 rounded-full flex-shrink-0"></div>
-                  <span className="text-sm text-white/80">{reward}</span>
+                <div key={index} className="flex items-center gap-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl">
+                  <div className="w-2 h-2 bg-yellow-600 dark:bg-yellow-400 rounded-full flex-shrink-0"></div>
+                  <span className="text-sm text-foreground/80">{reward}</span>
                 </div>
               ))}
             </div>
@@ -235,7 +271,7 @@ const AchievementDetailModal = ({ isOpen, onClose, badge, allBadges = [] }: Achi
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-white/10">
+        <div className="p-6">
           <Button 
             onClick={onClose}
             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"

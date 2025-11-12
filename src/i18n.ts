@@ -453,6 +453,7 @@ const resources = {
         progress: 'Progress',
         complete: 'complete',
         nextSteps: 'Next Steps',
+        nextGoal: 'Next Goal',
         awesome: 'Awesome!',
         keepGoing: 'Keep Going!',
         specialBronzeBadge: 'Special bronze badge',
