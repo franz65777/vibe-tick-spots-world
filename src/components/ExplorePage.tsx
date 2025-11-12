@@ -49,6 +49,7 @@ const ExplorePage = () => {
     return state?.searchMode || 'locations';
   });
   const [isSearching, setIsSearching] = useState(false);
+  const [inputFocused, setInputFocused] = useState(false);
   const [userRecommendations, setUserRecommendations] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
@@ -423,15 +424,17 @@ const ExplorePage = () => {
                 placeholder={searchMode === 'locations' ? t('searchPlaces', { ns: 'explore' }) : t('searchPeople', { ns: 'explore' })}
                 value={searchQuery}
                 onChange={e => handleSearch(e.target.value)}
+                onFocus={() => setInputFocused(true)}
+                onBlur={() => setTimeout(() => setInputFocused(false), 100)}
                 className="pl-12 pr-4 h-12 bg-muted/50 border-border focus:bg-background rounded-xl"
               />
               {searchQuery && <Button onClick={clearSearch} variant="ghost" size="sm" className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-muted rounded-full">
                   ×
                 </Button>}
             </div>
-            {searchQuery && (
+            {(inputFocused || searchQuery) && (
               <Button
-                onClick={clearSearch}
+                onClick={() => searchInputRef.current?.blur()}
                 variant="ghost"
                 className="text-sm font-medium text-primary hover:text-primary/80 px-3 shrink-0"
               >
