@@ -68,7 +68,7 @@ const DarkModeTileLayer = ({ isDarkMode }: { isDarkMode: boolean }) => {
         ? `https://api.mapbox.com/styles/v1/mapbox/navigation-night-v1/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`
         : `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`)
     : (isDarkMode
-        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+        ? 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
         : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png');
   return (
     <TileLayer
@@ -311,7 +311,7 @@ const LeafletExploreMap = ({
         }
         
         .leaflet-tile {
-          filter: ${isDarkMode ? 'brightness(1.2) contrast(1.05) saturate(1.1)' : 'brightness(1.0)'};
+          filter: ${isDarkMode ? 'brightness(0.7) contrast(1.2) saturate(0.9) hue-rotate(180deg) invert(1)' : 'brightness(1.0)'};
         }
       `}</style>
     </div>
