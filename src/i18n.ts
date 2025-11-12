@@ -5657,6 +5657,10 @@ const resources = {
       hoursAgo: '{{count}} س',
       daysAgo: '{{count}} ي',
       weeksAgo: '{{count}} أ',
+      onMyWay: 'أنا في طريقي',
+      onMyWayMessage: 'أنا في طريقي إلى {{location}}! أراك هناك 👋',
+      messageSent: 'تم إرسال الرسالة!',
+      isAtLocation: 'في',
     },
     messages: {
       messages: 'الرسائل',
