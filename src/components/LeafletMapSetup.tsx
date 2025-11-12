@@ -285,6 +285,7 @@ const LeafletMapSetup = ({
           friendAvatars: [],
           isDarkMode,
           hasCampaign,
+          sharedByUserAvatar: place.sharedByUser?.avatar_url || null,
         });
 
         let marker = markersRef.current.get(place.id);
