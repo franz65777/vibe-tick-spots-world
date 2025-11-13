@@ -54,7 +54,7 @@ export const useLocationShares = () => {
         .from('user_location_shares')
         .select(`
           *,
-          profiles:user_id (
+          profiles (
             id,
             username,
             avatar_url
