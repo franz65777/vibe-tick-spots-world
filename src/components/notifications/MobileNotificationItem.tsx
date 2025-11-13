@@ -755,6 +755,7 @@ const MobileNotificationItem = ({
               handleClick();
             }}
             onPointerDown={(e) => {
+              (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
               setTouchStartX(e.clientX);
             }}
             onPointerMove={(e) => {
@@ -775,10 +776,14 @@ const MobileNotificationItem = ({
               }
               setTouchStartX(null);
             }}
+            onPointerCancel={() => {
+              setTouchStartX(null);
+              if (!swipedOpen) setTranslateX(0);
+            }}
             className={`relative z-10 w-full ${swipedOpen ? '' : 'cursor-pointer active:bg-accent/50'} transition-colors ${
               !notification.is_read ? 'bg-accent/20' : 'bg-background'
             }`}
-            style={{ transform: `translateX(${translateX}px)`, transition: touchStartX ? 'none' : 'transform 180ms ease' }}
+            style={{ touchAction: 'pan-y', transform: `translateX(${translateX}px)`, transition: touchStartX ? 'none' : 'transform 180ms ease' }}
           >
             <div className="flex items-start gap-2.5 py-3 px-4">
               {/* User Avatar(s) */}
