@@ -44,12 +44,16 @@ interface MobileNotificationItemProps {
   };
   onMarkAsRead: (id: string) => void;
   onAction: (notification: any) => void;
+  openSwipeId?: string | null;
+  onSwipeOpen?: (id: string | null) => void;
 }
 
 const MobileNotificationItem = ({ 
   notification, 
   onMarkAsRead, 
-  onAction 
+  onAction,
+  openSwipeId,
+  onSwipeOpen
 }: MobileNotificationItemProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -70,6 +74,14 @@ const MobileNotificationItem = ({
   const [translateX, setTranslateX] = useState(0);
   const [swipedOpen, setSwipedOpen] = useState(false);
   const [hidden, setHidden] = useState(false);
+
+  // Close this notification if another one is opened
+  useEffect(() => {
+    if (openSwipeId && openSwipeId !== notification.id && swipedOpen) {
+      setSwipedOpen(false);
+      setTranslateX(0);
+    }
+  }, [openSwipeId, notification.id, swipedOpen]);
 
   // Cache for profile data to avoid redundant queries
   const profileCacheRef = useRef<Map<string, { avatar: string | null; username: string; timestamp: number }>>(new Map());
@@ -770,9 +782,13 @@ const MobileNotificationItem = ({
               if (translateX <= threshold) {
                 setTranslateX(-96);
                 setSwipedOpen(true);
+                onSwipeOpen?.(notification.id);
               } else {
                 setTranslateX(0);
                 setSwipedOpen(false);
+                if (openSwipeId === notification.id) {
+                  onSwipeOpen?.(null);
+                }
               }
               setTouchStartX(null);
             }}

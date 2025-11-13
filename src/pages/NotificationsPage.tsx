@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ const NotificationsPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { notifications, unreadCount, loading, markAsRead, markAllAsRead } = useNotifications();
+  const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
 
   // Mark all as read when page loads
   useEffect(() => {
@@ -166,6 +167,8 @@ const NotificationsPage = () => {
                 notification={notification}
                 onMarkAsRead={handleMarkAsRead}
                 onAction={handleNotificationClick}
+                openSwipeId={openSwipeId}
+                onSwipeOpen={setOpenSwipeId}
               />
             ))}
           </div>

@@ -349,7 +349,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
             className="w-8 h-8 flex items-center justify-center transition-all hover:scale-110 flex-shrink-0"
             aria-label="Discover places"
           >
-            <img src={fireIcon} alt="Discover" className="w-7 h-7" />
+            <img src={fireIcon} alt="Discover" className="w-7 h-7" style={{ transform: 'scaleX(0.85)' }} />
           </button>
         )}
       </div>
