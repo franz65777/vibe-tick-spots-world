@@ -51,31 +51,29 @@ const CloseFriendsModal: React.FC<CloseFriendsModalProps> = ({ open, onOpenChang
 
       const closeFriendIds = closeFriendsData?.map(cf => cf.friend_id) || [];
 
-      // Fetch all followers
+      // Fetch users I follow (following)
       const { data: followsData, error: followsError } = await supabase
         .from('follows')
-        .select('follower_id')
-        .eq('following_id', user.id);
+        .select('following_id')
+        .eq('follower_id', user.id);
 
       if (followsError) throw followsError;
 
-      const followerIds = followsData?.map(f => f.follower_id) || [];
+      const followingIds = followsData?.map(f => f.following_id) || [];
 
-      if (followerIds.length > 0 || closeFriendIds.length > 0) {
-        const allIds = [...new Set([...followerIds, ...closeFriendIds])];
-        
+      if (followingIds.length > 0 || closeFriendIds.length > 0) {
+        const allIds = [...new Set([...followingIds, ...closeFriendIds])];
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select('id, username, avatar_url')
           .in('id', allIds);
-
         if (profilesError) throw profilesError;
 
         const closeFriendsProfiles = profiles?.filter(p => closeFriendIds.includes(p.id)) || [];
-        const followersProfiles = profiles?.filter(p => followerIds.includes(p.id)) || [];
+        const followingProfiles = profiles?.filter(p => followingIds.includes(p.id)) || [];
 
         setCloseFriends(closeFriendsProfiles);
-        setFollowers(followersProfiles);
+        setFollowers(followingProfiles);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -213,7 +211,7 @@ const CloseFriendsModal: React.FC<CloseFriendsModalProps> = ({ open, onOpenChang
               {filteredFollowers.length > 0 && (
                 <div className="space-y-3">
                   <h3 className="text-sm font-medium text-muted-foreground px-1">
-                    {t('addFromFollowers', { ns: 'settings' })}
+                    {t('addFromFollowing', { ns: 'settings', defaultValue: t('addFromFollowers', { ns: 'settings', defaultValue: 'Add from people you follow' }) })}
                   </h3>
                   {filteredFollowers.map((follower) => (
                     <div
@@ -247,7 +245,9 @@ const CloseFriendsModal: React.FC<CloseFriendsModalProps> = ({ open, onOpenChang
 
               {filteredFollowers.length === 0 && filteredCloseFriends.length === 0 && (
                 <div className="text-center py-12 text-muted-foreground">
-                  {searchQuery ? t('noResults', { ns: 'common' }) : t('noFollowersAvailable', { ns: 'settings' })}
+                  {searchQuery 
+                    ? t('noResults', { ns: 'common' }) 
+                    : t('noFollowingAvailable', { ns: 'settings', defaultValue: t('noFollowersAvailable', { ns: 'settings', defaultValue: 'No following available' }) })}
                 </div>
               )}
             </div>
