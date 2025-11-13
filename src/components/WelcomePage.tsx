@@ -3,7 +3,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { LogIn, UserPlus, MapPin } from 'lucide-react';
-import { ThemeToggle } from '@/components/ThemeToggle';
 
 const WelcomePage = () => {
   const navigate = useNavigate();
@@ -18,11 +17,6 @@ const WelcomePage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Theme toggle in header */}
-      <div className="absolute top-4 right-4 z-10">
-        <ThemeToggle />
-      </div>
-      
       <div className="flex flex-col items-center justify-center min-h-screen px-6 py-8">
         <div className="w-full max-w-md space-y-8 text-center">
           {/* Logo with animation */}

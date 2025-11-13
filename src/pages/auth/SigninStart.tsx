@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Eye, EyeOff, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
-import { ThemeToggle } from '@/components/ThemeToggle';
 
 const SigninStart = () => {
   const [identifier, setIdentifier] = useState(''); // email or phone
@@ -48,11 +47,6 @@ const SigninStart = () => {
 
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
-      {/* Theme toggle in header */}
-      <div className="absolute top-4 right-4 z-10">
-        <ThemeToggle />
-      </div>
-      
       {/* Main content */}
       <div className="flex-1 overflow-y-auto scrollbar-hide px-6 py-8 overscroll-contain [-webkit-overflow-scrolling:touch]">
         <div className="w-full max-w-md mx-auto space-y-8 pt-12">

@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { ThemeToggle } from '@/components/ThemeToggle';
 
 const SignupPassword: React.FC = () => {
   const { t } = useTranslation();
@@ -143,7 +142,6 @@ const SignupPassword: React.FC = () => {
         }}>
           <ArrowLeft className="mr-2" /> {t('auth:back') || 'Indietro'}
         </Button>
-        <ThemeToggle />
       </header>
 
       <main className="flex-1 px-6 py-10">

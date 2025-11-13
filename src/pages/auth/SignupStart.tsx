@@ -5,11 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { ArrowLeft, Check, Loader2, X } from 'lucide-react';
+import { ArrowLeft, Check, Loader2, X, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
-import spottLogo from '@/assets/spott-logo.png';
-import { ThemeToggle } from '@/components/ThemeToggle';
 
 const languages = [
   { code: 'en', label: 'English' },
@@ -144,27 +142,31 @@ const SignupStart: React.FC = () => {
         <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="text-muted-foreground">
           <ArrowLeft className="mr-2" /> {t('auth:back') || 'Indietro'}
         </Button>
-        <div className="flex items-center gap-2">
-          <ThemeToggle />
-          <div className="w-40">
-            <Select value={i18n.language} onValueChange={(v) => i18n.changeLanguage(v)}>
-              <SelectTrigger className="h-9 rounded-full bg-background border border-input text-sm" aria-label="Language selector">
-                <SelectValue placeholder="Language" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl bg-popover text-popover-foreground z-[99999]">
-                {languages.map((l) => (
-                  <SelectItem key={l.code} value={l.code}>{l.label}</SelectItem>
+        <div className="w-40">
+          <Select value={i18n.language} onValueChange={(v) => i18n.changeLanguage(v)}>
+            <SelectTrigger className="h-9 rounded-full bg-background border border-input text-sm" aria-label="Language selector">
+              <SelectValue placeholder="Language" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl bg-popover text-popover-foreground z-[99999]">
+              {languages.map((l) => (
+                <SelectItem key={l.code} value={l.code}>{l.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-        </div>
       </header>
 
       <main className="flex-1 px-6 py-8 overflow-y-auto">
         <div className="w-full max-w-md mx-auto space-y-8">
           <div className="text-center">
-            <img src={spottLogo} alt="Spott Logo" className="h-16 mx-auto mb-4" />
+            <div className="flex items-center justify-center mb-8">
+              <div className="relative">
+                <h1 className="text-4xl font-semibold bg-gradient-to-br from-blue-800 via-blue-600 to-blue-400 bg-clip-text text-transparent flex items-baseline">
+                  SPOTT
+                  <MapPin className="w-3 h-3 text-blue-600 fill-blue-600 ml-1" />
+                </h1>
+              </div>
+            </div>
             <h2 className="mt-3 text-2xl font-semibold">Unisciti a Spott</h2>
             <p className="mt-1 text-muted-foreground">Inizia con la tua email o numero di telefono</p>
           </div>
@@ -230,7 +232,6 @@ const SignupStart: React.FC = () => {
                   {!checking && exists === true && <X className="w-4 h-4 text-destructive" />}
                 </div>
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">Potrebbe richiedere la configurazione SMS su Supabase</p>
               {exists === true && (
                 <div className="mt-2 text-sm text-destructive">
                   Questo numero è già in uso. <button type="button" className="underline text-primary ml-1" onClick={() => navigate('/auth?mode=login')}>Accedi</button>

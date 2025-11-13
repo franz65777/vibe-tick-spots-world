@@ -58,6 +58,7 @@ const MobileNotificationItem = ({
   const [isLoading, setIsLoading] = useState(false);
   const [targetUserId, setTargetUserId] = useState<string | null>(notification.data?.user_id ?? null);
   const [avatarOverride, setAvatarOverride] = useState<string | null>(null);
+  const [usernameOverride, setUsernameOverride] = useState<string | null>(null);
   const [hasActiveStory, setHasActiveStory] = useState(false);
   const [commentLiked, setCommentLiked] = useState(false);
   const [showStories, setShowStories] = useState(false);
@@ -91,6 +92,7 @@ const MobileNotificationItem = ({
           if (!uname) uname = cached.username ?? uname;
           setTargetUserId(uid);
           setAvatarOverride(avatar);
+          setUsernameOverride(uname);
         } else {
           // Fetch from database if not cached
           if (uid) {
@@ -134,6 +136,7 @@ const MobileNotificationItem = ({
 
           setTargetUserId(uid);
           setAvatarOverride(avatar);
+          setUsernameOverride(uname);
         }
 
         // Check follow status when we have both current user and target
@@ -388,13 +391,13 @@ const MobileNotificationItem = ({
   };
 
   const getNotificationText = () => {
-    // Support both field name formats from database
-    const username = notification.data?.user_name || notification.data?.username || notification.title || 'Someone';
+    // Use the fetched username if available, otherwise fall back to notification data
+    const username = usernameOverride || notification.data?.user_name || notification.data?.username || notification.title || 'Someone';
     const locationName = notification.data?.location_name || '';
     
     switch (notification.type) {
       case 'location_share':
-        const displayName = notification.data?.shared_by_username || notification.data?.user_name || notification.data?.username || notification.title || 'Someone';
+        const displayName = usernameOverride || notification.data?.shared_by_username || notification.data?.user_name || notification.data?.username || notification.title || 'Someone';
         return (
           <span className="text-foreground text-[13px] leading-tight">
             <span 
