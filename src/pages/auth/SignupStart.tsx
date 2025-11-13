@@ -10,18 +10,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 
 const languages = [
-  { code: 'en', label: 'English' },
-  { code: 'it', label: 'Italiano' },
-  { code: 'es', label: 'Español' },
-  { code: 'fr', label: 'Français' },
-  { code: 'de', label: 'Deutsch' },
-  { code: 'pt', label: 'Português' },
-  { code: 'nl', label: 'Nederlands' },
-  { code: 'pl', label: 'Polski' },
-  { code: 'ru', label: 'Русский' },
-  { code: 'tr', label: 'Türkçe' },
-  { code: 'ja', label: '日本語' },
-  { code: 'zh', label: '中文' },
+  { code: 'en', label: 'English', phonePlaceholder: '+44 7700 900123' },
+  { code: 'it', label: 'Italiano', phonePlaceholder: '+39 333 123 4567' },
+  { code: 'es', label: 'Español', phonePlaceholder: '+34 612 34 56 78' },
+  { code: 'fr', label: 'Français', phonePlaceholder: '+33 6 12 34 56 78' },
+  { code: 'de', label: 'Deutsch', phonePlaceholder: '+49 151 23456789' },
+  { code: 'pt', label: 'Português', phonePlaceholder: '+351 912 345 678' },
+  { code: 'nl', label: 'Nederlands', phonePlaceholder: '+31 6 12345678' },
+  { code: 'pl', label: 'Polski', phonePlaceholder: '+48 512 345 678' },
+  { code: 'ru', label: 'Русский', phonePlaceholder: '+7 912 345 67 89' },
+  { code: 'tr', label: 'Türkçe', phonePlaceholder: '+90 532 123 45 67' },
+  { code: 'ja', label: '日本語', phonePlaceholder: '+81 90 1234 5678' },
+  { code: 'zh', label: '中文', phonePlaceholder: '+86 138 0013 8000' },
 ];
 
 const SignupStart: React.FC = () => {
@@ -63,7 +63,7 @@ const SignupStart: React.FC = () => {
         if (error) throw error;
         const emailExists = !!data?.exists;
         setExists(emailExists);
-        setExistsMessage(emailExists ? 'Email già registrata' : '');
+        setExistsMessage(emailExists ? t('auth:emailAlreadyInUse') : '');
       } catch (e: any) {
         console.error('Email check error:', e);
         setExists(null);
@@ -73,7 +73,7 @@ const SignupStart: React.FC = () => {
       }
     }, 500);
     return () => clearTimeout(id);
-  }, [email]);
+  }, [email, t]);
 
   // Debounced availability check for phone
   useEffect(() => {
@@ -91,7 +91,7 @@ const SignupStart: React.FC = () => {
         if (error) throw error;
         const phoneExists = !!data?.exists;
         setExists(phoneExists);
-        setExistsMessage(phoneExists ? 'Numero già registrato' : '');
+        setExistsMessage(phoneExists ? t('auth:phoneAlreadyInUse') : '');
       } catch (e: any) {
         console.error('Phone check error:', e);
         setExists(null);
@@ -101,7 +101,7 @@ const SignupStart: React.FC = () => {
       }
     }, 500);
     return () => clearTimeout(id);
-  }, [phone]);
+  }, [phone, t]);
 
   const canContinue = useMemo(() => {
     const emailValid = /[^\s@]+@[^\s@]+\.[^\s@]+/.test(email.trim());
@@ -112,7 +112,7 @@ const SignupStart: React.FC = () => {
 
   const sendCode = async () => {
     if (exists) {
-      toast.error(existsMessage || (method === 'email' ? 'Email già registrata' : 'Numero già registrato'));
+      toast.error(existsMessage || (method === 'email' ? t('auth:emailAlreadyInUse') : t('auth:phoneAlreadyInUse')));
       return;
     }
     setLoading(true);
@@ -127,10 +127,10 @@ const SignupStart: React.FC = () => {
 
       if (error) throw error;
 
-      toast.success(method === 'email' ? 'Codice inviato alla tua email' : 'Codice inviato al tuo telefono');
+      toast.success(method === 'email' ? t('auth:codeSentEmail') : t('auth:codeSentPhone'));
       navigate(`/signup/verify?method=${method}&${method}=${encodeURIComponent(method === 'email' ? email.trim() : phone.trim())}`);
     } catch (e: any) {
-      toast.error(e?.message || 'Impossibile inviare il codice');
+      toast.error(e?.message || t('auth:cannotSendCode'));
     } finally {
       setLoading(false);
     }
@@ -167,8 +167,8 @@ const SignupStart: React.FC = () => {
                 </h1>
               </div>
             </div>
-            <h2 className="mt-3 text-2xl font-semibold">Unisciti a Spott</h2>
-            <p className="mt-1 text-muted-foreground">Inizia con la tua email o numero di telefono</p>
+            <h2 className="mt-3 text-2xl font-semibold">{t('auth:joinSpott')}</h2>
+            <p className="mt-1 text-muted-foreground">{t('auth:joinSpottSubtitle')}</p>
           </div>
 
           <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 justify-center snap-x snap-mandatory">
@@ -177,27 +177,27 @@ const SignupStart: React.FC = () => {
               onClick={() => setMethod('email')}
               className={`snap-center px-6 py-2 text-sm rounded-full border border-input transition-all ${method === 'email' ? 'bg-accent text-accent-foreground scale-105' : 'bg-background text-foreground'}`}
             >
-              Email
+              {t('auth:emailMethod')}
             </button>
             <button
               type="button"
               onClick={() => setMethod('phone')}
               className={`snap-center px-6 py-2 text-sm rounded-full border border-input transition-all ${method === 'phone' ? 'bg-accent text-accent-foreground scale-105' : 'bg-background text-foreground'}`}
             >
-              Telefono
+              {t('auth:phoneMethod')}
             </button>
           </div>
 
           {method === 'email' ? (
             <div>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('auth:email')}</Label>
               <div className="relative">
                 <Input 
                   id="email" 
                   type="email" 
                   value={email} 
                   onChange={(e) => setEmail(e.target.value)} 
-                  placeholder="nome@esempio.com" 
+                  placeholder={t('auth:emailPlaceholder')}
                   autoComplete="email"
                   className="pr-10"
                 />
@@ -209,20 +209,20 @@ const SignupStart: React.FC = () => {
               </div>
               {exists === true && (
                 <div className="mt-2 text-sm text-destructive">
-                  Questa email è già in uso. <button type="button" className="underline text-primary ml-1" onClick={() => navigate('/auth?mode=login')}>Accedi</button>
+                  {t('auth:emailAlreadyInUse')} <button type="button" className="underline text-primary ml-1" onClick={() => navigate('/auth?mode=login')}>{t('auth:signInButton')}</button>
                 </div>
               )}
             </div>
           ) : (
             <div>
-              <Label htmlFor="phone">Numero di telefono</Label>
+              <Label htmlFor="phone">{t('auth:phoneNumber')}</Label>
               <div className="relative">
                 <Input 
                   id="phone" 
                   type="tel" 
                   value={phone} 
                   onChange={(e) => setPhone(e.target.value)} 
-                  placeholder="+39 333 123 4567" 
+                  placeholder={languages.find(l => l.code === i18n.language)?.phonePlaceholder || '+39 333 123 4567'}
                   autoComplete="tel"
                   className="pr-10 bg-background text-foreground"
                 />
@@ -234,19 +234,19 @@ const SignupStart: React.FC = () => {
               </div>
               {exists === true && (
                 <div className="mt-2 text-sm text-destructive">
-                  Questo numero è già in uso. <button type="button" className="underline text-primary ml-1" onClick={() => navigate('/auth?mode=login')}>Accedi</button>
+                  {t('auth:phoneAlreadyInUse')} <button type="button" className="underline text-primary ml-1" onClick={() => navigate('/auth?mode=login')}>{t('auth:signInButton')}</button>
                 </div>
               )}
             </div>
           )}
 
           <Button disabled={!canContinue || loading} onClick={sendCode} className="w-full h-12">
-            {loading ? 'Invio in corso...' : exists ? (method === 'email' ? 'Email già in uso' : 'Numero già in uso') : 'Invia codice'}
+            {loading ? t('auth:sending') : exists ? (method === 'email' ? t('auth:emailAlreadyUsed') : t('auth:phoneAlreadyUsed')) : t('auth:sendCode')}
           </Button>
 
           <div className="text-center text-sm text-muted-foreground">
-            Hai già un account?
-            <Link to="/auth?mode=login" className="ml-1 text-primary underline">Accedi</Link>
+            {t('auth:alreadyHaveAccount')}
+            <Link to="/auth?mode=login" className="ml-1 text-primary underline">{t('auth:signInButton')}</Link>
           </div>
         </div>
       </main>

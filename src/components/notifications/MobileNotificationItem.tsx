@@ -66,7 +66,7 @@ const MobileNotificationItem = ({
 
   // Cache for profile data to avoid redundant queries
   const profileCacheRef = useRef<Map<string, { avatar: string | null; username: string; timestamp: number }>>(new Map());
-  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+  const CACHE_DURATION = 30 * 1000; // 30 seconds for more frequent updates
 
   // Resolve target user (id and avatar), check follow status, and check for active stories
   useEffect(() => {
