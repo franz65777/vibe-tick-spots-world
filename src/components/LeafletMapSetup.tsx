@@ -399,12 +399,28 @@ const LeafletMapSetup = ({
     if (!userActiveShare) return;
     
     try {
+      // Delete the location share
       const { error } = await supabase
         .from('user_location_shares')
         .delete()
         .eq('id', userActiveShare.id);
 
       if (error) throw error;
+      
+      // Update related notifications to change "si trova" to "si trovava"
+      const { error: notifError } = await supabase
+        .from('notifications')
+        .update({ 
+          message: userActiveShare.location?.name 
+            ? `si trovava a ${userActiveShare.location.name}` 
+            : 'si trovava in una posizione'
+        })
+        .eq('type', 'location_share')
+        .contains('data', { location_id: userActiveShare.location_id });
+
+      if (notifError) {
+        console.error('Error updating notifications:', notifError);
+      }
       
       toast.success('Condivisione posizione terminata');
       refetchShares();
