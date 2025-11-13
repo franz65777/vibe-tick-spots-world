@@ -1,6 +1,7 @@
 import React from 'react';
-import { Crown, Star, Trophy, Zap, Flame } from 'lucide-react';
+import { Crown, Star, Trophy, Zap } from 'lucide-react';
 import { useSuperUser } from '@/hooks/useSuperUser';
+import fireIcon from '@/assets/fire-icon-3d.png';
 
 const SuperUserBadge = () => {
   const { superUser, isElite, levelProgress } = useSuperUser();
@@ -54,7 +55,7 @@ const SuperUserBadge = () => {
       {/* Streak Display */}
       {currentStreak > 0 && (
         <div className="flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-full text-xs font-semibold shadow">
-          <Flame className="w-3 h-3" />
+          <img src={fireIcon} alt="fire" className="w-4 h-4" />
           <span>{currentStreak} day streak</span>
           {longestStreak > currentStreak && (
             <span className="opacity-75">• Best: {longestStreak}</span>
