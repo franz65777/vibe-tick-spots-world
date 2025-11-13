@@ -3,7 +3,7 @@ import { TrendingUp, MapPin, Users, ChevronDown, Percent, Calendar, Megaphone, S
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
-import fireIcon from '@/assets/fire-icon.png';
+import fireIcon from '@/assets/fire-icon-3d.png';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
