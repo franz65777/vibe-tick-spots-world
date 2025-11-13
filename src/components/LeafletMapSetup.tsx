@@ -9,6 +9,12 @@ import { createCurrentLocationMarker, createLeafletCustomMarker } from '@/utils/
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { supabase } from '@/integrations/supabase/client';
 import { useLocationShares } from '@/hooks/useLocationShares';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { MapPin, X, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
+import { LocationSharersModal } from './explore/LocationSharersModal';
 
 interface LeafletMapSetupProps {
   places: Place[];
@@ -48,8 +54,15 @@ const LeafletMapSetup = ({
 
   const { location } = useGeolocation();
   const { trackEvent } = useAnalytics();
-  const { shares } = useLocationShares();
+  const { shares, refetch: refetchShares } = useLocationShares();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [userActiveShare, setUserActiveShare] = useState<any>(null);
+  const [selectedSharersLocation, setSelectedSharersLocation] = useState<{ 
+    name: string; 
+    sharers: Array<{ id: string; username: string; avatar_url: string | null }> 
+  } | null>(null);
 
   // Detect dark mode
   useEffect(() => {
@@ -61,6 +74,16 @@ const LeafletMapSetup = ({
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     return () => observer.disconnect();
   }, []);
+
+  // Check if user has active share
+  useEffect(() => {
+    if (user && shares.length > 0) {
+      const activeShare = shares.find(share => share.user_id === user.id);
+      setUserActiveShare(activeShare || null);
+    } else {
+      setUserActiveShare(null);
+    }
+  }, [user, shares]);
 
   // Keep latest handlers in refs to avoid re-initializing map on prop changes
   const onMapRightClickRef = useRef(onMapRightClick);
@@ -281,7 +304,18 @@ const LeafletMapSetup = ({
 
           const hasCampaign = campaignLocationIds.has(place.id);
           
-          console.log('Creating marker for:', place.name, 'sharedByUser:', place.sharedByUser);
+          // Find all users sharing location at this place
+          const usersHere = shares.filter(share => {
+            const latDiff = Math.abs(parseFloat(share.latitude.toString()) - place.coordinates.lat);
+            const lngDiff = Math.abs(parseFloat(share.longitude.toString()) - place.coordinates.lng);
+            return latDiff < 0.001 && lngDiff < 0.001;
+          });
+
+          const sharedByUsers = usersHere.map(share => ({
+            id: share.user.id,
+            username: share.user.username,
+            avatar_url: share.user.avatar_url
+          }));
 
           const icon = createLeafletCustomMarker({
             category: place.category || 'attraction',
@@ -292,6 +326,7 @@ const LeafletMapSetup = ({
             isDarkMode,
             hasCampaign,
             sharedByUserAvatar: place.sharedByUser?.avatar_url || null,
+            sharedByUsers: sharedByUsers.length > 0 ? sharedByUsers : undefined,
           });
 
         let marker = markersRef.current.get(place.id);
@@ -299,7 +334,18 @@ const LeafletMapSetup = ({
           marker = L.marker([place.coordinates.lat, place.coordinates.lng], {
             icon,
           }).addTo(map);
-          marker.on('click', () => {
+          marker.on('click', (e) => {
+            // Check if clicked on the sharers badge
+            const target = (e.originalEvent as any).target;
+            if (target && target.closest('.location-sharers-badge') && sharedByUsers.length > 1) {
+              e.originalEvent.stopPropagation();
+              setSelectedSharersLocation({
+                name: place.name,
+                sharers: sharedByUsers
+              });
+              return;
+            }
+
             // Simple bounce animation
             const el = marker!.getElement();
             if (el) {
@@ -318,52 +364,6 @@ const LeafletMapSetup = ({
         }
         marker.setIcon(icon);
         marker.setLatLng([place.coordinates.lat, place.coordinates.lng]);
-
-        // Add user avatars for this location
-        const usersHere = shares.filter(share => {
-          const latDiff = Math.abs(parseFloat(share.latitude.toString()) - place.coordinates.lat);
-          const lngDiff = Math.abs(parseFloat(share.longitude.toString()) - place.coordinates.lng);
-          return latDiff < 0.001 && lngDiff < 0.001;
-        });
-
-        usersHere.slice(0, 3).forEach((share, index) => {
-          const avatarMarkerId = `avatar-${share.id}`;
-          let avatarMarker = markersRef.current.get(avatarMarkerId);
-          
-          if (!avatarMarker) {
-            const avatarIcon = L.divIcon({
-              className: 'custom-user-avatar',
-              html: `
-                <div style="
-                  width: 32px;
-                  height: 32px;
-                  border-radius: 50%;
-                  border: 2px solid white;
-                  background: white;
-                  overflow: hidden;
-                  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-                ">
-                  ${share.user?.avatar_url 
-                    ? `<img src="${share.user.avatar_url}" style="width: 100%; height: 100%; object-fit: cover;" alt="${share.user.username}" />` 
-                    : `<div style="width: 100%; height: 100%; background: #4F46E5; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: bold;">${share.user?.username?.[0]?.toUpperCase() || 'U'}</div>`
-                  }
-                </div>
-              `,
-              iconSize: [32, 32],
-              iconAnchor: [16, 16]
-            });
-
-            avatarMarker = L.marker([
-              place.coordinates.lat + (0.0005 * (index + 1)),
-              place.coordinates.lng + (0.0005 * (index + 1))
-            ], {
-              icon: avatarIcon,
-              zIndexOffset: 3000 + index
-            }).addTo(map);
-
-            markersRef.current.set(avatarMarkerId, avatarMarker);
-          }
-        });
       });
       } catch (error) {
         console.error('Error fetching campaigns:', error);
@@ -374,6 +374,30 @@ const LeafletMapSetup = ({
   }, [places, isDarkMode, onPinClick, trackEvent, shares]);
 
   const [selectedPostFromPin, setSelectedPostFromPin] = useState<string | null>(null);
+
+  const handleEndSharing = async () => {
+    if (!userActiveShare) return;
+    
+    try {
+      const { error } = await supabase
+        .from('user_location_shares')
+        .delete()
+        .eq('id', userActiveShare.id);
+
+      if (error) throw error;
+      
+      toast.success('Condivisione posizione terminata');
+      refetchShares();
+      setUserActiveShare(null);
+    } catch (error) {
+      console.error('Error ending share:', error);
+      toast.error('Errore terminando la condivisione');
+    }
+  };
+
+  const handleUpdateLocation = () => {
+    navigate('/share-location');
+  };
 
   return (
     <>
@@ -392,6 +416,30 @@ const LeafletMapSetup = ({
           pointerEvents: selectedPostFromPin ? 'none' : 'auto'
         }}
       />
+
+      {/* Location sharing controls */}
+      {userActiveShare && (
+        <div className="absolute bottom-4 left-4 z-[1000] flex flex-col gap-2">
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={handleEndSharing}
+            className="shadow-lg"
+          >
+            <X className="h-4 w-4 mr-2" />
+            Termina condivisione
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={handleUpdateLocation}
+            className="shadow-lg"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Aggiorna posizione
+          </Button>
+        </div>
+      )}
 
       <style>{`
         @keyframes bounce {
@@ -464,6 +512,16 @@ const LeafletMapSetup = ({
               }
             }, 300);
           }}
+        />
+      )}
+
+      {/* Location sharers modal */}
+      {selectedSharersLocation && (
+        <LocationSharersModal
+          isOpen={true}
+          onClose={() => setSelectedSharersLocation(null)}
+          sharers={selectedSharersLocation.sharers}
+          locationName={selectedSharersLocation.name}
         />
       )}
     </>

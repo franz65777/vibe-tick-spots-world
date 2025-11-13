@@ -16,6 +16,8 @@ interface MarkerOptions {
   isDarkMode?: boolean;
   hasCampaign?: boolean;
   sharedByUserAvatar?: string | null;
+  sharedByUsers?: Array<{ id: string; avatar_url: string | null; username: string }>;
+  onSharersClick?: () => void;
 }
 
 // Get category image path
@@ -58,7 +60,7 @@ const getCategoryImage = (category: string): string => {
 };
 
 export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => {
-  const { category, isSaved, isRecommended, recommendationScore = 0, isDarkMode, hasCampaign, sharedByUserAvatar } = options;
+  const { category, isSaved, isRecommended, recommendationScore = 0, isDarkMode, hasCampaign, sharedByUserAvatar, sharedByUsers } = options;
   
   // Get category image
   const categoryImg = getCategoryImage(category);
@@ -68,7 +70,8 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
   let ringColor = 'rgba(239, 68, 68, 0.3)';
   
   // Purple for shared locations
-  if (sharedByUserAvatar) {
+  const hasSharedUsers = (sharedByUsers && sharedByUsers.length > 0) || sharedByUserAvatar;
+  if (hasSharedUsers) {
     pinColor = '#9333EA'; // purple for shared
     ringColor = 'rgba(147, 51, 234, 0.3)';
   } else if (isSaved) {
@@ -79,34 +82,90 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
     ringColor = 'rgba(59, 130, 246, 0.3)';
   }
   
-  // User avatar overlay for shared locations
-  const avatarOverlay = sharedByUserAvatar ? `
-    <!-- User avatar badge -->
-    <div style="
-      position: absolute;
-      top: -6px;
-      right: -6px;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      border: 3px solid white;
-      box-shadow: 0 3px 6px rgba(0,0,0,0.4);
-      overflow: hidden;
-      background: white;
-      z-index: 20;
-    ">
-      <img 
-        src="${sharedByUserAvatar}" 
-        alt="User"
-        style="
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        "
-        onerror="this.parentElement.style.background='#9333EA'; this.style.display='none';"
-      />
-    </div>
-  ` : '';
+  // User avatar overlay for shared locations - support multiple users
+  let avatarOverlay = '';
+  
+  if (sharedByUsers && sharedByUsers.length > 0) {
+    const firstUser = sharedByUsers[0];
+    const hasMultiple = sharedByUsers.length > 1;
+    const avatarUrl = firstUser.avatar_url || '';
+    
+    avatarOverlay = `
+      <!-- User avatar badge -->
+      <div class="location-sharers-badge" style="
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        overflow: hidden;
+        background: white;
+        z-index: 20;
+        cursor: ${hasMultiple ? 'pointer' : 'default'};
+      ">
+        <img 
+          src="${avatarUrl}" 
+          alt="User"
+          style="
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          "
+          onerror="this.parentElement.style.background='#9333EA'; this.style.display='none';"
+        />
+        ${hasMultiple ? `
+          <div style="
+            position: absolute;
+            bottom: -3px;
+            right: -3px;
+            background: #EF4444;
+            color: white;
+            border-radius: 50%;
+            width: 14px;
+            height: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            font-weight: bold;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+          ">+</div>
+        ` : ''}
+      </div>
+    `;
+  } else if (sharedByUserAvatar) {
+    avatarOverlay = `
+      <!-- User avatar badge -->
+      <div style="
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        overflow: hidden;
+        background: white;
+        z-index: 20;
+      ">
+        <img 
+          src="${sharedByUserAvatar}" 
+          alt="User"
+          style="
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          "
+          onerror="this.parentElement.style.background='#9333EA'; this.style.display='none';"
+        />
+      </div>
+    `;
+  }
   
   // Campaign sparkle effect - 5 sparkles max, closer to pin
   const campaignEffect = hasCampaign ? `
