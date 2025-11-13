@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Heart } from 'lucide-react';
+import { Heart, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -703,11 +703,11 @@ const MobileNotificationItem = ({
       {hidden ? null : (
         <div className="relative overflow-hidden select-none">
           {/* Right action - Delete */}
-          <div className="absolute inset-y-0 right-0 flex items-center pr-3 z-[5]">
+          <div className="absolute inset-y-0 right-0 flex items-center justify-center w-20 z-[5]">
             <Button
-              size="sm"
-              variant="destructive"
-              className="h-9"
+              size="icon"
+              variant="ghost"
+              className="h-10 w-10 rounded-full bg-destructive/10 hover:bg-destructive/20"
               onClick={async (e) => {
                 e.stopPropagation();
                 setIsLoading(true);
@@ -736,7 +736,7 @@ const MobileNotificationItem = ({
                 }
               }}
             >
-              {t('delete', { ns: 'common' })}
+              <Trash2 className="h-5 w-5 text-destructive" />
             </Button>
           </div>
 
