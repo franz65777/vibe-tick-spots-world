@@ -11,16 +11,18 @@ const NotificationsPage = () => {
   const { t } = useTranslation();
   const { notifications, unreadCount, loading, markAsRead, markAllAsRead } = useNotifications();
   const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
+  const [hasMarkedAsRead, setHasMarkedAsRead] = useState(false);
 
-  // Mark all as read when page loads
+  // Mark all as read when page loads and notifications are fetched
   useEffect(() => {
-    if (notifications.length > 0 && unreadCount > 0) {
+    if (!loading && !hasMarkedAsRead && notifications.length > 0 && unreadCount > 0) {
       const timer = setTimeout(() => {
         markAllAsRead();
+        setHasMarkedAsRead(true);
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [loading, notifications.length, unreadCount, hasMarkedAsRead, markAllAsRead]);
 
   const handleMarkAsRead = async (notificationId: string) => {
     await markAsRead([notificationId]);
