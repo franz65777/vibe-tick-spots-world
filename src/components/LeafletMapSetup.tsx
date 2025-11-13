@@ -303,9 +303,13 @@ const LeafletMapSetup = ({
           if (!place.coordinates?.lat || !place.coordinates?.lng) return;
 
           const hasCampaign = campaignLocationIds.has(place.id);
-          
-          // Find all users sharing location at this place
-          const usersHere = shares.filter(share => {
+
+          // Find all users sharing location at this place (only active shares)
+          const now = new Date();
+          const activeShares = shares.filter(s => {
+            try { return new Date(s.expires_at) > now; } catch { return true; }
+          });
+          const usersHere = activeShares.filter(share => {
             // Prefer exact location_id match when present
             if (share.location_id && place.id && share.location_id === place.id) return true;
             // Fallback to proximity check (~350m)
