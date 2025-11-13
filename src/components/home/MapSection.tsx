@@ -29,6 +29,10 @@ import hotelIcon from '@/assets/category-hotel-upload.png';
 import museumIcon from '@/assets/category-museum-upload.png';
 import entertainmentIcon from '@/assets/category-entertainment-upload.png';
 
+// Location sharing state
+import { useLocationShares } from '@/hooks/useLocationShares';
+import { useAuth } from '@/contexts/AuthContext';
+
 const getCategoryIconImage = (category: string): string => {
   switch (category) {
     case 'restaurant': return restaurantIcon;
@@ -70,6 +74,11 @@ const MapSection = ({
   const [pinToShare, setPinToShare] = useState<PinShareData | null>(null);
   
   const { t } = useTranslation();
+  
+  // Active share by current user? Used to adjust control layout for more space
+  const { shares } = useLocationShares();
+  const { user } = useAuth();
+  const hasMyActiveShare = !!(user && shares.some(s => s.user_id === user.id));
   
   // Use global filter context - single source of truth
   const { activeFilter, selectedCategories, selectedFollowedUserIds, setActiveFilter, toggleCategory } = useMapFilter();
@@ -221,8 +230,7 @@ const MapSection = ({
           </div>
         )}
 
-        {/* Map Controls - List View and Expand Toggle - Inside map */}
-        <div className={`${isExpanded ? 'fixed bottom-[calc(env(safe-area-inset-bottom)+1rem)]' : 'absolute bottom-[calc(4rem+env(safe-area-inset-bottom)-1.75rem)]'} right-3 z-[1000] flex flex-row gap-2`}>
+        <div className={`${isExpanded ? 'fixed bottom-[calc(env(safe-area-inset-bottom)+1rem)]' : 'absolute bottom-[calc(4rem+env(safe-area-inset-bottom)-1.75rem)]'} right-3 z-[1000] flex ${!isExpanded && hasMyActiveShare ? 'flex-col items-end' : 'flex-row'} gap-2`}>
           {/* Expand/Collapse Button */}
           {onToggleExpand && (
             <Button
