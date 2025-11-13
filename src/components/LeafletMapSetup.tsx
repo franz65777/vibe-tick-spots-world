@@ -306,9 +306,12 @@ const LeafletMapSetup = ({
           
           // Find all users sharing location at this place
           const usersHere = shares.filter(share => {
+            // Prefer exact location_id match when present
+            if (share.location_id && place.id && share.location_id === place.id) return true;
+            // Fallback to proximity check (~350m)
             const latDiff = Math.abs(parseFloat(share.latitude.toString()) - place.coordinates.lat);
             const lngDiff = Math.abs(parseFloat(share.longitude.toString()) - place.coordinates.lng);
-            return latDiff < 0.001 && lngDiff < 0.001;
+            return latDiff < 0.003 && lngDiff < 0.003;
           });
 
           const sharedByUsers = usersHere.map(share => ({

@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 interface LocationShare {
   id: string;
   user_id: string;
+  location_id: string | null;
   location_name: string;
   location_address: string | null;
   latitude: number;

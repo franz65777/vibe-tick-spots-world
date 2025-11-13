@@ -918,10 +918,11 @@ const MobileNotificationItem = ({
 };
 
 export default memo(MobileNotificationItem, (prevProps, nextProps) => {
-  // Only re-render if notification data actually changed
-  return (
+  // Re-render also when swipe state controller changes
+  const notifEqual =
     prevProps.notification.id === nextProps.notification.id &&
     prevProps.notification.is_read === nextProps.notification.is_read &&
-    JSON.stringify(prevProps.notification.data) === JSON.stringify(nextProps.notification.data)
-  );
+    JSON.stringify(prevProps.notification.data) === JSON.stringify(nextProps.notification.data);
+  const swipeControllerEqual = prevProps.openSwipeId === nextProps.openSwipeId;
+  return notifEqual && swipeControllerEqual;
 });
