@@ -55,7 +55,7 @@ const SuperUserBadge = () => {
       {/* Streak Display */}
       {currentStreak > 0 && (
         <div className="flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-full text-xs font-semibold shadow">
-          <img src={fireIcon} alt="fire" className="w-4 h-4" />
+          <img src={fireIcon} alt="fire" className="w-4 h-4" style={{ transform: 'scaleX(0.85)' }} />
           <span>{currentStreak} day streak</span>
           {longestStreak > currentStreak && (
             <span className="opacity-75">• Best: {longestStreak}</span>
