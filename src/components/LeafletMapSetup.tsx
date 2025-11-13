@@ -87,6 +87,15 @@ const LeafletMapSetup = ({
     }
   }, [user, shares]);
 
+  // Adjust button position when user has active share and map is not expanded
+  const hasMyActiveShare = !!userActiveShare;
+  const mapControlsPosition = fullScreen 
+    ? 'bottom-[calc(env(safe-area-inset-bottom)+1rem)]'
+    : 'bottom-[calc(4rem+env(safe-area-inset-bottom)-1.75rem)]';
+  const sharingControlsPosition = fullScreen 
+    ? 'bottom-[calc(env(safe-area-inset-bottom)+1rem)]' 
+    : (hasMyActiveShare ? 'bottom-[calc(4rem+env(safe-area-inset-bottom)+3.5rem)]' : 'bottom-[calc(4rem+env(safe-area-inset-bottom)-1.75rem)]');
+
   // Keep latest handlers in refs to avoid re-initializing map on prop changes
   const onMapRightClickRef = useRef(onMapRightClick);
   const onMapClickRef = useRef(onMapClick);
@@ -430,7 +439,7 @@ const LeafletMapSetup = ({
 
       {/* Location sharing controls */}
       {userActiveShare && (
-        <div className={`${fullScreen ? 'fixed' : 'absolute'} ${fullScreen ? 'bottom-[calc(env(safe-area-inset-bottom)+1rem)]' : 'bottom-[calc(4rem+env(safe-area-inset-bottom)-1.75rem)]'} left-4 z-[1000] flex gap-2`}>
+        <div className={`${fullScreen ? 'fixed' : 'absolute'} ${sharingControlsPosition} left-4 z-[1000] flex gap-2`}>
           <Button
             size="sm"
             variant="destructive"
