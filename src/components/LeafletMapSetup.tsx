@@ -337,7 +337,6 @@ const LeafletMapSetup = ({
             friendAvatars: [],
             isDarkMode,
             hasCampaign,
-            sharedByUserAvatar: place.sharedByUser?.avatar_url || null,
             sharedByUsers: sharedByUsers.length > 0 ? sharedByUsers : undefined,
           });
 
