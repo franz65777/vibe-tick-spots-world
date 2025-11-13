@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { MapPin, X, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { LocationSharersModal } from './explore/LocationSharersModal';
+import { useTranslation } from 'react-i18next';
 
 interface LeafletMapSetupProps {
   places: Place[];
@@ -57,6 +58,7 @@ const LeafletMapSetup = ({
   const { shares, refetch: refetchShares } = useLocationShares();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [userActiveShare, setUserActiveShare] = useState<any>(null);
   const [selectedSharersLocation, setSelectedSharersLocation] = useState<{ 
@@ -426,24 +428,24 @@ const LeafletMapSetup = ({
 
       {/* Location sharing controls */}
       {userActiveShare && (
-        <div className="absolute bottom-4 left-4 z-[1000] flex flex-col gap-2">
+        <div className="absolute bottom-4 left-4 z-[1000] flex gap-2">
           <Button
             size="sm"
             variant="destructive"
             onClick={handleEndSharing}
-            className="shadow-lg"
+            className="shadow-lg rounded-full"
           >
-            <X className="h-4 w-4 mr-2" />
-            Termina condivisione
+            <X className="h-4 w-4 mr-1" />
+            {t('endSharing', { ns: 'common', defaultValue: 'End' })}
           </Button>
           <Button
             size="sm"
             variant="secondary"
             onClick={handleUpdateLocation}
-            className="shadow-lg"
+            className="shadow-lg rounded-full"
           >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Aggiorna posizione
+            <RefreshCw className="h-4 w-4 mr-1" />
+            {t('updateLocation', { ns: 'common', defaultValue: 'Update' })}
           </Button>
         </div>
       )}
