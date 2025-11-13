@@ -5,6 +5,8 @@ import { getDateFnsLocale } from '@/utils/dateFnsLocales';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Heart, MessageCircle, UserPlus, MapPin, Gift, Star, Camera, Calendar, Tag, Megaphone, Sparkles } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface NotificationItemProps {
   notification: {
@@ -22,6 +24,30 @@ interface NotificationItemProps {
 
 const NotificationItem = ({ notification, onMarkAsRead, onAction }: NotificationItemProps) => {
   const { i18n } = useTranslation();
+  const [currentUserData, setCurrentUserData] = useState<{name: string, avatar: string} | null>(null);
+  
+  // Fetch current user data dynamically for notifications with user_id
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (notification.data?.user_id) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('username, full_name, avatar_url')
+          .eq('id', notification.data.user_id)
+          .single();
+        
+        if (data) {
+          setCurrentUserData({
+            name: data.full_name || data.username || 'Unknown',
+            avatar: data.avatar_url || ''
+          });
+        }
+      }
+    };
+    
+    fetchUserData();
+  }, [notification.data?.user_id]);
+  
   const getNotificationStyle = () => {
     const styles = {
       like: {
@@ -124,6 +150,11 @@ const NotificationItem = ({ notification, onMarkAsRead, onAction }: Notification
   };
 
   const getUserAvatar = () => {
+    // Use dynamically fetched data if available
+    if (currentUserData) {
+      return currentUserData.avatar;
+    }
+    // Fallback to notification data
     if (notification.data?.user_avatar) {
       return notification.data.user_avatar;
     }
@@ -131,6 +162,11 @@ const NotificationItem = ({ notification, onMarkAsRead, onAction }: Notification
   };
 
   const getUserName = () => {
+    // Use dynamically fetched data if available
+    if (currentUserData) {
+      return currentUserData.name;
+    }
+    // Fallback to notification data
     if (notification.data?.user_name) {
       return notification.data.user_name;
     }

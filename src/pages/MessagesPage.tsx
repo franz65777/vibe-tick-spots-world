@@ -121,6 +121,9 @@ const MessagesPage = () => {
         loadOtherUserProfile(otherParticipant.id);
         setTimeout(() => scrollToBottom('auto'), 50);
       }
+    } else if (view === 'threads') {
+      // Refresh threads and unread counts when returning to threads view
+      loadThreads();
     }
   }, [selectedThread, view]);
 
@@ -206,12 +209,24 @@ const MessagesPage = () => {
       setLoading(true);
       const data = await messageService.getMessagesInThread(otherUserId);
       setMessages(data || []);
-      setTimeout(() => scrollToBottom('auto'), 0);
       
       // Mark messages as read
       if (user && data && data.length > 0) {
         await messageService.markMessagesAsRead(otherUserId);
+        // Update local unread count
+        setUnreadCounts(prev => ({ ...prev, [otherUserId]: 0 }));
       }
+      
+      // Scroll to last unread message or bottom
+      setTimeout(() => {
+        const firstUnreadIndex = data?.findIndex(m => !m.is_read && m.receiver_id === user?.id);
+        if (firstUnreadIndex && firstUnreadIndex > 0) {
+          // Scroll to first unread message
+          scrollToBottom('auto');
+        } else {
+          scrollToBottom('auto');
+        }
+      }, 100);
     } catch (error) {
       console.error('Error loading messages:', error);
     } finally {

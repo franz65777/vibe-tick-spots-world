@@ -9,6 +9,7 @@ import { ArrowLeft, Check, Loader2, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import spottLogo from '@/assets/spott-logo.png';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 const languages = [
   { code: 'en', label: 'English' },
@@ -144,6 +145,7 @@ const SignupStart: React.FC = () => {
           <ArrowLeft className="mr-2" /> {t('auth:back') || 'Indietro'}
         </Button>
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <div className="w-40">
             <Select value={i18n.language} onValueChange={(v) => i18n.changeLanguage(v)}>
               <SelectTrigger className="h-9 rounded-full bg-background border border-input text-sm" aria-label="Language selector">
@@ -220,7 +222,7 @@ const SignupStart: React.FC = () => {
                   onChange={(e) => setPhone(e.target.value)} 
                   placeholder="+39 333 123 4567" 
                   autoComplete="tel"
-                  className="pr-10"
+                  className="pr-10 bg-background text-foreground"
                 />
                 <div className="absolute inset-y-0 right-2 flex items-center">
                   {checking && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}

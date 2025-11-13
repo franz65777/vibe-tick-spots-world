@@ -6,6 +6,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 const SignupVerify: React.FC = () => {
   const { t } = useTranslation();
@@ -87,6 +88,7 @@ const SignupVerify: React.FC = () => {
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
           <ArrowLeft className="mr-2" /> {t('auth:back') || 'Indietro'}
         </Button>
+        <ThemeToggle />
       </header>
 
       <main className="flex-1 px-6 py-10">

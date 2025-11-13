@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 const SignupPassword: React.FC = () => {
   const { t } = useTranslation();
@@ -142,6 +143,7 @@ const SignupPassword: React.FC = () => {
         }}>
           <ArrowLeft className="mr-2" /> {t('auth:back') || 'Indietro'}
         </Button>
+        <ThemeToggle />
       </header>
 
       <main className="flex-1 px-6 py-10">
@@ -164,7 +166,7 @@ const SignupPassword: React.FC = () => {
           <div>
             <Label htmlFor="confirm">Conferma password</Label>
             <div className="relative mt-1">
-              <Input id="confirm" type={showConfirm ? 'text' : 'password'} value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Ripeti la password" className="pr-10" />
+              <Input id="confirm" type={showConfirm ? 'text' : 'password'} value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Ripeti la password" className="pr-10 bg-background text-foreground" />
               <button type="button" onClick={() => setShowConfirm((s) => !s)} className="absolute inset-y-0 right-2 flex items-center">
                 {showConfirm ? <EyeOff className="w-4 h-4 text-muted-foreground" /> : <Eye className="w-4 h-4 text-muted-foreground" />}
               </button>

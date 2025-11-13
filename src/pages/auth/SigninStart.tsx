@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Eye, EyeOff, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 const SigninStart = () => {
   const [identifier, setIdentifier] = useState(''); // email or phone
@@ -46,7 +47,12 @@ const SigninStart = () => {
   };
 
   return (
-    <div className="h-screen bg-white flex flex-col overflow-hidden">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
+      {/* Theme toggle in header */}
+      <div className="absolute top-4 right-4 z-10">
+        <ThemeToggle />
+      </div>
+      
       {/* Main content */}
       <div className="flex-1 overflow-y-auto scrollbar-hide px-6 py-8 overscroll-contain [-webkit-overflow-scrolling:touch]">
         <div className="w-full max-w-md mx-auto space-y-8 pt-12">
@@ -60,10 +66,10 @@ const SigninStart = () => {
                 </h1>
               </div>
             </div>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+            <h2 className="text-2xl font-semibold text-foreground mb-2">
               Bentornato
             </h2>
-            <p className="text-gray-600">
+            <p className="text-muted-foreground">
               Accedi per continuare a scoprire luoghi incredibili
             </p>
           </div>
@@ -71,7 +77,7 @@ const SigninStart = () => {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="text-sm font-medium text-gray-700 block mb-2">
+              <label className="text-sm font-medium text-foreground block mb-2">
                 Email o Telefono
               </label>
               <Input
@@ -79,7 +85,7 @@ const SigninStart = () => {
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 required
-                className="h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                className="h-12 bg-background text-foreground"
                 placeholder="email@esempio.com o +39 123 456 7890"
                 autoCapitalize="none"
                 autoCorrect="off"
@@ -87,7 +93,7 @@ const SigninStart = () => {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-700 block mb-2">
+              <label className="text-sm font-medium text-foreground block mb-2">
                 Password
               </label>
               <div className="relative">
@@ -96,7 +102,7 @@ const SigninStart = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="h-12 pr-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  className="h-12 pr-10 bg-background text-foreground"
                   placeholder="Inserisci la tua password"
                 />
                 <button
@@ -105,9 +111,9 @@ const SigninStart = () => {
                   className="absolute inset-y-0 right-0 flex items-center pr-3"
                 >
                   {showPassword ? (
-                    <EyeOff className="h-4 w-4 text-gray-400" />
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
                   ) : (
-                    <Eye className="h-4 w-4 text-gray-400" />
+                    <Eye className="h-4 w-4 text-muted-foreground" />
                   )}
                 </button>
               </div>
@@ -123,11 +129,11 @@ const SigninStart = () => {
           </form>
 
           {/* Sign up link */}
-          <div className="text-center text-sm text-gray-600">
+          <div className="text-center text-sm text-muted-foreground">
             Non hai un account?{' '}
             <button
               onClick={() => navigate('/signup/start')}
-              className="text-blue-600 font-medium hover:text-blue-700"
+              className="text-primary font-medium hover:opacity-80"
             >
               Registrati
             </button>
