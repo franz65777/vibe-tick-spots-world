@@ -306,10 +306,13 @@ const LeafletMapSetup = ({
 
           const hasCampaign = campaignLocationIds.has(place.id);
 
-          // Find all users sharing location at this place (only active shares)
+          // Find all users sharing location at this place (only active shares, excluding current user)
           const now = new Date();
           const activeShares = shares.filter(s => {
-            try { return new Date(s.expires_at) > now; } catch { return true; }
+            // Exclude current user's share
+            if (user && s.user_id === user.id) return false;
+            // Only active non-expired shares
+            try { return new Date(s.expires_at) > now; } catch { return false; }
           });
           const usersHere = activeShares.filter(share => {
             // Prefer exact location_id match when present
@@ -428,7 +431,7 @@ const LeafletMapSetup = ({
 
       {/* Location sharing controls */}
       {userActiveShare && (
-        <div className="absolute bottom-4 left-4 z-[1000] flex gap-2">
+        <div className={`${fullScreen ? 'fixed' : 'absolute'} ${fullScreen ? 'bottom-[calc(env(safe-area-inset-bottom)+1rem)]' : 'bottom-[calc(4rem+env(safe-area-inset-bottom)-1.75rem)]'} left-4 z-[1000] flex gap-2`}>
           <Button
             size="sm"
             variant="destructive"

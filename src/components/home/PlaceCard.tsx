@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Heart, MessageSquare, Users, MapPin, Share2, Building2, Bell, BellOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,6 +13,8 @@ import { Star } from 'lucide-react';
 import { getCategoryIcon } from '@/utils/categoryIcons';
 import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
 import { cn } from '@/lib/utils';
+import { useLocationShares } from '@/hooks/useLocationShares';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 interface PlaceCardProps {
   place: Place;
@@ -43,6 +44,7 @@ const PlaceCard = ({
   const { t } = useTranslation();
   const { user } = useAuth();
   const { mutedLocations, muteLocation, unmuteLocation, isMuting } = useMutedLocations(user?.id);
+  const { shares } = useLocationShares();
   const [interactionModal, setInteractionModal] = useState<{ isOpen: boolean; mode: 'comments' | 'share' }>({
     isOpen: false,
     mode: 'comments'
@@ -112,6 +114,27 @@ const PlaceCard = ({
     return typeof place.addedBy === 'object' && place.addedBy?.isFollowing === false;
   };
 
+  // Get active shares for this location (excluding current user)
+  const now = new Date();
+  const activeSharesHere = shares.filter(s => {
+    // Exclude current user's share
+    if (user && s.user_id === user.id) return false;
+    // Only active non-expired shares
+    try {
+      if (new Date(s.expires_at) <= now) return false;
+    } catch {
+      return false;
+    }
+    // Match by location_id or proximity
+    if (s.location_id && place.id && s.location_id === place.id) return true;
+    if (place.coordinates?.lat && place.coordinates?.lng) {
+      const latDiff = Math.abs(parseFloat(s.latitude.toString()) - place.coordinates.lat);
+      const lngDiff = Math.abs(parseFloat(s.longitude.toString()) - place.coordinates.lng);
+      return latDiff < 0.003 && lngDiff < 0.003;
+    }
+    return false;
+  });
+
   return (
     <>
       <div 
@@ -142,7 +165,26 @@ const PlaceCard = ({
         <div className="p-4">
           <div className="flex items-start justify-between mb-2">
             <div className="flex-1">
-              <h3 className="font-bold text-gray-900 text-lg leading-tight">{place.name}</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-gray-900 text-lg leading-tight">{place.name}</h3>
+                {activeSharesHere.length > 0 && (
+                  <div className="flex -space-x-1 shrink-0">
+                    {activeSharesHere.slice(0, 2).map((share, idx) => (
+                      <Avatar key={share.id} className="w-5 h-5 border-2 border-white ring-1 ring-purple-500">
+                        <AvatarImage src={share.user.avatar_url || undefined} />
+                        <AvatarFallback className="text-[8px] bg-purple-500 text-white">
+                          {share.user.username.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    ))}
+                    {activeSharesHere.length > 2 && (
+                      <div className="w-5 h-5 rounded-full bg-purple-500 text-white text-[8px] font-bold flex items-center justify-center border-2 border-white">
+                        +{activeSharesHere.length - 2}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
               <div className="flex items-center gap-1 text-gray-500 mt-1">
                 <MapPin className="w-3 h-3" />
                 <span className="text-sm">{cityName}</span>

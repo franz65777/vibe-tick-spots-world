@@ -119,20 +119,21 @@ export const createLeafletCustomMarker = (options: MarkerOptions): L.DivIcon => 
         ${hasMultiple ? `
           <div style="
             position: absolute;
-            bottom: -3px;
-            right: -3px;
-            background: #EF4444;
+            bottom: -4px;
+            right: -4px;
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF4757 100%);
             color: white;
             border-radius: 50%;
-            width: 14px;
-            height: 14px;
+            width: 16px;
+            height: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 9px;
-            font-weight: bold;
-            border: 2px solid white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            font-size: 10px;
+            font-weight: 800;
+            border: 2.5px solid white;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.4), 0 0 0 1px rgba(0,0,0,0.1);
+            font-family: system-ui, -apple-system, sans-serif;
           ">+</div>
         ` : ''}
       </div>
