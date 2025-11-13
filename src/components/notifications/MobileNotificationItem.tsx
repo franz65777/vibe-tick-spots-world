@@ -68,6 +68,7 @@ const MobileNotificationItem = ({
   const [showStories, setShowStories] = useState(false);
   const [userStories, setUserStories] = useState<any[]>([]);
   const [groupedUserOverrides, setGroupedUserOverrides] = useState<Record<string, { name: string; avatar?: string }>>({});
+  const [isLocationShareActive, setIsLocationShareActive] = useState(true);
 
   // Swipe-to-delete state
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
@@ -77,11 +78,39 @@ const MobileNotificationItem = ({
 
   // Close this notification if another one is opened
   useEffect(() => {
-    if (openSwipeId && openSwipeId !== notification.id && swipedOpen) {
+    if (openSwipeId && openSwipeId !== notification.id) {
       setSwipedOpen(false);
       setTranslateX(0);
     }
-  }, [openSwipeId, notification.id, swipedOpen]);
+  }, [openSwipeId, notification.id]);
+
+  // Check if location share is still active
+  useEffect(() => {
+    if (notification.type === 'location_share' && notification.data?.location_id) {
+      const checkLocationShareStatus = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('user_location_shares')
+            .select('expires_at')
+            .eq('location_id', notification.data.location_id)
+            .eq('user_id', notification.data?.shared_by_user_id || notification.data?.user_id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+          if (!error && data) {
+            const now = new Date();
+            const expiresAt = new Date(data.expires_at);
+            setIsLocationShareActive(expiresAt > now);
+          }
+        } catch (err) {
+          console.error('Error checking location share status:', err);
+        }
+      };
+
+      checkLocationShareStatus();
+    }
+  }, [notification.type, notification.data?.location_id, notification.data?.shared_by_user_id, notification.data?.user_id]);
 
   // Cache for profile data to avoid redundant queries
   const profileCacheRef = useRef<Map<string, { avatar: string | null; username: string; timestamp: number }>>(new Map());
@@ -534,7 +563,7 @@ const MobileNotificationItem = ({
             >
               {displayName}
             </span>
-            {' '}{t('isAtLocation', { ns: 'notifications' })}{' '}
+            {' '}{t(isLocationShareActive ? 'isAtLocation' : 'wasAtLocation', { ns: 'notifications' })}{' '}
             <span className="font-semibold">{locationName}</span>
           </span>
         );
@@ -820,10 +849,10 @@ const MobileNotificationItem = ({
                 {notification.type === 'location_share' ? (
                   <Button
                     onClick={handleOnMyWayClick}
-                    disabled={isLoading}
+                    disabled={isLoading || !isLocationShareActive}
                     size="sm"
                     variant="default"
-                    className="px-4 h-7 text-[12px] font-semibold rounded-lg bg-primary hover:bg-primary/90"
+                    className="px-4 h-7 text-[12px] font-semibold rounded-lg bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {t('onMyWay', { ns: 'notifications' })}
                   </Button>

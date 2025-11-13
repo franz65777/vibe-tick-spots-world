@@ -128,17 +128,6 @@ const NotificationsPage = () => {
             </Button>
             <h1 className="font-bold text-xl text-foreground">{t('title', { ns: 'notifications' })}</h1>
           </div>
-          
-          {unreadCount > 0 && (
-            <Button
-              onClick={handleMarkAllAsRead}
-              variant="ghost"
-              size="sm"
-              className="text-sm font-medium"
-            >
-              {t('markAllRead', { ns: 'notifications' })}
-            </Button>
-          )}
         </div>
       </header>
 
