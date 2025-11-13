@@ -546,6 +546,7 @@ const resources = {
       onMyWayMessage: "I'm on my way to {{location}}! See you there 👋",
       messageSent: 'Message sent!',
       isAtLocation: 'is at',
+      wasAtLocation: 'was at',
     },
     messages: {
       messages: 'Messages',
@@ -1260,6 +1261,7 @@ const resources = {
       onMyWayMessage: '¡Voy en camino a {{location}}! Nos vemos allí 👋',
       messageSent: '¡Mensaje enviado!',
       isAtLocation: 'está en',
+      wasAtLocation: 'estaba en',
     },
     messages: {
       messages: 'Mensajes',
@@ -2013,6 +2015,7 @@ const resources = {
       onMyWayMessage: 'Sto arrivando a {{location}}! Ci vediamo lì 👋',
       messageSent: 'Messaggio inviato!',
       isAtLocation: 'si trova ora presso',
+      wasAtLocation: 'si trovava presso',
     },
     messages: {
       messages: 'Messaggi',
@@ -2669,6 +2672,7 @@ const resources = {
       onMyWayMessage: 'Je suis en route vers {{location}} ! À tout de suite 👋',
       messageSent: 'Message envoyé !',
       isAtLocation: 'est à',
+      wasAtLocation: 'était à',
     },
     messages: {
       messages: 'Messages',
@@ -3840,6 +3844,7 @@ const resources = {
       onMyWayMessage: 'Estou a caminho de {{location}}! Vejo você lá 👋',
       messageSent: 'Mensagem enviada!',
       isAtLocation: 'está em',
+      wasAtLocation: 'estava em',
     },
     messages: {
       messages: 'Mensagens',
@@ -4302,6 +4307,7 @@ const resources = {
       onMyWayMessage: '我正在前往{{location}}！一会儿见 👋',
       messageSent: '消息已发送！',
       isAtLocation: '在',
+      wasAtLocation: '曾在',
     },
     messages: {
       messages: '消息',
@@ -4755,6 +4761,7 @@ const resources = {
       onMyWayMessage: '{{location}}に向かっています！またね 👋',
       messageSent: 'メッセージが送信されました！',
       isAtLocation: 'にいます',
+      wasAtLocation: 'にいました',
     },
     messages: {
       messages: 'メッセージ',
@@ -5212,6 +5219,7 @@ const resources = {
       onMyWayMessage: '{{location}}로 가는 중입니다! 곧 만나요 👋',
       messageSent: '메시지 전송됨!',
       isAtLocation: '에 있습니다',
+      wasAtLocation: '에 있었습니다',
     },
     messages: {
       messages: '메시지',
@@ -5669,6 +5677,7 @@ const resources = {
       onMyWayMessage: 'أنا في طريقي إلى {{location}}! أراك هناك 👋',
       messageSent: 'تم إرسال الرسالة!',
       isAtLocation: 'في',
+      wasAtLocation: 'كان في',
     },
     messages: {
       messages: 'الرسائل',
@@ -6141,6 +6150,7 @@ const resources = {
       onMyWayMessage: 'मैं {{location}} की ओर आ रहा हूँ! वहाँ मिलते हैं 👋',
       messageSent: 'संदेश भेजा गया!',
       isAtLocation: 'यहाँ है',
+      wasAtLocation: 'यहाँ था',
     },
     messages: {
       messages: 'संदेश',
@@ -6594,6 +6604,7 @@ const resources = {
       onMyWayMessage: 'Я еду в {{location}}! Увидимся там 👋',
       messageSent: 'Сообщение отправлено!',
       isAtLocation: 'находится в',
+      wasAtLocation: 'находился в',
     },
     messages: {
       messages: 'Сообщения',
