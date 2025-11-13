@@ -30,6 +30,7 @@ interface LeafletMapSetupProps {
   fullScreen?: boolean;
   preventCenterUpdate?: boolean;
   recenterToken?: number;
+  onSharingStateChange?: (hasSharing: boolean) => void;
 }
 
 // Vanilla Leaflet implementation to avoid react-leaflet context crash
@@ -46,6 +47,7 @@ const LeafletMapSetup = ({
   fullScreen,
   preventCenterUpdate = true, // Default to true to prevent auto-recentering
   recenterToken,
+  onSharingStateChange,
 }: LeafletMapSetupProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -77,24 +79,22 @@ const LeafletMapSetup = ({
     return () => observer.disconnect();
   }, []);
 
-  // Check if user has active share
+  // Check if user has active share and notify parent
   useEffect(() => {
     if (user && shares.length > 0) {
       const activeShare = shares.find(share => share.user_id === user.id);
       setUserActiveShare(activeShare || null);
+      onSharingStateChange?.(!!activeShare);
     } else {
       setUserActiveShare(null);
+      onSharingStateChange?.(false);
     }
-  }, [user, shares]);
+  }, [user, shares, onSharingStateChange]);
 
-  // Adjust button position when user has active share and map is not expanded
-  const hasMyActiveShare = !!userActiveShare;
-  const mapControlsPosition = fullScreen 
+  // Sharing controls always at same height as expand button
+  const baseControlPosition = fullScreen 
     ? 'bottom-[calc(env(safe-area-inset-bottom)+1rem)]'
     : 'bottom-[calc(4rem+env(safe-area-inset-bottom)-1.75rem)]';
-  const sharingControlsPosition = fullScreen 
-    ? 'bottom-[calc(env(safe-area-inset-bottom)+1rem)]' 
-    : (hasMyActiveShare ? 'bottom-[calc(4rem+env(safe-area-inset-bottom)+3.5rem)]' : 'bottom-[calc(4rem+env(safe-area-inset-bottom)-1.75rem)]');
 
   // Keep latest handlers in refs to avoid re-initializing map on prop changes
   const onMapRightClickRef = useRef(onMapRightClick);
@@ -439,7 +439,7 @@ const LeafletMapSetup = ({
 
       {/* Location sharing controls */}
       {userActiveShare && (
-        <div className={`${fullScreen ? 'fixed' : 'absolute'} ${sharingControlsPosition} left-4 z-[1000] flex gap-2`}>
+        <div className={`${fullScreen ? 'fixed' : 'absolute'} ${baseControlPosition} left-4 z-[1000] flex gap-2`}>
           <Button
             size="sm"
             variant="destructive"
