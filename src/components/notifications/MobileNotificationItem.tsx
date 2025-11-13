@@ -65,6 +65,12 @@ const MobileNotificationItem = ({
   const [userStories, setUserStories] = useState<any[]>([]);
   const [groupedUserOverrides, setGroupedUserOverrides] = useState<Record<string, { name: string; avatar?: string }>>({});
 
+  // Swipe-to-delete state
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [translateX, setTranslateX] = useState(0);
+  const [swipedOpen, setSwipedOpen] = useState(false);
+  const [hidden, setHidden] = useState(false);
+
   // Cache for profile data to avoid redundant queries
   const profileCacheRef = useRef<Map<string, { avatar: string | null; username: string; timestamp: number }>>(new Map());
   const CACHE_DURATION = 30 * 1000; // 30 seconds for more frequent updates
@@ -115,23 +121,58 @@ const MobileNotificationItem = ({
             }
           } else if (uname) {
             // Resolve by username if no user_id
-            const { data: profileByUsername } = await supabase
+            let resolvedId: string | null = null;
+            let resolvedUsername: string | null = null;
+            let resolvedAvatar: string | null = null;
+
+            // 1) Exact match
+            const { data: exact } = await supabase
               .from('profiles')
               .select('id, username, avatar_url')
               .eq('username', uname)
               .maybeSingle();
-            
-            if (profileByUsername) {
-              uid = profileByUsername.id;
-              avatar = profileByUsername.avatar_url ?? avatar;
-              // Cache the result
-              if (uid) {
-                profileCacheRef.current.set(uid, {
-                  avatar: profileByUsername.avatar_url,
-                  username: profileByUsername.username,
-                  timestamp: Date.now()
-                });
+
+            if (exact) {
+              resolvedId = exact.id;
+              resolvedUsername = exact.username;
+              resolvedAvatar = exact.avatar_url;
+            } else {
+              // 2) Case-insensitive prefix match (handles renamed usernames like 'sartori' -> 'sartoriz')
+              const { data: prefix } = await supabase
+                .from('profiles')
+                .select('id, username, avatar_url')
+                .ilike('username', `${uname}%`)
+                .limit(1);
+
+              if (prefix && prefix.length > 0) {
+                resolvedId = prefix[0].id;
+                resolvedUsername = prefix[0].username;
+                resolvedAvatar = prefix[0].avatar_url;
+              } else {
+                // 3) Contains match as last resort
+                const { data: contains } = await supabase
+                  .from('profiles')
+                  .select('id, username, avatar_url')
+                  .ilike('username', `%${uname}%`)
+                  .limit(1);
+                if (contains && contains.length > 0) {
+                  resolvedId = contains[0].id;
+                  resolvedUsername = contains[0].username;
+                  resolvedAvatar = contains[0].avatar_url;
+                }
               }
+            }
+
+            if (resolvedId) {
+              uid = resolvedId;
+              avatar = resolvedAvatar ?? avatar;
+              uname = resolvedUsername ?? uname;
+              // Cache the result
+              profileCacheRef.current.set(uid, {
+                avatar: resolvedAvatar,
+                username: uname,
+                timestamp: Date.now()
+              });
             }
           }
 
@@ -659,83 +700,148 @@ const MobileNotificationItem = ({
 
   return (
     <>
-      <div
-        onClick={handleClick}
-        className={`w-full cursor-pointer active:bg-accent/50 transition-colors ${
-          !notification.is_read ? 'bg-accent/20' : 'bg-background'
-        }`}
-      >
-        <div className="flex items-start gap-2.5 py-3 px-4">
-          {/* User Avatar(s) */}
-          {renderAvatars()}
+      {hidden ? null : (
+        <div className="relative overflow-hidden select-none">
+          {/* Right action - Delete */}
+          <div className="absolute inset-y-0 right-0 flex items-center pr-3 z-[5]">
+            <Button
+              size="sm"
+              variant="destructive"
+              className="h-9"
+              onClick={async (e) => {
+                e.stopPropagation();
+                setIsLoading(true);
+                try {
+                  // Try hard delete first
+                  const { error: delErr } = await supabase
+                    .from('notifications')
+                    .delete()
+                    .eq('id', notification.id);
 
-        {/* Notification Text and Time */}
-        <div className="flex-1 min-w-0">
-          <div className="text-left">
-            {getNotificationText()}
-            <span className="text-muted-foreground text-[12px] ml-1.5">
-              {getRelativeTime(notification.created_at)}
-            </span>
+                  if (delErr) {
+                    // Fallback: expire the notification so backend queries can ignore it
+                    const { error: updErr } = await supabase
+                      .from('notifications')
+                      .update({ expires_at: new Date().toISOString() })
+                      .eq('id', notification.id);
+                    if (updErr) {
+                      console.warn('Delete blocked by RLS, hiding locally');
+                    }
+                  }
+
+                  // Hide locally regardless
+                  setHidden(true);
+                } finally {
+                  setIsLoading(false);
+                }
+              }}
+            >
+              {t('delete', { ns: 'common' })}
+            </Button>
+          </div>
+
+          {/* Swipeable row */}
+          <div
+            onClick={handleClick}
+            onTouchStart={(e) => {
+              setTouchStartX(e.touches[0].clientX);
+            }}
+            onTouchMove={(e) => {
+              if (touchStartX === null) return;
+              const dx = e.touches[0].clientX - touchStartX;
+              // Only allow left swipe up to -96px
+              const next = Math.max(Math.min(dx, 0), -96);
+              setTranslateX(swipedOpen ? -96 + dx : next);
+            }}
+            onTouchEnd={() => {
+              const threshold = -48;
+              if (translateX <= threshold) {
+                setTranslateX(-96);
+                setSwipedOpen(true);
+              } else {
+                setTranslateX(0);
+                setSwipedOpen(false);
+              }
+              setTouchStartX(null);
+            }}
+            className={`w-full cursor-pointer active:bg-accent/50 transition-colors ${
+              !notification.is_read ? 'bg-accent/20' : 'bg-background'
+            }`}
+            style={{ transform: `translateX(${translateX}px)`, transition: touchStartX ? 'none' : 'transform 180ms ease' }}
+          >
+            <div className="flex items-start gap-2.5 py-3 px-4">
+              {/* User Avatar(s) */}
+              {renderAvatars()}
+
+              {/* Notification Text and Time */}
+              <div className="flex-1 min-w-0">
+                <div className="text-left">
+                  {getNotificationText()}
+                  <span className="text-muted-foreground text-[12px] ml-1.5">
+                    {getRelativeTime(notification.created_at)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Right Side - Follow Button, Post Thumbnail, Comment Actions, or On My Way Button */}
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                {notification.type === 'location_share' ? (
+                  <Button
+                    onClick={handleOnMyWayClick}
+                    disabled={isLoading}
+                    size="sm"
+                    variant="default"
+                    className="px-4 h-7 text-[12px] font-semibold rounded-lg bg-primary hover:bg-primary/90"
+                  >
+                    {t('onMyWay', { ns: 'notifications' })}
+                  </Button>
+                ) : notification.type === 'follow' ? (
+                  <Button
+                    onClick={handleFollowClick}
+                    disabled={isLoading}
+                    size="sm"
+                    variant={isFollowing ? 'outline' : 'default'}
+                    className={`px-4 h-7 text-[12px] font-semibold rounded-lg ${
+                      isFollowing 
+                        ? 'border-border hover:bg-accent' 
+                        : 'bg-primary hover:bg-primary/90'
+                    }`}
+                  >
+                    {isFollowing ? t('following', { ns: 'common' }) : t('follow', { ns: 'common' })}
+                  </Button>
+                ) : notification.type === 'comment' ? (
+                  <Button
+                    onClick={handleCommentLike}
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 rounded-full"
+                  >
+                    <Heart 
+                      className={`w-5 h-5 ${commentLiked ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`}
+                    />
+                  </Button>
+                ) : notification.data?.post_image ? (
+                  <div 
+                    className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 border border-border cursor-pointer"
+                    onClick={handlePostClick}
+                  >
+                    <img
+                      src={notification.data.post_image}
+                      alt="Post"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : null}
+
+                {/* Unread Indicator */}
+                {!notification.is_read && (
+                  <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                )}
+              </div>
+            </div>
           </div>
         </div>
-
-        {/* Right Side - Follow Button, Post Thumbnail, Comment Actions, or On My Way Button */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          {notification.type === 'location_share' ? (
-            <Button
-              onClick={handleOnMyWayClick}
-              disabled={isLoading}
-              size="sm"
-              variant="default"
-              className="px-4 h-7 text-[12px] font-semibold rounded-lg bg-primary hover:bg-primary/90"
-            >
-              {t('onMyWay', { ns: 'notifications' })}
-            </Button>
-          ) : notification.type === 'follow' ? (
-            <Button
-              onClick={handleFollowClick}
-              disabled={isLoading}
-              size="sm"
-              variant={isFollowing ? 'outline' : 'default'}
-              className={`px-4 h-7 text-[12px] font-semibold rounded-lg ${
-                isFollowing 
-                  ? 'border-border hover:bg-accent' 
-                  : 'bg-primary hover:bg-primary/90'
-              }`}
-            >
-              {isFollowing ? t('following', { ns: 'common' }) : t('follow', { ns: 'common' })}
-            </Button>
-          ) : notification.type === 'comment' ? (
-            <Button
-              onClick={handleCommentLike}
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 rounded-full"
-            >
-              <Heart 
-                className={`w-5 h-5 ${commentLiked ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`}
-              />
-            </Button>
-          ) : notification.data?.post_image ? (
-            <div 
-              className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 border border-border cursor-pointer"
-              onClick={handlePostClick}
-            >
-              <img
-                src={notification.data.post_image}
-                alt="Post"
-                className="w-full h-full object-cover"
-              />
-            </div>
-          ) : null}
-
-          {/* Unread Indicator */}
-          {!notification.is_read && (
-            <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
-          )}
-        </div>
-        </div>
-      </div>
+      )}
 
       {/* Stories Viewer */}
       {showStories && userStories.length > 0 && (
