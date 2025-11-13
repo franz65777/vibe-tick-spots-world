@@ -52,24 +52,32 @@ export const useLocationShares = () => {
     try {
       const { data, error } = await supabase
         .from('user_location_shares')
-        .select(`
-          *,
-          profiles (
-            id,
-            username,
-            avatar_url
-          )
-        `)
+        .select('*')
         .gt('expires_at', new Date().toISOString())
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
+      // Fetch related profiles separately (no FK relation in schema cache)
+      const userIds = Array.from(new Set((data || []).map((s: any) => s.user_id).filter(Boolean)));
+      let profilesMap: Record<string, { id: string; username: string; avatar_url: string | null }> = {};
+
+      if (userIds.length) {
+        const { data: profiles, error: pError } = await supabase
+          .from('profiles')
+          .select('id, username, avatar_url')
+          .in('id', userIds as string[]);
+        if (pError) throw pError;
+        profilesMap = Object.fromEntries((profiles || []).map((p: any) => [p.id, p]));
+      }
+
       // Transform data to match interface
-      const transformedData = data?.map(share => ({
-        ...share,
-        user: Array.isArray(share.profiles) ? share.profiles[0] : share.profiles
-      })).filter(share => share.user) || [];
+      const transformedData = (data || [])
+        .map((share: any) => ({
+          ...share,
+          user: profilesMap[share.user_id]
+        }))
+        .filter((share: any) => share.user) || [];
 
       setShares(transformedData as LocationShare[]);
     } catch (error) {
