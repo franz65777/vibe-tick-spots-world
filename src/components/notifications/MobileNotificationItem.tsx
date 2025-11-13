@@ -96,7 +96,7 @@ const MobileNotificationItem = ({
 
         if (isCacheValid && cached) {
           avatar = cached.avatar ?? avatar;
-          if (!uname) uname = cached.username ?? uname;
+          uname = cached.username ?? uname;
           setTargetUserId(uid);
           setAvatarOverride(avatar);
           setUsernameOverride(uname);
@@ -111,7 +111,7 @@ const MobileNotificationItem = ({
             
             if (profileById) {
               avatar = profileById.avatar_url ?? avatar;
-              if (!uname) uname = profileById.username ?? uname;
+              uname = profileById.username ?? uname;
               // Cache the result
               profileCacheRef.current.set(uid, {
                 avatar: profileById.avatar_url,
@@ -747,17 +747,16 @@ const MobileNotificationItem = ({
           {/* Swipeable row */}
           <div
             onClick={handleClick}
-            onTouchStart={(e) => {
-              setTouchStartX(e.touches[0].clientX);
+            onPointerDown={(e) => {
+              setTouchStartX(e.clientX);
             }}
-            onTouchMove={(e) => {
+            onPointerMove={(e) => {
               if (touchStartX === null) return;
-              const dx = e.touches[0].clientX - touchStartX;
-              // Only allow left swipe up to -96px
+              const dx = e.clientX - touchStartX;
               const next = Math.max(Math.min(dx, 0), -96);
               setTranslateX(swipedOpen ? -96 + dx : next);
             }}
-            onTouchEnd={() => {
+            onPointerUp={() => {
               const threshold = -48;
               if (translateX <= threshold) {
                 setTranslateX(-96);
