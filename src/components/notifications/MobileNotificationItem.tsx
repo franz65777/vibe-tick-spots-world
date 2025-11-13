@@ -585,7 +585,7 @@ const MobileNotificationItem = ({
               className="font-semibold cursor-pointer hover:underline" 
               onClick={handleUsernameClick}
             >
-              {username}
+              {displayUsername}
             </span>
             {' '}<span className="cursor-pointer" onClick={handlePostClick}>{t('likedYourPost', { ns: 'notifications' })}</span>
           </span>
@@ -597,7 +597,7 @@ const MobileNotificationItem = ({
               className="font-semibold cursor-pointer hover:underline" 
               onClick={handleUsernameClick}
             >
-              {username}
+              {displayUsername}
             </span>
             {' '}{t('likedYourStory', { ns: 'notifications' })}
           </span>
@@ -609,7 +609,7 @@ const MobileNotificationItem = ({
               className="font-semibold cursor-pointer hover:underline" 
               onClick={handleUsernameClick}
             >
-              {username}
+              {displayUsername}
             </span>
             {' '}{t('startedFollowing', { ns: 'notifications' })}
           </span>
@@ -622,7 +622,7 @@ const MobileNotificationItem = ({
                 className="font-semibold cursor-pointer hover:underline" 
                 onClick={handleUsernameClick}
               >
-                {username}
+                {displayUsername}
               </span>
               {' '}{t('commentedOnYourPost', { ns: 'notifications' })}
             </span>
@@ -640,7 +640,7 @@ const MobileNotificationItem = ({
               className="font-semibold cursor-pointer hover:underline" 
               onClick={handleUsernameClick}
             >
-              {username}
+              {displayUsername}
             </span>
             {' '}{t('repliedToYourStory', { ns: 'notifications' })}
           </span>
@@ -652,7 +652,8 @@ const MobileNotificationItem = ({
 
   // Get avatar URL - support both field name formats
   const avatarUrl = notification.data?.shared_by_avatar || notification.data?.user_avatar || notification.data?.avatar_url || '';
-  const username = notification.data?.shared_by_username || notification.data?.user_name || notification.data?.username || 'User';
+  const baseUsername = notification.data?.shared_by_username || notification.data?.user_name || notification.data?.username || notification.title || 'User';
+  const displayUsername = usernameOverride || baseUsername;
   const computedAvatar = avatarOverride || avatarUrl;
 
   // For grouped likes, show multiple avatars
@@ -689,10 +690,10 @@ const MobileNotificationItem = ({
       >
         <AvatarImage 
           src={computedAvatar || undefined} 
-          alt={username} 
+          alt={displayUsername} 
         />
         <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
-          {username[0].toUpperCase()}
+          {(displayUsername?.[0] || '?').toUpperCase()}
         </AvatarFallback>
       </Avatar>
     );
@@ -702,8 +703,11 @@ const MobileNotificationItem = ({
     <>
       {hidden ? null : (
         <div className="relative overflow-hidden select-none">
-          {/* Right action - Delete */}
-          <div className="absolute inset-y-0 right-0 flex items-center justify-center w-20 z-[5]">
+          {/* Right action - Delete (revealed on swipe) */}
+          <div 
+            className="absolute inset-y-0 right-0 flex items-center justify-center w-24 z-0"
+            style={{ pointerEvents: swipedOpen ? 'auto' : 'none', opacity: swipedOpen ? 1 : 0, transition: 'opacity 180ms ease' }}
+          >
             <Button
               size="icon"
               variant="ghost"
@@ -764,7 +768,7 @@ const MobileNotificationItem = ({
               }
               setTouchStartX(null);
             }}
-            className={`w-full cursor-pointer active:bg-accent/50 transition-colors ${
+            className={`relative z-10 w-full cursor-pointer active:bg-accent/50 transition-colors ${
               !notification.is_read ? 'bg-accent/20' : 'bg-background'
             }`}
             style={{ transform: `translateX(${translateX}px)`, transition: touchStartX ? 'none' : 'transform 180ms ease' }}
