@@ -190,21 +190,28 @@ const MapSection = ({
       <div className={`${isExpanded ? 'fixed inset-0 w-screen h-screen relative' : 'flex-1 relative min-h-[500px]'} w-full overflow-hidden`}>
         {/* Hide map when list view is open */}
         {!isListViewOpen && (
-          <LeafletMapSetup
-            key={isExpanded ? 'map-full' : 'map-embedded'}
-            places={places}
-            onPinClick={handlePinClick}
-            onPinShare={handlePinShare}
-            mapCenter={mapCenter}
-            selectedPlace={selectedPlace ? { ...selectedPlace, sourcePostId } : null}
-            onCloseSelectedPlace={() => { setSelectedPlace(null); setSourcePostId(undefined); }}
-            onMapRightClick={handleMapRightClick}
-            onMapClick={handleMapClick}
-            activeFilter={activeFilter}
-            fullScreen={isExpanded}
-            preventCenterUpdate={false}
-            recenterToken={recenterToken}
-          />
+        <LeafletMapSetup
+          key={isExpanded ? 'map-full' : 'map-embedded'}
+          places={places}
+          onPinClick={handlePinClick}
+          onPinShare={handlePinShare}
+          mapCenter={mapCenter}
+          selectedPlace={selectedPlace ? { ...selectedPlace, sourcePostId } : null}
+          onCloseSelectedPlace={() => { setSelectedPlace(null); setSourcePostId(undefined); }}
+          onMapRightClick={handleMapRightClick}
+          onMapClick={handleMapClick}
+          activeFilter={activeFilter}
+          fullScreen={isExpanded}
+          preventCenterUpdate={false}
+          recenterToken={recenterToken}
+          onSharingStateChange={(hasSharing) => {
+            // Update button layout when sharing state changes
+            const container = document.querySelector('[data-has-sharing]');
+            if (container) {
+              container.setAttribute('data-has-sharing', String(hasSharing && !isExpanded));
+            }
+          }}
+        />
         )}
 
         {/* Map Category Filters - Hide when list view is open */}
@@ -222,7 +229,7 @@ const MapSection = ({
         )}
 
         {/* Map Controls - List View and Expand Toggle - Inside map */}
-        <div className={`${isExpanded ? 'fixed bottom-[calc(env(safe-area-inset-bottom)+1rem)]' : 'absolute bottom-[calc(4rem+env(safe-area-inset-bottom)-1.75rem)]'} right-3 z-[1000] flex flex-row gap-2`}>
+        <div className={`${isExpanded ? 'fixed bottom-[calc(env(safe-area-inset-bottom)+1rem)]' : 'absolute bottom-[calc(4rem+env(safe-area-inset-bottom)-1.75rem)]'} right-3 z-[1000] flex flex-row gap-2 data-[has-sharing=true]:flex-col data-[has-sharing=true]:items-end`} data-has-sharing={false}>
           {/* Expand/Collapse Button */}
           {onToggleExpand && (
             <Button
