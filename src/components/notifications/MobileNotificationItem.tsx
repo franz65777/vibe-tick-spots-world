@@ -746,12 +746,20 @@ const MobileNotificationItem = ({
 
           {/* Swipeable row */}
           <div
-            onClick={handleClick}
+            onClick={(e) => {
+              if (swipedOpen) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+              }
+              handleClick();
+            }}
             onPointerDown={(e) => {
               setTouchStartX(e.clientX);
             }}
             onPointerMove={(e) => {
               if (touchStartX === null) return;
+              e.preventDefault();
               const dx = e.clientX - touchStartX;
               const next = Math.max(Math.min(dx, 0), -96);
               setTranslateX(swipedOpen ? -96 + dx : next);
@@ -767,7 +775,7 @@ const MobileNotificationItem = ({
               }
               setTouchStartX(null);
             }}
-            className={`relative z-10 w-full cursor-pointer active:bg-accent/50 transition-colors ${
+            className={`relative z-10 w-full ${swipedOpen ? '' : 'cursor-pointer active:bg-accent/50'} transition-colors ${
               !notification.is_read ? 'bg-accent/20' : 'bg-background'
             }`}
             style={{ transform: `translateX(${translateX}px)`, transition: touchStartX ? 'none' : 'transform 180ms ease' }}
