@@ -11,17 +11,17 @@ import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@
 
 const languages = [
   { code: 'en', label: 'English', phonePlaceholder: '+44 7700 900123' },
-  { code: 'it', label: 'Italiano', phonePlaceholder: '+39 333 123 4567' },
   { code: 'es', label: 'Español', phonePlaceholder: '+34 612 34 56 78' },
   { code: 'fr', label: 'Français', phonePlaceholder: '+33 6 12 34 56 78' },
   { code: 'de', label: 'Deutsch', phonePlaceholder: '+49 151 23456789' },
+  { code: 'it', label: 'Italiano', phonePlaceholder: '+39 333 123 4567' },
   { code: 'pt', label: 'Português', phonePlaceholder: '+351 912 345 678' },
-  { code: 'nl', label: 'Nederlands', phonePlaceholder: '+31 6 12345678' },
-  { code: 'pl', label: 'Polski', phonePlaceholder: '+48 512 345 678' },
-  { code: 'ru', label: 'Русский', phonePlaceholder: '+7 912 345 67 89' },
-  { code: 'tr', label: 'Türkçe', phonePlaceholder: '+90 532 123 45 67' },
-  { code: 'ja', label: '日本語', phonePlaceholder: '+81 90 1234 5678' },
   { code: 'zh', label: '中文', phonePlaceholder: '+86 138 0013 8000' },
+  { code: 'ja', label: '日本語', phonePlaceholder: '+81 90 1234 5678' },
+  { code: 'ko', label: '한국어', phonePlaceholder: '+82 10 1234 5678' },
+  { code: 'ar', label: 'العربية', phonePlaceholder: '+966 50 123 4567' },
+  { code: 'hi', label: 'हिन्दी', phonePlaceholder: '+91 98765 43210' },
+  { code: 'ru', label: 'Русский', phonePlaceholder: '+7 912 345 67 89' },
 ];
 
 const SignupStart: React.FC = () => {
@@ -143,7 +143,7 @@ const SignupStart: React.FC = () => {
           <ArrowLeft className="mr-2" /> {t('auth:back') || 'Indietro'}
         </Button>
         <div className="w-40">
-          <Select value={i18n.language} onValueChange={(v) => i18n.changeLanguage(v)}>
+          <Select value={i18n.language} onValueChange={(v) => { i18n.changeLanguage(v); localStorage.setItem('i18nextLng', v); }}>
             <SelectTrigger className="h-9 rounded-full bg-background border border-input text-sm" aria-label="Language selector">
               <SelectValue placeholder="Language" />
             </SelectTrigger>

@@ -63,6 +63,7 @@ const MobileNotificationItem = ({
   const [commentLiked, setCommentLiked] = useState(false);
   const [showStories, setShowStories] = useState(false);
   const [userStories, setUserStories] = useState<any[]>([]);
+  const [groupedUserOverrides, setGroupedUserOverrides] = useState<Record<string, { name: string; avatar?: string }>>({});
 
   // Cache for profile data to avoid redundant queries
   const profileCacheRef = useRef<Map<string, { avatar: string | null; username: string; timestamp: number }>>(new Map());
@@ -423,7 +424,7 @@ const MobileNotificationItem = ({
                   className="font-semibold cursor-pointer hover:underline" 
                   onClick={handleUsernameClick}
                 >
-                  {groupedUsers[0].name}
+                  {groupedUserOverrides[groupedUsers[0].id]?.name || groupedUsers[0].name}
                 </span>
                 {' '}<span className="cursor-pointer" onClick={handlePostClick}>{t('likedYourPost', { ns: 'notifications' })}</span>
               </span>
@@ -438,7 +439,7 @@ const MobileNotificationItem = ({
                   {groupedUsers[0].name}
                 </span>
                 {' '}{t('and', { ns: 'common' })}{' '}
-                <span className="font-semibold">{groupedUsers[1].name}</span>
+                <span className="font-semibold">{groupedUserOverrides[groupedUsers[1].id]?.name || groupedUsers[1].name}</span>
                 {' '}<span className="cursor-pointer" onClick={handlePostClick}>{t('likedYourPost', { ns: 'notifications' })}</span>
               </span>
             );
@@ -450,7 +451,7 @@ const MobileNotificationItem = ({
                   className="font-semibold cursor-pointer hover:underline" 
                   onClick={handleUsernameClick}
                 >
-                  {groupedUsers[0].name}
+                  {groupedUserOverrides[groupedUsers[0].id]?.name || groupedUsers[0].name}
                 </span>
                 {' '}{t('and', { ns: 'common' })}{' '}
                 <span className="font-semibold">
@@ -553,11 +554,11 @@ const MobileNotificationItem = ({
               onClick={handleAvatarClick}
             >
               <AvatarImage 
-                src={user.avatar || undefined} 
-                alt={user.name} 
+                src={groupedUserOverrides[user.id]?.avatar || user.avatar || undefined} 
+                alt={groupedUserOverrides[user.id]?.name || user.name} 
               />
               <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
-                {user.name[0].toUpperCase()}
+                {(groupedUserOverrides[user.id]?.name || user.name)[0].toUpperCase()}
               </AvatarFallback>
             </Avatar>
           ))}
