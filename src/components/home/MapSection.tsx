@@ -21,28 +21,6 @@ import ActiveSharesListSheet from './ActiveSharesListSheet';
 
 import { useTranslation } from 'react-i18next';
 
-// Import category icons (transparent versions)
-import restaurantIcon from '@/assets/category-restaurant-transparent.png';
-import barIcon from '@/assets/category-bar-transparent.png';
-import cafeIcon from '@/assets/category-cafe-transparent.png';
-import bakeryIcon from '@/assets/category-bakery-transparent.png';
-import hotelIcon from '@/assets/category-hotel-transparent.png';
-import museumIcon from '@/assets/category-museum-transparent.png';
-import entertainmentIcon from '@/assets/category-entertainment-transparent.png';
-
-const getCategoryIconImage = (category: string): string => {
-  switch (category) {
-    case 'restaurant': return restaurantIcon;
-    case 'bar': return barIcon;
-    case 'cafe': return cafeIcon;
-    case 'bakery': return bakeryIcon;
-    case 'hotel': return hotelIcon;
-    case 'museum': return museumIcon;
-    case 'entertainment': return entertainmentIcon;
-    default: return restaurantIcon;
-  }
-};
-
 interface MapSectionProps {
   mapCenter: { lat: number; lng: number };
   currentCity: string;
@@ -321,11 +299,11 @@ const MapSection = ({
                   size="sm"
                   variant="secondary"
                   onClick={() => setIsActiveSharesOpen(true)}
-                  className="rounded-full whitespace-nowrap flex-shrink-0 relative"
+                  className="rounded-full whitespace-nowrap flex-shrink-0 relative overflow-visible"
                 >
                   {t('activeShares', { ns: 'mapFilters' })}
                   {activeSharesCount > 0 && (
-                    <Badge variant="destructive" className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center p-0 text-xs">{activeSharesCount}</Badge>
+                    <Badge variant="destructive" className="absolute -top-2 -right-2 w-5 h-5 flex items-center justify-center p-0 text-xs">{activeSharesCount}</Badge>
                   )}
                 </Button>
               </div>
@@ -333,7 +311,6 @@ const MapSection = ({
             <ScrollArea className="flex-1 -mx-6 px-6 [&>div]:!overflow-y-auto [&>div]:!scrollbar-none [&>div::-webkit-scrollbar]:hidden">
               <div className="space-y-3 pr-4 py-2">
                 {places.map((place) => {
-                  const categoryIcon = getCategoryIconImage(place.category);
                   return (
                     <div
                       key={place.id}
@@ -344,13 +321,6 @@ const MapSection = ({
                       }}
                     >
                       <div className="flex gap-3">
-                        {/* Category Icon */}
-                        <div className="flex-shrink-0">
-                          {categoryIcon && (
-                            <img src={categoryIcon} alt={place.category || ''} className="w-12 h-12 object-contain" />
-                          )}
-                        </div>
-
                         {/* Content */}
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-foreground truncate">{place.name}</h3>
