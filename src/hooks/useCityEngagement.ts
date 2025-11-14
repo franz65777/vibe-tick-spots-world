@@ -79,7 +79,7 @@ export const useCityEngagement = (cityName: string | null, coords?: { lat: numbe
     // Realtime refresh when saves change
     try {
       channel = supabase
-        .channel(`city-engagement-${cityName}-${user.id}`)
+        .channel(`city-engagement-${cityName}-${user.id}-${Math.random().toString(36).slice(2)}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'saved_places' }, (payload) => {
           const city = (payload as any)?.new?.city || (payload as any)?.old?.city;
           if (!city || city === cityName) fetchEngagement();

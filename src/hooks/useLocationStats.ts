@@ -134,12 +134,15 @@ export const useLocationStats = (locationId: string | null, googlePlaceId: strin
 
     fetchStats();
 
+    // Unique suffix per hook instance to avoid duplicate subscribe on same channel name
+    const suffix = `${locationId || googlePlaceId || 'any'}-${Math.random().toString(36).slice(2)}`;
+
     // Set up real-time subscriptions for live updates
     const channels: any[] = [];
 
     if (googlePlaceId) {
       const savedPlacesChannel = supabase
-        .channel(`saved_places_${googlePlaceId}`)
+        .channel(`saved_places_${googlePlaceId}-${suffix}`)
         .on(
           'postgres_changes',
           {
@@ -158,7 +161,7 @@ export const useLocationStats = (locationId: string | null, googlePlaceId: strin
 
     if (locationId) {
       const userSavedChannel = supabase
-        .channel(`user_saved_locations_${locationId}`)
+        .channel(`user_saved_locations_${locationId}-${suffix}`)
         .on(
           'postgres_changes',
           {
@@ -175,7 +178,7 @@ export const useLocationStats = (locationId: string | null, googlePlaceId: strin
       channels.push(userSavedChannel);
 
       const interactionsChannel = supabase
-        .channel(`interactions_${locationId}`)
+        .channel(`interactions_${locationId}-${suffix}`)
         .on(
           'postgres_changes',
           {
@@ -193,7 +196,7 @@ export const useLocationStats = (locationId: string | null, googlePlaceId: strin
 
       // Listen for posts with ratings
       const postsChannel = supabase
-        .channel(`posts_ratings_${locationId}`)
+        .channel(`posts_ratings_${locationId}-${suffix}`)
         .on(
           'postgres_changes',
           {

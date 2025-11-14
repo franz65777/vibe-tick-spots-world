@@ -18,9 +18,12 @@ export const useRealtimeUpdates = (hooks: RealtimeHooks) => {
 
     console.log('Setting up realtime subscriptions for user:', user.id);
 
-    // Create channels with unique names including user ID to prevent conflicts
+    // Unique suffix per hook instance to avoid duplicate subscribes on same channel name
+    const suffix = Math.random().toString(36).slice(2);
+
+    // Create channels with unique names including user ID and instance suffix to prevent conflicts
     const savedLocationsChannel = supabase
-      .channel(`user-saved-locations-${user.id}`)
+      .channel(`user-saved-locations-${user.id}-${suffix}`)
       .on(
         'postgres_changes',
         {
@@ -51,7 +54,7 @@ export const useRealtimeUpdates = (hooks: RealtimeHooks) => {
 
     // Subscribe to new stories with unique channel name
     const storiesChannel = supabase
-      .channel(`stories-${user.id}`)
+      .channel(`stories-${user.id}-${suffix}`)
       .on(
         'postgres_changes',
         {
@@ -68,7 +71,7 @@ export const useRealtimeUpdates = (hooks: RealtimeHooks) => {
 
     // Subscribe to new posts with unique channel name
     const postsChannel = supabase
-      .channel(`posts-${user.id}`)
+      .channel(`posts-${user.id}-${suffix}`)
       .on(
         'postgres_changes',
         {
@@ -85,9 +88,9 @@ export const useRealtimeUpdates = (hooks: RealtimeHooks) => {
 
     return () => {
       console.log('Cleaning up realtime subscriptions');
-      savedLocationsChannel.unsubscribe();
-      storiesChannel.unsubscribe();
-      postsChannel.unsubscribe();
+      supabase.removeChannel(savedLocationsChannel);
+      supabase.removeChannel(storiesChannel);
+      supabase.removeChannel(postsChannel);
     };
   }, [user]);
 };

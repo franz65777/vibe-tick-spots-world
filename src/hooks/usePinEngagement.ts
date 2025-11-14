@@ -77,7 +77,7 @@ export const usePinEngagement = (locationId: string | null, googlePlaceId: strin
     // Realtime refresh when saves change
     try {
       channel = supabase
-        .channel(`pin-engagement-${locationId || googlePlaceId}-${user?.id}`)
+        .channel(`pin-engagement-${locationId || googlePlaceId}-${user?.id}-${Math.random().toString(36).slice(2)}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'saved_places' }, (payload) => {
           const placeId = (payload as any)?.new?.place_id || (payload as any)?.old?.place_id;
           if (!placeId || placeId === googlePlaceId) fetchEngagement();
