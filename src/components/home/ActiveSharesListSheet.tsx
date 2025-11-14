@@ -12,9 +12,10 @@ interface ActiveSharesListSheetProps {
   onOpenChange: (open: boolean) => void;
   places: Place[];
   onSelectLocation: (placeId: string) => void;
+  onCountChange?: (count: number) => void;
 }
 
-const ActiveSharesListSheet: React.FC<ActiveSharesListSheetProps> = ({ open, onOpenChange, places, onSelectLocation }) => {
+const ActiveSharesListSheet: React.FC<ActiveSharesListSheetProps> = ({ open, onOpenChange, places, onSelectLocation, onCountChange }) => {
   const { t } = useTranslation();
   const { shares } = useLocationShares();
 
@@ -41,6 +42,11 @@ const ActiveSharesListSheet: React.FC<ActiveSharesListSheetProps> = ({ open, onO
     return groups;
   }, [shares]);
 
+  // Notify parent of count changes
+  useEffect(() => {
+    onCountChange?.(grouped.size);
+  }, [grouped.size, onCountChange]);
+
   useEffect(() => {
     // Hide bottom navigation while open
     if (open) {
@@ -60,7 +66,14 @@ const ActiveSharesListSheet: React.FC<ActiveSharesListSheetProps> = ({ open, onO
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[80vh] rounded-t-3xl flex flex-col">
         <SheetHeader className="pb-2">
-          <SheetTitle className="text-xl font-semibold">{t('activeShares', { ns: 'mapFilters' })}</SheetTitle>
+          <SheetTitle className="text-xl font-semibold flex items-center gap-2">
+            {t('activeShares', { ns: 'mapFilters' })}
+            {grouped.size > 0 && (
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-500 text-white text-xs font-bold">
+                {grouped.size}
+              </span>
+            )}
+          </SheetTitle>
         </SheetHeader>
         <ScrollArea className="flex-1 -mx-6 px-6">
           <div className="space-y-3 pr-4 py-2">

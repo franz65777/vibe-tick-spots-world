@@ -70,6 +70,7 @@ const MapSection = ({
   const [newLocationCoords, setNewLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [pinToShare, setPinToShare] = useState<PinShareData | null>(null);
+  const [activeSharesCount, setActiveSharesCount] = useState(0);
   
   const { t } = useTranslation();
   
@@ -297,9 +298,14 @@ const MapSection = ({
                     size="sm"
                     variant="secondary"
                     onClick={() => setIsActiveSharesOpen(true)}
-                    className="rounded-full"
+                    className="rounded-full relative"
                   >
                     {t('activeShares', { ns: 'mapFilters' })}
+                    {activeSharesCount > 0 && (
+                      <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-purple-500 text-white text-[10px] font-bold shadow-md">
+                        {activeSharesCount}
+                      </span>
+                    )}
                   </Button>
                 </div>
               </SheetHeader>
@@ -424,6 +430,7 @@ const MapSection = ({
             handlePinClick(p);
           }
         }}
+        onCountChange={setActiveSharesCount}
       />
     </>
   );
