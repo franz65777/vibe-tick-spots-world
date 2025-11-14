@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { MapPin, Star, Phone, Globe, Clock } from 'lucide-react';
+import { MapPin, Star, Phone, Globe, Clock, Users, Bookmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import BusinessBadges from '@/components/business/BusinessBadges';
 import { useDetailedAddress } from '@/hooks/useDetailedAddress';
+import FollowersModal from '@/components/profile/FollowersModal';
 
 interface BusinessLocation {
   id: string;
@@ -34,11 +36,19 @@ interface BusinessLocation {
 const BusinessProfilePage = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const { userId } = useParams();
   const navigate = useNavigate();
   const [location, setLocation] = useState<BusinessLocation | null>(null);
   const [activeTab, setActiveTab] = useState('posts');
   const [loading, setLoading] = useState(true);
   const [marketingContent, setMarketingContent] = useState<any[]>([]);
+  const [stats, setStats] = useState({ followers: 0, following: 0, saved: 0 });
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [followersType, setFollowersType] = useState<'followers' | 'following'>('followers');
+
+  // Determina se stiamo visualizzando il profilo di un altro business
+  const targetUserId = userId || user?.id;
+  const isOwnProfile = !userId || userId === user?.id;
 
   const { detailedAddress } = useDetailedAddress({
     id: location?.id,
@@ -52,7 +62,8 @@ const BusinessProfilePage = () => {
   useEffect(() => {
     fetchBusinessLocation();
     fetchMarketingContent();
-  }, [user]);
+    fetchBusinessStats();
+  }, [targetUserId]);
 
   // Refetch when tab becomes active
   useEffect(() => {
@@ -65,7 +76,7 @@ const BusinessProfilePage = () => {
   }, [user]);
 
   const fetchBusinessLocation = async () => {
-    if (!user) return;
+    if (!targetUserId) return;
 
     try {
       setLoading(true);
@@ -73,7 +84,7 @@ const BusinessProfilePage = () => {
       const { data: businessProfile } = await supabase
         .from('business_profiles')
         .select('location_id, verification_status')
-        .eq('user_id', user.id)
+        .eq('user_id', targetUserId)
         .maybeSingle();
 
       if (businessProfile && businessProfile.location_id) {
@@ -96,14 +107,46 @@ const BusinessProfilePage = () => {
     }
   };
 
+  const fetchBusinessStats = async () => {
+    if (!targetUserId || !location?.id) return;
+    
+    try {
+      // Count followers (users following this business)
+      const { count: followersCount } = await supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('following_id', targetUserId);
+      
+      // Count following (users this business follows)
+      const { count: followingCount } = await supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('follower_id', targetUserId);
+      
+      // Count saved (users who saved this location)
+      const { count: savedCount } = await supabase
+        .from('user_saved_locations')
+        .select('*', { count: 'exact', head: true })
+        .eq('location_id', location.id);
+      
+      setStats({
+        followers: followersCount || 0,
+        following: followingCount || 0,
+        saved: savedCount || 0
+      });
+    } catch (error) {
+      console.error('Error fetching business stats:', error);
+    }
+  };
+
   const fetchMarketingContent = async () => {
-    if (!user) return;
+    if (!targetUserId) return;
 
     try {
       const { data } = await (supabase as any)
         .from('posts')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', targetUserId)
         .in('content_type', ['event', 'discount', 'promotion', 'announcement'])
         .order('created_at', { ascending: false });
 
@@ -188,6 +231,39 @@ const BusinessProfilePage = () => {
              (location.address && location.city ? `${location.city}, ${location.address}` : location.city) || 
              'Location'}
           </span>
+        </div>
+
+        {/* Stats Section */}
+        <div className="px-4 pt-4 flex items-center justify-around border-y border-border/50 py-4 my-4">
+          <button
+            onClick={() => {
+              setFollowersType('followers');
+              setShowFollowersModal(true);
+            }}
+            className="flex flex-col items-center gap-1 hover:opacity-70 transition-opacity"
+          >
+            <span className="text-lg font-bold text-foreground">{stats.followers}</span>
+            <span className="text-xs text-muted-foreground">{t('followers', { ns: 'common' })}</span>
+          </button>
+          
+          <button
+            onClick={() => {
+              setFollowersType('following');
+              setShowFollowersModal(true);
+            }}
+            className="flex flex-col items-center gap-1 hover:opacity-70 transition-opacity"
+          >
+            <span className="text-lg font-bold text-foreground">{stats.following}</span>
+            <span className="text-xs text-muted-foreground">{t('following', { ns: 'common' })}</span>
+          </button>
+          
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-lg font-bold text-foreground">{stats.saved}</span>
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <Bookmark className="w-3 h-3" />
+              {t('saved', { ns: 'common' })}
+            </span>
+          </div>
         </div>
 
         {/* Location Info */}
@@ -313,6 +389,15 @@ const BusinessProfilePage = () => {
           )}
         </div>
       </div>
+
+      {showFollowersModal && (
+        <FollowersModal
+          isOpen={showFollowersModal}
+          onClose={() => setShowFollowersModal(false)}
+          userId={targetUserId || ''}
+          initialTab={followersType}
+        />
+      )}
     </div>
   );
 };

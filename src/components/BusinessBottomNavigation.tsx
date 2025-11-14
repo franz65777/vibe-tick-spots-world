@@ -7,6 +7,9 @@ import { toast } from 'sonner';
 import AccountSwitchModal from './AccountSwitchModal';
 import { useTranslation } from 'react-i18next';
 import { useBusinessProfile } from '@/hooks/useBusinessProfile';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 const BusinessBottomNavigation = () => {
   const { t } = useTranslation();
@@ -14,10 +17,38 @@ const BusinessBottomNavigation = () => {
   const location = useLocation();
   const { trackEvent } = useAnalytics();
   const { hasValidBusinessAccount } = useBusinessProfile();
+  const { user } = useAuth();
   
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
   const [hideNav, setHideNav] = useState(false);
+  const [businessAvatar, setBusinessAvatar] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchBusinessAvatar = async () => {
+      if (!user?.id) return;
+      
+      const { data: businessProfile } = await supabase
+        .from('business_profiles')
+        .select('location_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (businessProfile?.location_id) {
+        const { data: locationData } = await supabase
+          .from('locations')
+          .select('image_url')
+          .eq('id', businessProfile.location_id)
+          .maybeSingle();
+        
+        if (locationData?.image_url) {
+          setBusinessAvatar(locationData.image_url);
+        }
+      }
+    };
+    
+    fetchBusinessAvatar();
+  }, [user?.id]);
 
   useEffect(() => {
     const handleOpen = () => setHideNav(true);
@@ -95,7 +126,16 @@ const BusinessBottomNavigation = () => {
       path: '/business/feed'
     },
     { 
-      icon: <User size={24} strokeWidth={2} />, 
+      icon: businessAvatar ? (
+        <Avatar className="w-6 h-6">
+          <AvatarImage src={businessAvatar} alt="Business" />
+          <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+            <User size={14} />
+          </AvatarFallback>
+        </Avatar>
+      ) : (
+        <User size={24} strokeWidth={2} />
+      ),
       label: t('profile', { ns: 'common' }), 
       path: '/business/profile'
     },
@@ -115,8 +155,8 @@ const BusinessBottomNavigation = () => {
         role="navigation"
         aria-label="Business navigation"
       >
-        <div className="w-full px-0 bg-white border-t border-gray-100">
-          <div className="h-16 flex items-center justify-around px-2 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]">
+        <div className="w-full px-0 bg-[#0A0A0A] border-t border-white/10">
+          <div className="h-16 flex items-center justify-around px-2 shadow-[0_-4px_16px_rgba(0,0,0,0.3)]">
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
               const isProfileTab = item.path === '/business/profile';
@@ -136,13 +176,13 @@ const BusinessBottomNavigation = () => {
                 >
                   <div className={cn(
                     "transition-colors duration-200",
-                    isActive ? 'text-primary' : 'text-muted-foreground'
+                    isActive ? 'text-white' : 'text-white/60'
                   )}>
                     {item.icon}
                   </div>
                   <span className={cn(
                     "text-[11px] font-medium transition-colors duration-200",
-                    isActive ? 'text-primary' : 'text-muted-foreground'
+                    isActive ? 'text-white' : 'text-white/60'
                   )}>
                     {item.label}
                   </span>
