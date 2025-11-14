@@ -13,9 +13,10 @@ interface ActiveSharesListSheetProps {
   places: Place[];
   onSelectLocation: (placeId: string) => void;
   onCountChange?: (count: number) => void;
+  parentOverlayOpen?: boolean;
 }
 
-const ActiveSharesListSheet: React.FC<ActiveSharesListSheetProps> = ({ open, onOpenChange, places, onSelectLocation, onCountChange }) => {
+const ActiveSharesListSheet: React.FC<ActiveSharesListSheetProps> = ({ open, onOpenChange, places, onSelectLocation, onCountChange, parentOverlayOpen }) => {
   const { t } = useTranslation();
   const { shares } = useLocationShares();
 
@@ -48,13 +49,16 @@ const ActiveSharesListSheet: React.FC<ActiveSharesListSheetProps> = ({ open, onO
   }, [grouped.size, onCountChange]);
 
   useEffect(() => {
-    // Hide bottom navigation while open
+    // Maintain global overlay state correctly
     if (open) {
+      window.dispatchEvent(new CustomEvent('ui:overlay-open'));
+    } else if (parentOverlayOpen) {
+      // Keep hidden if parent (location list) is still open
       window.dispatchEvent(new CustomEvent('ui:overlay-open'));
     } else {
       window.dispatchEvent(new CustomEvent('ui:overlay-close'));
     }
-  }, [open]);
+  }, [open, parentOverlayOpen]);
 
   const handleSelect = (locKey: string) => {
     // If locKey is a real place id, use it; if geo fallback, try to find nearest place
@@ -75,7 +79,7 @@ const ActiveSharesListSheet: React.FC<ActiveSharesListSheetProps> = ({ open, onO
             )}
           </SheetTitle>
         </SheetHeader>
-        <ScrollArea className="flex-1 -mx-6 px-6">
+        <ScrollArea className="flex-1 -mx-6 px-6 scrollbar-hide">
           <div className="space-y-3 pr-4 py-2">
             {Array.from(grouped.entries()).map(([locKey, info]) => {
               // Resolve place name from places by id if possible
