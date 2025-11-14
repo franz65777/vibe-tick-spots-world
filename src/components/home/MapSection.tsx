@@ -313,7 +313,7 @@ const MapSection = ({
               </SheetTitle>
               
               {/* Filter buttons with horizontal scroll */}
-              <div className="flex gap-2 mt-6 overflow-x-auto scrollbar-hide pb-2 -mx-6 px-6">
+              <div className="flex gap-2 mt-0 translate-y-3 overflow-x-auto scrollbar-hide pb-2 -mx-6 px-6 relative z-10">
                 <Button
                   size="sm"
                   variant={activeFilter === 'following' ? 'default' : 'outline'}
@@ -446,6 +446,7 @@ const MapSection = ({
         onSelectLocation={(placeId) => {
           const p = places.find(pl => pl.id === placeId) || null;
           if (p) {
+            setIsListViewOpen(false);
             handlePinClick(p);
           }
         }}

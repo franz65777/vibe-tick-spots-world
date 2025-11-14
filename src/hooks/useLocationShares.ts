@@ -56,6 +56,20 @@ export const useLocationShares = () => {
     }
   }, [user]);
 
+  // Keep shares fresh on tab focus/visibility changes
+  useEffect(() => {
+    const handler = () => {
+      try { fetchShares(); } catch {}
+    };
+    window.addEventListener('focus', handler);
+    document.addEventListener('visibilitychange', handler);
+    return () => {
+      window.removeEventListener('focus', handler);
+      document.removeEventListener('visibilitychange', handler);
+    };
+  }, []);
+
+
   const fetchShares = async () => {
     if (!user) return;
     
