@@ -33,7 +33,7 @@ const FeedPage = memo(() => {
   
   const [feedType, setFeedType] = useState<'forYou' | 'promotions'>('forYou');
   
-  // Usa React Query per feed "Per te" - post degli utenti seguiti
+  // Usa React Query per feed "Per te" - post degli utenti seguiti (esclusi business post)
   const { posts: forYouFeed, loading: feedLoading } = useOptimizedFeed();
   
   // Query separata per le promozioni - carica le campagne marketing attive
@@ -168,7 +168,7 @@ const FeedPage = memo(() => {
     loadLikes();
   }, [feedItems, user?.id]);
 
-  const handleAvatarClick = (userId: string, e: React.MouseEvent) => {
+  const handleAvatarClick = (userId: string, isBusiness: boolean, e: React.MouseEvent) => {
     e.stopPropagation();
     // Filter only this user's active (non-expired) stories
     const now = new Date().toISOString();
@@ -183,7 +183,11 @@ const FeedPage = memo(() => {
       setSelectedUserStoryIndex(0); // Always start from the first story of this user
       setStoriesViewerOpen(true);
     } else {
-      navigate(`/profile/${userId}`);
+      if (isBusiness) {
+        navigate(`/business/profile/${userId}`);
+      } else {
+        navigate(`/profile/${userId}`);
+      }
     }
   };
 
