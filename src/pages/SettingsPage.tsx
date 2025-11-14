@@ -9,12 +9,14 @@ import { useTranslation } from 'react-i18next';
 import { ChevronRight, Globe, Building2, BellOff, ArrowLeft, Shield, User, LogOut, UserCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import BusinessRequestModal from '@/components/BusinessRequestModal';
+import BusinessAccountManagement from '@/components/settings/BusinessAccountManagement';
 import LanguageModal from '@/components/settings/LanguageModal';
 import MutedLocationsModal from '@/components/settings/MutedLocationsModal';
 import CloseFriendsModal from '@/components/settings/CloseFriendsModal';
 import AdminBusinessRequestsModal from '@/components/settings/AdminBusinessRequestsModal';
 import EditProfileModal from '@/components/settings/EditProfileModal';
 import { useAdminRole } from '@/hooks/useAdminRole';
+import { useBusinessProfile } from '@/hooks/useBusinessProfile';
 
 const languages = [
   { code: 'en', label: 'English', flag: '🇬🇧' },
@@ -36,9 +38,11 @@ const SettingsPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { isAdmin } = useAdminRole();
+  const { hasValidBusinessAccount } = useBusinessProfile();
   const [language, setLanguage] = useState('en');
   const [saving, setSaving] = useState(false);
   const [businessModalOpen, setBusinessModalOpen] = useState(false);
+  const [businessManagementOpen, setBusinessManagementOpen] = useState(false);
   const [languageModalOpen, setLanguageModalOpen] = useState(false);
   const [mutedLocationsModalOpen, setMutedLocationsModalOpen] = useState(false);
   const [closeFriendsModalOpen, setCloseFriendsModalOpen] = useState(false);
@@ -150,7 +154,13 @@ const SettingsPage: React.FC = () => {
 
             {/* Business Account Setting */}
             <button
-              onClick={() => setBusinessModalOpen(true)}
+              onClick={() => {
+                if (hasValidBusinessAccount) {
+                  setBusinessManagementOpen(true);
+                } else {
+                  setBusinessModalOpen(true);
+                }
+              }}
               className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
@@ -158,7 +168,9 @@ const SettingsPage: React.FC = () => {
                 <div className="text-left">
                   <div className="font-medium">{t('businessAccount', { ns: 'settings' })}</div>
                   <div className="text-sm text-muted-foreground">
-                    {t('requestBusinessAccount', { ns: 'settings' })}
+                    {hasValidBusinessAccount 
+                      ? 'Gestisci il tuo account business' 
+                      : t('requestBusinessAccount', { ns: 'settings' })}
                   </div>
                 </div>
               </div>
@@ -237,6 +249,10 @@ const SettingsPage: React.FC = () => {
       <BusinessRequestModal 
         open={businessModalOpen} 
         onOpenChange={setBusinessModalOpen} 
+      />
+      <BusinessAccountManagement
+        open={businessManagementOpen}
+        onOpenChange={setBusinessManagementOpen}
       />
       <LanguageModal
         open={languageModalOpen}
