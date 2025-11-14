@@ -120,7 +120,7 @@ const SignupProfile: React.FC = () => {
                 autoCorrect="off"
                 spellCheck={false}
                 autoComplete="username"
-                className="pr-10"
+                className={`pr-10 ${available === false ? 'border-destructive focus-visible:ring-destructive' : ''}`}
               />
               <div className="absolute inset-y-0 right-2 flex items-center">
                 {checking && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
@@ -129,7 +129,16 @@ const SignupProfile: React.FC = () => {
               </div>
             </div>
             {available === false && (
-              <p className="mt-1 text-xs text-destructive">Nome utente già in uso</p>
+              <p className="mt-2 text-sm font-medium text-destructive flex items-center gap-1">
+                <X className="w-4 h-4" />
+                Nome utente già in uso. Scegline un altro.
+              </p>
+            )}
+            {available === true && (
+              <p className="mt-2 text-sm font-medium text-green-600 flex items-center gap-1">
+                <Check className="w-4 h-4" />
+                Username disponibile!
+              </p>
             )}
           </div>
 
