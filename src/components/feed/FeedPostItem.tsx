@@ -46,6 +46,7 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
   const username = profile?.username || 'Unknown';
   const avatarUrl = profile?.avatar_url;
   const userId = item.user_id;
+  const isBusiness = profile?.is_business || false;
   const postId = item.id;
   const mediaUrls = item.media_urls || [];
   const hasMultipleMedia = mediaUrls.length > 1;
@@ -74,7 +75,11 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/profile/${userId}`);
+              if (isBusiness) {
+                navigate(`/business/profile/${userId}`);
+              } else {
+                navigate(`/profile/${userId}`);
+              }
             }}
             className="font-semibold hover:opacity-70"
           >
@@ -141,15 +146,19 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
             )}
           </button>
           <div className="flex-1 min-w-0">
-            <button 
-              onClick={(e) => {
-                e.stopPropagation();
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isBusiness) {
+                navigate(`/business/profile/${userId}`);
+              } else {
                 navigate(`/profile/${userId}`);
-              }}
-              className="font-semibold text-sm hover:opacity-70 block truncate text-left"
-            >
-              {username}
-            </button>
+              }
+            }}
+            className="font-semibold text-sm hover:opacity-70 block truncate text-left"
+          >
+            {username}
+          </button>
             {locationName && locationId && location?.latitude && location?.longitude && (
               <button
                 onClick={(e) => onLocationClick(postId, locationId, location.latitude, location.longitude, locationName, e)}
