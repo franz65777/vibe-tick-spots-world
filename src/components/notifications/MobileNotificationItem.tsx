@@ -87,28 +87,49 @@ const MobileNotificationItem = ({
   // Check if location share is still active
   useEffect(() => {
     if (notification.type === 'location_share' && notification.data?.location_id) {
+      const uid = notification.data?.shared_by_user_id || notification.data?.user_id;
+      const locId = notification.data.location_id;
+
       const checkLocationShareStatus = async () => {
         try {
-          const { data, error } = await supabase
+          const { data } = await supabase
             .from('user_location_shares')
             .select('expires_at')
-            .eq('location_id', notification.data.location_id)
-            .eq('user_id', notification.data?.shared_by_user_id || notification.data?.user_id)
+            .eq('location_id', locId)
+            .eq('user_id', uid)
             .order('created_at', { ascending: false })
             .limit(1)
-            .single();
+            .maybeSingle();
 
-          if (!error && data) {
+          if (data?.expires_at) {
             const now = new Date();
             const expiresAt = new Date(data.expires_at);
             setIsLocationShareActive(expiresAt > now);
+          } else {
+            // No record found => not active
+            setIsLocationShareActive(false);
           }
         } catch (err) {
           console.error('Error checking location share status:', err);
+          setIsLocationShareActive(false);
         }
       };
 
       checkLocationShareStatus();
+
+      // Subscribe to realtime changes for this user/location to update live
+      const channel = supabase
+        .channel(`notif-locshare-${uid}-${locId}`)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'user_location_shares', filter: `user_id=eq.${uid}` },
+          () => checkLocationShareStatus()
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [notification.type, notification.data?.location_id, notification.data?.shared_by_user_id, notification.data?.user_id]);
 
