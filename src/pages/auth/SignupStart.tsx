@@ -127,7 +127,16 @@ const SignupStart: React.FC = () => {
 
       if (error) throw error;
 
-      toast.success(method === 'email' ? t('auth:codeSentEmail') : t('auth:codeSentPhone'));
+      // Check if we're in dev mode (email not sent but OTP generated)
+      if (data?.devMode && data?.devCode) {
+        toast.success('🔧 DEV MODE - Codice OTP: ' + data.devCode, { 
+          duration: 20000,
+          description: 'Il dominio email non è verificato. Usa questo codice per testare.'
+        });
+      } else {
+        toast.success(method === 'email' ? t('auth:codeSentEmail') : t('auth:codeSentPhone'));
+      }
+
       navigate(`/signup/verify?method=${method}&${method}=${encodeURIComponent(method === 'email' ? email.trim() : phone.trim())}`);
     } catch (e: any) {
       toast.error(e?.message || t('auth:cannotSendCode'));
