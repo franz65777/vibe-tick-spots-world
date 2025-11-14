@@ -254,18 +254,33 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
             <div className="max-w-2xl mx-auto p-4 space-y-6">
               {/* Avatar Section */}
               <div className="flex flex-col items-center gap-4 py-6">
-                <Avatar className="w-32 h-32">
-                  <AvatarImage src={avatarPreview || profile?.avatar_url || undefined} />
-                  <AvatarFallback className="text-3xl">
-                    {username.substring(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+                <button
+                  type="button"
+                  aria-label={t('upload', { ns: 'common' })}
+                  onClick={() => {
+                    if (avatarPreview || profile?.avatar_url) {
+                      setTempImageForCrop((avatarPreview || profile?.avatar_url) as string);
+                      setShowCropEditor(true);
+                    } else {
+                      fileInputRef.current?.click();
+                    }
+                  }}
+                  className="rounded-full focus:outline-none focus:ring-2 focus:ring-primary/50"
+                >
+                  <Avatar className="w-32 h-32 cursor-pointer">
+                    <AvatarImage src={avatarPreview || profile?.avatar_url || undefined} alt={t('profile', { ns: 'common' }) || 'Profile'} />
+                    <AvatarFallback className="text-3xl">
+                      {username.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
                 
                 <div className="flex gap-2">
                   <input
                     ref={fileInputRef}
                     type="file"
                     accept="image/*"
+                    onClick={(e) => { (e.currentTarget as HTMLInputElement).value = ''; }}
                     onChange={handleFileSelect}
                     className="hidden"
                     disabled={isLoading || isUploading}
