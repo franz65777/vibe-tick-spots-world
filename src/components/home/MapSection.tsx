@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { categoryDisplayNames, type AllowedCategory } from '@/utils/allowedCategories';
+import ActiveSharesListSheet from './ActiveSharesListSheet';
 
 import { useTranslation } from 'react-i18next';
 
@@ -65,6 +66,7 @@ const MapSection = ({
   const [isQuickAddModalOpen, setIsQuickAddModalOpen] = useState(false);
   const [isPinShareModalOpen, setIsPinShareModalOpen] = useState(false);
   const [isListViewOpen, setIsListViewOpen] = useState(false);
+  const [isActiveSharesOpen, setIsActiveSharesOpen] = useState(false);
   const [newLocationCoords, setNewLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [pinToShare, setPinToShare] = useState<PinShareData | null>(null);
@@ -290,6 +292,15 @@ const MapSection = ({
                   >
                     {t('saved', { ns: 'mapFilters' })}
                   </Button>
+                  {/* New: Active Shares list */}
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => setIsActiveSharesOpen(true)}
+                    className="rounded-full"
+                  >
+                    {t('activeShares', { ns: 'mapFilters' })}
+                  </Button>
                 </div>
               </SheetHeader>
               <ScrollArea className="flex-1 -mx-6 px-6">
@@ -400,6 +411,19 @@ const MapSection = ({
           setPinToShare(null);
         }}
         place={pinToShare || selectedPlace}
+      />
+
+      {/* Active Shares list */}
+      <ActiveSharesListSheet
+        open={isActiveSharesOpen}
+        onOpenChange={setIsActiveSharesOpen}
+        places={places}
+        onSelectLocation={(placeId) => {
+          const p = places.find(pl => pl.id === placeId) || null;
+          if (p) {
+            handlePinClick(p);
+          }
+        }}
       />
     </>
   );
