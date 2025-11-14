@@ -367,7 +367,11 @@ const MapSection = ({
                       <div className="flex gap-3">
                         {/* Category Icon */}
                         <div className="flex-shrink-0">
-                          <CategoryIcon category={place.category} className="w-12 h-12" />
+                          <CategoryIcon 
+                            category={place.category} 
+                            className="w-12 h-12"
+                            sizeMultiplier={place.category.toLowerCase() === 'restaurant' ? 0.75 : 1}
+                          />
                         </div>
 
                         {/* Content */}
