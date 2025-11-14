@@ -256,16 +256,9 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
               <div className="flex flex-col items-center gap-4 py-6">
                 <button
                   type="button"
-                  aria-label={t('upload', { ns: 'common' })}
-                  onClick={() => {
-                    if (avatarPreview || profile?.avatar_url) {
-                      setTempImageForCrop((avatarPreview || profile?.avatar_url) as string);
-                      setShowCropEditor(true);
-                    } else {
-                      fileInputRef.current?.click();
-                    }
-                  }}
-                  className="rounded-full focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  aria-label={t('upload')}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="rounded-full focus:outline-none focus:ring-2 focus:ring-primary/50 relative group"
                 >
                   <Avatar className="w-32 h-32 cursor-pointer">
                     <AvatarImage src={avatarPreview || profile?.avatar_url || undefined} alt={t('profile', { ns: 'common' }) || 'Profile'} />
@@ -273,44 +266,34 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
                       {username.substring(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
+                  <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Upload className="w-8 h-8 text-white" />
+                  </div>
                 </button>
                 
-                <div className="flex gap-2">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onClick={(e) => { (e.currentTarget as HTMLInputElement).value = ''; }}
-                    onChange={handleFileSelect}
-                    className="hidden"
-                    disabled={isLoading || isUploading}
-                  />
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onClick={(e) => { (e.currentTarget as HTMLInputElement).value = ''; }}
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  disabled={isLoading || isUploading}
+                />
+                
+                {(avatarPreview || profile?.avatar_url) && (
+                  <Button
+                    type="button"
+                    variant="outline"
                     size="sm"
                     className="rounded-[16px]"
+                    onClick={handleRemoveAvatar}
                     disabled={isLoading || isUploading}
-                    onClick={() => fileInputRef.current?.click()}
                   >
-                    <Upload className="w-4 h-4 mr-2" />
-                    {t('upload')}
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    {t('remove', { ns: 'common' })}
                   </Button>
-                  
-                  {(avatarPreview || profile?.avatar_url) && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="rounded-[16px]"
-                      onClick={handleRemoveAvatar}
-                      disabled={isLoading || isUploading}
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      {t('remove', { ns: 'common' })}
-                    </Button>
-                  )}
-                </div>
+                )}
               </div>
 
               {/* Name Field */}
