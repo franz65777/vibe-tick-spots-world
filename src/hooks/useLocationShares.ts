@@ -28,9 +28,9 @@ export const useLocationShares = () => {
     if (user) {
       fetchShares();
       
-      // Subscribe to realtime updates (any change triggers a refetch)
-      const subscription = supabase
-        .channel('location_shares_changes')
+      // Subscribe to realtime updates with unique channel per user
+      const channel = supabase
+        .channel(`location_shares_changes_${user.id}`)
         .on('postgres_changes', {
           event: '*',
           schema: 'public',
@@ -48,7 +48,7 @@ export const useLocationShares = () => {
       }, 15000);
 
       return () => {
-        subscription.unsubscribe();
+        supabase.removeChannel(channel);
         clearInterval(interval);
       };
     }
