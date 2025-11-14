@@ -81,12 +81,13 @@ export const AvatarCropEditor: React.FC<AvatarCropEditorProps> = ({
       setIsProcessing(true);
       const croppedImage = await getCroppedImg(image, croppedAreaPixels);
       onComplete(croppedImage);
+      onCancel(); // Chiude il crop editor dopo aver completato
     } catch (e) {
       console.error('Error cropping image:', e);
     } finally {
       setIsProcessing(false);
     }
-  }, [croppedAreaPixels, image, onComplete]);
+  }, [croppedAreaPixels, image, onComplete, onCancel]);
 
   return (
     <div className="fixed inset-0 z-[1000] bg-background/95 backdrop-blur-sm pointer-events-auto">
