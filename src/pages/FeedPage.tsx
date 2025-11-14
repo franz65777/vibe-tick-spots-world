@@ -41,7 +41,7 @@ const FeedPage = memo(() => {
     queryKey: ['promotions-feed', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      // Carica post marketing e includi profili business (left join), filtrando client-side
+      // Carica post marketing da utenti business verificati
       const { data: posts, error } = await (supabase as any)
         .from('posts')
         .select(`
@@ -50,16 +50,16 @@ const FeedPage = memo(() => {
           locations:location_id (id, name, address, city, latitude, longitude),
           business_profiles:user_id (verification_status)
         `)
-        .not('content_type', 'is', null)
-        .in('content_type', ['event', 'discount', 'promotion', 'announcement'])
+        .eq('is_business_post', true)
         .order('created_at', { ascending: false })
         .limit(50);
       if (error) {
         console.error('Promotions feed error:', error);
         return [];
       }
+      // Filtra solo post da business verificati
       const filtered = (posts as any[] | null) || [];
-      return filtered.filter((p: any) => !!p.business_profiles);
+      return filtered.filter((p: any) => p.business_profiles?.verification_status === 'verified');
     },
     enabled: !!user?.id && feedType === 'promotions',
     staleTime: 5 * 60 * 1000,
