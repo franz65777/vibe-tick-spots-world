@@ -27,10 +27,12 @@ export const useLocationShares = () => {
   useEffect(() => {
     if (user) {
       fetchShares();
+
+      const suffix = Math.random().toString(36).slice(2);
       
-      // Subscribe to realtime updates with unique channel per user
+      // Subscribe to realtime updates with unique channel per user + instance
       const channel = supabase
-        .channel(`location_shares_changes_${user.id}`)
+        .channel(`location_shares_changes_${user.id}_${suffix}`)
         .on('postgres_changes', {
           event: '*',
           schema: 'public',

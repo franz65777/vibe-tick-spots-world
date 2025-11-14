@@ -34,8 +34,9 @@ export const useUnreadMessages = () => {
     fetchUnreadCount();
 
     // Subscribe to real-time updates with unique channel per user
+    const suffix = Math.random().toString(36).slice(2);
     const channel = supabase
-      .channel(`unread-messages-${user.id}`)
+      .channel(`unread-messages-${user.id}-${suffix}`)
       .on(
         'postgres_changes',
         {
