@@ -369,7 +369,7 @@ export const useMapPins = (filter: 'following' | 'popular' | 'saved' = 'popular'
     if (!user) return;
     
     const channel = supabase
-      .channel('map-pins-refresh')
+      .channel(`map-pins-refresh-${user?.id || 'anon'}-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'saved_places' }, () => {
         console.log('🔄 Saved places changed, refreshing pins...');
         fetchPins();

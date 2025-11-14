@@ -26,7 +26,7 @@ const BusinessClaimPage = () => {
 
     // Subscribe to realtime changes
     const channel = supabase
-      .channel('business-claims-changes')
+      .channel(`business-claims-changes-${user.id}`)
       .on(
         'postgres_changes',
         {
