@@ -118,7 +118,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
         longitude,
         created_by,
         created_at,
-        user_saved_locations!left(id)
+        user_saved_locations!left(id, user_id)
       `);
 
       // Apply category filters if any selected
@@ -317,7 +317,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               },
               user_id: location.created_by,
               created_at: location.created_at,
-              isSaved: location.user_saved_locations && location.user_saved_locations.length > 0
+              isSaved: location.user_saved_locations && location.user_saved_locations.some((saved: any) => saved.user_id === user.id)
             }));
           }
           break;
