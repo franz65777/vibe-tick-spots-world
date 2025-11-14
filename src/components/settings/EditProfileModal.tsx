@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { AvatarCropEditor } from './AvatarCropEditor';
 
 interface EditProfileModalProps {
   open: boolean;
@@ -28,6 +29,8 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [showCropEditor, setShowCropEditor] = useState(false);
+  const [tempImageForCrop, setTempImageForCrop] = useState<string | null>(null);
 
   // Update fields when profile loads
   useEffect(() => {
@@ -53,12 +56,31 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
       return;
     }
 
-    setAvatarFile(file);
+    // Open crop editor instead of directly setting the preview
     const reader = new FileReader();
     reader.onloadend = () => {
-      setAvatarPreview(reader.result as string);
+      setTempImageForCrop(reader.result as string);
+      setShowCropEditor(true);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = (croppedBlob: Blob) => {
+    // Convert blob to file
+    const file = new File([croppedBlob], 'avatar.jpg', { type: 'image/jpeg' });
+    setAvatarFile(file);
+    
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(croppedBlob);
+    setAvatarPreview(previewUrl);
+    
+    setShowCropEditor(false);
+    setTempImageForCrop(null);
+  };
+
+  const handleCropCancel = () => {
+    setShowCropEditor(false);
+    setTempImageForCrop(null);
   };
 
   const handleRemoveAvatar = async () => {
@@ -201,7 +223,16 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <>
+      {showCropEditor && tempImageForCrop && (
+        <AvatarCropEditor
+          image={tempImageForCrop}
+          onComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+        />
+      )}
+      
+      <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-full p-0 [&>button]:hidden">
         <div className="h-full flex flex-col">
           <SheetHeader className="p-4">
@@ -341,6 +372,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
         </div>
       </SheetContent>
     </Sheet>
+    </>
   );
 };
 
