@@ -71,7 +71,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
     };
     
     const channel = supabase
-      .channel('map-locations-refresh')
+      .channel(`map-locations-refresh-${user?.id || 'anon'}-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'saved_places' }, debouncedRefresh)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'user_saved_locations' }, debouncedRefresh)
       .subscribe();
