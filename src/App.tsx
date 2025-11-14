@@ -125,6 +125,7 @@ function AppContent() {
           <Route path="/business/add" element={<BusinessAddPage />} />
           <Route path="/business/feed" element={<BusinessFeedPage />} />
           <Route path="/business/profile" element={<BusinessProfilePage />} />
+          <Route path="/business/profile/:userId" element={<BusinessProfilePage />} />
           <Route path="/business/notifications" element={<BusinessNotificationsPage />} />
           <Route path="/business/messages" element={<BusinessMessagesPage />} />
           <Route path="/business-dashboard" element={<BusinessDashboardPage />} />

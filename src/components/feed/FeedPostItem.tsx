@@ -18,7 +18,7 @@ interface FeedPostItemProps {
   userHasStory: boolean;
   postLikes: Map<string, PostLikeUser[]>;
   expandedCaptions: Set<string>;
-  onAvatarClick: (userId: string, e: React.MouseEvent) => void;
+  onAvatarClick: (userId: string, isBusiness: boolean, e: React.MouseEvent) => void;
   onLocationClick: (postId: string, locationId: string, lat: number, lng: number, name: string | null, e: React.MouseEvent) => void;
   onCommentClick: (postId: string) => void;
   onShareClick: (postId: string) => void;
@@ -132,7 +132,14 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
       <div className="post-compact-header flex items-center justify-between">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <button 
-            onClick={(e) => onAvatarClick(userId, e)}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isBusiness) {
+                navigate(`/business/profile/${userId}`);
+              } else {
+                navigate(`/profile/${userId}`);
+              }
+            }}
             className="shrink-0 relative"
           >
             <Avatar className="h-10 w-10">
