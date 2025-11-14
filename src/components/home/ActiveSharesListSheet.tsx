@@ -107,7 +107,7 @@ const ActiveSharesListSheet: React.FC<ActiveSharesListSheetProps> = ({ open, onO
                   <div className="flex-1 min-w-0">
                     <h4 className="font-semibold text-base text-foreground line-clamp-1">{name}</h4>
                   </div>
-                  <Button size="sm" variant="secondary">{t('view', { ns: 'common', defaultValue: 'View' })}</Button>
+                  <Button size="sm" variant="secondary">{t('view', { ns: 'common' })}</Button>
                 </button>
               );
             })}
