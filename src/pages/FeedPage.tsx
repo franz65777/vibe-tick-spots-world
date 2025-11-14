@@ -41,14 +41,12 @@ const FeedPage = memo(() => {
     queryKey: ['promotions-feed', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      // Carica campagne marketing attive da business verificati
+      // Carica campagne marketing attive (nessun filtro su verifica per garantire visibilità)
       const { data: campaigns, error } = await supabase
         .from('marketing_campaigns')
         .select(`
           *,
-          locations:location_id (id, name, address, city, latitude, longitude, category, image_url),
-          profiles:business_user_id (id, username, avatar_url, full_name),
-          business_profiles:business_user_id (verification_status, business_name)
+          locations:location_id (id, name, address, city, latitude, longitude, category, image_url)
         `)
         .eq('is_active', true)
         .order('created_at', { ascending: false })
@@ -59,32 +57,47 @@ const FeedPage = memo(() => {
         return [];
       }
       
-      // Filtra solo campagne da business verificati e trasforma in formato post
-      const filtered = (campaigns as any[] | null) || [];
-      return filtered
-        .filter((c: any) => c.business_profiles?.verification_status === 'verified')
-        .map((campaign: any) => ({
-          id: campaign.id,
-          user_id: campaign.business_user_id,
-          caption: `${campaign.title}\n\n${campaign.description}`,
-          media_urls: campaign.locations?.image_url ? [campaign.locations.image_url] : [],
-          location_id: campaign.location_id,
-          created_at: campaign.created_at,
-          likes_count: 0,
-          comments_count: 0,
-          shares_count: 0,
-          is_business_post: true,
-          content_type: campaign.campaign_type,
-          profiles: campaign.profiles,
-          locations: campaign.locations,
-          metadata: {
-            campaign_id: campaign.id,
-            campaign_type: campaign.campaign_type,
-            end_date: campaign.end_date
-          }
-        }));
-    },
-    enabled: !!user?.id && feedType === 'promotions',
+      const list = (campaigns as any[] | null) || [];
+      if (list.length === 0) return [];
+      
+      // Carica profili dei business (2a query perché non esiste una FK definita)
+      const userIds = Array.from(new Set(list.map((c: any) => c.business_user_id).filter(Boolean)));
+      let profilesMap = new Map<string, any>();
+      if (userIds.length > 0) {
+        const { data: profs, error: profErr } = await supabase
+          .from('profiles')
+          .select('id, username, avatar_url, full_name')
+          .in('id', userIds);
+        if (profErr) {
+          console.warn('Profiles join failed:', profErr);
+        } else {
+          profilesMap = new Map((profs as any[]).map((p: any) => [p.id, p]));
+        }
+      }
+      
+      // Trasforma le campagne in oggetti compatibili con il feed
+      return list.map((campaign: any) => ({
+        id: campaign.id,
+        user_id: campaign.business_user_id,
+        caption: `${campaign.title}\n\n${campaign.description}`,
+        media_urls: campaign.locations?.image_url ? [campaign.locations.image_url] : [],
+        location_id: campaign.location_id,
+        created_at: campaign.created_at,
+        likes_count: 0,
+        comments_count: 0,
+        shares_count: 0,
+        is_business_post: true,
+        content_type: campaign.campaign_type,
+        profiles: profilesMap.get(campaign.business_user_id) || { id: campaign.business_user_id },
+        locations: campaign.locations,
+        metadata: {
+          campaign_id: campaign.id,
+          campaign_type: campaign.campaign_type,
+          end_date: campaign.end_date
+        }
+      }));
+  },
+    enabled: feedType === 'promotions',
     staleTime: 5 * 60 * 1000,
   });
   
