@@ -347,7 +347,7 @@ const MapSection = ({
                 >
                   {t('activeShares', { ns: 'mapFilters' })}
                   {activeSharesCount > 0 && (
-                    <Badge variant="destructive" className="absolute -top-2 -right-2 w-5 h-5 flex items-center justify-center p-0 text-xs z-50">{activeSharesCount}</Badge>
+                    <Badge variant="destructive" className="absolute top-0 -right-2 w-5 h-5 flex items-center justify-center p-0 text-xs z-[999]">{activeSharesCount}</Badge>
                   )}
                 </Button>
               </div>

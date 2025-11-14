@@ -310,6 +310,7 @@ const LeafletMapSetup = ({
         const campaignLocationIds = new Set(campaigns?.map(c => c.location_id) || []);
 
         // Add / update markers
+        const usedFallbackShareIds = new Set<string>();
         places.forEach((place) => {
           if (!place.coordinates?.lat || !place.coordinates?.lng) return;
 
