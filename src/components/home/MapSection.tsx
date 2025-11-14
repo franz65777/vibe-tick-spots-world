@@ -313,7 +313,7 @@ const MapSection = ({
               </SheetTitle>
               
               {/* Filter buttons with horizontal scroll */}
-              <div className="flex gap-2 mt-4 overflow-x-auto scrollbar-hide pb-2 -mx-6 px-6">
+              <div className="flex gap-2 mt-6 overflow-x-auto scrollbar-hide pb-2 -mx-6 px-6">
                 <Button
                   size="sm"
                   variant={activeFilter === 'following' ? 'default' : 'outline'}
