@@ -12,6 +12,7 @@ interface LocationShare {
   longitude: number;
   share_type: string;
   expires_at: string;
+  created_at: string;
   user: {
     id: string;
     username: string;
@@ -121,14 +122,22 @@ export const useLocationShares = () => {
           }
         }) || [];
 
+      // Keep ONLY the most recent active share per user
+      // The query is ordered by created_at DESC, so first occurrence is the latest
+      const uniqueByUser = new Map<string, any>();
+      for (const s of transformedData) {
+        if (!uniqueByUser.has(s.user_id)) uniqueByUser.set(s.user_id, s);
+      }
+      const deduped = Array.from(uniqueByUser.values());
+
       // Update state
-      setShares(transformedData as LocationShare[]);
+      setShares(deduped as LocationShare[]);
 
       // Schedule automatic refresh at next expiration to remove stale shares immediately
       if (expiryTimerRef.current) {
         clearTimeout(expiryTimerRef.current);
       }
-      const nextExpiryTs = transformedData.reduce((min: number, s: any) => {
+      const nextExpiryTs = (deduped as any[]).reduce((min: number, s: any) => {
         const ts = new Date(s.expires_at).getTime();
         return isNaN(ts) ? min : Math.min(min, ts);
       }, Number.POSITIVE_INFINITY);
