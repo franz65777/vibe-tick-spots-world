@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -23,6 +23,7 @@ export const useLocationShares = () => {
   const { user } = useAuth();
   const [shares, setShares] = useState<LocationShare[]>([]);
   const [loading, setLoading] = useState(true);
+  const expiryTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -69,8 +70,14 @@ export const useLocationShares = () => {
     };
   }, []);
 
-
-  const fetchShares = async () => {
+  // Cleanup expiry timer on unmount
+  useEffect(() => {
+    return () => {
+      if (expiryTimerRef.current) {
+        clearTimeout(expiryTimerRef.current);
+      }
+    };
+  }, []);
     if (!user) return;
     
     try {
@@ -112,7 +119,24 @@ export const useLocationShares = () => {
           }
         }) || [];
 
+      // Update state
       setShares(transformedData as LocationShare[]);
+
+      // Schedule automatic refresh at next expiration to remove stale shares immediately
+      if (expiryTimerRef.current) {
+        clearTimeout(expiryTimerRef.current);
+      }
+      const nextExpiryTs = transformedData.reduce((min: number, s: any) => {
+        const ts = new Date(s.expires_at).getTime();
+        return isNaN(ts) ? min : Math.min(min, ts);
+      }, Number.POSITIVE_INFINITY);
+
+      if (Number.isFinite(nextExpiryTs)) {
+        const delay = Math.max(0, nextExpiryTs - now.getTime() + 250);
+        expiryTimerRef.current = window.setTimeout(() => {
+          fetchShares();
+        }, Math.min(delay, 5 * 60 * 1000));
+      }
     } catch (error) {
       console.error('Error fetching location shares:', error);
     } finally {
