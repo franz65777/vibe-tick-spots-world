@@ -20,6 +20,7 @@ import { categoryDisplayNames, type AllowedCategory } from '@/utils/allowedCateg
 import ActiveSharesListSheet from './ActiveSharesListSheet';
 
 import { useTranslation } from 'react-i18next';
+import { CategoryIcon } from '@/components/common/CategoryIcon';
 
 interface MapSectionProps {
   mapCenter: { lat: number; lng: number };
@@ -321,11 +322,16 @@ const MapSection = ({
                       }}
                     >
                       <div className="flex gap-3">
+                        {/* Category Icon */}
+                        <div className="flex-shrink-0">
+                          <CategoryIcon category={place.category} className="w-12 h-12" />
+                        </div>
+
                         {/* Content */}
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-foreground truncate">{place.name}</h3>
                           <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                            {place.address || place.description || categoryDisplayNames[place.category as AllowedCategory] || place.category}
+                            {place.address || t('addressNotAvailable', { ns: 'common' })}
                           </p>
                         </div>
                       </div>
@@ -339,17 +345,17 @@ const MapSection = ({
         
         {/* Loading/Error States */}
         {loading && (
-          <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-sm border border-gray-200 z-50">
+          <div className="absolute bottom-4 left-4 bg-card/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-sm border border-border z-50">
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-sm text-gray-600">Loading locations...</span>
+              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-sm text-muted-foreground">{t('loadingLocations', { ns: 'common' })}</span>
             </div>
           </div>
         )}
         
         {error && (
-          <div className="absolute bottom-4 left-4 bg-red-50 border border-red-200 rounded-lg px-3 py-2 shadow-sm z-50">
-            <span className="text-sm text-red-600">Error: {error}</span>
+          <div className="absolute bottom-4 left-4 bg-destructive/10 border border-destructive/30 rounded-lg px-3 py-2 shadow-sm z-50">
+            <span className="text-sm text-destructive">{t('error', { ns: 'common' })}: {error}</span>
           </div>
         )}
         
@@ -397,6 +403,7 @@ const MapSection = ({
           }
         }}
         onCountChange={setActiveSharesCount}
+        parentOverlayOpen={isListViewOpen}
       />
     </>
   );
