@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Upload, Trash2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -31,6 +31,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [showCropEditor, setShowCropEditor] = useState(false);
   const [tempImageForCrop, setTempImageForCrop] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Update fields when profile loads
   useEffect(() => {
@@ -261,26 +262,25 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
                 </Avatar>
                 
                 <div className="flex gap-2">
-                  <label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                      disabled={isLoading || isUploading}
-                    />
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm"
-                      className="rounded-[16px]"
-                      disabled={isLoading || isUploading}
-                      onClick={() => document.querySelector('input[type="file"]')?.dispatchEvent(new MouseEvent('click'))}
-                    >
-                      <Upload className="w-4 h-4 mr-2" />
-                      {t('upload', { ns: 'common' })}
-                    </Button>
-                  </label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    disabled={isLoading || isUploading}
+                  />
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm"
+                    className="rounded-[16px]"
+                    disabled={isLoading || isUploading}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    {t('upload', { ns: 'common' })}
+                  </Button>
                   
                   {(avatarPreview || profile?.avatar_url) && (
                     <Button
