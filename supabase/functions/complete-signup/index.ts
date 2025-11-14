@@ -97,6 +97,7 @@ const handler = async (req: Request): Promise<Response> => {
         full_name: fullName,
         date_of_birth: dateOfBirth,
         gender,
+        username: username.toLowerCase(),
       }
     };
 
@@ -139,29 +140,29 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Failed to create user");
     }
 
-    // Create profile
+    // Ensure profile has correct data (trigger already created it)
     const { error: profileError } = await supabase
       .from('profiles')
-      .insert({
-        id: authData.user.id,
+      .update({
         full_name: fullName,
         username: username.toLowerCase(),
-      });
+      })
+      .eq('id', authData.user.id);
 
     if (profileError) {
-      console.error("Profile error:", profileError);
-      // Rollback user creation
-      await supabase.auth.admin.deleteUser(authData.user.id);
-      
+      console.error("Profile update error:", profileError);
       // Check if it's a unique constraint violation (username already exists)
-      if (profileError.code === '23505') {
+      if ((profileError as any).code === '23505') {
         return new Response(
           JSON.stringify({ error: "Username già in uso" }),
           { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
       }
-      
-      throw new Error(profileError.message);
+
+      return new Response(
+        JSON.stringify({ error: profileError.message || 'Errore aggiornamento profilo' }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
     // Clear session from database
