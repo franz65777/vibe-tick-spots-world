@@ -102,6 +102,7 @@ const AdminBusinessRequestsModal: React.FC<AdminBusinessRequestsModalProps> = ({
           business_type: request.business_type,
           business_description: request.description,
           phone_number: request.contact_phone,
+          location_id: request.location_id,
           verification_status: 'verified',
         }, {
           onConflict: 'user_id',

@@ -60,14 +60,20 @@ const FeedPage = memo(() => {
       const list = (campaigns as any[] | null) || [];
       if (list.length === 0) return [];
       
-      // Carica business_profiles per ottenere nome e avatar del business
+      // Carica business_profiles per ottenere nome e avatar del business (ora accessibili grazie alla policy pubblica)
       const userIds = Array.from(new Set(list.map((c: any) => c.business_user_id).filter(Boolean)));
       let businessProfilesMap = new Map<string, any>();
+      
+      console.log('🔍 Loading business profiles for users:', userIds);
+      
       if (userIds.length > 0) {
         const { data: bizProfs, error: bizErr } = await supabase
           .from('business_profiles')
-          .select('user_id, business_name, location_id')
-          .in('user_id', userIds);
+          .select('user_id, business_name, location_id, verification_status')
+          .in('user_id', userIds)
+          .eq('verification_status', 'verified');
+        
+        console.log('✅ Business profiles loaded:', bizProfs);
         
         if (!bizErr && bizProfs) {
           // Per ogni business, carica la location per ottenere l'immagine
@@ -91,11 +97,20 @@ const FeedPage = memo(() => {
               }
             ])
           );
+        } else if (bizErr) {
+          console.error('❌ Business profiles error:', bizErr);
         }
       }
       
+      // Filtra solo campagne con business_profile valido
+      const validCampaigns = list.filter((campaign: any) => 
+        businessProfilesMap.has(campaign.business_user_id)
+      );
+      
+      console.log(`📊 Campaigns: ${list.length} total, ${validCampaigns.length} from verified businesses`);
+      
       // Trasforma le campagne in oggetti compatibili con il feed
-      return list.map((campaign: any) => ({
+      return validCampaigns.map((campaign: any) => ({
         id: campaign.id,
         user_id: campaign.business_user_id,
         caption: `${campaign.title}\n\n${campaign.description}`,
