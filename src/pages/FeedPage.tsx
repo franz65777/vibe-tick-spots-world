@@ -36,101 +36,86 @@ const FeedPage = memo(() => {
   // Usa React Query per feed "Per te" - post degli utenti seguiti (esclusi business post)
   const { posts: forYouFeed, loading: feedLoading } = useOptimizedFeed();
   
-  // Query separata per le promozioni - carica le campagne marketing attive
+  // Query separata per le promozioni - carica i POST BUSINESS (is_business_post = true)
   const { data: promotionsFeed = [], isLoading: promotionsLoading } = useQuery({
     queryKey: ['promotions-feed', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      // Carica campagne marketing attive con business_profiles
-      const { data: campaigns, error } = await supabase
-        .from('marketing_campaigns')
-        .select(`
-          *,
-          locations:location_id (id, name, address, city, latitude, longitude, category, image_url)
-        `)
-        .eq('is_active', true)
+      
+      // Carica post business (is_business_post = true) con profili e locations
+      const { data: businessPosts, error } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('is_business_post', true)
         .order('created_at', { ascending: false })
         .limit(50);
       
       if (error) {
-        console.error('Promotions feed error:', error);
+        console.error('Business posts feed error:', error);
         return [];
       }
       
-      const list = (campaigns as any[] | null) || [];
-      if (list.length === 0) return [];
+      const posts = businessPosts || [];
+      if (posts.length === 0) return [];
       
-      // Carica business_profiles per ottenere nome e avatar del business (ora accessibili grazie alla policy pubblica)
-      const userIds = Array.from(new Set(list.map((c: any) => c.business_user_id).filter(Boolean)));
-      let businessProfilesMap = new Map<string, any>();
+      // Carica profili business e locations in parallelo
+      const userIds = Array.from(new Set(posts.map((p: any) => p.user_id).filter(Boolean)));
+      const locationIds = Array.from(new Set(posts.map((p: any) => p.location_id).filter(Boolean)));
       
-      console.log('🔍 Loading business profiles for users:', userIds);
+      const [businessProfilesRes, locationsRes] = await Promise.all([
+        userIds.length > 0
+          ? supabase
+              .from('business_profiles')
+              .select('user_id, business_name, location_id, verification_status')
+              .in('user_id', userIds)
+              .eq('verification_status', 'verified')
+          : Promise.resolve({ data: [], error: null }),
+        locationIds.length > 0
+          ? supabase
+              .from('locations')
+              .select('id, name, address, city, latitude, longitude, category, image_url')
+              .in('id', locationIds)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
       
-      if (userIds.length > 0) {
-        const { data: bizProfs, error: bizErr } = await supabase
-          .from('business_profiles')
-          .select('user_id, business_name, location_id, verification_status')
-          .in('user_id', userIds)
-          .eq('verification_status', 'verified');
-        
-        console.log('✅ Business profiles loaded:', bizProfs);
-        
-        if (!bizErr && bizProfs) {
-          // Per ogni business, carica la location per ottenere l'immagine
-          const locationIds = bizProfs.map((bp: any) => bp.location_id).filter(Boolean);
-          const { data: locs } = await supabase
-            .from('locations')
-            .select('id, image_url')
-            .in('id', locationIds);
-          
-          const locMap = new Map((locs || []).map((l: any) => [l.id, l.image_url]));
-          
-          businessProfilesMap = new Map(
-            bizProfs.map((bp: any) => [
-              bp.user_id,
-              {
-                id: bp.user_id,
-                username: bp.business_name,
-                avatar_url: locMap.get(bp.location_id) || null,
-                full_name: bp.business_name,
-                is_business: true
-              }
-            ])
-          );
-        } else if (bizErr) {
-          console.error('❌ Business profiles error:', bizErr);
-        }
-      }
+      const businessProfiles = (businessProfilesRes as any).data || [];
+      const locations = (locationsRes as any).data || [];
       
-      // Filtra solo campagne con business_profile valido
-      const validCampaigns = list.filter((campaign: any) => 
-        businessProfilesMap.has(campaign.business_user_id)
+      // Per ottenere avatar business, carica le locations dei business profiles
+      const bizLocationIds = businessProfiles.map((bp: any) => bp.location_id).filter(Boolean);
+      const { data: bizLocations } = await supabase
+        .from('locations')
+        .select('id, image_url')
+        .in('id', bizLocationIds);
+      
+      const bizLocMap = new Map((bizLocations || []).map((l: any) => [l.id, l.image_url]));
+      
+      // Crea mappe
+      const businessProfileMap = new Map(
+        businessProfiles.map((bp: any) => [
+          bp.user_id,
+          {
+            id: bp.user_id,
+            username: bp.business_name,
+            avatar_url: bp.location_id ? bizLocMap.get(bp.location_id) : null,
+            is_business: true,
+          },
+        ])
       );
+      const locationMap = new Map(locations.map((l: any) => [l.id, l]));
       
-      console.log(`📊 Campaigns: ${list.length} total, ${validCampaigns.length} from verified businesses`);
+      // Arricchisci i post con profili e locations
+      const enriched = posts
+        .map((p: any) => ({
+          ...p,
+          profiles: businessProfileMap.get(p.user_id) || null,
+          locations: p.location_id ? locationMap.get(p.location_id) : null,
+        }))
+        .filter((p: any) => p.profiles); // Mostra solo post di business verificati
       
-      // Trasforma le campagne in oggetti compatibili con il feed
-      return validCampaigns.map((campaign: any) => ({
-        id: campaign.id,
-        user_id: campaign.business_user_id,
-        caption: `${campaign.title}\n\n${campaign.description}`,
-        media_urls: campaign.locations?.image_url ? [campaign.locations.image_url] : [],
-        location_id: campaign.location_id,
-        created_at: campaign.created_at,
-        likes_count: 0,
-        comments_count: 0,
-        shares_count: 0,
-        is_business_post: true,
-        content_type: campaign.campaign_type,
-        profiles: businessProfilesMap.get(campaign.business_user_id) || { id: campaign.business_user_id },
-        locations: campaign.locations,
-        metadata: {
-          campaign_id: campaign.id,
-          campaign_type: campaign.campaign_type,
-          end_date: campaign.end_date
-        }
-      }));
-  },
+      console.log('✅ Business posts loaded:', enriched.length);
+      return enriched;
+    },
     enabled: feedType === 'promotions',
     staleTime: 5 * 60 * 1000,
   });
