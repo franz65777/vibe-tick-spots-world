@@ -78,6 +78,8 @@ export const useLocationShares = () => {
       }
     };
   }, []);
+
+  const fetchShares = async () => {
     if (!user) return;
     
     try {
