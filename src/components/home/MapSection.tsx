@@ -76,6 +76,15 @@ const MapSection = ({
   
   // Use global filter context - single source of truth
   const { activeFilter, selectedCategories, selectedFollowedUserIds, setActiveFilter, toggleCategory } = useMapFilter();
+
+  // Dispatch events to hide/show bottom navigation when list view opens/closes
+  useEffect(() => {
+    if (isListViewOpen) {
+      window.dispatchEvent(new CustomEvent('ui:overlay-open'));
+    } else {
+      window.dispatchEvent(new CustomEvent('ui:overlay-close'));
+    }
+  }, [isListViewOpen]);
   
   // Fetch locations based on current filters
   const { locations, loading, error, refetch } = useMapLocations({
@@ -231,7 +240,8 @@ const MapSection = ({
           </div>
         )}
 
-        {/* Map Controls - List View and Expand Toggle - Inside map */}
+        {/* Map Controls - List View and Expand Toggle - Inside map - Hide when list is open */}
+        {!isListViewOpen && (
         <div className={`${isExpanded ? 'fixed bottom-[calc(env(safe-area-inset-bottom)+1rem)]' : 'absolute bottom-[calc(4rem+env(safe-area-inset-bottom)-1.75rem)]'} right-3 z-[1000] flex flex-row gap-2 data-[has-sharing=true]:flex-col data-[has-sharing=true]:items-end`} data-has-sharing={false}>
           {/* Expand/Collapse Button */}
           {onToggleExpand && (
@@ -267,13 +277,13 @@ const MapSection = ({
                   </Badge>
                 </SheetTitle>
                 
-                {/* Filter buttons */}
-                <div className="flex gap-2 mt-4">
+                {/* Filter buttons with horizontal scroll */}
+                <div className="flex gap-2 mt-4 overflow-x-auto scrollbar-hide pb-2 -mx-6 px-6">
                   <Button
                     size="sm"
                     variant={activeFilter === 'following' ? 'default' : 'outline'}
                     onClick={() => setActiveFilter('following')}
-                    className="rounded-full"
+                    className="rounded-full whitespace-nowrap flex-shrink-0"
                   >
                     {t('following', { ns: 'mapFilters' })}
                   </Button>
@@ -281,7 +291,7 @@ const MapSection = ({
                     size="sm"
                     variant={activeFilter === 'popular' ? 'default' : 'outline'}
                     onClick={() => setActiveFilter('popular')}
-                    className="rounded-full"
+                    className="rounded-full whitespace-nowrap flex-shrink-0"
                   >
                     {t('popular', { ns: 'mapFilters' })}
                   </Button>
@@ -289,7 +299,7 @@ const MapSection = ({
                     size="sm"
                     variant={activeFilter === 'saved' ? 'default' : 'outline'}
                     onClick={() => setActiveFilter('saved')}
-                    className="rounded-full"
+                    className="rounded-full whitespace-nowrap flex-shrink-0"
                   >
                     {t('saved', { ns: 'mapFilters' })}
                   </Button>
@@ -298,7 +308,7 @@ const MapSection = ({
                     size="sm"
                     variant="secondary"
                     onClick={() => setIsActiveSharesOpen(true)}
-                    className="rounded-full relative"
+                    className="rounded-full whitespace-nowrap flex-shrink-0 relative"
                   >
                     {t('activeShares', { ns: 'mapFilters' })}
                     {activeSharesCount > 0 && (
@@ -309,7 +319,7 @@ const MapSection = ({
                   </Button>
                 </div>
               </SheetHeader>
-              <ScrollArea className="flex-1 -mx-6 px-6">
+              <ScrollArea className="flex-1 -mx-6 px-6 scrollbar-hide">
                 <div className="space-y-3 pr-4 py-2">
                   {places.map((place) => {
                     const categoryIcon = getCategoryIconImage(place.category);
@@ -370,6 +380,7 @@ const MapSection = ({
             </SheetContent>
           </Sheet>
         </div>
+        )}
         
         {/* Loading/Error States */}
         {loading && (
