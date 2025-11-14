@@ -28,7 +28,7 @@ export const useLocationShares = () => {
     if (user) {
       fetchShares();
       
-      // Subscribe to realtime updates
+      // Subscribe to realtime updates (any change triggers a refetch)
       const subscription = supabase
         .channel('location_shares_changes')
         .on('postgres_changes', {
@@ -40,8 +40,16 @@ export const useLocationShares = () => {
         })
         .subscribe();
 
+      // Soft cleanup: periodically drop expired shares from local state
+      const interval = setInterval(() => {
+        setShares(prev => prev.filter(s => {
+          try { return new Date(s.expires_at) > new Date(); } catch { return false; }
+        }));
+      }, 15000);
+
       return () => {
         subscription.unsubscribe();
+        clearInterval(interval);
       };
     }
   }, [user]);
