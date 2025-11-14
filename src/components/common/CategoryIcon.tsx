@@ -10,9 +10,10 @@ import museum from '@/assets/category-museum-3d-new.png';
 interface CategoryIconProps {
   category: string;
   className?: string;
+  sizeMultiplier?: number;
 }
 
-export const CategoryIcon: React.FC<CategoryIconProps> = ({ category, className = 'w-12 h-12' }) => {
+export const CategoryIcon: React.FC<CategoryIconProps> = ({ category, className = 'w-12 h-12', sizeMultiplier = 1 }) => {
   const getCategoryImage = () => {
     const categoryLower = category.toLowerCase();
 
@@ -49,7 +50,7 @@ export const CategoryIcon: React.FC<CategoryIconProps> = ({ category, className 
         className="w-full h-full object-contain"
         style={{ 
           objectFit: 'contain',
-          transform: `scale(${scale})`
+          transform: `scale(${scale * sizeMultiplier})`
         }}
         loading="eager"
         fetchPriority="high"
