@@ -18,24 +18,24 @@ export const CategoryIcon: React.FC<CategoryIconProps> = ({ category, className 
 
     switch (categoryLower) {
       case 'bakery':
-        return { src: bakery, scale: 1 };
+        return { src: bakery, scale: 0.75 };
       case 'bar':
       case 'bar & pub':
-        return { src: bar, scale: 1 };
+        return { src: bar, scale: 0.75 };
       case 'museum':
-        return { src: museum, scale: 1 };
+        return { src: museum, scale: 0.75 };
       case 'hotel':
         return { src: hotel, scale: 1.08 };
       case 'cafe':
       case 'café':
-        return { src: cafe, scale: 1 };
+        return { src: cafe, scale: 0.75 };
       case 'restaurant':
         return { src: restaurant, scale: 1.26 };
       case 'entertainment':
-        return { src: entertainment, scale: 1 };
+        return { src: entertainment, scale: 0.75 };
       default:
         // Fallback to a neutral transparent icon (use restaurant as neutral) to avoid white backgrounds
-        return { src: restaurant, scale: 1.4 };
+        return { src: restaurant, scale: 1.1 };
     }
   };
 

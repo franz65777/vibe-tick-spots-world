@@ -21,6 +21,7 @@ import ActiveSharesListSheet from './ActiveSharesListSheet';
 
 import { useTranslation } from 'react-i18next';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
+import { formatDetailedAddress } from '@/utils/addressFormatter';
 
 interface MapSectionProps {
   mapCenter: { lat: number; lng: number };
@@ -50,6 +51,7 @@ const MapSection = ({
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [pinToShare, setPinToShare] = useState<PinShareData | null>(null);
   const [activeSharesCount, setActiveSharesCount] = useState(0);
+  const [enrichedAddresses, setEnrichedAddresses] = useState<Record<string, string>>({});
   
   const { t } = useTranslation();
   
@@ -71,6 +73,15 @@ const MapSection = ({
       window.dispatchEvent(new CustomEvent('ui:overlay-open'));
     }
   }, [activeFilter, isListViewOpen]);
+
+  // Maintain global overlay state for both list view and active shares
+  useEffect(() => {
+    if (isListViewOpen || isActiveSharesOpen) {
+      window.dispatchEvent(new CustomEvent('ui:overlay-open'));
+    } else {
+      window.dispatchEvent(new CustomEvent('ui:overlay-close'));
+    }
+  }, [isListViewOpen, isActiveSharesOpen]);
   
   // Fetch locations based on current filters
   const { locations, loading, error, refetch } = useMapLocations({
@@ -113,6 +124,38 @@ const MapSection = ({
     createdAt: location.created_at,
     sharedByUser: location.sharedByUser
   }));
+
+  // Enrich missing addresses using reverse geocoding
+  useEffect(() => {
+    const enrichMissingAddresses = async () => {
+      const placesNeedingAddress = places.filter(
+        place => !place.address && place.coordinates?.lat && place.coordinates?.lng && !enrichedAddresses[place.id]
+      );
+
+      for (const place of placesNeedingAddress) {
+        try {
+          const formattedAddress = await formatDetailedAddress({
+            city: place.city,
+            address: place.address,
+            coordinates: place.coordinates
+          });
+          
+          if (formattedAddress && formattedAddress !== 'Indirizzo non disponibile') {
+            setEnrichedAddresses(prev => ({
+              ...prev,
+              [place.id]: formattedAddress
+            }));
+          }
+        } catch (error) {
+          console.error('Failed to enrich address for', place.id, error);
+        }
+      }
+    };
+
+    if (isListViewOpen && places.length > 0) {
+      enrichMissingAddresses();
+    }
+  }, [isListViewOpen, places, enrichedAddresses]);
 
   const handleMapRightClick = (coords: { lat: number; lng: number }) => {
     // If a place is open, close it and continue
@@ -331,7 +374,7 @@ const MapSection = ({
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-foreground truncate">{place.name}</h3>
                           <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                            {place.address || t('addressNotAvailable', { ns: 'common' })}
+                            {place.address || enrichedAddresses[place.id] || t('addressNotAvailable', { ns: 'common' })}
                           </p>
                         </div>
                       </div>
