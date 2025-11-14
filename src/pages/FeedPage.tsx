@@ -41,7 +41,7 @@ const FeedPage = memo(() => {
     queryKey: ['promotions-feed', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      // Carica campagne marketing attive (nessun filtro su verifica per garantire visibilità)
+      // Carica campagne marketing attive con business_profiles
       const { data: campaigns, error } = await supabase
         .from('marketing_campaigns')
         .select(`
@@ -60,18 +60,37 @@ const FeedPage = memo(() => {
       const list = (campaigns as any[] | null) || [];
       if (list.length === 0) return [];
       
-      // Carica profili dei business (2a query perché non esiste una FK definita)
+      // Carica business_profiles per ottenere nome e avatar del business
       const userIds = Array.from(new Set(list.map((c: any) => c.business_user_id).filter(Boolean)));
-      let profilesMap = new Map<string, any>();
+      let businessProfilesMap = new Map<string, any>();
       if (userIds.length > 0) {
-        const { data: profs, error: profErr } = await supabase
-          .from('profiles')
-          .select('id, username, avatar_url, full_name')
-          .in('id', userIds);
-        if (profErr) {
-          console.warn('Profiles join failed:', profErr);
-        } else {
-          profilesMap = new Map((profs as any[]).map((p: any) => [p.id, p]));
+        const { data: bizProfs, error: bizErr } = await supabase
+          .from('business_profiles')
+          .select('user_id, business_name, location_id')
+          .in('user_id', userIds);
+        
+        if (!bizErr && bizProfs) {
+          // Per ogni business, carica la location per ottenere l'immagine
+          const locationIds = bizProfs.map((bp: any) => bp.location_id).filter(Boolean);
+          const { data: locs } = await supabase
+            .from('locations')
+            .select('id, image_url')
+            .in('id', locationIds);
+          
+          const locMap = new Map((locs || []).map((l: any) => [l.id, l.image_url]));
+          
+          businessProfilesMap = new Map(
+            bizProfs.map((bp: any) => [
+              bp.user_id,
+              {
+                id: bp.user_id,
+                username: bp.business_name,
+                avatar_url: locMap.get(bp.location_id) || null,
+                full_name: bp.business_name,
+                is_business: true
+              }
+            ])
+          );
         }
       }
       
@@ -88,7 +107,7 @@ const FeedPage = memo(() => {
         shares_count: 0,
         is_business_post: true,
         content_type: campaign.campaign_type,
-        profiles: profilesMap.get(campaign.business_user_id) || { id: campaign.business_user_id },
+        profiles: businessProfilesMap.get(campaign.business_user_id) || { id: campaign.business_user_id },
         locations: campaign.locations,
         metadata: {
           campaign_id: campaign.id,
