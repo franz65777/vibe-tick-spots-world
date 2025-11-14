@@ -21,14 +21,14 @@ import ActiveSharesListSheet from './ActiveSharesListSheet';
 
 import { useTranslation } from 'react-i18next';
 
-// Import category icons
-import restaurantIcon from '@/assets/category-restaurant-upload.png';
-import barIcon from '@/assets/category-bar-upload.png';
-import cafeIcon from '@/assets/category-cafe-upload.png';
-import bakeryIcon from '@/assets/category-bakery-upload.png';
-import hotelIcon from '@/assets/category-hotel-upload.png';
-import museumIcon from '@/assets/category-museum-upload.png';
-import entertainmentIcon from '@/assets/category-entertainment-upload.png';
+// Import category icons (transparent versions)
+import restaurantIcon from '@/assets/category-restaurant-transparent.png';
+import barIcon from '@/assets/category-bar-transparent.png';
+import cafeIcon from '@/assets/category-cafe-transparent.png';
+import bakeryIcon from '@/assets/category-bakery-transparent.png';
+import hotelIcon from '@/assets/category-hotel-transparent.png';
+import museumIcon from '@/assets/category-museum-transparent.png';
+import entertainmentIcon from '@/assets/category-entertainment-transparent.png';
 
 const getCategoryIconImage = (category: string): string => {
   switch (category) {
@@ -85,6 +85,13 @@ const MapSection = ({
       window.dispatchEvent(new CustomEvent('ui:overlay-close'));
     }
   }, [isListViewOpen]);
+
+  // Ensure bottom navigation stays hidden when changing filters while list is open
+  useEffect(() => {
+    if (isListViewOpen) {
+      window.dispatchEvent(new CustomEvent('ui:overlay-open'));
+    }
+  }, [activeFilter, isListViewOpen]);
   
   // Fetch locations based on current filters
   const { locations, loading, error, refetch } = useMapLocations({
@@ -323,7 +330,7 @@ const MapSection = ({
                 </Button>
               </div>
             </SheetHeader>
-            <ScrollArea className="flex-1 -mx-6 px-6 scrollbar-hide">
+            <ScrollArea className="flex-1 -mx-6 px-6 [&>div]:!overflow-y-auto [&>div]:!scrollbar-none [&>div::-webkit-scrollbar]:hidden">
               <div className="space-y-3 pr-4 py-2">
                 {places.map((place) => {
                   const categoryIcon = getCategoryIconImage(place.category);
@@ -347,7 +354,9 @@ const MapSection = ({
                         {/* Content */}
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-foreground truncate">{place.name}</h3>
-                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{place.description || place.address}</p>
+                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                            {place.address || place.description || categoryDisplayNames[place.category as AllowedCategory] || place.category}
+                          </p>
                         </div>
                       </div>
                     </div>
