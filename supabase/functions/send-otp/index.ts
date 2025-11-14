@@ -54,31 +54,56 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (method === 'email' && email) {
 
-      // Send email via Resend
-      const { data: emailData, error: emailError } = await resend.emails.send({
-        from: "Spott <onboarding@resend.dev>",
-        to: [email],
-        subject: "Il tuo codice di verifica Spott",
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #2563eb;">Benvenuto su Spott!</h1>
-            <p>Il tuo codice di verifica è:</p>
-            <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
-              <h2 style="font-size: 32px; letter-spacing: 8px; margin: 0;">${code}</h2>
+      // Send email via Resend (DEV MODE: returns OTP if sending fails)
+      let devMode = false;
+      try {
+        const { data: emailData, error: emailError } = await resend.emails.send({
+          from: "Spott <onboarding@resend.dev>",
+          to: [email],
+          subject: "Il tuo codice di verifica Spott",
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h1 style="color: #2563eb;">Benvenuto su Spott!</h1>
+              <p>Il tuo codice di verifica è:</p>
+              <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
+                <h2 style="font-size: 32px; letter-spacing: 8px; margin: 0;">${code}</h2>
+              </div>
+              <p>Questo codice scadrà tra 10 minuti.</p>
+              <p>Se non hai richiesto questo codice, ignora questa email.</p>
             </div>
-            <p>Questo codice scadrà tra 10 minuti.</p>
-            <p>Se non hai richiesto questo codice, ignora questa email.</p>
-          </div>
-        `,
-      });
+          `,
+        });
 
-      if (emailError) {
-        console.error("Resend error:", emailError);
-        throw new Error(emailError.message || "Email provider error");
+        if (emailError) {
+          console.error("Resend error:", emailError);
+          // Check if it's a domain verification error (dev mode)
+          const errorMsg = emailError.message || '';
+          const statusCode = (emailError as any).statusCode;
+          if (statusCode === 403 && errorMsg.includes('only send testing emails')) {
+            console.log("DEV MODE: Domain not verified, OTP saved but email not sent");
+            devMode = true;
+          } else {
+            throw new Error(emailError.message || "Email provider error");
+          }
+        } else {
+          console.log("Email OTP sent:", { email, success: true, id: emailData?.id });
+        }
+      } catch (error: any) {
+        console.error("Email sending error:", error);
+        // Check if it's a domain verification error
+        if (error.message && error.message.includes('only send testing emails')) {
+          console.log("DEV MODE: Caught domain error, continuing in dev mode");
+          devMode = true;
+        } else {
+          throw error;
+        }
       }
 
-      console.log("Email OTP sent:", { email, success: true, id: emailData?.id });
-      return new Response(JSON.stringify({ success: true }), {
+      return new Response(JSON.stringify({ 
+        success: true,
+        devMode,
+        ...(devMode && { devCode: code })
+      }), {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
