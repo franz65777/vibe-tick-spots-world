@@ -36,30 +36,53 @@ const FeedPage = memo(() => {
   // Usa React Query per feed "Per te" - post degli utenti seguiti
   const { posts: forYouFeed, loading: feedLoading } = useOptimizedFeed();
   
-  // Query separata per le promozioni - carica i post marketing con content_type
+  // Query separata per le promozioni - carica le campagne marketing attive
   const { data: promotionsFeed = [], isLoading: promotionsLoading } = useQuery({
     queryKey: ['promotions-feed', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      // Carica post marketing da utenti business verificati
-      const { data: posts, error } = await (supabase as any)
-        .from('posts')
+      // Carica campagne marketing attive da business verificati
+      const { data: campaigns, error } = await supabase
+        .from('marketing_campaigns')
         .select(`
           *,
-          profiles:user_id (id, username, avatar_url, full_name),
-          locations:location_id (id, name, address, city, latitude, longitude),
-          business_profiles:user_id (verification_status)
+          locations:location_id (id, name, address, city, latitude, longitude, category, image_url),
+          profiles:business_user_id (id, username, avatar_url, full_name),
+          business_profiles:business_user_id (verification_status, business_name)
         `)
-        .eq('is_business_post', true)
+        .eq('is_active', true)
         .order('created_at', { ascending: false })
         .limit(50);
+      
       if (error) {
         console.error('Promotions feed error:', error);
         return [];
       }
-      // Filtra solo post da business verificati
-      const filtered = (posts as any[] | null) || [];
-      return filtered.filter((p: any) => p.business_profiles?.verification_status === 'verified');
+      
+      // Filtra solo campagne da business verificati e trasforma in formato post
+      const filtered = (campaigns as any[] | null) || [];
+      return filtered
+        .filter((c: any) => c.business_profiles?.verification_status === 'verified')
+        .map((campaign: any) => ({
+          id: campaign.id,
+          user_id: campaign.business_user_id,
+          caption: `${campaign.title}\n\n${campaign.description}`,
+          media_urls: campaign.locations?.image_url ? [campaign.locations.image_url] : [],
+          location_id: campaign.location_id,
+          created_at: campaign.created_at,
+          likes_count: 0,
+          comments_count: 0,
+          shares_count: 0,
+          is_business_post: true,
+          content_type: campaign.campaign_type,
+          profiles: campaign.profiles,
+          locations: campaign.locations,
+          metadata: {
+            campaign_id: campaign.id,
+            campaign_type: campaign.campaign_type,
+            end_date: campaign.end_date
+          }
+        }));
     },
     enabled: !!user?.id && feedType === 'promotions',
     staleTime: 5 * 60 * 1000,
