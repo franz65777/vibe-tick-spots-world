@@ -89,7 +89,7 @@ export const AvatarCropEditor: React.FC<AvatarCropEditorProps> = ({
   }, [croppedAreaPixels, image, onComplete]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] bg-background/95 backdrop-blur-sm">
       <div className="flex flex-col h-full">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
