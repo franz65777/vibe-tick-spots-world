@@ -1,8 +1,7 @@
 import { useState, useCallback } from 'react';
 import Cropper from 'react-easy-crop';
 import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
-import { ZoomIn, ZoomOut, Check, X } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 
 interface AvatarCropEditorProps {
   image: string;
@@ -121,27 +120,11 @@ export const AvatarCropEditor: React.FC<AvatarCropEditorProps> = ({
         </div>
 
         {/* Controls */}
-        <div className="p-6 border-t border-border space-y-6">
-          {/* Zoom Slider */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-foreground">Zoom</label>
-              <span className="text-sm text-muted-foreground">{Math.round(zoom * 100)}%</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <ZoomOut className="h-4 w-4 text-muted-foreground" />
-              <Slider
-                value={[zoom]}
-                onValueChange={(value) => setZoom(value[0])}
-                min={1}
-                max={3}
-                step={0.1}
-                className="flex-1"
-              />
-              <ZoomIn className="h-4 w-4 text-muted-foreground" />
-            </div>
+        <div className="p-6 border-t border-border">
+          <div className="text-center mb-4 text-sm text-muted-foreground">
+            Usa due dita per ingrandire o rimpicciolire
           </div>
-
+          
           {/* Action Buttons */}
           <div className="flex gap-3">
             <Button
