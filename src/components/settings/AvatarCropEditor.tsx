@@ -89,10 +89,10 @@ export const AvatarCropEditor: React.FC<AvatarCropEditorProps> = ({
   }, [croppedAreaPixels, image, onComplete]);
 
   return (
-    <div className="fixed inset-0 z-[100] bg-background/95 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[1000] bg-background/95 backdrop-blur-sm pointer-events-auto">
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border">
+        <div className="flex items-center justify-between p-4">
           <h2 className="text-lg font-semibold text-foreground">Modifica foto profilo</h2>
           <Button
             variant="ghost"
@@ -120,11 +120,7 @@ export const AvatarCropEditor: React.FC<AvatarCropEditorProps> = ({
         </div>
 
         {/* Controls */}
-        <div className="p-6 border-t border-border">
-          <div className="text-center mb-4 text-sm text-muted-foreground">
-            Usa due dita per ingrandire o rimpicciolire
-          </div>
-          
+        <div className="p-6">
           {/* Action Buttons */}
           <div className="flex gap-3">
             <Button
