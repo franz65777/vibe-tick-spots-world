@@ -97,7 +97,7 @@ const BusinessAccountManagement: React.FC<BusinessAccountManagementProps> = ({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[90vh] overflow-y-auto scrollbar-hide">
+      <SheetContent side="bottom" className="h-[100dvh] overflow-y-auto scrollbar-hide rounded-t-none p-0">
         <SheetHeader>
           <div className="flex items-center gap-3">
             <Button
