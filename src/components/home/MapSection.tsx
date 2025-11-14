@@ -268,119 +268,95 @@ const MapSection = ({
                 <List className="w-4 h-4 text-foreground" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="bottom" className="h-[80vh] rounded-t-3xl flex flex-col">
-              <SheetHeader className="pb-4 flex-shrink-0">
-                <SheetTitle className="text-xl font-semibold">
-                  {t('locationsTitle', { ns: 'mapFilters' })}
-                  <Badge variant="secondary" className="ml-3 text-sm">
-                    {places.length}
-                  </Badge>
-                </SheetTitle>
-                
-                {/* Filter buttons with horizontal scroll */}
-                <div className="flex gap-2 mt-4 overflow-x-auto scrollbar-hide pb-2 -mx-6 px-6">
-                  <Button
-                    size="sm"
-                    variant={activeFilter === 'following' ? 'default' : 'outline'}
-                    onClick={() => setActiveFilter('following')}
-                    className="rounded-full whitespace-nowrap flex-shrink-0"
-                  >
-                    {t('following', { ns: 'mapFilters' })}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={activeFilter === 'popular' ? 'default' : 'outline'}
-                    onClick={() => setActiveFilter('popular')}
-                    className="rounded-full whitespace-nowrap flex-shrink-0"
-                  >
-                    {t('popular', { ns: 'mapFilters' })}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={activeFilter === 'saved' ? 'default' : 'outline'}
-                    onClick={() => setActiveFilter('saved')}
-                    className="rounded-full whitespace-nowrap flex-shrink-0"
-                  >
-                    {t('saved', { ns: 'mapFilters' })}
-                  </Button>
-                  {/* New: Active Shares list */}
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => setIsActiveSharesOpen(true)}
-                    className="rounded-full whitespace-nowrap flex-shrink-0 relative"
-                  >
-                    {t('activeShares', { ns: 'mapFilters' })}
-                    {activeSharesCount > 0 && (
-                      <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-purple-500 text-white text-[10px] font-bold shadow-md">
-                        {activeSharesCount}
-                      </span>
-                    )}
-                  </Button>
-                </div>
-              </SheetHeader>
-              <ScrollArea className="flex-1 -mx-6 px-6 scrollbar-hide">
-                <div className="space-y-3 pr-4 py-2">
-                  {places.map((place) => {
-                    const categoryIcon = getCategoryIconImage(place.category);
-                    return (
-                      <button
-                        key={place.id}
-                        onClick={() => {
-                          handlePinClick(place);
-                          setIsListViewOpen(false);
-                        }}
-                        className="w-full flex items-start gap-4 p-4 bg-card border-2 border-border rounded-2xl hover:border-primary/50 hover:shadow-md transition-all text-left"
-                      >
-                        <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0">
-                          <img 
-                            src={categoryIcon} 
-                            alt={place.category}
-                            className="w-9 h-9 object-contain"
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-base text-foreground mb-1">
-                            {place.name}
-                          </h4>
-                          <p className="text-sm text-muted-foreground line-clamp-1 mb-2">
-                            {place.address || 'Address not available'}
-                          </p>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <Badge variant="secondary" className="text-xs">
-                              {categoryDisplayNames[place.category as AllowedCategory]}
-                            </Badge>
-                            {place.isFollowing && (
-                              <Badge className="bg-blue-100 text-blue-700 text-xs border-blue-200">
-                                Following
-                              </Badge>
-                            )}
-                            {place.isSaved && (
-                              <Badge className="bg-green-100 text-green-700 text-xs border-green-200">
-                                Saved
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                  
-                  {places.length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
-                      <List className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                      <p className="text-sm">No locations found</p>
-                      {activeFilter === 'saved' && (
-                        <p className="text-xs mt-1">Tap on the map to add your first location</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-            </SheetContent>
           </Sheet>
         </div>
         )}
+
+        {/* Location List Sheet - Always rendered */}
+        <Sheet open={isListViewOpen} onOpenChange={setIsListViewOpen}>
+          <SheetContent side="bottom" className="h-[80vh] rounded-t-3xl flex flex-col">
+            <SheetHeader className="pb-4 flex-shrink-0">
+              <SheetTitle className="text-xl font-semibold">
+                {t('locationsTitle', { ns: 'mapFilters' })}
+                <Badge variant="secondary" className="ml-3 text-sm">
+                  {places.length}
+                </Badge>
+              </SheetTitle>
+              
+              {/* Filter buttons with horizontal scroll */}
+              <div className="flex gap-2 mt-4 overflow-x-auto scrollbar-hide pb-2 -mx-6 px-6">
+                <Button
+                  size="sm"
+                  variant={activeFilter === 'following' ? 'default' : 'outline'}
+                  onClick={() => setActiveFilter('following')}
+                  className="rounded-full whitespace-nowrap flex-shrink-0"
+                >
+                  {t('following', { ns: 'mapFilters' })}
+                </Button>
+                <Button
+                  size="sm"
+                  variant={activeFilter === 'popular' ? 'default' : 'outline'}
+                  onClick={() => setActiveFilter('popular')}
+                  className="rounded-full whitespace-nowrap flex-shrink-0"
+                >
+                  {t('popular', { ns: 'mapFilters' })}
+                </Button>
+                <Button
+                  size="sm"
+                  variant={activeFilter === 'saved' ? 'default' : 'outline'}
+                  onClick={() => setActiveFilter('saved')}
+                  className="rounded-full whitespace-nowrap flex-shrink-0"
+                >
+                  {t('saved', { ns: 'mapFilters' })}
+                </Button>
+                {/* New: Active Shares list */}
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setIsActiveSharesOpen(true)}
+                  className="rounded-full whitespace-nowrap flex-shrink-0 relative"
+                >
+                  {t('activeShares', { ns: 'mapFilters' })}
+                  {activeSharesCount > 0 && (
+                    <Badge variant="destructive" className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center p-0 text-xs">{activeSharesCount}</Badge>
+                  )}
+                </Button>
+              </div>
+            </SheetHeader>
+            <ScrollArea className="flex-1 -mx-6 px-6 scrollbar-hide">
+              <div className="space-y-3 pr-4 py-2">
+                {places.map((place) => {
+                  const categoryIcon = getCategoryIconImage(place.category);
+                  return (
+                    <div
+                      key={place.id}
+                      className="p-4 rounded-lg border border-border bg-card cursor-pointer hover:shadow-md transition-shadow"
+                      onClick={() => {
+                        handlePinClick(place);
+                        setIsListViewOpen(false);
+                      }}
+                    >
+                      <div className="flex gap-3">
+                        {/* Category Icon */}
+                        <div className="flex-shrink-0">
+                          {categoryIcon && (
+                            <img src={categoryIcon} alt={place.category || ''} className="w-12 h-12 object-contain" />
+                          )}
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-foreground truncate">{place.name}</h3>
+                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{place.description || place.address}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          </SheetContent>
+        </Sheet>
         
         {/* Loading/Error States */}
         {loading && (
