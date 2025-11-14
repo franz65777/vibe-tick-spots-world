@@ -19,11 +19,12 @@ export const useOptimizedFeed = () => {
       const followingIds = followingData?.map(f => f.following_id) || [];
       const userIds = Array.from(new Set([...followingIds, user.id]));
 
-      // 1) Prendi i post senza join (evita errori di relazione)
+      // 1) Prendi i post senza join (evita errori di relazione) - escludi business post
       const { data: postData, error: postError } = await supabase
         .from('posts')
         .select('*')
         .in('user_id', userIds)
+        .or('is_business_post.is.null,is_business_post.eq.false')
         .order('created_at', { ascending: false })
         .limit(50);
 
