@@ -294,7 +294,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
                     onClick={() => fileInputRef.current?.click()}
                   >
                     <Upload className="w-4 h-4 mr-2" />
-                    {t('upload', { ns: 'common' })}
+                    {t('upload')}
                   </Button>
                   
                   {(avatarPreview || profile?.avatar_url) && (
