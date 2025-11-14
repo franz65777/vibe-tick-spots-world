@@ -74,10 +74,11 @@ export const useLocationShares = () => {
     if (!user) return;
     
     try {
+      const now = new Date();
       const { data, error } = await supabase
         .from('user_location_shares')
         .select('*')
-        .gt('expires_at', new Date().toISOString())
+        .gt('expires_at', now.toISOString())
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -95,13 +96,21 @@ export const useLocationShares = () => {
         profilesMap = Object.fromEntries((profiles || []).map((p: any) => [p.id, p]));
       }
 
-      // Transform data to match interface
+      // Transform data and double-check expiration on client side
       const transformedData = (data || [])
         .map((share: any) => ({
           ...share,
           user: profilesMap[share.user_id]
         }))
-        .filter((share: any) => share.user) || [];
+        .filter((share: any) => {
+          if (!share.user) return false;
+          // Extra client-side check to ensure no expired shares
+          try {
+            return new Date(share.expires_at) > now;
+          } catch {
+            return false;
+          }
+        }) || [];
 
       setShares(transformedData as LocationShare[]);
     } catch (error) {
