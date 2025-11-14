@@ -109,10 +109,24 @@ const SignupPassword: React.FC = () => {
         return;
       }
 
-      // Auto-login with the returned session
-      if (data.session) {
-        await supabase.auth.setSession(data.session);
+      // CRITICAL: Set the new user's session to prevent logging into wrong account
+      if (!data.session) {
+        toast.error('Sessione non valida. Riprova ad accedere.');
+        return;
       }
+
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+      });
+
+      if (sessionError) {
+        console.error('Session set error:', sessionError);
+        toast.error('Errore nel login automatico. Riprova ad accedere.');
+        return;
+      }
+
+      console.log('New user logged in:', data.user?.id);
 
       // Clear session storage
       sessionStorage.removeItem('signup_session');
