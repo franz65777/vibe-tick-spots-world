@@ -15,6 +15,9 @@ import { useLocationStats } from '@/hooks/useLocationStats';
 import { useBusinessLocationStats } from '@/hooks/useBusinessLocationStats';
 import { useTranslation } from 'react-i18next';
 import { useDetailedAddress } from '@/hooks/useDetailedAddress';
+import { LocationViewersModal } from '@/components/business/LocationViewersModal';
+import { LocationCommentsModal } from '@/components/business/LocationCommentsModal';
+import { LocationSharersModal } from '@/components/explore/LocationSharersModal';
 
 interface Location {
   id: string;
@@ -54,6 +57,9 @@ const BusinessOverviewPageV2 = () => {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [showViewersModal, setShowViewersModal] = useState(false);
+  const [showCommentsModal, setShowCommentsModal] = useState(false);
+  const [showSaversModal, setShowSaversModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { stats } = useLocationStats(location?.id || null, location?.google_place_id || null);
@@ -366,7 +372,10 @@ const BusinessOverviewPageV2 = () => {
 
         {/* Stats Cards - Compact Design */}
         <div className="p-3 grid grid-cols-3 gap-2.5">
-          <Card className="relative overflow-hidden border-0 shadow-md bg-gradient-to-br from-primary via-primary/90 to-primary/80">
+          <Card 
+            className="relative overflow-hidden border-0 shadow-md bg-gradient-to-br from-primary via-primary/90 to-primary/80 cursor-pointer hover:scale-105 transition-transform"
+            onClick={() => setShowViewersModal(true)}
+          >
             <CardContent className="p-3 text-center relative z-10">
               <div className="w-8 h-8 mx-auto mb-1.5 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
                 <Eye className="w-4 h-4 text-white" />
@@ -377,7 +386,10 @@ const BusinessOverviewPageV2 = () => {
             <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -mr-8 -mt-8" />
           </Card>
 
-          <Card className="relative overflow-hidden border-0 shadow-md bg-gradient-to-br from-orange-500 via-orange-500/90 to-orange-600">
+          <Card 
+            className="relative overflow-hidden border-0 shadow-md bg-gradient-to-br from-orange-500 via-orange-500/90 to-orange-600 cursor-pointer hover:scale-105 transition-transform"
+            onClick={() => setShowCommentsModal(true)}
+          >
             <CardContent className="p-3 text-center relative z-10">
               <div className="w-8 h-8 mx-auto mb-1.5 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
                 <MessageSquare className="w-4 h-4 text-white" />
@@ -388,7 +400,10 @@ const BusinessOverviewPageV2 = () => {
             <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -mr-8 -mt-8" />
           </Card>
 
-          <Card className="relative overflow-hidden border-0 shadow-md bg-gradient-to-br from-emerald-500 via-emerald-500/90 to-emerald-600">
+          <Card 
+            className="relative overflow-hidden border-0 shadow-md bg-gradient-to-br from-emerald-500 via-emerald-500/90 to-emerald-600 cursor-pointer hover:scale-105 transition-transform"
+            onClick={() => setShowSaversModal(true)}
+          >
             <CardContent className="p-3 text-center relative z-10">
               <div className="w-8 h-8 mx-auto mb-1.5 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
                 <Heart className="w-4 h-4 text-white" />
@@ -471,6 +486,30 @@ const BusinessOverviewPageV2 = () => {
             <BusinessLocationPosts posts={posts} onPinToggle={handlePinToggle} />
           </div>
         )}
+
+        {/* Modals */}
+        <LocationViewersModal 
+          isOpen={showViewersModal}
+          onClose={() => setShowViewersModal(false)}
+          locationId={location?.id || null}
+          googlePlaceId={location?.google_place_id || null}
+        />
+        
+        <LocationCommentsModal 
+          isOpen={showCommentsModal}
+          onClose={() => setShowCommentsModal(false)}
+          locationId={location?.id || null}
+          googlePlaceId={location?.google_place_id || null}
+        />
+        
+        <LocationSharersModal 
+          isOpen={showSaversModal}
+          onClose={() => setShowSaversModal(false)}
+          sharers={[]}
+          locationName={location?.name || ''}
+          locationId={location?.id || null}
+          googlePlaceId={location?.google_place_id || null}
+        />
     </div>
   );
 };

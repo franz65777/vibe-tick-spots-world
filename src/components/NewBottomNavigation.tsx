@@ -2,20 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAnalytics } from '@/hooks/useAnalytics';
+import { useBusinessProfile } from '@/hooks/useBusinessProfile';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Map, Search, Plus, Activity, User } from 'lucide-react';
 import { toast } from 'sonner';
 import AccountSwitchModal from './AccountSwitchModal';
 import { useTranslation } from 'react-i18next';
-import { useBusinessProfile } from '@/hooks/useBusinessProfile';
-import { useProfile } from '@/hooks/useProfile';
+import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const NewBottomNavigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
+  const { profile, refetch: refetchProfile } = useOptimizedProfile();
   const { trackEvent } = useAnalytics();
   const { hasValidBusinessAccount } = useBusinessProfile();
-  const { profile } = useProfile();
   
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
@@ -32,7 +35,32 @@ const NewBottomNavigation = () => {
       window.removeEventListener('ui:overlay-open', handleOpen as EventListener);
       window.removeEventListener('ui:overlay-close', handleClose as EventListener);
     };
-  }, []);
+  }, [location.pathname]);
+
+  // Subscribe to profile changes for avatar updates
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('profile-avatar-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${user.id}`,
+        },
+        () => {
+          refetchProfile();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, refetchProfile]);
 
   // Hide navigation on messages and notifications pages, or when overlays are open
   if (hideNav || location.pathname === '/messages' || location.pathname === '/notifications') {
