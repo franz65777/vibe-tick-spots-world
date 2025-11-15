@@ -19,13 +19,13 @@ export function formatPostDate(dateString: string, t: TFunction): string {
     const diffHours = Math.floor(diffMinutes / 60);
     
     if (diffMinutes < 60) {
-      return t('minutesShort', { ns: 'common', count: diffMinutes });
+      return t('minutesShort', { ns: 'common', count: diffMinutes, defaultValue: '{{count}}m' });
     } else if (diffHours < 24) {
-      return t('hoursShort', { ns: 'common', count: diffHours });
+      return t('hoursShort', { ns: 'common', count: diffHours, defaultValue: '{{count}}h' });
     } else if (diffDays < 7) {
-      return t('daysShort', { ns: 'common', count: diffDays });
+      return t('daysShort', { ns: 'common', count: diffDays, defaultValue: '{{count}}d' });
     } else {
-      return t('weeksShort', { ns: 'common', count: diffWeeks });
+      return t('weeksShort', { ns: 'common', count: diffWeeks, defaultValue: '{{count}}w' });
     }
   }
   
@@ -35,7 +35,7 @@ export function formatPostDate(dateString: string, t: TFunction): string {
   const year = date.getFullYear();
   const currentYear = now.getFullYear();
   
-  const monthName = t(`months.${month}`, { ns: 'common' });
+  const monthName = t(`months.${month}`, { ns: 'common', defaultValue: date.toLocaleString(undefined, { month: 'long' }) });
   
   // Different year - include year
   if (year !== currentYear) {
