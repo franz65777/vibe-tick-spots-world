@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useParams } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { MapPin, Star, Phone, Globe, Clock, Users, Bookmark } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -112,30 +112,30 @@ const BusinessProfilePage = () => {
   };
 
   const fetchBusinessStats = async () => {
-    if (!targetUserId || !location?.id) return;
+    if (!location?.id) return;
     
     try {
-      // Count followers (users following this business)
-      const { count: followersCount } = await supabase
-        .from('follows')
-        .select('*', { count: 'exact', head: true })
-        .eq('following_id', targetUserId);
-      
-      // Count following (users this business follows)
-      const { count: followingCount } = await supabase
-        .from('follows')
-        .select('*', { count: 'exact', head: true })
-        .eq('follower_id', targetUserId);
-      
-      // Count saved (users who saved this location)
+      // Count users who saved this location
       const { count: savedCount } = await supabase
         .from('user_saved_locations')
         .select('*', { count: 'exact', head: true })
         .eq('location_id', location.id);
       
+      // Count likes on this location
+      const { count: likesCount } = await supabase
+        .from('location_likes')
+        .select('*', { count: 'exact', head: true })
+        .eq('location_id', location.id);
+      
+      // Count posts at this location
+      const { count: postsCount } = await supabase
+        .from('posts')
+        .select('*', { count: 'exact', head: true })
+        .eq('location_id', location.id);
+      
       setStats({
-        followers: followersCount || 0,
-        following: followingCount || 0,
+        followers: likesCount || 0,
+        following: postsCount || 0,
         saved: savedCount || 0
       });
     } catch (error) {
@@ -239,27 +239,15 @@ const BusinessProfilePage = () => {
 
         {/* Stats Section - Compact */}
         <div className="px-4 pt-2 pb-3 flex items-center gap-6">
-          <button
-            onClick={() => {
-              setFollowersType('followers');
-              setShowFollowersModal(true);
-            }}
-            className="flex items-center gap-1.5 hover:opacity-70 transition-opacity"
-          >
+          <div className="flex items-center gap-1.5">
             <span className="text-sm font-semibold text-foreground">{stats.followers}</span>
-            <span className="text-xs text-muted-foreground">{t('followers', { ns: 'common' })}</span>
-          </button>
+            <span className="text-xs text-muted-foreground">{t('likes', { ns: 'common' })}</span>
+          </div>
           
-          <button
-            onClick={() => {
-              setFollowersType('following');
-              setShowFollowersModal(true);
-            }}
-            className="flex items-center gap-1.5 hover:opacity-70 transition-opacity"
-          >
+          <div className="flex items-center gap-1.5">
             <span className="text-sm font-semibold text-foreground">{stats.following}</span>
-            <span className="text-xs text-muted-foreground">{t('following', { ns: 'common' })}</span>
-          </button>
+            <span className="text-xs text-muted-foreground">{t('posts', { ns: 'common' })}</span>
+          </div>
           
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-semibold text-foreground">{stats.saved}</span>
@@ -311,37 +299,98 @@ const BusinessProfilePage = () => {
           )}
 
           {activeTab === 'marketing' && (
-            <div className="space-y-4 pb-4">
+            <div className="space-y-3 pb-4">
               {marketingContent.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <p>{t('noMarketingContent', { ns: 'business' })}</p>
                   <p className="text-sm mt-2">{t('createMarketing', { ns: 'business' })}</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  {marketingContent.map((content) => (
+                marketingContent.map((content) => {
+                  const isExpired = content.metadata?.end_date && new Date(content.metadata.end_date) < new Date();
+                  return (
                     <Card key={content.id} className="overflow-hidden">
                       <CardContent className="p-0">
-                        {content.media_urls && content.media_urls.length > 0 ? (
-                          <img
-                            src={content.media_urls[0]}
-                            alt={content.caption || 'Campaign'}
-                            className="w-full aspect-square object-cover"
-                          />
-                        ) : (
-                          <div className="w-full aspect-square bg-muted flex items-center justify-center text-muted-foreground">{t('noImage', { ns: 'business' })}</div>
-                        )}
-                        <div className="p-3 space-y-2">
-                          <h3 className="font-semibold line-clamp-2 text-foreground text-sm">{content.caption || t('campaign', { ns: 'business' })}</h3>
-                          <div className="flex items-center justify-between">
-                            <p className="text-xs text-muted-foreground">{new Date(content.created_at).toLocaleDateString()}</p>
-                            <Button size="sm" onClick={() => handleRelaunch(content)} className="h-8 px-3 text-xs">{t('relaunch', { ns: 'business' })}</Button>
+                        <div className="flex gap-3 p-3">
+                          {content.media_urls && content.media_urls.length > 0 && (
+                            <img
+                              src={content.media_urls[0]}
+                              alt={content.caption || 'Campaign'}
+                              className="w-20 h-20 object-cover rounded-lg flex-shrink-0"
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold line-clamp-2 text-foreground text-sm mb-1">
+                                  {content.caption || t('campaign', { ns: 'business' })}
+                                </h3>
+                                <p className="text-xs text-muted-foreground">
+                                  {new Date(content.created_at).toLocaleDateString()}
+                                  {isExpired && (
+                                    <span className="ml-2 text-destructive">• {t('expired', { ns: 'business' })}</span>
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex gap-2 mt-2">
+                              {isExpired && (
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => handleRelaunch(content)} 
+                                  className="h-7 px-2 text-xs"
+                                >
+                                  {t('relaunch', { ns: 'business' })}
+                                </Button>
+                              )}
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => {
+                                  // TODO: Implement edit functionality
+                                  toast.info(t('editCampaign', { ns: 'business' }));
+                                }}
+                                className="h-7 px-2 text-xs"
+                              >
+                                {t('edit', { ns: 'common' })}
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="destructive"
+                                onClick={async () => {
+                                  try {
+                                    await supabase
+                                      .from('posts')
+                                      .delete()
+                                      .eq('id', content.id);
+                                    
+                                    // Also delete from marketing_campaigns if exists
+                                    if (content.metadata?.campaign_id) {
+                                      await supabase
+                                        .from('marketing_campaigns')
+                                        .delete()
+                                        .eq('id', content.metadata.campaign_id);
+                                    }
+                                    
+                                    toast.success(t('campaignDeleted', { ns: 'business' }));
+                                    fetchMarketingContent();
+                                  } catch (error) {
+                                    console.error('Error deleting campaign:', error);
+                                    toast.error(t('deleteFailed', { ns: 'business' }));
+                                  }
+                                }}
+                                className="h-7 px-2 text-xs"
+                              >
+                                {t('delete', { ns: 'common' })}
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
-                </div>
+                  );
+                })
               )}
             </div>
           )}
