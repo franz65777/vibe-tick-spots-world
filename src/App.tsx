@@ -43,6 +43,7 @@ const BusinessAddPage = lazy(() => import('@/pages/business/BusinessAddPage'));
 const BusinessFeedPage = lazy(() => import('@/pages/business/BusinessFeedPage'));
 const BusinessMessagesPage = lazy(() => import('@/pages/business/BusinessMessagesPage'));
 const BusinessNotificationsPage = lazy(() => import('@/pages/business/BusinessNotificationsPage'));
+const BusinessEditCampaignPage = lazy(() => import('@/pages/business/BusinessEditCampaignPage'));
 
 // Auth pages - not lazy loaded as they're needed immediately
 import SigninStart from '@/pages/auth/SigninStart';
@@ -126,6 +127,7 @@ function AppContent() {
           <Route path="/business/feed" element={<BusinessFeedPage />} />
           <Route path="/business/profile" element={<BusinessProfilePage />} />
           <Route path="/business/profile/:userId" element={<BusinessProfilePage />} />
+          <Route path="/business/edit-campaign" element={<BusinessEditCampaignPage />} />
           <Route path="/business/notifications" element={<BusinessNotificationsPage />} />
           <Route path="/business/messages" element={<BusinessMessagesPage />} />
           <Route path="/business-dashboard" element={<BusinessDashboardPage />} />

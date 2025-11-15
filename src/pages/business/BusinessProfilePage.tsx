@@ -47,6 +47,7 @@ const BusinessProfilePage = () => {
   const [stats, setStats] = useState({ followers: 0, following: 0, saved: 0 });
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [followersType, setFollowersType] = useState<'followers' | 'following'>('followers');
+  const [averageRating, setAverageRating] = useState<number | null>(null);
 
   // Determina se stiamo visualizzando il profilo di un altro business
   const targetUserId = userId || user?.id;
@@ -67,6 +68,7 @@ const BusinessProfilePage = () => {
     fetchBusinessLocation();
     fetchMarketingContent();
     fetchBusinessStats();
+    fetchAverageRating();
   }, [targetUserId]);
 
   // Refetch when tab becomes active
@@ -108,6 +110,27 @@ const BusinessProfilePage = () => {
       toast.error(t('failedLoadLocation', { ns: 'business' }));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAverageRating = async () => {
+    if (!location?.id) return;
+
+    try {
+      // Get average rating from location likes and interactions
+      const { count } = await supabase
+        .from('location_likes')
+        .select('*', { count: 'exact', head: true })
+        .eq('location_id', location.id);
+
+      if (count && count > 0) {
+        // Simple rating based on likes (scale 1-5)
+        // More sophisticated rating could be added later
+        const rating = Math.min(5, Math.max(1, Math.round((count / 10) + 3)));
+        setAverageRating(rating);
+      }
+    } catch (error) {
+      console.error('Error calculating average rating:', error);
     }
   };
 
@@ -219,6 +242,17 @@ const BusinessProfilePage = () => {
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
+          
+          {/* Average Rating - Top Right */}
+          {averageRating && (
+            <div className="absolute top-3 right-3 bg-background/95 backdrop-blur-sm px-3 py-1.5 rounded-full border border-border/50 shadow-lg">
+              <div className="flex items-center gap-1.5">
+                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                <span className="text-sm font-semibold text-foreground">{averageRating}</span>
+              </div>
+            </div>
+          )}
+          
           <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
             <h1 className="text-xl font-bold text-foreground truncate">{location.name}</h1>
             <Badge className={`${getCategoryColor(location.category)} bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full border-0 font-medium shadow-sm`}>
@@ -347,10 +381,7 @@ const BusinessProfilePage = () => {
                               <Button 
                                 size="sm" 
                                 variant="outline"
-                                onClick={() => {
-                                  // TODO: Implement edit functionality
-                                  toast.info(t('editCampaign', { ns: 'business' }));
-                                }}
+                                onClick={() => navigate(`/business/edit-campaign?id=${content.id}`)}
                                 className="h-7 px-2 text-xs"
                               >
                                 {t('edit', { ns: 'common' })}
