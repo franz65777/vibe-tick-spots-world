@@ -183,11 +183,8 @@ const FeedPage = memo(() => {
       setSelectedUserStoryIndex(0); // Always start from the first story of this user
       setStoriesViewerOpen(true);
     } else {
-      if (isBusiness) {
-        navigate(`/business/profile/${userId}`);
-      } else {
-        navigate(`/profile/${userId}`);
-      }
+      // SEMPRE naviga al profilo pubblico, mai al dashboard business
+      navigate(`/profile/${userId}`);
     }
   };
 
@@ -381,6 +378,7 @@ const FeedPage = memo(() => {
                       userHasStory={userHasStory}
                       postLikes={postLikes}
                       expandedCaptions={expandedCaptions}
+                      isPromotionFeed={feedType === 'promotions'}
                       onAvatarClick={handleAvatarClick}
                       onLocationClick={handleLocationClick}
                       onCommentClick={handleCommentClick}
