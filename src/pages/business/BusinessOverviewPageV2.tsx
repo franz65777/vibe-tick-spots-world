@@ -298,7 +298,7 @@ const BusinessOverviewPageV2 = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-muted/5 to-background pb-24 w-full max-w-none">
       {/* Sticky Header */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm w-full">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm w-full safe-area-pt">
           <div className="flex items-center justify-between px-safe py-3 w-full">
             <div className="flex items-center gap-3 flex-1">
               {/* Profile Image - Smaller Icon */}

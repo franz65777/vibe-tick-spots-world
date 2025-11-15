@@ -31,7 +31,7 @@ const Header = ({
 
   return (
     <>
-      <header className="bg-background sticky top-0 z-40">
+      <header className="bg-background sticky top-0 z-40 safe-area-pt">
         <div className="flex items-center justify-between pl-1 pr-0 py-3 gap-1">
           {/* Left: City Selection - Now with more space */}
           <div className="flex-1 min-w-0">
