@@ -23,9 +23,9 @@ export function formatPostDate(dateString: string, t: TFunction): string {
     } else if (diffHours < 24) {
       return `${diffHours}${t('hoursShort', { ns: 'common' })}`;
     } else if (diffDays < 7) {
-      return `${diffDays}d`;
+      return `${diffDays}${t('daysShort', { ns: 'common' })}`;
     } else {
-      return `${diffWeeks}w`;
+      return `${diffWeeks}${t('weeksShort', { ns: 'common' })}`;
     }
   }
   
