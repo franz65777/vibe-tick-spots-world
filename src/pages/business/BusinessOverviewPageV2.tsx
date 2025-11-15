@@ -62,7 +62,7 @@ const BusinessOverviewPageV2 = () => {
   const [showSaversModal, setShowSaversModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const { stats } = useLocationStats(location?.id || null, location?.google_place_id || null);
+  const { stats, loading: savesLoading } = useLocationStats(location?.id || null, location?.google_place_id || null);
   const { viewsCount, commentsCount, dailyGrowth, loading: statsLoading } = useBusinessLocationStats(location?.id || null);
 
   const { detailedAddress } = useDetailedAddress({
@@ -380,7 +380,7 @@ const BusinessOverviewPageV2 = () => {
               <div className="w-8 h-8 mx-auto mb-1.5 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
                 <Eye className="w-4 h-4 text-white" />
               </div>
-              <p className="text-xl font-bold text-white mb-0.5">{statsLoading ? '...' : viewsCount}</p>
+              <p className="text-xl font-bold text-white mb-0.5">{statsLoading ? '...' : (viewsCount || 0)}</p>
               <p className="text-[10px] text-white/80 font-medium">{t('views', { ns: 'business' })}</p>
             </CardContent>
             <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -mr-8 -mt-8" />
@@ -394,7 +394,7 @@ const BusinessOverviewPageV2 = () => {
               <div className="w-8 h-8 mx-auto mb-1.5 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
                 <MessageSquare className="w-4 h-4 text-white" />
               </div>
-              <p className="text-xl font-bold text-white mb-0.5">{statsLoading ? '...' : commentsCount}</p>
+              <p className="text-xl font-bold text-white mb-0.5">{statsLoading ? '...' : (commentsCount || 0)}</p>
               <p className="text-[10px] text-white/80 font-medium">{t('comments', { ns: 'business' })}</p>
             </CardContent>
             <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -mr-8 -mt-8" />
@@ -408,7 +408,7 @@ const BusinessOverviewPageV2 = () => {
               <div className="w-8 h-8 mx-auto mb-1.5 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
                 <Heart className="w-4 h-4 text-white" />
               </div>
-              <p className="text-xl font-bold text-white mb-0.5">{statsLoading ? '...' : stats.totalSaves}</p>
+              <p className="text-xl font-bold text-white mb-0.5">{savesLoading ? '...' : (stats.totalSaves || 0)}</p>
               <p className="text-[10px] text-white/80 font-medium">{t('saves', { ns: 'business' })}</p>
             </CardContent>
             <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -mr-8 -mt-8" />
