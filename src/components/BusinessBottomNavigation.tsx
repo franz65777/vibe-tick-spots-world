@@ -171,7 +171,7 @@ const BusinessBottomNavigation = () => {
       />
       
       <nav 
-        className="fixed bottom-0 left-0 right-0 z-[110] pb-safe"
+        className="fixed bottom-0 left-0 right-0 z-[110] safe-area-pb"
         role="navigation"
         aria-label="Business navigation"
       >
