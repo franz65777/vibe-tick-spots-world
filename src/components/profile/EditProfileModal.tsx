@@ -74,7 +74,7 @@ const EditProfileModal = ({ isOpen, onClose, currentProfile }: EditProfileModalP
         setIsUploading(true);
         const fileExt = avatarFile.name.split('.').pop();
         const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-        const filePath = `avatars/${fileName}`;
+        const filePath = `${user.id}/avatar/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
           .from('avatars')

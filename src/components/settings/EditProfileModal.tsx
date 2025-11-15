@@ -68,15 +68,43 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
     reader.readAsDataURL(file);
   };
 
-  const handleCropComplete = (croppedBlob: Blob) => {
+  const handleCropComplete = async (croppedBlob: Blob) => {
     // Convert blob to file
     const file = new File([croppedBlob], 'avatar.jpg', { type: 'image/jpeg' });
     setAvatarFile(file);
-    
-    // Create preview URL
+
+    // Create preview URL immediately
     const previewUrl = URL.createObjectURL(croppedBlob);
     setAvatarPreview(previewUrl);
-    
+
+    // Auto-upload and update profile so user doesn't need to press Save again
+    if (!user?.id) return;
+    try {
+      setIsUploading(true);
+      const fileName = `avatar-${Date.now()}.jpg`;
+      const filePath = `${user.id}/avatar/${fileName}`; // matches RLS policy first segment = userId
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      await updateProfile({ avatar_url: publicUrl });
+      await refetch();
+      // Invalidate profile cache globally so nav avatar updates
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      toast.success(t('profileUpdated', { ns: 'settings' }));
+    } catch (e) {
+      console.error('Error uploading cropped avatar:', e);
+      toast.error(t('failedToUpdate', { ns: 'settings' }));
+    } finally {
+      setIsUploading(false);
+    }
+
     setShowCropEditor(false);
     setTempImageForCrop(null);
   };
@@ -182,7 +210,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
         setIsUploading(true);
         const fileExt = avatarFile.name.split('.').pop();
         const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-        const filePath = `avatars/${fileName}`;
+        const filePath = `${user.id}/avatar/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
           .from('avatars')
