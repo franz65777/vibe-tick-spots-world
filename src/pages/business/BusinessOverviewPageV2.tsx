@@ -296,10 +296,10 @@ const BusinessOverviewPageV2 = () => {
   const avgEngagement = posts.length > 0 ? Math.round(totalEngagement / posts.length) : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-muted/5 to-background pb-24">
+    <div className="min-h-screen bg-gradient-to-b from-background via-muted/5 to-background pb-24 w-full max-w-none">
       {/* Sticky Header */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm">
-          <div className="flex items-center justify-between p-3">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm w-full">
+          <div className="flex items-center justify-between px-safe py-3 w-full">
             <div className="flex items-center gap-3 flex-1">
               {/* Profile Image - Smaller Icon */}
               <div className="relative group flex-shrink-0">
@@ -371,7 +371,7 @@ const BusinessOverviewPageV2 = () => {
         </div>
 
         {/* Stats Cards - Compact Design */}
-        <div className="p-3 grid grid-cols-3 gap-2.5">
+        <div className="px-safe py-3 grid grid-cols-3 gap-2.5 w-full">
           <Card 
             className="relative overflow-hidden border-0 shadow-md bg-gradient-to-br from-primary via-primary/90 to-primary/80 cursor-pointer hover:scale-105 transition-transform"
             onClick={() => setShowViewersModal(true)}
@@ -454,7 +454,7 @@ const BusinessOverviewPageV2 = () => {
 
         {/* Empty State or Posts */}
         {posts.length === 0 ? (
-          <div className="px-4 pb-4">
+          <div className="px-safe pb-4 w-full">
             <Card className="border-dashed border-2">
               <CardContent className="p-8 text-center">
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
@@ -472,7 +472,7 @@ const BusinessOverviewPageV2 = () => {
             </Card>
           </div>
         ) : (
-          <div className="px-4 pb-4">
+          <div className="px-safe pb-4 w-full">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-base font-semibold text-foreground">{t('userContent', { ns: 'business' })}</h2>
