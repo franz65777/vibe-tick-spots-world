@@ -107,7 +107,7 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/profile/${userId}`);
+              onAvatarClick(userId, isBusiness, e);
             }}
             className="font-semibold hover:opacity-70"
           >
@@ -160,10 +160,7 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
       <div className="post-compact-header flex items-center justify-between">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/profile/${userId}`);
-            }}
+            onClick={(e) => onAvatarClick(userId, isBusiness, e)}
             className="shrink-0 relative"
           >
             <Avatar className="h-10 w-10">
@@ -177,44 +174,47 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
             )}
           </button>
           <div className="flex-1 min-w-0">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/profile/${userId}`);
-            }}
-            className="font-semibold text-sm hover:opacity-70 block truncate text-left"
-          >
-            {username}
-          </button>
-            {/* Location and promotion type */}
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              {locationName && locationId && location?.latitude && location?.longitude && (
-                <button
-                  onClick={(e) => onLocationClick(postId, locationId, location.latitude, location.longitude, locationName, e)}
-                  className="hover:text-foreground flex items-center gap-1 truncate"
-                >
-                  <MapPin className="w-3 h-3 shrink-0" />
-                  <span className="truncate">{locationName}</span>
-                </button>
-              )}
-              {contentType && (
-                <div className="flex items-center gap-1 text-primary">
-                  {getPromotionIcon()}
-                  <span className="font-medium">{getPromotionLabel()}</span>
-                </div>
-              )}
-            </div>
+            <button
+              onClick={(e) => onAvatarClick(userId, isBusiness, e)}
+              className="font-semibold text-sm hover:opacity-70 block truncate text-left"
+            >
+              {username}
+            </button>
+            {/* Address: street, number, city */}
+            {location && (
+              <button
+                onClick={(e) => onLocationClick(postId, locationId, location.latitude, location.longitude, locationName, e)}
+                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 truncate"
+              >
+                <MapPin className="w-3 h-3 shrink-0" />
+                <span className="truncate">
+                  {location.address && location.city 
+                    ? `${location.address}, ${location.city}`
+                    : locationName || location.city || location.address || ''}
+                </span>
+              </button>
+            )}
           </div>
         </div>
-        {rating && rating > 0 && (
-          <div className="flex items-center gap-1 shrink-0">
-            {(() => {
-              const CategoryIcon = location?.category ? getCategoryIcon(location.category) : Star;
-              return <CategoryIcon className={cn("w-4 h-4", getRatingFillColor(rating), getRatingColor(rating))} />;
-            })()}
-            <span className={cn("text-sm font-semibold", getRatingColor(rating))}>{rating}</span>
-          </div>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Promotion type icon */}
+          {contentType && (
+            <div className="flex items-center gap-1 text-primary">
+              {getPromotionIcon()}
+              <span className="font-medium text-xs">{getPromotionLabel()}</span>
+            </div>
+          )}
+          {/* Rating */}
+          {rating && rating > 0 && (
+            <div className="flex items-center gap-1">
+              {(() => {
+                const CategoryIcon = location?.category ? getCategoryIcon(location.category) : Star;
+                return <CategoryIcon className={cn("w-4 h-4", getRatingFillColor(rating), getRatingColor(rating))} />;
+              })()}
+              <span className={cn("text-sm font-semibold", getRatingColor(rating))}>{rating}</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Post Media */}
