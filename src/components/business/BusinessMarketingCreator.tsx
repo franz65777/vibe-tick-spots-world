@@ -153,10 +153,32 @@ const BusinessMarketingCreator: React.FC<BusinessMarketingCreatorProps> = ({ onS
           caption: `${title}\n\n${description}`,
           content_type: contentType,
           media_urls: mediaUrls,
-          metadata
+          metadata,
+          is_business_post: true
         });
 
       if (error) throw error;
+
+      // Create marketing campaign entry for fireworks on map pins and location cards
+      if (locationClaim?.location_id && endDate) {
+        const { error: campaignError } = await supabase
+          .from('marketing_campaigns')
+          .insert({
+            business_user_id: user.id,
+            location_id: locationClaim.location_id,
+            campaign_type: contentType,
+            title: title,
+            description: description,
+            end_date: endDate,
+            metadata: metadata,
+            is_active: true
+          });
+
+        if (campaignError) {
+          console.error('Error creating marketing campaign entry:', campaignError);
+          // Don't throw - post is already created successfully
+        }
+      }
 
       toast.success(t('campaignPublished', { ns: 'business' }));
 
