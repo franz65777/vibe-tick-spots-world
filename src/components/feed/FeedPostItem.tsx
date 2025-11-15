@@ -362,7 +362,7 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
         {caption && renderCaption()}
 
         {/* Timestamp */}
-        <p className="text-xs text-muted-foreground uppercase text-left">
+        <p className="text-xs text-muted-foreground text-left">
           {formatPostDate(createdAt, t)}
         </p>
       </div>
