@@ -298,8 +298,8 @@ const FeedPage = memo(() => {
     <div className="h-screen bg-background flex flex-col overflow-hidden">
       <div className="w-full h-full flex flex-col">
         {/* Header */}
-        <div className="sticky top-0 z-30 bg-background shadow-sm shrink-0">
-          <div className="px-safe py-3 flex justify-start w-full">
+        <div className="sticky top-0 z-30 bg-background shadow-sm shrink-0 w-full">
+          <div className="py-3 pl-4 flex justify-start w-full">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button 
@@ -340,7 +340,7 @@ const FeedPage = memo(() => {
             <div className="py-4 w-full">
               {[1,2,3].map((i) => (
                 <div key={i} className="space-y-3">
-                  <div className="flex items-center gap-3 px-safe py-3">
+                  <div className="flex items-center gap-3 px-3 py-3">
                     <Skeleton className="h-10 w-10 rounded-full" />
                     <div className="space-y-2">
                       <Skeleton className="h-4 w-32" />
@@ -352,7 +352,7 @@ const FeedPage = memo(() => {
               ))}
             </div>
            ) : feedItems.length === 0 ? (
-            <div className="text-center py-12 px-safe text-muted-foreground w-full">
+            <div className="text-center py-12 px-4 text-muted-foreground w-full">
               <p className="mb-2">{t('feedEmpty')}</p>
               <p className="text-sm">{t('startFollowing')}</p>
               <Button
