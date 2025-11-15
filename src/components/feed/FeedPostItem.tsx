@@ -17,6 +17,7 @@ interface FeedPostItemProps {
   userHasStory: boolean;
   postLikes: Map<string, PostLikeUser[]>;
   expandedCaptions: Set<string>;
+  isPromotionFeed?: boolean;
   onAvatarClick: (userId: string, isBusiness: boolean, e: React.MouseEvent) => void;
   onLocationClick: (postId: string, locationId: string, lat: number, lng: number, name: string | null, e: React.MouseEvent) => void;
   onCommentClick: (postId: string) => void;
@@ -34,6 +35,7 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
     userHasStory,
     postLikes,
     expandedCaptions,
+    isPromotionFeed = false,
     onAvatarClick,
     onLocationClick,
     onCommentClick,
@@ -180,8 +182,8 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
             >
               {username}
             </button>
-            {/* Address: street, number, city */}
-            {location && (
+            {/* Show address only in promotion feed, otherwise show location name */}
+            {isPromotionFeed && location && (
               <button
                 onClick={(e) => onLocationClick(postId, locationId, location.latitude, location.longitude, locationName, e)}
                 className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 truncate"
@@ -192,6 +194,15 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
                     ? `${location.address}, ${location.city}`
                     : locationName || location.city || location.address || ''}
                 </span>
+              </button>
+            )}
+            {!isPromotionFeed && locationName && locationId && location?.latitude && location?.longitude && (
+              <button
+                onClick={(e) => onLocationClick(postId, locationId, location.latitude, location.longitude, locationName, e)}
+                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 truncate"
+              >
+                <MapPin className="w-3 h-3 shrink-0" />
+                <span className="truncate">{locationName}</span>
               </button>
             )}
           </div>
