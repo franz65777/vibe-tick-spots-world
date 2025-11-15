@@ -24,29 +24,69 @@ export const LocationCommentsModal = ({ isOpen, onClose, locationId, googlePlace
     queryFn: async () => {
       if (!locationId && !googlePlaceId) return [];
 
+      // Try to get comments from both place_comments and comments tables
+      const queries = [];
+      
+      // Query place_comments table with Google Place ID
+      if (googlePlaceId) {
+        queries.push(
+          supabase
+            .from('place_comments')
+            .select(`
+              id,
+              content,
+              created_at,
+              user_id,
+              profiles:user_id (
+                id,
+                username,
+                avatar_url
+              )
+            `)
+            .eq('place_id', googlePlaceId)
+            .order('created_at', { ascending: false })
+            .limit(50)
+        );
+      }
+
+      // Query comments table with location ID or Google Place ID
       const placeId = googlePlaceId || locationId;
-      if (!placeId) return [];
+      if (placeId) {
+        queries.push(
+          supabase
+            .from('comments')
+            .select(`
+              id,
+              content,
+              created_at,
+              user_id,
+              profiles:user_id (
+                id,
+                username,
+                avatar_url
+              )
+            `)
+            .eq('place_id', placeId)
+            .order('created_at', { ascending: false })
+            .limit(50)
+        );
+      }
 
-      const { data, error } = await supabase
-        .from('comments')
-        .select(`
-          id,
-          content,
-          created_at,
-          user_id,
-          profiles:user_id (
-            id,
-            username,
-            avatar_url
-          )
-        `)
-        .eq('place_id', placeId)
-        .order('created_at', { ascending: false })
-        .limit(50);
+      const results = await Promise.all(queries);
+      
+      // Combine and deduplicate comments
+      const allComments = results
+        .filter(r => !r.error && r.data)
+        .flatMap(r => r.data || []);
+      
+      // Remove duplicates by id
+      const uniqueComments = Array.from(
+        new Map(allComments.map(c => [c.id, c])).values()
+      );
 
-      if (error) throw error;
-
-      return data || [];
+      return uniqueComments.sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
     },
     enabled: isOpen && (!!locationId || !!googlePlaceId),
   });
