@@ -431,7 +431,7 @@ const HomePage = memo(() => {
   return (
     <MapFilterProvider>
       <div 
-        className="h-screen w-full bg-background flex flex-col overflow-hidden"
+        className="h-screen w-full bg-background flex flex-col overflow-hidden pt-5"
         data-map-expanded={isMapExpanded}
         onTouchStart={(e) => {
           // Start long press timer
