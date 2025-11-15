@@ -48,6 +48,26 @@ const BusinessBottomNavigation = () => {
     };
     
     fetchBusinessAvatar();
+
+    // Subscribe to location changes
+    const channel = supabase
+      .channel('business-avatar-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'locations',
+        },
+        () => {
+          fetchBusinessAvatar();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user?.id]);
 
   useEffect(() => {
