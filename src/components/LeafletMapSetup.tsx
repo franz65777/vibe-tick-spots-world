@@ -392,7 +392,7 @@ const LeafletMapSetup = ({
     };
 
     fetchCampaigns();
-  }, [places, isDarkMode, onPinClick, trackEvent, shares]);
+  }, [places, isDarkMode, onPinClick, trackEvent, shares, user]);
 
   const [selectedPostFromPin, setSelectedPostFromPin] = useState<string | null>(null);
 
