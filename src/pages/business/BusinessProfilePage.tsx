@@ -16,6 +16,8 @@ import { useTranslation } from 'react-i18next';
 import BusinessBadges from '@/components/business/BusinessBadges';
 import { useDetailedAddress } from '@/hooks/useDetailedAddress';
 import FollowersModal from '@/components/profile/FollowersModal';
+import { useLocationSavers } from '@/hooks/useLocationSavers';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface BusinessLocation {
   id: string;
@@ -58,6 +60,8 @@ const BusinessProfilePage = () => {
       ? { lat: Number(location.latitude), lng: Number(location.longitude) }
       : undefined,
   });
+
+  const { savers } = useLocationSavers(location?.id);
 
   useEffect(() => {
     fetchBusinessLocation();
@@ -224,25 +228,25 @@ const BusinessProfilePage = () => {
         </div>
 
         {/* Location Label */}
-        <div className="px-4 pt-4 flex items-center gap-2 text-muted-foreground">
-          <MapPin className="w-4 h-4" />
-          <span className="text-sm">
+        <div className="px-4 pt-3 flex items-center gap-2 text-muted-foreground">
+          <MapPin className="w-3.5 h-3.5" />
+          <span className="text-xs">
             {detailedAddress || 
              (location.address && location.city ? `${location.city}, ${location.address}` : location.city) || 
              'Location'}
           </span>
         </div>
 
-        {/* Stats Section */}
-        <div className="px-4 pt-4 flex items-center justify-around border-y border-border/50 py-4 my-4">
+        {/* Stats Section - Compact */}
+        <div className="px-4 pt-2 pb-3 flex items-center gap-6">
           <button
             onClick={() => {
               setFollowersType('followers');
               setShowFollowersModal(true);
             }}
-            className="flex flex-col items-center gap-1 hover:opacity-70 transition-opacity"
+            className="flex items-center gap-1.5 hover:opacity-70 transition-opacity"
           >
-            <span className="text-lg font-bold text-foreground">{stats.followers}</span>
+            <span className="text-sm font-semibold text-foreground">{stats.followers}</span>
             <span className="text-xs text-muted-foreground">{t('followers', { ns: 'common' })}</span>
           </button>
           
@@ -251,80 +255,53 @@ const BusinessProfilePage = () => {
               setFollowersType('following');
               setShowFollowersModal(true);
             }}
-            className="flex flex-col items-center gap-1 hover:opacity-70 transition-opacity"
+            className="flex items-center gap-1.5 hover:opacity-70 transition-opacity"
           >
-            <span className="text-lg font-bold text-foreground">{stats.following}</span>
+            <span className="text-sm font-semibold text-foreground">{stats.following}</span>
             <span className="text-xs text-muted-foreground">{t('following', { ns: 'common' })}</span>
           </button>
           
-          <div className="flex flex-col items-center gap-1">
-            <span className="text-lg font-bold text-foreground">{stats.saved}</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm font-semibold text-foreground">{stats.saved}</span>
             <span className="text-xs text-muted-foreground flex items-center gap-1">
               <Bookmark className="w-3 h-3" />
               {t('saved', { ns: 'common' })}
             </span>
-          </div>
-        </div>
-
-        {/* Location Info */}
-        <div className="px-4 py-6 space-y-4">
-          {location.description && (
-            <p className="text-muted-foreground text-sm mb-3 text-left">
-              {location.description}
-            </p>
-          )}
-
-          {/* Contact Info */}
-          <div className="space-y-2">
-
-            {location.phone && (
-              <div className="flex items-center gap-3 text-sm">
-                <Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                <a href={`tel:${location.phone}`} className="text-foreground hover:text-primary">
-                  {location.phone}
-                </a>
-              </div>
-            )}
-
-            {location.website && (
-              <div className="flex items-center gap-3 text-sm">
-                <Globe className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                <a
-                  href={location.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-foreground hover:text-primary"
-                >
-                  {t('visitWebsite', { ns: 'business' })}
-                </a>
-              </div>
-            )}
-
-            {location.hours && (
-              <div className="flex items-start gap-3 text-sm">
-                <Clock className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                <span className="text-foreground">{location.hours}</span>
+            {savers.length > 0 && (
+              <div className="flex -space-x-2 ml-1">
+                {savers.slice(0, 3).map((saver, index) => (
+                  <Avatar key={saver.id} className="w-5 h-5 border-2 border-background">
+                    <AvatarImage src={saver.avatar_url} alt={saver.username} />
+                    <AvatarFallback className="text-[8px]">
+                      {saver.username?.substring(0, 2).toUpperCase() || '?'}
+                    </AvatarFallback>
+                  </Avatar>
+                ))}
+                {savers.length > 3 && (
+                  <div className="w-5 h-5 rounded-full bg-muted border-2 border-background flex items-center justify-center">
+                    <span className="text-[8px] font-medium text-muted-foreground">+{savers.length - 3}</span>
+                  </div>
+                )}
               </div>
             )}
           </div>
         </div>
 
         {/* Tabs */}
-        <ProfileTabs
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          showTrips={false}
-          showLocations={false}
-          showMarketing={true}
-        />
+        <div className="pt-2">
+          <ProfileTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            showTrips={false}
+            showLocations={false}
+            showMarketing={true}
+          />
+        </div>
 
-        {/* Tab Content */}
-        <div className="px-4 py-4">
+        {/* Tab Content with scroll */}
+        <div className="px-4 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 420px)' }}>
           {activeTab === 'posts' && location.id && (
-            <div>
-              <p className="text-sm text-muted-foreground mb-4">
-                {t('marketingPostsFromBusiness', { ns: 'business' })}
-              </p>
+            <div className="pb-4">
               <PostsGrid 
                 userId={user?.id} 
                 locationId={location.id}
@@ -334,7 +311,7 @@ const BusinessProfilePage = () => {
           )}
 
           {activeTab === 'marketing' && (
-            <div className="space-y-4">
+            <div className="space-y-4 pb-4">
               {marketingContent.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <p>{t('noMarketingContent', { ns: 'business' })}</p>
@@ -370,17 +347,16 @@ const BusinessProfilePage = () => {
           )}
 
           {activeTab === 'badges' && (
-            <BusinessBadges 
-              locationId={location.id}
-              googlePlaceId={location.google_place_id || null}
-            />
+            <div className="pb-4">
+              <BusinessBadges 
+                locationId={location.id}
+                googlePlaceId={location.google_place_id || null}
+              />
+            </div>
           )}
 
           {activeTab === 'tagged' && location.id && (
-            <div>
-              <p className="text-sm text-muted-foreground mb-4">
-                {t('postsFromUsers', { ns: 'business' })}
-              </p>
+            <div className="pb-4">
               <PostsGrid 
                 locationId={location.id}
                 excludeUserId={user?.id}
