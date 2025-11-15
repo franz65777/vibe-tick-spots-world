@@ -299,7 +299,7 @@ const FeedPage = memo(() => {
       <div className="w-full h-full flex flex-col">
         {/* Header */}
         <div className="sticky top-0 z-30 bg-background shadow-sm shrink-0 w-full safe-area-pt">
-          <div className="py-3 pl-3 flex justify-start w-full">
+          <div className="py-3 pl-[10px] flex justify-start w-full">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button 
