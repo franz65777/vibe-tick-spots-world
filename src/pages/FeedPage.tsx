@@ -295,7 +295,7 @@ const FeedPage = memo(() => {
 
 
   return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden">
+    <div className="h-screen bg-background flex flex-col overflow-hidden pt-[25px]">
       <div className="w-full h-full flex flex-col">
         {/* Header */}
         <div className="sticky top-0 z-30 bg-background shadow-sm shrink-0 w-full safe-area-pt">

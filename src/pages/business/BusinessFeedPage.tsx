@@ -133,7 +133,7 @@ const BusinessFeedPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-24 pt-[25px]">
       <div className="max-w-screen-sm mx-auto">
         {/* Header */}
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b">
