@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { AvatarCropEditor } from './AvatarCropEditor';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface EditProfileModalProps {
   open: boolean;
@@ -21,6 +22,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
   const { t } = useTranslation();
   const { profile, updateProfile, refetch } = useProfile();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [username, setUsername] = useState(profile?.username || 'user');
   const [fullName, setFullName] = useState(profile?.full_name || '');
   const [bio, setBio] = useState(profile?.bio || '');
@@ -91,6 +93,8 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
       setAvatarPreview(null);
       setAvatarFile(null);
       await refetch();
+      // Invalidate all profile queries to update everywhere including nav bar
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
       toast.success(t('avatarRemoved', { ns: 'settings' }));
     } catch (error) {
       console.error('Error removing avatar:', error);
@@ -212,6 +216,8 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
       }
 
       await refetch();
+      // Invalidate all profile queries to update everywhere including nav bar
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
       toast.success(t('profileUpdated', { ns: 'settings' }));
       onOpenChange(false);
     } catch (error) {
