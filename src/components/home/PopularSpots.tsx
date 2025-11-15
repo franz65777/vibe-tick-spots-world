@@ -293,7 +293,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
   ];
 
   return (
-    <div className="h-full px-1 py-2 bg-background/50">
+    <div className="h-full px-[10px] py-2 bg-background/50">
       <div className="flex items-center justify-between gap-2 mb-2">
         <div className="relative flex items-center gap-1.5 flex-1 min-w-0" ref={dropdownRef}>
           <button
