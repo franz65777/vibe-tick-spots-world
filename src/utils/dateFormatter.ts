@@ -19,13 +19,13 @@ export function formatPostDate(dateString: string, t: TFunction): string {
     const diffHours = Math.floor(diffMinutes / 60);
     
     if (diffMinutes < 60) {
-      return `${diffMinutes}${t('minutesShort', { ns: 'common' })}`;
+      return t('minutesShort', { ns: 'common', count: diffMinutes });
     } else if (diffHours < 24) {
-      return `${diffHours}${t('hoursShort', { ns: 'common' })}`;
+      return t('hoursShort', { ns: 'common', count: diffHours });
     } else if (diffDays < 7) {
-      return `${diffDays}${t('daysShort', { ns: 'common' })}`;
+      return t('daysShort', { ns: 'common', count: diffDays });
     } else {
-      return `${diffWeeks}${t('weeksShort', { ns: 'common' })}`;
+      return t('weeksShort', { ns: 'common', count: diffWeeks });
     }
   }
   
