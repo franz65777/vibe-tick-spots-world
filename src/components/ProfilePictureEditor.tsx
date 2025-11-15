@@ -4,7 +4,7 @@ import { Camera, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useProfile } from '@/hooks/useProfile';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface ProfilePictureEditorProps {
   isOpen: boolean;
@@ -18,7 +18,7 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
   currentAvatarUrl
 }) => {
   const { user } = useAuth();
-  const { updateProfile, refetch } = useProfile();
+  const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -78,8 +78,8 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
 
       if (updateError) throw updateError;
 
-      // Refresh the profile data
-      await refetch();
+      // Invalidate all profile queries to refresh everywhere
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
 
       onClose();
       setPreviewUrl(null);
@@ -108,8 +108,8 @@ const ProfilePictureEditor: React.FC<ProfilePictureEditorProps> = ({
 
       if (updateError) throw updateError;
 
-      // Refresh the profile data
-      await refetch();
+      // Invalidate all profile queries to refresh everywhere
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
 
       onClose();
       setPreviewUrl(null);
