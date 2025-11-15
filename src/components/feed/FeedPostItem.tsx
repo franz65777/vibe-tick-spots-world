@@ -2,15 +2,14 @@ import { memo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import { MapPin, Star } from 'lucide-react';
+import { MapPin, Star, Percent, Calendar, Sparkles, Megaphone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PostActions } from './PostActions';
 import { getCategoryIcon } from '@/utils/categoryIcons';
 import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
 import { PostLikeUser } from '@/services/socialEngagementService';
 import { useTranslation } from 'react-i18next';
-import { formatDistanceToNow } from 'date-fns';
-import { it as itLocale, es as esLocale, enUS } from 'date-fns/locale';
+import { formatPostDate } from '@/utils/dateFormatter';
 
 interface FeedPostItemProps {
   item: any;
@@ -26,9 +25,8 @@ interface FeedPostItemProps {
 }
 
 const FeedPostItem = memo((props: FeedPostItemProps) => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const dfnsLocale = i18n.language.startsWith('it') ? itLocale : i18n.language.startsWith('es') ? esLocale : enUS;
   
   const {
     item,
@@ -57,6 +55,40 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
   const rating = item.rating;
   const createdAt = item.created_at;
   const isExpanded = expandedCaptions.has(postId);
+  const contentType = item.content_type;
+  
+  // Get promotion type icon
+  const getPromotionIcon = () => {
+    if (!contentType) return null;
+    switch (contentType) {
+      case 'discount':
+        return <Percent className="w-3.5 h-3.5 shrink-0" />;
+      case 'event':
+        return <Calendar className="w-3.5 h-3.5 shrink-0" />;
+      case 'promotion':
+        return <Sparkles className="w-3.5 h-3.5 shrink-0" />;
+      case 'announcement':
+        return <Megaphone className="w-3.5 h-3.5 shrink-0" />;
+      default:
+        return null;
+    }
+  };
+  
+  const getPromotionLabel = () => {
+    if (!contentType) return null;
+    switch (contentType) {
+      case 'discount':
+        return t('discount', { ns: 'common' });
+      case 'event':
+        return t('event', { ns: 'common' });
+      case 'promotion':
+        return t('promotion', { ns: 'common' });
+      case 'announcement':
+        return t('news', { ns: 'common' });
+      default:
+        return null;
+    }
+  };
 
   const renderCaption = () => {
     if (!caption) return null;
@@ -75,11 +107,7 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              if (isBusiness) {
-                navigate(`/business/profile/${userId}`);
-              } else {
-                navigate(`/profile/${userId}`);
-              }
+              navigate(`/profile/${userId}`);
             }}
             className="font-semibold hover:opacity-70"
           >
@@ -134,11 +162,7 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
           <button 
             onClick={(e) => {
               e.stopPropagation();
-              if (isBusiness) {
-                navigate(`/business/profile/${userId}`);
-              } else {
-                navigate(`/profile/${userId}`);
-              }
+              navigate(`/profile/${userId}`);
             }}
             className="shrink-0 relative"
           >
@@ -153,28 +177,33 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
             )}
           </button>
           <div className="flex-1 min-w-0">
-          <button 
+          <button
             onClick={(e) => {
               e.stopPropagation();
-              if (isBusiness) {
-                navigate(`/business/profile/${userId}`);
-              } else {
-                navigate(`/profile/${userId}`);
-              }
+              navigate(`/profile/${userId}`);
             }}
             className="font-semibold text-sm hover:opacity-70 block truncate text-left"
           >
             {username}
           </button>
-            {locationName && locationId && location?.latitude && location?.longitude && (
-              <button
-                onClick={(e) => onLocationClick(postId, locationId, location.latitude, location.longitude, locationName, e)}
-                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 truncate"
-              >
-                <MapPin className="w-3 h-3 shrink-0" />
-                <span className="truncate">{locationName}</span>
-              </button>
-            )}
+            {/* Location and promotion type */}
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              {locationName && locationId && location?.latitude && location?.longitude && (
+                <button
+                  onClick={(e) => onLocationClick(postId, locationId, location.latitude, location.longitude, locationName, e)}
+                  className="hover:text-foreground flex items-center gap-1 truncate"
+                >
+                  <MapPin className="w-3 h-3 shrink-0" />
+                  <span className="truncate">{locationName}</span>
+                </button>
+              )}
+              {contentType && (
+                <div className="flex items-center gap-1 text-primary">
+                  {getPromotionIcon()}
+                  <span className="font-medium">{getPromotionLabel()}</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
         {rating && rating > 0 && (
@@ -323,7 +352,7 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
 
         {/* Timestamp */}
         <p className="text-xs text-muted-foreground uppercase text-left">
-          {formatDistanceToNow(new Date(createdAt), { addSuffix: true, locale: dfnsLocale })}
+          {formatPostDate(createdAt, t)}
         </p>
       </div>
     </article>
