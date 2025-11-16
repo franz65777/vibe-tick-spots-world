@@ -27,6 +27,9 @@ import { PostDetailModalMobile } from './PostDetailModalMobile';
 import { cn } from '@/lib/utils';
 import { getCategoryIcon } from '@/utils/categoryIcons';
 import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
+import { SaveLocationDropdown } from '@/components/common/SaveLocationDropdown';
+import { SAVE_TAG_OPTIONS, type SaveTag } from '@/utils/saveTags';
+import { toast } from 'sonner';
 
 const localeMap: Record<string, Locale> = {
   en: undefined as any, // English is the default
@@ -56,6 +59,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
   const { t, i18n } = useTranslation();
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [currentSaveTag, setCurrentSaveTag] = useState<SaveTag>('general');
   const [loading, setLoading] = useState(false);
   const [posts, setPosts] = useState<any[]>([]);
   const [showVisitedModal, setShowVisitedModal] = useState(false);
@@ -191,6 +195,24 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
         
         setIsLiked(liked);
         setIsSaved(saved);
+
+        // Fetch current save tag if saved
+        if (saved && user) {
+          try {
+            const { data: savedLocation } = await supabase
+              .from('user_saved_locations')
+              .select('save_tag')
+              .eq('user_id', user.id)
+              .eq('location_id', place.id)
+              .maybeSingle();
+            
+            if (savedLocation?.save_tag) {
+              setCurrentSaveTag(savedLocation.save_tag as SaveTag);
+            }
+          } catch (error) {
+            console.error('Error fetching save tag:', error);
+          }
+        }
       }
     };
 
@@ -204,7 +226,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
     checkInteractions();
     fetchPosts();
     fetchReviews();
-  }, [place.id, place.google_place_id, place.name]);
+  }, [place.id, place.google_place_id, place.name, user]);
 
   useEffect(() => {
     const fetchLocationById = async () => {
@@ -253,24 +275,37 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
     };
   }, [viewStartTime, place.id, place.google_place_id, locationDetails]);
 
-  const handleSaveToggle = async () => {
+  const handleSaveWithTag = async (tag: SaveTag) => {
     setLoading(true);
     try {
-      if (isSaved) {
-        await locationInteractionService.unsaveLocation(place.id);
-        setIsSaved(false);
-      } else {
-        await locationInteractionService.saveLocation(place.id, {
-          google_place_id: place.google_place_id,
-          name: place.name,
-          address: place.address,
-          latitude: place.coordinates?.lat || 0,
-          longitude: place.coordinates?.lng || 0,
-          category: place.category,
-          types: place.types || []
-        });
-        setIsSaved(true);
-      }
+      await locationInteractionService.saveLocation(place.id, {
+        google_place_id: place.google_place_id,
+        name: place.name,
+        address: place.address,
+        latitude: place.coordinates?.lat || 0,
+        longitude: place.coordinates?.lng || 0,
+        category: place.category,
+        types: place.types || []
+      }, tag);
+      setIsSaved(true);
+      setCurrentSaveTag(tag);
+      toast.success(t('location_saved'));
+    } catch (error) {
+      toast.error(t('save_failed'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUnsave = async () => {
+    setLoading(true);
+    try {
+      await locationInteractionService.unsaveLocation(place.id);
+      setIsSaved(false);
+      setCurrentSaveTag('general');
+      toast.success(t('location_unsaved'));
+    } catch (error) {
+      toast.error(t('unsave_failed'));
     } finally {
       setLoading(false);
     }
@@ -433,16 +468,16 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
           >
             <div className="flex items-center gap-1.5">
               <div className="grid grid-cols-4 gap-1.5 flex-1">
-                <Button
-                  onClick={handleSaveToggle}
+                <SaveLocationDropdown
+                  isSaved={isSaved}
+                  onSave={handleSaveWithTag}
+                  onUnsave={handleUnsave}
                   disabled={loading}
-                  size="sm"
                   variant="secondary"
-                  className="flex-col h-auto py-3 gap-1 rounded-2xl"
-                >
-                  <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
-                  <span className="text-xs">{isSaved ? t('saved', { ns: 'common', defaultValue: 'Saved' }) : t('save', { ns: 'common', defaultValue: 'Save' })}</span>
-                </Button>
+                  size="sm"
+                  currentSaveTag={currentSaveTag}
+                  showLabel={true}
+                />
 
                 <Button
                   onClick={(e) => {
