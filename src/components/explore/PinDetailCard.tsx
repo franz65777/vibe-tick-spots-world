@@ -487,7 +487,10 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                       <Bookmark className="h-5 w-5" />
                     )}
                     <span className="text-xs">
-                      {t('save', { ns: 'common', defaultValue: 'Save' })}
+                      {isSaved 
+                        ? t('saved', { ns: 'profile', defaultValue: 'Saved' })
+                        : t('save', { ns: 'common', defaultValue: 'Save' })
+                      }
                     </span>
                   </Button>
 
@@ -565,7 +568,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                           e.stopPropagation();
                           handleUnsave();
                         }}
-                        className="w-full cursor-pointer flex items-center gap-3 py-3 px-4 hover:bg-accent text-destructive transition-colors min-h-[48px]"
+                        className="w-full cursor-pointer flex items-center gap-3 py-2 px-4 hover:bg-accent text-destructive transition-colors min-h-[44px]"
                       >
                         <BookmarkCheck className="h-4 w-4 flex-shrink-0" />
                         <span className="text-sm font-medium">{t('unsave', { ns: 'common', defaultValue: 'Unsave' })}</span>
@@ -583,14 +586,14 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                           handleSaveWithTag(option.value);
                           setDropdownOpen(false);
                         }}
-                        className={`w-full cursor-pointer flex items-center gap-3 py-3 px-4 hover:bg-accent transition-colors min-h-[48px] ${
+                        className={`w-full cursor-pointer flex items-center gap-3 py-2 px-4 hover:bg-accent transition-colors min-h-[44px] ${
                           option.value === currentSaveTag && isSaved ? 'bg-accent/50' : ''
                         }`}
                       >
                         {option.value === 'general' ? (
                           <Bookmark className="h-4 w-4 flex-shrink-0" />
                         ) : (
-                          <span className="text-base leading-none flex-shrink-0 w-4 flex items-center justify-center">{option.emoji}</span>
+                          <span className="text-sm leading-none flex-shrink-0 w-4 flex items-center justify-center">{option.emoji}</span>
                         )}
                         <span className="text-sm font-medium text-left flex-1">
                           {option.value === 'general' 
