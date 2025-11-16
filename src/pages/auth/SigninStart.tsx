@@ -117,7 +117,7 @@ const SigninStart = () => {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6 mt-8">
             <div>
               <Input
                 type="text"
