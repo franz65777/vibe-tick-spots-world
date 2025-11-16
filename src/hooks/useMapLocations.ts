@@ -389,7 +389,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
           }
 
           // Add places from saved_places
-          if (savedPlaces) {
+          if (savedPlaces && selectedSaveTags.length === 0) {
             savedPlaces.forEach(sp => {
               const coords = (sp.coordinates as any) || {};
               const key = sp.place_id;

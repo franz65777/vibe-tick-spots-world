@@ -200,15 +200,35 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
         // Fetch current save tag if saved
         if (saved && user) {
           try {
-            const { data: savedLocation } = await supabase
+            let { data: savedLocation } = await supabase
               .from('user_saved_locations')
               .select('save_tag')
               .eq('user_id', user.id)
               .eq('location_id', place.id)
               .maybeSingle();
             
+            // If not found by internal id, resolve via google_place_id -> locations.id
+            if (!savedLocation && place.google_place_id) {
+              const { data: locationRow } = await supabase
+                .from('locations')
+                .select('id')
+                .eq('google_place_id', place.google_place_id)
+                .maybeSingle();
+              if (locationRow?.id) {
+                const res = await supabase
+                  .from('user_saved_locations')
+                  .select('save_tag')
+                  .eq('user_id', user.id)
+                  .eq('location_id', locationRow.id)
+                  .maybeSingle();
+                savedLocation = res.data;
+              }
+            }
+            
             if (savedLocation?.save_tag) {
               setCurrentSaveTag(savedLocation.save_tag as SaveTag);
+            } else {
+              setCurrentSaveTag('general');
             }
           } catch (error) {
             console.error('Error fetching save tag:', error);
@@ -291,6 +311,16 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
       setIsSaved(true);
       setCurrentSaveTag(tag);
       toast.success(t('location_saved'));
+      
+      // Dispatch global event to sync other components (map, lists, etc.)
+      window.dispatchEvent(new CustomEvent('location-save-changed', {
+        detail: { locationId: place.id, isSaved: true, saveTag: tag }
+      }));
+      if (place.google_place_id) {
+        window.dispatchEvent(new CustomEvent('location-save-changed', {
+          detail: { locationId: place.google_place_id, isSaved: true, saveTag: tag }
+        }));
+      }
     } catch (error) {
       toast.error(t('save_failed'));
     } finally {
@@ -305,6 +335,16 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
       setIsSaved(false);
       setCurrentSaveTag('general');
       toast.success(t('location_unsaved'));
+      
+      // Dispatch global event to sync
+      window.dispatchEvent(new CustomEvent('location-save-changed', {
+        detail: { locationId: place.id, isSaved: false }
+      }));
+      if (place.google_place_id) {
+        window.dispatchEvent(new CustomEvent('location-save-changed', {
+          detail: { locationId: place.google_place_id, isSaved: false }
+        }));
+      }
     } catch (error) {
       toast.error(t('unsave_failed'));
     } finally {
