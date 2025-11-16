@@ -131,9 +131,10 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
   // Listen for global save changes
   useEffect(() => {
     const handleSaveChanged = (event: CustomEvent) => {
-      const { locationId, isSaved: newSavedState } = event.detail;
+      const { locationId } = event.detail;
       if (locationId === place?.id || locationId === place?.google_place_id) {
-        setIsSaved(newSavedState);
+        // Re-check to sync both isSaved and currentSaveTag
+        checkIfLocationSaved();
       }
     };
     
@@ -147,25 +148,44 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
     if (!place?.id) return;
     
     try {
-      const saved = await locationInteractionService.isLocationSaved(place.id);
+      let saved = await locationInteractionService.isLocationSaved(place.id);
+      if (!saved && place.google_place_id) {
+        saved = await locationInteractionService.isLocationSaved(place.google_place_id);
+      }
       setIsSaved(saved);
 
       // Fetch current save tag if saved
       if (saved && user) {
         try {
-          const { data: savedLocation } = await supabase
+          // Try with location id first
+          let { data: savedLocation } = await supabase
             .from('user_saved_locations')
             .select('save_tag')
             .eq('user_id', user.id)
             .eq('location_id', place.id)
             .maybeSingle();
           
+          // Fallback: try with google_place_id if not found
+          if (!savedLocation && place.google_place_id) {
+            const res = await supabase
+              .from('user_saved_locations')
+              .select('save_tag')
+              .eq('user_id', user.id)
+              .eq('location_id', place.google_place_id)
+              .maybeSingle();
+            savedLocation = res.data;
+          }
+          
           if (savedLocation?.save_tag) {
             setCurrentSaveTag(savedLocation.save_tag as SaveTag);
+          } else {
+            setCurrentSaveTag('general');
           }
         } catch (error) {
           console.error('Error fetching save tag:', error);
         }
+      } else {
+        setCurrentSaveTag('general');
       }
     } catch (error) {
       console.error('Error checking if location is saved:', error);
