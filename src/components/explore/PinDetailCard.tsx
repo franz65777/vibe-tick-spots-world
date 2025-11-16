@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Navigation, Heart, Bookmark, MessageSquare, ChevronLeft, Share2, Star, Bell, BellOff, Camera } from 'lucide-react';
+import { MapPin, Navigation, Heart, Bookmark, BookmarkCheck, MessageSquare, ChevronLeft, Share2, Star, Bell, BellOff, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -470,18 +470,31 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
             {!dropdownOpen ? (
               <div className="flex items-center gap-1.5">
                 <div className="grid grid-cols-4 gap-1.5 flex-1">
-                  <SaveLocationDropdown
-                    isSaved={isSaved}
-                    onSave={handleSaveWithTag}
-                    onUnsave={handleUnsave}
+                  <Button
+                    onClick={() => setDropdownOpen(true)}
                     disabled={loading}
                     variant="secondary"
                     size="sm"
-                    currentSaveTag={currentSaveTag}
-                    showLabel={true}
-                    open={dropdownOpen}
-                    onOpenChange={setDropdownOpen}
-                  />
+                    className="flex-col h-auto py-3 gap-1 rounded-2xl"
+                  >
+                    {isSaved ? (
+                      currentSaveTag === 'general' ? (
+                        <Bookmark className="h-5 w-5 fill-current" />
+                      ) : (
+                        <span className="text-xl">{SAVE_TAG_OPTIONS.find(opt => opt.value === currentSaveTag)?.emoji || '📍'}</span>
+                      )
+                    ) : (
+                      <Bookmark className="h-5 w-5" />
+                    )}
+                    <span className="text-xs">
+                      {isSaved 
+                        ? (currentSaveTag === 'general' 
+                          ? t('save', { ns: 'common', defaultValue: 'Save' })
+                          : t(currentSaveTag, { ns: 'save_tags', defaultValue: currentSaveTag }))
+                        : t('save', { ns: 'common', defaultValue: 'Save' })
+                      }
+                    </span>
+                  </Button>
 
                   <Button
                     onClick={(e) => {
@@ -538,18 +551,45 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                 </Button>
               </div>
             ) : (
-              <div className="relative min-h-[60px] flex items-center justify-center">
-                <SaveLocationDropdown
-                  isSaved={isSaved}
-                  onSave={handleSaveWithTag}
-                  onUnsave={handleUnsave}
-                  disabled={loading}
-                  variant="secondary"
-                  size="sm"
-                  currentSaveTag={currentSaveTag}
-                  showLabel={true}
-                  open={dropdownOpen}
-                  onOpenChange={setDropdownOpen}
+              <div className="pl-2.5">
+                <div className="w-56 bg-background/95 backdrop-blur-sm border border-border rounded-2xl shadow-lg overflow-hidden">
+                  {isSaved && (
+                    <button
+                      onClick={handleUnsave}
+                      className="w-full cursor-pointer flex items-center gap-3 py-3 px-4 hover:bg-accent text-destructive rounded-t-xl transition-colors"
+                    >
+                      <BookmarkCheck className="h-5 w-5" />
+                      <span className="text-sm font-medium">{t('unsave', { ns: 'common', defaultValue: 'Unsave' })}</span>
+                    </button>
+                  )}
+                  {SAVE_TAG_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => {
+                        handleSaveWithTag(option.value);
+                        setDropdownOpen(false);
+                      }}
+                      className={`w-full cursor-pointer flex items-center gap-3 py-3 px-4 hover:bg-accent transition-colors ${
+                        option.value === currentSaveTag && isSaved ? 'bg-accent/50' : ''
+                      } ${option === SAVE_TAG_OPTIONS[SAVE_TAG_OPTIONS.length - 1] ? 'rounded-b-xl' : ''}`}
+                    >
+                      {option.value === 'general' ? (
+                        <Bookmark className="h-5 w-5" />
+                      ) : (
+                        <span className="text-xl">{option.emoji}</span>
+                      )}
+                      <span className="text-sm font-medium">
+                        {option.value === 'general' 
+                          ? t('save', { ns: 'common', defaultValue: 'Save' })
+                          : t(option.value, { ns: 'save_tags', defaultValue: option.value })
+                        }
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <div 
+                  className="fixed inset-0 z-[-1]"
+                  onClick={() => setDropdownOpen(false)}
                 />
               </div>
             )}
