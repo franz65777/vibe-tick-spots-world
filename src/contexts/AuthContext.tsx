@@ -267,22 +267,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // If it's not email or phone, treat it as username and look up the email
     if (!isEmail && !isPhone) {
-      console.log('Looking up username in profiles...');
+      console.log('Looking up username using security definer function...');
       try {
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('email')
-          .ilike('username', identifier)
-          .single();
+        const { data: email, error: rpcError } = await supabase
+          .rpc('get_email_from_username', { _username: identifier });
         
-        console.log('Profile lookup result:', profile, 'error:', profileError);
+        console.log('RPC result - email:', email, 'error:', rpcError);
         
-        if (profileError || !profile?.email) {
-          console.error('Username not found or no email:', profileError);
+        if (rpcError || !email) {
+          console.error('Username not found:', rpcError);
           return { error: { message: 'Invalid login credentials' } };
         }
         
-        loginIdentifier = profile.email;
+        loginIdentifier = email;
         console.log('Found email for username:', loginIdentifier);
       } catch (err) {
         console.error('Exception during username lookup:', err);
