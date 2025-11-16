@@ -136,8 +136,8 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
     }
 
     // Filter out muted locations
-    if (isOwnProfile && mutedLocations.length > 0) {
-      filtered = filtered.filter((place: any) => !mutedLocations.includes(place.id));
+    if (isOwnProfile && mutedLocations && mutedLocations.length > 0) {
+      filtered = filtered.filter((place: any) => !mutedLocations.some((m: any) => m.location_id === place.id));
     }
 
     switch (sortBy) {
