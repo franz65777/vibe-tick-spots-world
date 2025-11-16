@@ -77,8 +77,10 @@ export const SaveLocationDropdown = ({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent 
-          align="center" 
-          className="w-56 bg-background/95 backdrop-blur-sm border-border rounded-2xl shadow-lg z-[100]"
+          align="center"
+          side="bottom"
+          sideOffset={8}
+          className="w-56 bg-background/95 backdrop-blur-sm border-border rounded-2xl shadow-lg z-[9999]"
         >
           <DropdownMenuItem
             onClick={onUnsave}
@@ -120,8 +122,10 @@ export const SaveLocationDropdown = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent 
-        align="center" 
-        className="w-56 bg-background/95 backdrop-blur-sm border-border rounded-2xl shadow-lg z-[100]"
+        align="center"
+        side="bottom"
+        sideOffset={8}
+        className="w-56 bg-background/95 backdrop-blur-sm border-border rounded-2xl shadow-lg z-[9999]"
       >
         {SAVE_TAG_OPTIONS.map((option) => (
           <DropdownMenuItem
