@@ -120,7 +120,7 @@ const SigninStart = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="text-sm font-medium text-foreground block mb-2">
-                {t('auth:email')} / {t('auth:phoneNumber')}
+                {t('auth:email')} / {t('auth:phoneNumber')} / {t('auth:username')}
               </label>
               <Input
                 type="text"
@@ -128,7 +128,7 @@ const SigninStart = () => {
                 onChange={(e) => setIdentifier(e.target.value)}
                 required
                 className="h-12 bg-background text-foreground"
-                placeholder={`${t('auth:emailPlaceholder', { defaultValue: 'name@example.com' })} • ${phoneExamples[i18n.language] || '+44 7700 900123'}`}
+                placeholder=""
                 autoCapitalize="none"
                 autoCorrect="off"
               />
