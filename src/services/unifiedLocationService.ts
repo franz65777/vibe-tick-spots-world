@@ -19,6 +19,7 @@ export interface UnifiedLocation {
   rating?: number;
   savedCount?: number;
   postsCount?: number;
+  saveTag?: string;
 }
 
 const locationCache = new Map<string, { data: UnifiedLocation[]; timestamp: number }>();
@@ -42,6 +43,7 @@ export class UnifiedLocationService {
           .select(`
             location_id,
             created_at,
+            save_tag,
             locations!inner (
               id,
               name,
@@ -98,6 +100,7 @@ export class UnifiedLocationService {
           locations.push({
             id: placeId,
             name: loc.name || 'Unknown Location',
+            saveTag: (item as any).save_tag || 'general',
             category: loc.category || 'place',
             city: finalCity,
             address: loc.address,
@@ -156,6 +159,7 @@ export class UnifiedLocationService {
           locations.push({
             id: placeId,
             name: place.place_name || 'Unknown Location',
+            saveTag: place.save_tag || 'general',
             category: place.place_category || 'place',
             city: finalCity,
             google_place_id: placeId,

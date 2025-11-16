@@ -9,6 +9,9 @@ import { cn } from '@/lib/utils';
 import { useLocationShares } from '@/hooks/useLocationShares';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { SAVE_TAG_OPTIONS } from '@/utils/saveTags';
+import { useTranslation } from 'react-i18next';
 
 interface MinimalLocationCardProps {
   place: {
@@ -24,6 +27,7 @@ interface MinimalLocationCardProps {
     };
     savedCount?: number;
     postsCount?: number;
+    saveTag?: string;
   };
   onCardClick: () => void;
 }
@@ -34,6 +38,10 @@ const MinimalLocationCard = ({
   const { stats } = useLocationStats(place.id, place.google_place_id);
   const { shares } = useLocationShares();
   const { user } = useAuth();
+  const { t } = useTranslation();
+
+  // Get save tag info
+  const saveTagOption = SAVE_TAG_OPTIONS.find(opt => opt.value === place.saveTag);
 
   // Get active shares for this location (excluding current user)
   const now = new Date();
@@ -68,6 +76,11 @@ const MinimalLocationCard = ({
             <h3 className="font-bold text-gray-900 text-sm truncate text-left">
               {place.name}
             </h3>
+            {saveTagOption && place.saveTag !== 'general' && (
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 shrink-0">
+                {saveTagOption.emoji}
+              </Badge>
+            )}
             {activeSharesHere.length > 0 && (
               <div className="flex -space-x-0.5 shrink-0">
                 {activeSharesHere.slice(0, 2).map((share) => (

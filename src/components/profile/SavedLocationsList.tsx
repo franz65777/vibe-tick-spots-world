@@ -11,6 +11,7 @@ import { UnifiedLocationService } from '@/services/unifiedLocationService';
 import { useTranslation } from 'react-i18next';
 import { translateCityName } from '@/utils/cityTranslations';
 import { useMutedLocations } from '@/hooks/useMutedLocations';
+import { SAVE_TAG_OPTIONS } from '@/utils/saveTags';
 
 interface SavedLocationsListProps {
   isOpen: boolean;
@@ -29,6 +30,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
   const [selectedCity, setSelectedCity] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
   const [selectedPlace, setSelectedPlace] = useState<any>(null);
+  const [selectedSaveTag, setSelectedSaveTag] = useState('all');
 
   useEffect(() => {
     const loadSavedPlaces = async () => {
@@ -72,7 +74,10 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
         await supabase.from('user_saved_locations').delete().eq('user_id', currentUser.id).eq('location_id', locationData.id);
       }
 
-      UnifiedLocationService.clearCache(currentUser.id);
+      // Clear cache to force refresh
+      if (currentUser) {
+        UnifiedLocationService.clearCache(currentUser.id);
+      }
 
       setSavedPlaces((prev: any) => {
         const updated = { ...prev };
@@ -125,6 +130,16 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
       filtered = filtered.filter(place => place.city === selectedCity);
     }
 
+    // Filter by save tag
+    if (selectedSaveTag !== 'all') {
+      filtered = filtered.filter(place => place.saveTag === selectedSaveTag);
+    }
+
+    // Filter out muted locations
+    if (isOwnProfile && mutedLocations.length > 0) {
+      filtered = filtered.filter((place: any) => !mutedLocations.includes(place.id));
+    }
+
     switch (sortBy) {
       case 'recent':
         return filtered.sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime());
@@ -137,7 +152,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
       default:
         return filtered;
     }
-  }, [allPlaces, searchQuery, selectedCity, sortBy]);
+  }, [allPlaces, searchQuery, selectedCity, selectedSaveTag, sortBy, isOwnProfile, mutedLocations]);
 
   const handlePlaceClick = (place: any) => {
     setSelectedPlace({
@@ -217,9 +232,9 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
           />
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Select value={selectedCity} onValueChange={setSelectedCity}>
-            <SelectTrigger className="flex-1 bg-background rounded-full border-border">
+            <SelectTrigger className="flex-1 min-w-[120px] bg-background rounded-full border-border">
               <SelectValue placeholder={t('allCities', { ns: 'profile' })} />
             </SelectTrigger>
             <SelectContent className="bg-background border-border z-[9999]">
@@ -232,8 +247,22 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
             </SelectContent>
           </Select>
 
+          <Select value={selectedSaveTag} onValueChange={setSelectedSaveTag}>
+            <SelectTrigger className="flex-1 min-w-[140px] bg-background rounded-full border-border">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-background border-border z-[9999]">
+              <SelectItem value="all">{t('all_categories')}</SelectItem>
+              {SAVE_TAG_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.emoji} {t(option.labelKey)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="flex-1 bg-background rounded-full border-border">
+            <SelectTrigger className="flex-1 min-w-[110px] bg-background rounded-full border-border">
               <SelectValue placeholder={t('sortBy', { ns: 'common' })} />
             </SelectTrigger>
             <SelectContent className="bg-background border-border z-[9999]">
