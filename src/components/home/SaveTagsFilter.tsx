@@ -15,15 +15,15 @@ const SaveTagsFilter = () => {
         <button
           onClick={() => setIsExpanded(true)}
           className={cn(
-            "flex items-center justify-center w-11 h-11 rounded-full transition-all backdrop-blur-sm border",
+            "relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 shadow-sm backdrop-blur-sm",
             selectedSaveTags.length > 0
-              ? "bg-primary/20 border-primary/50 text-primary"
-              : "bg-background/80 border-border/50 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              ? "bg-black/90 text-white"
+              : "bg-white/80 text-gray-700 hover:bg-white/90"
           )}
         >
           <Filter className="h-4 w-4" />
           {selectedSaveTags.length > 0 && (
-            <span className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 text-xs font-bold bg-primary text-primary-foreground rounded-full">
+            <span className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 text-[10px] font-bold bg-black/90 text-white rounded-full">
               {selectedSaveTags.length}
             </span>
           )}
@@ -38,21 +38,21 @@ const SaveTagsFilter = () => {
               key={option.value}
               onClick={() => toggleSaveTag(option.value)}
               className={cn(
-                "flex items-center justify-center w-10 h-10 rounded-full transition-all text-lg",
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 shadow-sm backdrop-blur-sm",
                 selectedSaveTags.includes(option.value)
-                  ? "bg-primary/20 border-2 border-primary scale-110"
-                  : "bg-background hover:bg-accent"
+                  ? "bg-black/90 text-white"
+                  : "bg-white/80 text-gray-700 hover:bg-white/90"
               )}
               title={option.labelKey}
             >
-              {option.emoji}
+              <span className="text-base leading-none">{option.emoji}</span>
             </button>
           ))}
           
           {/* Close button */}
           <button
             onClick={() => setIsExpanded(false)}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-muted hover:bg-accent transition-colors ml-1"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-white/80 text-gray-700 hover:bg-white/90 transition-all duration-200 shadow-sm backdrop-blur-sm ml-1"
           >
             <Filter className="h-4 w-4" />
           </button>
