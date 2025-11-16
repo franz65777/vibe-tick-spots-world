@@ -32,13 +32,14 @@ interface UseMapLocationsProps {
   selectedCategories: string[];
   currentCity: string;
   selectedFollowedUserIds?: string[];
+  selectedSaveTags?: string[];
 }
 
 // Cache for map locations to avoid redundant queries
 const locationCache = new Map<string, { data: MapLocation[]; timestamp: number }>();
 const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
 
-export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, selectedFollowedUserIds = [] }: UseMapLocationsProps) => {
+export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, selectedFollowedUserIds = [], selectedSaveTags = [] }: UseMapLocationsProps) => {
   const [locations, setLocations] = useState<MapLocation[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,13 +86,13 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
       }
       supabase.removeChannel(channel);
     };
-  }, [mapFilter, selectedCategories.join(','), currentCity, user?.id, selectedFollowedUserIds.join(',')]);
+  }, [mapFilter, selectedCategories.join(','), currentCity, user?.id, selectedFollowedUserIds.join(','), selectedSaveTags.join(',')]);
 
   const fetchLocations = async () => {
     if (!user) return;
     
     // Generate cache key
-    const cacheKey = `${mapFilter}-${selectedCategories.join(',')}-${currentCity}-${selectedFollowedUserIds.join(',')}`;
+    const cacheKey = `${mapFilter}-${selectedCategories.join(',')}-${currentCity}-${selectedFollowedUserIds.join(',')}-${selectedSaveTags.join(',')}`;
     
     // Check cache first
     const cached = locationCache.get(cacheKey);
@@ -330,6 +331,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             .select(`
               location_id,
               created_at,
+              save_tag,
               locations!inner(
                 id,
                 name,
@@ -358,6 +360,14 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             savedData
               .filter(item => item.locations)
               .forEach(item => {
+                // Apply save tag filter if any selected
+                if (selectedSaveTags.length > 0) {
+                  const saveTag = item.save_tag || 'general';
+                  if (!selectedSaveTags.includes(saveTag)) {
+                    return; // Skip this location if it doesn't match the filter
+                  }
+                }
+                
                 const key = item.locations.google_place_id || item.locations.id;
                 if (!locationMap.has(key)) {
                   locationMap.set(key, {
