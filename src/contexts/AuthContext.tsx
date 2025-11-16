@@ -254,14 +254,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signIn = async (identifier: string, password: string) => {
-    // Support both email and phone sign in
-    // Detect if identifier is email or phone
+    // Support email, phone, and username sign in
+    let loginIdentifier = identifier;
+    
+    // Detect if identifier is email, phone, or username
     const isEmail = identifier.includes('@');
+    const isPhone = identifier.startsWith('+') || /^\d+$/.test(identifier);
+    
+    // If it's not email or phone, treat it as username and look up the email
+    if (!isEmail && !isPhone) {
+      try {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('username', identifier)
+          .single();
+        
+        if (profileError || !profile?.email) {
+          return { error: { message: 'Invalid login credentials' } };
+        }
+        
+        loginIdentifier = profile.email;
+      } catch (err) {
+        return { error: { message: 'Invalid login credentials' } };
+      }
+    }
     
     const { error } = await supabase.auth.signInWithPassword(
-      isEmail 
-        ? { email: identifier, password }
-        : { phone: identifier, password }
+      isEmail || (!isEmail && !isPhone)
+        ? { email: loginIdentifier, password }
+        : { phone: loginIdentifier, password }
     );
 
     // Track authentication attempts for rate limiting (anonymized)
