@@ -442,7 +442,7 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-2 px-1 py-3 pb-16">
+      <div className="grid grid-cols-2 gap-2 px-[10px] py-3 pb-16">
         {locations.map((location) => {
           const isSaved = userSavedIds.has(location.id);
           const isMuted = mutedLocations?.some((m: any) => m.location_id === location.id);
