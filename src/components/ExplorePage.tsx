@@ -548,7 +548,7 @@ const ExplorePage = memo(() => {
               {/* User Search Results */}
               {isSearchActive && (
                 displayUsers.length > 0 ? (
-                  <div className="space-y-1 px-1 pb-6">
+                  <div className="space-y-1 px-[10px] pb-6">
                     {displayUsers.map(user => (
                       <Suspense key={user.id} fallback={<div className="h-16" />}>
                         <UserCard
