@@ -463,8 +463,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
 
           {/* Action Buttons - Hidden when scrolling down or when dropdown is open */}
           <div 
-            className={`bg-background px-4 pb-4 transition-all duration-300 ${
-              showActionButtons ? 'opacity-100 max-h-32' : 'opacity-0 max-h-0 overflow-hidden pb-0'
+            className={`relative bg-background px-4 pb-4 transition-all duration-300 ${
+              showActionButtons || dropdownOpen ? 'opacity-100 max-h-32' : 'opacity-0 max-h-0 overflow-hidden pb-0'
             }`}
           >
             {!dropdownOpen ? (
@@ -488,9 +488,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                     )}
                     <span className="text-xs">
                       {isSaved 
-                        ? (currentSaveTag === 'general' 
-                          ? t('save', { ns: 'common', defaultValue: 'Save' })
-                          : t(currentSaveTag, { ns: 'save_tags', defaultValue: currentSaveTag }))
+                        ? t('saved', { ns: 'profile', defaultValue: 'Saved' })
                         : t('save', { ns: 'common', defaultValue: 'Save' })
                       }
                     </span>
@@ -551,47 +549,59 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                 </Button>
               </div>
             ) : (
-              <div className="pl-2.5">
-                <div className="w-56 bg-background/95 backdrop-blur-sm border border-border rounded-2xl shadow-lg overflow-hidden">
-                  {isSaved && (
-                    <button
-                      onClick={handleUnsave}
-                      className="w-full cursor-pointer flex items-center gap-3 py-3 px-4 hover:bg-accent text-destructive rounded-t-xl transition-colors"
-                    >
-                      <BookmarkCheck className="h-5 w-5" />
-                      <span className="text-sm font-medium">{t('unsave', { ns: 'common', defaultValue: 'Unsave' })}</span>
-                    </button>
-                  )}
-                  {SAVE_TAG_OPTIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() => {
-                        handleSaveWithTag(option.value);
-                        setDropdownOpen(false);
-                      }}
-                      className={`w-full cursor-pointer flex items-center gap-3 py-3 px-4 hover:bg-accent transition-colors ${
-                        option.value === currentSaveTag && isSaved ? 'bg-accent/50' : ''
-                      } ${option === SAVE_TAG_OPTIONS[SAVE_TAG_OPTIONS.length - 1] ? 'rounded-b-xl' : ''}`}
-                    >
-                      {option.value === 'general' ? (
-                        <Bookmark className="h-5 w-5" />
-                      ) : (
-                        <span className="text-xl">{option.emoji}</span>
-                      )}
-                      <span className="text-sm font-medium">
-                        {option.value === 'general' 
-                          ? t('save', { ns: 'common', defaultValue: 'Save' })
-                          : t(option.value, { ns: 'save_tags', defaultValue: option.value })
-                        }
-                      </span>
-                    </button>
-                  ))}
-                </div>
+              <>
+                {/* Overlay to dim content and close dropdown */}
                 <div 
-                  className="fixed inset-0 z-[-1]"
-                  onClick={() => setDropdownOpen(false)}
+                  className="fixed inset-0 bg-black/50 z-40"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDropdownOpen(false);
+                  }}
                 />
-              </div>
+                
+                {/* Dropdown positioned absolutely */}
+                <div className="absolute left-4 top-0 w-auto z-50">
+                  <div className="w-56 bg-background backdrop-blur-sm border border-border rounded-2xl shadow-lg">
+                    {isSaved && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleUnsave();
+                        }}
+                        className="w-full cursor-pointer flex items-center gap-3 py-3 px-4 hover:bg-accent text-destructive transition-colors min-h-[48px]"
+                      >
+                        <BookmarkCheck className="h-5 w-5 flex-shrink-0" />
+                        <span className="text-sm font-medium">{t('unsave', { ns: 'common', defaultValue: 'Unsave' })}</span>
+                      </button>
+                    )}
+                    {SAVE_TAG_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSaveWithTag(option.value);
+                          setDropdownOpen(false);
+                        }}
+                        className={`w-full cursor-pointer flex items-center gap-3 py-3 px-4 hover:bg-accent transition-colors min-h-[48px] ${
+                          option.value === currentSaveTag && isSaved ? 'bg-accent/50' : ''
+                        }`}
+                      >
+                        {option.value === 'general' ? (
+                          <Bookmark className="h-5 w-5 flex-shrink-0" />
+                        ) : (
+                          <span className="text-xl leading-none flex-shrink-0 w-5 flex items-center justify-center">{option.emoji}</span>
+                        )}
+                        <span className="text-sm font-medium text-left flex-1">
+                          {option.value === 'general' 
+                            ? t('save', { ns: 'common', defaultValue: 'Save' })
+                            : t(option.value, { ns: 'save_tags', defaultValue: option.value })
+                          }
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
             )}
           </div>
 
