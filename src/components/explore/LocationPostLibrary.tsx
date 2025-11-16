@@ -144,23 +144,27 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
   }, [place?.id, place?.google_place_id]);
 
   const checkIfLocationSaved = async () => {
-    if (!user) return;
+    if (!user || !place?.id) return;
+    
     try {
-      let query = supabase
+      // First try to find by place.id
+      let { data: savedLocation } = await supabase
         .from('user_saved_locations')
-        .select('save_tag')
-        .eq('user_id', user.id);
-
-      // Check both place.id and place.google_place_id
-      if (place?.google_place_id) {
-        query = query.or(`location_id.eq.${place.id},location_id.eq.${place.google_place_id}`);
-      } else if (place?.id) {
-        query = query.eq('location_id', place.id);
-      } else {
-        return;
+        .select('save_tag, location_id')
+        .eq('user_id', user.id)
+        .eq('location_id', place.id)
+        .maybeSingle();
+      
+      // If not found and we have a google_place_id, try that
+      if (!savedLocation && place.google_place_id) {
+        const result = await supabase
+          .from('user_saved_locations')
+          .select('save_tag, location_id')
+          .eq('user_id', user.id)
+          .eq('location_id', place.google_place_id)
+          .maybeSingle();
+        savedLocation = result.data;
       }
-
-      const { data: savedLocation } = await query.maybeSingle();
       
       if (savedLocation) {
         setIsSaved(true);
@@ -433,18 +437,16 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
           >
             <div className="flex items-center gap-1.5">
               <div className="grid grid-cols-4 gap-1.5 flex-1">
-                <div className="pl-2.5">
-                  <SaveLocationDropdown
-                    isSaved={isSaved}
-                    onSave={handleSaveWithTag}
-                    onUnsave={handleUnsave}
-                    disabled={loading}
-                    variant="secondary"
-                    size="sm"
-                    currentSaveTag={currentSaveTag}
-                    showLabel={true}
-                  />
-                </div>
+                <SaveLocationDropdown
+                  isSaved={isSaved}
+                  onSave={handleSaveWithTag}
+                  onUnsave={handleUnsave}
+                  disabled={loading}
+                  variant="secondary"
+                  size="sm"
+                  currentSaveTag={currentSaveTag}
+                  showLabel={true}
+                />
 
                 <Button
                   onClick={(e) => {
