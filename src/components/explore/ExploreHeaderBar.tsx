@@ -30,7 +30,7 @@ const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
 
   return (
     <div className="bg-background pt-safe">
-      <div className="px-1 py-4 pt-2">
+      <div className="px-2.5 py-4 pt-2">
         {/* Search Mode Toggle */}
         <div className="flex bg-muted rounded-xl p-1 mb-4">
           <button
