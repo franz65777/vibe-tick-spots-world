@@ -88,7 +88,7 @@ export const SaveLocationDropdown = ({
           align="center"
           side="top"
           sideOffset={8}
-          className="w-56 bg-background/95 backdrop-blur-sm border-border rounded-2xl shadow-lg z-[9999] p-2.5"
+          className="w-56 bg-background/95 backdrop-blur-sm border-border rounded-2xl shadow-lg z-[9999] pl-2.5"
         >
           <DropdownMenuItem
             onClick={onUnsave}
@@ -133,7 +133,7 @@ export const SaveLocationDropdown = ({
         align="center"
         side="top"
         sideOffset={8}
-        className="w-56 bg-background/95 backdrop-blur-sm border-border rounded-2xl shadow-lg z-[9999] p-2.5"
+        className="w-56 bg-background/95 backdrop-blur-sm border-border rounded-2xl shadow-lg z-[9999] pl-2.5"
       >
         {SAVE_TAG_OPTIONS.map((option) => (
           <DropdownMenuItem
