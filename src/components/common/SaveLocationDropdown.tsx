@@ -90,18 +90,11 @@ export const SaveLocationDropdown = ({
           sideOffset={8}
           className="w-56 bg-background/95 backdrop-blur-sm border-border rounded-2xl shadow-lg z-[9999] pl-2.5"
         >
-          <DropdownMenuItem
-            onClick={onUnsave}
-            className="cursor-pointer flex items-center gap-3 py-3 px-4 hover:bg-accent text-destructive rounded-xl m-1"
-          >
-            <BookmarkCheck className="h-5 w-5" />
-            <span className="text-sm font-medium">{t('unsave', { ns: 'common', defaultValue: 'Unsave' })}</span>
-          </DropdownMenuItem>
           {SAVE_TAG_OPTIONS.map((option) => (
             <DropdownMenuItem
               key={option.value}
               onClick={() => handleSaveWithTag(option.value)}
-              className={`cursor-pointer flex items-center gap-3 py-3 px-4 hover:bg-accent rounded-xl m-1 ${option.value === currentSaveTag ? 'bg-accent/50' : ''}`}
+              className={"cursor-pointer flex items-center gap-3 py-3 px-4 hover:bg-accent rounded-xl m-1"}
             >
               {option.value === 'general' ? (
                 <Bookmark className="h-5 w-5" />
