@@ -3,6 +3,7 @@ import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import { authTranslations } from './i18n-auth';
 import { authTranslationsExtended } from './i18n-auth-extended';
+import { saveTagsTranslations } from './i18n-save-tags';
 
 // Comprehensive resources for all languages
 const resources = {
@@ -6802,6 +6803,16 @@ Object.keys(authTranslationsExtended).forEach(lang => {
     resources[lang] = {
       ...resources[lang],
       ...authTranslationsExtended[lang]
+    };
+  }
+});
+
+// Merge save tags translations into resources
+Object.keys(saveTagsTranslations).forEach(lang => {
+  if (resources[lang]) {
+    resources[lang] = {
+      ...resources[lang],
+      ...saveTagsTranslations[lang]
     };
   }
 });
