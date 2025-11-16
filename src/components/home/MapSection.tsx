@@ -56,7 +56,7 @@ const MapSection = ({
   const { t } = useTranslation();
   
   // Use global filter context - single source of truth
-  const { activeFilter, selectedCategories, selectedFollowedUserIds, setActiveFilter, toggleCategory } = useMapFilter();
+  const { activeFilter, selectedCategories, selectedFollowedUserIds, selectedSaveTags, setActiveFilter, toggleCategory } = useMapFilter();
 
   // Dispatch events to hide/show bottom navigation when list view opens/closes
   useEffect(() => {
@@ -88,7 +88,8 @@ const MapSection = ({
     mapFilter: activeFilter,
     selectedCategories,
     currentCity,
-    selectedFollowedUserIds
+    selectedFollowedUserIds,
+    selectedSaveTags
   });
 
   // Track sourcePostId separately to preserve it

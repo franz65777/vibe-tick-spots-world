@@ -30,10 +30,10 @@ const SaveTagsFilter = () => {
         </button>
       )}
 
-      {/* Expanded state - show all save tag options */}
+      {/* Expanded state - show save tag options (excluding 'general') */}
       {isExpanded && (
         <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm border border-border/50 rounded-full p-1.5 shadow-lg">
-          {SAVE_TAG_OPTIONS.map((option) => (
+          {SAVE_TAG_OPTIONS.filter(opt => opt.value !== 'general').map((option) => (
             <button
               key={option.value}
               onClick={() => toggleSaveTag(option.value)}
