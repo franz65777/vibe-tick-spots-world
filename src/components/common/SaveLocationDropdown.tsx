@@ -15,8 +15,10 @@ interface SaveLocationDropdownProps {
   onSave: (tag: SaveTag) => void;
   onUnsave: () => void;
   disabled?: boolean;
-  variant?: 'default' | 'ghost' | 'outline';
+  variant?: 'default' | 'ghost' | 'outline' | 'secondary';
   size?: 'default' | 'sm' | 'lg' | 'icon';
+  currentSaveTag?: SaveTag;
+  showLabel?: boolean;
 }
 
 export const SaveLocationDropdown = ({
@@ -26,6 +28,8 @@ export const SaveLocationDropdown = ({
   disabled = false,
   variant = 'ghost',
   size = 'icon',
+  currentSaveTag = 'general',
+  showLabel = false,
 }: SaveLocationDropdownProps) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -35,17 +39,47 @@ export const SaveLocationDropdown = ({
     setOpen(false);
   };
 
+  // Get the emoji for the current save tag
+  const currentTagOption = SAVE_TAG_OPTIONS.find(opt => opt.value === currentSaveTag);
+  const currentEmoji = currentTagOption?.emoji || '🔖';
+
   if (isSaved) {
     return (
-      <Button
-        variant={variant}
-        size={size}
-        onClick={onUnsave}
-        disabled={disabled}
-        className="text-primary hover:text-primary/80"
-      >
-        <BookmarkCheck className="h-5 w-5" />
-      </Button>
+      <DropdownMenu open={open} onOpenChange={setOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant={variant as any}
+            size={size}
+            disabled={disabled}
+            className={showLabel ? "flex-col h-auto py-3 gap-1 rounded-2xl" : ""}
+          >
+            <span className="text-xl">{currentEmoji}</span>
+            {showLabel && <span className="text-xs">{t('saved', { ns: 'common', defaultValue: 'Saved' })}</span>}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent 
+          align="end" 
+          className="w-56 bg-background border-border z-[100]"
+        >
+          <DropdownMenuItem
+            onClick={onUnsave}
+            className="cursor-pointer flex items-center gap-3 py-3 px-4 hover:bg-accent text-destructive"
+          >
+            <BookmarkCheck className="h-5 w-5" />
+            <span className="text-sm font-medium">{t('unsave', { ns: 'common', defaultValue: 'Unsave' })}</span>
+          </DropdownMenuItem>
+          {SAVE_TAG_OPTIONS.map((option) => (
+            <DropdownMenuItem
+              key={option.value}
+              onClick={() => handleSaveWithTag(option.value)}
+              className={`cursor-pointer flex items-center gap-3 py-3 px-4 hover:bg-accent ${option.value === currentSaveTag ? 'bg-accent/50' : ''}`}
+            >
+              <span className="text-xl">{option.emoji}</span>
+              <span className="text-sm font-medium">{t(option.labelKey)}</span>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
     );
   }
 
@@ -53,11 +87,13 @@ export const SaveLocationDropdown = ({
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button
-          variant={variant}
+          variant={variant as any}
           size={size}
           disabled={disabled}
+          className={showLabel ? "flex-col h-auto py-3 gap-1 rounded-2xl" : ""}
         >
           <Bookmark className="h-5 w-5" />
+          {showLabel && <span className="text-xs">{t('save', { ns: 'common', defaultValue: 'Save' })}</span>}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent 
