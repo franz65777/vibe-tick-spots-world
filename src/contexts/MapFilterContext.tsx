@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 export type MapFilter = 'following' | 'popular' | 'recommended' | 'saved' | 'shared';
+export type SaveTagFilter = 'general' | 'date_night' | 'birthday' | 'night_out' | 'family';
 
 interface MapFilterContextType {
   activeFilter: MapFilter;
@@ -14,6 +15,10 @@ interface MapFilterContextType {
   addFollowedUser: (userId: string) => void;
   removeFollowedUser: (userId: string) => void;
   clearFollowedUsers: () => void;
+  selectedSaveTags: SaveTagFilter[];
+  setSelectedSaveTags: (tags: SaveTagFilter[]) => void;
+  toggleSaveTag: (tag: SaveTagFilter) => void;
+  clearSaveTags: () => void;
 }
 
 const MapFilterContext = createContext<MapFilterContextType | undefined>(undefined);
@@ -22,6 +27,7 @@ export const MapFilterProvider = ({ children }: { children: ReactNode }) => {
   const [activeFilter, setActiveFilter] = useState<MapFilter>('popular');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedFollowedUserIds, setSelectedFollowedUserIds] = useState<string[]>([]);
+  const [selectedSaveTags, setSelectedSaveTags] = useState<SaveTagFilter[]>([]);
 
   const toggleCategory = (categoryId: string) => {
     setSelectedCategories(prev => 
@@ -49,10 +55,23 @@ export const MapFilterProvider = ({ children }: { children: ReactNode }) => {
     setSelectedFollowedUserIds([]);
   };
 
-  // Reset categories and followed users when filter changes
+  const toggleSaveTag = (tag: SaveTagFilter) => {
+    setSelectedSaveTags(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    );
+  };
+
+  const clearSaveTags = () => {
+    setSelectedSaveTags([]);
+  };
+
+  // Reset categories, followed users, and save tags when filter changes
   const handleSetActiveFilter = (filter: MapFilter) => {
     setActiveFilter(filter);
     setSelectedCategories([]);
+    setSelectedSaveTags([]);
     if (filter !== 'following') {
       setSelectedFollowedUserIds([]);
     }
@@ -72,6 +91,10 @@ export const MapFilterProvider = ({ children }: { children: ReactNode }) => {
         addFollowedUser,
         removeFollowedUser,
         clearFollowedUsers,
+        selectedSaveTags,
+        setSelectedSaveTags,
+        toggleSaveTag,
+        clearSaveTags,
       }}
     >
       {children}

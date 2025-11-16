@@ -24,6 +24,7 @@ import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
+import SaveTagsFilter from './SaveTagsFilter';
 
 export interface CategoryFilter {
   id: string;
@@ -351,6 +352,9 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
 
       {/* Category Filters - Always show horizontally scrollable */}
       <div className="flex gap-2 overflow-x-auto scrollbar-hide pointer-events-auto w-full">
+        {/* Save Tags Filter - Only shown when in 'saved' mode */}
+        {activeFilter === 'saved' && <SaveTagsFilter />}
+        
         {categoryFilters.map((category) => {
           const IconComponent = category.icon;
           const isSelected = selectedCategories.includes(category.id);

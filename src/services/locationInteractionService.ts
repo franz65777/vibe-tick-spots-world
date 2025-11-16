@@ -61,16 +61,19 @@ class LocationInteractionService {
         locationId = existingLocationId;
       }
 
-      // Save location for user with save tag (prevent duplicate saves)
+      // Save location for user with save tag (upsert to update tag if already saved)
       const { error } = await supabase
         .from('user_saved_locations')
-        .insert({
+        .upsert({
           user_id: user.user.id,
           location_id: locationId,
           save_tag: saveTag
+        }, {
+          onConflict: 'user_id,location_id',
+          ignoreDuplicates: false
         });
 
-      if (error && !error.message.includes('duplicate')) {
+      if (error) {
         console.error('Save location error:', error);
         return false;
       }
