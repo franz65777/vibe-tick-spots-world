@@ -19,6 +19,8 @@ interface SaveLocationDropdownProps {
   size?: 'default' | 'sm' | 'lg' | 'icon';
   currentSaveTag?: SaveTag;
   showLabel?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export const SaveLocationDropdown = ({
@@ -30,9 +32,15 @@ export const SaveLocationDropdown = ({
   size = 'icon',
   currentSaveTag = 'general',
   showLabel = false,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: SaveLocationDropdownProps) => {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  
+  // Use controlled state if provided, otherwise use internal state
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = controlledOnOpenChange || setInternalOpen;
 
   const handleSaveWithTag = (tag: SaveTag) => {
     onSave(tag);
@@ -78,7 +86,7 @@ export const SaveLocationDropdown = ({
         </DropdownMenuTrigger>
         <DropdownMenuContent 
           align="center"
-          side="bottom"
+          side="top"
           sideOffset={8}
           className="w-56 bg-background/95 backdrop-blur-sm border-border rounded-2xl shadow-lg z-[9999]"
         >
@@ -123,7 +131,7 @@ export const SaveLocationDropdown = ({
       </DropdownMenuTrigger>
       <DropdownMenuContent 
         align="center"
-        side="bottom"
+        side="top"
         sideOffset={8}
         className="w-56 bg-background/95 backdrop-blur-sm border-border rounded-2xl shadow-lg z-[9999]"
       >
