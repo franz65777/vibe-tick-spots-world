@@ -144,34 +144,28 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
   }, [place?.id, place?.google_place_id]);
 
   const checkIfLocationSaved = async () => {
-    if (!user || !place?.id) return;
+    if (!place?.id) return;
     
     try {
-      // First try to find by place.id
-      let { data: savedLocation } = await supabase
-        .from('user_saved_locations')
-        .select('save_tag, location_id')
-        .eq('user_id', user.id)
-        .eq('location_id', place.id)
-        .maybeSingle();
-      
-      // If not found and we have a google_place_id, try that
-      if (!savedLocation && place.google_place_id) {
-        const result = await supabase
-          .from('user_saved_locations')
-          .select('save_tag, location_id')
-          .eq('user_id', user.id)
-          .eq('location_id', place.google_place_id)
-          .maybeSingle();
-        savedLocation = result.data;
-      }
-      
-      if (savedLocation) {
-        setIsSaved(true);
-        setCurrentSaveTag((savedLocation.save_tag as SaveTag) || 'general');
-      } else {
-        setIsSaved(false);
-        setCurrentSaveTag('general');
+      const saved = await locationInteractionService.isLocationSaved(place.id);
+      setIsSaved(saved);
+
+      // Fetch current save tag if saved
+      if (saved && user) {
+        try {
+          const { data: savedLocation } = await supabase
+            .from('user_saved_locations')
+            .select('save_tag')
+            .eq('user_id', user.id)
+            .eq('location_id', place.id)
+            .maybeSingle();
+          
+          if (savedLocation?.save_tag) {
+            setCurrentSaveTag(savedLocation.save_tag as SaveTag);
+          }
+        } catch (error) {
+          console.error('Error fetching save tag:', error);
+        }
       }
     } catch (error) {
       console.error('Error checking if location is saved:', error);
