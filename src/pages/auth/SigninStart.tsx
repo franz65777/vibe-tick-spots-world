@@ -119,16 +119,13 @@ const SigninStart = () => {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="text-sm font-medium text-foreground block mb-2">
-                {t('auth:email')} / {t('auth:phoneNumber')} / {t('auth:username')}
-              </label>
               <Input
                 type="text"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 required
                 className="h-12 bg-background text-foreground"
-                placeholder=""
+                placeholder={t('auth:loginPlaceholder')}
                 autoCapitalize="none"
                 autoCorrect="off"
               />
