@@ -487,10 +487,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                       <Bookmark className="h-5 w-5" />
                     )}
                     <span className="text-xs">
-                      {isSaved 
-                        ? t('saved', { ns: 'profile', defaultValue: 'Saved' })
-                        : t('save', { ns: 'common', defaultValue: 'Save' })
-                      }
+                      {t('save', { ns: 'common', defaultValue: 'Save' })}
                     </span>
                   </Button>
 
@@ -570,11 +567,15 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                         }}
                         className="w-full cursor-pointer flex items-center gap-3 py-3 px-4 hover:bg-accent text-destructive transition-colors min-h-[48px]"
                       >
-                        <BookmarkCheck className="h-5 w-5 flex-shrink-0" />
+                        <BookmarkCheck className="h-4 w-4 flex-shrink-0" />
                         <span className="text-sm font-medium">{t('unsave', { ns: 'common', defaultValue: 'Unsave' })}</span>
                       </button>
                     )}
-                    {SAVE_TAG_OPTIONS.map((option) => (
+                    {SAVE_TAG_OPTIONS.filter(option => {
+                      // If location is saved, don't show the "general" option, only show tag options
+                      if (isSaved && option.value === 'general') return false;
+                      return true;
+                    }).map((option) => (
                       <button
                         key={option.value}
                         onClick={(e) => {
@@ -587,9 +588,9 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                         }`}
                       >
                         {option.value === 'general' ? (
-                          <Bookmark className="h-5 w-5 flex-shrink-0" />
+                          <Bookmark className="h-4 w-4 flex-shrink-0" />
                         ) : (
-                          <span className="text-xl leading-none flex-shrink-0 w-5 flex items-center justify-center">{option.emoji}</span>
+                          <span className="text-base leading-none flex-shrink-0 w-4 flex items-center justify-center">{option.emoji}</span>
                         )}
                         <span className="text-sm font-medium text-left flex-1">
                           {option.value === 'general' 
