@@ -257,34 +257,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Support email, phone, and username sign in
     let loginIdentifier = identifier;
     
+    console.log('SignIn attempt with identifier:', identifier);
+    
     // Detect if identifier is email, phone, or username
     const isEmail = identifier.includes('@');
     const isPhone = identifier.startsWith('+') || /^\d+$/.test(identifier);
     
+    console.log('isEmail:', isEmail, 'isPhone:', isPhone);
+    
     // If it's not email or phone, treat it as username and look up the email
     if (!isEmail && !isPhone) {
+      console.log('Looking up username in profiles...');
       try {
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('email')
-          .eq('username', identifier)
+          .ilike('username', identifier)
           .single();
         
+        console.log('Profile lookup result:', profile, 'error:', profileError);
+        
         if (profileError || !profile?.email) {
+          console.error('Username not found or no email:', profileError);
           return { error: { message: 'Invalid login credentials' } };
         }
         
         loginIdentifier = profile.email;
+        console.log('Found email for username:', loginIdentifier);
       } catch (err) {
+        console.error('Exception during username lookup:', err);
         return { error: { message: 'Invalid login credentials' } };
       }
     }
     
+    console.log('Attempting auth with:', loginIdentifier);
     const { error } = await supabase.auth.signInWithPassword(
       isEmail || (!isEmail && !isPhone)
         ? { email: loginIdentifier, password }
         : { phone: loginIdentifier, password }
     );
+    
+    console.log('Auth result error:', error);
 
     // Track authentication attempts for rate limiting (anonymized)
     try {
