@@ -2942,6 +2942,7 @@ export type Database = {
         }[]
       }
       get_dau: { Args: { target_date: string }; Returns: number }
+      get_email_from_username: { Args: { _username: string }; Returns: string }
       get_feature_usage: {
         Args: { end_date: string; start_date: string }
         Returns: {
