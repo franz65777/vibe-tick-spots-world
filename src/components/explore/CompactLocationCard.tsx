@@ -20,6 +20,9 @@ import { useMutedLocations } from '@/hooks/useMutedLocations';
 import { useAuth } from '@/contexts/AuthContext';
 import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
 import { cn } from '@/lib/utils';
+import { SaveLocationDropdown } from '@/components/common/SaveLocationDropdown';
+import type { SaveTag } from '@/utils/saveTags';
+import { locationInteractionService } from '@/services/locationInteractionService';
 
 interface CompactLocationCardProps {
   place: Place;
@@ -28,7 +31,7 @@ interface CompactLocationCardProps {
 
 const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) => {
   const { user } = useAuth();
-  const { isLiked, isSaved, toggleLike, toggleSave } = usePlaceEngagement();
+  const { isLiked, isSaved, toggleLike, refetch } = usePlaceEngagement();
   const { engagement } = usePinEngagement(place.id, place.google_place_id || null);
   const [isLiking, setIsLiking] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -88,13 +91,46 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
     }
   };
 
-  const handleSave = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isSaving) return;
-    
+  const handleSave = async (tag: SaveTag) => {
+    if (!user) return;
     setIsSaving(true);
     try {
-      await toggleSave(place);
+      const locationData = place.google_place_id ? {
+        google_place_id: place.google_place_id,
+        name: place.name,
+        address: place.address,
+        latitude: place.coordinates?.lat,
+        longitude: place.coordinates?.lng,
+        category: place.category
+      } : null;
+      
+      await locationInteractionService.saveLocation(place.id, locationData, tag);
+      // Refetch engagement to update state
+      await refetch();
+      // Emit global event
+      window.dispatchEvent(new CustomEvent('location-save-changed', {
+        detail: { locationId: place.id, isSaved: true }
+      }));
+    } catch (error) {
+      console.error('Error saving location:', error);
+    } finally {
+      setTimeout(() => setIsSaving(false), 300);
+    }
+  };
+
+  const handleUnsave = async () => {
+    if (!user) return;
+    setIsSaving(true);
+    try {
+      await locationInteractionService.unsaveLocation(place.id);
+      // Refetch engagement to update state
+      await refetch();
+      // Emit global event
+      window.dispatchEvent(new CustomEvent('location-save-changed', {
+        detail: { locationId: place.id, isSaved: false }
+      }));
+    } catch (error) {
+      console.error('Error unsaving location:', error);
     } finally {
       setTimeout(() => setIsSaving(false), 300);
     }
@@ -187,18 +223,17 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
           </div>
 
           {/* Save Button - Top Right */}
-          <Button
-            size="sm"
-            onClick={handleSave}
-            disabled={isSaving}
-            className={`absolute top-2 right-2 h-8 w-8 rounded-full p-0 ${
-              isSaved(place.id)
-                ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
-                : 'bg-background/95 text-foreground hover:bg-background'
-            } backdrop-blur-sm shadow-lg ${isSaving ? 'animate-pulse' : ''}`}
-          >
-            <Bookmark className={`w-4 h-4 ${isSaved(place.id) ? 'fill-current' : ''}`} />
-          </Button>
+          <div className="absolute top-2 right-2 z-10" onClick={(e) => e.stopPropagation()}>
+            <SaveLocationDropdown
+              isSaved={isSaved(place.id)}
+              onSave={handleSave}
+              onUnsave={handleUnsave}
+              disabled={isSaving}
+              variant="secondary"
+              size="icon"
+              currentSaveTag={'general'}
+            />
+          </div>
 
           {/* Content Overlay at Bottom */}
           <div className="absolute bottom-0 left-0 right-0 p-3 space-y-2">

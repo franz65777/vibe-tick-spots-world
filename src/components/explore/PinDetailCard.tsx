@@ -477,15 +477,15 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                     size="sm"
                     className="flex-col h-auto py-3 gap-1 rounded-2xl"
                   >
-                    {isSaved ? (
-                      currentSaveTag === 'general' ? (
-                        <Bookmark className="h-5 w-5 fill-current" />
-                      ) : (
-                        <span className="text-xl">{SAVE_TAG_OPTIONS.find(opt => opt.value === currentSaveTag)?.emoji || '📍'}</span>
-                      )
-                    ) : (
-                      <Bookmark className="h-5 w-5" />
-                    )}
+                     {isSaved ? (
+                       currentSaveTag === 'general' ? (
+                         <Bookmark className="h-5 w-5 fill-current" />
+                       ) : (
+                         <span className="text-lg leading-none h-5 w-5 flex items-center justify-center">{SAVE_TAG_OPTIONS.find(opt => opt.value === currentSaveTag)?.emoji || '📍'}</span>
+                       )
+                     ) : (
+                       <Bookmark className="h-5 w-5" />
+                     )}
                     <span className="text-xs">
                       {isSaved 
                         ? t('saved', { ns: 'profile', defaultValue: 'Saved' })
