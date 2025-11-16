@@ -131,7 +131,7 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
   // Listen for global save changes
   useEffect(() => {
     const handleSaveChanged = (event: CustomEvent) => {
-      const { locationId } = event.detail;
+      const { locationId, saveTag } = event.detail;
       if (locationId === place?.id || locationId === place?.google_place_id) {
         // Re-check to sync both isSaved and currentSaveTag
         checkIfLocationSaved();
@@ -313,48 +313,46 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
   };
 
   const handleSaveWithTag = async (tag: SaveTag) => {
-    if (!user) {
-      toast.error(t('login_required', { ns: 'common', defaultValue: 'Please log in to save locations' }));
-      return;
-    }
+    setLoading(true);
     try {
-      const locationData = {
-        google_place_id: place.google_place_id || place.id,
+      await locationInteractionService.saveLocation(place.id, {
+        google_place_id: place.google_place_id,
         name: place.name,
         address: place.address,
         latitude: place.coordinates?.lat || 0,
         longitude: place.coordinates?.lng || 0,
         category: place.category || 'place',
-        types: place.category ? [place.category] : []
-      };
-
-      await locationInteractionService.saveLocation(place.id, locationData, tag);
+        types: []
+      }, tag);
       setIsSaved(true);
       setCurrentSaveTag(tag);
-      toast.success(t('location_saved', { ns: 'common', defaultValue: 'Location saved successfully!' }));
+      toast.success(t('location_saved'));
       
+      // Dispatch global event for sync
       window.dispatchEvent(new CustomEvent('location-save-changed', { 
-        detail: { locationId: place.id, isSaved: true } 
+        detail: { locationId: place.id, isSaved: true, saveTag: tag } 
       }));
       if (place.google_place_id) {
         window.dispatchEvent(new CustomEvent('location-save-changed', { 
-          detail: { locationId: place.google_place_id, isSaved: true } 
+          detail: { locationId: place.google_place_id, isSaved: true, saveTag: tag } 
         }));
       }
     } catch (error) {
-      console.error('Error saving location:', error);
-      toast.error(t('save_failed', { ns: 'common', defaultValue: 'Failed to save location' }));
+      toast.error(t('save_failed'));
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleUnsave = async () => {
-    if (!user) return;
+    setLoading(true);
     try {
       await locationInteractionService.unsaveLocation(place.id);
       setIsSaved(false);
       setCurrentSaveTag('general');
-      toast.success(t('location_unsaved', { ns: 'common', defaultValue: 'Location removed from saved' }));
+      toast.success(t('location_unsaved'));
       
+      // Dispatch global event for sync
       window.dispatchEvent(new CustomEvent('location-save-changed', { 
         detail: { locationId: place.id, isSaved: false } 
       }));
@@ -364,8 +362,9 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
         }));
       }
     } catch (error) {
-      console.error('Error unsaving location:', error);
-      toast.error(t('unsave_failed', { ns: 'common', defaultValue: 'Failed to unsave location' }));
+      toast.error(t('unsave_failed'));
+    } finally {
+      setLoading(false);
     }
   };
   
@@ -527,6 +526,19 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
                   />
                   <div className="absolute left-4 top-0 w-auto z-50">
                     <div className="w-56 bg-background backdrop-blur-sm border border-border rounded-2xl shadow-lg">
+                      {isSaved && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUnsave();
+                            setDropdownOpen(false);
+                          }}
+                          className="w-full cursor-pointer flex items-center gap-3 py-2 px-4 hover:bg-accent text-destructive transition-colors min-h-[44px]"
+                        >
+                          <BookmarkCheck className="h-4 w-4 flex-shrink-0" />
+                          <span className="text-sm font-medium">{t('unsave', { ns: 'common', defaultValue: 'Unsave' })}</span>
+                        </button>
+                      )}
                       {SAVE_TAG_OPTIONS.filter(option => {
                         if (isSaved && option.value === 'general') return false;
                         return true;
