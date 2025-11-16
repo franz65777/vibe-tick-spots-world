@@ -331,7 +331,6 @@ const resources = {
     },
     add: {
       newPost: 'New Post',
-      continue: 'Next',
       caption: 'Caption',
       captionPlaceholder: 'Write a caption...',
       selectLocation: 'Select Location',
@@ -1080,7 +1079,6 @@ const resources = {
     },
     add: {
       newPost: 'Nueva publicación',
-      continue: 'Siguiente',
       caption: 'Descripción',
       captionPlaceholder: 'Escribe una descripción...',
       selectLocation: 'Seleccionar lugar',
@@ -1820,7 +1818,6 @@ const resources = {
     },
     add: {
       newPost: 'Nuovo Post',
-      continue: 'Prosegui',
       caption: 'Didascalia',
       captionPlaceholder: 'Scrivi una didascalia...',
       selectLocation: 'Seleziona Posizione',
@@ -2546,7 +2543,6 @@ const resources = {
     },
     add: {
       newPost: 'Nouveau post',
-      continue: 'Suivant',
       caption: 'Légende',
       captionPlaceholder: 'Écrivez une légende...',
       selectLocation: 'Sélectionner un lieu',
@@ -3172,7 +3168,6 @@ const resources = {
     },
     add: {
       newPost: 'Neuer Beitrag',
-      continue: 'Weiter',
       caption: 'Beschreibung',
       captionPlaceholder: 'Beschreibung schreiben...',
       selectLocation: 'Ort auswählen',
@@ -3717,7 +3712,6 @@ const resources = {
     },
     add: {
       newPost: 'Nova publicação',
-      continue: 'Continuar',
       caption: 'Legenda',
       captionPlaceholder: 'Escreva uma legenda...',
       selectLocation: 'Selecionar local',
@@ -4203,7 +4197,6 @@ const resources = {
     },
     add: {
       newPost: '新帖子',
-      continue: '下一步',
       caption: '标题',
       captionPlaceholder: '写标题...',
       selectLocation: '选择地点',
@@ -4650,7 +4643,6 @@ const resources = {
     },
     add: {
       newPost: '新しい投稿',
-      continue: '次へ',
       caption: 'キャプション',
       captionPlaceholder: 'キャプションを書く...',
       selectLocation: '場所を選択',
@@ -5135,7 +5127,6 @@ const resources = {
     },
     add: {
       newPost: '새 게시물',
-      continue: '다음',
       caption: '캡션',
       captionPlaceholder: '캡션 작성...',
       selectLocation: '장소 선택',
@@ -5603,7 +5594,6 @@ const resources = {
     },
     add: {
       newPost: 'منشور جديد',
-      continue: 'التالي',
       caption: 'تعليق',
       captionPlaceholder: 'اكتب تعليقًا...',
       selectLocation: 'اختر موقعًا',
@@ -6070,7 +6060,6 @@ const resources = {
     },
     add: {
       newPost: 'नई पोस्ट',
-      continue: 'अगला',
       caption: 'कैप्शन',
       captionPlaceholder: 'कैप्शन लिखें...',
       selectLocation: 'स्थान चुनें',
@@ -6554,7 +6543,6 @@ const resources = {
     },
     add: {
       newPost: 'Новый пост',
-      continue: 'Далее',
       caption: 'Подпись',
       captionPlaceholder: 'Напишите подпись...',
       selectLocation: 'Выберите место',

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { MediaGalleryStep } from './MediaGalleryStep';
-import { PostDetailsStep } from './PostDetailsStep';
+import { PostEditor } from './PostEditor';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -14,7 +13,6 @@ export const NewAddPage = () => {
   const navigate = useNavigate();
   const { businessProfile, hasValidBusinessAccount } = useBusinessProfile();
   
-  const [step, setStep] = useState<'media' | 'details'>('media');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [caption, setCaption] = useState('');
@@ -305,45 +303,26 @@ export const NewAddPage = () => {
     setTaggedUsers(prev => prev.filter(u => u.id !== userId));
   };
 
-  // Hide bottom navigation when in add flow
-  React.useEffect(() => {
-    window.dispatchEvent(new CustomEvent('ui:overlay-open'));
-    return () => {
-      window.dispatchEvent(new CustomEvent('ui:overlay-close'));
-    };
-  }, []);
-
-  if (step === 'media') {
-    return (
-      <MediaGalleryStep
-        selectedFiles={selectedFiles}
-        previewUrls={previewUrls}
-        onFilesSelect={handleFilesSelect}
-        onRemoveFile={handleRemoveFile}
-        onContinue={() => setStep('details')}
-        maxFiles={10}
-      />
-    );
-  }
-
   return (
-    <PostDetailsStep
+    <PostEditor
+      selectedFiles={selectedFiles}
+      previewUrls={previewUrls}
       caption={caption}
       selectedLocation={selectedLocation}
       selectedCategory={selectedCategory}
       taggedUsers={taggedUsers}
-      rating={rating}
+      rating={hasValidBusinessAccount ? undefined : rating}
       isUploading={isUploading}
+      onFilesSelect={handleFilesSelect}
+      onRemoveFile={handleRemoveFile}
       onCaptionChange={setCaption}
       onLocationSelect={handleLocationSelect}
       onCategoryChange={setSelectedCategory}
       onUserTagged={handleUserTagged}
       onUserRemoved={handleUserRemoved}
-      onRatingChange={setRating}
+      onRatingChange={hasValidBusinessAccount ? undefined : setRating}
       onSubmit={handleSubmit}
-      onBack={() => setStep('media')}
       isBusinessAccount={hasValidBusinessAccount}
-      previewUrl={previewUrls[0]}
     />
   );
 };
