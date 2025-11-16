@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Navigation, Bookmark, Share2, Star, Bell, BellOff, Camera, X } from 'lucide-react';
+import { MapPin, Navigation, Bookmark, BookmarkCheck, Share2, Star, Bell, BellOff, Camera, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,8 +23,7 @@ import { it, es, pt, fr, de, ja, ko, ar, hi, ru, zhCN } from 'date-fns/locale';
 import { getCategoryIcon } from '@/utils/categoryIcons';
 import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
 import { cn } from '@/lib/utils';
-import { SaveLocationDropdown } from '@/components/common/SaveLocationDropdown';
-import type { SaveTag } from '@/utils/saveTags';
+import { SAVE_TAG_OPTIONS, type SaveTag } from '@/utils/saveTags';
 
 const localeMap: Record<string, Locale> = {
   en: undefined as any, // English is the default
@@ -92,6 +91,7 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
   const [showSavedBy, setShowSavedBy] = useState(false);
   const [activeTab, setActiveTab] = useState<'posts' | 'reviews'>('posts');
   const [showActionButtons, setShowActionButtons] = useState(true);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   
@@ -445,22 +445,35 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
 
           {/* Action Buttons */}
           <div 
-            className={`bg-background px-4 pb-4 transition-all duration-300 ${
+            className={`relative bg-background px-4 pb-4 transition-all duration-300 ${
               showActionButtons ? 'opacity-100 max-h-32' : 'opacity-0 max-h-0 overflow-hidden pb-0'
             }`}
           >
             <div className="flex items-center gap-1.5">
               <div className="grid grid-cols-4 gap-1.5 flex-1">
-                <SaveLocationDropdown
-                  isSaved={isSaved}
-                  onSave={handleSaveWithTag}
-                  onUnsave={handleUnsave}
+                <Button
+                  onClick={() => setDropdownOpen(true)}
                   disabled={loading}
                   variant="secondary"
                   size="sm"
-                  currentSaveTag={currentSaveTag}
-                  showLabel={true}
-                />
+                  className="flex-col h-auto py-3 gap-1 rounded-2xl"
+                >
+                  {isSaved ? (
+                    currentSaveTag === 'general' ? (
+                      <Bookmark className="h-5 w-5 fill-current" />
+                    ) : (
+                      <span className="text-lg leading-none h-5 w-5 flex items-center justify-center">{(SAVE_TAG_OPTIONS.find(opt => opt.value === currentSaveTag)?.emoji) || '📍'}</span>
+                    )
+                  ) : (
+                    <Bookmark className="h-5 w-5" />
+                  )}
+                  <span className="text-xs">
+                    {isSaved 
+                      ? t('saved', { ns: 'profile', defaultValue: 'Saved' })
+                      : t('save', { ns: 'common', defaultValue: 'Save' })
+                    }
+                  </span>
+                </Button>
 
                 <Button
                   onClick={(e) => {
@@ -503,25 +516,65 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
                 </Button>
               </div>
 
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const isMuted = mutedLocations?.some((m: any) => m.location_id === place.id);
-                  if (isMuted) {
-                    unmuteLocation(place.id);
-                  } else {
-                    muteLocation(place.id);
-                  }
-                }}
-                disabled={isMuting}
-                size="icon"
-                variant="secondary"
-                className={`h-10 w-10 rounded-full flex-shrink-0 ${
-                  mutedLocations?.some((m: any) => m.location_id === place.id) ? 'bg-muted text-muted-foreground hover:bg-muted/80' : ''
-                }`}
-              >
-                {mutedLocations?.some((m: any) => m.location_id === place.id) ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
-              </Button>
+              {dropdownOpen && (
+                <>
+                  <div 
+                    className="fixed inset-0 bg-black/50 z-40"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDropdownOpen(false);
+                    }}
+                  />
+                  <div className="absolute left-4 top-0 w-auto z-50">
+                    <div className="w-56 bg-background/95 backdrop-blur-sm border border-border rounded-2xl shadow-lg pl-2.5">
+                      {isSaved && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUnsave();
+                            setDropdownOpen(false);
+                          }}
+                          className="w-full cursor-pointer flex items-center gap-3 py-2 px-4 hover:bg-accent text-destructive transition-colors min-h-[44px]"
+                        >
+                          <BookmarkCheck className="h-4 w-4 flex-shrink-0" />
+                          <span className="text-sm font-medium">{t('unsave', { ns: 'common', defaultValue: 'Unsave' })}</span>
+                        </button>
+                      )}
+                      {SAVE_TAG_OPTIONS.filter(option => {
+                        if (isSaved && option.value === 'general') return false;
+                        return true;
+                      }).map((option) => (
+                        <button
+                          key={option.value}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSaveWithTag(option.value);
+                            setDropdownOpen(false);
+                          }}
+                          className="w-full cursor-pointer flex items-center gap-3 py-2 px-4 hover:bg-accent transition-colors min-h-[44px]"
+                        >
+                          {option.value === 'general' ? (
+                            <Bookmark className="h-5 w-5" />
+                          ) : (
+                            <span className="text-xl">{option.emoji}</span>
+                          )}
+                          <span className="text-sm font-medium">
+                            {(() => {
+                              if (option.value === 'general') {
+                                return t('save', { ns: 'common', defaultValue: 'Save' });
+                              }
+                              const parts = option.labelKey.split('.');
+                              const key = parts[parts.length - 1];
+                              return t(key, { ns: 'save_tags', defaultValue: key });
+                            })()}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
             </div>
           </div>
 
