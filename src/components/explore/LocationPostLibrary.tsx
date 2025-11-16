@@ -144,14 +144,23 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
   }, [place?.id, place?.google_place_id]);
 
   const checkIfLocationSaved = async () => {
-    if (!user || !place?.id) return;
+    if (!user) return;
     try {
-      const { data: savedLocation } = await supabase
+      let query = supabase
         .from('user_saved_locations')
         .select('save_tag')
-        .eq('user_id', user.id)
-        .or(`location_id.eq.${place.id},location_id.eq.${place.google_place_id || place.id}`)
-        .maybeSingle();
+        .eq('user_id', user.id);
+
+      // Check both place.id and place.google_place_id
+      if (place?.google_place_id) {
+        query = query.or(`location_id.eq.${place.id},location_id.eq.${place.google_place_id}`);
+      } else if (place?.id) {
+        query = query.eq('location_id', place.id);
+      } else {
+        return;
+      }
+
+      const { data: savedLocation } = await query.maybeSingle();
       
       if (savedLocation) {
         setIsSaved(true);
@@ -424,16 +433,18 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
           >
             <div className="flex items-center gap-1.5">
               <div className="grid grid-cols-4 gap-1.5 flex-1">
-                <SaveLocationDropdown
-                  isSaved={isSaved}
-                  onSave={handleSaveWithTag}
-                  onUnsave={handleUnsave}
-                  disabled={loading}
-                  variant="secondary"
-                  size="sm"
-                  currentSaveTag={currentSaveTag}
-                  showLabel={true}
-                />
+                <div className="pl-2.5">
+                  <SaveLocationDropdown
+                    isSaved={isSaved}
+                    onSave={handleSaveWithTag}
+                    onUnsave={handleUnsave}
+                    disabled={loading}
+                    variant="secondary"
+                    size="sm"
+                    currentSaveTag={currentSaveTag}
+                    showLabel={true}
+                  />
+                </div>
 
                 <Button
                   onClick={(e) => {
