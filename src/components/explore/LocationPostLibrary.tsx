@@ -23,6 +23,8 @@ import { it, es, pt, fr, de, ja, ko, ar, hi, ru, zhCN } from 'date-fns/locale';
 import { getCategoryIcon } from '@/utils/categoryIcons';
 import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
 import { cn } from '@/lib/utils';
+import { SaveLocationDropdown } from '@/components/common/SaveLocationDropdown';
+import type { SaveTag } from '@/utils/saveTags';
 
 const localeMap: Record<string, Locale> = {
   en: undefined as any, // English is the default
@@ -86,6 +88,7 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
   const [postsPage, setPostsPage] = useState(1);
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
+  const [currentSaveTag, setCurrentSaveTag] = useState<SaveTag>('general');
   const [showSavedBy, setShowSavedBy] = useState(false);
   const [activeTab, setActiveTab] = useState<'posts' | 'reviews'>('posts');
   const [showActionButtons, setShowActionButtons] = useState(true);
@@ -143,11 +146,20 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
   const checkIfLocationSaved = async () => {
     if (!user || !place?.id) return;
     try {
-      let saved = await locationInteractionService.isLocationSaved(place.id);
-      if (!saved && place.google_place_id && place.google_place_id !== place.id) {
-        saved = await locationInteractionService.isLocationSaved(place.google_place_id);
+      const { data: savedLocation } = await supabase
+        .from('user_saved_locations')
+        .select('save_tag')
+        .eq('user_id', user.id)
+        .or(`location_id.eq.${place.id},location_id.eq.${place.google_place_id || place.id}`)
+        .maybeSingle();
+      
+      if (savedLocation) {
+        setIsSaved(true);
+        setCurrentSaveTag((savedLocation.save_tag as SaveTag) || 'general');
+      } else {
+        setIsSaved(false);
+        setCurrentSaveTag('general');
       }
-      setIsSaved(!!saved);
     } catch (error) {
       console.error('Error checking if location is saved:', error);
     }
@@ -273,50 +285,60 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
     }
   };
 
-  const handleSaveLocation = async () => {
+  const handleSaveWithTag = async (tag: SaveTag) => {
     if (!user) {
-      toast.error('Please log in to save locations');
+      toast.error(t('login_required', { ns: 'common', defaultValue: 'Please log in to save locations' }));
       return;
     }
     try {
-      if (isSaved) {
-        await locationInteractionService.unsaveLocation(place.id);
-        setIsSaved(false);
-        toast.success('Location removed from saved');
-        window.dispatchEvent(new CustomEvent('location-save-changed', { 
-          detail: { locationId: place.id, isSaved: false } 
-        }));
-        if (place.google_place_id) {
-          window.dispatchEvent(new CustomEvent('location-save-changed', { 
-            detail: { locationId: place.google_place_id, isSaved: false } 
-          }));
-        }
-      } else {
-        const locationData = {
-          google_place_id: place.google_place_id || place.id,
-          name: place.name,
-          address: place.address,
-          latitude: place.coordinates?.lat || 0,
-          longitude: place.coordinates?.lng || 0,
-          category: place.category || 'place',
-          types: place.category ? [place.category] : []
-        };
+      const locationData = {
+        google_place_id: place.google_place_id || place.id,
+        name: place.name,
+        address: place.address,
+        latitude: place.coordinates?.lat || 0,
+        longitude: place.coordinates?.lng || 0,
+        category: place.category || 'place',
+        types: place.category ? [place.category] : []
+      };
 
-        await locationInteractionService.saveLocation(place.id, locationData);
-        setIsSaved(true);
-        toast.success('Location saved successfully!');
+      await locationInteractionService.saveLocation(place.id, locationData, tag);
+      setIsSaved(true);
+      setCurrentSaveTag(tag);
+      toast.success(t('location_saved', { ns: 'common', defaultValue: 'Location saved successfully!' }));
+      
+      window.dispatchEvent(new CustomEvent('location-save-changed', { 
+        detail: { locationId: place.id, isSaved: true } 
+      }));
+      if (place.google_place_id) {
         window.dispatchEvent(new CustomEvent('location-save-changed', { 
-          detail: { locationId: place.id, isSaved: true } 
+          detail: { locationId: place.google_place_id, isSaved: true } 
         }));
-        if (place.google_place_id) {
-          window.dispatchEvent(new CustomEvent('location-save-changed', { 
-            detail: { locationId: place.google_place_id, isSaved: true } 
-          }));
-        }
       }
     } catch (error) {
-      console.error('Error toggling save:', error);
-      toast.error('Failed to update location');
+      console.error('Error saving location:', error);
+      toast.error(t('save_failed', { ns: 'common', defaultValue: 'Failed to save location' }));
+    }
+  };
+
+  const handleUnsave = async () => {
+    if (!user) return;
+    try {
+      await locationInteractionService.unsaveLocation(place.id);
+      setIsSaved(false);
+      setCurrentSaveTag('general');
+      toast.success(t('location_unsaved', { ns: 'common', defaultValue: 'Location removed from saved' }));
+      
+      window.dispatchEvent(new CustomEvent('location-save-changed', { 
+        detail: { locationId: place.id, isSaved: false } 
+      }));
+      if (place.google_place_id) {
+        window.dispatchEvent(new CustomEvent('location-save-changed', { 
+          detail: { locationId: place.google_place_id, isSaved: false } 
+        }));
+      }
+    } catch (error) {
+      console.error('Error unsaving location:', error);
+      toast.error(t('unsave_failed', { ns: 'common', defaultValue: 'Failed to unsave location' }));
     }
   };
   
@@ -402,16 +424,16 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
           >
             <div className="flex items-center gap-1.5">
               <div className="grid grid-cols-4 gap-1.5 flex-1">
-                <Button
-                  onClick={handleSaveLocation}
+                <SaveLocationDropdown
+                  isSaved={isSaved}
+                  onSave={handleSaveWithTag}
+                  onUnsave={handleUnsave}
                   disabled={loading}
-                  size="sm"
                   variant="secondary"
-                  className="flex-col h-auto py-3 gap-1 rounded-2xl"
-                >
-                  <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
-                  <span className="text-xs">{isSaved ? t('saved', { ns: 'common', defaultValue: 'Saved' }) : t('save', { ns: 'common', defaultValue: 'Save' })}</span>
-                </Button>
+                  size="sm"
+                  currentSaveTag={currentSaveTag}
+                  showLabel={true}
+                />
 
                 <Button
                   onClick={(e) => {
