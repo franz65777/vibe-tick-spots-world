@@ -12,6 +12,8 @@ import MarketingCampaignBanner from './MarketingCampaignBanner';
 import { getCategoryIcon } from '@/utils/categoryIcons';
 import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
 import { cn } from '@/lib/utils';
+import { SaveLocationDropdown } from '@/components/common/SaveLocationDropdown';
+import type { SaveTag } from '@/utils/saveTags';
 
 interface EnhancedLocationCardV2Props {
   place: any;
@@ -61,36 +63,43 @@ const EnhancedLocationCardV2 = ({ place, onCardClick }: EnhancedLocationCardV2Pr
     };
   }, [place.id]);
 
-  const handleSaveToggle = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleSaveToggle = async (tag: SaveTag) => {
     setLoading(true);
     
     try {
-      if (isSaved) {
-        await locationInteractionService.unsaveLocation(place.id);
-        setIsSaved(false);
-        // Emit global event
-        window.dispatchEvent(new CustomEvent('location-save-changed', { 
-          detail: { locationId: place.id, isSaved: false } 
-        }));
-      } else {
-        await locationInteractionService.saveLocation(place.id, {
-          google_place_id: place.google_place_id,
-          name: place.name,
-          address: place.address,
-          latitude: place.coordinates?.lat || 0,
-          longitude: place.coordinates?.lng || 0,
-          category: place.category,
-          types: place.types || []
-        });
-        setIsSaved(true);
-        // Emit global event
-        window.dispatchEvent(new CustomEvent('location-save-changed', { 
-          detail: { locationId: place.id, isSaved: true } 
-        }));
-      }
+      await locationInteractionService.saveLocation(place.id, {
+        google_place_id: place.google_place_id,
+        name: place.name,
+        address: place.address,
+        latitude: place.coordinates?.lat || 0,
+        longitude: place.coordinates?.lng || 0,
+        category: place.category,
+        types: place.types || []
+      }, tag);
+      setIsSaved(true);
+      // Emit global event
+      window.dispatchEvent(new CustomEvent('location-save-changed', { 
+        detail: { locationId: place.id, isSaved: true } 
+      }));
     } catch (error) {
-      console.error('Error toggling save:', error);
+      console.error('Error saving location:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUnsave = async () => {
+    setLoading(true);
+    
+    try {
+      await locationInteractionService.unsaveLocation(place.id);
+      setIsSaved(false);
+      // Emit global event
+      window.dispatchEvent(new CustomEvent('location-save-changed', { 
+        detail: { locationId: place.id, isSaved: false } 
+      }));
+    } catch (error) {
+      console.error('Error unsaving location:', error);
     } finally {
       setLoading(false);
     }
@@ -163,17 +172,16 @@ const EnhancedLocationCardV2 = ({ place, onCardClick }: EnhancedLocationCardV2Pr
         )}
 
         {/* Save Icon (Top Right) */}
-        <button
-          onClick={handleSaveToggle}
-          disabled={loading}
-          className={`absolute top-3 right-3 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 backdrop-blur-sm ${
-            isSaved
-              ? 'bg-blue-600 text-white shadow-lg'
-              : 'bg-white/90 text-gray-700 hover:bg-white'
-          }`}
-        >
-          <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
-        </button>
+        <div className="absolute top-3 right-3">
+          <SaveLocationDropdown
+            isSaved={isSaved}
+            onSave={handleSaveToggle}
+            onUnsave={handleUnsave}
+            disabled={loading}
+            variant="ghost"
+            size="icon"
+          />
+        </div>
       </div>
 
       {/* Content Section */}

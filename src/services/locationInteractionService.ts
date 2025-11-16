@@ -11,7 +11,7 @@ export interface LocationInteraction {
 
 class LocationInteractionService {
   // Save a location for the user - IMPROVED duplicate prevention
-  async saveLocation(locationId: string, locationData?: any): Promise<boolean> {
+  async saveLocation(locationId: string, locationData?: any, saveTag: string = 'general'): Promise<boolean> {
     try {
       const { data: user } = await supabase.auth.getUser();
       if (!user?.user) return false;
@@ -61,12 +61,13 @@ class LocationInteractionService {
         locationId = existingLocationId;
       }
 
-      // Save location for user (prevent duplicate saves)
+      // Save location for user with save tag (prevent duplicate saves)
       const { error } = await supabase
         .from('user_saved_locations')
         .insert({
           user_id: user.user.id,
-          location_id: locationId
+          location_id: locationId,
+          save_tag: saveTag
         });
 
       if (error && !error.message.includes('duplicate')) {
