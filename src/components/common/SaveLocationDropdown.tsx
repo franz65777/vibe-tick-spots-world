@@ -41,7 +41,22 @@ export const SaveLocationDropdown = ({
 
   // Get the emoji for the current save tag
   const currentTagOption = SAVE_TAG_OPTIONS.find(opt => opt.value === currentSaveTag);
-  const currentEmoji = currentTagOption?.emoji || '🔖';
+  const currentEmoji = currentTagOption?.emoji || '📍';
+  
+  // Function to get the display label for a save tag
+  const getTagLabel = (tag: SaveTag) => {
+    if (tag === 'general') {
+      return t('save', { ns: 'common', defaultValue: 'Save' });
+    }
+    const option = SAVE_TAG_OPTIONS.find(opt => opt.value === tag);
+    if (option) {
+      // Extract just the category name without the save_tags prefix
+      const parts = option.labelKey.split('.');
+      const key = parts[parts.length - 1];
+      return t(key, { ns: 'save_tags', defaultValue: key });
+    }
+    return t('save', { ns: 'common', defaultValue: 'Save' });
+  };
 
   if (isSaved) {
     return (
@@ -53,17 +68,21 @@ export const SaveLocationDropdown = ({
             disabled={disabled}
             className={showLabel ? "flex-col h-auto py-3 gap-1 rounded-2xl" : ""}
           >
-            <span className="text-xl">{currentEmoji}</span>
-            {showLabel && <span className="text-xs">{t('saved', { ns: 'common', defaultValue: 'Saved' })}</span>}
+            {currentSaveTag === 'general' ? (
+              <Bookmark className="h-5 w-5 fill-current" />
+            ) : (
+              <span className="text-xl">{currentEmoji}</span>
+            )}
+            {showLabel && <span className="text-xs">{getTagLabel(currentSaveTag)}</span>}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent 
-          align="end" 
-          className="w-56 bg-background border-border z-[100]"
+          align="center" 
+          className="w-56 bg-background/95 backdrop-blur-sm border-border rounded-2xl shadow-lg z-[100]"
         >
           <DropdownMenuItem
             onClick={onUnsave}
-            className="cursor-pointer flex items-center gap-3 py-3 px-4 hover:bg-accent text-destructive"
+            className="cursor-pointer flex items-center gap-3 py-3 px-4 hover:bg-accent text-destructive rounded-xl m-1"
           >
             <BookmarkCheck className="h-5 w-5" />
             <span className="text-sm font-medium">{t('unsave', { ns: 'common', defaultValue: 'Unsave' })}</span>
@@ -72,10 +91,14 @@ export const SaveLocationDropdown = ({
             <DropdownMenuItem
               key={option.value}
               onClick={() => handleSaveWithTag(option.value)}
-              className={`cursor-pointer flex items-center gap-3 py-3 px-4 hover:bg-accent ${option.value === currentSaveTag ? 'bg-accent/50' : ''}`}
+              className={`cursor-pointer flex items-center gap-3 py-3 px-4 hover:bg-accent rounded-xl m-1 ${option.value === currentSaveTag ? 'bg-accent/50' : ''}`}
             >
-              <span className="text-xl">{option.emoji}</span>
-              <span className="text-sm font-medium">{t(option.labelKey)}</span>
+              {option.value === 'general' ? (
+                <Bookmark className="h-5 w-5" />
+              ) : (
+                <span className="text-xl">{option.emoji}</span>
+              )}
+              <span className="text-sm font-medium">{getTagLabel(option.value)}</span>
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>
@@ -97,17 +120,21 @@ export const SaveLocationDropdown = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent 
-        align="end" 
-        className="w-56 bg-background border-border z-[100]"
+        align="center" 
+        className="w-56 bg-background/95 backdrop-blur-sm border-border rounded-2xl shadow-lg z-[100]"
       >
         {SAVE_TAG_OPTIONS.map((option) => (
           <DropdownMenuItem
             key={option.value}
             onClick={() => handleSaveWithTag(option.value)}
-            className="cursor-pointer flex items-center gap-3 py-3 px-4 hover:bg-accent"
+            className="cursor-pointer flex items-center gap-3 py-3 px-4 hover:bg-accent rounded-xl m-1"
           >
-            <span className="text-xl">{option.emoji}</span>
-            <span className="text-sm font-medium">{t(option.labelKey)}</span>
+            {option.value === 'general' ? (
+              <Bookmark className="h-5 w-5" />
+            ) : (
+              <span className="text-xl">{option.emoji}</span>
+            )}
+            <span className="text-sm font-medium">{getTagLabel(option.value)}</span>
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
