@@ -287,13 +287,13 @@ class LocationInteractionService {
     }
   }
 
-  // Check if user has saved a location (checks both tables)
+  // Check if user has saved a location (checks both tables and resolves google_place_id)
   async isLocationSaved(locationId: string): Promise<boolean> {
     try {
       const { data: user } = await supabase.auth.getUser();
       if (!user?.user) return false;
 
-      // Check user_saved_locations table
+      // 1) Direct check with internal location id
       const { data: internalSave } = await supabase
         .from('user_saved_locations')
         .select('id')
@@ -303,7 +303,24 @@ class LocationInteractionService {
 
       if (internalSave) return true;
 
-      // Check saved_places table (for Google Places)
+      // 2) If not found, treat locationId as google_place_id and resolve internal id
+      const { data: locationRow } = await supabase
+        .from('locations')
+        .select('id')
+        .eq('google_place_id', locationId)
+        .maybeSingle();
+
+      if (locationRow?.id) {
+        const { data: resolvedSave } = await supabase
+          .from('user_saved_locations')
+          .select('id')
+          .eq('user_id', user.user.id)
+          .eq('location_id', locationRow.id)
+          .maybeSingle();
+        if (resolvedSave) return true;
+      }
+
+      // 3) Legacy: check saved_places by google place id
       const { data: googleSave } = await supabase
         .from('saved_places')
         .select('id')
