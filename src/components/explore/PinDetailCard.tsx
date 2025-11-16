@@ -77,6 +77,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [showActionButtons, setShowActionButtons] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   // Source post ID - if the pin was opened from a post
@@ -460,14 +461,84 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
             </div>
           </div>
 
-          {/* Action Buttons - Hidden when scrolling down */}
+          {/* Action Buttons - Hidden when scrolling down or when dropdown is open */}
           <div 
             className={`bg-background px-4 pb-4 transition-all duration-300 ${
               showActionButtons ? 'opacity-100 max-h-32' : 'opacity-0 max-h-0 overflow-hidden pb-0'
             }`}
           >
-            <div className="flex items-center gap-1.5">
-              <div className="grid grid-cols-4 gap-1.5 flex-1">
+            {!dropdownOpen ? (
+              <div className="flex items-center gap-1.5">
+                <div className="grid grid-cols-4 gap-1.5 flex-1">
+                  <SaveLocationDropdown
+                    isSaved={isSaved}
+                    onSave={handleSaveWithTag}
+                    onUnsave={handleUnsave}
+                    disabled={loading}
+                    variant="secondary"
+                    size="sm"
+                    currentSaveTag={currentSaveTag}
+                    showLabel={true}
+                    open={dropdownOpen}
+                    onOpenChange={setDropdownOpen}
+                  />
+
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setReviewOpen(true);
+                    }}
+                    size="sm"
+                    variant="secondary"
+                    className="flex-col h-auto py-3 gap-1 rounded-2xl"
+                  >
+                    <Star className="w-5 h-5" />
+                    <span className="text-xs">{t('review', { ns: 'common', defaultValue: 'Review' })}</span>
+                  </Button>
+
+                  <Button
+                    onClick={handleDirections}
+                    size="sm"
+                    variant="secondary"
+                    className="flex-col h-auto py-3 gap-1 rounded-2xl"
+                  >
+                    <Navigation className="w-5 h-5" />
+                    <span className="text-xs">{t('directions', { ns: 'common', defaultValue: 'Directions' })}</span>
+                  </Button>
+
+                  <Button
+                    onClick={() => setShareOpen(true)}
+                    size="sm"
+                    variant="secondary"
+                    className="flex-col h-auto py-3 gap-1 rounded-2xl"
+                  >
+                    <Share2 className="w-5 h-5" />
+                    <span className="text-xs">{t('share', { ns: 'common', defaultValue: 'Share' })}</span>
+                  </Button>
+                </div>
+
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const isMuted = mutedLocations?.some((m: any) => m.location_id === place.id);
+                    if (isMuted) {
+                      unmuteLocation(place.id);
+                    } else {
+                      muteLocation(place.id);
+                    }
+                  }}
+                  disabled={isMuting}
+                  size="icon"
+                  variant="secondary"
+                  className={`h-10 w-10 rounded-full flex-shrink-0 ${
+                    mutedLocations?.some((m: any) => m.location_id === place.id) ? 'bg-muted text-muted-foreground hover:bg-muted/80' : ''
+                  }`}
+                >
+                  {mutedLocations?.some((m: any) => m.location_id === place.id) ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+                </Button>
+              </div>
+            ) : (
+              <div className="relative min-h-[60px] flex items-center justify-center">
                 <SaveLocationDropdown
                   isSaved={isSaved}
                   onSave={handleSaveWithTag}
@@ -477,62 +548,11 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                   size="sm"
                   currentSaveTag={currentSaveTag}
                   showLabel={true}
+                  open={dropdownOpen}
+                  onOpenChange={setDropdownOpen}
                 />
-
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setReviewOpen(true);
-                  }}
-                  size="sm"
-                  variant="secondary"
-                  className="flex-col h-auto py-3 gap-1 rounded-2xl"
-                >
-                  <Star className="w-5 h-5" />
-                  <span className="text-xs">{t('review', { ns: 'common', defaultValue: 'Review' })}</span>
-                </Button>
-
-                <Button
-                  onClick={handleDirections}
-                  size="sm"
-                  variant="secondary"
-                  className="flex-col h-auto py-3 gap-1 rounded-2xl"
-                >
-                  <Navigation className="w-5 h-5" />
-                  <span className="text-xs">{t('directions', { ns: 'common', defaultValue: 'Directions' })}</span>
-                </Button>
-
-                <Button
-                  onClick={() => setShareOpen(true)}
-                  size="sm"
-                  variant="secondary"
-                  className="flex-col h-auto py-3 gap-1 rounded-2xl"
-                >
-                  <Share2 className="w-5 h-5" />
-                  <span className="text-xs">{t('share', { ns: 'common', defaultValue: 'Share' })}</span>
-                </Button>
               </div>
-
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const isMuted = mutedLocations?.some((m: any) => m.location_id === place.id);
-                  if (isMuted) {
-                    unmuteLocation(place.id);
-                  } else {
-                    muteLocation(place.id);
-                  }
-                }}
-                disabled={isMuting}
-                size="icon"
-                variant="secondary"
-                className={`h-10 w-10 rounded-full flex-shrink-0 ${
-                  mutedLocations?.some((m: any) => m.location_id === place.id) ? 'bg-muted text-muted-foreground hover:bg-muted/80' : ''
-                }`}
-              >
-                {mutedLocations?.some((m: any) => m.location_id === place.id) ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
-              </Button>
-            </div>
+            )}
           </div>
 
           {/* Marketing Campaign - Expandable Section */}
