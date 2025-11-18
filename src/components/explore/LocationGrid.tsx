@@ -515,12 +515,12 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
                 <div className="flex items-center gap-3 pt-1.5">
                   <div className="flex items-center gap-0.5">
                     <span className="text-[11px] font-semibold text-foreground">{location.postsCount || 0}</span>
-                    <span className="text-[10px] text-muted-foreground">{t('leaderboard.posts')}</span>
+                    <span className="text-[10px] text-muted-foreground">{t('posts', { ns: 'common' })}</span>
                   </div>
                   
                   <div className="flex items-center gap-0.5">
                     <span className="text-[11px] font-semibold text-foreground">{location.savesCount || 0}</span>
-                    <span className="text-[10px] text-muted-foreground">{t('leaderboard.saved')}</span>
+                    <span className="text-[10px] text-muted-foreground">{t('saved', { ns: 'common' })}</span>
                   </div>
                   
                   {location.rankingScore && location.rankingScore > 0 && (
