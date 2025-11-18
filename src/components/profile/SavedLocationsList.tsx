@@ -1,12 +1,11 @@
 import { useState, useMemo, useEffect } from 'react';
-import { ArrowLeft, Search, MapPin, X } from 'lucide-react';
+import { ArrowLeft, Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import MinimalLocationCard from '@/components/explore/MinimalLocationCard';
 import LocationPostLibrary from '@/components/explore/LocationPostLibrary';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { UnifiedLocationService } from '@/services/unifiedLocationService';
 import { useTranslation } from 'react-i18next';
 import { translateCityName } from '@/utils/cityTranslations';
@@ -14,6 +13,8 @@ import { useMutedLocations } from '@/hooks/useMutedLocations';
 import { SAVE_TAG_OPTIONS } from '@/utils/saveTags';
 import { locationInteractionService } from '@/services/locationInteractionService';
 import { toast } from 'sonner';
+import SimpleCategoryFilter from '@/components/explore/SimpleCategoryFilter';
+import { AllowedCategory } from '@/utils/allowedCategories';
 
 interface SavedLocationsListProps {
   isOpen: boolean;
@@ -24,15 +25,15 @@ interface SavedLocationsListProps {
 const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps) => {
   const { t, i18n } = useTranslation();
   const { user: currentUser } = useAuth();
-  const { mutedLocations, muteLocation, unmuteLocation, isMuting } = useMutedLocations(currentUser?.id);
+  const { mutedLocations } = useMutedLocations(currentUser?.id);
   const targetUserId = userId || currentUser?.id;
   const [savedPlaces, setSavedPlaces] = useState<any>({});
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState('all');
-  const [sortBy, setSortBy] = useState('recent');
   const [selectedPlace, setSelectedPlace] = useState<any>(null);
   const [selectedSaveTag, setSelectedSaveTag] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState<AllowedCategory | null>(null);
 
   useEffect(() => {
     const loadSavedPlaces = async () => {
@@ -64,15 +65,12 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
     if (!currentUser || currentUser.id !== targetUserId) return;
 
     try {
-      // Use the service to handle unsaving (handles both tables correctly)
       await locationInteractionService.unsaveLocation(placeId);
 
-      // Clear cache to force refresh
       if (currentUser) {
         UnifiedLocationService.clearCache(currentUser.id);
       }
 
-      // Update local state
       setSavedPlaces((prev: any) => {
         const updated = { ...prev };
         if (updated[city]) {
@@ -82,7 +80,6 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
         return updated;
       });
 
-      // Dispatch global event for sync
       window.dispatchEvent(new CustomEvent('location-save-changed', { 
         detail: { locationId: placeId, isSaved: false } 
       }));
@@ -92,7 +89,6 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
     }
   };
 
-  // Keep profile saved list in sync with global save changes
   useEffect(() => {
     const handleSaveChanged = (event: CustomEvent) => {
       const { locationId, isSaved, saveTag } = event.detail;
@@ -104,126 +100,75 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
         let changed = false;
 
         for (const [city, places] of Object.entries(prev)) {
-          const newPlaces = (places as any[]).map((place: any) => {
-            if (place.id === locationId || place.google_place_id === locationId) {
-              changed = true;
-              if (!isSaved) {
-                return null;
-              }
-              return {
-                ...place,
-                saveTag: saveTag ?? place.saveTag,
-              };
-            }
-            return place;
-          }).filter(Boolean);
-
-          if (newPlaces.length > 0) {
-            updated[city] = newPlaces;
-          } else if (places && (places as any[]).length > 0) {
+          const placesArray = places as any[];
+          const filteredPlaces = placesArray.filter((p: any) => p.id !== locationId);
+          
+          if (filteredPlaces.length !== placesArray.length) {
             changed = true;
+          }
+          
+          if (filteredPlaces.length > 0) {
+            updated[city] = filteredPlaces;
           }
         }
 
         return changed ? updated : prev;
       });
-
-      if (!isSaved && currentUser) {
-        UnifiedLocationService.clearCache(currentUser.id);
-      }
     };
 
     window.addEventListener('location-save-changed', handleSaveChanged as EventListener);
     return () => {
       window.removeEventListener('location-save-changed', handleSaveChanged as EventListener);
     };
-  }, [currentUser]);
+  }, []);
 
   const isOwnProfile = currentUser?.id === targetUserId;
 
-  // Get all unique cities with translations
   const cities = useMemo(() => {
-    return Object.keys(savedPlaces)
-      .map(city => ({
-        original: city,
-        translated: translateCityName(city, i18n.language)
-      }))
-      .sort((a, b) => a.translated.localeCompare(b.translated));
+    return Object.keys(savedPlaces || {}).map(city => ({
+      original: city,
+      translated: translateCityName(city, i18n.language)
+    })).sort((a, b) => a.translated.localeCompare(b.translated));
   }, [savedPlaces, i18n.language]);
 
-  // Flatten all places
   const allPlaces = useMemo(() => {
-    const places = [];
-    for (const [city, cityPlaces] of Object.entries(savedPlaces)) {
-      places.push(...(cityPlaces as any[]).map(place => ({ ...place, city })));
-    }
-    return places;
+    return Object.values(savedPlaces || {}).flat() as any[];
   }, [savedPlaces]);
 
-  // Filter and sort places
   const filteredAndSortedPlaces = useMemo(() => {
-    let filtered = allPlaces;
+    let places = allPlaces.filter(place => {
+      const matchesSearch = !searchQuery || 
+        place.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        place.city?.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesCity = selectedCity === 'all' || place.city === selectedCity;
+      
+      const matchesSaveTag = selectedSaveTag === 'all' || place.save_tag === selectedSaveTag;
+      
+      const matchesCategory = !selectedCategory || place.category === selectedCategory;
+      
+      const isMuted = isOwnProfile && mutedLocations.includes(place.id);
+      
+      return matchesSearch && matchesCity && matchesSaveTag && matchesCategory && !isMuted;
+    });
 
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(place => 
-        place.name.toLowerCase().includes(query) ||
-        place.category.toLowerCase().includes(query) ||
-        place.city.toLowerCase().includes(query)
-      );
-    }
+    places.sort((a, b) => {
+      return new Date(b.saved_at || 0).getTime() - new Date(a.saved_at || 0).getTime();
+    });
 
-    if (selectedCity !== 'all') {
-      filtered = filtered.filter(place => place.city === selectedCity);
-    }
-
-    // Filter by save tag
-    if (selectedSaveTag !== 'all') {
-      filtered = filtered.filter(place => place.saveTag === selectedSaveTag);
-    }
-
-    // Filter out muted locations
-    if (isOwnProfile && mutedLocations && mutedLocations.length > 0) {
-      filtered = filtered.filter((place: any) => !mutedLocations.some((m: any) => m.location_id === place.id));
-    }
-
-    switch (sortBy) {
-      case 'recent':
-        return filtered.sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime());
-      case 'name':
-        return filtered.sort((a, b) => a.name.localeCompare(b.name));
-      case 'city':
-        return filtered.sort((a, b) => a.city.localeCompare(b.city));
-      case 'category':
-        return filtered.sort((a, b) => a.category.localeCompare(b.category));
-      default:
-        return filtered;
-    }
-  }, [allPlaces, searchQuery, selectedCity, selectedSaveTag, sortBy, isOwnProfile, mutedLocations]);
+    return places;
+  }, [allPlaces, searchQuery, selectedCity, selectedSaveTag, selectedCategory, isOwnProfile, mutedLocations]);
 
   const handlePlaceClick = (place: any) => {
     setSelectedPlace({
       ...place,
-      id: place.id,
-      google_place_id: place.google_place_id || place.id,
-      name: place.name,
-      address: place.address,
-      category: place.category,
-      city: place.city,
-      types: place.types || [place.category],
-      coordinates: (place.latitude != null && place.longitude != null)
-        ? { lat: place.latitude, lng: place.longitude }
-        : undefined
+      id: place.id
     });
   };
 
-  const handleUnsave = async (e: React.MouseEvent, place: any) => {
+  const handleUnsave = (e: React.MouseEvent, place: any) => {
     e.stopPropagation();
-    try {
-      await unsavePlace(place.id, place.city);
-    } catch (error) {
-      console.error('Failed to remove location:', error);
-    }
+    unsavePlace(place.id, place.city);
   };
 
   if (!isOpen) return null;
@@ -250,7 +195,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
       `}</style>
       
       {/* Header */}
-      <div className="bg-background border-b border-gray-100 sticky top-0 z-40 shadow-sm mt-2.5">
+      <div className="bg-background sticky top-0 z-40 shadow-sm mt-2.5">
         <div className="flex items-center justify-between pl-1 pr-4 py-4 gap-2">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <button
@@ -299,7 +244,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-background border-border z-[9999]">
-              <SelectItem value="all">{t('all_categories')}</SelectItem>
+              <SelectItem value="all">{t('all', { ns: 'common', defaultValue: 'All' })}</SelectItem>
               {SAVE_TAG_OPTIONS.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.emoji} {t(option.labelKey)}
@@ -307,103 +252,72 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
               ))}
             </SelectContent>
           </Select>
-
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="flex-1 min-w-[110px] bg-background rounded-full border-border">
-              <SelectValue placeholder={t('sortBy', { ns: 'common' })} />
-            </SelectTrigger>
-            <SelectContent className="bg-background border-border z-[9999]">
-              <SelectItem value="recent">{t('recentlySaved', { ns: 'profile' })}</SelectItem>
-              <SelectItem value="name">{t('nameAZ', { ns: 'common' })}</SelectItem>
-              <SelectItem value="city">{t('cityAZ', { ns: 'common' })}</SelectItem>
-              <SelectItem value="category">{t('category', { ns: 'common' })}</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
+
+        {/* Category Filter Icons */}
+        <SimpleCategoryFilter 
+          selectedCategory={selectedCategory}
+          onCategorySelect={setSelectedCategory}
+        />
       </div>
 
-      {/* Loading State */}
-      {loading && (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-3"></div>
-            <p className="text-muted-foreground">{t('loadingSaved', { ns: 'profile' })}</p>
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto">
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-muted-foreground">{t('loading', { ns: 'common' })}...</div>
           </div>
-        </div>
-      )}
-
-      {/* Empty State */}
-      {!loading && allPlaces.length === 0 && (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center max-w-xs mx-auto px-4">
-            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-              <MapPin className="w-8 h-8 text-muted-foreground" />
+        ) : filteredAndSortedPlaces.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 px-4">
+            <div className="text-center text-muted-foreground">
+              {searchQuery || selectedCity !== 'all' || selectedSaveTag !== 'all' || selectedCategory ? (
+                <>
+                  <p className="text-lg font-medium mb-1">{t('noMatchingSavedLocations', { ns: 'profile' })}</p>
+                  <p className="text-sm">{t('tryDifferentFilters', { ns: 'profile' })}</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-lg font-medium mb-1">{t('noSavedLocations', { ns: 'profile' })}</p>
+                  <p className="text-sm">{t('startSavingPlaces', { ns: 'profile' })}</p>
+                </>
+              )}
             </div>
-            <h3 className="text-lg font-semibold mb-2">{t('noSavedLocations', { ns: 'profile' })}</h3>
-            <p className="text-muted-foreground text-sm">
-              {t('startSaving', { ns: 'profile' })}
-            </p>
           </div>
-        </div>
-      )}
-
-      {/* No Search Results */}
-      {!loading && allPlaces.length > 0 && filteredAndSortedPlaces.length === 0 && (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center max-w-xs mx-auto px-4">
-            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-              <Search className="w-8 h-8 text-muted-foreground" />
+        ) : (
+          <div className="p-4">
+            <div className="grid grid-cols-2 gap-2">
+              {filteredAndSortedPlaces.map((p: any) => {
+                return (
+                  <div key={p.id} className="relative group">
+                    <MinimalLocationCard
+                      place={{
+                        id: p.id,
+                        name: p.name,
+                        category: p.category,
+                        city: p.city,
+                        saveTag: p.save_tag
+                      }}
+                      onCardClick={() => handlePlaceClick(p)}
+                    />
+                    {isOwnProfile && (
+                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 bg-background/80 hover:bg-background"
+                          onClick={(e) => handleUnsave(e, p)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-            <h3 className="text-lg font-semibold mb-2">{t('noResults', { ns: 'common' })}</h3>
-            <p className="text-muted-foreground text-sm">
-              {t('adjustFilters', { ns: 'common' })}
-            </p>
           </div>
-        </div>
-      )}
-
-      {/* Locations List - Minimal Cards - Grid */}
-      {!loading && filteredAndSortedPlaces.length > 0 && (
-        <div className="flex-1 overflow-y-auto bg-background">
-          <div className="grid grid-cols-2 gap-3 px-4 py-3">
-            {filteredAndSortedPlaces.map((p, idx) => {
-              const isMuted = mutedLocations?.some((m: any) => m.location_id === p.id);
-              
-              return (
-                <div key={`${p.city}-${p.id}-${idx}`} className="relative group">
-                  <MinimalLocationCard
-                    place={{
-                      id: p.id,
-                      name: p.name,
-                      category: p.category,
-                      city: p.city,
-                      address: p.address,
-                      google_place_id: p.google_place_id,
-                      coordinates: p.coordinates,
-                      savedCount: p.savedCount || 0,
-                      postsCount: p.postsCount || 0,
-                      saveTag: p.saveTag || 'general',
-                    }}
-                    onCardClick={() => handlePlaceClick(p)}
-                  />
-                  {isOwnProfile && (
-                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 bg-background/80 hover:bg-background"
-                        onClick={(e) => handleUnsave(e, p)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
