@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Plus, Folder, ChevronRight, Lock, Globe } from 'lucide-react';
+import { X, Plus, Folder, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -16,7 +16,6 @@ interface SavedFolder {
   description: string | null;
   color: string | null;
   icon: string | null;
-  is_private: boolean;
   created_at: string;
   locations_count?: number;
 }
@@ -46,7 +45,6 @@ const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect, savedLocations = 
   const [loading, setLoading] = useState(true);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [folderName, setFolderName] = useState('');
-  const [isPrivate, setIsPrivate] = useState(false);
   const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const [touchStart, setTouchStart] = useState(0);
@@ -81,7 +79,6 @@ const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect, savedLocations = 
         description: folder.description ?? null,
         color: folder.color ?? null,
         icon: folder.icon ?? null,
-        is_private: folder.is_private ?? false,
         created_at: folder.created_at,
         locations_count: folder.folder_locations?.[0]?.count || 0,
       }));
@@ -129,7 +126,6 @@ const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect, savedLocations = 
 
       toast.success(t('folderCreated', { ns: 'profile', defaultValue: 'Cartella creata' }));
       setFolderName('');
-      setIsPrivate(false);
       setSelectedLocationIds([]);
       setCreateModalOpen(false);
       loadFolders();
@@ -247,25 +243,18 @@ const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect, savedLocations = 
                     }}
                     className="group relative aspect-square rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-200 active:scale-95"
                   >
-                    <div className={`absolute inset-0 ${folder.color || 'bg-primary'} opacity-90`} />
-                    <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-white">
-                      <Folder className="h-12 w-12 mb-2" />
-                      <p className="font-semibold text-sm line-clamp-2 text-center">
+                    <div className={`absolute inset-0 ${folder.color || 'bg-primary'} opacity-80 dark:opacity-60`} />
+                    <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-white dark:text-white/90">
+                      <Folder className="h-12 w-12 mb-2 opacity-90" />
+                      <p className="font-semibold text-sm line-clamp-2 text-center opacity-95">
                         {folder.name}
                       </p>
-                      <p className="text-xs opacity-90 mt-1">
+                      <p className="text-xs opacity-80 mt-1">
                         {folder.locations_count || 0} {t('locations', { ns: 'common', defaultValue: 'posizioni' })}
                       </p>
                     </div>
-                    <div className="absolute top-2 right-2">
-                      {folder.is_private ? (
-                        <Lock className="h-4 w-4 text-white/80" />
-                      ) : (
-                        <Globe className="h-4 w-4 text-white/80" />
-                      )}
-                    </div>
                     <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <ChevronRight className="h-5 w-5 text-white" />
+                      <ChevronRight className="h-5 w-5 text-white dark:text-white/80" />
                     </div>
                   </button>
                 ))}
@@ -303,21 +292,6 @@ const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect, savedLocations = 
                 onChange={(e) => setFolderName(e.target.value)}
                 placeholder={t('enterFolderName', { ns: 'profile', defaultValue: 'es. ❤️ Preferiti, 🍕 Da provare...' })}
                 maxLength={50}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="is-private">
-                  {t('privateFolder', { ns: 'profile', defaultValue: 'Cartella privata' })}
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  {t('privateFolderDesc', { ns: 'profile', defaultValue: 'Solo tu potrai vedere questa cartella' })}
-                </p>
-              </div>
-              <Switch
-                id="is-private"
-                checked={isPrivate}
-                onCheckedChange={setIsPrivate}
               />
             </div>
             <div className="space-y-2 pt-2">
