@@ -3,6 +3,7 @@ import { normalizeCity, extractCityFromAddress, extractCityFromName } from '@/ut
 
 export interface UnifiedLocation {
   id: string;
+  location_id?: string; // Internal UUID from locations table
   name: string;
   category: string;
   city: string;
@@ -99,6 +100,7 @@ export class UnifiedLocationService {
 
           locations.push({
             id: placeId,
+            location_id: loc.id, // Internal UUID from locations table
             name: loc.name || 'Unknown Location',
             saveTag: (item as any).save_tag || 'general',
             category: loc.category || 'place',

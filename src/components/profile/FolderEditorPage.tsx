@@ -199,11 +199,13 @@ const FolderEditorPage = ({ isOpen, onClose, savedLocations = [], folderId, onFo
     }
   };
 
-  const toggleLocationSelection = (locationId: string) => {
+  const toggleLocationSelection = (locationId: string, internalId?: string) => {
+    // Use internal location_id (UUID) if available, otherwise use the id
+    const idToUse = internalId || locationId;
     setSelectedLocationIds((prev) =>
-      prev.includes(locationId)
-        ? prev.filter((id) => id !== locationId)
-        : [...prev, locationId]
+      prev.includes(idToUse)
+        ? prev.filter((id) => id !== idToUse)
+        : [...prev, idToUse]
     );
   };
 
@@ -215,9 +217,9 @@ const FolderEditorPage = ({ isOpen, onClose, savedLocations = [], folderId, onFo
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-background z-[10001] flex flex-col">
+    <div className="fixed inset-0 bg-background z-[10001] flex flex-col pt-[25px]">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-border">
+      <div className="flex items-center justify-between px-4 py-4">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <button
             onClick={onClose}
@@ -330,12 +332,14 @@ const FolderEditorPage = ({ isOpen, onClose, savedLocations = [], folderId, onFo
                   </p>
                 ) : (
                   filteredLocations.map((place: any) => {
-                    const isSelected = selectedLocationIds.includes(place.id);
+                    // Use internal location_id if available, otherwise use id
+                    const idToCheck = place.location_id || place.id;
+                    const isSelected = selectedLocationIds.includes(idToCheck);
                     return (
                       <button
                         type="button"
                         key={place.id}
-                        onClick={() => toggleLocationSelection(place.id)}
+                        onClick={() => toggleLocationSelection(place.id, place.location_id)}
                         className={`w-full flex items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors ${
                           isSelected ? 'border-primary bg-primary/5' : 'border-border bg-background hover:bg-accent/40'
                         }`}
@@ -369,39 +373,48 @@ const FolderEditorPage = ({ isOpen, onClose, savedLocations = [], folderId, onFo
       </div>
 
       {/* Footer Actions */}
-      <div className="p-4 border-t border-border space-y-2">
-        {isEditMode && (
+      <div className="p-4 flex gap-2">
+        {isEditMode ? (
+          <>
+            <Button
+              onClick={handleDelete}
+              variant="outline"
+              className="flex-1 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-2xl"
+              disabled={saving}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              {t('deleteFolder', { ns: 'profile', defaultValue: 'Elimina cartella' })}
+            </Button>
+            <Button
+              onClick={handleSave}
+              className="flex-1 rounded-2xl"
+              size="lg"
+              disabled={!folderName.trim() || saving}
+            >
+              {saving ? (
+                t('saving', { ns: 'common', defaultValue: 'Salvataggio...' })
+              ) : (
+                t('saveChanges', { ns: 'common', defaultValue: 'Salva modifiche' })
+              )}
+            </Button>
+          </>
+        ) : (
           <Button
-            onClick={handleDelete}
-            variant="outline"
-            className="w-full text-destructive hover:text-destructive"
-            disabled={saving}
+            onClick={handleSave}
+            className="w-full rounded-2xl"
+            size="lg"
+            disabled={!folderName.trim() || saving}
           >
-            <Trash2 className="h-4 w-4 mr-2" />
-            {t('deleteFolder', { ns: 'profile', defaultValue: 'Elimina cartella' })}
+            {saving ? (
+              t('saving', { ns: 'common', defaultValue: 'Salvataggio...' })
+            ) : (
+              <>
+                <Plus className="h-5 w-5 mr-2" />
+                {t('createFolder', { ns: 'profile', defaultValue: 'Crea cartella' })}
+              </>
+            )}
           </Button>
         )}
-        <Button
-          onClick={handleSave}
-          className="w-full"
-          size="lg"
-          disabled={!folderName.trim() || saving}
-        >
-          {saving ? (
-            t('saving', { ns: 'common', defaultValue: 'Salvataggio...' })
-          ) : (
-            <>
-              {isEditMode ? (
-                t('saveChanges', { ns: 'common', defaultValue: 'Salva modifiche' })
-              ) : (
-                <>
-                  <Plus className="h-5 w-5 mr-2" />
-                  {t('createFolder', { ns: 'profile', defaultValue: 'Crea cartella' })}
-                </>
-              )}
-            </>
-          )}
-        </Button>
       </div>
     </div>
   );
