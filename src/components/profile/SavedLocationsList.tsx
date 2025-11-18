@@ -267,6 +267,13 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
       />
       
       <div ref={containerRef} className="fixed inset-0 bg-background z-[9999] flex flex-col">
+        {/* Swipe Indicator */}
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-20 bg-primary/30 rounded-r-full z-50 pointer-events-none">
+          <div className="absolute left-1 top-1/2 -translate-y-1/2 text-primary/60 text-xs whitespace-nowrap origin-left -rotate-90">
+            ← Swipe
+          </div>
+        </div>
+        
         <style>{`
           [class*="bottom-navigation"],
           [class*="NewBottomNavigation"],
@@ -277,7 +284,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
         `}</style>
       
       {/* Header */}
-      <div className="bg-background sticky top-0 z-40 mt-2.5">
+      <div className="bg-background sticky top-0 z-40 mt-2.5 shadow-none">
         <div className="flex items-center justify-between pl-1 pr-4 py-4 gap-2">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <button
