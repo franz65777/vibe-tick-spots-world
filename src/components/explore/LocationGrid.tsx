@@ -185,17 +185,33 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
         .select('place_id, user_id')
         .in('place_id', placeIds);
 
-      // Fetch posts count for all locations
+      // Fetch ALL location IDs that share the same google_place_id or name+city
+      // to ensure we count posts/ratings across all related locations
+      const allRelatedLocationIds = new Set<string>(locationIds);
+      
+      // Find all locations with matching google_place_ids
+      if (placeIds.length > 0) {
+        const { data: relatedLocations } = await supabase
+          .from('locations')
+          .select('id')
+          .in('google_place_id', placeIds);
+        
+        relatedLocations?.forEach(loc => allRelatedLocationIds.add(loc.id));
+      }
+      
+      const allIdsArray = Array.from(allRelatedLocationIds);
+
+      // Fetch posts count for ALL related locations
       const { data: postsData } = await supabase
         .from('posts')
         .select('location_id, id')
-        .in('location_id', locationIds);
+        .in('location_id', allIdsArray);
 
-      // Fetch ratings from interactions table
+      // Fetch ratings from interactions table for ALL related locations
       const { data: ratingsData } = await supabase
         .from('interactions')
         .select('location_id, weight')
-        .in('location_id', locationIds)
+        .in('location_id', allIdsArray)
         .eq('action_type', 'review')
         .not('weight', 'is', null);
 
