@@ -36,10 +36,13 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
   const [selectedSaveTag, setSelectedSaveTag] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState<AllowedCategory | null>(null);
   const [isFoldersDrawerOpen, setIsFoldersDrawerOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef(0);
   const touchCurrentX = useRef(0);
   const isDragging = useRef(false);
+  const lastScrollY = useRef(0);
 
   useEffect(() => {
     const loadSavedPlaces = async () => {
@@ -128,6 +131,29 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
     };
   }, []);
 
+  // Scroll handling for filter visibility
+  useEffect(() => {
+    const content = contentRef.current;
+    if (!content) return;
+
+    const handleScroll = () => {
+      const currentScrollY = content.scrollTop;
+      
+      if (currentScrollY > lastScrollY.current && currentScrollY > 50) {
+        // Scrolling down
+        setShowFilters(false);
+      } else if (currentScrollY < lastScrollY.current) {
+        // Scrolling up
+        setShowFilters(true);
+      }
+      
+      lastScrollY.current = currentScrollY;
+    };
+
+    content.addEventListener('scroll', handleScroll, { passive: true });
+    return () => content.removeEventListener('scroll', handleScroll);
+  }, []);
+
   // Swipe gesture handling
   useEffect(() => {
     const container = containerRef.current;
@@ -144,7 +170,8 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
       touchCurrentX.current = e.touches[0].clientX;
       const diff = touchCurrentX.current - touchStartX.current;
       
-      if (diff > 50 && touchStartX.current < 50) {
+      // Swipe from anywhere on screen if moving right
+      if (diff > 80) {
         setIsFoldersDrawerOpen(true);
         isDragging.current = false;
       }
@@ -158,10 +185,8 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
 
     // Mouse events for desktop
     const handleMouseDown = (e: MouseEvent) => {
-      if (e.clientX < 50) {
-        touchStartX.current = e.clientX;
-        isDragging.current = true;
-      }
+      touchStartX.current = e.clientX;
+      isDragging.current = true;
     };
 
     const handleMouseMove = (e: MouseEvent) => {
@@ -169,7 +194,8 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
       touchCurrentX.current = e.clientX;
       const diff = touchCurrentX.current - touchStartX.current;
       
-      if (diff > 50) {
+      // Swipe from anywhere on screen if moving right
+      if (diff > 80) {
         setIsFoldersDrawerOpen(true);
         isDragging.current = false;
       }
@@ -181,9 +207,9 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
       touchCurrentX.current = 0;
     };
 
-    container.addEventListener('touchstart', handleTouchStart);
-    container.addEventListener('touchmove', handleTouchMove);
-    container.addEventListener('touchend', handleTouchEnd);
+    container.addEventListener('touchstart', handleTouchStart, { passive: true });
+    container.addEventListener('touchmove', handleTouchMove, { passive: true });
+    container.addEventListener('touchend', handleTouchEnd, { passive: true });
     container.addEventListener('mousedown', handleMouseDown);
     container.addEventListener('mousemove', handleMouseMove);
     container.addEventListener('mouseup', handleMouseUp);
@@ -296,7 +322,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-background px-4 pb-2 space-y-3">
+      <div className={`bg-background px-4 pb-2 space-y-3 transition-all duration-300 ${showFilters ? 'opacity-100 max-h-[500px]' : 'opacity-0 max-h-0 overflow-hidden'}`}>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <Input
@@ -372,7 +398,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div ref={contentRef} className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-muted-foreground">{t('loading', { ns: 'common' })}...</div>
