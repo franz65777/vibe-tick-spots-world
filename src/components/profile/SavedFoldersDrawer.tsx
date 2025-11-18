@@ -1,14 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Plus, Folder, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import FolderEditorPage from './FolderEditorPage';
 
 interface SavedFolder {
   id: string;
@@ -39,13 +36,12 @@ const FOLDER_COLORS = [
 ];
 
 const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect, savedLocations = [] }: SavedFoldersDrawerProps) => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [folders, setFolders] = useState<SavedFolder[]>([]);
   const [loading, setLoading] = useState(true);
-  const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [folderName, setFolderName] = useState('');
-  const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [touchStart, setTouchStart] = useState(0);
   const [mouseStart, setMouseStart] = useState(0);
@@ -92,55 +88,18 @@ const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect, savedLocations = 
     }
   };
 
-  const handleCreateFolder = async () => {
-    if (!user || !folderName.trim()) return;
-
-    try {
-      const randomColor = FOLDER_COLORS[Math.floor(Math.random() * FOLDER_COLORS.length)];
-
-      const { data, error } = await supabase
-        .from('saved_folders')
-        .insert({
-          user_id: user.id,
-          name: folderName.trim(),
-          color: randomColor,
-          icon: 'folder',
-        })
-        .select('id')
-        .single();
-
-      if (error) throw error;
-
-      if (selectedLocationIds.length > 0) {
-        const { error: locationsError } = await supabase
-          .from('folder_locations')
-          .insert(
-            selectedLocationIds.map((locationId) => ({
-              folder_id: data.id,
-              location_id: locationId,
-            }))
-          );
-
-        if (locationsError) throw locationsError;
-      }
-
-      toast.success(t('folderCreated', { ns: 'profile', defaultValue: 'Cartella creata' }));
-      setFolderName('');
-      setSelectedLocationIds([]);
-      setCreateModalOpen(false);
-      loadFolders();
-    } catch (error) {
-      console.error('Error creating folder:', error);
-      toast.error(t('errorCreatingFolder', { ns: 'profile', defaultValue: 'Errore nella creazione della cartella' }));
-    }
+  const handleOpenEditor = (folderId?: string) => {
+    setEditingFolderId(folderId || null);
+    setEditorOpen(true);
   };
 
-  const toggleLocationSelection = (locationId: string) => {
-    setSelectedLocationIds((prev) =>
-      prev.includes(locationId)
-        ? prev.filter((id) => id !== locationId)
-        : [...prev, locationId]
-    );
+  const handleCloseEditor = () => {
+    setEditorOpen(false);
+    setEditingFolderId(null);
+  };
+
+  const handleFolderSaved = () => {
+    loadFolders();
   };
 
   // Swipe gesture handling
@@ -235,28 +194,26 @@ const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect, savedLocations = 
             ) : (
               <div className="grid grid-cols-2 gap-3">
                 {folders.map((folder) => (
-                  <button
-                    key={folder.id}
-                    onClick={() => {
-                      onFolderSelect?.(folder.id);
-                      onClose();
-                    }}
-                    className="group relative aspect-square rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-200 active:scale-95"
-                  >
-                    <div className={`absolute inset-0 ${folder.color || 'bg-primary'} opacity-80 dark:opacity-60`} />
-                    <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-white dark:text-white/90">
-                      <Folder className="h-12 w-12 mb-2 opacity-90" />
-                      <p className="font-semibold text-sm line-clamp-2 text-center opacity-95">
-                        {folder.name}
-                      </p>
-                      <p className="text-xs opacity-80 mt-1">
-                        {folder.locations_count || 0} {t('locations', { ns: 'common', defaultValue: 'posizioni' })}
-                      </p>
-                    </div>
-                    <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <ChevronRight className="h-5 w-5 text-white dark:text-white/80" />
-                    </div>
-                  </button>
+                  <div key={folder.id} className="relative">
+                    <button
+                      onClick={() => handleOpenEditor(folder.id)}
+                      className="w-full group relative aspect-square rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-200 active:scale-95"
+                    >
+                      <div className={`absolute inset-0 ${folder.color || 'bg-primary'} opacity-80 dark:opacity-60`} />
+                      <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-white dark:text-white/90">
+                        <Folder className="h-12 w-12 mb-2 opacity-90" />
+                        <p className="font-semibold text-sm line-clamp-2 text-center opacity-95">
+                          {folder.name}
+                        </p>
+                        <p className="text-xs opacity-80 mt-1">
+                          {folder.locations_count || 0} {t('locations', { ns: 'common', defaultValue: 'posizioni' })}
+                        </p>
+                      </div>
+                      <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <ChevronRight className="h-5 w-5 text-white dark:text-white/80" />
+                      </div>
+                    </button>
+                  </div>
                 ))}
               </div>
             )}
@@ -265,7 +222,7 @@ const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect, savedLocations = 
           {/* Create Button */}
           <div className="p-4">
             <Button
-              onClick={() => setCreateModalOpen(true)}
+              onClick={() => handleOpenEditor()}
               className="w-full rounded-full"
               size="lg"
             >
@@ -275,78 +232,14 @@ const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect, savedLocations = 
           </div>
         </div>
 
-      {/* Create Folder Modal */}
-      <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
-        <DialogContent className="z-[10002] bg-background">
-          <DialogHeader>
-            <DialogTitle>{t('createFolder', { ns: 'profile', defaultValue: 'Crea cartella' })}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="folder-name">
-                {t('folderName', { ns: 'profile', defaultValue: 'Nome cartella' })}
-              </Label>
-              <Input
-                id="folder-name"
-                value={folderName}
-                onChange={(e) => setFolderName(e.target.value)}
-                placeholder={t('enterFolderName', { ns: 'profile', defaultValue: 'es. ❤️ Preferiti, 🍕 Da provare...' })}
-                maxLength={50}
-              />
-            </div>
-            <div className="space-y-2 pt-2">
-              <Label>
-                {t('selectLocationsForFolder', { ns: 'profile', defaultValue: 'Seleziona i luoghi da aggiungere' })}
-              </Label>
-              <div className="max-h-64 overflow-y-auto space-y-2">
-                {savedLocations.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    {t('noSavedLocationsForFolder', { ns: 'profile', defaultValue: 'Non hai ancora luoghi salvati da aggiungere' })}
-                  </p>
-                ) : (
-                  savedLocations.map((place: any) => {
-                    const isSelected = selectedLocationIds.includes(place.id);
-                    return (
-                      <button
-                        type="button"
-                        key={place.id}
-                        onClick={() => toggleLocationSelection(place.id)}
-                        className={`w-full flex items-center justify-between rounded-xl border px-3 py-2 text-left transition-colors ${
-                          isSelected ? 'border-primary bg-primary/5' : 'border-border bg-background hover:bg-accent/40'
-                        }`}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{place.name}</p>
-                          {place.city && (
-                            <p className="text-xs text-muted-foreground truncate">
-                              {place.city}
-                            </p>
-                          )}
-                        </div>
-                        <div
-                          className={`ml-3 h-5 w-5 rounded-full border flex items-center justify-center ${
-                            isSelected ? 'border-primary bg-primary text-primary-foreground' : 'border-border'
-                          }`}
-                        >
-                          {isSelected && <span className="text-[10px] font-semibold">✓</span>}
-                        </div>
-                      </button>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateModalOpen(false)}>
-              {t('cancel', { ns: 'common', defaultValue: 'Annulla' })}
-            </Button>
-            <Button onClick={handleCreateFolder} disabled={!folderName.trim()}>
-              {t('create', { ns: 'common', defaultValue: 'Crea' })}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Folder Editor */}
+      <FolderEditorPage
+        isOpen={editorOpen}
+        onClose={handleCloseEditor}
+        savedLocations={savedLocations}
+        folderId={editingFolderId}
+        onFolderSaved={handleFolderSaved}
+      />
     </>
   );
 };
