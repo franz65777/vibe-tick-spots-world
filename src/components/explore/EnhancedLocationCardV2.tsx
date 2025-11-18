@@ -22,6 +22,7 @@ interface EnhancedLocationCardV2Props {
 
 const EnhancedLocationCardV2 = ({ place, onCardClick }: EnhancedLocationCardV2Props) => {
   const [isSaved, setIsSaved] = useState(false);
+  const [currentSaveTag, setCurrentSaveTag] = useState<SaveTag>('general');
   const [loading, setLoading] = useState(false);
 
   const { cityLabel } = useNormalizedCity({
@@ -40,20 +41,38 @@ const EnhancedLocationCardV2 = ({ place, onCardClick }: EnhancedLocationCardV2Pr
 
   useEffect(() => {
     const checkSaved = async () => {
-      if (place.id) {
+      if (!place.id) return;
+
+      try {
         const saved = await locationInteractionService.isLocationSaved(place.id);
         setIsSaved(saved);
+
+        if (saved) {
+          const tag = await locationInteractionService.getCurrentSaveTag(
+            place.google_place_id || place.id
+          );
+          setCurrentSaveTag((tag as SaveTag) || 'general');
+        } else {
+          setCurrentSaveTag('general');
+        }
+      } catch (error) {
+        console.error('Error checking saved state:', error);
       }
     };
     checkSaved();
-  }, [place.id]);
+  }, [place.id, place.google_place_id]);
 
   // Listen for global save changes
   useEffect(() => {
     const handleSaveChanged = (event: CustomEvent) => {
-      const { locationId, isSaved: newSavedState } = event.detail;
-      if (locationId === place.id) {
+      const { locationId, isSaved: newSavedState, saveTag } = event.detail;
+      if (locationId === place.id || locationId === place.google_place_id) {
         setIsSaved(newSavedState);
+        if (saveTag) {
+          setCurrentSaveTag(saveTag as SaveTag);
+        } else if (!newSavedState) {
+          setCurrentSaveTag('general');
+        }
       }
     };
     
@@ -61,7 +80,7 @@ const EnhancedLocationCardV2 = ({ place, onCardClick }: EnhancedLocationCardV2Pr
     return () => {
       window.removeEventListener('location-save-changed', handleSaveChanged as EventListener);
     };
-  }, [place.id]);
+  }, [place.id, place.google_place_id]);
 
   const handleSaveToggle = async (tag: SaveTag) => {
     setLoading(true);
@@ -77,10 +96,16 @@ const EnhancedLocationCardV2 = ({ place, onCardClick }: EnhancedLocationCardV2Pr
         types: place.types || []
       }, tag);
       setIsSaved(true);
+      setCurrentSaveTag(tag);
       // Emit global event
       window.dispatchEvent(new CustomEvent('location-save-changed', { 
-        detail: { locationId: place.id, isSaved: true } 
+        detail: { locationId: place.id, isSaved: true, saveTag: tag } 
       }));
+      if (place.google_place_id) {
+        window.dispatchEvent(new CustomEvent('location-save-changed', {
+          detail: { locationId: place.google_place_id, isSaved: true, saveTag: tag }
+        }));
+      }
     } catch (error) {
       console.error('Error saving location:', error);
     } finally {
@@ -94,10 +119,16 @@ const EnhancedLocationCardV2 = ({ place, onCardClick }: EnhancedLocationCardV2Pr
     try {
       await locationInteractionService.unsaveLocation(place.id);
       setIsSaved(false);
+      setCurrentSaveTag('general');
       // Emit global event
       window.dispatchEvent(new CustomEvent('location-save-changed', { 
         detail: { locationId: place.id, isSaved: false } 
       }));
+      if (place.google_place_id) {
+        window.dispatchEvent(new CustomEvent('location-save-changed', {
+          detail: { locationId: place.google_place_id, isSaved: false }
+        }));
+      }
     } catch (error) {
       console.error('Error unsaving location:', error);
     } finally {

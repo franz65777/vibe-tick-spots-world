@@ -35,6 +35,7 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
   const { engagement } = usePinEngagement(place.id, place.google_place_id || null);
   const [isLiking, setIsLiking] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [currentSaveTag, setCurrentSaveTag] = useState<SaveTag>('general');
   const [commentModalOpen, setCommentModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
@@ -51,33 +52,32 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
   });
 
   const { stats } = useLocationStats(place.id, place.google_place_id || null);
-
+ 
   const isMuted = mutedLocations?.some((m: any) => m.location_id === place.id);
 
   useEffect(() => {
     loadSmartImage();
   }, [place]);
 
-  const loadSmartImage = async () => {
-    setImageLoading(true);
-    try {
-      if (place.image) {
-        setSmartImage(place.image);
-      } else {
-        const image = await imageService.getPlaceImage(
-          place.name,
-          cityLabel || 'Unknown',
-          place.category
-        );
-        setSmartImage(image);
+  // Load current save tag on mount and when place changes
+  useEffect(() => {
+    const fetchSaveTag = async () => {
+      if (!place.id) return;
+      try {
+        const saved = await locationInteractionService.isLocationSaved(place.id);
+        if (saved) {
+          const tag = await locationInteractionService.getCurrentSaveTag(place.google_place_id || place.id);
+          setCurrentSaveTag((tag as SaveTag) || 'general');
+        } else {
+          setCurrentSaveTag('general');
+        }
+      } catch (error) {
+        console.error('Error fetching save tag:', error);
       }
-    } catch (error) {
-      console.error('Error loading smart image:', error);
-      setSmartImage('');
-    } finally {
-      setImageLoading(false);
-    }
-  };
+    };
+
+    fetchSaveTag();
+  }, [place.id, place.google_place_id]);
 
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -105,12 +105,18 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
       } : null;
       
       await locationInteractionService.saveLocation(place.id, locationData, tag);
+      setCurrentSaveTag(tag);
       // Refetch engagement to update state
       await refetch();
       // Emit global event
       window.dispatchEvent(new CustomEvent('location-save-changed', {
-        detail: { locationId: place.id, isSaved: true }
+        detail: { locationId: place.id, isSaved: true, saveTag: tag }
       }));
+      if (place.google_place_id) {
+        window.dispatchEvent(new CustomEvent('location-save-changed', {
+          detail: { locationId: place.google_place_id, isSaved: true, saveTag: tag }
+        }));
+      }
     } catch (error) {
       console.error('Error saving location:', error);
     } finally {
@@ -123,12 +129,18 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
     setIsSaving(true);
     try {
       await locationInteractionService.unsaveLocation(place.id);
+      setCurrentSaveTag('general');
       // Refetch engagement to update state
       await refetch();
       // Emit global event
       window.dispatchEvent(new CustomEvent('location-save-changed', {
         detail: { locationId: place.id, isSaved: false }
       }));
+      if (place.google_place_id) {
+        window.dispatchEvent(new CustomEvent('location-save-changed', {
+          detail: { locationId: place.google_place_id, isSaved: false }
+        }));
+      }
     } catch (error) {
       console.error('Error unsaving location:', error);
     } finally {
@@ -231,7 +243,7 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
               disabled={isSaving}
               variant="secondary"
               size="icon"
-              currentSaveTag={'general'}
+              currentSaveTag={currentSaveTag}
             />
           </div>
 
