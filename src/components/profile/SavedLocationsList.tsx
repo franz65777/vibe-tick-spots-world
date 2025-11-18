@@ -143,7 +143,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
       
       const matchesCity = selectedCity === 'all' || place.city === selectedCity;
       
-      const matchesSaveTag = selectedSaveTag === 'all' || place.save_tag === selectedSaveTag;
+      const matchesSaveTag = selectedSaveTag === 'all' || place.saveTag === selectedSaveTag;
       
       const matchesCategory = !selectedCategory || place.category === selectedCategory;
       
@@ -153,7 +153,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
     });
 
     places.sort((a, b) => {
-      return new Date(b.saved_at || 0).getTime() - new Date(a.saved_at || 0).getTime();
+      return new Date(b.saved_at || b.savedAt || 0).getTime() - new Date(a.saved_at || a.savedAt || 0).getTime();
     });
 
     return places;
@@ -244,17 +244,27 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
               <SelectValue>
                 {selectedSaveTag === 'all' 
                   ? t('all', { ns: 'common', defaultValue: 'All' })
-                  : SAVE_TAG_OPTIONS.find(opt => opt.value === selectedSaveTag)?.emoji + ' ' + 
-                    t(SAVE_TAG_OPTIONS.find(opt => opt.value === selectedSaveTag)?.labelKey || '')}
+                  : (() => {
+                      const option = SAVE_TAG_OPTIONS.find(opt => opt.value === selectedSaveTag);
+                      if (!option) return t('all', { ns: 'common', defaultValue: 'All' });
+                      const labelParts = option.labelKey.split('.');
+                      const translationKey = labelParts[labelParts.length - 1];
+                      return `${option.emoji} ${t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}`;
+                    })()
+                }
               </SelectValue>
             </SelectTrigger>
             <SelectContent className="bg-background border-border z-[9999]">
               <SelectItem value="all">{t('all', { ns: 'common', defaultValue: 'All' })}</SelectItem>
-              {SAVE_TAG_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.emoji} {t(option.labelKey)}
-                </SelectItem>
-              ))}
+              {SAVE_TAG_OPTIONS.map((option) => {
+                const labelParts = option.labelKey.split('.');
+                const translationKey = labelParts[labelParts.length - 1];
+                return (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.emoji} {t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>
@@ -277,8 +287,22 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
             <div className="text-center text-muted-foreground">
               {searchQuery || selectedCity !== 'all' || selectedSaveTag !== 'all' || selectedCategory ? (
                 <>
-                  <p className="text-lg font-medium mb-1">{t('noMatchingSavedLocations', { ns: 'profile' })}</p>
-                  <p className="text-sm">{t('tryDifferentFilters', { ns: 'profile' })}</p>
+                  <p className="text-lg font-medium mb-1">
+                    {t('noMatchingSavedLocations', { 
+                      ns: 'profile', 
+                      defaultValue: i18n.language.startsWith('it')
+                        ? 'Nessuna posizione salvata trovata'
+                        : 'No matching saved locations'
+                    })}
+                  </p>
+                  <p className="text-sm">
+                    {t('tryDifferentFilters', { 
+                      ns: 'profile', 
+                      defaultValue: i18n.language.startsWith('it')
+                        ? 'Prova a modificare i filtri'
+                        : 'Try different filters'
+                    })}
+                  </p>
                 </>
               ) : (
                 <>
