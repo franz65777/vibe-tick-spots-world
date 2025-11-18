@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Plus, Folder, ChevronRight } from 'lucide-react';
+import { X, Plus, Folder, ChevronRight, Edit2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
@@ -196,7 +196,10 @@ const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect, savedLocations = 
                 {folders.map((folder) => (
                   <div key={folder.id} className="relative">
                     <button
-                      onClick={() => handleOpenEditor(folder.id)}
+                      onClick={() => {
+                        onFolderSelect?.(folder.id);
+                        onClose();
+                      }}
                       className="w-full group relative aspect-square rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-200 active:scale-95"
                     >
                       <div className={`absolute inset-0 ${folder.color || 'bg-primary'} opacity-80 dark:opacity-60`} />
@@ -212,6 +215,17 @@ const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect, savedLocations = 
                       <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <ChevronRight className="h-5 w-5 text-white dark:text-white/80" />
                       </div>
+                    </button>
+                    {/* Edit button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenEditor(folder.id);
+                      }}
+                      className="absolute top-2 right-2 p-2 bg-black/30 hover:bg-black/50 rounded-full transition-colors backdrop-blur-sm z-10"
+                      title={t('edit', { ns: 'common', defaultValue: 'Modifica' })}
+                    >
+                      <Edit2 className="h-4 w-4 text-white" />
                     </button>
                   </div>
                 ))}
