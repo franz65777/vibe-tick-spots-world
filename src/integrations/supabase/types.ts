@@ -2030,8 +2030,10 @@ export type Database = {
         Row: {
           color: string | null
           created_at: string | null
+          description: string | null
           icon: string | null
           id: string
+          is_private: boolean | null
           name: string
           updated_at: string | null
           user_id: string
@@ -2039,8 +2041,10 @@ export type Database = {
         Insert: {
           color?: string | null
           created_at?: string | null
+          description?: string | null
           icon?: string | null
           id?: string
+          is_private?: boolean | null
           name: string
           updated_at?: string | null
           user_id: string
@@ -2048,8 +2052,10 @@ export type Database = {
         Update: {
           color?: string | null
           created_at?: string | null
+          description?: string | null
           icon?: string | null
           id?: string
+          is_private?: boolean | null
           name?: string
           updated_at?: string | null
           user_id?: string
