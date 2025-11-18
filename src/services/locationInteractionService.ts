@@ -16,61 +16,69 @@ class LocationInteractionService {
       const { data: user } = await supabase.auth.getUser();
       if (!user?.user) return false;
 
-      // First check if location exists, if not create it (with better duplicate prevention)
-      if (locationData) {
-        let existingLocationId = locationId;
+      let internalLocationId = locationId;
 
-        // If we have a google_place_id, check for existing location first
-        if (locationData.google_place_id) {
-          const { data: existingLocation } = await supabase
+      // First, try to resolve the internal location.id if we have a google_place_id
+      if (locationData?.google_place_id) {
+        const { data: existingLocation } = await supabase
+          .from('locations')
+          .select('id')
+          .eq('google_place_id', locationData.google_place_id)
+          .maybeSingle();
+
+        if (existingLocation) {
+          internalLocationId = existingLocation.id;
+        } else {
+          // Create new location only if it doesn't exist
+          const { data: newLocation, error: locationError } = await supabase
             .from('locations')
+            .insert({
+              google_place_id: locationData.google_place_id,
+              name: locationData.name,
+              address: locationData.address,
+              latitude: locationData.latitude,
+              longitude: locationData.longitude,
+              category: locationData.category || 'restaurant',
+              place_types: locationData.types || [],
+              created_by: user.user.id,
+              pioneer_user_id: user.user.id
+            })
             .select('id')
-            .eq('google_place_id', locationData.google_place_id)
-            .maybeSingle();
+            .single();
 
-          if (existingLocation) {
-            existingLocationId = existingLocation.id;
-          } else {
-            // OSM doesn't provide detailed place info, use provided data directly
-
-            // Create new location only if it doesn't exist
-            const { data: newLocation, error: locationError } = await supabase
-              .from('locations')
-              .insert({
-                google_place_id: locationData.google_place_id,
-                name: locationData.name,
-                address: locationData.address,
-                latitude: locationData.latitude,
-                longitude: locationData.longitude,
-                category: locationData.category || 'restaurant',
-                place_types: locationData.types || [],
-                created_by: user.user.id,
-                pioneer_user_id: user.user.id
-              })
-              .select('id')
-              .single();
-
-            if (locationError) {
-              console.error('Location creation error:', locationError);
-              return false;
-            }
-            existingLocationId = newLocation.id;
+          if (locationError) {
+            console.error('Location creation error:', locationError);
+            return false;
           }
+          internalLocationId = newLocation.id;
         }
+      } else {
+        // If no locationData, try to check if locationId is a google_place_id
+        const { data: existingLocation } = await supabase
+          .from('locations')
+          .select('id')
+          .or(`id.eq.${locationId},google_place_id.eq.${locationId}`)
+          .maybeSingle();
 
-        locationId = existingLocationId;
+        if (existingLocation) {
+          internalLocationId = existingLocation.id;
+        }
       }
 
-      // Save location for user with save tag (upsert to update tag if already saved)
+      // Delete any existing save with different tag to ensure only one save per location
+      await supabase
+        .from('user_saved_locations')
+        .delete()
+        .eq('user_id', user.user.id)
+        .eq('location_id', internalLocationId);
+
+      // Now insert the new save with the correct tag
       const { error } = await supabase
         .from('user_saved_locations')
-        .upsert({
+        .insert({
           user_id: user.user.id,
-          location_id: locationId,
+          location_id: internalLocationId,
           save_tag: saveTag
-        }, {
-          onConflict: 'user_id,location_id',
-          ignoreDuplicates: false
         });
 
       if (error) {
@@ -80,10 +88,9 @@ class LocationInteractionService {
 
       // Track the save interaction for recommendations
       try {
-        await trackInteraction(user.user.id, locationId, 'save');
+        await trackInteraction(user.user.id, internalLocationId, 'save');
       } catch (trackError) {
         console.error('Error tracking save interaction:', trackError);
-        // Don't fail the save if tracking fails
       }
 
       return true;
@@ -99,19 +106,46 @@ class LocationInteractionService {
       const { data: user } = await supabase.auth.getUser();
       if (!user?.user) return false;
 
-      // Remove from user_saved_locations
-      await supabase
-        .from('user_saved_locations')
-        .delete()
-        .eq('user_id', user.user.id)
-        .eq('location_id', locationId);
+      // Try to resolve internal location id
+      let internalLocationId = locationId;
+      const { data: existingLocation } = await supabase
+        .from('locations')
+        .select('id, google_place_id')
+        .or(`id.eq.${locationId},google_place_id.eq.${locationId}`)
+        .maybeSingle();
 
-      // Remove from saved_places (for Google Places)
-      await supabase
-        .from('saved_places')
-        .delete()
-        .eq('user_id', user.user.id)
-        .eq('place_id', locationId);
+      if (existingLocation) {
+        internalLocationId = existingLocation.id;
+        
+        // Remove from user_saved_locations using internal id
+        await supabase
+          .from('user_saved_locations')
+          .delete()
+          .eq('user_id', user.user.id)
+          .eq('location_id', internalLocationId);
+
+        // Remove from saved_places using google_place_id if available
+        if (existingLocation.google_place_id) {
+          await supabase
+            .from('saved_places')
+            .delete()
+            .eq('user_id', user.user.id)
+            .eq('place_id', existingLocation.google_place_id);
+        }
+      } else {
+        // Fallback: try to delete with the id we have
+        await supabase
+          .from('user_saved_locations')
+          .delete()
+          .eq('user_id', user.user.id)
+          .eq('location_id', locationId);
+
+        await supabase
+          .from('saved_places')
+          .delete()
+          .eq('user_id', user.user.id)
+          .eq('place_id', locationId);
+      }
 
       return true;
     } catch (error) {
@@ -352,6 +386,36 @@ class LocationInteractionService {
     } catch (error) {
       console.error('Check liked location error:', error);
       return false;
+    }
+  }
+
+  // Get the current save tag for a location
+  async getCurrentSaveTag(locationId: string): Promise<string> {
+    try {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user?.user) return 'general';
+
+      // Try to resolve the internal location id
+      const { data: location } = await supabase
+        .from('locations')
+        .select('id')
+        .or(`id.eq.${locationId},google_place_id.eq.${locationId}`)
+        .maybeSingle();
+
+      const internalId = location?.id || locationId;
+
+      // Get save tag from user_saved_locations
+      const { data: savedLocation } = await supabase
+        .from('user_saved_locations')
+        .select('save_tag')
+        .eq('user_id', user.user.id)
+        .eq('location_id', internalId)
+        .maybeSingle();
+
+      return savedLocation?.save_tag || 'general';
+    } catch (error) {
+      console.error('Error getting save tag:', error);
+      return 'general';
     }
   }
 

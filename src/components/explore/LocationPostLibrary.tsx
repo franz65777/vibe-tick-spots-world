@@ -148,51 +148,16 @@ const LocationPostLibrary = ({ place, isOpen, onClose }: LocationPostLibraryProp
     if (!place?.id) return;
     
     try {
-      let saved = await locationInteractionService.isLocationSaved(place.id);
-      if (!saved && place.google_place_id) {
-        saved = await locationInteractionService.isLocationSaved(place.google_place_id);
-      }
+      const saved = await locationInteractionService.isLocationSaved(
+        place.google_place_id || place.id
+      );
       setIsSaved(saved);
 
-      // Fetch current save tag if saved
-      if (saved && user) {
-        try {
-          // Try with location id first
-          let { data: savedLocation } = await supabase
-            .from('user_saved_locations')
-            .select('save_tag')
-            .eq('user_id', user.id)
-            .eq('location_id', place.id)
-            .maybeSingle();
-          
-          // Fallback: try with google_place_id if not found
-          if (!savedLocation && place.google_place_id) {
-            // Resolve internal location id by google_place_id, then fetch save_tag
-            const { data: locationRow } = await supabase
-              .from('locations')
-              .select('id')
-              .eq('google_place_id', place.google_place_id)
-              .maybeSingle();
-
-            if (locationRow?.id) {
-              const res = await supabase
-                .from('user_saved_locations')
-                .select('save_tag')
-                .eq('user_id', user.id)
-                .eq('location_id', locationRow.id)
-                .maybeSingle();
-              savedLocation = res.data;
-            }
-          }
-          
-          if (savedLocation?.save_tag) {
-            setCurrentSaveTag(savedLocation.save_tag as SaveTag);
-          } else {
-            setCurrentSaveTag('general');
-          }
-        } catch (error) {
-          console.error('Error fetching save tag:', error);
-        }
+      if (saved) {
+        const tag = await locationInteractionService.getCurrentSaveTag(
+          place.google_place_id || place.id
+        );
+        setCurrentSaveTag(tag as SaveTag);
       } else {
         setCurrentSaveTag('general');
       }
