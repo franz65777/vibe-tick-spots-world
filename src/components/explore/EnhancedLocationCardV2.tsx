@@ -211,6 +211,7 @@ const EnhancedLocationCardV2 = ({ place, onCardClick }: EnhancedLocationCardV2Pr
             disabled={loading}
             variant="ghost"
             size="icon"
+            currentSaveTag={currentSaveTag}
           />
         </div>
       </div>

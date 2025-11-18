@@ -265,6 +265,7 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
               disabled={loading}
               variant="ghost"
               size="icon"
+              currentSaveTag={currentSaveTag}
             />
             <span className="text-xs">{t(isSaved ? 'saved' : 'save', { ns: 'common' })}</span>
           </div>
