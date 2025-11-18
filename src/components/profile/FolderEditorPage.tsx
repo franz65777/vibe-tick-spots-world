@@ -379,29 +379,30 @@ const FolderEditorPage = ({ isOpen, onClose, savedLocations = [], folderId, onFo
             <Button
               onClick={handleDelete}
               variant="outline"
-              className="flex-1 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-2xl"
+              className="flex-1 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-2xl h-12"
               disabled={saving}
+              size="lg"
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              {t('deleteFolder', { ns: 'profile', defaultValue: 'Elimina cartella' })}
+              {t('delete', { ns: 'common', defaultValue: 'Elimina' })}
             </Button>
             <Button
               onClick={handleSave}
-              className="flex-1 rounded-2xl"
+              className="flex-1 rounded-2xl h-12"
               size="lg"
               disabled={!folderName.trim() || saving}
             >
               {saving ? (
                 t('saving', { ns: 'common', defaultValue: 'Salvataggio...' })
               ) : (
-                t('saveChanges', { ns: 'common', defaultValue: 'Salva modifiche' })
+                t('save', { ns: 'common', defaultValue: 'Salva' })
               )}
             </Button>
           </>
         ) : (
           <Button
             onClick={handleSave}
-            className="w-full rounded-2xl"
+            className="w-full rounded-2xl h-12"
             size="lg"
             disabled={!folderName.trim() || saving}
           >
@@ -410,7 +411,7 @@ const FolderEditorPage = ({ isOpen, onClose, savedLocations = [], folderId, onFo
             ) : (
               <>
                 <Plus className="h-5 w-5 mr-2" />
-                {t('createFolder', { ns: 'profile', defaultValue: 'Crea cartella' })}
+                {t('save', { ns: 'common', defaultValue: 'Salva' })}
               </>
             )}
           </Button>
