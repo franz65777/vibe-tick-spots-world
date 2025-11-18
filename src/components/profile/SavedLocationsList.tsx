@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { ArrowLeft, Search, X } from 'lucide-react';
+import { ArrowLeft, Search, X, Bookmark } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -195,7 +195,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
       `}</style>
       
       {/* Header */}
-      <div className="bg-background sticky top-0 z-40 shadow-sm mt-2.5">
+      <div className="bg-background sticky top-0 z-40 mt-2.5">
         <div className="flex items-center justify-between pl-1 pr-4 py-4 gap-2">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <button
@@ -207,13 +207,13 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
             <h1 className="text-base font-semibold truncate">{t('savedLocations', { ns: 'profile' })}</h1>
           </div>
           <div className="bg-primary/10 text-primary font-bold px-3 py-1.5 rounded-full text-sm flex-shrink-0">
-            {allPlaces.length}
+            {filteredAndSortedPlaces.length}
           </div>
         </div>
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-background px-4 py-2 space-y-3">
+      <div className="bg-background px-4 pb-2 space-y-3">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <Input
@@ -249,6 +249,9 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
                       if (!option) return t('all', { ns: 'common', defaultValue: 'All' });
                       const labelParts = option.labelKey.split('.');
                       const translationKey = labelParts[labelParts.length - 1];
+                      if (option.value === 'general') {
+                        return <div className="flex items-center gap-2"><Bookmark className="w-4 h-4" /> {t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}</div>;
+                      }
                       return `${option.emoji} ${t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}`;
                     })()
                 }
@@ -261,7 +264,16 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
                 const translationKey = labelParts[labelParts.length - 1];
                 return (
                   <SelectItem key={option.value} value={option.value}>
-                    {option.emoji} {t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}
+                    {option.value === 'general' ? (
+                      <div className="flex items-center gap-2">
+                        <Bookmark className="w-4 h-4" />
+                        {t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}
+                      </div>
+                    ) : (
+                      <>
+                        {option.emoji} {t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}
+                      </>
+                    )}
                   </SelectItem>
                 );
               })}
@@ -313,7 +325,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
             </div>
           </div>
         ) : (
-          <div className="px-4 pt-2 pb-4">
+          <div className="px-4 pb-4">
             <div className="grid grid-cols-2 gap-2">
               {filteredAndSortedPlaces.map((p: any) => {
                 return (
