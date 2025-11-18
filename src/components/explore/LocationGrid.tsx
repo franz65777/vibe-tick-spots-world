@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import LocationPostLibrary from './LocationPostLibrary';
@@ -37,6 +37,7 @@ interface LocationCard {
 
 const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const { mutedLocations, muteLocation, unmuteLocation, isMuting } = useMutedLocations(user?.id);
   const [locations, setLocations] = useState<LocationCard[]>([]);
   const [loading, setLoading] = useState(true);
@@ -463,7 +464,15 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
             >
               {/* Top section with category, mute, and save */}
               <div className="relative p-2.5 flex items-start justify-between">
-                <CategoryIcon category={location.category} className={location.category.toLowerCase() === 'hotel' || location.category.toLowerCase() === 'restaurant' ? 'w-9 h-9' : 'w-7 h-7'} />
+                <CategoryIcon 
+                  category={location.category} 
+                  className={location.category.toLowerCase() === 'hotel' || location.category.toLowerCase() === 'restaurant' ? 'w-9 h-9' : 'w-7 h-7'}
+                  sizeMultiplier={
+                    location.category.toLowerCase() === 'restaurant' ? 0.8 : 
+                    location.category.toLowerCase() === 'hotel' ? 0.9 : 
+                    1
+                  }
+                />
                 
                 <div className="flex items-center gap-1.5">
                   
@@ -506,15 +515,15 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
                 <div className="flex items-center gap-3 pt-1.5">
                   <div className="flex items-center gap-0.5">
                     <span className="text-[11px] font-semibold text-foreground">{location.postsCount || 0}</span>
-                    <span className="text-[10px] text-muted-foreground">posts</span>
+                    <span className="text-[10px] text-muted-foreground">{t('leaderboard.posts')}</span>
                   </div>
                   
                   <div className="flex items-center gap-0.5">
                     <span className="text-[11px] font-semibold text-foreground">{location.savesCount || 0}</span>
-                    <span className="text-[10px] text-muted-foreground">saved</span>
+                    <span className="text-[10px] text-muted-foreground">{t('leaderboard.saved')}</span>
                   </div>
                   
-                  {location.rankingScore && (
+                  {location.rankingScore && location.rankingScore > 0 && (
                     <div className="flex items-center gap-0.5">
                       <svg className="w-3 h-3 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
