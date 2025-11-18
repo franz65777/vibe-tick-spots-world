@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import FolderEditorPage from './FolderEditorPage';
+import { CategoryIcon } from '@/components/common/CategoryIcon';
 
 interface SavedFolder {
   id: string;
@@ -15,6 +16,7 @@ interface SavedFolder {
   icon: string | null;
   created_at: string;
   locations_count?: number;
+  location_categories?: string[];
 }
 
 interface SavedFoldersDrawerProps {
@@ -58,28 +60,45 @@ const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect, savedLocations = 
 
     setLoading(true);
     try {
+      // Load folders
       const { data, error } = await supabase
         .from('saved_folders')
-        .select(`
-          *,
-          folder_locations (count)
-        `)
+        .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      const foldersWithCount: SavedFolder[] = (data || []).map((folder: any) => ({
-        id: folder.id,
-        name: folder.name,
-        description: folder.description ?? null,
-        color: folder.color ?? null,
-        icon: folder.icon ?? null,
-        created_at: folder.created_at,
-        locations_count: folder.folder_locations?.[0]?.count || 0,
-      }));
+      // Get location counts and categories for each folder
+      const foldersWithDetails = await Promise.all(
+        (data || []).map(async (folder: any) => {
+          const { data: locations, error: locError } = await supabase
+            .from('folder_locations')
+            .select(`
+              location_id,
+              locations (
+                category
+              )
+            `)
+            .eq('folder_id', folder.id)
+            .limit(4);
 
-      setFolders(foldersWithCount);
+          if (locError) console.error('Error loading folder locations:', locError);
+
+          return {
+            id: folder.id,
+            name: folder.name,
+            description: folder.description ?? null,
+            color: folder.color ?? null,
+            icon: folder.icon ?? null,
+            created_at: folder.created_at,
+            locations_count: locations?.length || 0,
+            location_categories: locations?.map((l: any) => l.locations?.category).filter(Boolean) || []
+          };
+        })
+      );
+
+      setFolders(foldersWithDetails);
     } catch (error) {
       console.error('Error loading folders:', error);
       toast.error(t('errorLoadingFolders', { ns: 'profile', defaultValue: 'Errore nel caricamento delle cartelle' }));
@@ -204,7 +223,18 @@ const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect, savedLocations = 
                     >
                       <div className={`absolute inset-0 ${folder.color || 'bg-primary'} opacity-80 dark:opacity-60`} />
                       <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-white dark:text-white/90">
-                        <Folder className="h-12 w-12 mb-2 opacity-90" />
+                        {/* Show location category icons preview */}
+                        {folder.location_categories && folder.location_categories.length > 0 ? (
+                          <div className="flex flex-wrap gap-1 justify-center mb-2">
+                            {folder.location_categories.slice(0, 4).map((category, idx) => (
+                              <div key={idx} className="bg-white/20 backdrop-blur-sm rounded-lg p-1.5">
+                                <CategoryIcon category={category} className="w-5 h-5" />
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <Folder className="h-12 w-12 mb-2 opacity-90" />
+                        )}
                         <p className="font-semibold text-sm line-clamp-2 text-center opacity-95">
                           {folder.name}
                         </p>
