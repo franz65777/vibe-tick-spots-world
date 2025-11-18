@@ -12,6 +12,8 @@ import { useTranslation } from 'react-i18next';
 import { translateCityName } from '@/utils/cityTranslations';
 import { useMutedLocations } from '@/hooks/useMutedLocations';
 import { SAVE_TAG_OPTIONS } from '@/utils/saveTags';
+import { locationInteractionService } from '@/services/locationInteractionService';
+import { toast } from 'sonner';
 
 interface SavedLocationsListProps {
   isOpen: boolean;
@@ -62,23 +64,15 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
     if (!currentUser || currentUser.id !== targetUserId) return;
 
     try {
-      await supabase.from('saved_places').delete().eq('user_id', currentUser.id).eq('place_id', placeId);
-
-      const { data: locationData } = await supabase
-        .from('locations')
-        .select('id')
-        .or(`google_place_id.eq.${placeId},id.eq.${placeId}`)
-        .maybeSingle();
-
-      if (locationData?.id) {
-        await supabase.from('user_saved_locations').delete().eq('user_id', currentUser.id).eq('location_id', locationData.id);
-      }
+      // Use the service to handle unsaving (handles both tables correctly)
+      await locationInteractionService.unsaveLocation(placeId);
 
       // Clear cache to force refresh
       if (currentUser) {
         UnifiedLocationService.clearCache(currentUser.id);
       }
 
+      // Update local state
       setSavedPlaces((prev: any) => {
         const updated = { ...prev };
         if (updated[city]) {
@@ -87,8 +81,14 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
         }
         return updated;
       });
+
+      // Dispatch global event for sync
+      window.dispatchEvent(new CustomEvent('location-save-changed', { 
+        detail: { locationId: placeId, isSaved: false } 
+      }));
     } catch (error) {
       console.error('Error unsaving place:', error);
+      toast.error(t('unsave_failed', { ns: 'common', defaultValue: 'Failed to remove location' }));
     }
   };
 
