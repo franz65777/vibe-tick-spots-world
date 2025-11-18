@@ -92,6 +92,53 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
     }
   };
 
+  // Keep profile saved list in sync with global save changes
+  useEffect(() => {
+    const handleSaveChanged = (event: CustomEvent) => {
+      const { locationId, isSaved, saveTag } = event.detail;
+
+      setSavedPlaces((prev: any) => {
+        if (!prev || Object.keys(prev).length === 0) return prev;
+
+        const updated: any = {};
+        let changed = false;
+
+        for (const [city, places] of Object.entries(prev)) {
+          const newPlaces = (places as any[]).map((place: any) => {
+            if (place.id === locationId || place.google_place_id === locationId) {
+              changed = true;
+              if (!isSaved) {
+                return null;
+              }
+              return {
+                ...place,
+                saveTag: saveTag ?? place.saveTag,
+              };
+            }
+            return place;
+          }).filter(Boolean);
+
+          if (newPlaces.length > 0) {
+            updated[city] = newPlaces;
+          } else if (places && (places as any[]).length > 0) {
+            changed = true;
+          }
+        }
+
+        return changed ? updated : prev;
+      });
+
+      if (!isSaved && currentUser) {
+        UnifiedLocationService.clearCache(currentUser.id);
+      }
+    };
+
+    window.addEventListener('location-save-changed', handleSaveChanged as EventListener);
+    return () => {
+      window.removeEventListener('location-save-changed', handleSaveChanged as EventListener);
+    };
+  }, [currentUser]);
+
   const isOwnProfile = currentUser?.id === targetUserId;
 
   // Get all unique cities with translations
