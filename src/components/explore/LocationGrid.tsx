@@ -12,6 +12,9 @@ import { reverseTranslateCityName } from '@/utils/cityTranslations';
 import { useMutedLocations } from '@/hooks/useMutedLocations';
 import { SAVE_TAG_OPTIONS, type SaveTag } from '@/utils/saveTags';
 import { locationInteractionService } from '@/services/locationInteractionService';
+import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
+import { getCategoryIcon } from '@/utils/categoryIcons';
+import { cn } from '@/lib/utils';
 
 interface LocationGridProps {
   searchQuery?: string;
