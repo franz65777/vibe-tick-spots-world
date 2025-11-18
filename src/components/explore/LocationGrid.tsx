@@ -12,6 +12,7 @@ import { reverseTranslateCityName } from '@/utils/cityTranslations';
 import { useMutedLocations } from '@/hooks/useMutedLocations';
 import { SAVE_TAG_OPTIONS, type SaveTag } from '@/utils/saveTags';
 import { locationInteractionService } from '@/services/locationInteractionService';
+import { SaveLocationDropdown } from '@/components/common/SaveLocationDropdown';
 
 interface LocationGridProps {
   searchQuery?: string;
@@ -50,6 +51,38 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
     fetchLocations();
     fetchActiveCampaigns();
   }, [searchQuery, selectedCategory, user?.id]);
+
+  // Listen for global save tag changes
+  useEffect(() => {
+    const handleSaveChanged = (event: CustomEvent) => {
+      const { locationId, isSaved, saveTag } = event.detail;
+      
+      setUserSavedIds(prev => {
+        const newSet = new Set(prev);
+        if (isSaved) {
+          newSet.add(locationId);
+        } else {
+          newSet.delete(locationId);
+        }
+        return newSet;
+      });
+
+      if (isSaved && saveTag) {
+        setSaveTags(prev => ({ ...prev, [locationId]: saveTag }));
+      } else if (!isSaved) {
+        setSaveTags(prev => {
+          const newTags = { ...prev };
+          delete newTags[locationId];
+          return newTags;
+        });
+      }
+    };
+
+    window.addEventListener('location-save-changed', handleSaveChanged as EventListener);
+    return () => {
+      window.removeEventListener('location-save-changed', handleSaveChanged as EventListener);
+    };
+  }, []);
 
   const fetchActiveCampaigns = async () => {
     try {
@@ -91,6 +124,7 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
 
       setLocations(cachedLocations.locations);
       setUserSavedIds(cachedLocations.userSavedIds);
+      setSaveTags(cachedLocations.saveTags || {});
     } catch (error) {
       console.error('Error fetching locations:', error);
       setLocations([]);
@@ -100,7 +134,7 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
   };
 
   const fetchLocationsData = async () => {
-    if (!user) return { locations: [], userSavedIds: new Set<string>() };
+    if (!user) return { locations: [], userSavedIds: new Set<string>(), saveTags: {} };
 
       // Fetch from locations table
       let query = supabase
@@ -314,8 +348,32 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
         }
       });
 
-      // Check if user saved ANY of the location IDs or place_id for each unique place
+      // Track which locations the current user has saved + their save tags
       const finalUserSavedIds = new Set<string>();
+      const finalSaveTags: Record<string, SaveTag> = {};
+      
+      // Get user's save tags from user_saved_locations
+      const { data: userSaveTagsData } = await supabase
+        .from('user_saved_locations')
+        .select('location_id, save_tag')
+        .eq('user_id', user.id);
+      
+      const userSaveTagsMap = new Map<string, string>();
+      userSaveTagsData?.forEach(s => {
+        userSaveTagsMap.set(s.location_id, s.save_tag || 'general');
+      });
+      
+      // Get user's save tags from saved_places
+      const { data: savedPlaceTagsData } = await supabase
+        .from('saved_places')
+        .select('place_id, save_tag')
+        .eq('user_id', user.id);
+      
+      const savedPlaceTagsMap = new Map<string, string>();
+      savedPlaceTagsData?.forEach(s => {
+        savedPlaceTagsMap.set(s.place_id, s.save_tag || 'general');
+      });
+      
       groups.forEach((g) => {
         const userSavedLocation = g.allLocationIds.some((id) =>
           savesData?.some((s) => s.location_id === id && s.user_id === user?.id)
@@ -323,9 +381,27 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
         const userSavedPlace = g.google_place_id && savedPlacesCountData?.some(
           (s) => s.place_id === g.google_place_id && s.user_id === user?.id
         );
-        if (userSavedLocation || userSavedPlace) finalUserSavedIds.add(g.id);
+        
+        if (userSavedLocation || userSavedPlace) {
+          finalUserSavedIds.add(g.id);
+          
+          // Find the save tag for this location
+          let saveTag: string = 'general';
+          for (const locId of g.allLocationIds) {
+            if (userSaveTagsMap.has(locId)) {
+              saveTag = userSaveTagsMap.get(locId)!;
+              break;
+            }
+          }
+          if (g.google_place_id && savedPlaceTagsMap.has(g.google_place_id)) {
+            saveTag = savedPlaceTagsMap.get(g.google_place_id)!;
+          }
+          finalSaveTags[g.id] = saveTag as SaveTag;
+        }
       });
+      
       setUserSavedIds(finalUserSavedIds);
+      setSaveTags(finalSaveTags);
 
       // Sort by saves count (most popular first) and strip internal fields
       const uniqueLocations = Array.from(groups.values())
@@ -334,7 +410,8 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
 
       return {
         locations: uniqueLocations,
-        userSavedIds: finalUserSavedIds
+        userSavedIds: finalUserSavedIds,
+        saveTags: finalSaveTags
       };
   };
 
@@ -343,85 +420,79 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
     setIsLibraryOpen(true);
   };
 
-  const handleSaveToggle = async (e: React.MouseEvent, locationId: string) => {
-    e.stopPropagation();
+  const handleSaveWithTag = async (locationId: string, tag: SaveTag) => {
     if (!user) return;
+    const location = locations.find(l => l.id === locationId);
+    if (!location) return;
 
     try {
-      const isSaved = userSavedIds.has(locationId);
-      const location = locations.find(l => l.id === locationId);
-      if (!location) return;
-      
-      if (isSaved) {
-        // Unsave from both tables
-        if (location.google_place_id) {
-          // Delete from saved_places
-          await supabase
-            .from('saved_places')
-            .delete()
-            .eq('user_id', user.id)
-            .eq('place_id', location.google_place_id);
-        }
-        
-        // Also check if this is an internal location and delete from user_saved_locations
-        const { data: internalLocations } = await supabase
-          .from('locations')
-          .select('id')
-          .or(
-            location.google_place_id 
-              ? `google_place_id.eq.${location.google_place_id}` 
-              : `and(latitude.eq.${location.coordinates.lat},longitude.eq.${location.coordinates.lng})`
-          );
-        
-        if (internalLocations && internalLocations.length > 0) {
-          const allIds = internalLocations.map(l => l.id);
-          await supabase
-            .from('user_saved_locations')
-            .delete()
-            .eq('user_id', user.id)
-            .in('location_id', allIds);
-        }
-        
-        const newSet = new Set(userSavedIds);
-        newSet.delete(locationId);
-        setUserSavedIds(newSet);
-      } else {
-        // Save - prioritize saved_places if it has google_place_id
-        if (location.google_place_id) {
-          await supabase
-            .from('saved_places')
-            .insert({
-              user_id: user.id,
-              place_id: location.google_place_id,
-              place_name: location.name,
-              place_category: location.category,
-              city: location.city,
-              coordinates: {
-                lat: location.coordinates.lat,
-                lng: location.coordinates.lng
-              }
-            });
-        } else {
-          // Save to user_saved_locations if no google_place_id
-          await supabase
-            .from('user_saved_locations')
-            .insert({
-              user_id: user.id,
-              location_id: locationId
-            });
-        }
-        
-        const newSet = new Set(userSavedIds);
-        newSet.add(locationId);
-        setUserSavedIds(newSet);
+      await locationInteractionService.saveLocation(locationId, {
+        google_place_id: location.google_place_id,
+        name: location.name,
+        address: location.address,
+        latitude: location.coordinates.lat,
+        longitude: location.coordinates.lng,
+        category: location.category,
+        types: []
+      }, tag);
+
+      setUserSavedIds(prev => new Set([...prev, locationId]));
+      setSaveTags(prev => ({ ...prev, [locationId]: tag }));
+
+      // Emit global event
+      window.dispatchEvent(new CustomEvent('location-save-changed', {
+        detail: { locationId, isSaved: true, saveTag: tag }
+      }));
+      if (location.google_place_id) {
+        window.dispatchEvent(new CustomEvent('location-save-changed', {
+          detail: { locationId: location.google_place_id, isSaved: true, saveTag: tag }
+        }));
       }
 
-      // Clear cache and refresh locations to update save counts
+      // Clear cache and refresh
       const cacheKey = `locations-grid-${searchQuery || 'all'}-${selectedCategory || 'all'}-${user.id}`;
       clearCache(cacheKey);
       fetchLocations();
     } catch (error) {
-      console.error('Error toggling save:', error);
+      console.error('Error saving location:', error);
+    }
+  };
+
+  const handleUnsave = async (locationId: string) => {
+    if (!user) return;
+    const location = locations.find(l => l.id === locationId);
+    if (!location) return;
+
+    try {
+      await locationInteractionService.unsaveLocation(locationId);
+
+      setUserSavedIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(locationId);
+        return newSet;
+      });
+      setSaveTags(prev => {
+        const newTags = { ...prev };
+        delete newTags[locationId];
+        return newTags;
+      });
+
+      // Emit global event
+      window.dispatchEvent(new CustomEvent('location-save-changed', {
+        detail: { locationId, isSaved: false }
+      }));
+      if (location.google_place_id) {
+        window.dispatchEvent(new CustomEvent('location-save-changed', {
+          detail: { locationId: location.google_place_id, isSaved: false }
+        }));
+      }
+
+      // Clear cache and refresh
+      const cacheKey = `locations-grid-${searchQuery || 'all'}-${selectedCategory || 'all'}-${user.id}`;
+      clearCache(cacheKey);
+      fetchLocations();
+    } catch (error) {
+      console.error('Error unsaving location:', error);
     }
   };
 
@@ -465,21 +536,15 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
               <div className="relative p-2.5 flex items-start justify-between">
                 <CategoryIcon category={location.category} className={location.category.toLowerCase() === 'hotel' || location.category.toLowerCase() === 'restaurant' ? 'w-9 h-9' : 'w-7 h-7'} />
                 
-                <div className="flex items-center gap-1.5">
-                  
-                  <button
-                    onClick={(e) => handleSaveToggle(e, location.id)}
-                    className={`rounded-full p-1.5 transition-all ${
-                      isSaved 
-                        ? 'bg-primary text-primary-foreground shadow-sm' 
-                        : 'bg-muted hover:bg-muted/80 text-muted-foreground'
-                    }`}
-                    aria-label={isSaved ? 'Unsave location' : 'Save location'}
-                  >
-                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
-                    </svg>
-                  </button>
+                <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                  <SaveLocationDropdown
+                    isSaved={isSaved}
+                    onSave={(tag) => handleSaveWithTag(location.id, tag)}
+                    onUnsave={() => handleUnsave(location.id)}
+                    currentSaveTag={saveTags[location.id] || 'general'}
+                    variant="ghost"
+                    size="icon"
+                  />
                 </div>
               </div>
 
