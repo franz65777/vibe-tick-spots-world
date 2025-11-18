@@ -241,7 +241,12 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
 
           <Select value={selectedSaveTag} onValueChange={setSelectedSaveTag}>
             <SelectTrigger className="flex-1 min-w-[140px] bg-background rounded-full border-border">
-              <SelectValue />
+              <SelectValue>
+                {selectedSaveTag === 'all' 
+                  ? t('all', { ns: 'common', defaultValue: 'All' })
+                  : SAVE_TAG_OPTIONS.find(opt => opt.value === selectedSaveTag)?.emoji + ' ' + 
+                    t(SAVE_TAG_OPTIONS.find(opt => opt.value === selectedSaveTag)?.labelKey || '')}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent className="bg-background border-border z-[9999]">
               <SelectItem value="all">{t('all', { ns: 'common', defaultValue: 'All' })}</SelectItem>
@@ -284,7 +289,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
             </div>
           </div>
         ) : (
-          <div className="p-4">
+          <div className="px-4 pt-2 pb-4">
             <div className="grid grid-cols-2 gap-2">
               {filteredAndSortedPlaces.map((p: any) => {
                 return (
