@@ -171,23 +171,28 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
       // Merge both datasets
       const allLocations = [...(locationsData || []), ...savedPlacesAsLocations];
 
-      // Get ALL saves for these locations (from all users)
-      const locationIds = allLocations.map(l => l.id);
-      const { data: savesData } = await supabase
-        .from('user_saved_locations')
-        .select('location_id, user_id')
-        .in('location_id', locationIds);
+      // Internal location IDs (only real locations table, no Google place IDs)
+      const internalLocationIds = (locationsData || []).map(l => l.id);
 
-      // Also count saves from saved_places table
+      // Get ALL saves for these internal locations (from all users)
+      let savesData: any[] | null = null;
+      if (internalLocationIds.length > 0) {
+        const { data } = await supabase
+          .from('user_saved_locations')
+          .select('location_id, user_id')
+          .in('location_id', internalLocationIds);
+        savesData = data;
+      }
+
+      // Also count saves from saved_places table (by Google place id)
       const placeIds = allLocations.map(l => l.google_place_id).filter(Boolean);
       const { data: savedPlacesCountData } = await supabase
         .from('saved_places')
         .select('place_id, user_id')
         .in('place_id', placeIds);
 
-      // Fetch ALL location IDs that share the same google_place_id or name+city
-      // to ensure we count posts/ratings across all related locations
-      const allRelatedLocationIds = new Set<string>(locationIds);
+      // Build internal location IDs set for posts/ratings
+      const allRelatedLocationIds = new Set<string>(internalLocationIds);
       
       // Find all locations with matching google_place_ids
       if (placeIds.length > 0) {
