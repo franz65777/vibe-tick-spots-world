@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Heart, Bookmark, MessageCircle, Share2, MapPin, Star, Users } from 'lucide-react';
+import { Heart, MessageCircle, Share2, MapPin, Star, Users } from 'lucide-react';
 import { Place } from '@/types/place';
 import { usePlaceEngagement } from '@/hooks/usePlaceEngagement';
 import { usePinEngagement } from '@/hooks/usePinEngagement';
@@ -21,6 +21,9 @@ import MarketingCampaignBanner from './MarketingCampaignBanner';
 import { getCategoryIcon } from '@/utils/categoryIcons';
 import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
 import { cn } from '@/lib/utils';
+import { SaveLocationDropdown } from '@/components/common/SaveLocationDropdown';
+import type { SaveTag } from '@/utils/saveTags';
+import { locationInteractionService } from '@/services/locationInteractionService';
 
 interface LocationCardProps {
   place: Place;
@@ -30,28 +33,41 @@ interface LocationCardProps {
 const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { isLiked, isSaved, toggleLike, toggleSave, refetch } = usePlaceEngagement();
+  const { isLiked, toggleLike, refetch } = usePlaceEngagement();
   const { engagement } = usePinEngagement(place.id, place.google_place_id || null);
   const { mutedLocations, muteLocation, unmuteLocation, isMuting } = useMutedLocations(user?.id);
   const [isLiking, setIsLiking] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [currentSaveTag, setCurrentSaveTag] = useState<SaveTag>('general');
   const [commentModalOpen, setCommentModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [libraryModalOpen, setLibraryModalOpen] = useState(false);
 
   const isMuted = mutedLocations?.some((m: any) => m.location_id === place.id);
 
-  // Listen for global save changes
+  // Listen for global save changes and keep local save/tag in sync
   useEffect(() => {
-    const handleSaveChanged = () => {
+    const handleSaveChanged = (event: CustomEvent) => {
+      const { locationId, isSaved: newSavedState, saveTag } = event.detail;
+
+      if (locationId === place.id || locationId === place.google_place_id) {
+        setIsSaved(!!newSavedState);
+        if (newSavedState && saveTag) {
+          setCurrentSaveTag(saveTag as SaveTag);
+        } else if (!newSavedState) {
+          setCurrentSaveTag('general');
+        }
+      }
+
       refetch();
     };
     
-    window.addEventListener('location-save-changed', handleSaveChanged);
+    window.addEventListener('location-save-changed', handleSaveChanged as EventListener);
     return () => {
-      window.removeEventListener('location-save-changed', handleSaveChanged);
+      window.removeEventListener('location-save-changed', handleSaveChanged as EventListener);
     };
-  }, [refetch]);
+  }, [refetch, place.id, place.google_place_id]);
 
   const { cityLabel } = useNormalizedCity({
     id: place.google_place_id || place.id,
@@ -64,6 +80,26 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
   const { stats } = useLocationStats(place.id, place.google_place_id || null);
   const { campaign } = useMarketingCampaign(place.id, place.google_place_id || undefined);
 
+  // Load current save tag on mount and when place changes
+  useEffect(() => {
+    const checkSaved = async () => {
+      if (!place.id) return;
+      try {
+        const saved = await locationInteractionService.isLocationSaved(place.id);
+        setIsSaved(saved);
+        if (saved) {
+          const tag = await locationInteractionService.getCurrentSaveTag(place.google_place_id || place.id);
+          setCurrentSaveTag((tag as SaveTag) || 'general');
+        } else {
+          setCurrentSaveTag('general');
+        }
+      } catch (error) {
+        console.error('Error checking saved state:', error);
+      }
+    };
+
+    checkSaved();
+  }, [place.id, place.google_place_id]);
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isLiking) return;
@@ -76,15 +112,53 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
     }
   };
 
-  const handleSave = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isSaving) return;
-    
+  const handleSaveWithTag = async (tag: SaveTag) => {
     setIsSaving(true);
     try {
-      await toggleSave(place);
+      await locationInteractionService.saveLocation(place.id, {
+        google_place_id: place.google_place_id,
+        name: place.name,
+        address: place.address,
+        latitude: place.coordinates?.lat || 0,
+        longitude: place.coordinates?.lng || 0,
+        category: place.category,
+        types: []
+      }, tag);
+      setIsSaved(true);
+      setCurrentSaveTag(tag);
+      window.dispatchEvent(new CustomEvent('location-save-changed', {
+        detail: { locationId: place.id, isSaved: true, saveTag: tag }
+      }));
+      if (place.google_place_id) {
+        window.dispatchEvent(new CustomEvent('location-save-changed', {
+          detail: { locationId: place.google_place_id, isSaved: true, saveTag: tag }
+        }));
+      }
+    } catch (error) {
+      console.error('Error saving location:', error);
     } finally {
-      setTimeout(() => setIsSaving(false), 300);
+      setIsSaving(false);
+    }
+  };
+
+  const handleUnsave = async () => {
+    setIsSaving(true);
+    try {
+      await locationInteractionService.unsaveLocation(place.id);
+      setIsSaved(false);
+      setCurrentSaveTag('general');
+      window.dispatchEvent(new CustomEvent('location-save-changed', {
+        detail: { locationId: place.id, isSaved: false }
+      }));
+      if (place.google_place_id) {
+        window.dispatchEvent(new CustomEvent('location-save-changed', {
+          detail: { locationId: place.google_place_id, isSaved: false }
+        }));
+      }
+    } catch (error) {
+      console.error('Error unsaving location:', error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -251,20 +325,16 @@ const LocationCard = ({ place, onCardClick }: LocationCardProps) => {
                 <span className="text-xs font-medium">{t('like', { ns: 'common' })}</span>
               </Button>
               
-              <Button
+              <SaveLocationDropdown
+                isSaved={isSaved}
+                onSave={handleSaveWithTag}
+                onUnsave={handleUnsave}
+                disabled={isSaving}
                 variant="ghost"
                 size="sm"
-                onClick={handleSave}
-                disabled={isSaving}
-                className={`h-12 rounded-xl flex flex-col gap-1 transition-all ${
-                  isSaved(place.id)
-                    ? 'text-blue-600 bg-blue-50 hover:bg-blue-100' 
-                    : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
-                } ${isSaving ? 'animate-pulse' : ''}`}
-              >
-                <Bookmark className={`w-4 h-4 ${isSaved(place.id) ? 'fill-current' : ''}`} />
-                <span className="text-xs font-medium">{t(isSaved(place.id) ? 'saved' : 'save', { ns: 'common' })}</span>
-              </Button>
+                currentSaveTag={currentSaveTag}
+                showLabel
+              />
               
               <Button
                 variant="ghost"
