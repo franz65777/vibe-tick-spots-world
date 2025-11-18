@@ -1,6 +1,10 @@
-import { useState, useEffect } from 'react';
-import { X, Plus, Folder, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, Plus, Folder, ChevronRight, Lock, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,6 +16,7 @@ interface SavedFolder {
   description: string | null;
   color: string | null;
   icon: string | null;
+  is_private: boolean;
   created_at: string;
   locations_count?: number;
 }
@@ -38,6 +43,13 @@ const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect }: SavedFoldersDra
   const { user } = useAuth();
   const [folders, setFolders] = useState<SavedFolder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [folderName, setFolderName] = useState('');
+  const [isPrivate, setIsPrivate] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [touchStart, setTouchStart] = useState(0);
+  const [mouseStart, setMouseStart] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     if (isOpen && user) {
@@ -75,14 +87,8 @@ const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect }: SavedFoldersDra
     }
   };
 
-  const createFolder = async () => {
-    if (!user) return;
-
-    const folderName = prompt(
-      t('enterFolderName', { ns: 'profile', defaultValue: 'Nome della cartella' })
-    );
-
-    if (!folderName) return;
+  const handleCreateFolder = async () => {
+    if (!user || !folderName.trim()) return;
 
     try {
       const randomColor = FOLDER_COLORS[Math.floor(Math.random() * FOLDER_COLORS.length)];
@@ -91,19 +97,56 @@ const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect }: SavedFoldersDra
         .from('saved_folders')
         .insert({
           user_id: user.id,
-          name: folderName,
+          name: folderName.trim(),
           color: randomColor,
-          icon: 'folder'
+          icon: 'folder',
+          is_private: isPrivate
         });
 
       if (error) throw error;
 
       toast.success(t('folderCreated', { ns: 'profile', defaultValue: 'Cartella creata' }));
+      setFolderName('');
+      setIsPrivate(false);
+      setCreateModalOpen(false);
       loadFolders();
     } catch (error) {
       console.error('Error creating folder:', error);
       toast.error(t('errorCreatingFolder', { ns: 'profile', defaultValue: 'Errore nella creazione della cartella' }));
     }
+  };
+
+  // Swipe gesture handling
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.touches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const currentTouch = e.touches[0].clientX;
+    const diff = touchStart - currentTouch;
+    
+    if (diff > 50) {
+      onClose();
+    }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    setMouseStart(e.clientX);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    const diff = mouseStart - e.clientX;
+    
+    if (diff > 50) {
+      setIsDragging(false);
+      onClose();
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
   };
 
   return (
@@ -118,28 +161,34 @@ const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect }: SavedFoldersDra
 
       {/* Drawer */}
       <div 
-        className={`fixed left-0 top-0 h-full w-[85%] max-w-sm bg-background shadow-2xl transition-transform duration-300 z-[10001] ${
+        ref={containerRef}
+        className={`fixed inset-0 bg-background transition-transform duration-300 z-[10001] flex flex-col ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
       >
-        <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-border">
-            <h2 className="text-lg font-semibold">
-              {t('myFolders', { ns: 'profile', defaultValue: 'Le mie cartelle' })}
-            </h2>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              className="h-8 w-8"
-            >
-              <X className="h-5 w-5" />
-            </Button>
+          <div className="flex items-center justify-between pl-1 pr-4 py-4 mt-2.5">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-accent rounded-full transition-colors flex-shrink-0"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              <h2 className="text-lg font-semibold truncate">
+                {t('myFolders', { ns: 'profile', defaultValue: 'Le mie cartelle' })}
+              </h2>
+            </div>
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="flex-1 overflow-y-auto px-4 pb-4">
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="text-muted-foreground">
@@ -177,6 +226,13 @@ const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect }: SavedFoldersDra
                         {folder.locations_count || 0} {t('locations', { ns: 'common', defaultValue: 'posizioni' })}
                       </p>
                     </div>
+                    <div className="absolute top-2 right-2">
+                      {folder.is_private ? (
+                        <Lock className="h-4 w-4 text-white/80" />
+                      ) : (
+                        <Globe className="h-4 w-4 text-white/80" />
+                      )}
+                    </div>
                     <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <ChevronRight className="h-5 w-5 text-white" />
                     </div>
@@ -189,7 +245,7 @@ const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect }: SavedFoldersDra
           {/* Create Button */}
           <div className="p-4 border-t border-border">
             <Button
-              onClick={createFolder}
+              onClick={() => setCreateModalOpen(true)}
               className="w-full"
               size="lg"
             >
@@ -198,7 +254,52 @@ const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect }: SavedFoldersDra
             </Button>
           </div>
         </div>
-      </div>
+
+      {/* Create Folder Modal */}
+      <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('createFolder', { ns: 'profile', defaultValue: 'Crea cartella' })}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="folder-name">
+                {t('folderName', { ns: 'profile', defaultValue: 'Nome cartella' })}
+              </Label>
+              <Input
+                id="folder-name"
+                value={folderName}
+                onChange={(e) => setFolderName(e.target.value)}
+                placeholder={t('enterFolderName', { ns: 'profile', defaultValue: 'es. ❤️ Preferiti, 🍕 Da provare...' })}
+                maxLength={50}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="is-private">
+                  {t('privateFolder', { ns: 'profile', defaultValue: 'Cartella privata' })}
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  {t('privateFolderDesc', { ns: 'profile', defaultValue: 'Solo tu potrai vedere questa cartella' })}
+                </p>
+              </div>
+              <Switch
+                id="is-private"
+                checked={isPrivate}
+                onCheckedChange={setIsPrivate}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateModalOpen(false)}>
+              {t('cancel', { ns: 'common', defaultValue: 'Annulla' })}
+            </Button>
+            <Button onClick={handleCreateFolder} disabled={!folderName.trim()}>
+              {t('create', { ns: 'common', defaultValue: 'Crea' })}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
