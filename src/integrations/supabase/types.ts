@@ -741,6 +741,35 @@ export type Database = {
           },
         ]
       }
+      folder_locations: {
+        Row: {
+          created_at: string | null
+          folder_id: string
+          id: string
+          location_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          folder_id: string
+          id?: string
+          location_id: string
+        }
+        Update: {
+          created_at?: string | null
+          folder_id?: string
+          id?: string
+          location_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "folder_locations_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "saved_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       follows: {
         Row: {
           created_at: string | null
@@ -1993,6 +2022,44 @@ export type Database = {
             columns: ["location_id"]
             isOneToOne: false
             referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      saved_folders: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          icon: string | null
+          id: string
+          name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_folders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
