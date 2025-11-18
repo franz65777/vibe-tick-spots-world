@@ -180,6 +180,18 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
       }
     };
 
+    const handleTouchEnd = () => {
+      isDragging.current = false;
+      touchStartX.current = 0;
+      touchCurrentX.current = 0;
+    };
+
+    // Mouse events for desktop
+    const handleMouseDown = (e: MouseEvent) => {
+      touchStartX.current = e.clientX;
+      isDragging.current = true;
+    };
+
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging.current) return;
       touchCurrentX.current = e.clientX;
