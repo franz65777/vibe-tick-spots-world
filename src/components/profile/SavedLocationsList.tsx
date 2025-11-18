@@ -381,7 +381,8 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
                       google_place_id: p.google_place_id,
                       coordinates: p.coordinates,
                       savedCount: p.savedCount || 0,
-                      postsCount: p.postsCount || 0
+                      postsCount: p.postsCount || 0,
+                      saveTag: p.saveTag || 'general',
                     }}
                     onCardClick={() => handlePlaceClick(p)}
                   />

@@ -10,6 +10,8 @@ import { getCachedData, clearCache } from '@/services/performanceService';
 import { normalizeCity } from '@/utils/cityNormalization';
 import { reverseTranslateCityName } from '@/utils/cityTranslations';
 import { useMutedLocations } from '@/hooks/useMutedLocations';
+import { SAVE_TAG_OPTIONS, type SaveTag } from '@/utils/saveTags';
+import { locationInteractionService } from '@/services/locationInteractionService';
 
 interface LocationGridProps {
   searchQuery?: string;
@@ -42,6 +44,7 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [userSavedIds, setUserSavedIds] = useState<Set<string>>(new Set());
   const [campaignLocationIds, setCampaignLocationIds] = useState<Set<string>>(new Set());
+  const [saveTags, setSaveTags] = useState<Record<string, SaveTag>>({});
 
   useEffect(() => {
     fetchLocations();
