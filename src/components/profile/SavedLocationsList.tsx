@@ -290,6 +290,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
       <SavedFoldersDrawer 
         isOpen={isFoldersDrawerOpen}
         onClose={() => setIsFoldersDrawerOpen(false)}
+        savedLocations={allPlaces}
       />
       
       <div ref={containerRef} className="fixed inset-0 bg-background z-[9999] flex flex-col">

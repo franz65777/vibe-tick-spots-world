@@ -6,7 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useTranslation } from 'react-i18next';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -25,6 +25,7 @@ interface SavedFoldersDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   onFolderSelect?: (folderId: string) => void;
+  savedLocations?: any[];
 }
 
 const FOLDER_COLORS = [
@@ -38,7 +39,7 @@ const FOLDER_COLORS = [
   'bg-orange-500',
 ];
 
-const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect }: SavedFoldersDrawerProps) => {
+const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect, savedLocations = [] }: SavedFoldersDrawerProps) => {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const [folders, setFolders] = useState<SavedFolder[]>([]);
@@ -46,6 +47,7 @@ const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect }: SavedFoldersDra
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [folderName, setFolderName] = useState('');
   const [isPrivate, setIsPrivate] = useState(false);
+  const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const [touchStart, setTouchStart] = useState(0);
   const [mouseStart, setMouseStart] = useState(0);
@@ -73,10 +75,16 @@ const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect }: SavedFoldersDra
 
       if (error) throw error;
 
-      const foldersWithCount = data?.map(folder => ({
-        ...folder,
-        locations_count: folder.folder_locations?.[0]?.count || 0
-      })) || [];
+      const foldersWithCount: SavedFolder[] = (data || []).map((folder: any) => ({
+        id: folder.id,
+        name: folder.name,
+        description: folder.description ?? null,
+        color: folder.color ?? null,
+        icon: folder.icon ?? null,
+        is_private: folder.is_private ?? false,
+        created_at: folder.created_at,
+        locations_count: folder.folder_locations?.[0]?.count || 0,
+      }));
 
       setFolders(foldersWithCount);
     } catch (error) {
@@ -93,27 +101,50 @@ const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect }: SavedFoldersDra
     try {
       const randomColor = FOLDER_COLORS[Math.floor(Math.random() * FOLDER_COLORS.length)];
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('saved_folders')
         .insert({
           user_id: user.id,
           name: folderName.trim(),
           color: randomColor,
           icon: 'folder',
-          is_private: isPrivate
-        });
+        })
+        .select('id')
+        .single();
 
       if (error) throw error;
+
+      if (selectedLocationIds.length > 0) {
+        const { error: locationsError } = await supabase
+          .from('folder_locations')
+          .insert(
+            selectedLocationIds.map((locationId) => ({
+              folder_id: data.id,
+              location_id: locationId,
+            }))
+          );
+
+        if (locationsError) throw locationsError;
+      }
 
       toast.success(t('folderCreated', { ns: 'profile', defaultValue: 'Cartella creata' }));
       setFolderName('');
       setIsPrivate(false);
+      setSelectedLocationIds([]);
       setCreateModalOpen(false);
       loadFolders();
     } catch (error) {
       console.error('Error creating folder:', error);
       toast.error(t('errorCreatingFolder', { ns: 'profile', defaultValue: 'Errore nella creazione della cartella' }));
     }
+  };
+
+  const toggleLocationSelection = (locationId: string) => {
+    setSelectedLocationIds((prev) =>
+      prev.includes(locationId)
+        ? prev.filter((id) => id !== locationId)
+        : [...prev, locationId]
+    );
   };
 
   // Swipe gesture handling
@@ -243,10 +274,10 @@ const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect }: SavedFoldersDra
           </div>
 
           {/* Create Button */}
-          <div className="p-4 border-t border-border">
+          <div className="p-4">
             <Button
               onClick={() => setCreateModalOpen(true)}
-              className="w-full"
+              className="w-full rounded-full"
               size="lg"
             >
               <Plus className="h-5 w-5 mr-2" />
@@ -288,6 +319,48 @@ const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect }: SavedFoldersDra
                 checked={isPrivate}
                 onCheckedChange={setIsPrivate}
               />
+            </div>
+            <div className="space-y-2 pt-2">
+              <Label>
+                {t('selectLocationsForFolder', { ns: 'profile', defaultValue: 'Seleziona i luoghi da aggiungere' })}
+              </Label>
+              <div className="max-h-64 overflow-y-auto space-y-2">
+                {savedLocations.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    {t('noSavedLocationsForFolder', { ns: 'profile', defaultValue: 'Non hai ancora luoghi salvati da aggiungere' })}
+                  </p>
+                ) : (
+                  savedLocations.map((place: any) => {
+                    const isSelected = selectedLocationIds.includes(place.id);
+                    return (
+                      <button
+                        type="button"
+                        key={place.id}
+                        onClick={() => toggleLocationSelection(place.id)}
+                        className={`w-full flex items-center justify-between rounded-xl border px-3 py-2 text-left transition-colors ${
+                          isSelected ? 'border-primary bg-primary/5' : 'border-border bg-background hover:bg-accent/40'
+                        }`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{place.name}</p>
+                          {place.city && (
+                            <p className="text-xs text-muted-foreground truncate">
+                              {place.city}
+                            </p>
+                          )}
+                        </div>
+                        <div
+                          className={`ml-3 h-5 w-5 rounded-full border flex items-center justify-center ${
+                            isSelected ? 'border-primary bg-primary text-primary-foreground' : 'border-border'
+                          }`}
+                        >
+                          {isSelected && <span className="text-[10px] font-semibold">✓</span>}
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
             </div>
           </div>
           <DialogFooter>
