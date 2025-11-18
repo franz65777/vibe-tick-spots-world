@@ -67,13 +67,13 @@ const MinimalLocationCard = ({
   return <div className="rounded-2xl shadow-sm border border-border hover:shadow-md transition-all duration-200 bg-card dark:bg-muted/30 dark:border-border/60 dark:backdrop-blur-sm">
       <div className="p-3 cursor-pointer" onClick={onCardClick}>
       <div className="flex items-center gap-3">
-        <div className="shrink-0 bg-gray-50 rounded-xl p-1.5">
+        <div className="shrink-0 bg-muted rounded-xl p-1.5">
           <CategoryIcon category={place.category} className="w-8 h-8" />
         </div>
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <h3 className="font-bold text-gray-900 text-sm truncate text-left">
+            <h3 className="font-bold text-foreground text-sm truncate text-left">
               {place.name}
             </h3>
             {saveTagOption && place.saveTag !== 'general' && (

@@ -277,7 +277,7 @@ const SavedFoldersDrawer = ({ isOpen, onClose, onFolderSelect, savedLocations = 
 
       {/* Create Folder Modal */}
       <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
-        <DialogContent>
+        <DialogContent className="z-[10002] bg-background">
           <DialogHeader>
             <DialogTitle>{t('createFolder', { ns: 'profile', defaultValue: 'Crea cartella' })}</DialogTitle>
           </DialogHeader>
