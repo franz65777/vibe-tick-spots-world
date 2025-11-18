@@ -59,6 +59,27 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
     loadSmartImage();
   }, [place]);
 
+  const loadSmartImage = async () => {
+    setImageLoading(true);
+    try {
+      if (place.image) {
+        setSmartImage(place.image);
+      } else {
+        const image = await imageService.getPlaceImage(
+          place.name,
+          cityLabel || 'Unknown',
+          place.category
+        );
+        setSmartImage(image);
+      }
+    } catch (error) {
+      console.error('Error loading smart image:', error);
+      setSmartImage('');
+    } finally {
+      setImageLoading(false);
+    }
+  };
+
   // Load current save tag on mount and when place changes
   useEffect(() => {
     const fetchSaveTag = async () => {
