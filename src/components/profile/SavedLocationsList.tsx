@@ -46,6 +46,10 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
   const touchCurrentX = useRef(0);
   const isDragging = useRef(false);
   const lastScrollY = useRef(0);
+  const cityDropdownRef = useRef<HTMLDivElement | null>(null);
+  const saveTagDropdownRef = useRef<HTMLDivElement | null>(null);
+  const [selectedSaveTags, setSelectedSaveTags] = useState<string[]>([]);
+  const [isSaveTagDropdownOpen, setIsSaveTagDropdownOpen] = useState(false);
 
   useEffect(() => {
     const loadSavedPlaces = async () => {
@@ -173,8 +177,8 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
       touchCurrentX.current = e.touches[0].clientX;
       const diff = touchStartX.current - touchCurrentX.current;
       
-      // Swipe from anywhere on screen if moving left
-      if (diff > 80) {
+      // Swipe from anywhere on screen if moving horizontally
+      if (Math.abs(diff) > 80) {
         setIsFoldersDrawerOpen(true);
         isDragging.current = false;
       }
@@ -197,8 +201,8 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
       touchCurrentX.current = e.clientX;
       const diff = touchStartX.current - touchCurrentX.current;
       
-      // Swipe from anywhere on screen if moving left
-      if (diff > 80) {
+      // Swipe from anywhere on screen if moving horizontally
+      if (Math.abs(diff) > 80) {
         setIsFoldersDrawerOpen(true);
         isDragging.current = false;
       }
@@ -226,6 +230,25 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
     };
   }, []);
 
+  // Close city and save-tag dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+
+      if (cityDropdownRef.current && !cityDropdownRef.current.contains(target)) {
+        setIsCityDropdownOpen(false);
+      }
+      if (saveTagDropdownRef.current && !saveTagDropdownRef.current.contains(target)) {
+        setIsSaveTagDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const isOwnProfile = currentUser?.id === targetUserId;
 
   const cities = useMemo(() => {
@@ -247,7 +270,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
       
       const matchesCity = selectedCities.length === 0 || (place.city && selectedCities.includes(place.city));
       
-      const matchesSaveTag = selectedSaveTag === 'all' || place.saveTag === selectedSaveTag;
+      const matchesSaveTag = selectedSaveTags.length === 0 || (place.saveTag && selectedSaveTags.includes(place.saveTag));
       
       const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(place.category as AllowedCategory);
       
@@ -261,7 +284,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
     });
 
     return places;
-  }, [allPlaces, searchQuery, selectedCities, selectedSaveTag, selectedCategories, isOwnProfile, mutedLocations]);
+  }, [allPlaces, searchQuery, selectedCities, selectedSaveTags, selectedCategories, isOwnProfile, mutedLocations]);
 
   const handlePlaceClick = (place: any) => {
     setSelectedPlace({
@@ -338,7 +361,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
 
         <div className="flex gap-2 flex-wrap">
           {/* City multi-select dropdown */}
-          <div className="relative flex-1 min-w-[120px]">
+          <div ref={cityDropdownRef} className="relative flex-1 min-w-[120px]">
             <button
               type="button"
               onClick={() => setIsCityDropdownOpen((prev) => !prev)}
@@ -406,47 +429,96 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
             )}
           </div>
 
-          {/* Save tag select (single) */}
-          <Select value={selectedSaveTag} onValueChange={setSelectedSaveTag}>
-            <SelectTrigger className="flex-1 min-w-[140px] bg-background rounded-full border-border">
-              <SelectValue>
-                {selectedSaveTag === 'all' 
+          {/* Save tag multi-select dropdown */}
+          <div ref={saveTagDropdownRef} className="relative flex-1 min-w-[140px]">
+            <button
+              type="button"
+              onClick={() => setIsSaveTagDropdownOpen((prev) => !prev)}
+              className="w-full flex items-center justify-between bg-background rounded-full border border-border px-3 py-2 text-sm"
+            >
+              <span className="truncate">
+                {selectedSaveTags.length === 0
                   ? t('all', { ns: 'common', defaultValue: 'All' })
-                  : (() => {
-                      const option = SAVE_TAG_OPTIONS.find(opt => opt.value === selectedSaveTag);
-                      if (!option) return t('all', { ns: 'common', defaultValue: 'All' });
-                      const labelParts = option.labelKey.split('.');
-                      const translationKey = labelParts[labelParts.length - 1];
-                      if (option.value === 'general') {
-                        return <div className="flex items-center gap-2"><Bookmark className="w-4 h-4" /> {t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}</div>;
+                  : selectedSaveTags.length === 1
+                    ? (() => {
+                        const option = SAVE_TAG_OPTIONS.find(opt => opt.value === selectedSaveTags[0]);
+                        if (!option) return t('all', { ns: 'common', defaultValue: 'All' });
+                        const labelParts = option.labelKey.split('.');
+                        const translationKey = labelParts[labelParts.length - 1];
+                        if (option.value === 'general') {
+                          return (
+                            <div className="flex items-center gap-2">
+                              <Bookmark className="w-4 h-4" />
+                              {t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}
+                            </div>
+                          );
+                        }
+                        return `${option.emoji} ${t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}`;
+                      })()
+                    : t('categoriesSelected', {
+                        ns: 'profile',
+                        defaultValue: '{{count}} tipi selezionati',
+                        count: selectedSaveTags.length,
+                      })}
+              </span>
+              <ChevronDown className="w-4 h-4 text-muted-foreground ml-2 flex-shrink-0" />
+            </button>
+
+            {isSaveTagDropdownOpen && (
+              <div className="absolute left-0 right-0 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-border bg-background shadow-lg z-[10000]">
+                <button
+                  type="button"
+                  onClick={() => setSelectedSaveTags([])}
+                  className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-accent/60"
+                >
+                  <span>{t('all', { ns: 'common', defaultValue: 'All' })}</span>
+                  {selectedSaveTags.length === 0 && (
+                    <span className="text-xs font-medium text-primary">✓</span>
+                  )}
+                </button>
+                {SAVE_TAG_OPTIONS.map((option) => {
+                  const isSelected = selectedSaveTags.includes(option.value);
+                  const labelParts = option.labelKey.split('.');
+                  const translationKey = labelParts[labelParts.length - 1];
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() =>
+                        setSelectedSaveTags((prev) =>
+                          prev.includes(option.value)
+                            ? prev.filter((v) => v !== option.value)
+                            : [...prev, option.value]
+                        )
                       }
-                      return `${option.emoji} ${t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}`;
-                    })()
-                }
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent className="bg-background border-border z-[9999]">
-              <SelectItem value="all">{t('all', { ns: 'common', defaultValue: 'All' })}</SelectItem>
-              {SAVE_TAG_OPTIONS.map((option) => {
-                const labelParts = option.labelKey.split('.');
-                const translationKey = labelParts[labelParts.length - 1];
-                return (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.value === 'general' ? (
+                      className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-accent/60"
+                    >
                       <div className="flex items-center gap-2">
-                        <Bookmark className="w-4 h-4" />
-                        {t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}
+                        {option.value === 'general' ? (
+                          <>
+                            <Bookmark className="w-4 h-4" />
+                            {t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}
+                          </>
+                        ) : (
+                          <>
+                            <span>{option.emoji}</span>
+                            {t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}
+                          </>
+                        )}
                       </div>
-                    ) : (
-                      <>
-                        {option.emoji} {t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}
-                      </>
-                    )}
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
+                      <span
+                        className={`ml-2 h-4 w-4 rounded-full border flex items-center justify-center text-[10px] ${
+                          isSelected ? 'border-primary bg-primary text-primary-foreground' : 'border-border'
+                        }`}
+                      >
+                        {isSelected && '✓'}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Category multi-select dropdown */}
