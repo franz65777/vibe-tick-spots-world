@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { ArrowLeft, Search, X, Bookmark, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Search, X, Bookmark } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -13,8 +13,8 @@ import { useMutedLocations } from '@/hooks/useMutedLocations';
 import { SAVE_TAG_OPTIONS } from '@/utils/saveTags';
 import { locationInteractionService } from '@/services/locationInteractionService';
 import { toast } from 'sonner';
-import { AllowedCategory, allowedCategories, categoryDisplayNames } from '@/utils/allowedCategories';
-import { CategoryIcon } from '@/components/common/CategoryIcon';
+import SimpleCategoryFilter from '@/components/explore/SimpleCategoryFilter';
+import { AllowedCategory } from '@/utils/allowedCategories';
 import SavedFoldersDrawer from './SavedFoldersDrawer';
 import { useNavigate } from 'react-router-dom';
 
@@ -32,24 +32,18 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
   const [savedPlaces, setSavedPlaces] = useState<any>({});
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCities, setSelectedCities] = useState<string[]>([]);
+  const [selectedCity, setSelectedCity] = useState('all');
   const [selectedPlace, setSelectedPlace] = useState<any>(null);
   const [selectedSaveTag, setSelectedSaveTag] = useState('all');
-  const [selectedCategories, setSelectedCategories] = useState<AllowedCategory[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<AllowedCategory | null>(null);
   const [isFoldersDrawerOpen, setIsFoldersDrawerOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
-  const [isCityDropdownOpen, setIsCityDropdownOpen] = useState(false);
-  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef(0);
   const touchCurrentX = useRef(0);
   const isDragging = useRef(false);
   const lastScrollY = useRef(0);
-  const cityDropdownRef = useRef<HTMLDivElement | null>(null);
-  const saveTagDropdownRef = useRef<HTMLDivElement | null>(null);
-  const [selectedSaveTags, setSelectedSaveTags] = useState<string[]>([]);
-  const [isSaveTagDropdownOpen, setIsSaveTagDropdownOpen] = useState(false);
 
   useEffect(() => {
     const loadSavedPlaces = async () => {
@@ -175,10 +169,10 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
     const handleTouchMove = (e: TouchEvent) => {
       if (!isDragging.current) return;
       touchCurrentX.current = e.touches[0].clientX;
-      const diff = touchStartX.current - touchCurrentX.current;
+      const diff = touchCurrentX.current - touchStartX.current;
       
-      // Swipe from anywhere on screen if moving horizontally
-      if (Math.abs(diff) > 80) {
+      // Swipe from anywhere on screen if moving right
+      if (diff > 80) {
         setIsFoldersDrawerOpen(true);
         isDragging.current = false;
       }
@@ -199,10 +193,10 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging.current) return;
       touchCurrentX.current = e.clientX;
-      const diff = touchStartX.current - touchCurrentX.current;
+      const diff = touchCurrentX.current - touchStartX.current;
       
-      // Swipe from anywhere on screen if moving horizontally
-      if (Math.abs(diff) > 80) {
+      // Swipe from anywhere on screen if moving right
+      if (diff > 80) {
         setIsFoldersDrawerOpen(true);
         isDragging.current = false;
       }
@@ -213,6 +207,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
       touchStartX.current = 0;
       touchCurrentX.current = 0;
     };
+
     container.addEventListener('touchstart', handleTouchStart, { passive: true });
     container.addEventListener('touchmove', handleTouchMove, { passive: true });
     container.addEventListener('touchend', handleTouchEnd, { passive: true });
@@ -227,25 +222,6 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
       container.removeEventListener('mousedown', handleMouseDown);
       container.removeEventListener('mousemove', handleMouseMove);
       container.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, []);
-
-  // Close city and save-tag dropdowns when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node;
-
-      if (cityDropdownRef.current && !cityDropdownRef.current.contains(target)) {
-        setIsCityDropdownOpen(false);
-      }
-      if (saveTagDropdownRef.current && !saveTagDropdownRef.current.contains(target)) {
-        setIsSaveTagDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
@@ -268,11 +244,11 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
         place.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         place.city?.toLowerCase().includes(searchQuery.toLowerCase());
       
-      const matchesCity = selectedCities.length === 0 || (place.city && selectedCities.includes(place.city));
+      const matchesCity = selectedCity === 'all' || place.city === selectedCity;
       
-      const matchesSaveTag = selectedSaveTags.length === 0 || (place.saveTag && selectedSaveTags.includes(place.saveTag));
+      const matchesSaveTag = selectedSaveTag === 'all' || place.saveTag === selectedSaveTag;
       
-      const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(place.category as AllowedCategory);
+      const matchesCategory = !selectedCategory || place.category === selectedCategory;
       
       const isMuted = isOwnProfile && mutedLocations.includes(place.id);
       
@@ -284,7 +260,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
     });
 
     return places;
-  }, [allPlaces, searchQuery, selectedCities, selectedSaveTags, selectedCategories, isOwnProfile, mutedLocations]);
+  }, [allPlaces, searchQuery, selectedCity, selectedSaveTag, selectedCategory, isOwnProfile, mutedLocations]);
 
   const handlePlaceClick = (place: any) => {
     setSelectedPlace({
@@ -360,243 +336,67 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
         </div>
 
         <div className="flex gap-2 flex-wrap">
-          {/* City multi-select dropdown */}
-          <div ref={cityDropdownRef} className="relative flex-1 min-w-[120px]">
-            <button
-              type="button"
-              onClick={() => setIsCityDropdownOpen((prev) => !prev)}
-              className="w-full flex items-center justify-between bg-background rounded-full border border-border px-3 py-2 text-sm"
-            >
-              <span className="truncate">
-                {selectedCities.length === 0
-                  ? t('allCities', { ns: 'profile' })
-                  : selectedCities.length === 1
-                    ? (() => {
-                        const city = cities.find(c => c.original === selectedCities[0]);
-                        if (!city) return t('allCities', { ns: 'profile' });
-                        return `${city.translated} (${savedPlaces[city.original]?.length || 0})`;
-                      })()
-                    : t('citiesSelected', {
-                        ns: 'profile',
-                        defaultValue: '{{count}} città selezionate',
-                        count: selectedCities.length,
-                      })}
-              </span>
-              <ChevronDown className="w-4 h-4 text-muted-foreground ml-2 flex-shrink-0" />
-            </button>
+          <Select value={selectedCity} onValueChange={setSelectedCity}>
+            <SelectTrigger className="flex-1 min-w-[120px] bg-background rounded-full border-border">
+              <SelectValue placeholder={t('allCities', { ns: 'profile' })} />
+            </SelectTrigger>
+            <SelectContent className="bg-background border-border z-[9999]">
+              <SelectItem value="all">{t('allCities', { ns: 'profile' })}</SelectItem>
+              {cities.map(city => (
+                <SelectItem key={city.original} value={city.original}>
+                  {city.translated} ({savedPlaces[city.original]?.length || 0})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-            {isCityDropdownOpen && (
-              <div className="absolute left-0 right-0 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-border bg-background shadow-lg z-[10000]">
-                <button
-                  type="button"
-                  onClick={() => setSelectedCities([])}
-                  className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-accent/60"
-                >
-                  <span>{t('allCities', { ns: 'profile' })}</span>
-                  {selectedCities.length === 0 && (
-                    <span className="text-xs font-medium text-primary">✓</span>
-                  )}
-                </button>
-                {cities.map(city => {
-                  const isSelected = selectedCities.includes(city.original);
-                  return (
-                    <button
-                      type="button"
-                      key={city.original}
-                      onClick={() =>
-                        setSelectedCities((prev) =>
-                          prev.includes(city.original)
-                            ? prev.filter((c) => c !== city.original)
-                            : [...prev, city.original]
-                        )
-                      }
-                      className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-accent/60"
-                    >
-                      <span className="truncate">
-                        {city.translated} ({savedPlaces[city.original]?.length || 0})
-                      </span>
-                      <span
-                        className={`ml-2 h-4 w-4 rounded-full border flex items-center justify-center text-[10px] ${
-                          isSelected ? 'border-primary bg-primary text-primary-foreground' : 'border-border'
-                        }`}
-                      >
-                        {isSelected && '✓'}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Save tag multi-select dropdown */}
-          <div ref={saveTagDropdownRef} className="relative flex-1 min-w-[140px]">
-            <button
-              type="button"
-              onClick={() => setIsSaveTagDropdownOpen((prev) => !prev)}
-              className="w-full flex items-center justify-between bg-background rounded-full border border-border px-3 py-2 text-sm"
-            >
-              <span className="truncate">
-                {selectedSaveTags.length === 0
+          <Select value={selectedSaveTag} onValueChange={setSelectedSaveTag}>
+            <SelectTrigger className="flex-1 min-w-[140px] bg-background rounded-full border-border">
+              <SelectValue>
+                {selectedSaveTag === 'all' 
                   ? t('all', { ns: 'common', defaultValue: 'All' })
-                  : selectedSaveTags.length === 1
-                    ? (() => {
-                        const option = SAVE_TAG_OPTIONS.find(opt => opt.value === selectedSaveTags[0]);
-                        if (!option) return t('all', { ns: 'common', defaultValue: 'All' });
-                        const labelParts = option.labelKey.split('.');
-                        const translationKey = labelParts[labelParts.length - 1];
-                        if (option.value === 'general') {
-                          return (
-                            <div className="flex items-center gap-2">
-                              <Bookmark className="w-4 h-4" />
-                              {t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}
-                            </div>
-                          );
-                        }
-                        return `${option.emoji} ${t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}`;
-                      })()
-                    : t('categoriesSelected', {
-                        ns: 'profile',
-                        defaultValue: '{{count}} tipi selezionati',
-                        count: selectedSaveTags.length,
-                      })}
-              </span>
-              <ChevronDown className="w-4 h-4 text-muted-foreground ml-2 flex-shrink-0" />
-            </button>
-
-            {isSaveTagDropdownOpen && (
-              <div className="absolute left-0 right-0 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-border bg-background shadow-lg z-[10000]">
-                <button
-                  type="button"
-                  onClick={() => setSelectedSaveTags([])}
-                  className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-accent/60"
-                >
-                  <span>{t('all', { ns: 'common', defaultValue: 'All' })}</span>
-                  {selectedSaveTags.length === 0 && (
-                    <span className="text-xs font-medium text-primary">✓</span>
-                  )}
-                </button>
-                {SAVE_TAG_OPTIONS.map((option) => {
-                  const isSelected = selectedSaveTags.includes(option.value);
-                  const labelParts = option.labelKey.split('.');
-                  const translationKey = labelParts[labelParts.length - 1];
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() =>
-                        setSelectedSaveTags((prev) =>
-                          prev.includes(option.value)
-                            ? prev.filter((v) => v !== option.value)
-                            : [...prev, option.value]
-                        )
+                  : (() => {
+                      const option = SAVE_TAG_OPTIONS.find(opt => opt.value === selectedSaveTag);
+                      if (!option) return t('all', { ns: 'common', defaultValue: 'All' });
+                      const labelParts = option.labelKey.split('.');
+                      const translationKey = labelParts[labelParts.length - 1];
+                      if (option.value === 'general') {
+                        return <div className="flex items-center gap-2"><Bookmark className="w-4 h-4" /> {t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}</div>;
                       }
-                      className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-accent/60"
-                    >
-                      <div className="flex items-center gap-2">
-                        {option.value === 'general' ? (
-                          <>
-                            <Bookmark className="w-4 h-4" />
-                            {t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}
-                          </>
-                        ) : (
-                          <>
-                            <span>{option.emoji}</span>
-                            {t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}
-                          </>
-                        )}
-                      </div>
-                      <span
-                        className={`ml-2 h-4 w-4 rounded-full border flex items-center justify-center text-[10px] ${
-                          isSelected ? 'border-primary bg-primary text-primary-foreground' : 'border-border'
-                        }`}
-                      >
-                        {isSelected && '✓'}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Category multi-select dropdown */}
-        <div className="relative w-full">
-          <button
-            type="button"
-            onClick={() => setIsCategoryDropdownOpen((prev) => !prev)}
-            className="w-full flex items-center justify-between bg-background rounded-full border border-border px-3 py-2 text-sm"
-          >
-            <span className="truncate">
-              {selectedCategories.length === 0
-                ? t('allCategories', {
-                    ns: 'profile',
-                    defaultValue: 'Tutte le categorie',
-                  })
-                : selectedCategories.length === 1
-                  ? categoryDisplayNames[selectedCategories[0]]
-                  : t('categoriesSelected', {
-                      ns: 'profile',
-                      defaultValue: '{{count}} categorie selezionate',
-                      count: selectedCategories.length,
-                    })}
-            </span>
-            <ChevronDown className="w-4 h-4 text-muted-foreground ml-2 flex-shrink-0" />
-          </button>
-
-          {isCategoryDropdownOpen && (
-            <div className="absolute left-0 right-0 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-border bg-background shadow-lg z-[10000]">
-              <button
-                type="button"
-                onClick={() => setSelectedCategories([])}
-                className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-accent/60"
-              >
-                <span>
-                  {t('allCategories', {
-                    ns: 'profile',
-                    defaultValue: 'Tutte le categorie',
-                  })}
-                </span>
-                {selectedCategories.length === 0 && (
-                  <span className="text-xs font-medium text-primary">✓</span>
-                )}
-              </button>
-
-              {allowedCategories.map((category) => {
-                const isSelected = selectedCategories.includes(category);
+                      return `${option.emoji} ${t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}`;
+                    })()
+                }
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent className="bg-background border-border z-[9999]">
+              <SelectItem value="all">{t('all', { ns: 'common', defaultValue: 'All' })}</SelectItem>
+              {SAVE_TAG_OPTIONS.map((option) => {
+                const labelParts = option.labelKey.split('.');
+                const translationKey = labelParts[labelParts.length - 1];
                 return (
-                  <button
-                    type="button"
-                    key={category}
-                    onClick={() =>
-                      setSelectedCategories((prev) =>
-                        prev.includes(category)
-                          ? prev.filter((c) => c !== category)
-                          : [...prev, category]
-                      )
-                    }
-                    className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-accent/60"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="shrink-0 rounded-md bg-muted p-1.5">
-                        <CategoryIcon category={category} className="w-5 h-5" />
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.value === 'general' ? (
+                      <div className="flex items-center gap-2">
+                        <Bookmark className="w-4 h-4" />
+                        {t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}
                       </div>
-                      <span className="truncate">{categoryDisplayNames[category]}</span>
-                    </div>
-                    <span
-                      className={`ml-2 h-4 w-4 rounded-full border flex items-center justify-center text-[10px] ${
-                        isSelected ? 'border-primary bg-primary text-primary-foreground' : 'border-border'
-                      }`}
-                    >
-                      {isSelected && '✓'}
-                    </span>
-                  </button>
+                    ) : (
+                      <>
+                        {option.emoji} {t(translationKey, { ns: 'save_tags', defaultValue: translationKey })}
+                      </>
+                    )}
+                  </SelectItem>
                 );
               })}
-            </div>
-          )}
+            </SelectContent>
+          </Select>
         </div>
+
+        {/* Category Filter Icons */}
+        <SimpleCategoryFilter 
+          selectedCategory={selectedCategory}
+          onCategorySelect={setSelectedCategory}
+        />
       </div>
 
       {/* Content */}
@@ -608,7 +408,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
         ) : filteredAndSortedPlaces.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 px-4">
             <div className="text-center text-muted-foreground">
-              {searchQuery || selectedCities.length > 0 || selectedSaveTag !== 'all' || selectedCategories.length > 0 ? (
+              {searchQuery || selectedCity !== 'all' || selectedSaveTag !== 'all' || selectedCategory ? (
                 <>
                   <p className="text-lg font-medium mb-1">
                     {t('noMatchingSavedLocations', { 
