@@ -1,4 +1,4 @@
-import { X, Search, UserPlus, Check } from 'lucide-react';
+import { X, Search, UserPlus, Check, Bookmark } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useTranslation } from 'react-i18next';
+import { SAVE_TAG_OPTIONS, type SaveTag } from '@/utils/saveTags';
 
 interface SavedByModalProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ interface SaverUser {
   username: string | null;
   avatar_url: string | null;
   isFollowing: boolean;
+  save_tag: SaveTag;
 }
 
 const SavedByModal = ({ isOpen, onClose, placeId, googlePlaceId }: SavedByModalProps) => {
@@ -38,35 +40,43 @@ const SavedByModal = ({ isOpen, onClose, placeId, googlePlaceId }: SavedByModalP
       }
       setLoading(true);
       try {
-        // 1) Collect all user_ids who saved this location (internal + google)
-        const userIds = new Set<string>();
+        // 1) Collect all user_ids who saved this location (internal + google) with their save_tag
+        const userSaveTags = new Map<string, SaveTag>();
 
         if (placeId) {
           const { data: internal, error: internalError } = await supabase
             .from('user_saved_locations')
-            .select('user_id')
+            .select('user_id, save_tag')
             .eq('location_id', placeId);
           
           if (internalError) {
             console.error('Error fetching from user_saved_locations:', internalError);
           }
-          internal?.forEach((r: any) => r.user_id && userIds.add(r.user_id));
+          internal?.forEach((r: any) => {
+            if (r.user_id) {
+              userSaveTags.set(r.user_id, (r.save_tag as SaveTag) || 'general');
+            }
+          });
         }
 
         if (googlePlaceId) {
           const { data: google, error: googleError } = await supabase
             .from('saved_places')
-            .select('user_id')
+            .select('user_id, save_tag')
             .eq('place_id', googlePlaceId);
           
           if (googleError) {
             console.error('Error fetching from saved_places:', googleError);
           }
-          google?.forEach((r: any) => r.user_id && userIds.add(r.user_id));
+          google?.forEach((r: any) => {
+            if (r.user_id && !userSaveTags.has(r.user_id)) {
+              userSaveTags.set(r.user_id, (r.save_tag as SaveTag) || 'general');
+            }
+          });
         }
 
         // Don't filter out current user - include everyone
-        const ids = Array.from(userIds).filter((id) => id);
+        const ids = Array.from(userSaveTags.keys()).filter((id) => id);
         if (ids.length === 0) {
           setSavers([]);
           setLoading(false);
@@ -99,6 +109,7 @@ const SavedByModal = ({ isOpen, onClose, placeId, googlePlaceId }: SavedByModalP
           username: p.username,
           avatar_url: p.avatar_url,
           isFollowing: followingSet.has(p.id),
+          save_tag: userSaveTags.get(p.id) || 'general',
         }));
 
         // Sort: current user first, then following, then others
@@ -189,9 +200,18 @@ const SavedByModal = ({ isOpen, onClose, placeId, googlePlaceId }: SavedByModalP
             ) : (
               filtered.map((u) => {
                 const isCurrentUser = u.id === currentUser?.id;
+                const saveTagOption = SAVE_TAG_OPTIONS.find(opt => opt.value === u.save_tag);
                 return (
                   <div key={u.id} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
+                      {/* Save category indicator */}
+                      <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
+                        {u.save_tag === 'general' ? (
+                          <Bookmark className="w-5 h-5 text-primary fill-primary" />
+                        ) : (
+                          <span className="text-lg leading-none">{saveTagOption?.emoji || '📍'}</span>
+                        )}
+                      </div>
                       <Avatar className="h-10 w-10">
                         <AvatarImage src={u.avatar_url || undefined} />
                         <AvatarFallback>{(u.username || 'U')[0].toUpperCase()}</AvatarFallback>
