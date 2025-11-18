@@ -64,7 +64,7 @@ const MinimalLocationCard = ({
     return false;
   });
 
-  return <div className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200">
+  return <div className="rounded-2xl shadow-sm border border-border hover:shadow-md transition-all duration-200 bg-card dark:bg-muted/30 dark:border-border/60 dark:backdrop-blur-sm">
       <div className="p-3 cursor-pointer" onClick={onCardClick}>
       <div className="flex items-center gap-3">
         <div className="shrink-0 bg-gray-50 rounded-xl p-1.5">

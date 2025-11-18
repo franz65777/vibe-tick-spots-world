@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import SimpleCategoryFilter from '@/components/explore/SimpleCategoryFilter';
 import { AllowedCategory } from '@/utils/allowedCategories';
 import SavedFoldersDrawer from './SavedFoldersDrawer';
+import { useNavigate } from 'react-router-dom';
 
 interface SavedLocationsListProps {
   isOpen: boolean;
