@@ -26,6 +26,7 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
   const { user } = useAuth();
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [currentSaveTag, setCurrentSaveTag] = useState<SaveTag>('general');
   const [likeCount, setLikeCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -46,7 +47,9 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
 
   useEffect(() => {
     const checkInteractions = async () => {
-      if (place.id) {
+      if (!place.id) return;
+
+      try {
         const [liked, saved, count] = await Promise.all([
           locationInteractionService.isLocationLiked(place.id),
           locationInteractionService.isLocationSaved(place.id),
@@ -56,18 +59,34 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
         setIsLiked(liked);
         setIsSaved(saved);
         setLikeCount(count);
+
+        if (saved) {
+          const tag = await locationInteractionService.getCurrentSaveTag(
+            place.google_place_id || place.id
+          );
+          setCurrentSaveTag((tag as SaveTag) || 'general');
+        } else {
+          setCurrentSaveTag('general');
+        }
+      } catch (error) {
+        console.error('Error checking interactions:', error);
       }
     };
 
     checkInteractions();
-  }, [place.id]);
+  }, [place.id, place.google_place_id]);
 
   // Listen for global save changes
   useEffect(() => {
     const handleSaveChanged = (event: CustomEvent) => {
-      const { locationId, isSaved: newSavedState } = event.detail;
-      if (locationId === place.id) {
+      const { locationId, isSaved: newSavedState, saveTag } = event.detail;
+      if (locationId === place.id || locationId === place.google_place_id) {
         setIsSaved(newSavedState);
+        if (saveTag) {
+          setCurrentSaveTag(saveTag as SaveTag);
+        } else if (!newSavedState) {
+          setCurrentSaveTag('general');
+        }
       }
     };
     
@@ -75,7 +94,7 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
     return () => {
       window.removeEventListener('location-save-changed', handleSaveChanged as EventListener);
     };
-  }, [place.id]);
+  }, [place.id, place.google_place_id]);
 
   const handleLikeToggle = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -106,10 +125,16 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
         types: place.types || []
       }, tag);
       setIsSaved(true);
+      setCurrentSaveTag(tag);
       // Emit global event
       window.dispatchEvent(new CustomEvent('location-save-changed', { 
-        detail: { locationId: place.id, isSaved: true } 
+        detail: { locationId: place.id, isSaved: true, saveTag: tag } 
       }));
+      if (place.google_place_id) {
+        window.dispatchEvent(new CustomEvent('location-save-changed', {
+          detail: { locationId: place.google_place_id, isSaved: true, saveTag: tag }
+        }));
+      }
     } catch (error) {
       console.error('Error saving location:', error);
     } finally {
@@ -123,10 +148,16 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
     try {
       await locationInteractionService.unsaveLocation(place.id);
       setIsSaved(false);
+      setCurrentSaveTag('general');
       // Emit global event
       window.dispatchEvent(new CustomEvent('location-save-changed', { 
         detail: { locationId: place.id, isSaved: false } 
       }));
+      if (place.google_place_id) {
+        window.dispatchEvent(new CustomEvent('location-save-changed', {
+          detail: { locationId: place.google_place_id, isSaved: false }
+        }));
+      }
     } catch (error) {
       console.error('Error unsaving location:', error);
     } finally {
