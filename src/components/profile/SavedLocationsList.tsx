@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { ArrowLeft, Search, X, Bookmark } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -15,6 +15,7 @@ import { locationInteractionService } from '@/services/locationInteractionServic
 import { toast } from 'sonner';
 import SimpleCategoryFilter from '@/components/explore/SimpleCategoryFilter';
 import { AllowedCategory } from '@/utils/allowedCategories';
+import SavedFoldersDrawer from './SavedFoldersDrawer';
 
 interface SavedLocationsListProps {
   isOpen: boolean;
@@ -34,6 +35,11 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
   const [selectedPlace, setSelectedPlace] = useState<any>(null);
   const [selectedSaveTag, setSelectedSaveTag] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState<AllowedCategory | null>(null);
+  const [isFoldersDrawerOpen, setIsFoldersDrawerOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const touchStartX = useRef(0);
+  const touchCurrentX = useRef(0);
+  const isDragging = useRef(false);
 
   useEffect(() => {
     const loadSavedPlaces = async () => {
@@ -122,6 +128,76 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
     };
   }, []);
 
+  // Swipe gesture handling
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    // Touch events for mobile
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartX.current = e.touches[0].clientX;
+      isDragging.current = true;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isDragging.current) return;
+      touchCurrentX.current = e.touches[0].clientX;
+      const diff = touchCurrentX.current - touchStartX.current;
+      
+      if (diff > 50 && touchStartX.current < 50) {
+        setIsFoldersDrawerOpen(true);
+        isDragging.current = false;
+      }
+    };
+
+    const handleTouchEnd = () => {
+      isDragging.current = false;
+      touchStartX.current = 0;
+      touchCurrentX.current = 0;
+    };
+
+    // Mouse events for desktop
+    const handleMouseDown = (e: MouseEvent) => {
+      if (e.clientX < 50) {
+        touchStartX.current = e.clientX;
+        isDragging.current = true;
+      }
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging.current) return;
+      touchCurrentX.current = e.clientX;
+      const diff = touchCurrentX.current - touchStartX.current;
+      
+      if (diff > 50) {
+        setIsFoldersDrawerOpen(true);
+        isDragging.current = false;
+      }
+    };
+
+    const handleMouseUp = () => {
+      isDragging.current = false;
+      touchStartX.current = 0;
+      touchCurrentX.current = 0;
+    };
+
+    container.addEventListener('touchstart', handleTouchStart);
+    container.addEventListener('touchmove', handleTouchMove);
+    container.addEventListener('touchend', handleTouchEnd);
+    container.addEventListener('mousedown', handleMouseDown);
+    container.addEventListener('mousemove', handleMouseMove);
+    container.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('touchend', handleTouchEnd);
+      container.removeEventListener('mousedown', handleMouseDown);
+      container.removeEventListener('mousemove', handleMouseMove);
+      container.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
+
   const isOwnProfile = currentUser?.id === targetUserId;
 
   const cities = useMemo(() => {
@@ -184,15 +260,21 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
   }
 
   return (
-    <div className="fixed inset-0 bg-background z-[9999] flex flex-col">
-      <style>{`
-        [class*="bottom-navigation"],
-        [class*="NewBottomNavigation"],
-        [class*="BusinessBottomNavigation"],
-        nav[class*="fixed bottom"] {
-          display: none !important;
-        }
-      `}</style>
+    <>
+      <SavedFoldersDrawer 
+        isOpen={isFoldersDrawerOpen}
+        onClose={() => setIsFoldersDrawerOpen(false)}
+      />
+      
+      <div ref={containerRef} className="fixed inset-0 bg-background z-[9999] flex flex-col">
+        <style>{`
+          [class*="bottom-navigation"],
+          [class*="NewBottomNavigation"],
+          [class*="BusinessBottomNavigation"],
+          nav[class*="fixed bottom"] {
+            display: none !important;
+          }
+        `}</style>
       
       {/* Header */}
       <div className="bg-background sticky top-0 z-40 mt-2.5">
@@ -359,7 +441,8 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 
