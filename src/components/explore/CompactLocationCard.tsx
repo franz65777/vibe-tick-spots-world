@@ -100,6 +100,25 @@ const CompactLocationCard = ({ place, onCardClick }: CompactLocationCardProps) =
     fetchSaveTag();
   }, [place.id, place.google_place_id]);
 
+  // Keep save tag in sync when updated elsewhere
+  useEffect(() => {
+    const handleSaveChanged = (event: CustomEvent) => {
+      const { locationId, isSaved: newSavedState, saveTag } = event.detail;
+      if (locationId === place.id || locationId === place.google_place_id) {
+        if (newSavedState && saveTag) {
+          setCurrentSaveTag(saveTag as SaveTag);
+        } else if (!newSavedState) {
+          setCurrentSaveTag('general');
+        }
+      }
+    };
+
+    window.addEventListener('location-save-changed', handleSaveChanged as EventListener);
+    return () => {
+      window.removeEventListener('location-save-changed', handleSaveChanged as EventListener);
+    };
+  }, [place.id, place.google_place_id]);
+
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isLiking) return;
