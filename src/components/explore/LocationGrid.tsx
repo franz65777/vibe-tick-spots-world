@@ -201,10 +201,10 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
       
       const allIdsArray = Array.from(allRelatedLocationIds);
 
-      // Fetch posts count for ALL related locations
+      // Fetch posts count (and ratings from posts) for ALL related locations
       const { data: postsData } = await supabase
         .from('posts')
-        .select('location_id, id')
+        .select('location_id, id, rating')
         .in('location_id', allIdsArray);
 
       // Fetch ratings from interactions table for ALL related locations
@@ -232,22 +232,40 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
         postsMap.set(post.location_id, (postsMap.get(post.location_id) || 0) + 1);
       });
 
-      // Calculate average rating by location_id
+      // Calculate average rating by location_id (from interactions AND posts)
       const ratingsMap = new Map<string, number>();
+      const ratingsByLocation = new Map<string, number[]>();
+
       if (ratingsData && ratingsData.length > 0) {
-        const ratingsByLocation = new Map<string, number[]>();
         ratingsData.forEach(r => {
-          if (!ratingsByLocation.has(r.location_id)) {
-            ratingsByLocation.set(r.location_id, []);
+          const locId = r.location_id as string;
+          if (!locId) return;
+          if (!ratingsByLocation.has(locId)) {
+            ratingsByLocation.set(locId, []);
           }
-          ratingsByLocation.get(r.location_id)!.push(Number(r.weight));
-        });
-        
-        ratingsByLocation.forEach((ratings, locationId) => {
-          const avg = ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
-          ratingsMap.set(locationId, Math.round(avg * 10) / 10);
+          ratingsByLocation.get(locId)!.push(Number(r.weight));
         });
       }
+
+      if (postsData && postsData.length > 0) {
+        postsData.forEach(post => {
+          const locId = post.location_id as string | null;
+          const rating = (post as any).rating;
+          if (!locId || rating == null) return;
+          const numeric = Number(rating);
+          if (!numeric || numeric <= 0) return;
+          if (!ratingsByLocation.has(locId)) {
+            ratingsByLocation.set(locId, []);
+          }
+          ratingsByLocation.get(locId)!.push(numeric);
+        });
+      }
+
+      ratingsByLocation.forEach((ratings, locationId) => {
+        if (ratings.length === 0) return;
+        const avg = ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
+        ratingsMap.set(locationId, Math.round(avg * 10) / 10);
+      });
 
       // Group by canonical place using google_place_id when available,
       // otherwise fall back to normalized name + city. Also link records that
@@ -330,6 +348,17 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
           g.rankingScore = Math.round(avgRating * 10) / 10;
         }
       });
+
+      // Debug specific location stats
+      const debugLocation = Array.from(groups.values()).find(g => g.name === 'Nalu Restaurant & Lounge');
+      if (debugLocation) {
+        console.log('LocationGrid debug - Nalu Restaurant & Lounge', {
+          postsCount: debugLocation.postsCount,
+          savesCount: debugLocation.savesCount,
+          rankingScore: debugLocation.rankingScore,
+          allLocationIds: debugLocation.allLocationIds,
+        });
+      }
 
       // Check if user saved ANY of the location IDs or place_id for each unique place
       const finalUserSavedIds = new Set<string>();
