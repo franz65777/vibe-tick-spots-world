@@ -395,7 +395,7 @@ class LocationInteractionService {
       const { data: user } = await supabase.auth.getUser();
       if (!user?.user) return 'general';
 
-      // Try to resolve the internal location id
+      // Try to resolve the internal location id (for user_saved_locations)
       const { data: location } = await supabase
         .from('locations')
         .select('id')
@@ -404,7 +404,7 @@ class LocationInteractionService {
 
       const internalId = location?.id || locationId;
 
-      // Get save tag from user_saved_locations
+      // 1) New system: user_saved_locations (one row per location with save_tag)
       const { data: savedLocation } = await supabase
         .from('user_saved_locations')
         .select('save_tag')
@@ -412,7 +412,23 @@ class LocationInteractionService {
         .eq('location_id', internalId)
         .maybeSingle();
 
-      return savedLocation?.save_tag || 'general';
+      if (savedLocation?.save_tag) {
+        return savedLocation.save_tag;
+      }
+
+      // 2) Legacy system: saved_places (place_id = google_place_id)
+      const { data: savedPlace } = await supabase
+        .from('saved_places')
+        .select('save_tag')
+        .eq('user_id', user.user.id)
+        .eq('place_id', locationId)
+        .maybeSingle();
+
+      if (savedPlace?.save_tag) {
+        return savedPlace.save_tag;
+      }
+
+      return 'general';
     } catch (error) {
       console.error('Error getting save tag:', error);
       return 'general';
