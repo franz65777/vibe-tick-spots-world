@@ -349,12 +349,12 @@ ${likedLocations.slice(0, 10).map(l => `- ${l.name} (${l.category}) in ${l.city}
     const cuisineMatch = queryLower.match(/\b(italian|mexican|japanese|chinese|thai|indian|french|korean|vietnamese|greek|spanish|turkish|lebanese|brazilian|peruvian|messican[oa]|italiano|giapponese|cinese|taco|burrito|margarita|pizza|pasta|sushi|curry)\b/i);
     const cityMatch = queryLower.match(/\b(?:in|a|ad|at)\s+([a-z\s]+?)(?:\s|$|,|\?)/i);
     
-    // Rileva contesti "party" / "festa" per usare esplicitamente i tuoi salvataggi night_out
+    // Rileva contesti "party" / "festa" per usare esplicitamente i tuoi luoghi per uscire la sera
     const isPartyContext = /\b(festa|serata fuori|party|serata|notte|night out|aperitivo|apericena)\b/i.test(queryLower);
     
     let smartSearchContext = "";
     
-    // 1) Se il contesto è "festa", costruisci un blocco di luoghi dai save_tags night_out (tuoi + amici)
+    // 1) Se il contesto è "festa", costruisci un blocco di luoghi per uscire la sera (tuoi + amici)
     if (isPartyContext) {
       const targetCityRaw = cityMatch?.[1]?.trim() || null;
       const targetCity = targetCityRaw ? targetCityRaw.toLowerCase() : null;
@@ -365,45 +365,77 @@ ${likedLocations.slice(0, 10).map(l => `- ${l.name} (${l.category}) in ${l.city}
         return city.toLowerCase().includes(targetCity);
       };
       
-      const userNightOutSaves = [
+      const isPartyTag = (tags: string[] = []) => {
+        const lower = tags.map(t => t.toLowerCase());
+        return lower.includes('night_out') || lower.includes('party') || lower.includes('serata') || lower.includes('aperitivo');
+      };
+      
+      const isPartyCategory = (category?: string | null) => {
+        if (!category) return false;
+        const c = category.toLowerCase();
+        return /(bar|club|pub|night|cocktail|discoteca|lounge)/.test(c);
+      };
+      
+      const userSavesNormalized = [
         ...(savedPlaces || []).map(p => ({ 
           name: p.place_name,
           category: p.place_category,
           city: p.city,
-          google_place_id: p.google_place_id || p.place_id,
+          google_place_id: (p as any).google_place_id || p.place_id,
+          internal_id: null as string | null,
           tags: Array.isArray(p.save_tags) ? p.save_tags : []
         })),
         ...(savedLocations || []).map(l => ({
           name: l.locations?.name,
           category: l.locations?.category,
           city: l.locations?.city,
-          google_place_id: l.locations?.google_place_id,
-          internal_id: l.locations?.id,
+          google_place_id: l.locations?.google_place_id as string | null,
+          internal_id: l.locations?.id as string | null,
           tags: Array.isArray(l.save_tags) ? l.save_tags : []
         }))
-      ].filter(p => p.name && p.tags?.includes('night_out') && filterByCity(p.city));
+      ];
       
-      const friendsNightOutSaves = (friendsPlaces || []).filter(p => {
-        const tags = (p.tags && Array.isArray(p.tags)) ? p.tags : [];
-        return p.name && tags.includes('night_out') && filterByCity(p.city);
-      });
+      const friendsSavesNormalized = (friendsPlaces || []).map(p => ({
+        name: p.name,
+        category: p.category,
+        city: p.city,
+        google_place_id: p.google_place_id as string | null,
+        internal_id: p.internal_id as string | null,
+        friendUsername: p.friendUsername,
+        user_id: p.user_id,
+        tags: Array.isArray(p.tags) ? p.tags : []
+      }));
+      
+      const userPartyCandidates = userSavesNormalized.filter(p =>
+        p.name && filterByCity(p.city) && (isPartyTag(p.tags) || isPartyCategory(p.category))
+      );
+      
+      const friendPartyCandidates = friendsSavesNormalized.filter(p =>
+        p.name && filterByCity(p.city) && (isPartyTag(p.tags) || isPartyCategory(p.category))
+      );
+      
+      const fallbackUser = userSavesNormalized.filter(p => p.name && filterByCity(p.city));
+      const fallbackFriends = friendsSavesNormalized.filter(p => p.name && filterByCity(p.city));
+      
+      const finalUserList = userPartyCandidates.length > 0 ? userPartyCandidates : fallbackUser;
+      const finalFriendList = friendPartyCandidates.length > 0 ? friendPartyCandidates : fallbackFriends;
       
       const partyPlacesLines: string[] = [];
       
-      if (friendsNightOutSaves.length > 0) {
-        partyPlacesLines.push(`FRIENDS' NIGHT_OUT SAVES${targetCity ? ` IN ${targetCity.toUpperCase()}` : ''}:`);
+      if (finalFriendList.length > 0) {
+        partyPlacesLines.push(`LUOGHI SALVATI DAI TUOI AMICI PER USCIRE LA SERA${targetCity ? ` A ${targetCity.toUpperCase()}` : ''}:`);
         partyPlacesLines.push(
-          ...friendsNightOutSaves.slice(0, 8).map(p => {
+          ...finalFriendList.slice(0, 8).map(p => {
             const id = p.google_place_id || (p.internal_id ? `internal:${p.internal_id}` : p.name);
             return `- [PLACE:${p.name}|${id}] (${p.category || 'night_out'}) - salvato da [USER:${p.friendUsername}|${p.user_id || 'unknown'}]`;
           })
         );
       }
       
-      if (userNightOutSaves.length > 0) {
-        partyPlacesLines.push(`\nYOUR NIGHT_OUT SAVES${targetCity ? ` IN ${targetCity.toUpperCase()}` : ''}:`);
+      if (finalUserList.length > 0) {
+        partyPlacesLines.push(`\nI TUOI LUOGHI SALVATI PER USCIRE LA SERA${targetCity ? ` A ${targetCity.toUpperCase()}` : ''}:`);
         partyPlacesLines.push(
-          ...userNightOutSaves.slice(0, 8).map(p => {
+          ...finalUserList.slice(0, 8).map(p => {
             const id = p.google_place_id || (p.internal_id ? `internal:${p.internal_id}` : p.name);
             return `- [PLACE:${p.name}|${id}] (${p.category || 'night_out'})`;
           })
