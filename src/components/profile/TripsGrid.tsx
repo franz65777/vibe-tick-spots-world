@@ -8,7 +8,7 @@ import tripsEmptyImage from '@/assets/trips-empty-state.png';
 const TripsGrid = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
-  const { t } = useTranslation();
+  const { t } = useTranslation(['trips', 'ai']);
 
   const handleCreateTrip = (tripData: any) => {
     console.log('Creating trip:', tripData);
@@ -16,7 +16,7 @@ const TripsGrid = () => {
 
   return (
     <div className="px-4 pt-[25px]">
-      <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="flex flex-col items-center justify-center py-4 text-center">
         <div className="flex flex-col gap-3 w-full max-w-xs mb-8">
           <button 
             onClick={() => setIsAiModalOpen(true)}

@@ -17,7 +17,7 @@ export const AiAssistantModal = ({ isOpen, onClose }: AiAssistantModalProps) => 
   const { messages, isLoading, error, sendMessage } = useAiAssistant();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { t } = useTranslation();
+  const { t } = useTranslation(['ai', 'trips']);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -58,9 +58,17 @@ export const AiAssistantModal = ({ isOpen, onClose }: AiAssistantModalProps) => 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-background z-50 flex flex-col pt-[25px]">
+    <div className="fixed inset-0 bg-background z-[9999] flex flex-col pt-[25px]">
+      <style>{`
+        [class*="bottom-navigation"],
+        [class*="NewBottomNavigation"],
+        [class*="BusinessBottomNavigation"],
+        nav[class*="fixed bottom"] {
+          display: none !important;
+        }
+      `}</style>
       {/* Header */}
-      <div className="px-6 py-4 flex items-center justify-between">
+      <div className="px-6 py-4 flex items-center justify-between border-b border-border">
         <div className="flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-primary" />
           <h2 className="text-lg font-semibold">{t('ai.title')}</h2>
@@ -136,7 +144,7 @@ export const AiAssistantModal = ({ isOpen, onClose }: AiAssistantModalProps) => 
         </ScrollArea>
 
         {/* Input */}
-        <div className="p-4 bg-background">
+        <div className="p-4 bg-background border-t border-border">
           <form
             onSubmit={(e) => {
               e.preventDefault();
