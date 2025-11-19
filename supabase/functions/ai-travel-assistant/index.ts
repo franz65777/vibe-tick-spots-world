@@ -162,10 +162,10 @@ serve(async (req) => {
         )
         .limit(100);
 
-      // Analyze user preferences
-      const categoryPreferences: Record<string, number> = {};
-      const saveTags: Record<string, number> = {};
-      const ratings: { high: number; medium: number; low: number } = { high: 0, medium: 0, low: 0 };
+    // Build comprehensive context
+    const isFirstMessage = messages.length <= 1;
+    
+    if (user) {
 
       // Process saved places with ratings
       savedPlaces?.forEach(place => {
@@ -280,9 +280,13 @@ serve(async (req) => {
         friendsPlacesByCity[city].push(place);
       });
 
+      const greeting = isFirstMessage && profile?.username 
+        ? `Hello @${profile.username}! 👋 ` 
+        : "";
+      
       userContext = `
 USER PROFILE:
-- Username: ${profileData?.username || "Traveler"}
+- Username: ${profile?.username || "Traveler"} ${greeting ? `(${greeting})` : ""}
 - Current City: ${Object.keys(placesByCity)[0] || "Not set"}
 - Total saved places: ${allSaves.length}
 - Cities with saved places: ${Object.keys(placesByCity).join(", ") || "None"}
