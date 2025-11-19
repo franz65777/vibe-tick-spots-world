@@ -757,7 +757,8 @@ const resources = {
       title: 'My Trips',
       subtitle: 'Plan and organize your travel adventures with AI assistance or create custom trips',
       aiButton: 'AI Travel Assistant',
-      createButton: 'Create New Trip'
+      createButton: 'Create New Trip',
+      planWithFriends: 'Plan trips with your friends'
     },
     ai: {
       title: 'AI Travel Assistant',
@@ -1520,7 +1521,8 @@ const resources = {
       title: 'Mis Viajes',
       subtitle: 'Planifica y organiza tus aventuras de viaje con asistencia IA o crea viajes personalizados',
       aiButton: 'Asistente de Viajes IA',
-      createButton: 'Crear Nuevo Viaje'
+      createButton: 'Crear Nuevo Viaje',
+      planWithFriends: 'Planifica viajes con tus amigos'
     },
     ai: {
       title: 'Asistente de Viajes IA',
@@ -2300,7 +2302,8 @@ const resources = {
       title: 'I Miei Viaggi',
       subtitle: 'Pianifica e organizza le tue avventure di viaggio con assistenza IA o crea viaggi personalizzati',
       aiButton: 'Assistente di Viaggio IA',
-      createButton: 'Crea Nuovo Viaggio'
+      createButton: 'Crea Nuovo Viaggio',
+      planWithFriends: 'Pianifica i viaggi con i tuoi amici'
     },
     ai: {
       title: 'Assistente di Viaggio IA',
@@ -2958,7 +2961,8 @@ const resources = {
       title: 'Mes Voyages',
       subtitle: 'Planifiez et organisez vos aventures de voyage avec l\'assistance IA ou créez des voyages personnalisés',
       aiButton: 'Assistant de Voyage IA',
-      createButton: 'Créer un Nouveau Voyage'
+      createButton: 'Créer un Nouveau Voyage',
+      planWithFriends: 'Planifiez des voyages avec vos amis'
     },
     ai: {
       title: 'Assistant de Voyage IA',
@@ -3510,6 +3514,25 @@ const resources = {
     },
     gamification: {
       level: 'Level'
+    },
+    trips: {
+      title: 'Meine Reisen',
+      subtitle: 'Planen und organisieren Sie Ihre Reiseabenteuer mit KI-Unterstützung oder erstellen Sie individuelle Reisen',
+      aiButton: 'KI-Reiseassistent',
+      createButton: 'Neue Reise Erstellen',
+      planWithFriends: 'Planen Sie Reisen mit Ihren Freunden'
+    },
+    ai: {
+      title: 'KI-Assistent',
+      welcomeTitle: 'Hallo! Ich bin Ihr persönlicher KI-Reiseassistent',
+      welcomeDesc: 'Ich kann Ihnen helfen, Ihre nächste Reise basierend auf Ihren Vorlieben zu planen. Fragen Sie mich einfach!',
+      hiddenGems: 'Versteckte Juwelen',
+      hiddenGemsPrompt: 'Welche versteckten Juwelen gibt es in meiner Gegend?',
+      planTrip: 'Reise Planen',
+      planTripPrompt: 'Hilf mir, eine Wochenendreise zu planen',
+      itinerary: 'Reiseplan',
+      itineraryPrompt: 'Erstelle einen 3-Tage-Reiseplan für mich',
+      inputPlaceholder: 'Stell mir eine Frage...'
     },
     leaderboard: {
       leaderboard: 'Bestenliste',
@@ -4082,7 +4105,8 @@ const resources = {
       title: 'Minhas Viagens',
       subtitle: 'Planeje e organize suas aventuras de viagem com assistência IA ou crie viagens personalizadas',
       aiButton: 'Assistente de Viagem IA',
-      createButton: 'Criar Nova Viagem'
+      createButton: 'Criar Nova Viagem',
+      planWithFriends: 'Planeje viagens com seus amigos'
     },
     ai: {
       title: 'Assistente de Viagem IA',
@@ -4567,7 +4591,8 @@ const resources = {
       title: '我的旅行',
       subtitle: '借助AI助手或创建自定义旅行来规划和组织您的旅行冒险',
       aiButton: 'AI旅行助手',
-      createButton: '创建新旅行'
+      createButton: '创建新旅行',
+      planWithFriends: '与您的朋友一起计划旅行'
     },
     ai: {
       title: 'AI旅行助手',
@@ -5052,7 +5077,8 @@ const resources = {
       title: 'マイ トリップ',
       subtitle: 'AIアシスタントを使って旅行の冒険を計画・整理するか、カスタム旅行を作成',
       aiButton: 'AI旅行アシスタント',
-      createButton: '新しい旅行を作成'
+      createButton: '新しい旅行を作成',
+      planWithFriends: '友達と旅行を計画する'
     },
     ai: {
       title: 'AI旅行アシスタント',
@@ -5541,7 +5567,8 @@ const resources = {
       title: '내 여행',
       subtitle: 'AI 지원으로 여행 모험을 계획하고 정리하거나 맞춤 여행 만들기',
       aiButton: 'AI 여행 어시스턴트',
-      createButton: '새 여행 만들기'
+      createButton: '새 여행 만들기',
+      planWithFriends: '친구들과 여행 계획하기'
     },
     ai: {
       title: 'AI 여행 어시스턴트',
@@ -6030,7 +6057,8 @@ const resources = {
       title: 'رحلاتي',
       subtitle: 'خطط ونظم مغامرات سفرك بمساعدة الذكاء الاصطناعي أو أنشئ رحلات مخصصة',
       aiButton: 'مساعد السفر بالذكاء الاصطناعي',
-      createButton: 'إنشاء رحلة جديدة'
+      createButton: 'إنشاء رحلة جديدة',
+      planWithFriends: 'خطط للرحلات مع أصدقائك'
     },
     ai: {
       title: 'مساعد السفر بالذكاء الاصطناعي',
@@ -6534,7 +6562,8 @@ const resources = {
       title: 'मेरी यात्राएं',
       subtitle: 'AI सहायता से अपनी यात्रा रोमांच की योजना बनाएं और व्यवस्थित करें या कस्टम यात्राएं बनाएं',
       aiButton: 'AI यात्रा सहायक',
-      createButton: 'नई यात्रा बनाएं'
+      createButton: 'नई यात्रा बनाएं',
+      planWithFriends: 'अपने दोस्तों के साथ यात्राओं की योजना बनाएं'
     },
     ai: {
       title: 'AI यात्रा सहायक',
@@ -7019,7 +7048,8 @@ const resources = {
       title: 'Мои Поездки',
       subtitle: 'Планируйте и организуйте свои путешествия с помощью ИИ или создайте индивидуальные поездки',
       aiButton: 'ИИ Помощник по Путешествиям',
-      createButton: 'Создать Новую Поездку'
+      createButton: 'Создать Новую Поездку',
+      planWithFriends: 'Планируйте поездки с друзьями'
     },
     ai: {
       title: 'ИИ Помощник по Путешествиям',
