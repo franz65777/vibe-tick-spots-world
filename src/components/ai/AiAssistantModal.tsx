@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import LocationDetailDrawer from '@/components/home/LocationDetailDrawer';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 const detectLanguage = (text: string): string => {
   const lowerText = text.toLowerCase();
@@ -99,20 +100,97 @@ export const AiAssistantModal = ({ isOpen, onClose }: AiAssistantModalProps) => 
     sendMessage(prompt, detectedLanguage);
   };
 
-  const handlePlaceClick = (name: string, placeId: string) => {
+  const handlePlaceClick = async (name: string, placeId: string) => {
     if (placeId === 'unknown') return;
     
     const isInternal = placeId.startsWith('internal:');
     const actualId = isInternal ? placeId.replace('internal:', '') : placeId;
 
-    setSelectedLocation({
-      place_id: actualId,
-      name,
-      category: 'restaurant',
-      city: null,
-      coordinates: { lat: 0, lng: 0 }
-    });
-    setDrawerOpen(true);
+    try {
+      // Fetch full location data from database
+      let locationData: any = null;
+
+      if (isInternal) {
+        // Internal location by ID
+        const { data } = await supabase
+          .from('locations')
+          .select('*')
+          .eq('id', actualId)
+          .maybeSingle();
+        locationData = data;
+      } else {
+        // External location by google_place_id
+        const { data } = await supabase
+          .from('locations')
+          .select('*')
+          .eq('google_place_id', actualId)
+          .maybeSingle();
+        
+        if (data) {
+          locationData = data;
+        } else {
+          // Check if it exists in saved_places
+          const { data: savedPlace } = await supabase
+            .from('saved_places')
+            .select('*')
+            .eq('place_id', actualId)
+            .limit(1)
+            .maybeSingle();
+          
+          if (savedPlace) {
+            const coords: any = savedPlace.coordinates || {};
+            locationData = {
+              google_place_id: savedPlace.place_id,
+              name: savedPlace.place_name,
+              category: savedPlace.place_category,
+              city: savedPlace.city,
+              address: null,
+              latitude: coords.lat || coords.latitude || 0,
+              longitude: coords.lng || coords.longitude || 0,
+            };
+          }
+        }
+      }
+
+      if (locationData) {
+        setSelectedLocation({
+          place_id: isInternal ? undefined : (locationData.google_place_id || actualId),
+          id: isInternal ? actualId : locationData.id,
+          name: locationData.name || name,
+          category: locationData.category || 'restaurant',
+          city: locationData.city,
+          address: locationData.address,
+          coordinates: {
+            lat: Number(locationData.latitude || 0),
+            lng: Number(locationData.longitude || 0)
+          }
+        });
+      } else {
+        // Fallback if nothing found
+        setSelectedLocation({
+          place_id: isInternal ? undefined : actualId,
+          id: isInternal ? actualId : undefined,
+          name,
+          category: 'restaurant',
+          city: null,
+          coordinates: { lat: 0, lng: 0 }
+        });
+      }
+      
+      setDrawerOpen(true);
+    } catch (error) {
+      console.error('Error fetching location details:', error);
+      // Fallback on error
+      setSelectedLocation({
+        place_id: isInternal ? undefined : actualId,
+        id: isInternal ? actualId : undefined,
+        name,
+        category: 'restaurant',
+        city: null,
+        coordinates: { lat: 0, lng: 0 }
+      });
+      setDrawerOpen(true);
+    }
   };
 
   const handleUserClick = (userId: string) => {
