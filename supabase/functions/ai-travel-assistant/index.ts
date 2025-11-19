@@ -62,7 +62,7 @@ serve(async (req) => {
       // Get user's saved places (Google Places) with ratings
       const savedPlacesResult = await supabase
         .from("saved_places")
-        .select("place_name, place_category, city, rating, save_tags")
+        .select("place_id, place_name, place_category, city, rating, save_tags")
         .eq("user_id", user.id)
         .limit(100);
       savedPlaces = savedPlacesResult.data || [];
@@ -135,11 +135,11 @@ serve(async (req) => {
       const friendsSavesResult = await supabase
         .from("saved_places")
         .select(`
+          place_id,
           place_name,
           place_category,
           city,
           rating,
-          google_place_id,
           user_id,
           profiles!saved_places_user_id_fkey (
             username
@@ -281,7 +281,7 @@ serve(async (req) => {
           category: p.place_category,
           city: p.city,
           rating: p.rating,
-          google_place_id: p.google_place_id,
+          google_place_id: (p as any).google_place_id || (p as any).place_id,
           friendUsername: p.profiles?.username,
           user_id: p.user_id,
           tags: Array.isArray(p.save_tags) ? p.save_tags : []
@@ -359,15 +359,53 @@ ${likedLocations.slice(0, 10).map(l => `- ${l.name} (${l.category}) in ${l.city}
       const targetCityRaw = cityMatch?.[1]?.trim() || null;
       const targetCity = targetCityRaw ? targetCityRaw.toLowerCase() : null;
       
+      const normalizeCityName = (value: string | null | undefined) => {
+        if (!value) return null;
+        let c = value.toLowerCase().split(',')[0];
+
+        // Remove postal district numbers, e.g. "Dublin 2" -> "dublin"
+        c = c.replace(/\s+\d+$/g, '');
+
+        // Remove "county" prefix
+        c = c.replace(/^county\s+/g, '').trim();
+
+        // Basic Italian → English mappings for frequent cities
+        const italianToEnglish: { [key: string]: string } = {
+          dublino: 'dublin',
+          londra: 'london',
+          parigi: 'paris',
+          berlino: 'berlin',
+          lisbona: 'lisbon',
+          praga: 'prague',
+        };
+
+        if (italianToEnglish[c]) {
+          c = italianToEnglish[c];
+        }
+
+        return c;
+      };
+
+      const normalizedTargetCity = normalizeCityName(targetCity);
+      
       const filterByCity = (city?: string | null) => {
-        if (!targetCity) return true;
-        if (!city) return false;
-        return city.toLowerCase().includes(targetCity);
+        if (!normalizedTargetCity) return true;
+        const normalizedCity = normalizeCityName(city);
+        if (!normalizedCity) return false;
+        return normalizedCity === normalizedTargetCity;
       };
       
       const isPartyTag = (tags: string[] = []) => {
         const lower = tags.map(t => t.toLowerCase());
-        return lower.includes('night_out') || lower.includes('party') || lower.includes('serata') || lower.includes('aperitivo');
+        return (
+          lower.includes('night_out') ||
+          lower.includes('nightout') ||
+          lower.includes('party') ||
+          lower.includes('serata') ||
+          lower.includes('festa') ||
+          lower.includes('aperitivo') ||
+          lower.includes('apericena')
+        );
       };
       
       const isPartyCategory = (category?: string | null) => {
