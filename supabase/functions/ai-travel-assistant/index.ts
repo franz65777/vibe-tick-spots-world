@@ -161,6 +161,7 @@ serve(async (req) => {
           ).data?.map(f => f.following_id) || []
         )
         .limit(100);
+    }
 
     // Build comprehensive context
     const isFirstMessage = messages.length <= 1;
