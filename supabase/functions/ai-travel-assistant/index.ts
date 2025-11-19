@@ -108,21 +108,55 @@ serve(async (req) => {
         .eq("user_id", user.id)
         .limit(200);
 
-      // Get following users' saves
-      const { data: followingSaves } = await supabase
-        .from("follows")
+      // Get friends' saved places with more details
+      const { data: friendsSaves } = await supabase
+        .from("saved_places")
         .select(`
-          profiles!follows_following_id_fkey (
+          place_name,
+          place_category,
+          city,
+          rating,
+          google_place_id,
+          user_id,
+          profiles!saved_places_user_id_fkey (
             username
-          ),
-          saved_places!saved_places_user_id_fkey (
-            place_name,
-            place_category,
-            city
           )
         `)
-        .eq("follower_id", user.id)
-        .limit(50);
+        .in('user_id', 
+          (await supabase
+            .from("follows")
+            .select("following_id")
+            .eq("follower_id", user.id)
+          ).data?.map(f => f.following_id) || []
+        )
+        .limit(100);
+
+      // Get friends' internal saved locations
+      const { data: friendsLocations } = await supabase
+        .from("user_saved_locations")
+        .select(`
+          rating,
+          user_id,
+          locations (
+            id,
+            name,
+            category,
+            city,
+            description,
+            google_place_id
+          ),
+          profiles!user_saved_locations_user_id_fkey (
+            username
+          )
+        `)
+        .in('user_id',
+          (await supabase
+            .from("follows")
+            .select("following_id")
+            .eq("follower_id", user.id)
+          ).data?.map(f => f.following_id) || []
+        )
+        .limit(100);
 
       // Analyze user preferences
       const categoryPreferences: Record<string, number> = {};
@@ -214,6 +248,34 @@ serve(async (req) => {
         .slice(0, 5)
         .map(([tag, count]) => `${tag} (${count} times)`);
 
+      // Process friends' saves
+      const friendsPlaces = [
+        ...(friendsSaves || []).map(p => ({
+          name: p.place_name,
+          category: p.place_category,
+          city: p.city,
+          rating: p.rating,
+          google_place_id: p.google_place_id,
+          friendUsername: p.profiles?.username
+        })),
+        ...(friendsLocations || []).map(l => ({
+          name: l.locations?.name,
+          category: l.locations?.category,
+          city: l.locations?.city,
+          rating: l.rating,
+          google_place_id: l.locations?.google_place_id,
+          internal_id: l.locations?.id,
+          friendUsername: l.profiles?.username
+        }))
+      ];
+
+      const friendsPlacesByCity: Record<string, any[]> = {};
+      friendsPlaces.forEach(place => {
+        const city = place.city || 'Unknown';
+        if (!friendsPlacesByCity[city]) friendsPlacesByCity[city] = [];
+        friendsPlacesByCity[city].push(place);
+      });
+
       userContext = `
 USER PROFILE:
 - Username: ${profile?.username || "Traveler"}
@@ -232,6 +294,11 @@ ${Object.entries(placesByCity).map(([city, places]) =>
   `${city} (${places.length} places):\n${places.slice(0, 5).map(p => `  - ${p.name} (${p.category})`).join('\n')}`
 ).join('\n\n') || "No saved places yet"}
 
+FRIENDS' SAVED PLACES:
+${Object.entries(friendsPlacesByCity).slice(0, 3).map(([city, places]) => 
+  `${city} (${places.length} places from friends):\n${places.slice(0, 5).map(p => `  - ${p.name} (${p.category}) - saved by ${p.friendUsername}`).join('\n')}`
+).join('\n\n') || "No friends' places available yet"}
+
 LIKED POST LOCATIONS:
 ${likedLocations.slice(0, 10).map(l => `- ${l.name} (${l.category}) in ${l.city}`).join('\n') || "None"}
 
@@ -241,29 +308,82 @@ ${followingSaves?.flatMap(fs =>
     `- ${sp.place_name} (${sp.place_category}) in ${sp.city} (by @${fs.profiles?.username})`
   )
 ).filter(Boolean).slice(0, 15).join('\n') || "None"}
-`;
+      `.trim();
     }
 
-    const systemPrompt = `You are a concise, expert AI Travel Assistant for Spott, a location discovery and social travel app.
+    // Extract user query details for smart search
+    const lastUserMessage = messages[messages.length - 1]?.content || "";
+    const queryLower = lastUserMessage.toLowerCase();
+    
+    // Check if user is asking about specific food/cuisine
+    const cuisineMatch = queryLower.match(/\b(italian|mexican|japanese|chinese|thai|indian|french|korean|vietnamese|greek|spanish|turkish|lebanese|brazilian|peruvian|messican[oa]|italiano|giapponese|cinese)\b/);
+    const cityMatch = queryLower.match(/\b(?:in|a|ad)\s+([a-z\s]+?)(?:\s|$|,|\?)/i);
+    
+    let smartSearchContext = "";
+    if (cuisineMatch && cityMatch) {
+      const cuisine = cuisineMatch[0];
+      const city = cityMatch[1].trim();
+      
+      console.log(`Smart search: ${cuisine} in ${city}`);
+      
+      // Search for posts with relevant keywords in that city
+      const { data: relevantPosts } = await supabase
+        .from("posts")
+        .select(`
+          caption,
+          locations (
+            id,
+            name,
+            category,
+            city,
+            description,
+            google_place_id
+          )
+        `)
+        .or(`caption.ilike.%${cuisine}%,caption.ilike.%taco%,caption.ilike.%burrito%,caption.ilike.%margarita%`)
+        .limit(30);
+      
+      const matchingLocations = relevantPosts
+        ?.filter(p => p.locations?.city?.toLowerCase().includes(city.toLowerCase()))
+        .map(p => p.locations)
+        .filter((loc, index, self) => 
+          loc && self.findIndex(l => l?.id === loc.id) === index
+        ) || [];
+      
+      if (matchingLocations.length > 0) {
+        smartSearchContext = `\n\nRELEVANT LOCATIONS FOR "${cuisine}" IN ${city.toUpperCase()} (from user posts):
+${matchingLocations.slice(0, 10).map(loc => 
+  `- ${loc.name} (${loc.category}) - ID: ${loc.google_place_id || `internal:${loc.id}`}`
+).join('\n')}`;
+      }
+    }
 
-${userContext}
+    const systemPrompt = `You are a knowledgeable, friendly travel assistant AI integrated into Spott, a social travel discovery app. Your goal is to help users discover amazing places based on their preferences, past saves, and social connections.
+
+CONTEXT:
+${userContext}${smartSearchContext}
+
+CRITICAL FORMATTING RULES:
+1. When mentioning specific places, use this EXACT format: [PLACE:place_name|place_id]
+   - For Google Places, use: [PLACE:Restaurant Name|ChIJxxxxx]
+   - For internal locations, use: [PLACE:Restaurant Name|internal:uuid]
+   - Example: "I recommend [PLACE:Masa Drury St|ChIJ123abc] for tacos"
+2. DO NOT use asterisks (**) around place names
+3. Each place name should be wrapped in [PLACE:name|id] tags so users can click on them
+4. If you don't have the place_id, just use the name: [PLACE:Restaurant Name|unknown]
 
 RESPONSE GUIDELINES:
-- Keep responses SHORT and ACTIONABLE (3-5 sentences max for simple queries)
-- Always prioritize places from people they follow (shown above) - these are trusted recommendations
-- Reference actual saved places and liked locations by name
-- For "where should I..." questions, give 2-3 specific suggestions with brief reasons
-- Don't explain how the app works unless asked
-- Be conversational but get straight to the point
+1. Be conversational, warm, and enthusiastic about travel
+2. Prioritize places the user has already saved when relevant
+3. ALSO suggest places saved by the user's friends - these are great recommendations!
+4. Consider the user's rating patterns and category preferences
+5. Reference specific places using the [PLACE:name|id] format
+6. When the user asks about specific cuisine or food type, use the smart search results to provide highly relevant suggestions
+7. Keep responses concise but informative (2-3 paragraphs max unless asked for more detail)
+8. Use emojis sparingly and naturally
+9. Extract keywords from reviews and captions to enrich recommendations (e.g., "great margaritas", "authentic tacos")
 
-EXAMPLE RESPONSES:
-Q: "I'm visiting Rome, where should I eat sushi?"
-A: "Based on your taste, try Hasekura - it's in Prati and similar to the spots you've liked. @marco also saved Sushisen in Termini area. Both get great reviews from travelers like you!"
-
-Q: "Suggest a 4-day trip to Rome"
-A: "Here's a 4-day Rome itinerary based on your saved places: Day 1: Trevi + Pantheon + Campo de' Fiori for dinner. Day 2: Vatican + Castel Sant'Angelo + Trastevere evening. Day 3: Colosseum + Roman Forum + Testaccio for authentic food. Day 4: Villa Borghese + Spanish Steps + Monti neighborhood. Want details on any day?"
-
-Always reference actual data from their profile when making recommendations.`;
+Remember: You have access to the user's saves, friends' saves, and can search for specific cuisines/food types. Use [PLACE:name|id] format for ALL location mentions.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
