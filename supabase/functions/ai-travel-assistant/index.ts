@@ -282,8 +282,8 @@ serve(async (req) => {
 
       userContext = `
 USER PROFILE:
-- Username: ${profile?.username || "Traveler"}
-- Current City: ${profile?.current_city || "Not set"}
+- Username: ${user?.user_metadata?.username || "Traveler"}
+- Current City: ${Object.keys(placesByCity)[0] || "Not set"}
 - Total saved places: ${allSaves.length}
 - Cities with saved places: ${Object.keys(placesByCity).join(", ") || "None"}
 
@@ -456,7 +456,7 @@ CONTEXT:
 ${userContext}${smartSearchContext}
 
 CRITICAL FORMATTING RULES:
-1. ALWAYS start your response with "Ciao ${profile?.username || ""}!" 
+1. ALWAYS start your response with "Ciao" followed by the Username from USER PROFILE (es: "Ciao Traveler!") 
 2. When mentioning places from the database, wrap them EXACTLY like this: [PLACE:place_name|place_id]
    - Example: "Ti consiglio [PLACE:Masa Drury St|ChIJ123abc] per i tacos"
 3. When mentioning users who reviewed/posted, use: [USER:username|user_id]
@@ -466,7 +466,7 @@ CRITICAL FORMATTING RULES:
 6. If a place is NOT in verified list, say: "Potresti essere il primo su Spott a provare [place name]!"
 
 RESPONSE GUIDELINES:
-1. START WITH GREETING: "Ciao ${profile?.username || ""}! " followed by your response
+1. START WITH GREETING: usa sempre "Ciao" + username dell'utente (es: "Ciao Marta!") prima del resto della risposta
 2. KEEP IT CONCISE: Max 3-4 short sentences. Users hate long paragraphs!
 3. Use "luoghi salvati" not "mi piace" when talking about user's saves
 4. Mention save_tags context (night out, family, romantic, date, aperitivo, etc.) when relevant
