@@ -69,6 +69,19 @@ export const AiMessageContent = ({ content }: AiMessageContentProps) => {
               latitude: lat,
               longitude: lng,
             };
+          } else {
+            // Final fallback: try to resolve by name if the AI used an outdated place_id
+            const { data: byName } = await supabase
+              .from('locations')
+              .select('*')
+              .ilike('name', name)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            if (byName) {
+              locationData = byName;
+            }
           }
         }
       }
