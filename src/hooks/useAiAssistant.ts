@@ -8,7 +8,7 @@ export const useAiAssistant = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const sendMessage = async (userMessage: string) => {
+  const sendMessage = async (userMessage: string, userLanguage?: string) => {
     if (!userMessage.trim()) return;
 
     const newUserMessage: Message = { role: "user", content: userMessage };
@@ -29,7 +29,10 @@ export const useAiAssistant = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${session?.access_token}`,
           },
-          body: JSON.stringify({ messages: [...messages, newUserMessage] }),
+          body: JSON.stringify({ 
+            messages: [...messages, newUserMessage],
+            userLanguage 
+          }),
         }
       );
 
