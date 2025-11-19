@@ -309,8 +309,8 @@ ${likedLocations.slice(0, 10).map(l => `- ${l.name} (${l.category}) in ${l.city}
     const queryLower = lastUserMessage.toLowerCase();
     
     // Check if user is asking about specific food/cuisine
-    const cuisineMatch = queryLower.match(/\b(italian|mexican|japanese|chinese|thai|indian|french|korean|vietnamese|greek|spanish|turkish|lebanese|brazilian|peruvian|messican[oa]|italiano|giapponese|cinese)\b/);
-    const cityMatch = queryLower.match(/\b(?:in|a|ad)\s+([a-z\s]+?)(?:\s|$|,|\?)/i);
+    const cuisineMatch = queryLower.match(/\b(italian|mexican|japanese|chinese|thai|indian|french|korean|vietnamese|greek|spanish|turkish|lebanese|brazilian|peruvian|messican[oa]|italiano|giapponese|cinese|taco|burrito|margarita|pizza|pasta|sushi|curry)\b/i);
+    const cityMatch = queryLower.match(/\b(?:in|a|ad|at)\s+([a-z\s]+?)(?:\s|$|,|\?)/i);
     
     let smartSearchContext = "";
     if (cuisineMatch && cityMatch) {
@@ -320,6 +320,9 @@ ${likedLocations.slice(0, 10).map(l => `- ${l.name} (${l.category}) in ${l.city}
       console.log(`Smart search: ${cuisine} in ${city}`);
       
       // Search for posts with relevant keywords in that city
+      const searchKeywords = [cuisine, 'taco', 'burrito', 'margarita', 'authentic', 'delicious'];
+      const orConditions = searchKeywords.map(kw => `caption.ilike.%${kw}%`).join(',');
+      
       const { data: relevantPosts } = await supabase
         .from("posts")
         .select(`
@@ -333,22 +336,80 @@ ${likedLocations.slice(0, 10).map(l => `- ${l.name} (${l.category}) in ${l.city}
             google_place_id
           )
         `)
-        .or(`caption.ilike.%${cuisine}%,caption.ilike.%taco%,caption.ilike.%burrito%,caption.ilike.%margarita%`)
-        .limit(30);
+        .or(orConditions)
+        .limit(50);
+      
+      // Also search post_reviews for keyword mentions
+      const { data: reviewsWithKeywords } = await supabase
+        .from("post_reviews")
+        .select(`
+          comment,
+          rating,
+          location_id,
+          locations (
+            id,
+            name,
+            category,
+            city,
+            google_place_id
+          )
+        `)
+        .or(orConditions)
+        .limit(50);
       
       const matchingLocations = relevantPosts
         ?.filter(p => p.locations?.city?.toLowerCase().includes(city.toLowerCase()))
-        .map(p => p.locations)
+        .map(p => ({
+          ...p.locations,
+          keywords: extractKeywords(p.caption || '')
+        }))
         .filter((loc, index, self) => 
           loc && self.findIndex(l => l?.id === loc.id) === index
         ) || [];
       
-      if (matchingLocations.length > 0) {
-        smartSearchContext = `\n\nRELEVANT LOCATIONS FOR "${cuisine}" IN ${city.toUpperCase()} (from user posts):
-${matchingLocations.slice(0, 10).map(loc => 
-  `- ${loc.name} (${loc.category}) - ID: ${loc.google_place_id || `internal:${loc.id}`}`
-).join('\n')}`;
+      const reviewLocations = reviewsWithKeywords
+        ?.filter(r => r.locations?.city?.toLowerCase().includes(city.toLowerCase()))
+        .map(r => ({
+          ...r.locations,
+          keywords: extractKeywords(r.comment || ''),
+          rating: r.rating
+        }))
+        .filter((loc, index, self) => 
+          loc && self.findIndex(l => l?.id === loc.id) === index
+        ) || [];
+      
+      // Merge and deduplicate
+      const allMatches = [...matchingLocations, ...reviewLocations].reduce((acc, loc) => {
+        const existing = acc.find(l => l.id === loc.id);
+        if (existing) {
+          existing.keywords = [...new Set([...(existing.keywords || []), ...(loc.keywords || [])])];
+        } else {
+          acc.push(loc);
+        }
+        return acc;
+      }, [] as any[]);
+      
+      if (allMatches.length > 0) {
+        smartSearchContext = `\n\nVERIFIED LOCATIONS IN DATABASE FOR "${cuisine}" IN ${city.toUpperCase()}:
+${allMatches.slice(0, 8).map(loc => {
+  const keywords = loc.keywords?.length > 0 ? ` (Keywords: ${loc.keywords.join(', ')})` : '';
+  return `- ${loc.name} - ID: ${loc.google_place_id || `internal:${loc.id}`}${keywords}`;
+}).join('\n')}
+
+IMPORTANT: Only recommend places from this list. If a place is not in this list, tell the user they could be the first on Spott to try it and recommend it to friends!`;
       }
+    }
+    
+    function extractKeywords(text: string): string[] {
+      const keywords: string[] = [];
+      const lowerText = text.toLowerCase();
+      const terms = ['margarita', 'taco', 'burrito', 'authentic', 'delicious', 'amazing', 'best', 'great', 'perfect', 'ottimo', 'autentico', 'delizioso'];
+      
+      terms.forEach(term => {
+        if (lowerText.includes(term)) keywords.push(term);
+      });
+      
+      return [...new Set(keywords)];
     }
 
     const systemPrompt = `You are a knowledgeable, friendly travel assistant AI integrated into Spott, a social travel discovery app. Your goal is to help users discover amazing places based on their preferences, past saves, and social connections.
@@ -357,24 +418,20 @@ CONTEXT:
 ${userContext}${smartSearchContext}
 
 CRITICAL FORMATTING RULES:
-1. When mentioning specific places, use this EXACT format: [PLACE:place_name|place_id]
-   - For Google Places, use: [PLACE:Restaurant Name|ChIJxxxxx]
-   - For internal locations, use: [PLACE:Restaurant Name|internal:uuid]
-   - Example: "I recommend [PLACE:Masa Drury St|ChIJ123abc] for tacos"
-2. DO NOT use asterisks (**) around place names
-3. Each place name should be wrapped in [PLACE:name|id] tags so users can click on them
-4. If you don't have the place_id, just use the name: [PLACE:Restaurant Name|unknown]
+1. When mentioning places from the database, wrap them EXACTLY like this: [PLACE:place_name|place_id]
+   - Example: "Ti consiglio [PLACE:Masa Drury St|ChIJ123abc] per i tacos"
+2. NEVER use asterisks (**) or brackets around place names
+3. Write place names naturally in the sentence, then wrap ONLY the name in [PLACE:name|id]
+4. If a place is NOT in the verified database list, DO NOT use [PLACE:] tags. Instead say: "Potresti essere il primo su Spott a provare [place name] e consigliarlo ai tuoi amici!"
 
 RESPONSE GUIDELINES:
-1. Be conversational, warm, and enthusiastic about travel
-2. Prioritize places the user has already saved when relevant
-3. ALSO suggest places saved by the user's friends - these are great recommendations!
-4. Consider the user's rating patterns and category preferences
-5. Reference specific places using the [PLACE:name|id] format
-6. When the user asks about specific cuisine or food type, use the smart search results to provide highly relevant suggestions
-7. Keep responses concise but informative (2-3 paragraphs max unless asked for more detail)
-8. Use emojis sparingly and naturally
-9. Extract keywords from reviews and captions to enrich recommendations (e.g., "great margaritas", "authentic tacos")
+1. KEEP IT CONCISE: Max 3-4 short sentences per response. Users don't want long paragraphs!
+2. Prioritize places from "VERIFIED LOCATIONS IN DATABASE" section when available
+3. Mention keyword highlights from reviews/posts (e.g., "ottimi margaritas", "tacos autentici")
+4. Recommend friends' saved places when relevant
+5. If suggesting unverified places, encourage user to be a pioneer on Spott
+6. Use emojis sparingly (max 1-2 per response)
+7. Be warm and enthusiastic but BRIEF
 
 Remember: You have access to the user's saves, friends' saves, and can search for specific cuisines/food types. Use [PLACE:name|id] format for ALL location mentions.`;
 
