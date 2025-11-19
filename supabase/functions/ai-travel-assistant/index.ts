@@ -336,7 +336,7 @@ ${likedLocations.slice(0, 10).map(l => `- ${l.name} (${l.category}) in ${l.city}
       `.trim();
     }
 
-    // Extract user query details for smart search
+    // Extract user query details for smart search (cucine + contesti come "festa")
     const lastUserMessage = messages[messages.length - 1]?.content || "";
     const queryLower = lastUserMessage.toLowerCase();
     
@@ -344,8 +344,74 @@ ${likedLocations.slice(0, 10).map(l => `- ${l.name} (${l.category}) in ${l.city}
     const cuisineMatch = queryLower.match(/\b(italian|mexican|japanese|chinese|thai|indian|french|korean|vietnamese|greek|spanish|turkish|lebanese|brazilian|peruvian|messican[oa]|italiano|giapponese|cinese|taco|burrito|margarita|pizza|pasta|sushi|curry)\b/i);
     const cityMatch = queryLower.match(/\b(?:in|a|ad|at)\s+([a-z\s]+?)(?:\s|$|,|\?)/i);
     
+    // Rileva contesti "party" / "festa" per usare esplicitamente i tuoi salvataggi night_out
+    const isPartyContext = /\b(festa|serata fuori|party|serata|notte|night out|aperitivo|apericena)\b/i.test(queryLower);
+    
     let smartSearchContext = "";
-    if (cuisineMatch && cityMatch) {
+    
+    // 1) Se il contesto è "festa", costruisci un blocco di luoghi dai save_tags night_out (tuoi + amici)
+    if (isPartyContext) {
+      const targetCityRaw = cityMatch?.[1]?.trim() || null;
+      const targetCity = targetCityRaw ? targetCityRaw.toLowerCase() : null;
+      
+      const filterByCity = (city?: string | null) => {
+        if (!targetCity) return true;
+        if (!city) return false;
+        return city.toLowerCase().includes(targetCity);
+      };
+      
+      const userNightOutSaves = [
+        ...(savedPlaces || []).map(p => ({ 
+          name: p.place_name,
+          category: p.place_category,
+          city: p.city,
+          google_place_id: p.google_place_id || p.place_id,
+          tags: Array.isArray(p.save_tags) ? p.save_tags : []
+        })),
+        ...(savedLocations || []).map(l => ({
+          name: l.locations?.name,
+          category: l.locations?.category,
+          city: l.locations?.city,
+          google_place_id: l.locations?.google_place_id,
+          internal_id: l.locations?.id,
+          tags: Array.isArray(l.save_tags) ? l.save_tags : []
+        }))
+      ].filter(p => p.name && p.tags?.includes('night_out') && filterByCity(p.city));
+      
+      const friendsNightOutSaves = (friendsPlaces || []).filter(p => {
+        const tags = (p.tags && Array.isArray(p.tags)) ? p.tags : [];
+        return p.name && tags.includes('night_out') && filterByCity(p.city);
+      });
+      
+      const partyPlacesLines: string[] = [];
+      
+      if (friendsNightOutSaves.length > 0) {
+        partyPlacesLines.push(`FRIENDS' NIGHT_OUT SAVES${targetCity ? ` IN ${targetCity.toUpperCase()}` : ''}:`);
+        partyPlacesLines.push(
+          ...friendsNightOutSaves.slice(0, 8).map(p => {
+            const id = p.google_place_id || (p.internal_id ? `internal:${p.internal_id}` : p.name);
+            return `- [PLACE:${p.name}|${id}] (${p.category || 'night_out'}) - salvato da [USER:${p.friendUsername}|${p.user_id || 'unknown'}]`;
+          })
+        );
+      }
+      
+      if (userNightOutSaves.length > 0) {
+        partyPlacesLines.push(`\nYOUR NIGHT_OUT SAVES${targetCity ? ` IN ${targetCity.toUpperCase()}` : ''}:`);
+        partyPlacesLines.push(
+          ...userNightOutSaves.slice(0, 8).map(p => {
+            const id = p.google_place_id || (p.internal_id ? `internal:${p.internal_id}` : p.name);
+            return `- [PLACE:${p.name}|${id}] (${p.category || 'night_out'})`;
+          })
+        );
+      }
+      
+      if (partyPlacesLines.length > 0) {
+        smartSearchContext = `\n\nPARTY/NIGHT_OUT CONTEXT:\n${partyPlacesLines.join('\n')}`;
+      }
+    }
+    
+    // 2) Smart search per cucine specifiche (lasciata com'era, ma usa anche smartSearchContext esistente)
+    if (!smartSearchContext && cuisineMatch && cityMatch) {
       const cuisine = cuisineMatch[0];
       const city = cityMatch[1].trim();
       
@@ -378,7 +444,6 @@ ${likedLocations.slice(0, 10).map(l => `- ${l.name} (${l.category}) in ${l.city}
         .not('media_url', 'is', null)
         .limit(50);
       
-      // Also search post_reviews for keyword mentions
       const { data: reviewsWithKeywords } = await supabase
         .from("post_reviews")
         .select(`
@@ -458,7 +523,8 @@ ${allMatches.slice(0, 8).map(loc => {
   const users = loc.userMentions?.length > 0 ? ` - Mentioned by: ${loc.userMentions.map((u: string) => u.split('|')[0]).join(', ')}` : '';
   const userIds = loc.userMentions?.length > 0 ? ` - UserIDs: ${loc.userMentions.map((u: string) => u.split('|')[1]).join(', ')}` : '';
   const comments = loc.userComments?.length > 0 ? ` - Comments: "${loc.userComments.join('; ')}"` : '';
-  return `- ${loc.name} - ID: ${loc.google_place_id || `internal:${loc.id}`}${keywords}${users}${userIds}${comments}`;
+  const placeId = loc.google_place_id || `internal:${loc.id}`;
+  return `- [PLACE:${loc.name}|${placeId}]${keywords}${users}${userIds}${comments}`;
 }).join('\n')}
 
 IMPORTANT: Only recommend places from this list. When mentioning a place, also mention the user who recommended it using [USER:username|user_id] format. If a place is not in this list, tell the user they could be the first on Spott to try it and recommend it to friends!`;
