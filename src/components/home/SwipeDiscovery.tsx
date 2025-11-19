@@ -251,12 +251,22 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       for (const s of raw) {
         let coords: any = { lat: 0, lng: 0 };
         try {
-          coords = typeof s.coordinates === 'string' ? JSON.parse(s.coordinates) : (s.coordinates || { lat: 0, lng: 0 });
+          coords = typeof s.coordinates === 'string' ? JSON.parse(s.coordinates) : (s.coordinates ?? { lat: 0, lng: 0 });
         } catch (e) {
           console.error('Error parsing coordinates for', s.place_name, e);
         }
-        const latNum = Number(coords?.lat ?? coords?.latitude ?? 0);
-        const lngNum = Number(coords?.lng ?? coords?.longitude ?? 0);
+
+        // Support multiple coordinate formats: object or [lat, lng] array
+        let latNum = 0;
+        let lngNum = 0;
+        if (Array.isArray(coords) && coords.length >= 2) {
+          latNum = Number(coords[0] ?? 0);
+          lngNum = Number(coords[1] ?? 0);
+        } else {
+          latNum = Number(coords?.lat ?? coords?.latitude ?? 0);
+          lngNum = Number(coords?.lng ?? coords?.longitude ?? 0);
+        }
+
         const placeId = s.place_id || '';
         if (!placeId || processedPlaceIds.has(placeId)) continue;
         const saver = { id: s.user_id || '', username: s.username || 'User', avatar_url: s.avatar_url || '' };

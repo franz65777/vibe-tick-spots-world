@@ -66,6 +66,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
   const [fullAddress, setFullAddress] = useState<string>('');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'posts' | 'reviews'>('posts');
+  const [resolvedCoordinates, setResolvedCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
   // Leaflet (vanilla) map refs
@@ -155,9 +156,9 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
   useEffect(() => {
     if (!isOpen || !location) return;
 
-    const coords: any = location.coordinates || {};
-    const lat = Number(coords.lat ?? coords.latitude ?? 0);
-    const lng = Number(coords.lng ?? coords.longitude ?? 0);
+    const coordsSource: any = resolvedCoordinates || location.coordinates || {};
+    const lat = Number(coordsSource.lat ?? coordsSource.latitude ?? 0);
+    const lng = Number(coordsSource.lng ?? coordsSource.longitude ?? 0);
     if (!lat || !lng) return;
 
     // Defer to ensure drawer is fully mounted and sized
@@ -220,7 +221,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
     return () => {
       clearTimeout(t);
     };
-  }, [isOpen, location?.coordinates, isDarkMode]);
+  }, [isOpen, location, resolvedCoordinates, isDarkMode]);
 
   // Cleanup map on close
   useEffect(() => {
@@ -241,9 +242,9 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
   const fetchLocationData = async () => {
     if (!location) return;
     try {
-      const coords: any = location.coordinates || {};
-      const lat = Number(coords.lat ?? coords.latitude ?? 0);
-      const lng = Number(coords.lng ?? coords.longitude ?? 0);
+      const coordsSource: any = resolvedCoordinates || location.coordinates || {};
+      const lat = Number(coordsSource.lat ?? coordsSource.latitude ?? 0);
+      const lng = Number(coordsSource.lng ?? coordsSource.longitude ?? 0);
 
       // Use formatDetailedAddress which includes reverse geocoding
       const addr = await formatDetailedAddress({
@@ -433,9 +434,9 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
       setReviewsLoading(false);
     }
   };
-  const c: any = location?.coordinates || {};
-  const lat = Number(c.lat ?? c.latitude ?? 0);
-  const lng = Number(c.lng ?? c.longitude ?? 0);
+  const coordSource: any = resolvedCoordinates || location?.coordinates || {};
+  const lat = Number(coordSource.lat ?? coordSource.latitude ?? 0);
+  const lng = Number(coordSource.lng ?? coordSource.longitude ?? 0);
   const hasValidCoordinates = !!lat && !!lng;
 
   return (
