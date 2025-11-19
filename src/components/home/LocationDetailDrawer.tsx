@@ -89,33 +89,58 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
     
     const fetchLocationDetails = async () => {
       try {
-        // If coordinates are missing or 0, fetch from database
+        // If coordinates or basic info are missing, fetch from database
         const coords: any = location.coordinates || {};
         const lat = Number(coords.lat ?? coords.latitude ?? 0);
         const lng = Number(coords.lng ?? coords.longitude ?? 0);
-        
-        if (!lat || !lng) {
-          const { data: locationData } = await supabase
-            .from('locations')
-            .select('latitude, longitude, address, city, category')
-            .eq('google_place_id', location.place_id)
-            .maybeSingle();
-          
+
+        if (!lat || !lng || !location.address || !location.city) {
+          let locationData: any = null;
+
+          if (location.place_id) {
+            // First, try resolving by google_place_id
+            const { data: byGoogle } = await supabase
+              .from('locations')
+              .select('id, google_place_id, latitude, longitude, address, city, category')
+              .eq('google_place_id', location.place_id)
+              .maybeSingle();
+
+            if (byGoogle) {
+              locationData = byGoogle;
+            } else {
+              // Fallback: treat place_id as internal location id
+              const { data: byId } = await supabase
+                .from('locations')
+                .select('id, google_place_id, latitude, longitude, address, city, category')
+                .eq('id', location.place_id)
+                .maybeSingle();
+
+              if (byId) {
+                locationData = byId;
+              }
+            }
+          }
+
           if (locationData?.latitude && locationData?.longitude) {
-            // Update location with fetched data
             location.coordinates = {
               lat: locationData.latitude,
-              lng: locationData.longitude
+              lng: locationData.longitude,
             };
-            if (!location.address && locationData.address) {
-              location.address = locationData.address;
-            }
-            if (!location.city && locationData.city) {
-              location.city = locationData.city;
-            }
-            if (location.category === 'restaurant' && locationData.category) {
-              location.category = locationData.category;
-            }
+          }
+
+          if (!location.address && locationData?.address) {
+            location.address = locationData.address;
+          }
+          if (!location.city && locationData?.city) {
+            location.city = locationData.city;
+          }
+          if (location.category === 'restaurant' && locationData?.category) {
+            location.category = locationData.category;
+          }
+
+          // Normalize place_id to the canonical google_place_id when available
+          if (locationData?.google_place_id) {
+            location.place_id = locationData.google_place_id;
           }
         }
       } catch (error) {
@@ -238,20 +263,45 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
     if (!location) return;
     setLoading(true);
     try {
-      // Resolve UUID from google_place_id (place_id)
-      const { data: locationData, error: locationError } = await supabase
-        .from('locations')
-        .select('id')
-        .eq('google_place_id', location.place_id)
-        .maybeSingle();
+      // Resolve internal location id from place_id, supporting both google_place_id and direct id
+      let locationId: string | null = null;
 
-      if (locationError) {
-        console.error('Error fetching location:', locationError);
-        setLoading(false);
-        return;
+      if (location.place_id) {
+        const { data: byGoogle, error: locationError } = await supabase
+          .from('locations')
+          .select('id')
+          .eq('google_place_id', location.place_id)
+          .maybeSingle();
+
+        if (locationError) {
+          console.error('Error fetching location by google_place_id:', locationError);
+        }
+
+        if (byGoogle) {
+          locationId = byGoogle.id;
+        }
+
+        if (!locationId) {
+          const { data: byId, error: locationByIdError } = await supabase
+            .from('locations')
+            .select('id, google_place_id')
+            .eq('id', location.place_id)
+            .maybeSingle();
+
+          if (locationByIdError) {
+            console.error('Error fetching location by id:', locationByIdError);
+          }
+
+          if (byId) {
+            locationId = byId.id;
+            if (byId.google_place_id) {
+              location.place_id = byId.google_place_id;
+            }
+          }
+        }
       }
 
-      if (!locationData) {
+      if (!locationId) {
         setPosts([]);
         setLoading(false);
         return;
@@ -271,7 +321,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
             avatar_url
           )
         `)
-        .eq('location_id', locationData.id)
+        .eq('location_id', locationId)
         .not('media_urls', 'is', null)
         .order('created_at', { ascending: false })
         .limit(2);
@@ -302,20 +352,41 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
     if (!location) return;
     setReviewsLoading(true);
     try {
-      // Resolve UUID from google_place_id
-      const { data: locationData } = await supabase
-        .from('locations')
-        .select('id')
-        .eq('google_place_id', location.place_id)
-        .maybeSingle();
+      // Resolve internal location id from place_id, supporting both google_place_id and direct id
+      let locationId: string | null = null;
 
-      if (!locationData) {
+      if (location.place_id) {
+        const { data: byGoogle } = await supabase
+          .from('locations')
+          .select('id')
+          .eq('google_place_id', location.place_id)
+          .maybeSingle();
+
+        if (byGoogle) {
+          locationId = byGoogle.id;
+        }
+
+        if (!locationId) {
+          const { data: byId } = await supabase
+            .from('locations')
+            .select('id, google_place_id')
+            .eq('id', location.place_id)
+            .maybeSingle();
+
+          if (byId) {
+            locationId = byId.id;
+            if (byId.google_place_id) {
+              location.place_id = byId.google_place_id;
+            }
+          }
+        }
+      }
+
+      if (!locationId) {
         setReviews([]);
         setReviewsLoading(false);
         return;
       }
-
-      const locationId = locationData.id;
 
       // Fetch reviews from posts table only
       const { data: postsData } = await supabase
@@ -362,7 +433,6 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
       setReviewsLoading(false);
     }
   };
-
   const c: any = location?.coordinates || {};
   const lat = Number(c.lat ?? c.latitude ?? 0);
   const lng = Number(c.lng ?? c.longitude ?? 0);
@@ -459,7 +529,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
                 ) : posts.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <Image className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>{t('noPostsYet')}</p>
+                    <p>{t('noPostsYet', { ns: 'common', defaultValue: 'No posts yet' })}</p>
                   </div>
                 ) : (
                   <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4">
