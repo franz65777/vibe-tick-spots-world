@@ -26,16 +26,21 @@ export const AiMessageContent = ({ content }: AiMessageContentProps) => {
       const placeName = match[1];
       const placeId = match[2];
 
-      // Add clickable place name
-      parts.push(
-        <button
-          key={`place-${keyCounter++}`}
-          onClick={() => handlePlaceClick(placeName, placeId)}
-          className="text-primary underline decoration-primary/50 hover:decoration-primary transition-colors font-medium"
-        >
-          {placeName}
-        </button>
-      );
+      // Add clickable place name (only if not unknown)
+      if (placeId !== 'unknown') {
+        parts.push(
+          <button
+            key={`place-${keyCounter++}`}
+            onClick={() => handlePlaceClick(placeName, placeId)}
+            className="text-primary underline decoration-primary/50 hover:decoration-primary transition-colors font-medium"
+          >
+            {placeName}
+          </button>
+        );
+      } else {
+        // Just add plain text for unknown places
+        parts.push(placeName);
+      }
 
       lastIndex = regex.lastIndex;
     }
@@ -50,6 +55,12 @@ export const AiMessageContent = ({ content }: AiMessageContentProps) => {
 
   const handlePlaceClick = async (name: string, placeId: string) => {
     console.log('Place clicked:', name, placeId);
+    
+    // Check if place exists in database
+    if (placeId === 'unknown') {
+      console.log('Place not in database');
+      return; // Don't open drawer for unknown places
+    }
     
     // Determine if it's a Google Place or internal location
     const isInternal = placeId.startsWith('internal:');
