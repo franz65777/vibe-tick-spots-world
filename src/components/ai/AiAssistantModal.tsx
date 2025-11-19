@@ -17,7 +17,7 @@ export const AiAssistantModal = ({ isOpen, onClose }: AiAssistantModalProps) => 
   const { messages, isLoading, error, sendMessage } = useAiAssistant();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { t } = useTranslation(['ai', 'trips']);
+  const { t } = useTranslation('ai');
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -50,9 +50,9 @@ export const AiAssistantModal = ({ isOpen, onClose }: AiAssistantModalProps) => 
   };
 
   const quickActions = [
-    { icon: MapPin, labelKey: 'ai.hiddenGems', prompt: t('ai.hiddenGemsPrompt') },
-    { icon: Compass, labelKey: 'ai.planTrip', prompt: t('ai.planTripPrompt') },
-    { icon: Calendar, labelKey: 'ai.itinerary', prompt: t('ai.itineraryPrompt') },
+    { icon: MapPin, labelKey: 'hiddenGems', prompt: t('hiddenGemsPrompt') },
+    { icon: Compass, labelKey: 'planTrip', prompt: t('planTripPrompt') },
+    { icon: Calendar, labelKey: 'itinerary', prompt: t('itineraryPrompt') },
   ];
 
   if (!isOpen) return null;
@@ -68,10 +68,10 @@ export const AiAssistantModal = ({ isOpen, onClose }: AiAssistantModalProps) => 
         }
       `}</style>
       {/* Header */}
-      <div className="px-6 py-4 flex items-center justify-between border-b border-border">
+      <div className="px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-primary" />
-          <h2 className="text-lg font-semibold">{t('ai.title')}</h2>
+          <h2 className="text-lg font-semibold">{t('title')}</h2>
         </div>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="w-5 h-5" />
@@ -87,9 +87,9 @@ export const AiAssistantModal = ({ isOpen, onClose }: AiAssistantModalProps) => 
                 <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Sparkles className="w-8 h-8 text-primary" />
                 </div>
-                <h3 className="font-semibold text-lg">{t('ai.welcomeTitle')}</h3>
+                <h3 className="font-semibold text-lg">{t('welcomeTitle')}</h3>
                 <p className="text-muted-foreground text-sm max-w-md mx-auto">
-                  {t('ai.welcomeDesc')}
+                  {t('welcomeDesc')}
                 </p>
               </div>
 
@@ -144,7 +144,7 @@ export const AiAssistantModal = ({ isOpen, onClose }: AiAssistantModalProps) => 
         </ScrollArea>
 
         {/* Input */}
-        <div className="p-4 bg-background border-t border-border">
+        <div className="p-4 bg-background">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -156,11 +156,16 @@ export const AiAssistantModal = ({ isOpen, onClose }: AiAssistantModalProps) => 
               ref={inputRef}
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              placeholder={t('ai.inputPlaceholder')}
+              placeholder={t('inputPlaceholder')}
               className="flex-1"
               disabled={isLoading}
             />
-            <Button type="submit" size="icon" disabled={isLoading || !inputMessage.trim()}>
+            <Button
+              type="submit"
+              size="icon"
+              disabled={isLoading || !inputMessage.trim()}
+              className="rounded-2xl"
+            >
               <Send className="w-4 h-4" />
             </Button>
           </form>

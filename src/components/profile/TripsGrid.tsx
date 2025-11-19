@@ -8,7 +8,7 @@ import tripsEmptyImage from '@/assets/trips-empty-state.png';
 const TripsGrid = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
-  const { t } = useTranslation(['trips', 'ai']);
+  const { t } = useTranslation('trips');
 
   const handleCreateTrip = (tripData: any) => {
     console.log('Creating trip:', tripData);
@@ -23,7 +23,7 @@ const TripsGrid = () => {
             className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-2xl text-sm font-semibold flex items-center gap-2 hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
           >
             <Sparkles className="w-5 h-5" />
-            {t('trips.aiButton')}
+            {t('aiButton')}
           </button>
           
           <button 
@@ -31,7 +31,7 @@ const TripsGrid = () => {
             className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-2xl text-sm font-semibold flex items-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
           >
             <Plus className="w-5 h-5" />
-            {t('trips.createButton')}
+            {t('createButton')}
           </button>
         </div>
         
@@ -44,7 +44,7 @@ const TripsGrid = () => {
         </div>
         
         <p className="text-foreground text-base font-medium max-w-xs">
-          {t('trips.planWithFriends')}
+          {t('planWithFriends')}
         </p>
       </div>
 
