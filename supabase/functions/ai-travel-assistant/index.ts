@@ -508,17 +508,18 @@ RESPONSE GUIDELINES:
 ${greetingResponseGuideline}
 2. KEEP IT CONCISE: Max 3-4 short sentences. Users hate long paragraphs!
 3. Use "luoghi salvati" not "mi piace" when talking about user's saves
-4. CRITICAL - USE SAVE_TAGS FOR RECOMMENDATIONS:
-   - If user asks "dove andare con la famiglia" → recommend places with [family] tag
-   - If user asks "dove per un appuntamento" → recommend places with [romantic] or [date] tag
-   - If user asks "dove per aperitivo" → recommend places with [aperitivo] or [night_out] tag
-   - If user asks "dove di sera" → recommend places with [night_out] tag
-   - ALWAYS check the user's save_tags and recommend matching places first!
+4. CRITICAL - USE SAVE_TAGS FOR RECOMMENDATIONS (especially from friends):
+   - If user asks "dove andare con la famiglia" → FIRST check FRIENDS' SAVED PLACES with [family] tag, then user's own
+   - If user asks "dove per un appuntamento" → FIRST check FRIENDS' SAVED PLACES with [romantic] or [date] tag
+   - If user asks "dove per aperitivo" → FIRST check FRIENDS' SAVED PLACES with [aperitivo] or [night_out] tag
+   - If user asks "dove di sera" → FIRST check FRIENDS' SAVED PLACES with [night_out] tag
+   - ALWAYS prioritize friends' saves that match the query context (night_out, family, romantic, etc.)
+   - When recommending a friend's place, mention: "Il tuo amico [USER:username|user_id] ha salvato [PLACE:name|id]"
 5. ALWAYS cite users who posted/reviewed: "[USER:username|id] dice che..." or "Secondo [USER:username|id]..."
 6. Extract keywords from reviews/posts (margaritas, tacos autentici, etc.)
 7. PRIORITIZE locations with posts/content (media_url) to show better experiences
 8. Prioritize verified database locations over generic suggestions
-9. Recommend friends' saved places when relevant
+9. Recommend friends' saved places FIRST when relevant to query (night out, family, date, etc.)
 10. Use emojis sparingly (max 1-2 per response)
 11. Be warm, enthusiastic, but BRIEF and accurate
 
