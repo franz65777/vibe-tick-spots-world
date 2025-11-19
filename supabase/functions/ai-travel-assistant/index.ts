@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages } = await req.json();
+    const { messages, userLanguage } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -36,7 +36,7 @@ serve(async (req) => {
     if (user) {
       console.log("Fetching comprehensive user data...");
 
-      // Get user profile
+      // Get user profile with actual username
       const { data: profileData } = await supabase
         .from("profiles")
         .select("username, current_city, cities_visited, places_visited")
@@ -282,7 +282,7 @@ serve(async (req) => {
 
       userContext = `
 USER PROFILE:
-- Username: ${user?.user_metadata?.username || "Traveler"}
+- Username: ${profileData?.username || "Traveler"}
 - Current City: ${Object.keys(placesByCity)[0] || "Not set"}
 - Total saved places: ${allSaves.length}
 - Cities with saved places: ${Object.keys(placesByCity).join(", ") || "None"}
@@ -335,6 +335,7 @@ ${likedLocations.slice(0, 10).map(l => `- ${l.name} (${l.category}) in ${l.city}
         .select(`
           caption,
           user_id,
+          media_url,
           locations (
             id,
             name,
@@ -349,6 +350,7 @@ ${likedLocations.slice(0, 10).map(l => `- ${l.name} (${l.category}) in ${l.city}
           )
         `)
         .or(orConditions)
+        .not('media_url', 'is', null)
         .limit(50);
       
       // Also search post_reviews for keyword mentions
@@ -450,13 +452,17 @@ IMPORTANT: Only recommend places from this list. When mentioning a place, also m
       return [...new Set(keywords)];
     }
 
+    const languageInstruction = userLanguage ? `IMPORTANT: Respond ONLY in ${userLanguage}. All text, greetings, and explanations must be in ${userLanguage}.` : '';
+    
     const systemPrompt = `You are a knowledgeable, friendly travel assistant AI integrated into Spott, a social travel discovery app. Your goal is to help users discover amazing places based on their preferences, past saves, and social connections.
+
+${languageInstruction}
 
 CONTEXT:
 ${userContext}${smartSearchContext}
 
 CRITICAL FORMATTING RULES:
-1. ALWAYS start your response with "Ciao" followed by the Username from USER PROFILE (es: "Ciao Traveler!") 
+1. ALWAYS start your response with a greeting using the Username from USER PROFILE in the user's language
 2. When mentioning places from the database, wrap them EXACTLY like this: [PLACE:place_name|place_id]
    - Example: "Ti consiglio [PLACE:Masa Drury St|ChIJ123abc] per i tacos"
 3. When mentioning users who reviewed/posted, use: [USER:username|user_id]
@@ -466,16 +472,17 @@ CRITICAL FORMATTING RULES:
 6. If a place is NOT in verified list, say: "Potresti essere il primo su Spott a provare [place name]!"
 
 RESPONSE GUIDELINES:
-1. START WITH GREETING: usa sempre "Ciao" + username dell'utente (es: "Ciao Marta!") prima del resto della risposta
+1. START WITH GREETING: Always greet with username in the user's language
 2. KEEP IT CONCISE: Max 3-4 short sentences. Users hate long paragraphs!
 3. Use "luoghi salvati" not "mi piace" when talking about user's saves
 4. Mention save_tags context (night out, family, romantic, date, aperitivo, etc.) when relevant
 5. ALWAYS cite users who posted/reviewed: "[USER:username|id] dice che..." or "Secondo [USER:username|id]..."
 6. Extract keywords from reviews/posts (margaritas, tacos autentici, etc.)
-7. Prioritize verified database locations over generic suggestions
-8. Recommend friends' saved places when relevant
-9. Use emojis sparingly (max 1-2 per response)
-10. Be warm, enthusiastic, but BRIEF and accurate in Italian
+7. PRIORITIZE locations with posts/content (media_url) to show better experiences
+8. Prioritize verified database locations over generic suggestions
+9. Recommend friends' saved places when relevant
+10. Use emojis sparingly (max 1-2 per response)
+11. Be warm, enthusiastic, but BRIEF and accurate
 
 Remember: You have access to the user's saves, friends' saves, and can search for specific cuisines/food types. Use [PLACE:name|id] format for ALL location mentions.`;
 

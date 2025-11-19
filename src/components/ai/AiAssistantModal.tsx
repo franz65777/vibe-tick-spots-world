@@ -10,6 +10,46 @@ import LocationDetailDrawer from '@/components/home/LocationDetailDrawer';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { useNavigate } from 'react-router-dom';
 
+const detectLanguage = (text: string): string => {
+  const lowerText = text.toLowerCase();
+  
+  // Italian
+  if (/\b(ciao|grazie|per favore|dove|come|quando|perch[eé]|cosa|dove|qui|là|molto|bene|male|sì|no|ho|hai|sono|sei|è|siamo|hanno)\b/.test(lowerText)) return 'Italian';
+  
+  // Spanish
+  if (/\b(hola|gracias|por favor|dónde|cómo|cuándo|por qué|qué|aquí|allí|muy|bien|mal|sí|no|tengo|tienes|soy|eres|es|somos|tienen)\b/.test(lowerText)) return 'Spanish';
+  
+  // French
+  if (/\b(bonjour|merci|s'il vous plaît|où|comment|quand|pourquoi|quoi|ici|là|très|bien|mal|oui|non|j'ai|tu as|je suis|tu es|il est|nous sommes|ils ont)\b/.test(lowerText)) return 'French';
+  
+  // German
+  if (/\b(hallo|danke|bitte|wo|wie|wann|warum|was|hier|dort|sehr|gut|schlecht|ja|nein|ich habe|du hast|ich bin|du bist|er ist|wir sind|sie haben)\b/.test(lowerText)) return 'German';
+  
+  // Portuguese
+  if (/\b(olá|obrigado|por favor|onde|como|quando|por que|o que|aqui|lá|muito|bem|mal|sim|não|tenho|tens|sou|és|é|somos|têm)\b/.test(lowerText)) return 'Portuguese';
+  
+  // Dutch
+  if (/\b(hallo|dank je|alsjeblieft|waar|hoe|wanneer|waarom|wat|hier|daar|zeer|goed|slecht|ja|nee|ik heb|je hebt|ik ben|je bent|hij is|we zijn|ze hebben)\b/.test(lowerText)) return 'Dutch';
+  
+  // Russian
+  if (/[а-яА-ЯёЁ]/.test(text)) return 'Russian';
+  
+  // Chinese
+  if (/[\u4e00-\u9fa5]/.test(text)) return 'Chinese';
+  
+  // Japanese
+  if (/[\u3040-\u309f\u30a0-\u30ff]/.test(text)) return 'Japanese';
+  
+  // Korean
+  if (/[\uac00-\ud7af]/.test(text)) return 'Korean';
+  
+  // Arabic
+  if (/[\u0600-\u06ff]/.test(text)) return 'Arabic';
+  
+  // Default to English
+  return 'English';
+};
+
 interface AiAssistantModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -49,12 +89,14 @@ export const AiAssistantModal = ({ isOpen, onClose }: AiAssistantModalProps) => 
     if (!inputMessage.trim() || isLoading) return;
     
     const message = inputMessage;
+    const detectedLanguage = detectLanguage(message);
     setInputMessage('');
-    await sendMessage(message);
+    await sendMessage(message, detectedLanguage);
   };
 
   const handleQuickAction = (prompt: string) => {
-    sendMessage(prompt);
+    const detectedLanguage = detectLanguage(prompt);
+    sendMessage(prompt, detectedLanguage);
   };
 
   const handlePlaceClick = (name: string, placeId: string) => {

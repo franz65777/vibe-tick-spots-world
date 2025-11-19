@@ -83,6 +83,49 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
     return () => observer.disconnect();
   }, []);
 
+  // Fetch location details including coordinates if missing
+  useEffect(() => {
+    if (!isOpen || !location) return;
+    
+    const fetchLocationDetails = async () => {
+      try {
+        // If coordinates are missing or 0, fetch from database
+        const coords: any = location.coordinates || {};
+        const lat = Number(coords.lat ?? coords.latitude ?? 0);
+        const lng = Number(coords.lng ?? coords.longitude ?? 0);
+        
+        if (!lat || !lng) {
+          const { data: locationData } = await supabase
+            .from('locations')
+            .select('latitude, longitude, address, city, category')
+            .eq('google_place_id', location.place_id)
+            .maybeSingle();
+          
+          if (locationData?.latitude && locationData?.longitude) {
+            // Update location with fetched data
+            location.coordinates = {
+              lat: locationData.latitude,
+              lng: locationData.longitude
+            };
+            if (!location.address && locationData.address) {
+              location.address = locationData.address;
+            }
+            if (!location.city && locationData.city) {
+              location.city = locationData.city;
+            }
+            if (location.category === 'restaurant' && locationData.category) {
+              location.category = locationData.category;
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching location details:', error);
+      }
+    };
+    
+    fetchLocationDetails();
+  }, [isOpen, location]);
+
   // Init / update Leaflet map when opening
   useEffect(() => {
     if (!isOpen || !location) return;
@@ -416,7 +459,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
                 ) : posts.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <Image className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>Nessun post ancora per questa location</p>
+                    <p>{t('noPostsYet')}</p>
                   </div>
                 ) : (
                   <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4">
