@@ -298,8 +298,14 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
     if (!location) return;
     setLoading(true);
     try {
-      // Resolve internal location id from place_id, supporting both google_place_id and direct id
+      // Resolve internal location id from place_id, supporting both google_place_id and (when valid) direct id
       let locationId: string | null = null;
+
+      const looksLikeUuid = (value: string | null | undefined) =>
+        !!value &&
+        /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
+          value
+        );
 
       if (location.place_id) {
         const { data: byGoogle, error: locationError } = await supabase
@@ -316,7 +322,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
           locationId = byGoogle.id;
         }
 
-        if (!locationId) {
+        if (!locationId && looksLikeUuid(location.place_id)) {
           const { data: byId, error: locationByIdError } = await supabase
             .from('locations')
             .select('id, google_place_id')
@@ -387,8 +393,14 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
     if (!location) return;
     setReviewsLoading(true);
     try {
-      // Resolve internal location id from place_id, supporting both google_place_id and direct id
+      // Resolve internal location id from place_id, supporting both google_place_id and (when valid) direct id
       let locationId: string | null = null;
+
+      const looksLikeUuid = (value: string | null | undefined) =>
+        !!value &&
+        /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
+          value
+        );
 
       if (location.place_id) {
         const { data: byGoogle } = await supabase
@@ -401,7 +413,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
           locationId = byGoogle.id;
         }
 
-        if (!locationId) {
+        if (!locationId && looksLikeUuid(location.place_id)) {
           const { data: byId } = await supabase
             .from('locations')
             .select('id, google_place_id')
