@@ -41,21 +41,25 @@ serve(async (req) => {
         .eq("id", user.id)
         .single();
 
-      // Get user's saved places (Google Places)
+      // Get user's saved places (Google Places) with ratings
       const { data: savedPlaces } = await supabase
         .from("saved_places")
-        .select("place_name, place_category, city")
+        .select("place_name, place_category, city, rating, save_tags")
         .eq("user_id", user.id)
         .limit(100);
 
-      // Get user's saved internal locations
+      // Get user's saved internal locations with ratings
       const { data: savedLocations } = await supabase
         .from("user_saved_locations")
         .select(`
+          rating,
+          save_tags,
           locations (
             name,
             category,
-            city
+            city,
+            description,
+            metadata
           )
         `)
         .eq("user_id", user.id)
@@ -69,12 +73,40 @@ serve(async (req) => {
             locations (
               name,
               category,
-              city
+              city,
+              description
             )
           )
         `)
         .eq("user_id", user.id)
         .limit(50);
+
+      // Get user's posts with locations and media
+      const { data: userPosts } = await supabase
+        .from("posts")
+        .select(`
+          caption,
+          locations (
+            name,
+            category,
+            city
+          )
+        `)
+        .eq("user_id", user.id)
+        .limit(50);
+
+      // Get user's interaction preferences (most liked categories)
+      const { data: interactions } = await supabase
+        .from("interactions")
+        .select(`
+          action_type,
+          weight,
+          locations (
+            category
+          )
+        `)
+        .eq("user_id", user.id)
+        .limit(200);
 
       // Get following users' saves
       const { data: followingSaves } = await supabase
@@ -92,16 +124,75 @@ serve(async (req) => {
         .eq("follower_id", user.id)
         .limit(50);
 
+      // Analyze user preferences
+      const categoryPreferences: Record<string, number> = {};
+      const saveTags: Record<string, number> = {};
+      const ratings: { high: number; medium: number; low: number } = { high: 0, medium: 0, low: 0 };
+
+      // Process saved places with ratings
+      savedPlaces?.forEach(place => {
+        categoryPreferences[place.place_category] = (categoryPreferences[place.place_category] || 0) + 1;
+        if (place.rating) {
+          if (place.rating >= 4) ratings.high++;
+          else if (place.rating >= 3) ratings.medium++;
+          else ratings.low++;
+        }
+        if (place.save_tags && Array.isArray(place.save_tags)) {
+          place.save_tags.forEach((tag: string) => {
+            saveTags[tag] = (saveTags[tag] || 0) + 1;
+          });
+        }
+      });
+
+      // Process saved locations with ratings
+      savedLocations?.forEach(loc => {
+        if (loc.locations?.category) {
+          categoryPreferences[loc.locations.category] = (categoryPreferences[loc.locations.category] || 0) + 1;
+        }
+        if (loc.rating) {
+          if (loc.rating >= 4) ratings.high++;
+          else if (loc.rating >= 3) ratings.medium++;
+          else ratings.low++;
+        }
+        if (loc.save_tags && Array.isArray(loc.save_tags)) {
+          loc.save_tags.forEach((tag: string) => {
+            saveTags[tag] = (saveTags[tag] || 0) + 1;
+          });
+        }
+      });
+
+      // Process interactions for deeper insights
+      interactions?.forEach(int => {
+        if (int.locations?.category) {
+          const weight = int.weight || 1;
+          categoryPreferences[int.locations.category] = (categoryPreferences[int.locations.category] || 0) + weight;
+        }
+      });
+
       // Combine and organize data
       const allSaves = [
-        ...(savedPlaces || []).map(p => ({ name: p.place_name, category: p.place_category, city: p.city })),
-        ...(savedLocations || []).map(l => ({ name: l.locations?.name, category: l.locations?.category, city: l.locations?.city }))
+        ...(savedPlaces || []).map(p => ({ 
+          name: p.place_name, 
+          category: p.place_category, 
+          city: p.city,
+          rating: p.rating,
+          tags: p.save_tags 
+        })),
+        ...(savedLocations || []).map(l => ({ 
+          name: l.locations?.name, 
+          category: l.locations?.category, 
+          city: l.locations?.city,
+          rating: l.rating,
+          tags: l.save_tags,
+          description: l.locations?.description
+        }))
       ];
 
       const likedLocations = likedPosts?.filter(lp => lp.posts?.locations).map(lp => ({
         name: lp.posts.locations.name,
         category: lp.posts.locations.category,
-        city: lp.posts.locations.city
+        city: lp.posts.locations.city,
+        description: lp.posts.locations.description
       })) || [];
 
       // Group by city
@@ -112,12 +203,29 @@ serve(async (req) => {
         placesByCity[city].push(place);
       });
 
+      // Top preferences
+      const topCategories = Object.entries(categoryPreferences)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([cat, count]) => `${cat} (${count} saves)`);
+
+      const topTags = Object.entries(saveTags)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([tag, count]) => `${tag} (${count} times)`);
+
       userContext = `
 USER PROFILE:
 - Username: ${profile?.username || "Traveler"}
 - Current City: ${profile?.current_city || "Not set"}
 - Total saved places: ${allSaves.length}
 - Cities with saved places: ${Object.keys(placesByCity).join(", ") || "None"}
+
+PREFERENCES & TASTE:
+- Favorite categories: ${topCategories.join(", ") || "No clear preference yet"}
+- Common tags: ${topTags.join(", ") || "No tags yet"}
+- Rating patterns: ${ratings.high} high-rated, ${ratings.medium} medium-rated, ${ratings.low} low-rated places
+- User posts count: ${userPosts?.length || 0}
 
 SAVED PLACES BY CITY:
 ${Object.entries(placesByCity).map(([city, places]) => 

@@ -219,7 +219,27 @@ const resources = {
     },
     profile: {
       posts: 'Posts',
-      trips: 'Trips',
+      tripsTab: 'Trips',
+      trips: {
+        title: 'Plan Your Travels',
+        subtitle: 'Get personalized recommendations or create custom itineraries',
+        aiButton: 'Plan with AI Assistant',
+        createButton: 'Create Trip Manually',
+      },
+      ai: {
+        title: 'AI Travel Assistant',
+        welcomeTitle: 'Your Personal Travel Assistant',
+        welcomeDesc: 'I analyze your saved places, ratings, and preferences to give you highly personalized recommendations based on your unique taste.',
+        inputPlaceholder: 'Ask about places, trips, or recommendations...',
+        quickActions: {
+          hiddenGems: 'Find hidden gems',
+          hiddenGemsPrompt: 'Show me hidden gem places based on my taste',
+          planTrip: 'Plan a trip',
+          planTripPrompt: 'Help me plan a trip based on my preferences',
+          itinerary: 'Create itinerary',
+          itineraryPrompt: 'Create a personalized itinerary based on my interests',
+        },
+      },
       badges: 'Badges',
       tagged: 'Tagged',
       marketing: 'Marketing',
