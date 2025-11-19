@@ -50,9 +50,9 @@ export const AiAssistantModal = ({ isOpen, onClose }: AiAssistantModalProps) => 
   };
 
   const quickActions = [
-    { icon: MapPin, labelKey: 'profile.ai.quickActions.hiddenGems', prompt: t('profile.ai.quickActions.hiddenGemsPrompt') },
-    { icon: Compass, labelKey: 'profile.ai.quickActions.planTrip', prompt: t('profile.ai.quickActions.planTripPrompt') },
-    { icon: Calendar, labelKey: 'profile.ai.quickActions.itinerary', prompt: t('profile.ai.quickActions.itineraryPrompt') },
+    { icon: MapPin, labelKey: 'ai.hiddenGems', prompt: t('ai.hiddenGemsPrompt') },
+    { icon: Compass, labelKey: 'ai.planTrip', prompt: t('ai.planTripPrompt') },
+    { icon: Calendar, labelKey: 'ai.itinerary', prompt: t('ai.itineraryPrompt') },
   ];
 
   if (!isOpen) return null;
@@ -63,7 +63,7 @@ export const AiAssistantModal = ({ isOpen, onClose }: AiAssistantModalProps) => 
       <div className="px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-primary" />
-          <h2 className="text-lg font-semibold">{t('profile.ai.title')}</h2>
+          <h2 className="text-lg font-semibold">{t('ai.title')}</h2>
         </div>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="w-5 h-5" />
@@ -79,9 +79,9 @@ export const AiAssistantModal = ({ isOpen, onClose }: AiAssistantModalProps) => 
                 <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Sparkles className="w-8 h-8 text-primary" />
                 </div>
-                <h3 className="font-semibold text-lg">{t('profile.ai.welcomeTitle')}</h3>
+                <h3 className="font-semibold text-lg">{t('ai.welcomeTitle')}</h3>
                 <p className="text-muted-foreground text-sm max-w-md mx-auto">
-                  {t('profile.ai.welcomeDesc')}
+                  {t('ai.welcomeDesc')}
                 </p>
               </div>
 
@@ -148,7 +148,7 @@ export const AiAssistantModal = ({ isOpen, onClose }: AiAssistantModalProps) => 
               ref={inputRef}
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              placeholder={t('profile.ai.inputPlaceholder')}
+              placeholder={t('ai.inputPlaceholder')}
               className="flex-1"
               disabled={isLoading}
             />
