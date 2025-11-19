@@ -75,7 +75,7 @@ export const AiAssistantModal = ({ isOpen, onClose }: AiAssistantModalProps) => 
 
   const handleUserClick = (userId: string) => {
     onClose();
-    navigate(`/user/${userId}`);
+    navigate(`/profile/${userId}`);
   };
 
   const parseContent = (text: string) => {

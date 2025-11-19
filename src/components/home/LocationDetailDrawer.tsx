@@ -327,7 +327,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
 
   return (
     <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DrawerContent className="h-[85vh] flex flex-col">
+      <DrawerContent className="h-[85vh] flex flex-col z-[10000]">
         {/* Drag handle */}
         <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-muted-foreground/20 mt-3 mb-2" />
 
