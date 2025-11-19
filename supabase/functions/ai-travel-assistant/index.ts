@@ -33,6 +33,19 @@ serve(async (req) => {
     let userContext = "";
     let profile: any = null;
     
+    // Declare all variables that will be used across multiple if blocks
+    let savedPlaces: any[] = [];
+    let savedLocations: any[] = [];
+    let likedPosts: any[] = [];
+    let userPosts: any[] = [];
+    let interactions: any[] = [];
+    let friendsSaves: any[] = [];
+    let friendsLocations: any[] = [];
+    
+    const categoryPreferences: Record<string, number> = {};
+    const saveTags: Record<string, number> = {};
+    const ratings = { high: 0, medium: 0, low: 0 };
+    
     if (user) {
       console.log("Fetching comprehensive user data...");
 
@@ -46,14 +59,15 @@ serve(async (req) => {
       profile = profileData;
 
       // Get user's saved places (Google Places) with ratings
-      const { data: savedPlaces } = await supabase
+      const savedPlacesResult = await supabase
         .from("saved_places")
         .select("place_name, place_category, city, rating, save_tags")
         .eq("user_id", user.id)
         .limit(100);
+      savedPlaces = savedPlacesResult.data || [];
 
       // Get user's saved internal locations with ratings
-      const { data: savedLocations } = await supabase
+      const savedLocationsResult = await supabase
         .from("user_saved_locations")
         .select(`
           rating,
@@ -68,9 +82,10 @@ serve(async (req) => {
         `)
         .eq("user_id", user.id)
         .limit(100);
+      savedLocations = savedLocationsResult.data || [];
 
       // Get liked posts with locations
-      const { data: likedPosts } = await supabase
+      const likedPostsResult = await supabase
         .from("post_likes")
         .select(`
           posts (
@@ -84,9 +99,10 @@ serve(async (req) => {
         `)
         .eq("user_id", user.id)
         .limit(50);
+      likedPosts = likedPostsResult.data || [];
 
       // Get user's posts with locations and media
-      const { data: userPosts } = await supabase
+      const userPostsResult = await supabase
         .from("posts")
         .select(`
           caption,
@@ -98,9 +114,10 @@ serve(async (req) => {
         `)
         .eq("user_id", user.id)
         .limit(50);
+      userPosts = userPostsResult.data || [];
 
       // Get user's interaction preferences (most liked categories)
-      const { data: interactions } = await supabase
+      const interactionsResult = await supabase
         .from("interactions")
         .select(`
           action_type,
@@ -111,9 +128,10 @@ serve(async (req) => {
         `)
         .eq("user_id", user.id)
         .limit(200);
+      interactions = interactionsResult.data || [];
 
       // Get friends' saved places with more details
-      const { data: friendsSaves } = await supabase
+      const friendsSavesResult = await supabase
         .from("saved_places")
         .select(`
           place_name,
@@ -134,9 +152,10 @@ serve(async (req) => {
           ).data?.map(f => f.following_id) || []
         )
         .limit(100);
+      friendsSaves = friendsSavesResult.data || [];
 
       // Get friends' internal saved locations
-      const { data: friendsLocations } = await supabase
+      const friendsLocationsResult = await supabase
         .from("user_saved_locations")
         .select(`
           rating,
@@ -161,6 +180,7 @@ serve(async (req) => {
           ).data?.map(f => f.following_id) || []
         )
         .limit(100);
+      friendsLocations = friendsLocationsResult.data || [];
     }
 
     // Build comprehensive context
