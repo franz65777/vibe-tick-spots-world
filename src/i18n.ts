@@ -753,6 +753,24 @@ const resources = {
     gamification: {
       level: 'Level'
     },
+    trips: {
+      title: 'My Trips',
+      subtitle: 'Plan and organize your travel adventures with AI assistance or create custom trips',
+      aiButton: 'AI Travel Assistant',
+      createButton: 'Create New Trip'
+    },
+    ai: {
+      title: 'AI Travel Assistant',
+      welcomeTitle: 'Your Personal Travel Assistant',
+      welcomeDesc: 'Get personalized travel recommendations based on your preferences and saved places',
+      hiddenGems: 'Hidden Gems',
+      planTrip: 'Plan a Trip',
+      itinerary: 'Create Itinerary',
+      hiddenGemsPrompt: 'Show me hidden gems based on my saved places',
+      planTripPrompt: 'Help me plan a trip based on my preferences',
+      itineraryPrompt: 'Create a detailed itinerary for my next adventure',
+      inputPlaceholder: 'Ask me anything about travel...'
+    },
     leaderboard: {
       leaderboard: 'Leaderboard',
       weeklyLeaderboard: 'Weekly Leaderboard',
@@ -1497,6 +1515,24 @@ const resources = {
     },
     gamification: {
       level: 'Nivel'
+    },
+    trips: {
+      title: 'Mis Viajes',
+      subtitle: 'Planifica y organiza tus aventuras de viaje con asistencia IA o crea viajes personalizados',
+      aiButton: 'Asistente de Viajes IA',
+      createButton: 'Crear Nuevo Viaje'
+    },
+    ai: {
+      title: 'Asistente de Viajes IA',
+      welcomeTitle: 'Tu Asistente Personal de Viajes',
+      welcomeDesc: 'Obtén recomendaciones de viaje personalizadas basadas en tus preferencias y lugares guardados',
+      hiddenGems: 'Joyas Ocultas',
+      planTrip: 'Planificar un Viaje',
+      itinerary: 'Crear Itinerario',
+      hiddenGemsPrompt: 'Muéstrame joyas ocultas basadas en mis lugares guardados',
+      planTripPrompt: 'Ayúdame a planificar un viaje basado en mis preferencias',
+      itineraryPrompt: 'Crea un itinerario detallado para mi próxima aventura',
+      inputPlaceholder: 'Pregúntame cualquier cosa sobre viajes...'
     },
     leaderboard: {
       leaderboard: 'Tabla de Clasificación',
@@ -2260,6 +2296,24 @@ const resources = {
     gamification: {
       level: 'Livello'
     },
+    trips: {
+      title: 'I Miei Viaggi',
+      subtitle: 'Pianifica e organizza le tue avventure di viaggio con assistenza IA o crea viaggi personalizzati',
+      aiButton: 'Assistente di Viaggio IA',
+      createButton: 'Crea Nuovo Viaggio'
+    },
+    ai: {
+      title: 'Assistente di Viaggio IA',
+      welcomeTitle: 'Il Tuo Assistente Personale di Viaggio',
+      welcomeDesc: 'Ottieni consigli di viaggio personalizzati basati sulle tue preferenze e luoghi salvati',
+      hiddenGems: 'Gemme Nascoste',
+      planTrip: 'Pianifica un Viaggio',
+      itinerary: 'Crea Itinerario',
+      hiddenGemsPrompt: 'Mostrami gemme nascoste basate sui miei luoghi salvati',
+      planTripPrompt: 'Aiutami a pianificare un viaggio basato sulle mie preferenze',
+      itineraryPrompt: 'Crea un itinerario dettagliato per la mia prossima avventura',
+      inputPlaceholder: 'Chiedimi qualsiasi cosa sui viaggi...'
+    },
     leaderboard: {
       leaderboard: 'Classifica',
       weeklyLeaderboard: 'Classifica Settimanale',
@@ -2899,6 +2953,24 @@ const resources = {
     },
     gamification: {
       level: 'Niveau'
+    },
+    trips: {
+      title: 'Mes Voyages',
+      subtitle: 'Planifiez et organisez vos aventures de voyage avec l\'assistance IA ou créez des voyages personnalisés',
+      aiButton: 'Assistant de Voyage IA',
+      createButton: 'Créer un Nouveau Voyage'
+    },
+    ai: {
+      title: 'Assistant de Voyage IA',
+      welcomeTitle: 'Votre Assistant de Voyage Personnel',
+      welcomeDesc: 'Obtenez des recommandations de voyage personnalisées basées sur vos préférences et lieux sauvegardés',
+      hiddenGems: 'Trésors Cachés',
+      planTrip: 'Planifier un Voyage',
+      itinerary: 'Créer un Itinéraire',
+      hiddenGemsPrompt: 'Montrez-moi des trésors cachés basés sur mes lieux sauvegardés',
+      planTripPrompt: 'Aidez-moi à planifier un voyage basé sur mes préférences',
+      itineraryPrompt: 'Créez un itinéraire détaillé pour ma prochaine aventure',
+      inputPlaceholder: 'Demandez-moi n\'importe quoi sur les voyages...'
     },
     leaderboard: {
       leaderboard: 'Classement',
@@ -4006,6 +4078,24 @@ const resources = {
     gamification: {
       level: 'Nível'
     },
+    trips: {
+      title: 'Minhas Viagens',
+      subtitle: 'Planeje e organize suas aventuras de viagem com assistência IA ou crie viagens personalizadas',
+      aiButton: 'Assistente de Viagem IA',
+      createButton: 'Criar Nova Viagem'
+    },
+    ai: {
+      title: 'Assistente de Viagem IA',
+      welcomeTitle: 'Seu Assistente Pessoal de Viagem',
+      welcomeDesc: 'Obtenha recomendações de viagem personalizadas baseadas em suas preferências e locais salvos',
+      hiddenGems: 'Joias Escondidas',
+      planTrip: 'Planejar uma Viagem',
+      itinerary: 'Criar Itinerário',
+      hiddenGemsPrompt: 'Mostre-me joias escondidas baseadas em meus locais salvos',
+      planTripPrompt: 'Ajude-me a planejar uma viagem baseada em minhas preferências',
+      itineraryPrompt: 'Crie um itinerário detalhado para minha próxima aventura',
+      inputPlaceholder: 'Pergunte-me qualquer coisa sobre viagens...'
+    },
     leaderboard: {
       leaderboard: 'Classificação',
       weeklyLeaderboard: 'Classificação Semanal',
@@ -4469,7 +4559,28 @@ const resources = {
       dealMasterDesc: '创建10+个折扣',
       trendingNow: '热门趋势',
       trendingNowDesc: '获得100次分享'
-    }
+    },
+    gamification: {
+      level: '等级'
+    },
+    trips: {
+      title: '我的旅行',
+      subtitle: '借助AI助手或创建自定义旅行来规划和组织您的旅行冒险',
+      aiButton: 'AI旅行助手',
+      createButton: '创建新旅行'
+    },
+    ai: {
+      title: 'AI旅行助手',
+      welcomeTitle: '您的个人旅行助手',
+      welcomeDesc: '根据您的偏好和已保存的地点获取个性化旅行推荐',
+      hiddenGems: '隐藏宝藏',
+      planTrip: '规划旅行',
+      itinerary: '创建行程',
+      hiddenGemsPrompt: '根据我保存的地点向我展示隐藏宝藏',
+      planTripPrompt: '帮我根据我的偏好规划一次旅行',
+      itineraryPrompt: '为我的下一次冒险创建详细行程',
+      inputPlaceholder: '问我任何关于旅行的问题...'
+    },
   },
 
   ja: {
@@ -4933,7 +5044,28 @@ const resources = {
       dealMasterDesc: '10件以上の割引を作成',
       trendingNow: 'トレンド',
       trendingNowDesc: '100件のシェアを獲得'
-    }
+    },
+    gamification: {
+      level: 'レベル'
+    },
+    trips: {
+      title: 'マイ トリップ',
+      subtitle: 'AIアシスタントを使って旅行の冒険を計画・整理するか、カスタム旅行を作成',
+      aiButton: 'AI旅行アシスタント',
+      createButton: '新しい旅行を作成'
+    },
+    ai: {
+      title: 'AI旅行アシスタント',
+      welcomeTitle: 'あなた専用の旅行アシスタント',
+      welcomeDesc: 'あなたの好みと保存した場所に基づいてパーソナライズされた旅行のおすすめを取得',
+      hiddenGems: '隠れた名所',
+      planTrip: '旅行を計画',
+      itinerary: '旅程を作成',
+      hiddenGemsPrompt: '保存した場所に基づいて隠れた名所を表示',
+      planTripPrompt: '好みに基づいて旅行の計画を手伝って',
+      itineraryPrompt: '次の冒険のために詳細な旅程を作成',
+      inputPlaceholder: '旅行について何でも聞いてください...'
+    },
   },
 
   ko: {
@@ -5401,7 +5533,28 @@ const resources = {
       dealMasterDesc: '10개 이상 할인 만들기',
       trendingNow: '트렌딩',
       trendingNowDesc: '100개 공유 달성'
-    }
+    },
+    gamification: {
+      level: '레벨'
+    },
+    trips: {
+      title: '내 여행',
+      subtitle: 'AI 지원으로 여행 모험을 계획하고 정리하거나 맞춤 여행 만들기',
+      aiButton: 'AI 여행 어시스턴트',
+      createButton: '새 여행 만들기'
+    },
+    ai: {
+      title: 'AI 여행 어시스턴트',
+      welcomeTitle: '나만의 여행 어시스턴트',
+      welcomeDesc: '선호도와 저장된 장소를 기반으로 맞춤형 여행 추천 받기',
+      hiddenGems: '숨겨진 보석',
+      planTrip: '여행 계획',
+      itinerary: '일정 만들기',
+      hiddenGemsPrompt: '저장된 장소를 기반으로 숨겨진 보석 보여주기',
+      planTripPrompt: '선호도를 바탕으로 여행 계획 도와주기',
+      itineraryPrompt: '다음 모험을 위한 상세 일정 만들기',
+      inputPlaceholder: '여행에 대해 무엇이든 물어보세요...'
+    },
   },
 
   ar: {
@@ -5869,7 +6022,28 @@ const resources = {
       dealMasterDesc: 'أنشئ 10+ خصومات',
       trendingNow: 'رائج الآن',
       trendingNowDesc: 'احصل على 100 مشاركة'
-    }
+    },
+    gamification: {
+      level: 'المستوى'
+    },
+    trips: {
+      title: 'رحلاتي',
+      subtitle: 'خطط ونظم مغامرات سفرك بمساعدة الذكاء الاصطناعي أو أنشئ رحلات مخصصة',
+      aiButton: 'مساعد السفر بالذكاء الاصطناعي',
+      createButton: 'إنشاء رحلة جديدة'
+    },
+    ai: {
+      title: 'مساعد السفر بالذكاء الاصطناعي',
+      welcomeTitle: 'مساعد السفر الشخصي الخاص بك',
+      welcomeDesc: 'احصل على توصيات سفر مخصصة بناءً على تفضيلاتك والأماكن المحفوظة',
+      hiddenGems: 'كنوز مخفية',
+      planTrip: 'خطط لرحلة',
+      itinerary: 'إنشاء مسار رحلة',
+      hiddenGemsPrompt: 'أظهر لي كنوز مخفية بناءً على أماكني المحفوظة',
+      planTripPrompt: 'ساعدني في التخطيط لرحلة بناءً على تفضيلاتي',
+      itineraryPrompt: 'أنشئ مسار رحلة مفصل لمغامرتي القادمة',
+      inputPlaceholder: 'اسألني أي شيء عن السفر...'
+    },
   },
 
   hi: {
@@ -6352,7 +6526,28 @@ const resources = {
       dealMasterDesc: '10+ छूट बनाएं',
       trendingNow: 'ट्रेंडिंग',
       trendingNowDesc: '100 शेयर प्राप्त करें'
-    }
+    },
+    gamification: {
+      level: 'स्तर'
+    },
+    trips: {
+      title: 'मेरी यात्राएं',
+      subtitle: 'AI सहायता से अपनी यात्रा रोमांच की योजना बनाएं और व्यवस्थित करें या कस्टम यात्राएं बनाएं',
+      aiButton: 'AI यात्रा सहायक',
+      createButton: 'नई यात्रा बनाएं'
+    },
+    ai: {
+      title: 'AI यात्रा सहायक',
+      welcomeTitle: 'आपका व्यक्तिगत यात्रा सहायक',
+      welcomeDesc: 'अपनी पसंद और सहेजे गए स्थानों के आधार पर वैयक्तिकृत यात्रा सिफारिशें प्राप्त करें',
+      hiddenGems: 'छिपे हुए रत्न',
+      planTrip: 'यात्रा की योजना बनाएं',
+      itinerary: 'यात्रा कार्यक्रम बनाएं',
+      hiddenGemsPrompt: 'मेरे सहेजे गए स्थानों के आधार पर मुझे छिपे हुए रत्न दिखाएं',
+      planTripPrompt: 'मेरी पसंद के आधार पर यात्रा की योजना बनाने में मदद करें',
+      itineraryPrompt: 'मेरे अगले रोमांच के लिए विस्तृत यात्रा कार्यक्रम बनाएं',
+      inputPlaceholder: 'यात्रा के बारे में मुझसे कुछ भी पूछें...'
+    },
   },
 
   ru: {
@@ -6816,7 +7011,28 @@ const resources = {
       dealMasterDesc: 'Создайте 10+ скидок',
       trendingNow: 'В тренде',
       trendingNowDesc: 'Получите 100 репостов'
-    }
+    },
+    gamification: {
+      level: 'Уровень'
+    },
+    trips: {
+      title: 'Мои Поездки',
+      subtitle: 'Планируйте и организуйте свои путешествия с помощью ИИ или создайте индивидуальные поездки',
+      aiButton: 'ИИ Помощник по Путешествиям',
+      createButton: 'Создать Новую Поездку'
+    },
+    ai: {
+      title: 'ИИ Помощник по Путешествиям',
+      welcomeTitle: 'Ваш Личный Помощник по Путешествиям',
+      welcomeDesc: 'Получайте персонализированные рекомендации путешествий на основе ваших предпочтений и сохраненных мест',
+      hiddenGems: 'Скрытые Жемчужины',
+      planTrip: 'Спланировать Поездку',
+      itinerary: 'Создать Маршрут',
+      hiddenGemsPrompt: 'Покажите мне скрытые жемчужины на основе моих сохраненных мест',
+      planTripPrompt: 'Помогите спланировать поездку на основе моих предпочтений',
+      itineraryPrompt: 'Создайте подробный маршрут для моего следующего приключения',
+      inputPlaceholder: 'Спросите меня что угодно о путешествиях...'
+    },
   }
 };
 
