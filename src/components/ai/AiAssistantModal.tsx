@@ -6,6 +6,7 @@ import { useAiAssistant } from '@/hooks/useAiAssistant';
 import { Sparkles, Send, MapPin, Compass, Calendar, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { AiMessageContent } from './AiMessageContent';
 
 interface AiAssistantModalProps {
   isOpen: boolean;
@@ -124,7 +125,11 @@ export const AiAssistantModal = ({ isOpen, onClose }: AiAssistantModalProps) => 
                         : 'bg-muted'
                     }`}
                   >
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    {message.role === 'assistant' ? (
+                      <AiMessageContent content={message.content} />
+                    ) : (
+                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    )}
                   </div>
                 </div>
               ))}
