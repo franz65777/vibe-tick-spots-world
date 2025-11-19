@@ -301,13 +301,6 @@ ${Object.entries(friendsPlacesByCity).slice(0, 3).map(([city, places]) =>
 
 LIKED POST LOCATIONS:
 ${likedLocations.slice(0, 10).map(l => `- ${l.name} (${l.category}) in ${l.city}`).join('\n') || "None"}
-
-RECOMMENDATIONS FROM FOLLOWING:
-${followingSaves?.flatMap(fs => 
-  fs.saved_places?.slice(0, 3).map(sp => 
-    `- ${sp.place_name} (${sp.place_category}) in ${sp.city} (by @${fs.profiles?.username})`
-  )
-).filter(Boolean).slice(0, 15).join('\n') || "None"}
       `.trim();
     }
 
