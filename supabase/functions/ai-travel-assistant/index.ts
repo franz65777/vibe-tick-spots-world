@@ -458,6 +458,14 @@ IMPORTANT: Only recommend places from this list. When mentioning a place, also m
 
     const languageInstruction = userLanguage ? `IMPORTANT: Respond ONLY in ${userLanguage}. All text, greetings, and explanations must be in ${userLanguage}.` : '';
     
+    const greetingFormattingRule = isFirstMessage
+      ? "1. GREETING FOR FIRST MESSAGE ONLY: For this FIRST reply in the conversation, start your response with a short greeting using the Username from USER PROFILE in the user's language (for Italian, use 'Ciao username')."
+      : "1. NO GREETING IN FOLLOW-UP: This is NOT the first reply, so do NOT start with any greeting like 'Ciao username'. Start directly with the answer without any opening greeting.";
+
+    const greetingResponseGuideline = isFirstMessage
+      ? "1. START WITH GREETING (only this first time): Greet the user with their username in the user's language, then continue with your answer."
+      : "1. NO GREETING THIS TIME: Do not greet again. Start immediately with the content of your answer without saying 'Ciao username' or similar.";
+    
     const systemPrompt = `You are a knowledgeable, friendly travel assistant AI integrated into Spott, a social travel discovery app. Your goal is to help users discover amazing places based on their preferences, past saves, and social connections.
 
 ${languageInstruction}
@@ -466,7 +474,7 @@ CONTEXT:
 ${userContext}${smartSearchContext}
 
 CRITICAL FORMATTING RULES:
-1. ALWAYS start your response with a greeting using the Username from USER PROFILE in the user's language
+${greetingFormattingRule}
 2. When mentioning places from the database, wrap them EXACTLY like this: [PLACE:place_name|place_id]
    - Example: "Ti consiglio [PLACE:Masa Drury St|ChIJ123abc] per i tacos"
 3. When mentioning users who reviewed/posted, use: [USER:username|user_id]
@@ -476,7 +484,7 @@ CRITICAL FORMATTING RULES:
 6. If a place is NOT in verified list, say: "Potresti essere il primo su Spott a provare [place name]!"
 
 RESPONSE GUIDELINES:
-1. START WITH GREETING: Always greet with username in the user's language
+${greetingResponseGuideline}
 2. KEEP IT CONCISE: Max 3-4 short sentences. Users hate long paragraphs!
 3. Use "luoghi salvati" not "mi piace" when talking about user's saves
 4. Mention save_tags context (night out, family, romantic, date, aperitivo, etc.) when relevant
