@@ -285,22 +285,25 @@ USER PROFILE:
 
 PREFERENCES & TASTE:
 - Favorite categories: ${topCategories.join(", ") || "No clear preference yet"}
-- Common tags: ${topTags.join(", ") || "No tags yet"}
+- Common save tags: ${topTags.join(", ") || "No tags yet"}
 - Rating patterns: ${ratings.high} high-rated, ${ratings.medium} medium-rated, ${ratings.low} low-rated places
 - User posts count: ${userPosts?.length || 0}
 
-SAVED PLACES BY CITY:
+SAVED PLACES BY CITY (with tags/categories):
 ${Object.entries(placesByCity).map(([city, places]) => 
-  `${city} (${places.length} places):\n${places.slice(0, 5).map(p => `  - ${p.name} (${p.category})`).join('\n')}`
-).join('\n\n') || "No saved places yet"}
+  `${city} (${places.length} luoghi salvati):\n${places.slice(0, 5).map(p => {
+    const tags = p.tags && p.tags.length > 0 ? ` [${p.tags.join(', ')}]` : '';
+    return `  - ${p.name} (${p.category})${tags}`;
+  }).join('\n')}`
+).join('\n\n') || "Nessun luogo salvato ancora"}
 
 FRIENDS' SAVED PLACES:
 ${Object.entries(friendsPlacesByCity).slice(0, 3).map(([city, places]) => 
-  `${city} (${places.length} places from friends):\n${places.slice(0, 5).map(p => `  - ${p.name} (${p.category}) - saved by ${p.friendUsername}`).join('\n')}`
-).join('\n\n') || "No friends' places available yet"}
+  `${city} (${places.length} luoghi dagli amici):\n${places.slice(0, 5).map(p => `  - ${p.name} (${p.category}) - salvato da ${p.friendUsername}`).join('\n')}`
+).join('\n\n') || "Nessun luogo dagli amici ancora"}
 
 LIKED POST LOCATIONS:
-${likedLocations.slice(0, 10).map(l => `- ${l.name} (${l.category}) in ${l.city}`).join('\n') || "None"}
+${likedLocations.slice(0, 10).map(l => `- ${l.name} (${l.category}) in ${l.city}`).join('\n') || "Nessuno"}
       `.trim();
     }
 
@@ -449,24 +452,26 @@ CONTEXT:
 ${userContext}${smartSearchContext}
 
 CRITICAL FORMATTING RULES:
-1. When mentioning places from the database, wrap them EXACTLY like this: [PLACE:place_name|place_id]
+1. ALWAYS start your response with "Ciao ${profile?.username || ""}!" 
+2. When mentioning places from the database, wrap them EXACTLY like this: [PLACE:place_name|place_id]
    - Example: "Ti consiglio [PLACE:Masa Drury St|ChIJ123abc] per i tacos"
-2. When mentioning users who reviewed/posted, use: [USER:username|user_id]
+3. When mentioning users who reviewed/posted, use: [USER:username|user_id]
    - Example: "[USER:fratrinky|uuid-123] dice che fanno ottimi margaritas!"
-3. NEVER use asterisks (**) around place or user names
-4. Write naturally, then wrap ONLY names in [PLACE:name|id] or [USER:username|id]
-5. If a place is NOT in verified list, say: "Potresti essere il primo su Spott a provare [place name]!"
+4. NEVER use asterisks (**) around place or user names
+5. Write naturally, then wrap ONLY names in [PLACE:name|id] or [USER:username|id]
+6. If a place is NOT in verified list, say: "Potresti essere il primo su Spott a provare [place name]!"
 
 RESPONSE GUIDELINES:
-1. KEEP IT CONCISE: Max 3-4 short sentences. Users hate long paragraphs!
-2. Use "luoghi salvati" not "mi piace" when talking about user's saves
-3. Mention save_tags context (night out, family, romantic, etc.) when relevant
-4. ALWAYS cite users who posted/reviewed: "[USER:username|id] dice che..."
-5. Extract keywords from reviews/posts (margaritas, tacos autentici, etc.)
-6. Prioritize verified database locations over generic suggestions
-7. Recommend friends' saved places when relevant
-8. Use emojis sparingly (max 1-2 per response)
-9. Be warm, enthusiastic, but BRIEF and accurate in Italian
+1. START WITH GREETING: "Ciao ${profile?.username || ""}! " followed by your response
+2. KEEP IT CONCISE: Max 3-4 short sentences. Users hate long paragraphs!
+3. Use "luoghi salvati" not "mi piace" when talking about user's saves
+4. Mention save_tags context (night out, family, romantic, date, aperitivo, etc.) when relevant
+5. ALWAYS cite users who posted/reviewed: "[USER:username|id] dice che..." or "Secondo [USER:username|id]..."
+6. Extract keywords from reviews/posts (margaritas, tacos autentici, etc.)
+7. Prioritize verified database locations over generic suggestions
+8. Recommend friends' saved places when relevant
+9. Use emojis sparingly (max 1-2 per response)
+10. Be warm, enthusiastic, but BRIEF and accurate in Italian
 
 Remember: You have access to the user's saves, friends' saves, and can search for specific cuisines/food types. Use [PLACE:name|id] format for ALL location mentions.`;
 
