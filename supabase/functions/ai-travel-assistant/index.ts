@@ -31,15 +31,19 @@ serve(async (req) => {
     const { data: { user } } = await supabase.auth.getUser();
     
     let userContext = "";
+    let profile: any = null;
+    
     if (user) {
       console.log("Fetching comprehensive user data...");
 
       // Get user profile
-      const { data: profile } = await supabase
+      const { data: profileData } = await supabase
         .from("profiles")
         .select("username, current_city, cities_visited, places_visited")
         .eq("id", user.id)
         .single();
+      
+      profile = profileData;
 
       // Get user's saved places (Google Places) with ratings
       const { data: savedPlaces } = await supabase
