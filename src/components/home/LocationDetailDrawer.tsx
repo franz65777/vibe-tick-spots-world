@@ -118,15 +118,49 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
 
               if (byId) {
                 locationData = byId;
+              } else {
+                // Ultimate fallback: resolve from saved_places by google place id
+                const { data: savedPlace } = await supabase
+                  .from('saved_places')
+                  .select('*')
+                  .eq('place_id', location.place_id)
+                  .maybeSingle();
+
+                if (savedPlace) {
+                  const rawCoords = savedPlace.coordinates;
+                  let spLat = 0;
+                  let spLng = 0;
+
+                  if (Array.isArray(rawCoords) && rawCoords.length >= 2) {
+                    spLat = Number(rawCoords[0] ?? 0);
+                    spLng = Number(rawCoords[1] ?? 0);
+                  } else if (rawCoords && typeof rawCoords === 'object') {
+                    spLat = Number((rawCoords as any).lat ?? (rawCoords as any).latitude ?? 0);
+                    spLng = Number((rawCoords as any).lng ?? (rawCoords as any).longitude ?? 0);
+                  }
+
+                  locationData = {
+                    id: null,
+                    google_place_id: savedPlace.place_id,
+                    latitude: spLat || null,
+                    longitude: spLng || null,
+                    address: null,
+                    city: savedPlace.city,
+                    category: savedPlace.place_category,
+                  };
+                }
               }
             }
           }
 
           if (locationData?.latitude && locationData?.longitude) {
+            const latNum = Number(locationData.latitude);
+            const lngNum = Number(locationData.longitude);
             location.coordinates = {
-              lat: locationData.latitude,
-              lng: locationData.longitude,
+              lat: latNum,
+              lng: lngNum,
             };
+            setResolvedCoordinates({ lat: latNum, lng: lngNum });
           }
 
           if (!location.address && locationData?.address) {
