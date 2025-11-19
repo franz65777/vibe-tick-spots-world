@@ -327,6 +327,7 @@ ${likedLocations.slice(0, 10).map(l => `- ${l.name} (${l.category}) in ${l.city}
         .from("posts")
         .select(`
           caption,
+          user_id,
           locations (
             id,
             name,
@@ -334,6 +335,10 @@ ${likedLocations.slice(0, 10).map(l => `- ${l.name} (${l.category}) in ${l.city}
             city,
             description,
             google_place_id
+          ),
+          profiles:user_id (
+            id,
+            username
           )
         `)
         .or(orConditions)
@@ -346,12 +351,17 @@ ${likedLocations.slice(0, 10).map(l => `- ${l.name} (${l.category}) in ${l.city}
           comment,
           rating,
           location_id,
+          user_id,
           locations (
             id,
             name,
             category,
             city,
             google_place_id
+          ),
+          profiles:user_id (
+            id,
+            username
           )
         `)
         .or(orConditions)
@@ -361,7 +371,9 @@ ${likedLocations.slice(0, 10).map(l => `- ${l.name} (${l.category}) in ${l.city}
         ?.filter(p => p.locations?.city?.toLowerCase().includes(city.toLowerCase()))
         .map(p => ({
           ...p.locations,
-          keywords: extractKeywords(p.caption || '')
+          keywords: extractKeywords(p.caption || ''),
+          userMention: p.profiles?.username ? `${p.profiles.username}|${p.profiles.id}` : null,
+          userComment: p.caption
         }))
         .filter((loc, index, self) => 
           loc && self.findIndex(l => l?.id === loc.id) === index
@@ -372,7 +384,9 @@ ${likedLocations.slice(0, 10).map(l => `- ${l.name} (${l.category}) in ${l.city}
         .map(r => ({
           ...r.locations,
           keywords: extractKeywords(r.comment || ''),
-          rating: r.rating
+          rating: r.rating,
+          userMention: r.profiles?.username ? `${r.profiles.username}|${r.profiles.id}` : null,
+          userComment: r.comment
         }))
         .filter((loc, index, self) => 
           loc && self.findIndex(l => l?.id === loc.id) === index
@@ -383,8 +397,22 @@ ${likedLocations.slice(0, 10).map(l => `- ${l.name} (${l.category}) in ${l.city}
         const existing = acc.find(l => l.id === loc.id);
         if (existing) {
           existing.keywords = [...new Set([...(existing.keywords || []), ...(loc.keywords || [])])];
+          if (loc.userMention && !existing.userMentions) {
+            existing.userMentions = [loc.userMention];
+          } else if (loc.userMention && !existing.userMentions.includes(loc.userMention)) {
+            existing.userMentions.push(loc.userMention);
+          }
+          if (loc.userComment && !existing.userComments) {
+            existing.userComments = [loc.userComment];
+          } else if (loc.userComment && !existing.userComments?.includes(loc.userComment)) {
+            existing.userComments.push(loc.userComment);
+          }
         } else {
-          acc.push(loc);
+          acc.push({
+            ...loc,
+            userMentions: loc.userMention ? [loc.userMention] : [],
+            userComments: loc.userComment ? [loc.userComment] : []
+          });
         }
         return acc;
       }, [] as any[]);
@@ -393,10 +421,13 @@ ${likedLocations.slice(0, 10).map(l => `- ${l.name} (${l.category}) in ${l.city}
         smartSearchContext = `\n\nVERIFIED LOCATIONS IN DATABASE FOR "${cuisine}" IN ${city.toUpperCase()}:
 ${allMatches.slice(0, 8).map(loc => {
   const keywords = loc.keywords?.length > 0 ? ` (Keywords: ${loc.keywords.join(', ')})` : '';
-  return `- ${loc.name} - ID: ${loc.google_place_id || `internal:${loc.id}`}${keywords}`;
+  const users = loc.userMentions?.length > 0 ? ` - Mentioned by: ${loc.userMentions.map((u: string) => u.split('|')[0]).join(', ')}` : '';
+  const userIds = loc.userMentions?.length > 0 ? ` - UserIDs: ${loc.userMentions.map((u: string) => u.split('|')[1]).join(', ')}` : '';
+  const comments = loc.userComments?.length > 0 ? ` - Comments: "${loc.userComments.join('; ')}"` : '';
+  return `- ${loc.name} - ID: ${loc.google_place_id || `internal:${loc.id}`}${keywords}${users}${userIds}${comments}`;
 }).join('\n')}
 
-IMPORTANT: Only recommend places from this list. If a place is not in this list, tell the user they could be the first on Spott to try it and recommend it to friends!`;
+IMPORTANT: Only recommend places from this list. When mentioning a place, also mention the user who recommended it using [USER:username|user_id] format. If a place is not in this list, tell the user they could be the first on Spott to try it and recommend it to friends!`;
       }
     }
     
@@ -420,18 +451,22 @@ ${userContext}${smartSearchContext}
 CRITICAL FORMATTING RULES:
 1. When mentioning places from the database, wrap them EXACTLY like this: [PLACE:place_name|place_id]
    - Example: "Ti consiglio [PLACE:Masa Drury St|ChIJ123abc] per i tacos"
-2. NEVER use asterisks (**) or brackets around place names
-3. Write place names naturally in the sentence, then wrap ONLY the name in [PLACE:name|id]
-4. If a place is NOT in the verified database list, DO NOT use [PLACE:] tags. Instead say: "Potresti essere il primo su Spott a provare [place name] e consigliarlo ai tuoi amici!"
+2. When mentioning users who reviewed/posted, use: [USER:username|user_id]
+   - Example: "[USER:fratrinky|uuid-123] dice che fanno ottimi margaritas!"
+3. NEVER use asterisks (**) around place or user names
+4. Write naturally, then wrap ONLY names in [PLACE:name|id] or [USER:username|id]
+5. If a place is NOT in verified list, say: "Potresti essere il primo su Spott a provare [place name]!"
 
 RESPONSE GUIDELINES:
-1. KEEP IT CONCISE: Max 3-4 short sentences per response. Users don't want long paragraphs!
-2. Prioritize places from "VERIFIED LOCATIONS IN DATABASE" section when available
-3. Mention keyword highlights from reviews/posts (e.g., "ottimi margaritas", "tacos autentici")
-4. Recommend friends' saved places when relevant
-5. If suggesting unverified places, encourage user to be a pioneer on Spott
-6. Use emojis sparingly (max 1-2 per response)
-7. Be warm and enthusiastic but BRIEF
+1. KEEP IT CONCISE: Max 3-4 short sentences. Users hate long paragraphs!
+2. Use "luoghi salvati" not "mi piace" when talking about user's saves
+3. Mention save_tags context (night out, family, romantic, etc.) when relevant
+4. ALWAYS cite users who posted/reviewed: "[USER:username|id] dice che..."
+5. Extract keywords from reviews/posts (margaritas, tacos autentici, etc.)
+6. Prioritize verified database locations over generic suggestions
+7. Recommend friends' saved places when relevant
+8. Use emojis sparingly (max 1-2 per response)
+9. Be warm, enthusiastic, but BRIEF and accurate in Italian
 
 Remember: You have access to the user's saves, friends' saves, and can search for specific cuisines/food types. Use [PLACE:name|id] format for ALL location mentions.`;
 

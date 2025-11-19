@@ -6,7 +6,9 @@ import { useAiAssistant } from '@/hooks/useAiAssistant';
 import { Sparkles, Send, MapPin, Compass, Calendar, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import { AiMessageContent } from './AiMessageContent';
+import LocationDetailDrawer from '@/components/home/LocationDetailDrawer';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { useNavigate } from 'react-router-dom';
 
 interface AiAssistantModalProps {
   isOpen: boolean;
@@ -19,6 +21,11 @@ export const AiAssistantModal = ({ isOpen, onClose }: AiAssistantModalProps) => 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { t } = useTranslation('ai');
+  const [selectedLocation, setSelectedLocation] = useState<any | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [userSheetOpen, setUserSheetOpen] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -48,6 +55,80 @@ export const AiAssistantModal = ({ isOpen, onClose }: AiAssistantModalProps) => 
 
   const handleQuickAction = (prompt: string) => {
     sendMessage(prompt);
+  };
+
+  const handlePlaceClick = (name: string, placeId: string) => {
+    if (placeId === 'unknown') return;
+    
+    const isInternal = placeId.startsWith('internal:');
+    const actualId = isInternal ? placeId.replace('internal:', '') : placeId;
+
+    setSelectedLocation({
+      place_id: actualId,
+      name,
+      category: 'restaurant',
+      city: null,
+      coordinates: { lat: 0, lng: 0 }
+    });
+    setDrawerOpen(true);
+  };
+
+  const handleUserClick = (userId: string) => {
+    onClose();
+    navigate(`/user/${userId}`);
+  };
+
+  const parseContent = (text: string) => {
+    const parts: (string | JSX.Element)[] = [];
+    const placeRegex = /\[PLACE:([^\|]+)\|([^\]]+)\]/g;
+    const userRegex = /\[USER:([^\|]+)\|([^\]]+)\]/g;
+    const combined = /\[(PLACE|USER):([^\|]+)\|([^\]]+)\]/g;
+    
+    let lastIndex = 0;
+    let match;
+    let keyCounter = 0;
+
+    while ((match = combined.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(text.substring(lastIndex, match.index));
+      }
+
+      const type = match[1];
+      const name = match[2];
+      const id = match[3];
+
+      if (type === 'PLACE' && id !== 'unknown') {
+        parts.push(
+          <button
+            key={`place-${keyCounter++}`}
+            onClick={() => handlePlaceClick(name, id)}
+            className="text-primary underline decoration-primary/50 hover:decoration-primary transition-colors font-medium"
+          >
+            {name}
+          </button>
+        );
+      } else if (type === 'USER') {
+        parts.push(
+          <button
+            key={`user-${keyCounter++}`}
+            onClick={() => handleUserClick(id)}
+            className="text-primary underline decoration-primary/50 hover:decoration-primary transition-colors font-medium"
+          >
+            @{name}
+          </button>
+        );
+      } else {
+        parts.push(name);
+      }
+
+      lastIndex = combined.lastIndex;
+    }
+
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex));
+    }
+
+    return parts;
   };
 
   const quickActions = [
@@ -126,7 +207,9 @@ export const AiAssistantModal = ({ isOpen, onClose }: AiAssistantModalProps) => 
                     }`}
                   >
                     {message.role === 'assistant' ? (
-                      <AiMessageContent content={message.content} />
+                      <p className="text-sm whitespace-pre-wrap">
+                        {parseContent(message.content)}
+                      </p>
                     ) : (
                       <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                     )}
@@ -176,6 +259,15 @@ export const AiAssistantModal = ({ isOpen, onClose }: AiAssistantModalProps) => 
           </form>
         </div>
       </div>
+
+      <LocationDetailDrawer
+        location={selectedLocation}
+        isOpen={drawerOpen}
+        onClose={() => {
+          setDrawerOpen(false);
+          setSelectedLocation(null);
+        }}
+      />
     </div>
   );
 };
