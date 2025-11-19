@@ -230,7 +230,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
       setFullAddress(addr);
     } catch (error) {
       console.error('Error fetching location data:', error);
-      setFullAddress('Indirizzo non disponibile');
+      setFullAddress(t('addressNotAvailable'));
     }
   };
 
@@ -397,7 +397,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
             <div className="w-full h-48 bg-muted flex items-center justify-center">
               <div className="text-center text-muted-foreground">
                 <MapPin className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p>Coordinate non disponibili</p>
+                <p>{t('coordinatesNotAvailable')}</p>
               </div>
             </div>
           )}
