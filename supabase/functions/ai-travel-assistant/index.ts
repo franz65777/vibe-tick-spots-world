@@ -62,7 +62,7 @@ serve(async (req) => {
       // Get user's saved places (Google Places) with ratings
       const savedPlacesResult = await supabase
         .from("saved_places")
-        .select("place_id, place_name, place_category, city, rating, save_tags")
+        .select("place_id, place_name, place_category, city, rating, save_tag")
         .eq("user_id", user.id)
         .limit(100);
       savedPlaces = savedPlacesResult.data || [];
@@ -72,7 +72,7 @@ serve(async (req) => {
         .from("user_saved_locations")
         .select(`
           rating,
-          save_tags,
+          save_tag,
           locations (
             name,
             category,
@@ -197,10 +197,9 @@ serve(async (req) => {
           else if (place.rating >= 3) ratings.medium++;
           else ratings.low++;
         }
-        if (place.save_tags && Array.isArray(place.save_tags)) {
-          place.save_tags.forEach((tag: string) => {
-            saveTags[tag] = (saveTags[tag] || 0) + 1;
-          });
+        const tag = (place as any).save_tag as string | undefined;
+        if (tag) {
+          saveTags[tag] = (saveTags[tag] || 0) + 1;
         }
       });
 
@@ -214,10 +213,9 @@ serve(async (req) => {
           else if (loc.rating >= 3) ratings.medium++;
           else ratings.low++;
         }
-        if (loc.save_tags && Array.isArray(loc.save_tags)) {
-          loc.save_tags.forEach((tag: string) => {
-            saveTags[tag] = (saveTags[tag] || 0) + 1;
-          });
+        const tag = (loc as any).save_tag as string | undefined;
+        if (tag) {
+          saveTags[tag] = (saveTags[tag] || 0) + 1;
         }
       });
 
@@ -236,14 +234,14 @@ serve(async (req) => {
           category: p.place_category, 
           city: p.city,
           rating: p.rating,
-          tags: p.save_tags 
+          tags: (p as any).save_tag ? [((p as any).save_tag as string)] : []
         })),
         ...(savedLocations || []).map(l => ({ 
           name: l.locations?.name, 
           category: l.locations?.category, 
           city: l.locations?.city,
           rating: l.rating,
-          tags: l.save_tags,
+          tags: (l as any).save_tag ? [((l as any).save_tag as string)] : [],
           description: l.locations?.description
         }))
       ];
@@ -284,7 +282,7 @@ serve(async (req) => {
           google_place_id: (p as any).google_place_id || (p as any).place_id,
           friendUsername: p.profiles?.username,
           user_id: p.user_id,
-          tags: Array.isArray(p.save_tags) ? p.save_tags : []
+          tags: (p as any).save_tag ? [((p as any).save_tag as string)] : []
         })),
         ...(friendsLocations || []).map(l => ({
           name: l.locations?.name,
@@ -295,7 +293,7 @@ serve(async (req) => {
           internal_id: l.locations?.id,
           friendUsername: l.profiles?.username,
           user_id: l.user_id,
-          tags: Array.isArray(l.save_tags) ? l.save_tags : []
+          tags: (l as any).save_tag ? [((l as any).save_tag as string)] : []
         }))
       ];
 
@@ -421,7 +419,7 @@ ${likedLocations.slice(0, 10).map(l => `- ${l.name} (${l.category}) in ${l.city}
           city: p.city,
           google_place_id: (p as any).google_place_id || p.place_id,
           internal_id: null as string | null,
-          tags: Array.isArray(p.save_tags) ? p.save_tags : []
+          tags: (p as any).save_tag ? [((p as any).save_tag as string)] : []
         })),
         ...(savedLocations || []).map(l => ({
           name: l.locations?.name,
@@ -429,7 +427,7 @@ ${likedLocations.slice(0, 10).map(l => `- ${l.name} (${l.category}) in ${l.city}
           city: l.locations?.city,
           google_place_id: l.locations?.google_place_id as string | null,
           internal_id: l.locations?.id as string | null,
-          tags: Array.isArray(l.save_tags) ? l.save_tags : []
+          tags: (l as any).save_tag ? [((l as any).save_tag as string)] : []
         }))
       ];
       
