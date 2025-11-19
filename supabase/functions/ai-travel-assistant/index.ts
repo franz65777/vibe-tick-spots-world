@@ -41,6 +41,7 @@ serve(async (req) => {
     let interactions: any[] = [];
     let friendsSaves: any[] = [];
     let friendsLocations: any[] = [];
+    let friendsPlaces: any[] = [];
     
     const categoryPreferences: Record<string, number> = {};
     const saveTags: Record<string, number> = {};
@@ -274,14 +275,16 @@ serve(async (req) => {
         .map(([tag, count]) => `${tag} (${count} times)`);
 
       // Process friends' saves
-      const friendsPlaces = [
+      friendsPlaces = [
         ...(friendsSaves || []).map(p => ({
           name: p.place_name,
           category: p.place_category,
           city: p.city,
           rating: p.rating,
           google_place_id: p.google_place_id,
-          friendUsername: p.profiles?.username
+          friendUsername: p.profiles?.username,
+          user_id: p.user_id,
+          tags: Array.isArray(p.save_tags) ? p.save_tags : []
         })),
         ...(friendsLocations || []).map(l => ({
           name: l.locations?.name,
@@ -290,7 +293,9 @@ serve(async (req) => {
           rating: l.rating,
           google_place_id: l.locations?.google_place_id,
           internal_id: l.locations?.id,
-          friendUsername: l.profiles?.username
+          friendUsername: l.profiles?.username,
+          user_id: l.user_id,
+          tags: Array.isArray(l.save_tags) ? l.save_tags : []
         }))
       ];
 
