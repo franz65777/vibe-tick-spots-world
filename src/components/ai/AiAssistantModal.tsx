@@ -138,15 +138,27 @@ export const AiAssistantModal = ({ isOpen, onClose }: AiAssistantModalProps) => 
             .maybeSingle();
           
           if (savedPlace) {
-            const coords: any = savedPlace.coordinates || {};
+            // Handle coordinates which can be array [lat, lng] or object {lat, lng}
+            const rawCoords = savedPlace.coordinates;
+            let lat = 0;
+            let lng = 0;
+            
+            if (Array.isArray(rawCoords) && rawCoords.length >= 2) {
+              lat = Number(rawCoords[0] ?? 0);
+              lng = Number(rawCoords[1] ?? 0);
+            } else if (rawCoords && typeof rawCoords === 'object') {
+              lat = Number((rawCoords as any).lat ?? (rawCoords as any).latitude ?? 0);
+              lng = Number((rawCoords as any).lng ?? (rawCoords as any).longitude ?? 0);
+            }
+            
             locationData = {
               google_place_id: savedPlace.place_id,
               name: savedPlace.place_name,
               category: savedPlace.place_category,
               city: savedPlace.city,
               address: null,
-              latitude: coords.lat || coords.latitude || 0,
-              longitude: coords.lng || coords.longitude || 0,
+              latitude: lat,
+              longitude: lng,
             };
           }
         }
@@ -228,14 +240,11 @@ export const AiAssistantModal = ({ isOpen, onClose }: AiAssistantModalProps) => 
           </button>
         );
       } else if (type === 'USER') {
+        // Show username as plain text, NOT clickable
         parts.push(
-          <button
-            key={`user-${keyCounter++}`}
-            onClick={() => handleUserClick(id)}
-            className="text-primary underline decoration-primary/50 hover:decoration-primary transition-colors font-medium"
-          >
+          <span key={`user-${keyCounter++}`} className="text-foreground">
             @{name}
-          </button>
+          </span>
         );
       } else {
         parts.push(name);
