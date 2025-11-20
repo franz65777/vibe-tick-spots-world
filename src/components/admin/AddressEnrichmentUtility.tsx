@@ -32,11 +32,11 @@ export const AddressEnrichmentUtility = () => {
       }
 
       if (!locations || locations.length === 0) {
-        toast.success('All locations already have complete address data!');
+        toast.success('Tutti i luoghi hanno già dati di indirizzo completi!');
         return;
       }
 
-      toast.info(`Starting enrichment for ${locations.length} locations...`);
+      toast.info(`Inizio arricchimento per ${locations.length} luoghi...`);
 
       for (const location of locations) {
         if (!location.latitude || !location.longitude) continue;
@@ -85,52 +85,49 @@ export const AddressEnrichmentUtility = () => {
         }
       }
 
-      toast.success(`Successfully enriched ${enrichedCount} locations!`);
+      toast.success(`${enrichedCount} luoghi arricchiti con successo!`);
     } catch (error: any) {
       console.error('Batch enrichment error:', error);
-      toast.error(error?.message || 'Failed to enrich locations');
+      toast.error(error?.message || 'Impossibile arricchire i luoghi');
     } finally {
       setIsEnriching(false);
     }
   };
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="rounded-xl border-none shadow-sm">
+      <CardHeader className="border-b-0">
         <CardTitle className="flex items-center gap-2">
           <MapPin className="w-5 h-5" />
-          Address Enrichment
+          Arricchimento Indirizzi
         </CardTitle>
-        <CardDescription>
-          Batch update locations with complete address information (city, street, number)
-        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 px-6">
         <div className="text-sm text-muted-foreground">
-          This will find locations missing city or address data and enrich them using reverse geocoding.
+          Trova luoghi con dati di città o indirizzo mancanti e li arricchisce usando geocoding inverso.
         </div>
         
         {enrichedCount > 0 && (
           <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
             <CheckCircle className="w-4 h-4" />
-            <span>{enrichedCount} locations enriched</span>
+            <span>{enrichedCount} luoghi arricchiti</span>
           </div>
         )}
 
         <Button
           onClick={handleBatchEnrich}
           disabled={isEnriching}
-          className="w-full"
+          className="w-full rounded-full"
         >
           {isEnriching ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Enriching locations...
+              Arricchimento in corso...
             </>
           ) : (
             <>
               <MapPin className="w-4 h-4 mr-2" />
-              Start Batch Enrichment
+              Inizia Arricchimento
             </>
           )}
         </Button>
