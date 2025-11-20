@@ -54,6 +54,7 @@ export const CategoryIcon: React.FC<CategoryIconProps> = ({ category, className 
         }}
         loading="eager"
         fetchPriority="high"
+        decoding="async"
       />
     </div>
   );
