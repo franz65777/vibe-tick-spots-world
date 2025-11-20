@@ -7,8 +7,12 @@ import 'leaflet/dist/leaflet.css'
 import './index.css'
 import './i18n'
 import { useEffect } from 'react'
+import { preloadCategoryImages } from './utils/preloadCategoryImages'
 
 console.log('🚀 Starting full app with dependencies fixed...');
+
+// Preload category images for faster rendering
+preloadCategoryImages();
 
 // Dark mode system preference handler
 const DarkModeHandler = ({ children }: { children: React.ReactNode }) => {

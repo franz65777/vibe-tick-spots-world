@@ -67,6 +67,9 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Category counts type
+  type CategoryCounts = Record<string, number>;
+
   const mapFilters = [
     { id: 'following' as const, name: t('mapFilters:following'), icon: Users, description: t('mapFilters:followingDesc') },
     { id: 'popular' as const, name: t('mapFilters:popular'), icon: TrendingUp, description: t('mapFilters:popularDesc') },
@@ -115,40 +118,50 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
 
       const normalizedCity = currentCity.trim().toLowerCase();
       
-      // Query saved_places (Google Places)
-      const { data: savedPlacesUsers } = await supabase
+      // Query saved_places with category counts
+      const { data: savedPlacesData } = await supabase
         .from('saved_places')
-.select('user_id, city')
+        .select('user_id, city, place:places_cache(category)')
         .in('user_id', followingIds)
         .ilike('city', `%${normalizedCity}%`);
       
-      // Query user_saved_locations (internal locations)
-      const { data: savedLocUsers } = await supabase
+      // Query user_saved_locations with category counts
+      const { data: savedLocData } = await supabase
         .from('user_saved_locations')
         .select(`
           user_id,
-          locations!inner(city)
+          locations!inner(city, category)
         `)
         .in('user_id', followingIds);
       
-      // Combine and filter by city
-      const userIdsWithSavesInCity = new Set<string>();
+      // Build user IDs and category counts
+      const userDataMap = new Map<string, CategoryCounts>();
       
-      savedPlacesUsers?.forEach(sp => {
+      savedPlacesData?.forEach((sp: any) => {
         const spCity = sp.city?.trim().toLowerCase();
         if (spCity && (spCity.includes(normalizedCity) || normalizedCity.includes(spCity))) {
-          userIdsWithSavesInCity.add(sp.user_id);
+          const category = sp.place?.category?.toLowerCase() || 'unknown';
+          if (!userDataMap.has(sp.user_id)) {
+            userDataMap.set(sp.user_id, {});
+          }
+          const counts = userDataMap.get(sp.user_id)!;
+          counts[category] = (counts[category] || 0) + 1;
         }
       });
       
-      savedLocUsers?.forEach((sl: any) => {
+      savedLocData?.forEach((sl: any) => {
         const locCity = sl.locations?.city?.trim().toLowerCase();
         if (locCity && (locCity.includes(normalizedCity) || normalizedCity.includes(locCity))) {
-          userIdsWithSavesInCity.add(sl.user_id);
+          const category = sl.locations?.category?.toLowerCase() || 'unknown';
+          if (!userDataMap.has(sl.user_id)) {
+            userDataMap.set(sl.user_id, {});
+          }
+          const counts = userDataMap.get(sl.user_id)!;
+          counts[category] = (counts[category] || 0) + 1;
         }
       });
       
-      if (userIdsWithSavesInCity.size === 0) {
+      if (userDataMap.size === 0) {
         setUsers([]);
         setLoading(false);
         return;
@@ -158,7 +171,7 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
       let profileQuery = supabase
         .from('profiles')
         .select('id, username, avatar_url, bio')
-        .in('id', Array.from(userIdsWithSavesInCity));
+        .in('id', Array.from(userDataMap.keys()));
       
       if (query.trim()) {
         profileQuery = profileQuery.ilike('username', `%${query}%`);
@@ -166,7 +179,13 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
       
       const { data: profiles } = await profileQuery;
       
-      setUsers(profiles || []);
+      // Attach category counts to profiles
+      const profilesWithCounts = (profiles || []).map(profile => ({
+        ...profile,
+        categoryCounts: userDataMap.get(profile.id) || {}
+      }));
+      
+      setUsers(profilesWithCounts);
     } catch (error) {
       console.error('Error fetching users with saves in city:', error);
       setUsers([]);
@@ -254,7 +273,7 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
 
       {/* User Search Bar - Shown when Following is active and search is enabled */}
       {showUserSearch && activeFilter === 'following' && (
-        <div className="mb-2 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 p-3 pointer-events-auto">
+        <div className="mb-2 bg-white/95 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-3 pointer-events-auto">
           <div className="flex items-center gap-2">
             <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
             <Input
@@ -292,7 +311,7 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
                   <button
                     key={user.id}
                     onClick={() => handleUserSelect(user.id)}
-                    className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-100 transition-colors text-left"
+                    className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
                   >
                     <Avatar className="w-9 h-9 flex-shrink-0">
                       <AvatarImage src={user.avatar_url || ''} />
@@ -301,28 +320,44 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                         {user.username || 'Unknown User'}
                       </p>
                       {user.bio && (
-                        <p className="text-xs text-gray-500 truncate">{user.bio}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.bio}</p>
                       )}
                     </div>
+                    {/* Category counts */}
+                    {user.categoryCounts && Object.keys(user.categoryCounts).length > 0 && (
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {Object.entries(user.categoryCounts).map(([category, count]: [string, any]) => {
+                          const categoryFilter = categoryFilters.find(c => c.id.toLowerCase() === category);
+                          if (!categoryFilter) return null;
+                          const IconComponent = categoryFilter.icon;
+                          return (
+                            <div key={category} className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700">
+                              <IconComponent className="w-3 h-3 text-gray-600 dark:text-gray-300" />
+                              <span className="text-xs font-medium text-gray-700 dark:text-gray-200">{count}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </button>
                 ))}
             </div>
           )}
           
           {users.length === 0 && !loading && (
-            <p className="mt-3 text-xs text-gray-500 text-center">
+            <p className="mt-3 text-xs text-gray-500 dark:text-gray-400 text-center">
               {t('mapFilters:noUsersInCity', { city: currentCity || t('common:thisCity') })}
             </p>
           )}
 
           {/* Selected Users */}
           {selectedUsers.length > 0 && (
-            <div className="mt-3 pt-3">
-              <p className="text-xs text-gray-500 mb-2 font-medium">{t('mapFilters:showingPinsFrom')}</p>
+            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium">{t('mapFilters:showingPinsFrom')}</p>
               <div className="flex flex-wrap gap-1.5">
                 {selectedUsers.map(user => (
                   <div
@@ -350,8 +385,9 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
         </div>
       )}
 
-      {/* Category Filters - Always show horizontally scrollable */}
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide pointer-events-auto w-full">
+      {/* Category Filters - Hidden when user search is open */}
+      {!(showUserSearch && activeFilter === 'following') && (
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide pointer-events-auto w-full">
         {/* Save Tags Filter - Only shown when in 'saved' mode */}
         {activeFilter === 'saved' && <SaveTagsFilter />}
         
@@ -383,7 +419,8 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
             {t('common:clearAll')}
           </button>
         )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
