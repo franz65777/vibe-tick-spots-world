@@ -227,6 +227,12 @@ const MapSection = ({
     try { refetch?.(); } catch {}
   };
 
+  const handleMapMove = (center: { lat: number; lng: number }, bounds: any) => {
+    // For future implementation: load pins based on map bounds
+    // For now, clustering handles the display of many pins efficiently
+    console.log('🗺️ Map moved to:', center);
+  };
+
   return (
     <>
       <div className={`${isExpanded ? 'fixed inset-0 w-screen h-screen relative' : 'flex-1 relative min-h-[500px]'} w-full overflow-hidden`}>
@@ -246,6 +252,7 @@ const MapSection = ({
           fullScreen={isExpanded}
           preventCenterUpdate={false}
           recenterToken={recenterToken}
+          onMapMove={handleMapMove}
           onSharingStateChange={(hasSharing) => {
             // Update button layout when sharing state changes
             const container = document.querySelector('[data-has-sharing]');
