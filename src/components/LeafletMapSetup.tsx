@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet.markercluster';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import { Place } from '@/types/place';
 import PinDetailCard from './explore/PinDetailCard';
 import { PostDetailModalMobile } from './explore/PostDetailModalMobile';
@@ -31,6 +34,7 @@ interface LeafletMapSetupProps {
   preventCenterUpdate?: boolean;
   recenterToken?: number;
   onSharingStateChange?: (hasSharing: boolean) => void;
+  onMapMove?: (center: { lat: number; lng: number }, bounds: L.LatLngBounds) => void;
 }
 
 // Vanilla Leaflet implementation to avoid react-leaflet context crash
@@ -48,12 +52,14 @@ const LeafletMapSetup = ({
   preventCenterUpdate = true, // Default to true to prevent auto-recentering
   recenterToken,
   onSharingStateChange,
+  onMapMove,
 }: LeafletMapSetupProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const markersRef = useRef<Map<string, L.Marker>>(new Map());
   const currentLocationMarkerRef = useRef<L.Marker | null>(null);
+  const markerClusterGroupRef = useRef<L.MarkerClusterGroup | null>(null);
 
   const { location } = useGeolocation();
   const { trackEvent } = useAnalytics();
@@ -112,6 +118,7 @@ const LeafletMapSetup = ({
     const map = L.map(containerRef.current, {
       center: [mapCenter.lat, mapCenter.lng],
       zoom: 15,
+      minZoom: 3,
       zoomControl: false,
       attributionControl: true,
       doubleClickZoom: false,
@@ -142,6 +149,17 @@ const LeafletMapSetup = ({
     tile.addTo(map);
     tileLayerRef.current = tile;
 
+    // Initialize marker cluster group
+    const markerClusterGroup = L.markerClusterGroup({
+      showCoverageOnHover: false,
+      zoomToBoundsOnClick: true,
+      spiderfyOnMaxZoom: true,
+      removeOutsideVisibleBounds: true,
+      maxClusterRadius: 80,
+    });
+    map.addLayer(markerClusterGroup);
+    markerClusterGroupRef.current = markerClusterGroup;
+
     // Map events (handlers read latest refs)
     map.on('contextmenu', (e: L.LeafletMouseEvent) => {
       onMapRightClickRef.current?.({ lat: e.latlng.lat, lng: e.latlng.lng });
@@ -150,7 +168,18 @@ const LeafletMapSetup = ({
       onMapClickRef.current?.({ lat: e.latlng.lat, lng: e.latlng.lng });
     });
 
+    // Map move event for dynamic loading
+    map.on('moveend', () => {
+      const center = map.getCenter();
+      const bounds = map.getBounds();
+      onMapMove?.({ lat: center.lat, lng: center.lng }, bounds);
+    });
+
     return () => {
+      if (markerClusterGroupRef.current) {
+        map.removeLayer(markerClusterGroupRef.current);
+        markerClusterGroupRef.current = null;
+      }
       map.remove();
       mapRef.current = null;
       markersRef.current.clear();
@@ -281,12 +310,13 @@ const LeafletMapSetup = ({
   // Places markers with campaign detection
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    const clusterGroup = markerClusterGroupRef.current;
+    if (!map || !clusterGroup) return;
 
     // Remove markers that no longer exist
     markersRef.current.forEach((marker, id) => {
       if (!places.find((p) => p.id === id)) {
-        map.removeLayer(marker);
+        clusterGroup.removeLayer(marker);
         markersRef.current.delete(id);
       }
     });
@@ -354,7 +384,7 @@ const LeafletMapSetup = ({
         if (!marker) {
           marker = L.marker([place.coordinates.lat, place.coordinates.lng], {
             icon,
-          }).addTo(map);
+          });
           marker.on('click', (e) => {
             // Check if clicked on the sharers badge
             const target = (e.originalEvent as any).target;
@@ -381,6 +411,7 @@ const LeafletMapSetup = ({
             });
             onPinClick?.(place);
           });
+          clusterGroup.addLayer(marker);
           markersRef.current.set(place.id, marker);
         }
         marker.setIcon(icon);
@@ -561,6 +592,38 @@ const LeafletMapSetup = ({
           locationName={selectedSharersLocation.name}
         />
       )}
+
+      {/* Custom cluster styling */}
+      <style>{`
+        .marker-cluster-small,
+        .marker-cluster-medium,
+        .marker-cluster-large {
+          background-color: hsl(var(--primary) / 0.2) !important;
+          border: 2px solid hsl(var(--primary)) !important;
+        }
+        
+        .marker-cluster-small div,
+        .marker-cluster-medium div,
+        .marker-cluster-large div {
+          background-color: hsl(var(--primary)) !important;
+          color: hsl(var(--primary-foreground)) !important;
+          font-weight: 600;
+          font-size: 14px;
+        }
+        
+        .marker-cluster {
+          animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+          0%, 100% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.05);
+          }
+        }
+      `}</style>
     </>
   );
 };
