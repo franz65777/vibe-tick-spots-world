@@ -88,11 +88,24 @@ const LeafletMapSetup = ({
   // Check if user has active share and notify parent
   useEffect(() => {
     if (user && shares.length > 0) {
-      const activeShare = shares.find(share => share.user_id === user.id);
-      setUserActiveShare(activeShare || null);
+      const activeShare = shares.find(share => share.user_id === user.id) || null;
+
+      setUserActiveShare(prev => {
+        const prevId = prev?.id;
+        const newId = (activeShare as any)?.id;
+        // Avoid state updates if nothing meaningfully changed to prevent render loops
+        if (prevId === newId && (!!prev === !!activeShare)) {
+          return prev;
+        }
+        return activeShare;
+      });
+
       onSharingStateChangeRef.current?.(!!activeShare);
     } else {
-      setUserActiveShare(null);
+      setUserActiveShare(prev => {
+        if (prev === null) return prev;
+        return null;
+      });
       onSharingStateChangeRef.current?.(false);
     }
   }, [user, shares]);
