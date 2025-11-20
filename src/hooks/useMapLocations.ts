@@ -210,18 +210,96 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
         }
 
         case 'following': {
-          // Fetch locations saved by people the user follows from both internal locations and Google saved places
-          const [locRes, placesRes] = await Promise.all([
-            supabase.rpc('get_following_saved_locations'),
-            supabase.rpc('get_following_saved_places', { limit_count: 200 })
-          ]);
+          // When map bounds are provided, fetch locations directly from the database
+          // instead of using RPC functions which don't support bounds filtering
+          if (mapBounds) {
+            // Fetch locations within bounds from followed users
+            const { data: followedUsers } = await supabase
+              .from('follows')
+              .select('following_id')
+              .eq('follower_id', user.id);
+            
+            const followedUserIds = followedUsers?.map(f => f.following_id) || [];
+            
+            if (followedUserIds.length === 0) {
+              console.log('No followed users found');
+              break;
+            }
+            
+            // Fetch internal locations
+            const { data: locations } = await supabase
+              .from('locations')
+              .select('*')
+              .in('created_by', followedUserIds)
+              .gte('latitude', mapBounds.south)
+              .lte('latitude', mapBounds.north)
+              .gte('longitude', mapBounds.west)
+              .lte('longitude', mapBounds.east)
+              .not('latitude', 'is', null)
+              .not('longitude', 'is', null);
+            
+            // Fetch saved places
+            const { data: savedPlaces } = await supabase
+              .from('saved_places')
+              .select('*, place:places_cache(*)')
+              .in('user_id', followedUserIds);
+            
+            // Convert to MapLocation format
+            const fromLocations: MapLocation[] = (locations || []).map((loc: any) => ({
+              id: loc.id,
+              name: loc.name,
+              category: loc.category,
+              address: loc.address,
+              city: loc.city,
+              coordinates: {
+                lat: Number(loc.latitude) || 0,
+                lng: Number(loc.longitude) || 0,
+              },
+              isFollowing: true,
+              user_id: loc.created_by,
+              created_at: loc.created_at,
+            }));
+            
+            const fromSavedPlaces: MapLocation[] = (savedPlaces || [])
+              .filter(sp => sp.place?.latitude && sp.place?.longitude)
+              .filter(sp => {
+                const lat = Number(sp.place.latitude);
+                const lng = Number(sp.place.longitude);
+                return lat >= mapBounds.south && lat <= mapBounds.north &&
+                       lng >= mapBounds.west && lng <= mapBounds.east;
+              })
+              .map((sp: any) => ({
+                id: sp.place_id,
+                name: sp.place.name,
+                category: sp.place.category || 'Unknown',
+                address: undefined,
+                city: sp.place.city || undefined,
+                coordinates: {
+                  lat: Number(sp.place.latitude) || 0,
+                  lng: Number(sp.place.longitude) || 0,
+                },
+                isFollowing: true,
+                user_id: sp.user_id,
+                created_at: sp.created_at,
+              }));
+            
+            finalLocations = [...fromLocations, ...fromSavedPlaces].filter(loc => {
+              if (selectedCategories.length > 0 && !selectedCategories.includes(loc.category)) return false;
+              return true;
+            });
+          } else {
+            // Use RPC functions when no bounds (original behavior for city search)
+            const [locRes, placesRes] = await Promise.all([
+              supabase.rpc('get_following_saved_locations'),
+              supabase.rpc('get_following_saved_places', { limit_count: 200 })
+            ]);
 
-          if (locRes.error) {
-            console.error('Error fetching following internal locations:', locRes.error);
-          }
-          if (placesRes.error) {
-            console.error('Error fetching following saved places:', placesRes.error);
-          }
+            if (locRes.error) {
+              console.error('Error fetching following internal locations:', locRes.error);
+            }
+            if (placesRes.error) {
+              console.error('Error fetching following saved places:', placesRes.error);
+            }
 
           const fromLocations: MapLocation[] = (locRes.data as any[] | null)?.map((row: any) => ({
             id: row.id,
