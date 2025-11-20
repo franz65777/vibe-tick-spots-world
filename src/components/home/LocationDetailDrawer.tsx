@@ -180,77 +180,68 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
     const coordsSource: any = resolvedCoordinates || location.coordinates || {};
     const lat = Number(coordsSource.lat ?? coordsSource.latitude ?? 0);
     const lng = Number(coordsSource.lng ?? coordsSource.longitude ?? 0);
-    if (!lat || !lng) return;
+    if (!lat || !lng || !mapDivRef.current) return;
 
-    // Defer to ensure drawer is fully mounted and sized
-    const t = setTimeout(() => {
-      try {
-        if (!mapDivRef.current) return;
-
-        // Prefer Mapbox when token present; fallback to CartoDB
-        const mapboxToken = (import.meta as any).env?.VITE_MAPBOX_TOKEN as string | undefined;
-        const tileUrl = mapboxToken
-          ? (isDarkMode
-              ? `https://api.mapbox.com/styles/v1/mapbox/navigation-night-v1/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`
-              : `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`)
-          : (isDarkMode
-              ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-              : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png');
-
-        if (mapRef.current) {
-          mapRef.current.setView([lat, lng], 15);
-          // Force map refresh
-          setTimeout(() => mapRef.current?.invalidateSize(), 100);
-        } else {
-          const map = L.map(mapDivRef.current, {
-            center: [lat, lng],
-            zoom: 15,
-            zoomControl: false,
-            attributionControl: true,
-            doubleClickZoom: false,
-          });
-          
-          L.tileLayer(tileUrl, {
-            maxZoom: 19,
-            attribution: mapboxToken ? '&copy; OpenStreetMap, &copy; Mapbox' : '&copy; OpenStreetMap, &copy; CartoDB',
-            tileSize: mapboxToken ? 512 : undefined,
-            zoomOffset: mapboxToken ? -1 : undefined,
-            subdomains: mapboxToken ? undefined as any : 'abcd',
-          }).addTo(map);
-
-          // Use the same custom marker as home page
-          const icon = createLeafletCustomMarker({
-            category: location.category || 'restaurant',
-            isSaved: false,
-            isRecommended: false,
-            isDarkMode,
-          });
-
-          L.marker([lat, lng], { icon }).addTo(map);
-          mapRef.current = map;
-          
-          // Multiple invalidate attempts to fix white tiles
-          setTimeout(() => map.invalidateSize(), 100);
-          setTimeout(() => map.invalidateSize(), 300);
-          setTimeout(() => map.invalidateSize(), 500);
-        }
-      } catch (e) {
-        console.error('Leaflet map init error', e);
+    try {
+      if (mapRef.current) {
+        mapRef.current.setView([lat, lng], 15);
+        // Force map refresh
+        setTimeout(() => mapRef.current?.invalidateSize(), 100);
+        return;
       }
-    }, 100);
 
-    return () => {
-      clearTimeout(t);
-    };
+      const map = L.map(mapDivRef.current, {
+        center: [lat, lng],
+        zoom: 15,
+        zoomControl: false,
+        attributionControl: true,
+        doubleClickZoom: false,
+      });
+
+      // Prefer Mapbox when token present; fallback to CartoDB (same config as main map)
+      const mapboxToken = (import.meta as any).env?.VITE_MAPBOX_TOKEN as string | undefined;
+      const tileUrl = mapboxToken
+        ? (isDarkMode
+            ? `https://api.mapbox.com/styles/v1/mapbox/navigation-night-v1/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`
+            : `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`)
+        : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+
+      const tileLayer = mapboxToken
+        ? L.tileLayer(tileUrl, {
+            maxZoom: 19,
+            tileSize: 512,
+            zoomOffset: -1,
+            attribution: '&copy; OpenStreetMap, &copy; Mapbox',
+          })
+        : L.tileLayer(tileUrl, {
+            maxZoom: 19,
+            subdomains: 'abcd',
+            attribution: '&copy; OpenStreetMap, &copy; CartoDB',
+          });
+
+      tileLayer.addTo(map);
+
+      // Use the same custom marker as home page
+      const icon = createLeafletCustomMarker({
+        category: location.category || 'restaurant',
+        isSaved: false,
+        isRecommended: false,
+        isDarkMode,
+      });
+
+      L.marker([lat, lng], { icon }).addTo(map);
+      mapRef.current = map;
+
+      // Multiple invalidate attempts to fix white tiles
+      setTimeout(() => map.invalidateSize(), 100);
+      setTimeout(() => map.invalidateSize(), 300);
+      setTimeout(() => map.invalidateSize(), 500);
+    } catch (e) {
+      console.error('Leaflet map init error', e);
+    }
   }, [isOpen, location, resolvedCoordinates, isDarkMode]);
 
-  // Cleanup map on close
-  useEffect(() => {
-    if (!isOpen && mapRef.current) {
-      mapRef.current.remove();
-      mapRef.current = null;
-    }
-  }, [isOpen]);
+  // Cleanup handled by component unmount to avoid Leaflet re-init errors
 
   // Fetch location data to get full address with reverse geocoding fallback
   useEffect(() => {
