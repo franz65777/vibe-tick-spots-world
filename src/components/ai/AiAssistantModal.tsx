@@ -107,67 +107,32 @@ export const AiAssistantModal = ({ isOpen, onClose }: AiAssistantModalProps) => 
     const actualId = isInternal ? placeId.replace('internal:', '') : placeId;
 
     try {
-      // Fetch full location data from database
       let locationData: any = null;
 
-      if (isInternal) {
-        // Internal location by ID
-        const { data } = await supabase
+      // Always fetch from locations table by internal ID
+      const { data } = await supabase
+        .from('locations')
+        .select('*')
+        .eq('id', actualId)
+        .maybeSingle();
+      
+      locationData = data;
+
+      // Fallback: search by name if ID lookup failed
+      if (!locationData) {
+        const { data: byName } = await supabase
           .from('locations')
           .select('*')
-          .eq('id', actualId)
+          .ilike('name', name)
+          .order('created_at', { ascending: false })
+          .limit(1)
           .maybeSingle();
-        locationData = data;
-      } else {
-        // External location by google_place_id
-        const { data } = await supabase
-          .from('locations')
-          .select('*')
-          .eq('google_place_id', actualId)
-          .maybeSingle();
-        
-        if (data) {
-          locationData = data;
-        } else {
-          // Check if it exists in saved_places
-          const { data: savedPlace } = await supabase
-            .from('saved_places')
-            .select('*')
-            .eq('place_id', actualId)
-            .limit(1)
-            .maybeSingle();
-          
-          if (savedPlace) {
-            // Handle coordinates which can be array [lat, lng] or object {lat, lng}
-            const rawCoords = savedPlace.coordinates;
-            let lat = 0;
-            let lng = 0;
-            
-            if (Array.isArray(rawCoords) && rawCoords.length >= 2) {
-              lat = Number(rawCoords[0] ?? 0);
-              lng = Number(rawCoords[1] ?? 0);
-            } else if (rawCoords && typeof rawCoords === 'object') {
-              lat = Number((rawCoords as any).lat ?? (rawCoords as any).latitude ?? 0);
-              lng = Number((rawCoords as any).lng ?? (rawCoords as any).longitude ?? 0);
-            }
-            
-            locationData = {
-              google_place_id: savedPlace.place_id,
-              name: savedPlace.place_name,
-              category: savedPlace.place_category,
-              city: savedPlace.city,
-              address: null,
-              latitude: lat,
-              longitude: lng,
-            };
-          }
-        }
+        locationData = byName;
       }
 
       if (locationData) {
         setSelectedLocation({
-          place_id: isInternal ? undefined : (locationData.google_place_id || actualId),
-          id: isInternal ? actualId : locationData.id,
+          id: locationData.id,
           name: locationData.name || name,
           category: locationData.category || 'restaurant',
           city: locationData.city,
@@ -178,10 +143,9 @@ export const AiAssistantModal = ({ isOpen, onClose }: AiAssistantModalProps) => 
           }
         });
       } else {
-        // Fallback if nothing found
+        // Minimal fallback
         setSelectedLocation({
-          place_id: isInternal ? undefined : actualId,
-          id: isInternal ? actualId : undefined,
+          id: actualId,
           name,
           category: 'restaurant',
           city: null,
@@ -192,10 +156,8 @@ export const AiAssistantModal = ({ isOpen, onClose }: AiAssistantModalProps) => 
       setDrawerOpen(true);
     } catch (error) {
       console.error('Error fetching location details:', error);
-      // Fallback on error
       setSelectedLocation({
-        place_id: isInternal ? undefined : actualId,
-        id: isInternal ? actualId : undefined,
+        id: actualId,
         name,
         category: 'restaurant',
         city: null,

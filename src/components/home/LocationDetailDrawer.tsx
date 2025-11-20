@@ -19,7 +19,7 @@ import {
 
 interface LocationDetailDrawerProps {
   location: {
-    place_id: string;
+    id?: string;
     name: string;
     category: string;
     city: string | null;
@@ -90,7 +90,6 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
     
     const fetchLocationDetails = async () => {
       try {
-        // If coordinates or basic info are missing, fetch from database
         const coords: any = location.coordinates || {};
         const lat = Number(coords.lat ?? coords.latitude ?? 0);
         const lng = Number(coords.lng ?? coords.longitude ?? 0);
@@ -98,59 +97,29 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
         if (!lat || !lng || !location.address || !location.city) {
           let locationData: any = null;
 
-          if (location.place_id) {
-            // First, try resolving by google_place_id
-            const { data: byGoogle } = await supabase
+          if (location.id) {
+            // Fetch from locations table by internal ID
+            const { data: byId } = await supabase
               .from('locations')
-              .select('id, google_place_id, latitude, longitude, address, city, category')
-              .eq('google_place_id', location.place_id)
+              .select('id, latitude, longitude, address, city, category')
+              .eq('id', location.id)
               .maybeSingle();
 
-            if (byGoogle) {
-              locationData = byGoogle;
-            } else {
-              // Fallback: treat place_id as internal location id
-              const { data: byId } = await supabase
-                .from('locations')
-                .select('id, google_place_id, latitude, longitude, address, city, category')
-                .eq('id', location.place_id)
-                .maybeSingle();
+            locationData = byId;
+          }
 
-              if (byId) {
-                locationData = byId;
-              } else {
-                // Ultimate fallback: resolve from saved_places by google place id
-                const { data: savedPlace } = await supabase
-                  .from('saved_places')
-                  .select('*')
-                  .eq('place_id', location.place_id)
-                  .maybeSingle();
+          // Fallback: search by name + city
+          if (!locationData) {
+            const { data: byName } = await supabase
+              .from('locations')
+              .select('id, latitude, longitude, address, city, category')
+              .ilike('name', location.name)
+              .eq('city', location.city || '')
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
 
-                if (savedPlace) {
-                  const rawCoords = savedPlace.coordinates;
-                  let spLat = 0;
-                  let spLng = 0;
-
-                  if (Array.isArray(rawCoords) && rawCoords.length >= 2) {
-                    spLat = Number(rawCoords[0] ?? 0);
-                    spLng = Number(rawCoords[1] ?? 0);
-                  } else if (rawCoords && typeof rawCoords === 'object') {
-                    spLat = Number((rawCoords as any).lat ?? (rawCoords as any).latitude ?? 0);
-                    spLng = Number((rawCoords as any).lng ?? (rawCoords as any).longitude ?? 0);
-                  }
-
-                  locationData = {
-                    id: null,
-                    google_place_id: savedPlace.place_id,
-                    latitude: spLat || null,
-                    longitude: spLng || null,
-                    address: null,
-                    city: savedPlace.city,
-                    category: savedPlace.place_category,
-                  };
-                }
-              }
-            }
+            locationData = byName;
           }
 
           if (locationData?.latitude && locationData?.longitude) {
@@ -172,17 +141,14 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
           if (location.category === 'restaurant' && locationData?.category) {
             location.category = locationData.category;
           }
-
-          // Normalize place_id to the canonical google_place_id when available
-          if (locationData?.google_place_id) {
-            location.place_id = locationData.google_place_id;
-          }
+        } else {
+          setResolvedCoordinates({ lat, lng });
         }
       } catch (error) {
-        console.error('Error fetching location details:', error);
+        console.error('Error fetching location details (drawer):', error);
       }
     };
-    
+
     fetchLocationDetails();
   }, [isOpen, location]);
 
@@ -271,7 +237,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
     fetchLocationData();
     fetchLocationPosts();
     fetchReviews();
-  }, [isOpen, location?.place_id]);
+  }, [isOpen, location?.id, location?.name]);
 
   const fetchLocationData = async () => {
     if (!location) return;
@@ -298,48 +264,20 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
     if (!location) return;
     setLoading(true);
     try {
-      // Resolve internal location id from place_id, supporting both google_place_id and (when valid) direct id
-      let locationId: string | null = null;
+      let locationId: string | null = location.id || null;
 
-      const looksLikeUuid = (value: string | null | undefined) =>
-        !!value &&
-        /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
-          value
-        );
-
-      if (location.place_id) {
-        const { data: byGoogle, error: locationError } = await supabase
+      // Fallback: search by name + city
+      if (!locationId) {
+        const { data: byName } = await supabase
           .from('locations')
           .select('id')
-          .eq('google_place_id', location.place_id)
+          .ilike('name', location.name)
+          .eq('city', location.city || '')
+          .order('created_at', { ascending: false })
+          .limit(1)
           .maybeSingle();
 
-        if (locationError) {
-          console.error('Error fetching location by google_place_id:', locationError);
-        }
-
-        if (byGoogle) {
-          locationId = byGoogle.id;
-        }
-
-        if (!locationId && looksLikeUuid(location.place_id)) {
-          const { data: byId, error: locationByIdError } = await supabase
-            .from('locations')
-            .select('id, google_place_id')
-            .eq('id', location.place_id)
-            .maybeSingle();
-
-          if (locationByIdError) {
-            console.error('Error fetching location by id:', locationByIdError);
-          }
-
-          if (byId) {
-            locationId = byId.id;
-            if (byId.google_place_id) {
-              location.place_id = byId.google_place_id;
-            }
-          }
-        }
+        locationId = byName?.id || null;
       }
 
       if (!locationId) {
@@ -393,40 +331,20 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
     if (!location) return;
     setReviewsLoading(true);
     try {
-      // Resolve internal location id from place_id, supporting both google_place_id and (when valid) direct id
-      let locationId: string | null = null;
+      let locationId: string | null = location.id || null;
 
-      const looksLikeUuid = (value: string | null | undefined) =>
-        !!value &&
-        /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
-          value
-        );
-
-      if (location.place_id) {
-        const { data: byGoogle } = await supabase
+      // Fallback: search by name + city
+      if (!locationId) {
+        const { data: byName } = await supabase
           .from('locations')
           .select('id')
-          .eq('google_place_id', location.place_id)
+          .ilike('name', location.name)
+          .eq('city', location.city || '')
+          .order('created_at', { ascending: false })
+          .limit(1)
           .maybeSingle();
 
-        if (byGoogle) {
-          locationId = byGoogle.id;
-        }
-
-        if (!locationId && looksLikeUuid(location.place_id)) {
-          const { data: byId } = await supabase
-            .from('locations')
-            .select('id, google_place_id')
-            .eq('id', location.place_id)
-            .maybeSingle();
-
-          if (byId) {
-            locationId = byId.id;
-            if (byId.google_place_id) {
-              location.place_id = byId.google_place_id;
-            }
-          }
-        }
+        locationId = byName?.id || null;
       }
 
       if (!locationId) {
