@@ -62,16 +62,34 @@ Deno.serve(async (req) => {
     console.log(`Found ${duplicates.length} duplicate groups`);
 
     let mergedCount = 0;
+    let totalPostsMigrated = 0;
+    let totalReviewsMigrated = 0;
 
     // Merge each group
     for (const group of duplicates) {
       console.log(`🔄 Merging ${group.remove.length} into ${group.keep}`);
 
       // Update posts
-      await supabaseClient
+      const { count: postsCount } = await supabaseClient
         .from('posts')
-        .update({ location_id: group.keep })
+        .update({ location_id: group.keep }, { count: 'exact' })
         .in('location_id', group.remove);
+      
+      if (postsCount) {
+        totalPostsMigrated += postsCount;
+        console.log(`  ✓ Migrated ${postsCount} posts`);
+      }
+
+      // Update post reviews (recensioni!)
+      const { count: reviewsCount } = await supabaseClient
+        .from('post_reviews')
+        .update({ location_id: group.keep }, { count: 'exact' })
+        .in('location_id', group.remove);
+      
+      if (reviewsCount) {
+        totalReviewsMigrated += reviewsCount;
+        console.log(`  ✓ Migrated ${reviewsCount} reviews`);
+      }
 
       // Update saved locations
       await supabaseClient
@@ -85,7 +103,107 @@ Deno.serve(async (req) => {
         .update({ location_id: group.keep })
         .in('location_id', group.remove);
 
-      // Delete duplicates
+      // Update location likes
+      await supabaseClient
+        .from('location_likes')
+        .update({ location_id: group.keep })
+        .in('location_id', group.remove);
+
+      // Update location swipes
+      await supabaseClient
+        .from('location_swipes')
+        .update({ location_id: group.keep })
+        .in('location_id', group.remove);
+
+      // Update location view duration
+      await supabaseClient
+        .from('location_view_duration')
+        .update({ location_id: group.keep })
+        .in('location_id', group.remove);
+
+      // Update media
+      await supabaseClient
+        .from('media')
+        .update({ location_id: group.keep })
+        .in('location_id', group.remove);
+
+      // Update stories
+      await supabaseClient
+        .from('stories')
+        .update({ location_id: group.keep })
+        .in('location_id', group.remove);
+
+      // Update folder locations
+      await supabaseClient
+        .from('folder_locations')
+        .update({ location_id: group.keep })
+        .in('location_id', group.remove);
+
+      // Update reservations
+      await supabaseClient
+        .from('reservations')
+        .update({ location_id: group.keep })
+        .in('location_id', group.remove);
+
+      // Update trip locations
+      await supabaseClient
+        .from('trip_locations')
+        .update({ location_id: group.keep })
+        .in('location_id', group.remove);
+
+      // Update location shares
+      await supabaseClient
+        .from('user_location_shares')
+        .update({ location_id: group.keep })
+        .in('location_id', group.remove);
+
+      // Update location rankings
+      await supabaseClient
+        .from('location_rankings')
+        .update({ location_id: group.keep })
+        .in('location_id', group.remove);
+
+      // Update chat messages
+      await supabaseClient
+        .from('chat_messages')
+        .update({ location_id: group.keep })
+        .in('location_id', group.remove);
+
+      // Update direct messages
+      await supabaseClient
+        .from('direct_messages')
+        .update({ location_id: group.keep })
+        .in('location_id', group.remove);
+
+      // Update marketing campaigns
+      await supabaseClient
+        .from('marketing_campaigns')
+        .update({ location_id: group.keep })
+        .in('location_id', group.remove);
+
+      // Update event registrations
+      await supabaseClient
+        .from('event_registrations')
+        .update({ location_id: group.keep })
+        .in('location_id', group.remove);
+
+      // Delete duplicates from dependent tables first
+      await supabaseClient
+        .from('user_muted_locations')
+        .delete()
+        .in('location_id', group.remove);
+
+      await supabaseClient
+        .from('user_notification_settings')
+        .delete()
+        .in('location_id', group.remove);
+
+      await supabaseClient
+        .from('user_recommendations')
+        .delete()
+        .in('location_id', group.remove);
+
+      // Delete duplicate locations
       await supabaseClient
         .from('locations')
         .delete()
@@ -94,14 +212,18 @@ Deno.serve(async (req) => {
       mergedCount += group.remove.length;
     }
 
-    console.log(`✅ Merged ${mergedCount} duplicates`);
+    console.log(`✅ Merged ${mergedCount} duplicate locations`);
+    console.log(`📝 Total posts migrated: ${totalPostsMigrated}`);
+    console.log(`⭐ Total reviews migrated: ${totalReviewsMigrated}`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Merged ${mergedCount} duplicate locations`,
+        message: `Merged ${mergedCount} duplicate locations, migrated ${totalPostsMigrated} posts and ${totalReviewsMigrated} reviews`,
         groups: duplicates.length,
         merged: mergedCount,
+        postsMigrated: totalPostsMigrated,
+        reviewsMigrated: totalReviewsMigrated,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
