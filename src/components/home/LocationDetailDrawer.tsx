@@ -494,10 +494,38 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
   }, [user?.id, location?.id, isOpen]);
 
   const handleSave = async (tag: SaveTag) => {
-    if (!location?.id) return;
+    if (!user?.id || !location) return;
     setLoading(true);
     try {
-      const saved = await locationInteractionService.saveLocation(location.id, {
+      let locationIdToSave = location.id;
+      
+      // If location doesn't exist in database, create it first
+      if (!locationIdToSave) {
+        const coordsSource: any = resolvedCoordinates || location.coordinates || {};
+        const lat = Number(coordsSource.lat ?? coordsSource.latitude ?? 0);
+        const lng = Number(coordsSource.lng ?? coordsSource.longitude ?? 0);
+        
+        const { data: newLocation, error: createError } = await supabase
+          .from('locations')
+          .insert({
+            name: location.name,
+            address: location.address || fullAddress,
+            city: location.city,
+            latitude: lat || null,
+            longitude: lng || null,
+            category: location.category || 'restaurant',
+            google_place_id: (location as any).google_place_id || null,
+            created_by: user.id,
+          })
+          .select('id')
+          .single();
+
+        if (createError) throw createError;
+        locationIdToSave = newLocation.id;
+        location.id = newLocation.id; // Update location object with new ID
+      }
+
+      const saved = await locationInteractionService.saveLocation(locationIdToSave, {
         google_place_id: (location as any).google_place_id,
         name: location.name,
         address: location.address,
@@ -591,8 +619,8 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
                 <span className="line-clamp-2">{fullAddress}</span>
               </div>
               
-              {/* Action Buttons */}
-              <div className="flex gap-2">
+              {/* Action Buttons - Equal size grid */}
+              <div className="grid grid-cols-2 gap-2">
                 <SaveLocationDropdown
                   isSaved={isSaved}
                   onSave={handleSave}
@@ -601,17 +629,16 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
                   open={dropdownOpen}
                   onOpenChange={setDropdownOpen}
                   variant="outline"
-                  size="sm"
-                  showLabel
+                  size="default"
                 />
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="default"
                   onClick={() => setDirectionsModalOpen(true)}
                   disabled={!hasValidCoordinates}
-                  className="flex-1"
+                  className="w-full gap-2"
                 >
-                  <Navigation className="w-4 h-4 mr-1" />
+                  <Navigation className="w-4 h-4" />
                   {t('directions', { ns: 'common', defaultValue: 'Directions' })}
                 </Button>
               </div>
