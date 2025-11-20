@@ -16,7 +16,6 @@ import { allowedCategories, type AllowedCategory } from '@/utils/allowedCategori
 
 interface SwipeLocation {
   id: string;
-  place_id: string;
   name: string;
   category: string;
   city: string | null;
@@ -197,31 +196,64 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       setLoading(true);
 
       // Parallel queries for better performance
-      const [swipedData, mySavedPlaces, friendsSaves] = await Promise.all([
+      const [swipedData, mySavedLocations, friendsSaves] = await Promise.all([
         supabase.from('location_swipes').select('location_id').eq('user_id', user.id),
-        supabase.from('saved_places').select('place_id').eq('user_id', user.id),
+        supabase.from('user_saved_locations').select('location_id').eq('user_id', user.id),
         supabase.rpc('get_following_saved_places', { limit_count: 50 })
       ]);
 
-      const swipedLocationIds = (swipedData.data || []).map((s) => s.location_id);
-      const mySavedPlaceIds = new Set((mySavedPlaces.data || []).map((s) => s.place_id) as string[]);
+      const swipedLocationIds = new Set((swipedData.data || []).map((s) => s.location_id));
+      const mySavedLocationIds = new Set((mySavedLocations.data || []).map((s) => s.location_id) as string[]);
 
-      // Get swipedPlaceIds efficiently
-      let swipedPlaceIds: Set<string> = new Set();
-      if (swipedLocationIds.length > 0) {
-        const { data } = await supabase
-          .from('locations')
-          .select('google_place_id')
-          .in('id', swipedLocationIds);
-        swipedPlaceIds = new Set((data || []).map(l => l.google_place_id).filter(Boolean) as string[]);
+      // Get internal locations from user_saved_locations for followed users
+      const { data: followsData } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', user.id);
+
+      if (!followsData || followsData.length === 0) {
+        setFollowedUsers([]);
+        return;
       }
 
-      // Filter by selected user if one is selected later during aggregation
-      const raw = (friendsSaves.data || []) as any[];
+      const followingIds = followsData.map(f => f.following_id);
 
-      // Build followed users list directly from current saves feed, excluding already processed places
+      // Get internal locations from user_saved_locations for followed users
+      const { data: internalSaves } = await supabase
+        .from('user_saved_locations')
+        .select(`
+          location_id,
+          user_id,
+          created_at,
+          locations (
+            id,
+            name,
+            category,
+            city,
+            address,
+            latitude,
+            longitude,
+            image_url
+          ),
+          profiles:user_id (
+            id,
+            username,
+            avatar_url
+          )
+        `)
+        .in('user_id', followingIds)
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      const raw = (internalSaves || []) as any[];
+
+      // Build followed users list, excluding already processed and saved locations
       try {
-        const sourceForCounts = raw.filter((r: any) => !processedPlaceIds.has(r.place_id) && !mySavedPlaceIds.has(r.place_id));
+        const sourceForCounts = raw.filter((r: any) => 
+          r.location_id && 
+          !processedPlaceIds.has(r.location_id) && 
+          !mySavedLocationIds.has(r.location_id)
+        );
         const usersMap = new Map<string, { id: string; username: string; avatar_url: string; new_saves_count: number }>();
         for (const r of sourceForCounts) {
           const uid = r.user_id;
@@ -232,8 +264,8 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
           } else {
             usersMap.set(uid, {
               id: uid,
-              username: r.username || 'User',
-              avatar_url: r.avatar_url || '',
+              username: r.profiles?.username || 'User',
+              avatar_url: r.profiles?.avatar_url || '',
               new_saves_count: 1,
             });
           }
@@ -246,42 +278,37 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
         console.warn('Could not build followed users from saves feed', e);
       }
 
-      // Map raw rows into grouped locations by place_id, aggregating all savers
-      const byPlace = new Map<string, SwipeLocation & { saved_by_users: NonNullable<SwipeLocation['saved_by_users']> }>();
+      // Map internal locations, aggregating all savers
+      const byLocationId = new Map<string, SwipeLocation & { saved_by_users: NonNullable<SwipeLocation['saved_by_users']> }>();
       for (const s of raw) {
-        let coords: any = { lat: 0, lng: 0 };
-        try {
-          coords = typeof s.coordinates === 'string' ? JSON.parse(s.coordinates) : (s.coordinates ?? { lat: 0, lng: 0 });
-        } catch (e) {
-          console.error('Error parsing coordinates for', s.place_name, e);
-        }
+        const loc = s.locations;
+        if (!loc?.id) continue;
 
-        // Support multiple coordinate formats: object or [lat, lng] array
-        let latNum = 0;
-        let lngNum = 0;
-        if (Array.isArray(coords) && coords.length >= 2) {
-          latNum = Number(coords[0] ?? 0);
-          lngNum = Number(coords[1] ?? 0);
-        } else {
-          latNum = Number(coords?.lat ?? coords?.latitude ?? 0);
-          lngNum = Number(coords?.lng ?? coords?.longitude ?? 0);
-        }
+        const locationId = loc.id;
+        if (processedPlaceIds.has(locationId) || mySavedLocationIds.has(locationId)) continue;
 
-        const placeId = s.place_id || '';
-        if (!placeId || processedPlaceIds.has(placeId)) continue;
-        const saver = { id: s.user_id || '', username: s.username || 'User', avatar_url: s.avatar_url || '' };
-        const existing = byPlace.get(placeId);
+        const latNum = Number(loc.latitude ?? 0);
+        const lngNum = Number(loc.longitude ?? 0);
+
+        const saver = { 
+          id: s.profiles?.id || s.user_id || '', 
+          username: s.profiles?.username || 'User', 
+          avatar_url: s.profiles?.avatar_url || '' 
+        };
+
+        const existing = byLocationId.get(locationId);
         if (existing) {
-          if (!existing.saved_by_users.find(u => u.id === saver.id)) existing.saved_by_users.push(saver);
+          if (!existing.saved_by_users.find(u => u.id === saver.id)) {
+            existing.saved_by_users.push(saver);
+          }
         } else {
-          byPlace.set(placeId, {
-            id: placeId,
-            place_id: placeId,
-            name: s.place_name || 'Unknown Place',
-            category: s.place_category || 'place',
-            city: s.city || null,
-            address: s.address || null,
-            image_url: undefined,
+          byLocationId.set(locationId, {
+            id: locationId,
+            name: loc.name || 'Unknown Place',
+            category: loc.category || 'place',
+            city: loc.city || null,
+            address: loc.address || null,
+            image_url: loc.image_url || undefined,
             coordinates: { lat: latNum, lng: lngNum },
             saved_by: saver,
             saved_by_users: [saver],
@@ -290,65 +317,16 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       }
 
       // Convert to array and apply optional selected user filter
-      let candidates: SwipeLocation[] = Array.from(byPlace.values());
+      let candidates: SwipeLocation[] = Array.from(byLocationId.values());
       if (selectedUserId) {
         candidates = candidates.filter(c => c.saved_by_users?.some(u => u.id === selectedUserId));
       }
 
-      // Enrich candidates with internal location data (city/address/coords/image)
-      if (candidates.length > 0) {
-        const placeIds = Array.from(new Set(candidates.map(c => c.place_id).filter(Boolean)));
-        if (placeIds.length) {
-          const { data: locRows } = await supabase
-            .from('locations')
-            .select('google_place_id, city, address, latitude, longitude, image_url')
-            .in('google_place_id', placeIds);
-          const byId = new Map((locRows || []).map((r: any) => [r.google_place_id, r]));
-          candidates = candidates.map(c => {
-            const m: any = byId.get(c.place_id);
-            if (!m) return c;
-            const lat = Number(c.coordinates?.lat) || Number(m.latitude) || 0;
-            const lng = Number(c.coordinates?.lng) || Number(m.longitude) || 0;
-            return {
-              ...c,
-              city: c.city || m.city || null,
-              address: c.address || m.address || null,
-              image_url: c.image_url || m.image_url || undefined,
-              coordinates: { lat, lng },
-            };
-          });
-        }
-      }
-
-      // Fallback: if no follows or no candidates, show recent public locations (with google_place_id)
-      if (candidates.length === 0) {
-        console.log('⚠️ No friends saves, loading fallback locations');
-        const { data: recentLocations } = await supabase
-          .from('locations')
-          .select('google_place_id, name, category, city, latitude, longitude, image_url')
-          .not('google_place_id', 'is', null)
-          .order('created_at', { ascending: false })
-          .limit(60);
-        candidates = (recentLocations || []).map((l: any) => ({
-          id: l.google_place_id,
-          place_id: l.google_place_id,
-          name: l.name || 'Unknown Place',
-          category: l.category || 'place',
-          city: l.city || 'Unknown',
-          address: l.address || null,
-          image_url: l.image_url || undefined,
-          coordinates: { lat: Number(l.latitude) || 0, lng: Number(l.longitude) || 0 },
-          saved_by: undefined,
-          saved_by_users: [],
-        }));
-        console.log('📍 Loaded', candidates.length, 'fallback locations');
-      }
-
       // Filter out already saved/swiped and invalid
       const filtered = candidates.filter((c) =>
-        c.place_id &&
-        !mySavedPlaceIds.has(c.place_id) &&
-        !swipedPlaceIds.has(c.place_id) &&
+        c.id &&
+        !mySavedLocationIds.has(c.id) &&
+        !swipedLocationIds.has(c.id) &&
         c.name !== 'Unknown Place'
       );
 
@@ -356,7 +334,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
 
       if (filtered.length === 0) {
         console.log('⚠️ No new locations to show after filtering');
-        console.log('📊 Status: mySavedPlaceIds:', mySavedPlaceIds.size, 'swipedPlaceIds:', swipedPlaceIds.size);
+        console.log('📊 Status: mySavedLocationIds:', mySavedLocationIds.size, 'swipedLocationIds:', swipedLocationIds.size);
         // Only reset if this is the initial load
         if (locations.length === 0) {
           setLocations([]);
@@ -392,44 +370,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
     setSwipeDirection(direction);
 
     try {
-      // First, get or create the location in the locations table
-      let locationId: string | null = null;
-
-      // Check if location already exists
-      const { data: existingLocation } = await supabase
-        .from('locations')
-        .select('id')
-        .eq('google_place_id', location.place_id)
-        .single();
-
-      if (existingLocation) {
-        locationId = existingLocation.id;
-      } else {
-        // Create new location
-        const { data: newLocation, error: createError } = await supabase
-          .from('locations')
-          .insert({
-            google_place_id: location.place_id,
-            name: location.name,
-            category: location.category,
-            city: location.city,
-            address: location.address,
-            image_url: location.image_url,
-            latitude: location.coordinates.lat,
-            longitude: location.coordinates.lng,
-            created_by: user.id
-          })
-          .select('id')
-          .single();
-
-        if (createError) {
-          console.error('Error creating location:', createError);
-          toast.error('Failed to save location');
-          setSwipeDirection(null);
-          return;
-        }
-        locationId = newLocation.id;
-      }
+      const locationId = location.id;
 
       // Record swipe
       await supabase.from('location_swipes').insert({
@@ -439,41 +380,21 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       });
 
       if (direction === 'right') {
-        // Save to saved_places and backfill city if missing
-        const { data: inserted, error: spInsertError } = await supabase
-          .from('saved_places')
+        // Save to user_saved_locations
+        const { error: saveError } = await supabase
+          .from('user_saved_locations')
           .insert({
             user_id: user.id,
-            place_id: location.place_id,
-            place_name: location.name,
-            place_category: location.category,
-            city: location.city || null,
-            coordinates: location.coordinates
-          })
-          .select('id, city')
-          .single();
-        if (spInsertError) {
-          console.error('Error saving to saved_places:', spInsertError);
+            location_id: locationId,
+          });
+
+        if (saveError) {
+          console.error('Error saving location:', saveError);
           toast.error('Failed to save location');
           setSwipeDirection(null);
           return;
         }
-        // If city is missing/Unknown but we have coords, reverse geocode and update
-        const needCity = !inserted?.city || inserted.city === 'Unknown' || inserted.city.trim() === '';
-        if (needCity && location.coordinates?.lat && location.coordinates?.lng) {
-          try {
-            const { data: geo } = await supabase.functions.invoke('reverse-geocode', {
-              body: { latitude: location.coordinates.lat, longitude: location.coordinates.lng }
-            });
-            const city = geo?.city || null;
-            if (city) {
-              await supabase.from('saved_places').update({ city }).eq('id', inserted.id);
-              console.log(`✅ Backfilled city for saved_place ${inserted.id}: ${city}`);
-            }
-          } catch (e) {
-            console.warn('Reverse geocode failed for saved_place:', e);
-          }
-        }
+
         toast.success(`${location.name} saved!`);
       }
 
@@ -482,14 +403,14 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
         setSwipeDirection(null);
         setTouchOffset({ x: 0, y: 0 });
 
-        // Mark this place as processed so it won't be counted again in future fetches
+        // Mark this location as processed
         setProcessedPlaceIds((prev) => {
           const next = new Set(prev);
-          if (location.place_id) next.add(location.place_id);
+          if (location.id) next.add(location.id);
           return next;
         });
         
-        // Update follower counts if this location was saved by any shown user
+        // Update follower counts
         if (location.saved_by_users && location.saved_by_users.length > 0) {
           setFollowedUsers(prev => prev.map(u => (
             location.saved_by_users!.some(saver => saver.id === u.id)
@@ -500,7 +421,6 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
         
         // Remove the current location from the list
         setLocations(prev => prev.filter((_, idx) => idx !== currentIndex));
-        // Don't increment index since we removed an item
       }, 300);
     } catch (error) {
       console.error('Error swiping:', error);
@@ -809,7 +729,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                     <div className="flex items-center gap-2 text-white/90 text-base">
                       <MapPin className="w-5 h-5" />
                       <CityLabel 
-                        id={currentLocation.place_id}
+                        id={currentLocation.id}
                         city={currentLocation.city}
                         address={currentLocation.address}
                         coordinates={currentLocation.coordinates}
