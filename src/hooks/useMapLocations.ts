@@ -319,19 +319,23 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
         }
 
         case 'popular': {
-          // Popular locations with bounds or city filter
+          // Get followed user IDs for weighted scoring
+          const { data: followedUsers } = await supabase
+            .from('follows')
+            .select('following_id')
+            .eq('follower_id', user.id);
+          
+          const followedUserIds = followedUsers?.map(f => f.following_id) || [];
+
+          // Fetch locations with popularity metrics
           let locationsQuery = supabase
             .from('locations')
             .select(`
-              id, name, category, address, city, latitude, longitude, created_by, created_at,
-              saves:user_saved_locations(count)
+              id, name, category, address, city, latitude, longitude, created_by, created_at
             `)
             .not('latitude', 'is', null)
-            .not('longitude', 'is', null)
-            .order('created_at', { ascending: false })
-            .limit(200);
+            .not('longitude', 'is', null);
 
-          // Apply bounds filter if provided (prioritize over city filter)
           if (mapBounds) {
             locationsQuery = locationsQuery
               .gte('latitude', mapBounds.south)
@@ -342,76 +346,131 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             locationsQuery = locationsQuery.ilike('city', `%${currentCity}%`);
           }
 
-          const { data: locations, error: locError } = await locationsQuery;
+          const { data: locations, error: locError } = await locationsQuery.limit(500);
 
           if (locError) {
             console.error('Error fetching popular locations:', locError);
             break;
           }
 
-          let placesQuery = supabase
-            .from('places_cache')
-            .select(`
-              id, name, category, city, latitude, longitude,
-              saves:saved_places(count)
-            `)
-            .not('latitude', 'is', null)
-            .not('longitude', 'is', null)
-            .order('created_at', { ascending: false })
-            .limit(200);
+          // Fetch saved places
+          let savedPlacesQuery = supabase
+            .from('saved_places')
+            .select('place_id, place_name, place_category, city, coordinates, user_id, created_at');
 
-          // Apply bounds filter if provided (prioritize over city filter)
-          if (mapBounds) {
-            placesQuery = placesQuery
-              .gte('latitude', mapBounds.south)
-              .lte('latitude', mapBounds.north)
-              .gte('longitude', mapBounds.west)
-              .lte('longitude', mapBounds.east);
-          } else if (currentCity && currentCity.trim()) {
-            placesQuery = placesQuery.ilike('city', `%${currentCity}%`);
-          }
+          const { data: allSavedPlaces, error: savedPlacesError } = await savedPlacesQuery;
 
-          const { data: places, error: placesError } = await placesQuery;
-
-          if (placesError) {
-            console.error('Error fetching popular places:', placesError);
+          if (savedPlacesError) {
+            console.error('Error fetching saved places:', savedPlacesError);
             break;
           }
 
-          const fromLocations: MapLocation[] = (locations || []).map((loc: any) => ({
-            id: loc.id,
-            name: loc.name,
-            category: loc.category,
-            address: loc.address,
-            city: loc.city,
-            coordinates: {
-              lat: Number(loc.latitude) || 0,
-              lng: Number(loc.longitude) || 0,
-            },
-            user_id: loc.created_by,
-            created_at: loc.created_at,
-          }));
+          // Filter saved places by bounds or city
+          const filteredSavedPlaces = (allSavedPlaces || []).filter((place: any) => {
+            const coords = place.coordinates as any || {};
+            const lat = Number(coords.lat);
+            const lng = Number(coords.lng);
+            
+            if (!lat || !lng) return false;
+            
+            if (mapBounds) {
+              return lat >= mapBounds.south && lat <= mapBounds.north &&
+                     lng >= mapBounds.west && lng <= mapBounds.east;
+            } else if (currentCity && currentCity.trim()) {
+              return place.city && place.city.toLowerCase().includes(currentCity.toLowerCase());
+            }
+            return true;
+          });
 
-          const fromPlaces: MapLocation[] = (places || []).map((place: any) => ({
-            id: place.id,
-            name: place.name,
-            category: place.category || 'Unknown',
-            address: undefined,
-            city: place.city || 'Unknown',
-            coordinates: {
-              lat: Number(place.latitude) || 0,
-              lng: Number(place.longitude) || 0,
-            },
-            user_id: user.id,
-            created_at: place.created_at || new Date().toISOString(),
-          }));
+          // Get location IDs
+          const locationIds = (locations || []).map(l => l.id);
 
-          finalLocations = [...fromLocations, ...fromPlaces].filter(location => {
+          // Fetch saves for locations
+          const { data: locationSaves } = locationIds.length > 0 ? await supabase
+            .from('user_saved_locations')
+            .select('location_id, user_id')
+            .in('location_id', locationIds) : { data: [] };
+
+          // Fetch posts for locations
+          const { data: locationPosts } = locationIds.length > 0 ? await supabase
+            .from('posts')
+            .select('location_id')
+            .in('location_id', locationIds) : { data: [] };
+
+          // Calculate popularity scores for locations
+          const locationScores = new Map<string, number>();
+          (locationSaves || []).forEach((save: any) => {
+            const score = locationScores.get(save.location_id) || 0;
+            const weight = followedUserIds.includes(save.user_id) ? 3 : 1; // 3x weight for followed users
+            locationScores.set(save.location_id, score + weight);
+          });
+          
+          (locationPosts || []).forEach((post: any) => {
+            const score = locationScores.get(post.location_id) || 0;
+            locationScores.set(post.location_id, score + 0.5); // 0.5 points per post
+          });
+
+          // Calculate popularity scores for saved places (aggregate by place_id)
+          const placeScores = new Map<string, { score: number; place: any }>();
+          filteredSavedPlaces.forEach((save: any) => {
+            const existing = placeScores.get(save.place_id) || { score: 0, place: save };
+            const weight = followedUserIds.includes(save.user_id) ? 3 : 1;
+            placeScores.set(save.place_id, {
+              score: existing.score + weight,
+              place: save
+            });
+          });
+
+          const fromLocations: MapLocation[] = (locations || [])
+            .map((loc: any) => ({
+              id: loc.id,
+              name: loc.name,
+              category: loc.category,
+              address: loc.address,
+              city: loc.city,
+              coordinates: {
+                lat: Number(loc.latitude) || 0,
+                lng: Number(loc.longitude) || 0,
+              },
+              user_id: loc.created_by,
+              created_at: loc.created_at,
+              recommendationScore: locationScores.get(loc.id) || 0,
+            }))
+            .filter(loc => (locationScores.get(loc.id) || 0) > 0); // Only show locations with at least 1 save
+
+          const fromPlaces: MapLocation[] = Array.from(placeScores.values())
+            .map(({ score, place }) => {
+              const coords = place.coordinates as any || {};
+              return {
+                id: place.place_id,
+                name: place.place_name || 'Unknown',
+                category: place.place_category || 'Unknown',
+                address: undefined,
+                city: place.city || 'Unknown',
+                coordinates: {
+                  lat: Number(coords.lat) || 0,
+                  lng: Number(coords.lng) || 0,
+                },
+                user_id: place.user_id,
+                created_at: place.created_at,
+                recommendationScore: score,
+              };
+            })
+            .filter(place => place.recommendationScore > 0);
+
+          // Combine and sort by popularity score
+          const combined = [...fromLocations, ...fromPlaces]
+            .sort((a, b) => (b.recommendationScore || 0) - (a.recommendationScore || 0))
+            .slice(0, 200); // Limit to top 200 most popular
+
+          finalLocations = combined.filter(location => {
             if (selectedCategories.length > 0 && !selectedCategories.includes(location.category)) {
               return false;
             }
             return true;
           });
+          
+          console.log(`✅ Found ${finalLocations.length} popular locations (scored by saves + posts + follower weight)`);
           break;
         }
 
