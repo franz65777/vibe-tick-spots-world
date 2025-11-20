@@ -19,16 +19,25 @@ export const AiMessageContent = ({ content }: AiMessageContentProps) => {
     try {
       let locationData: any = null;
 
-      // Always try to fetch from locations table by internal ID
-      const { data } = await supabase
-        .from('locations')
-        .select('*')
-        .eq('id', actualId)
-        .maybeSingle();
+      if (isInternal) {
+        // Fetch from locations table by internal ID
+        const { data } = await supabase
+          .from('locations')
+          .select('*')
+          .eq('id', actualId)
+          .maybeSingle();
+        locationData = data;
+      } else {
+        // Fallback: try matching by Google Place ID for older AI links
+        const { data: byGoogleId } = await supabase
+          .from('locations')
+          .select('*')
+          .eq('google_place_id', placeId)
+          .maybeSingle();
+        locationData = byGoogleId;
+      }
 
-      locationData = data;
-
-      // Fallback: search by name if ID lookup failed
+      // Fallback: search by name if lookup by ID or Google Place ID failed
       if (!locationData) {
         const { data: byName } = await supabase
           .from('locations')

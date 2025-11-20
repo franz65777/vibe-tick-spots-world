@@ -14,20 +14,20 @@ import { supabase } from '@/integrations/supabase/client';
 const detectLanguage = (text: string): string => {
   const lowerText = text.toLowerCase();
   
-  // Italian
-  if (/\b(ciao|grazie|per favore|dove|come|quando|perch[eé]|cosa|dove|qui|là|molto|bene|male|sì|no|ho|hai|sono|sei|è|siamo|hanno)\b/.test(lowerText)) return 'Italian';
+  // Italian (expanded tokens for casual queries)
+  if (/\b(ciao|grazie|per favore|dove|come|quando|perch[eé]|cosa|qui|l[aà]|molto|bene|male|s[iì]|no|ho|hai|sono|sei|\b[eè]\b|siamo|hanno|buono|buona|festa|serata|locale|posti?|messican[oa])\b/.test(lowerText)) return 'Italian';
   
   // Spanish
-  if (/\b(hola|gracias|por favor|dónde|cómo|cuándo|por qué|qué|aquí|allí|muy|bien|mal|sí|no|tengo|tienes|soy|eres|es|somos|tienen)\b/.test(lowerText)) return 'Spanish';
+  if (/\b(hola|gracias|por favor|d[óo]nde|c[oó]mo|cu[aá]ndo|por qu[eé]|qu[eé]|aqu[ií]|all[ií]|muy|bien|mal|s[ií]|no|tengo|tienes|soy|eres|es|somos|tienen)\b/.test(lowerText)) return 'Spanish';
   
   // French
-  if (/\b(bonjour|merci|s'il vous plaît|où|comment|quand|pourquoi|quoi|ici|là|très|bien|mal|oui|non|j'ai|tu as|je suis|tu es|il est|nous sommes|ils ont)\b/.test(lowerText)) return 'French';
+  if (/\b(bonjour|merci|s'il vous pla[iî]t|o[uù]|comment|quand|pourquoi|quoi|ici|l[aà]|tr[eè]s|bien|mal|oui|non|j'ai|tu as|je suis|tu es|il est|nous sommes|ils ont)\b/.test(lowerText)) return 'French';
   
   // German
   if (/\b(hallo|danke|bitte|wo|wie|wann|warum|was|hier|dort|sehr|gut|schlecht|ja|nein|ich habe|du hast|ich bin|du bist|er ist|wir sind|sie haben)\b/.test(lowerText)) return 'German';
   
   // Portuguese
-  if (/\b(olá|obrigado|por favor|onde|como|quando|por que|o que|aqui|lá|muito|bem|mal|sim|não|tenho|tens|sou|és|é|somos|têm)\b/.test(lowerText)) return 'Portuguese';
+  if (/\b(ol[aá]|obrigado|por favor|onde|como|quando|por qu[eê]|o que|aqui|l[aá]|muito|bem|mal|sim|n[aã]o|tenho|tens|sou|[eé]s|[eé]|somos|t[eê]m)\b/.test(lowerText)) return 'Portuguese';
   
   // Dutch
   if (/\b(hallo|dank je|alsjeblieft|waar|hoe|wanneer|waarom|wat|hier|daar|zeer|goed|slecht|ja|nee|ik heb|je hebt|ik ben|je bent|hij is|we zijn|ze hebben)\b/.test(lowerText)) return 'Dutch';
@@ -109,16 +109,25 @@ export const AiAssistantModal = ({ isOpen, onClose }: AiAssistantModalProps) => 
     try {
       let locationData: any = null;
 
-      // Always fetch from locations table by internal ID
-      const { data } = await supabase
-        .from('locations')
-        .select('*')
-        .eq('id', actualId)
-        .maybeSingle();
-      
-      locationData = data;
+      if (isInternal) {
+        // Fetch from locations table by internal ID
+        const { data } = await supabase
+          .from('locations')
+          .select('*')
+          .eq('id', actualId)
+          .maybeSingle();
+        locationData = data;
+      } else {
+        // Fallback: try matching by Google Place ID for older AI links
+        const { data: byGoogleId } = await supabase
+          .from('locations')
+          .select('*')
+          .eq('google_place_id', placeId)
+          .maybeSingle();
+        locationData = byGoogleId;
+      }
 
-      // Fallback: search by name if ID lookup failed
+      // Fallback: search by name if lookup by ID or Google Place ID failed
       if (!locationData) {
         const { data: byName } = await supabase
           .from('locations')
