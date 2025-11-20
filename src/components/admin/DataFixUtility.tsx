@@ -66,12 +66,16 @@ const DataFixUtility = () => {
 
       if (error) throw error;
 
-      toast.success('Duplicate locations merged!', {
-        description: data?.message || 'Nearby locations with identical coordinates have been merged into a single location',
+      const message = data?.postsMigrated || data?.reviewsMigrated
+        ? `${data.merged} location duplicate unite. Migrati ${data.postsMigrated || 0} post e ${data.reviewsMigrated || 0} recensioni.`
+        : 'Location duplicate unite con successo';
+
+      toast.success('Merge completato!', {
+        description: message,
       });
     } catch (error) {
       console.error('Error cleaning duplicates:', error);
-      toast.error('Failed to merge duplicates', {
+      toast.error('Errore nel merge', {
         description: (error as Error).message,
       });
     } finally {
