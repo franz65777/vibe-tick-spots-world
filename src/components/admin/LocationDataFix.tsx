@@ -111,20 +111,52 @@ export const LocationDataFix = () => {
     }
 
     try {
-      // Call Foursquare search to get proper data
-      const { data, error } = await supabase.functions.invoke('foursquare-search', {
+      // Try Foursquare with larger radius (2km) to find nearby places
+      const { data: fsqData, error: fsqError } = await supabase.functions.invoke('foursquare-search', {
         body: { 
           lat: latitude, 
           lng: longitude,
-          limit: 1
+          limit: 5,
+          radiusKm: 2.0  // Use larger radius for better results
         }
       });
 
-      if (error || !data?.results?.[0]) {
-        throw new Error('Dati non trovati');
+      if (fsqError || !fsqData?.places?.length) {
+        // If Foursquare fails, try reverse geocoding to at least get city/address
+        console.log('Foursquare failed, trying reverse geocoding');
+        const { data: geoData, error: geoError } = await supabase.functions.invoke('reverse-geocode', {
+          body: { 
+            latitude, 
+            longitude 
+          }
+        });
+
+        if (!geoError && geoData) {
+          // Update with geocoding data only
+          const { error: updateError } = await supabase
+            .from('locations')
+            .update({
+              address: geoData.formatted_address || null,
+              city: geoData.city || null,
+            })
+            .eq('id', locationId);
+
+          if (updateError) throw updateError;
+
+          setFixed(prev => [...prev, locationId]);
+          
+          toast({
+            title: "Indirizzo aggiornato",
+            description: "Aggiornati solo città e indirizzo",
+          });
+          return;
+        }
+
+        throw new Error('Nessun dato disponibile per questa posizione');
       }
 
-      const location = data.results[0];
+      // Use the closest result from Foursquare
+      const location = fsqData.places[0];
 
       // Update the location with correct data
       const { error: updateError } = await supabase
@@ -133,7 +165,7 @@ export const LocationDataFix = () => {
           name: location.name,
           address: location.address || null,
           city: location.city || null,
-          google_place_id: location.google_place_id || null,
+          google_place_id: location.fsq_id || null,
         })
         .eq('id', locationId);
 
@@ -149,7 +181,7 @@ export const LocationDataFix = () => {
       console.error('Error fixing location:', error);
       toast({
         title: "Errore",
-        description: "Impossibile aggiornare il luogo",
+        description: error instanceof Error ? error.message : "Impossibile aggiornare il luogo",
         variant: "destructive",
       });
     }
@@ -188,19 +220,17 @@ export const LocationDataFix = () => {
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Correzione Dati Luoghi</CardTitle>
-        <CardDescription>
-          Trova e correggi luoghi con dati mancanti o incompleti nel database
-        </CardDescription>
+    <Card className="w-full rounded-xl border-none shadow-sm">
+      <CardHeader className="border-b-0">
+        <CardTitle>Admin</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex gap-2">
+      <CardContent className="space-y-4 px-6">
+        <div className="flex gap-2 flex-wrap">
           <Button
             onClick={scanForIssues}
             disabled={scanning || loading}
             variant="outline"
+            className="rounded-full"
           >
             {scanning ? (
               <>
@@ -216,6 +246,7 @@ export const LocationDataFix = () => {
             <Button
               onClick={fixAllLocations}
               disabled={loading || issues.length === fixed.length}
+              className="rounded-full"
             >
               {loading ? (
                 <>
@@ -240,7 +271,7 @@ export const LocationDataFix = () => {
               </span>
             </div>
 
-            <ScrollArea className="h-[400px] rounded-md border">
+            <ScrollArea className="h-[400px] rounded-xl border">
               <div className="p-4 space-y-2">
                 {issues.map((issue) => {
                   const isFixed = fixed.includes(issue.id);
@@ -248,7 +279,7 @@ export const LocationDataFix = () => {
                   return (
                     <div
                       key={issue.id}
-                      className={`flex items-start gap-3 p-3 rounded-lg border ${
+                      className={`flex items-start gap-3 p-3 rounded-xl border ${
                         isFixed ? 'bg-green-50 border-green-200' : 'bg-card'
                       }`}
                     >
@@ -278,6 +309,7 @@ export const LocationDataFix = () => {
                           variant="outline"
                           onClick={() => fixLocation(issue.id, issue.latitude, issue.longitude)}
                           disabled={loading}
+                          className="rounded-full"
                         >
                           Correggi
                         </Button>

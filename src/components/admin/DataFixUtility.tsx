@@ -87,67 +87,66 @@ const DataFixUtility = () => {
       <AddressEnrichmentUtility />
       
       <Card>
-        <CardHeader>
+        <CardHeader className="border-b-0">
           <CardTitle className="flex items-center gap-2">
             <MapPin className="w-5 h-5" />
-            Location Data Fixes
+            Admin
           </CardTitle>
-          <CardDescription>
-            Run maintenance tasks to clean up location data
-          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+        <CardContent className="space-y-4 px-6">
+          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl">
             <div className="flex-1">
-              <h4 className="font-semibold text-sm mb-1">Populate City Names</h4>
+              <h4 className="font-semibold text-sm mb-1">Popola Nomi Città</h4>
               <p className="text-xs text-muted-foreground">
-                Uses reverse geocoding to fill missing city names from coordinates
+                Usa geocoding inverso per riempire i nomi delle città mancanti dalle coordinate
               </p>
             </div>
             <Button 
               onClick={handleFixCities} 
               disabled={isFixingCities}
               size="sm"
+              className="rounded-full"
             >
               {isFixingCities ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Fixing...
+                  Correzione...
                 </>
               ) : (
-                'Fix Cities'
+                'Correggi Città'
               )}
             </Button>
           </div>
 
-          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl">
             <div className="flex-1">
-              <h4 className="font-semibold text-sm mb-1">Normalize Categories</h4>
+              <h4 className="font-semibold text-sm mb-1">Normalizza Categorie</h4>
               <p className="text-xs text-muted-foreground">
-                Corrects categories based on place_types data (e.g., cafe vs restaurant)
+                Corregge le categorie in base ai dati place_types (es. cafe vs restaurant)
               </p>
             </div>
             <Button 
               onClick={handleFixCategories} 
               disabled={isFixingCategories}
               size="sm"
+              className="rounded-full"
             >
               {isFixingCategories ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Fixing...
+                  Correzione...
                 </>
               ) : (
-                'Fix Categories'
+                'Correggi Categorie'
               )}
             </Button>
           </div>
 
-          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl">
             <div className="flex-1">
-              <h4 className="font-semibold text-sm mb-1">Clean Duplicate Locations</h4>
+              <h4 className="font-semibold text-sm mb-1">Pulisci Luoghi Duplicati</h4>
               <p className="text-xs text-muted-foreground">
-                Removes invalid duplicate entries with missing coordinates and wrong Google Place IDs
+                Rimuove voci duplicate non valide con coordinate mancanti e Google Place ID errati
               </p>
             </div>
             <Button 
@@ -155,14 +154,15 @@ const DataFixUtility = () => {
               disabled={isCleaningDuplicates}
               size="sm"
               variant="destructive"
+              className="rounded-full"
             >
               {isCleaningDuplicates ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Cleaning...
+                  Pulizia...
                 </>
               ) : (
-                'Clean Duplicates'
+                'Pulisci Duplicati'
               )}
             </Button>
           </div>
