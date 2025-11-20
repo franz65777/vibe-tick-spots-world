@@ -57,38 +57,22 @@ const DataFixUtility = () => {
   const handleCleanDuplicates = async () => {
     setIsCleaningDuplicates(true);
     try {
-      // Delete bad location entries with invalid data
-      const badLocationIds = ['cc443454-664b-4706-a50e-bf5e8bde2523', 'd035a816-2e21-4ea8-82a5-827f5a655a12'];
-      
-      // First delete user_saved_locations references
-      const { error: savedError } = await supabase
-        .from('user_saved_locations')
-        .delete()
-        .in('location_id', badLocationIds);
-      
-      if (savedError) throw savedError;
-      
-      // Delete the bad locations
-      const { error: locError } = await supabase
-        .from('locations')
-        .delete()
-        .in('id', badLocationIds);
-      
-      if (locError) throw locError;
-      
-      toast.success('Duplicate locations cleaned!', {
-        description: 'Removed 2 invalid duplicate entries (B Bar and Brownes of Sandymount)'
+      const { data, error } = await supabase.functions.invoke('cleanup-duplicate-locations');
+
+      if (error) throw error;
+
+      toast.success('Duplicate locations merged!', {
+        description: data?.message || 'Nearby locations with identical coordinates have been merged into a single location',
       });
     } catch (error) {
       console.error('Error cleaning duplicates:', error);
-      toast.error('Failed to clean duplicates', {
-        description: error.message
+      toast.error('Failed to merge duplicates', {
+        description: (error as Error).message,
       });
     } finally {
       setIsCleaningDuplicates(false);
     }
   };
-
   return (
     <div className="space-y-4">
       {/* Location Data Fix Utility */}
