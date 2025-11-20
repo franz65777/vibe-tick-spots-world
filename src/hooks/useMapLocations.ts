@@ -109,91 +109,60 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
     setError(null);
 
     try {
-      console.log(`🗺️ Fetching ${mapFilter} locations for categories:`, selectedCategories);
-
-      let query = supabase.from('locations').select(`
-        id,
-        name,
-        category,
-        address,
-        city,
-        latitude,
-        longitude,
-        created_by,
-        created_at,
-        user_saved_locations!left(id, user_id)
-      `);
-
-      // Apply category filters if any selected
-      if (selectedCategories.length > 0) {
-        query = query.in('category', selectedCategories);
-      }
-
-      // Apply city filter if available
-      if (currentCity && currentCity !== 'Unknown City') {
-        query = query.or(`city.ilike.%${currentCity}%,address.ilike.%${currentCity}%`);
-      }
+      console.log(`🗺️ Fetching ${mapFilter} locations${mapBounds ? ' within map bounds' : currentCity ? ` for city: ${currentCity}` : ''}`);
 
       let finalLocations: MapLocation[] = [];
 
       switch (mapFilter) {
         case 'shared': {
-          // Fetch current user's followers and close friends in parallel
-          const [followData, closeFriendData] = await Promise.all([
-            supabase.from('follows').select('follower_id').eq('following_id', user.id),
-            supabase.from('close_friends').select('friend_id').eq('user_id', user.id)
-          ]);
-
-          const followerIds = followData.data?.map(f => f.follower_id) || [];
-          const closeFriendIds = closeFriendData.data?.map(cf => cf.friend_id) || [];
-
-          // Fetch ALL location shares
-          const { data: allShares, error: sharedError } = await supabase
+          // Fetch active location shares
+          let sharesQuery = supabase
             .from('user_location_shares')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(200);
-
-          if (sharedError) {
-            console.error('Error fetching shared locations:', sharedError);
-            finalLocations = [];
+            .select(`
+              id,
+              location_id,
+              latitude,
+              longitude,
+              expires_at,
+              user_id,
+              created_at,
+              location:locations(name, category, city, address)
+            `)
+            .gt('expires_at', new Date().toISOString());
+          
+          // Apply bounds filter if provided
+          if (mapBounds) {
+            sharesQuery = sharesQuery
+              .gte('latitude', mapBounds.south)
+              .lte('latitude', mapBounds.north)
+              .gte('longitude', mapBounds.west)
+              .lte('longitude', mapBounds.east);
+          }
+          
+          const { data: shares, error: sharesError } = await sharesQuery.order('created_at', { ascending: false });
+          
+          if (sharesError) {
+            console.error('Error fetching active shares:', sharesError);
             break;
           }
 
-          // Filter shares based on visibility rules
-          const visibleShares = (allShares || []).filter(share => {
-            if (share.user_id === user.id) return false;
-            
-            if (share.share_type === 'all_followers') {
-              return followerIds.includes(share.user_id);
-            } else if (share.share_type === 'close_friends') {
-              return closeFriendIds.includes(share.user_id);
-            } else if (share.share_type === 'specific_users') {
-              return share.shared_with_user_ids?.includes(user.id);
-            }
-            return false;
-          });
-
-          if (visibleShares.length === 0) {
-            finalLocations = [];
-            break;
-          }
-
-          // Fetch profiles for all visible shares
-          const userIds = [...new Set(visibleShares.map(s => s.user_id))];
-          const { data: profiles } = await supabase
+          // Get profile data for users sharing locations
+          const userIds = shares?.map(s => s.user_id).filter(Boolean) || [];
+          const { data: profiles } = userIds.length > 0 ? await supabase
             .from('profiles')
             .select('id, username, avatar_url')
-            .in('id', userIds);
+            .in('id', userIds) : { data: [] };
 
-          const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+          const profileMap = new Map<string, { id: string; username: string; avatar_url: string | null }>(
+            profiles?.map(p => [p.id, p] as [string, { id: string; username: string; avatar_url: string | null }]) || []
+          );
 
-          finalLocations = visibleShares.map(share => ({
-            id: share.location_id || share.id,
-            name: share.location_name,
-            category: 'restaurant',
-            address: share.location_address,
-            city: '',
+          finalLocations = (shares || []).map(share => ({
+            id: share.location_id || `share-${share.id}`,
+            name: share.location?.name || 'Shared Location',
+            category: share.location?.category || 'Unknown',
+            address: share.location?.address,
+            city: share.location?.city,
             coordinates: {
               lat: Number(share.latitude) || 0,
               lng: Number(share.longitude) || 0
@@ -210,10 +179,8 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
         }
 
         case 'following': {
-          // When map bounds are provided, fetch locations directly from the database
-          // instead of using RPC functions which don't support bounds filtering
+          // When map bounds are provided, fetch locations directly within bounds
           if (mapBounds) {
-            // Fetch locations within bounds from followed users
             const { data: followedUsers } = await supabase
               .from('follows')
               .select('following_id')
@@ -226,7 +193,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               break;
             }
             
-            // Fetch internal locations
+            // Fetch internal locations within bounds
             const { data: locations } = await supabase
               .from('locations')
               .select('*')
@@ -238,10 +205,10 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               .not('latitude', 'is', null)
               .not('longitude', 'is', null);
             
-            // Fetch saved places
+            // Fetch saved places within bounds
             const { data: savedPlaces } = await supabase
               .from('saved_places')
-              .select('*, place:places_cache(*)')
+              .select('place_id, created_at, user_id, place:places_cache(id, name, category, city, latitude, longitude)')
               .in('user_id', followedUserIds);
             
             // Convert to MapLocation format
@@ -261,8 +228,8 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
             }));
             
             const fromSavedPlaces: MapLocation[] = (savedPlaces || [])
-              .filter(sp => sp.place?.latitude && sp.place?.longitude)
-              .filter(sp => {
+              .filter((sp: any) => sp.place?.latitude && sp.place?.longitude)
+              .filter((sp: any) => {
                 const lat = Number(sp.place.latitude);
                 const lng = Number(sp.place.longitude);
                 return lat >= mapBounds.south && lat <= mapBounds.north &&
@@ -288,7 +255,7 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               return true;
             });
           } else {
-            // Use RPC functions when no bounds (original behavior for city search)
+            // Use RPC functions when no bounds (city search)
             const [locRes, placesRes] = await Promise.all([
               supabase.rpc('get_following_saved_locations'),
               supabase.rpc('get_following_saved_places', { limit_count: 200 })
@@ -301,190 +268,272 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               console.error('Error fetching following saved places:', placesRes.error);
             }
 
-          const fromLocations: MapLocation[] = (locRes.data as any[] | null)?.map((row: any) => ({
-            id: row.id,
-            name: row.name,
-            category: row.category,
-            address: row.address,
-            city: row.city,
-            coordinates: {
-              lat: Number(row.latitude) || 0,
-              lng: Number(row.longitude) || 0,
-            },
-            isFollowing: true,
-            user_id: row.created_by,
-            created_at: row.created_at,
-          })) ?? [];
-
-          const fromSavedPlaces: MapLocation[] = (placesRes.data as any[] | null)?.map((row: any) => {
-            const coords = (row.coordinates as any) || {};
-            return {
-              id: row.place_id,
-              name: row.place_name,
-              category: row.place_category || 'Unknown',
-              address: undefined,
-              city: row.city || undefined,
+            const fromLocations: MapLocation[] = (locRes.data as any[] | null)?.map((row: any) => ({
+              id: row.id,
+              name: row.name,
+              category: row.category,
+              address: row.address,
+              city: row.city,
               coordinates: {
-                lat: Number(coords.lat) || 0,
-                lng: Number(coords.lng) || 0,
+                lat: Number(row.latitude) || 0,
+                lng: Number(row.longitude) || 0,
               },
               isFollowing: true,
-              user_id: row.user_id,
+              user_id: row.created_by,
               created_at: row.created_at,
-            } as MapLocation;
-          }) ?? [];
+            })) ?? [];
 
-          // Merge and apply filters
-          const merged = [...fromLocations, ...fromSavedPlaces].filter((loc) => {
-            // Apply category filter
-            if (selectedCategories.length > 0 && !selectedCategories.includes(loc.category)) return false;
-            
-            // Apply specific user filter if provided
-            if (selectedFollowedUserIds.length > 0 && !selectedFollowedUserIds.includes(loc.user_id)) return false;
-            
-            return true;
-          });
+            const fromSavedPlaces: MapLocation[] = (placesRes.data as any[] | null)?.map((row: any) => {
+              const coords = (row.coordinates as any) || {};
+              return {
+                id: row.place_id,
+                name: row.place_name,
+                category: row.place_category || 'Unknown',
+                address: undefined,
+                city: row.city || undefined,
+                coordinates: {
+                  lat: Number(coords.lat) || 0,
+                  lng: Number(coords.lng) || 0,
+                },
+                isFollowing: true,
+                user_id: row.user_id,
+                created_at: row.created_at,
+              };
+            }) ?? [];
 
-          finalLocations = merged;
-          break;
-        }
+            const combined = [...fromLocations, ...fromSavedPlaces];
 
-        case 'recommended': {
-          // Get recommended locations using the recommendation service
-          const { getRecommendedLocations } = await import('@/services/recommendationService');
-          const recommendations = await getRecommendedLocations(
-            user.id,
-            currentCity && currentCity !== 'Unknown City' ? currentCity : undefined,
-            100,
-            selectedCategories.length === 1 ? selectedCategories[0] : null
-          );
-
-          finalLocations = recommendations.map(rec => ({
-            id: rec.id,
-            name: rec.name,
-            category: rec.category,
-            address: rec.address,
-            city: rec.city,
-            coordinates: {
-              lat: Number(rec.latitude) || 0,
-              lng: Number(rec.longitude) || 0
-            },
-            isRecommended: true,
-            recommendationScore: rec.score * 10, // Convert 0-1 score to 1-10
-            user_id: user.id,
-            created_at: new Date().toISOString()
-          }));
+            // Filter by city and categories
+            finalLocations = combined.filter(location => {
+              if (selectedCategories.length > 0 && !selectedCategories.includes(location.category)) return false;
+              if (currentCity && location.city && !location.city.toLowerCase().includes(currentCity.toLowerCase())) return false;
+              return true;
+            });
+          }
           break;
         }
 
         case 'popular': {
-          // Get popular locations based on likes and saves
-          const { data: popularData } = await query
+          // Popular locations with bounds or city filter
+          let locationsQuery = supabase
+            .from('locations')
+            .select(`
+              id, name, category, address, city, latitude, longitude, created_by, created_at,
+              saves:user_saved_locations(count)
+            `)
             .not('latitude', 'is', null)
             .not('longitude', 'is', null)
             .order('created_at', { ascending: false })
-            .limit(50);
+            .limit(200);
 
-          if (popularData) {
-            finalLocations = popularData.map(location => ({
-              id: location.id,
-              name: location.name,
-              category: location.category,
-              address: location.address,
-              city: location.city,
-              coordinates: {
-                lat: Number(location.latitude) || 0,
-                lng: Number(location.longitude) || 0
-              },
-              user_id: location.created_by,
-              created_at: location.created_at,
-              isSaved: location.user_saved_locations && location.user_saved_locations.some((saved: any) => saved.user_id === user.id)
-            }));
+          // Apply bounds filter if provided (prioritize over city filter)
+          if (mapBounds) {
+            locationsQuery = locationsQuery
+              .gte('latitude', mapBounds.south)
+              .lte('latitude', mapBounds.north)
+              .gte('longitude', mapBounds.west)
+              .lte('longitude', mapBounds.east);
+          } else if (currentCity && currentCity.trim()) {
+            locationsQuery = locationsQuery.ilike('city', `%${currentCity}%`);
           }
+
+          const { data: locations, error: locError } = await locationsQuery;
+
+          if (locError) {
+            console.error('Error fetching popular locations:', locError);
+            break;
+          }
+
+          let placesQuery = supabase
+            .from('places_cache')
+            .select(`
+              id, name, category, city, latitude, longitude,
+              saves:saved_places(count)
+            `)
+            .not('latitude', 'is', null)
+            .not('longitude', 'is', null)
+            .order('created_at', { ascending: false })
+            .limit(200);
+
+          // Apply bounds filter if provided (prioritize over city filter)
+          if (mapBounds) {
+            placesQuery = placesQuery
+              .gte('latitude', mapBounds.south)
+              .lte('latitude', mapBounds.north)
+              .gte('longitude', mapBounds.west)
+              .lte('longitude', mapBounds.east);
+          } else if (currentCity && currentCity.trim()) {
+            placesQuery = placesQuery.ilike('city', `%${currentCity}%`);
+          }
+
+          const { data: places, error: placesError } = await placesQuery;
+
+          if (placesError) {
+            console.error('Error fetching popular places:', placesError);
+            break;
+          }
+
+          const fromLocations: MapLocation[] = (locations || []).map((loc: any) => ({
+            id: loc.id,
+            name: loc.name,
+            category: loc.category,
+            address: loc.address,
+            city: loc.city,
+            coordinates: {
+              lat: Number(loc.latitude) || 0,
+              lng: Number(loc.longitude) || 0,
+            },
+            user_id: loc.created_by,
+            created_at: loc.created_at,
+          }));
+
+          const fromPlaces: MapLocation[] = (places || []).map((place: any) => ({
+            id: place.id,
+            name: place.name,
+            category: place.category || 'Unknown',
+            address: undefined,
+            city: place.city || 'Unknown',
+            coordinates: {
+              lat: Number(place.latitude) || 0,
+              lng: Number(place.longitude) || 0,
+            },
+            user_id: user.id,
+            created_at: place.created_at || new Date().toISOString(),
+          }));
+
+          finalLocations = [...fromLocations, ...fromPlaces].filter(location => {
+            if (selectedCategories.length > 0 && !selectedCategories.includes(location.category)) {
+              return false;
+            }
+            return true;
+          });
           break;
         }
 
         case 'saved': {
-          // Get user's saved locations from user_saved_locations
-          const { data: savedData } = await supabase
-            .from('user_saved_locations')
-            .select(`
-              location_id,
-              created_at,
-              save_tag,
-              locations!inner(
-                id,
-                name,
-                category,
-                address,
-                city,
-                latitude,
-                longitude,
-                created_by,
-                google_place_id
-              )
-            `)
-            .eq('user_id', user.id);
-
-          // Get user's saved places from saved_places (Google Places)
-          const { data: savedPlaces } = await supabase
-            .from('saved_places')
-            .select('place_id, place_name, place_category, city, coordinates, created_at')
-            .eq('user_id', user.id);
-
-          // Combine both sources
+          // User's saved locations with bounds or city filter
           const locationMap = new Map<string, MapLocation>();
 
-          // Add locations from user_saved_locations
-          if (savedData) {
-            savedData
-              .filter(item => item.locations)
-              .forEach(item => {
-                // Apply save tag filter if any selected
-                if (selectedSaveTags.length > 0) {
-                  const saveTag = item.save_tag || 'general';
-                  if (!selectedSaveTags.includes(saveTag)) {
-                    return; // Skip this location if it doesn't match the filter
-                  }
-                }
-                
-                const key = item.locations.google_place_id || item.locations.id;
-                if (!locationMap.has(key)) {
-                  locationMap.set(key, {
-                    id: item.locations.id,
-                    name: item.locations.name,
-                    category: item.locations.category,
-                    address: item.locations.address,
-                    city: item.locations.city,
-                    coordinates: {
-                      lat: Number(item.locations.latitude) || 0,
-                      lng: Number(item.locations.longitude) || 0
-                    },
-                    isSaved: true,
-                    user_id: item.locations.created_by,
-                    created_at: item.created_at
-                  });
-                }
-              });
+          let shouldFetchLocations = true;
+          let shouldFetchPlaces = true;
+
+          if (selectedSaveTags.length > 0) {
+            if (selectedSaveTags.includes('location') && selectedSaveTags.length === 1) {
+              shouldFetchPlaces = false;
+            } else if (selectedSaveTags.includes('place') && selectedSaveTags.length === 1) {
+              shouldFetchLocations = false;
+            }
           }
 
-          // Add places from saved_places
-          if (savedPlaces && selectedSaveTags.length === 0) {
-            savedPlaces.forEach(sp => {
-              const coords = (sp.coordinates as any) || {};
+          // Fetch internal saved locations
+          if (shouldFetchLocations) {
+            let savedLocationsQuery = supabase
+              .from('user_saved_locations')
+              .select(`
+                location_id,
+                save_tag,
+                created_at,
+                location:locations (
+                  id, name, category, address, city, latitude, longitude, created_by
+                )
+              `)
+              .eq('user_id', user.id)
+              .not('location', 'is', null);
+
+            if (selectedSaveTags.length > 0 && !selectedSaveTags.includes('location')) {
+              savedLocationsQuery = savedLocationsQuery.in('save_tag', selectedSaveTags);
+            }
+
+            const { data: savedLocations } = await savedLocationsQuery;
+
+            (savedLocations || []).forEach((sl: any) => {
+              const loc = sl.location;
+              if (!loc?.latitude || !loc?.longitude) return;
+              
+              const lat = Number(loc.latitude);
+              const lng = Number(loc.longitude);
+              
+              // Apply bounds filter if provided
+              if (mapBounds) {
+                if (lat < mapBounds.south || lat > mapBounds.north ||
+                    lng < mapBounds.west || lng > mapBounds.east) {
+                  return;
+                }
+              } else if (currentCity && currentCity.trim()) {
+                // Apply city filter only if no bounds
+                if (!loc.city || !loc.city.toLowerCase().includes(currentCity.toLowerCase())) {
+                  return;
+                }
+              }
+
+              const key = loc.id || sl.location_id;
+              if (key && !locationMap.has(key)) {
+                locationMap.set(key, {
+                  id: key,
+                  name: loc.name,
+                  category: loc.category || 'Unknown',
+                  address: loc.address,
+                  city: loc.city,
+                  coordinates: { lat, lng },
+                  isSaved: true,
+                  user_id: loc.created_by || user.id,
+                  created_at: sl.created_at
+                });
+              }
+            });
+          }
+
+          // Fetch Google saved places
+          if (shouldFetchPlaces) {
+            let savedPlacesQuery = supabase
+              .from('saved_places')
+              .select(`
+                place_id,
+                save_tag,
+                created_at,
+                place:places_cache (
+                  id, name, category, city, latitude, longitude, coordinates
+                )
+              `)
+              .eq('user_id', user.id)
+              .not('place', 'is', null);
+
+            if (selectedSaveTags.length > 0 && !selectedSaveTags.includes('place')) {
+              savedPlacesQuery = savedPlacesQuery.in('save_tag', selectedSaveTags);
+            }
+
+            const { data: savedPlaces } = await savedPlacesQuery;
+
+            (savedPlaces || []).forEach((sp: any) => {
+              const place = sp.place;
+              if (!place?.latitude || !place?.longitude) return;
+              
+              const coords = place.coordinates as any || {};
+              const lat = Number(place.latitude) || Number(coords.lat);
+              const lng = Number(place.longitude) || Number(coords.lng);
+              
+              // Apply bounds filter if provided
+              if (mapBounds) {
+                if (lat < mapBounds.south || lat > mapBounds.north ||
+                    lng < mapBounds.west || lng > mapBounds.east) {
+                  return;
+                }
+              } else if (currentCity && currentCity.trim()) {
+                // Apply city filter only if no bounds
+                if (!place.city || !place.city.toLowerCase().includes(currentCity.toLowerCase())) {
+                  return;
+                }
+              }
+
               const key = sp.place_id;
-              if (!locationMap.has(key)) {
-                // Create a pseudo location for Google Place
+              if (key && !locationMap.has(key)) {
                 locationMap.set(key, {
                   id: sp.place_id,
-                  name: sp.place_name,
-                  category: sp.place_category || 'Unknown',
+                  name: place.name,
+                  category: place.category || 'Unknown',
                   address: '',
-                  city: sp.city || 'Unknown',
-                  coordinates: {
-                    lat: Number(coords.lat) || 0,
-                    lng: Number(coords.lng) || 0
-                  },
+                  city: place.city || 'Unknown',
+                  coordinates: { lat, lng },
                   isSaved: true,
                   user_id: user.id,
                   created_at: sp.created_at
@@ -495,7 +544,6 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
 
           finalLocations = Array.from(locationMap.values())
             .filter(location => {
-              // Apply category filter
               if (selectedCategories.length > 0 && !selectedCategories.includes(location.category)) {
                 return false;
               }
@@ -505,39 +553,15 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
         }
       }
 
-      // Deduplicate by location id
-      const byId = new Map<string, MapLocation>();
-      for (const loc of finalLocations) {
-        if (loc?.id) byId.set(loc.id, loc);
-      }
-      finalLocations = Array.from(byId.values());
-
       // Filter out locations with invalid coordinates
       finalLocations = finalLocations.filter((location) => {
         const { lat, lng } = location.coordinates || { lat: 0, lng: 0 };
         return Number.isFinite(lat) && Number.isFinite(lng) && !(lat === 0 && lng === 0);
       });
 
-      // Apply map bounds filter if provided
-      if (mapBounds) {
-        finalLocations = finalLocations.filter((location) => {
-          const { lat, lng } = location.coordinates;
-          return lat >= mapBounds.south && lat <= mapBounds.north && 
-                 lng >= mapBounds.west && lng <= mapBounds.east;
-        });
-        console.log(`🗺️ Filtered to ${finalLocations.length} locations within map bounds`);
-      }
-
-      // If following filter, indicate presence
-      if (mapFilter === 'following') {
-        console.log('✅ Following locations after filter:', finalLocations.length);
-      }
-
-      console.log(`✅ Found ${finalLocations.length} ${mapFilter} locations (after dedupe)`);
+      console.log(`✅ Found ${finalLocations.length} ${mapFilter} locations`);
       
-      // Cache the results (including bounds in key)
-      const boundsKey = mapBounds ? `${mapBounds.north},${mapBounds.south},${mapBounds.east},${mapBounds.west}` : '';
-      const cacheKey = `${mapFilter}-${selectedCategories.join(',')}-${currentCity}-${selectedFollowedUserIds.join(',')}-${selectedSaveTags.join(',')}-${boundsKey}`;
+      // Cache the results
       locationCache.set(cacheKey, {
         data: finalLocations,
         timestamp: Date.now()
