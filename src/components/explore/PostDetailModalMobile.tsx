@@ -68,6 +68,35 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
     }
   }, [isOpen, postId]);
 
+  const loadSinglePost = async () => {
+    const { data: postData, error: postError } = await supabase
+      .from('posts')
+      .select('*')
+      .eq('id', postId)
+      .maybeSingle();
+
+    if (postError) throw postError;
+    if (!postData) throw new Error('Post not found');
+
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('username, avatar_url')
+      .eq('id', postData.user_id)
+      .single();
+
+    let locationData = null;
+    if (postData.location_id) {
+      const { data: locData } = await supabase
+        .from('locations')
+        .select('id, name, category, city, latitude, longitude')
+        .eq('id', postData.location_id)
+        .single();
+      locationData = locData;
+    }
+    
+    setPosts([{ ...postData, profiles: profileData, locations: locationData }] as any);
+  };
+
   const loadPostData = async () => {
     try {
       if (locationId) {
@@ -80,9 +109,16 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
 
         if (postsError) throw postsError;
 
-        // Load profiles for all posts
+        // If for some reason there are no posts for this location, fall back to single post load
+        if (!postsData || postsData.length === 0) {
+          console.warn('No posts found for location, falling back to single post load', { locationId, postId });
+          await loadSinglePost();
+          return;
+        }
+
+        // Load profiles and locations for all posts
         const postsWithProfiles = await Promise.all(
-          (postsData || []).map(async (post) => {
+          postsData.map(async (post) => {
             const { data: profileData } = await supabase
               .from('profiles')
               .select('username, avatar_url')
@@ -121,8 +157,15 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
 
         if (postsError) throw postsError;
 
+        // If for some reason there are no posts for this user, fall back to single post load
+        if (!postsData || postsData.length === 0) {
+          console.warn('No posts found for user, falling back to single post load', { userId, postId });
+          await loadSinglePost();
+          return;
+        }
+
         const postsWithProfiles = await Promise.all(
-          (postsData || []).map(async (post) => {
+          postsData.map(async (post) => {
             const { data: profileData } = await supabase
               .from('profiles')
               .select('username, avatar_url')
@@ -151,33 +194,8 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
 
         setPosts(postsWithProfiles as any);
       } else {
-        // Load single post
-        const { data: postData, error: postError } = await supabase
-          .from('posts')
-          .select('*')
-          .eq('id', postId)
-          .maybeSingle();
-
-        if (postError) throw postError;
-        if (!postData) throw new Error('Post not found');
-
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('username, avatar_url')
-          .eq('id', postData.user_id)
-          .single();
-
-        let locationData = null;
-        if (postData.location_id) {
-          const { data: locData } = await supabase
-            .from('locations')
-            .select('id, name, category, city, latitude, longitude')
-            .eq('id', postData.location_id)
-            .single();
-          locationData = locData;
-        }
-        
-        setPosts([{...postData, profiles: profileData, locations: locationData}] as any);
+        // Load a single post by id
+        await loadSinglePost();
       }
     } catch (error) {
       console.error('Error loading post:', error);
@@ -185,7 +203,6 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
       setLoading(false);
     }
   };
-
   const handleCommentClick = async () => {
     setCommentsDrawerOpen(true);
     const postComments = await getPostComments(postId);
