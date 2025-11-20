@@ -149,13 +149,32 @@ const LeafletMapSetup = ({
     tile.addTo(map);
     tileLayerRef.current = tile;
 
-    // Initialize marker cluster group
+    // Initialize marker cluster group with custom icon
     const markerClusterGroup = L.markerClusterGroup({
       showCoverageOnHover: false,
       zoomToBoundsOnClick: true,
       spiderfyOnMaxZoom: true,
       removeOutsideVisibleBounds: true,
       maxClusterRadius: 80,
+      iconCreateFunction: (cluster: any) => {
+        const count = cluster.getChildCount();
+        let size = 'small';
+        let clusterSize = 40;
+        
+        if (count > 100) {
+          size = 'large';
+          clusterSize = 60;
+        } else if (count > 30) {
+          size = 'medium';
+          clusterSize = 50;
+        }
+        
+        return L.divIcon({
+          html: `<div class="cluster-inner ${size}">${count}</div>`,
+          className: `custom-cluster-icon ${size}`,
+          iconSize: L.point(clusterSize, clusterSize),
+        });
+      },
     });
     map.addLayer(markerClusterGroup);
     markerClusterGroupRef.current = markerClusterGroup;
@@ -595,33 +614,42 @@ const LeafletMapSetup = ({
 
       {/* Custom cluster styling */}
       <style>{`
-        .marker-cluster-small,
-        .marker-cluster-medium,
-        .marker-cluster-large {
-          background-color: hsl(var(--primary) / 0.2) !important;
-          border: 2px solid hsl(var(--primary)) !important;
+        .custom-cluster-icon {
+          background: transparent !important;
+          border: none !important;
         }
         
-        .marker-cluster-small div,
-        .marker-cluster-medium div,
-        .marker-cluster-large div {
-          background-color: hsl(var(--primary)) !important;
-          color: hsl(var(--primary-foreground)) !important;
-          font-weight: 600;
+        .cluster-inner {
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+          color: white;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          transition: all 0.2s ease;
+        }
+        
+        .cluster-inner.small {
+          background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 100%);
           font-size: 14px;
         }
         
-        .marker-cluster {
-          animation: pulse 2s infinite;
+        .cluster-inner.medium {
+          background: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(var(--accent) / 0.8) 100%);
+          font-size: 16px;
         }
         
-        @keyframes pulse {
-          0%, 100% {
-            transform: scale(1);
-          }
-          50% {
-            transform: scale(1.05);
-          }
+        .cluster-inner.large {
+          background: linear-gradient(135deg, hsl(var(--destructive)) 0%, hsl(var(--destructive) / 0.8) 100%);
+          font-size: 18px;
+        }
+        
+        .custom-cluster-icon:hover .cluster-inner {
+          transform: scale(1.1);
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
         }
       `}</style>
     </>

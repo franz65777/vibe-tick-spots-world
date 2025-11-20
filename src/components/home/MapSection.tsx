@@ -83,13 +83,17 @@ const MapSection = ({
     }
   }, [isListViewOpen, isActiveSharesOpen]);
   
-  // Fetch locations based on current filters
+  // State for map bounds to enable dynamic loading
+  const [mapBounds, setMapBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
+  
+  // Fetch locations based on current filters and map bounds
   const { locations, loading, error, refetch } = useMapLocations({
     mapFilter: activeFilter,
     selectedCategories,
     currentCity,
     selectedFollowedUserIds,
-    selectedSaveTags
+    selectedSaveTags,
+    mapBounds: mapBounds || undefined,
   });
 
   // Track sourcePostId separately to preserve it
@@ -228,9 +232,14 @@ const MapSection = ({
   };
 
   const handleMapMove = (center: { lat: number; lng: number }, bounds: any) => {
-    // For future implementation: load pins based on map bounds
-    // For now, clustering handles the display of many pins efficiently
-    console.log('🗺️ Map moved to:', center);
+    // Update map bounds for dynamic loading
+    setMapBounds({
+      north: bounds.getNorth(),
+      south: bounds.getSouth(),
+      east: bounds.getEast(),
+      west: bounds.getWest(),
+    });
+    console.log('🗺️ Map moved - loading pins within bounds');
   };
 
   return (

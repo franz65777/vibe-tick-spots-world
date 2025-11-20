@@ -33,13 +33,14 @@ interface UseMapLocationsProps {
   currentCity: string;
   selectedFollowedUserIds?: string[];
   selectedSaveTags?: string[];
+  mapBounds?: { north: number; south: number; east: number; west: number };
 }
 
 // Cache for map locations to avoid redundant queries
 const locationCache = new Map<string, { data: MapLocation[]; timestamp: number }>();
 const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
 
-export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, selectedFollowedUserIds = [], selectedSaveTags = [] }: UseMapLocationsProps) => {
+export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, selectedFollowedUserIds = [], selectedSaveTags = [], mapBounds }: UseMapLocationsProps) => {
   const [locations, setLocations] = useState<MapLocation[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,13 +87,14 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
       }
       supabase.removeChannel(channel);
     };
-  }, [mapFilter, selectedCategories.join(','), currentCity, user?.id, selectedFollowedUserIds.join(','), selectedSaveTags.join(',')]);
+  }, [mapFilter, selectedCategories.join(','), currentCity, user?.id, selectedFollowedUserIds.join(','), selectedSaveTags.join(','), mapBounds ? `${mapBounds.north},${mapBounds.south},${mapBounds.east},${mapBounds.west}` : '']);
 
   const fetchLocations = async () => {
     if (!user) return;
     
     // Generate cache key
-    const cacheKey = `${mapFilter}-${selectedCategories.join(',')}-${currentCity}-${selectedFollowedUserIds.join(',')}-${selectedSaveTags.join(',')}`;
+    const boundsKey = mapBounds ? `${mapBounds.north},${mapBounds.south},${mapBounds.east},${mapBounds.west}` : '';
+    const cacheKey = `${mapFilter}-${selectedCategories.join(',')}-${currentCity}-${selectedFollowedUserIds.join(',')}-${selectedSaveTags.join(',')}-${boundsKey}`;
     
     // Check cache first
     const cached = locationCache.get(cacheKey);
@@ -438,6 +440,16 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
         return Number.isFinite(lat) && Number.isFinite(lng) && !(lat === 0 && lng === 0);
       });
 
+      // Apply map bounds filter if provided
+      if (mapBounds) {
+        finalLocations = finalLocations.filter((location) => {
+          const { lat, lng } = location.coordinates;
+          return lat >= mapBounds.south && lat <= mapBounds.north && 
+                 lng >= mapBounds.west && lng <= mapBounds.east;
+        });
+        console.log(`🗺️ Filtered to ${finalLocations.length} locations within map bounds`);
+      }
+
       // If following filter, indicate presence
       if (mapFilter === 'following') {
         console.log('✅ Following locations after filter:', finalLocations.length);
@@ -445,8 +457,9 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
 
       console.log(`✅ Found ${finalLocations.length} ${mapFilter} locations (after dedupe)`);
       
-      // Cache the results
-      const cacheKey = `${mapFilter}-${selectedCategories.join(',')}-${currentCity}-${selectedFollowedUserIds.join(',')}`;
+      // Cache the results (including bounds in key)
+      const boundsKey = mapBounds ? `${mapBounds.north},${mapBounds.south},${mapBounds.east},${mapBounds.west}` : '';
+      const cacheKey = `${mapFilter}-${selectedCategories.join(',')}-${currentCity}-${selectedFollowedUserIds.join(',')}-${selectedSaveTags.join(',')}-${boundsKey}`;
       locationCache.set(cacheKey, {
         data: finalLocations,
         timestamp: Date.now()
