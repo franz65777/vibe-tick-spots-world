@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Image, Star } from 'lucide-react';
+import { MapPin, Image, Star, Navigation, Bookmark, BookmarkCheck } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,15 +7,27 @@ import { useAuth } from '@/contexts/AuthContext';
 import { createLeafletCustomMarker } from '@/utils/leafletMarkerCreator';
 import { formatDetailedAddress } from '@/utils/addressFormatter';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/dateFnsLocales';
+import { CategoryIcon } from '@/components/common/CategoryIcon';
+import { SaveLocationDropdown } from '@/components/common/SaveLocationDropdown';
+import { toast } from 'sonner';
 import {
   Drawer,
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { locationInteractionService } from '@/services/locationInteractionService';
+import { SAVE_TAG_OPTIONS, type SaveTag } from '@/utils/saveTags';
 
 interface LocationDetailDrawerProps {
   location: {
@@ -61,12 +73,16 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
   const { t, i18n } = useTranslation();
   const [posts, setPosts] = useState<Post[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [loading, setLoading] = useState(false);
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [fullAddress, setFullAddress] = useState<string>('');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'posts' | 'reviews'>('posts');
   const [resolvedCoordinates, setResolvedCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+  const [isSaved, setIsSaved] = useState(false);
+  const [currentSaveTag, setCurrentSaveTag] = useState<SaveTag>('general');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [directionsModalOpen, setDirectionsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
   // Leaflet (vanilla) map refs
@@ -87,6 +103,12 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
   // Fetch location details including coordinates if missing - MATCH PinDetailCard pattern
   useEffect(() => {
     if (!isOpen || !location) return;
+    
+    // Reset states when location changes
+    setPosts([]);
+    setReviews([]);
+    setLoading(false);
+    setReviewsLoading(false);
     
     const fetchLocationDetails = async () => {
       try {
@@ -171,9 +193,9 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
     };
 
     fetchLocationDetails();
-  }, [isOpen, location]);
+  }, [isOpen, location?.id, location?.name]);
 
-  // Init / update Leaflet map when opening
+  // Init / update Leaflet map when opening - FIXED for black screen
   useEffect(() => {
     if (!isOpen || !location) return;
 
@@ -183,11 +205,10 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
     if (!lat || !lng || !mapDivRef.current) return;
 
     try {
+      // Always recreate map to avoid black screen issues
       if (mapRef.current) {
-        mapRef.current.setView([lat, lng], 15);
-        // Force map refresh
-        setTimeout(() => mapRef.current?.invalidateSize(), 100);
-        return;
+        mapRef.current.remove();
+        mapRef.current = null;
       }
 
       const map = L.map(mapDivRef.current, {
@@ -196,28 +217,16 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
         zoomControl: false,
         attributionControl: true,
         doubleClickZoom: false,
+        preferCanvas: true, // Better performance
       });
 
-      // Prefer Mapbox when token present; fallback to CartoDB (same config as main map)
-      const mapboxToken = (import.meta as any).env?.VITE_MAPBOX_TOKEN as string | undefined;
-      const tileUrl = mapboxToken
-        ? (isDarkMode
-            ? `https://api.mapbox.com/styles/v1/mapbox/navigation-night-v1/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`
-            : `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`)
-        : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-
-      const tileLayer = mapboxToken
-        ? L.tileLayer(tileUrl, {
-            maxZoom: 19,
-            tileSize: 512,
-            zoomOffset: -1,
-            attribution: '&copy; OpenStreetMap, &copy; Mapbox',
-          })
-        : L.tileLayer(tileUrl, {
-            maxZoom: 19,
-            subdomains: 'abcd',
-            attribution: '&copy; OpenStreetMap, &copy; CartoDB',
-          });
+      // Use CartoDB tiles (same as main map)
+      const tileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+      const tileLayer = L.tileLayer(tileUrl, {
+        maxZoom: 19,
+        subdomains: 'abcd',
+        attribution: '&copy; OpenStreetMap, &copy; CartoDB',
+      });
 
       tileLayer.addTo(map);
 
@@ -232,13 +241,26 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
       L.marker([lat, lng], { icon }).addTo(map);
       mapRef.current = map;
 
-      // Multiple invalidate attempts to fix white tiles
-      setTimeout(() => map.invalidateSize(), 100);
-      setTimeout(() => map.invalidateSize(), 300);
-      setTimeout(() => map.invalidateSize(), 500);
+      // Force multiple invalidations with increasing delays
+      const timeouts = [50, 150, 300, 600, 1000];
+      timeouts.forEach(delay => {
+        setTimeout(() => {
+          if (mapRef.current) {
+            mapRef.current.invalidateSize();
+          }
+        }, delay);
+      });
     } catch (e) {
       console.error('Leaflet map init error', e);
     }
+
+    // Cleanup on unmount
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
   }, [isOpen, location, resolvedCoordinates, isDarkMode]);
 
   // Cleanup handled by component unmount to avoid Leaflet re-init errors
@@ -275,6 +297,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
   const fetchLocationPosts = async () => {
     if (!location) return;
     setLoading(true);
+    setPosts([]); // Clear previous posts to avoid showing wrong data
     try {
       // Match PinDetailCard pattern: ensure we have internal location_id
       let locationId = location.id;
@@ -362,6 +385,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
   const fetchReviews = async () => {
     if (!location) return;
     setReviewsLoading(true);
+    setReviews([]); // Clear previous reviews to avoid showing wrong data
     try {
       // Match PinDetailCard pattern: ensure we have internal location_id
       let locationId = location.id;
@@ -443,6 +467,101 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
       setReviewsLoading(false);
     }
   };
+
+  // Check if location is saved - using direct query to user_saved_locations
+  useEffect(() => {
+    if (!user?.id || !location?.id || !isOpen) return;
+    const checkSaved = async () => {
+      try {
+        const { data } = await supabase
+          .from('user_saved_locations')
+          .select('save_tag')
+          .eq('user_id', user.id)
+          .eq('location_id', location.id)
+          .maybeSingle();
+        
+        setIsSaved(!!data);
+        if (data?.save_tag) {
+          setCurrentSaveTag(data.save_tag as SaveTag);
+        } else {
+          setCurrentSaveTag('general');
+        }
+      } catch (error) {
+        console.error('Error checking saved status:', error);
+      }
+    };
+    checkSaved();
+  }, [user?.id, location?.id, isOpen]);
+
+  const handleSave = async (tag: SaveTag) => {
+    if (!location?.id) return;
+    setLoading(true);
+    try {
+      const saved = await locationInteractionService.saveLocation(location.id, {
+        google_place_id: (location as any).google_place_id,
+        name: location.name,
+        address: location.address,
+        latitude: lat || 0,
+        longitude: lng || 0,
+        category: location.category,
+        types: []
+      }, tag);
+      
+      if (saved) {
+        setIsSaved(true);
+        setCurrentSaveTag(tag);
+        toast.success(t('locationSaved', { ns: 'common' }));
+      } else {
+        toast.error(t('failedToSave', { ns: 'common' }));
+      }
+    } catch (error) {
+      console.error('Error saving location:', error);
+      toast.error(t('failedToSave', { ns: 'common' }));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUnsave = async () => {
+    if (!location?.id) return;
+    setLoading(true);
+    try {
+      const unsaved = await locationInteractionService.unsaveLocation(location.id);
+      if (unsaved) {
+        setIsSaved(false);
+        setCurrentSaveTag('general');
+        toast.success(t('locationRemoved', { ns: 'common' }));
+      }
+    } catch (error) {
+      console.error('Error unsaving location:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDirections = (app: 'google' | 'apple' | 'waze') => {
+    const coordsSource: any = resolvedCoordinates || location?.coordinates || {};
+    const lat = Number(coordsSource.lat ?? coordsSource.latitude ?? 0);
+    const lng = Number(coordsSource.lng ?? coordsSource.longitude ?? 0);
+    const encodedName = encodeURIComponent(location?.name || '');
+
+    let url = '';
+    switch (app) {
+      case 'google':
+        url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+        break;
+      case 'apple':
+        url = `http://maps.apple.com/?daddr=${lat},${lng}&q=${encodedName}`;
+        break;
+      case 'waze':
+        url = `https://waze.com/ul?ll=${lat},${lng}&navigate=yes&q=${encodedName}`;
+        break;
+    }
+
+    window.open(url, '_blank');
+    setDirectionsModalOpen(false);
+  };
+
   const coordSource: any = resolvedCoordinates || location?.coordinates || {};
   const lat = Number(coordSource.lat ?? coordSource.latitude ?? 0);
   const lng = Number(coordSource.lng ?? coordSource.longitude ?? 0);
@@ -455,15 +574,46 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
         <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-muted-foreground/20 mt-3 mb-2" />
 
         {/* Header - Fixed */}
-        <DrawerHeader className="flex-shrink-0 px-4 pb-4 border-b">
-          <div className="flex items-start justify-between">
-            <div className="flex-1 pr-4">
-              <DrawerTitle className="text-xl font-bold text-foreground mb-1">
+        <DrawerHeader className="flex-shrink-0 px-4 pb-3 border-b">
+          <div className="flex items-start gap-3">
+            {/* Category Icon */}
+            <div className="flex-shrink-0 mt-1">
+              <CategoryIcon category={location?.category || 'restaurant'} className="w-10 h-10" />
+            </div>
+            
+            {/* Location Info */}
+            <div className="flex-1 min-w-0">
+              <DrawerTitle className="text-xl font-bold text-foreground mb-1 text-left">
                 {location?.name}
               </DrawerTitle>
-              <div className="flex items-start gap-1 text-sm text-muted-foreground">
+              <div className="flex items-start gap-1 text-sm text-muted-foreground mb-2">
                 <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <span className="line-clamp-2">{fullAddress}</span>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                <SaveLocationDropdown
+                  isSaved={isSaved}
+                  onSave={handleSave}
+                  onUnsave={handleUnsave}
+                  currentSaveTag={currentSaveTag}
+                  open={dropdownOpen}
+                  onOpenChange={setDropdownOpen}
+                  variant="outline"
+                  size="sm"
+                  showLabel
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDirectionsModalOpen(true)}
+                  disabled={!hasValidCoordinates}
+                  className="flex-1"
+                >
+                  <Navigation className="w-4 h-4 mr-1" />
+                  {t('directions', { ns: 'common', defaultValue: 'Directions' })}
+                </Button>
               </div>
             </div>
           </div>
@@ -537,9 +687,10 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
                     <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
                   </div>
                 ) : posts.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Image className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>{t('noPostsYet', { ns: 'common', defaultValue: 'No posts yet' })}</p>
+                  <div className="text-center py-12 px-6 text-muted-foreground">
+                    <Image className="w-16 h-16 mx-auto mb-3 opacity-50" />
+                    <p className="font-semibold mb-1">{t('noPostsYet', { ns: 'common', defaultValue: 'No posts yet' })}</p>
+                    <p className="text-sm">{t('beFirstToShare', { ns: 'common', defaultValue: 'Be the first to share your experience at this place!' })}</p>
                   </div>
                 ) : (
                   <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4">
@@ -565,9 +716,10 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
                     <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
                   </div>
                 ) : reviews.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Star className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>{t('noReviewsYet', { ns: 'common', defaultValue: 'No reviews yet' })}</p>
+                  <div className="text-center py-12 px-6 text-muted-foreground">
+                    <Star className="w-16 h-16 mx-auto mb-3 opacity-50" />
+                    <p className="font-semibold mb-1">{t('noReviewsYet', { ns: 'common', defaultValue: 'No reviews yet' })}</p>
+                    <p className="text-sm">{t('beFirstToReview', { ns: 'common', defaultValue: 'Be the first to try this place and leave a review!' })}</p>
                   </div>
                 ) : (
                   <div className="space-y-4 pb-4">
@@ -603,6 +755,56 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
           </div>
         </div>
       </DrawerContent>
+
+      {/* Directions Modal */}
+      <Dialog open={directionsModalOpen} onOpenChange={setDirectionsModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('getDirections', { ns: 'common', defaultValue: 'Get Directions' })}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3 py-4">
+            <Button
+              variant="outline"
+              onClick={() => handleDirections('google')}
+              className="w-full justify-start h-auto py-3"
+            >
+              <div className="flex items-center gap-3">
+                <Navigation className="w-5 h-5" />
+                <div className="text-left">
+                  <div className="font-medium">Google Maps</div>
+                  <div className="text-xs text-muted-foreground">Open in Google Maps</div>
+                </div>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => handleDirections('apple')}
+              className="w-full justify-start h-auto py-3"
+            >
+              <div className="flex items-center gap-3">
+                <Navigation className="w-5 h-5" />
+                <div className="text-left">
+                  <div className="font-medium">Apple Maps</div>
+                  <div className="text-xs text-muted-foreground">Open in Apple Maps</div>
+                </div>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => handleDirections('waze')}
+              className="w-full justify-start h-auto py-3"
+            >
+              <div className="flex items-center gap-3">
+                <Navigation className="w-5 h-5" />
+                <div className="text-left">
+                  <div className="font-medium">Waze</div>
+                  <div className="text-xs text-muted-foreground">Open in Waze</div>
+                </div>
+              </div>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Drawer>
   );
 };
