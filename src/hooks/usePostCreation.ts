@@ -32,15 +32,14 @@ export const usePostCreation = () => {
     try {
       let locationId = null;
 
-      // STEP 1: Handle location creation/finding - CRITICAL FIX
+      // STEP 1: Handle location creation/finding - ENHANCED DEDUPLICATION
       if (location) {
-        console.log('🔍 LOCATION LINKING - CRITICAL FIX');
-        console.log('Looking for location:', location.name);
-        console.log('Google Place ID:', location.google_place_id);
+        console.log('🔍 LOCATION DEDUPLICATION - Enhanced with coordinates');
+        console.log('Looking for:', location.name, 'at', location.latitude, location.longitude);
         
-        // FIRST: Check by Google Place ID (most reliable)
         let existingLocation = null;
         
+        // STRATEGY 1: Check by Google Place ID (if available)
         if (location.google_place_id) {
           const { data: googlePlaceLocation, error: googlePlaceError } = await supabase
             .from('locations')
@@ -52,31 +51,55 @@ export const usePostCreation = () => {
             console.error('❌ Error checking by Google Place ID:', googlePlaceError);
           } else if (googlePlaceLocation) {
             existingLocation = googlePlaceLocation;
-            console.log('✅ FOUND EXISTING by Google Place ID:', existingLocation.name);
+            console.log('✅ FOUND by Google Place ID:', existingLocation.name);
           }
         }
 
-        // SECOND: If not found by Google Place ID, check by exact name match (case-insensitive)
+        // STRATEGY 2: Check by COORDINATES (prevent duplicates at same location)
+        // This is CRITICAL to prevent the duplicate issue!
+        if (!existingLocation && location.latitude && location.longitude) {
+          console.log('🔍 Checking by coordinates...');
+          
+          // Find locations within ~11 meters (0.0001 degrees)
+          const threshold = 0.0001;
+          const { data: nearbyLocations, error: coordError } = await supabase
+            .from('locations')
+            .select('id, name, address, latitude, longitude')
+            .gte('latitude', location.latitude - threshold)
+            .lte('latitude', location.latitude + threshold)
+            .gte('longitude', location.longitude - threshold)
+            .lte('longitude', location.longitude + threshold);
+
+          if (coordError) {
+            console.error('❌ Error checking by coordinates:', coordError);
+          } else if (nearbyLocations && nearbyLocations.length > 0) {
+            // Use the first nearby location (they're at the same spot)
+            existingLocation = nearbyLocations[0];
+            console.log('✅ FOUND by coordinates:', existingLocation.name, 'at same location');
+          }
+        }
+
+        // STRATEGY 3: Check by exact name match (fallback)
         if (!existingLocation) {
-          console.log('🔍 No Google Place ID match, checking by exact name...');
+          console.log('🔍 Checking by name match...');
           
           const { data: nameLocation, error: nameError } = await supabase
             .from('locations')
             .select('id, name, address')
-            .ilike('name', location.name) // Case-insensitive exact match
+            .ilike('name', location.name)
             .maybeSingle();
 
           if (nameError) {
             console.error('❌ Error checking by name:', nameError);
           } else if (nameLocation) {
             existingLocation = nameLocation;
-            console.log('✅ FOUND EXISTING by name:', existingLocation.name);
+            console.log('✅ FOUND by name:', existingLocation.name);
           }
         }
 
         if (existingLocation) {
           // EXISTING LOCATION FOUND - USE IT
-          console.log('✅ USING EXISTING LOCATION ID:', existingLocation.id);
+          console.log('✅ REUSING LOCATION ID:', existingLocation.id);
           locationId = existingLocation.id;
         } else {
           // CREATE NEW LOCATION
@@ -85,7 +108,7 @@ export const usePostCreation = () => {
           const { data: newLocation, error: locationError } = await supabase
             .from('locations')
             .insert({
-              google_place_id: location.google_place_id,
+              google_place_id: location.google_place_id || null,
               name: location.name,
               address: location.address,
               latitude: location.latitude,
@@ -99,11 +122,11 @@ export const usePostCreation = () => {
             .single();
 
           if (locationError) {
-            console.error('❌ Error creating new location:', locationError);
+            console.error('❌ Error creating location:', locationError);
             throw locationError;
           }
           
-          console.log('✅ NEW LOCATION CREATED with ID:', newLocation.id);
+          console.log('✅ NEW LOCATION CREATED:', newLocation.id);
           locationId = newLocation.id;
         }
       }
