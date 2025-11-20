@@ -6,7 +6,6 @@ const corsHeaders = {
 };
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -17,50 +16,92 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    console.log('Starting cleanup of duplicate locations...');
+    console.log('🔍 Starting intelligent duplicate location cleanup...');
 
-    // These are the bad duplicate entries with invalid data (no coordinates, wrong google_place_id)
-    const badLocationIds = [
-      'cc443454-664b-4706-a50e-bf5e8bde2523', // Bad B Bar duplicate
-      'd035a816-2e21-4ea8-82a5-827f5a655a12'  // Bad Brownes of Sandymount duplicate
-    ];
-
-    // First, delete user_saved_locations references
-    const { data: savedDeleted, error: savedError } = await supabaseClient
-      .from('user_saved_locations')
-      .delete()
-      .in('location_id', badLocationIds)
-      .select();
-
-    if (savedError) {
-      console.error('Error deleting user_saved_locations:', savedError);
-      throw savedError;
-    }
-
-    console.log(`Deleted ${savedDeleted?.length || 0} user_saved_locations references`);
-
-    // Delete the bad locations
-    const { data: locationsDeleted, error: locError } = await supabaseClient
+    // Get all locations
+    const { data: allLocations, error: fetchError } = await supabaseClient
       .from('locations')
-      .delete()
-      .in('id', badLocationIds)
-      .select();
+      .select('id, name, address, latitude, longitude, created_at, google_place_id')
+      .order('created_at', { ascending: true });
 
-    if (locError) {
-      console.error('Error deleting locations:', locError);
-      throw locError;
+    if (fetchError) throw fetchError;
+
+    console.log(`Found ${allLocations.length} total locations`);
+
+    const duplicates: Array<{ keep: string; remove: string[] }> = [];
+    const processed = new Set<string>();
+    const threshold = 0.0001; // ~11 meters
+
+    // Find duplicates by coordinates
+    for (let i = 0; i < allLocations.length; i++) {
+      const loc1 = allLocations[i];
+      if (processed.has(loc1.id)) continue;
+
+      const duplicateIds: string[] = [];
+
+      for (let j = i + 1; j < allLocations.length; j++) {
+        const loc2 = allLocations[j];
+        if (processed.has(loc2.id)) continue;
+
+        const latDiff = Math.abs(loc1.latitude - loc2.latitude);
+        const lngDiff = Math.abs(loc1.longitude - loc2.longitude);
+
+        if (latDiff < threshold && lngDiff < threshold) {
+          console.log(`📍 Duplicate: "${loc1.name}" and "${loc2.name}"`);
+          duplicateIds.push(loc2.id);
+          processed.add(loc2.id);
+        }
+      }
+
+      if (duplicateIds.length > 0) {
+        duplicates.push({ keep: loc1.id, remove: duplicateIds });
+        processed.add(loc1.id);
+      }
     }
 
-    console.log(`Deleted ${locationsDeleted?.length || 0} bad location entries`);
+    console.log(`Found ${duplicates.length} duplicate groups`);
+
+    let mergedCount = 0;
+
+    // Merge each group
+    for (const group of duplicates) {
+      console.log(`🔄 Merging ${group.remove.length} into ${group.keep}`);
+
+      // Update posts
+      await supabaseClient
+        .from('posts')
+        .update({ location_id: group.keep })
+        .in('location_id', group.remove);
+
+      // Update saved locations
+      await supabaseClient
+        .from('user_saved_locations')
+        .update({ location_id: group.keep })
+        .in('location_id', group.remove);
+
+      // Update interactions
+      await supabaseClient
+        .from('interactions')
+        .update({ location_id: group.keep })
+        .in('location_id', group.remove);
+
+      // Delete duplicates
+      await supabaseClient
+        .from('locations')
+        .delete()
+        .in('id', group.remove);
+
+      mergedCount += group.remove.length;
+    }
+
+    console.log(`✅ Merged ${mergedCount} duplicates`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Duplicate locations cleaned successfully',
-        deleted: {
-          savedLocations: savedDeleted?.length || 0,
-          locations: locationsDeleted?.length || 0
-        }
+        message: `Merged ${mergedCount} duplicate locations`,
+        groups: duplicates.length,
+        merged: mergedCount,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -68,12 +109,9 @@ Deno.serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error in cleanup-duplicate-locations:', error);
+    console.error('❌ Error:', error);
     return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message
-      }),
+      JSON.stringify({ success: false, error: error.message }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
