@@ -90,12 +90,12 @@ const LeafletMapSetup = ({
     if (user && shares.length > 0) {
       const activeShare = shares.find(share => share.user_id === user.id);
       setUserActiveShare(activeShare || null);
-      onSharingStateChange?.(!!activeShare);
+      onSharingStateChangeRef.current?.(!!activeShare);
     } else {
       setUserActiveShare(null);
-      onSharingStateChange?.(false);
+      onSharingStateChangeRef.current?.(false);
     }
-  }, [user, shares, onSharingStateChange]);
+  }, [user, shares]);
 
   // Sharing controls always at same height as expand button
   const baseControlPosition = fullScreen 
@@ -105,11 +105,13 @@ const LeafletMapSetup = ({
   // Keep latest handlers in refs to avoid re-initializing map on prop changes
   const onMapRightClickRef = useRef(onMapRightClick);
   const onMapClickRef = useRef(onMapClick);
+  const onSharingStateChangeRef = useRef(onSharingStateChange);
 
   useEffect(() => {
     onMapRightClickRef.current = onMapRightClick;
     onMapClickRef.current = onMapClick;
-  }, [onMapRightClick, onMapClick]);
+    onSharingStateChangeRef.current = onSharingStateChange;
+  }, [onMapRightClick, onMapClick, onSharingStateChange]);
 
   // Initialize map once
   useEffect(() => {
