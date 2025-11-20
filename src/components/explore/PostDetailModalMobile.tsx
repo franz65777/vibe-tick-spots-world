@@ -63,12 +63,28 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
   const [expandedCaptions, setExpandedCaptions] = useState<{ [key: string]: boolean }>({});
   const [carouselApis, setCarouselApis] = useState<Record<string, any>>({});
   const [currentMediaIndexes, setCurrentMediaIndexes] = useState<Record<string, number>>({});
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen && postId) {
       loadPostData();
     }
   }, [isOpen, postId]);
+
+  // Scroll to the clicked post after loading
+  useEffect(() => {
+    if (!loading && posts.length > 0 && scrollContainerRef.current) {
+      const clickedPostIndex = posts.findIndex(p => p.id === postId);
+      if (clickedPostIndex !== -1) {
+        const postElement = scrollContainerRef.current.querySelector(`[data-post-id="${postId}"]`);
+        if (postElement) {
+          setTimeout(() => {
+            postElement.scrollIntoView({ behavior: 'instant', block: 'start' });
+          }, 100);
+        }
+      }
+    }
+  }, [loading, posts, postId]);
 
   const loadSinglePost = async () => {
     const { data: postData, error: postError } = await supabase
@@ -141,14 +157,20 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
           })
         );
 
-        // Move the initial post to the front
+        // Organize posts: show clicked post first, then newer posts below, older posts can be scrolled up to
         const initialPostIndex = postsWithProfiles.findIndex(p => p.id === postId);
-        if (initialPostIndex > 0) {
-          const [initialPost] = postsWithProfiles.splice(initialPostIndex, 1);
-          postsWithProfiles.unshift(initialPost);
+        if (initialPostIndex !== -1) {
+          // Split into posts before and after the clicked post
+          const postsAfter = postsWithProfiles.slice(0, initialPostIndex); // Newer posts (scroll down)
+          const clickedPost = postsWithProfiles[initialPostIndex];
+          const postsBefore = postsWithProfiles.slice(initialPostIndex + 1); // Older posts (scroll up)
+          
+          // Order: older posts first (for scroll up), then clicked post, then newer posts (for scroll down)
+          const reorderedPosts = [...postsBefore, clickedPost, ...postsAfter];
+          setPosts(reorderedPosts as any);
+        } else {
+          setPosts(postsWithProfiles as any);
         }
-
-        setPosts(postsWithProfiles as any);
       } else if (userId) {
         // Load all posts for this user
         const { data: postsData, error: postsError } = await supabase
@@ -188,13 +210,20 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
           })
         );
 
+        // Organize posts: show clicked post first, then newer posts below, older posts can be scrolled up to
         const initialPostIndex = postsWithProfiles.findIndex(p => p.id === postId);
-        if (initialPostIndex > 0) {
-          const [initialPost] = postsWithProfiles.splice(initialPostIndex, 1);
-          postsWithProfiles.unshift(initialPost);
+        if (initialPostIndex !== -1) {
+          // Split into posts before and after the clicked post
+          const postsAfter = postsWithProfiles.slice(0, initialPostIndex); // Newer posts (scroll down)
+          const clickedPost = postsWithProfiles[initialPostIndex];
+          const postsBefore = postsWithProfiles.slice(initialPostIndex + 1); // Older posts (scroll up)
+          
+          // Order: older posts first (for scroll up), then clicked post, then newer posts (for scroll down)
+          const reorderedPosts = [...postsBefore, clickedPost, ...postsAfter];
+          setPosts(reorderedPosts as any);
+        } else {
+          setPosts(postsWithProfiles as any);
         }
-
-        setPosts(postsWithProfiles as any);
       } else {
         // Load a single post by id
         await loadSinglePost();
@@ -335,7 +364,7 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
 
   return (
     <>
-      <div className="fixed inset-0 z-[3000] bg-background overflow-y-auto scrollbar-hide">
+      <div ref={scrollContainerRef} className="fixed inset-0 z-[3000] bg-background overflow-y-auto scrollbar-hide">
         {/* Top safe area padding */}
         <div className="h-16 bg-background sticky top-0 z-20 flex items-center px-4 mt-4">
           {(locationId || userId || showBackButton) && (
@@ -357,7 +386,7 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
           const hasMultipleMedia = post.media_urls.length > 1;
           
           return (
-            <article key={post.id} className="post-compact border-b-8 border-background/50 pb-4">{index === 0 && <div className="h-2" />}
+            <article key={post.id} data-post-id={post.id} className="post-compact border-b-8 border-background/50 pb-4">{index === 0 && <div className="h-2" />}
               {/* Header */}
               <div className="post-compact-header flex items-center justify-between border-b border-border">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
