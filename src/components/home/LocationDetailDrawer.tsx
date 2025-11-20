@@ -84,65 +84,86 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
     return () => observer.disconnect();
   }, []);
 
-  // Fetch location details including coordinates if missing
+  // Fetch location details including coordinates if missing - MATCH PinDetailCard pattern
   useEffect(() => {
     if (!isOpen || !location) return;
     
     const fetchLocationDetails = async () => {
       try {
-        const coords: any = location.coordinates || {};
-        const lat = Number(coords.lat ?? coords.latitude ?? 0);
-        const lng = Number(coords.lng ?? coords.longitude ?? 0);
+        // First, ensure we have a valid internal location_id
+        let locationId = location.id;
+        let locationData: any = null;
 
-        if (!lat || !lng || !location.address || !location.city) {
-          let locationData: any = null;
-
-          if (location.id) {
-            // Fetch from locations table by internal ID
-            const { data: byId } = await supabase
-              .from('locations')
-              .select('id, latitude, longitude, address, city, category')
-              .eq('id', location.id)
-              .maybeSingle();
-
-            locationData = byId;
+        // If no ID, try to find by google_place_id (fallback for older data)
+        if (!locationId && (location as any).google_place_id) {
+          const { data } = await supabase
+            .from('locations')
+            .select('id, latitude, longitude, address, city, category, name')
+            .eq('google_place_id', (location as any).google_place_id)
+            .maybeSingle();
+          
+          if (data) {
+            locationId = data.id;
+            locationData = data;
           }
+        }
 
-          // Fallback: search by name + city
-          if (!locationData) {
-            const { data: byName } = await supabase
-              .from('locations')
-              .select('id, latitude, longitude, address, city, category')
-              .ilike('name', location.name)
-              .eq('city', location.city || '')
-              .order('created_at', { ascending: false })
-              .limit(1)
-              .maybeSingle();
+        // If still no ID, try by name + city
+        if (!locationId) {
+          const { data } = await supabase
+            .from('locations')
+            .select('id, latitude, longitude, address, city, category, name')
+            .ilike('name', location.name)
+            .eq('city', location.city || '')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
 
-            locationData = byName;
+          if (data) {
+            locationId = data.id;
+            locationData = data;
           }
+        }
 
-          if (locationData?.latitude && locationData?.longitude) {
+        // If we have an ID but no full data yet, fetch it
+        if (locationId && !locationData) {
+          const { data } = await supabase
+            .from('locations')
+            .select('id, latitude, longitude, address, city, category, name')
+            .eq('id', locationId)
+            .maybeSingle();
+          
+          locationData = data;
+        }
+
+        // Update location with fetched data
+        if (locationData) {
+          location.id = locationData.id; // Critical: ensure ID is set
+          
+          if (locationData.latitude && locationData.longitude) {
             const latNum = Number(locationData.latitude);
             const lngNum = Number(locationData.longitude);
-            location.coordinates = {
-              lat: latNum,
-              lng: lngNum,
-            };
+            location.coordinates = { lat: latNum, lng: lngNum };
             setResolvedCoordinates({ lat: latNum, lng: lngNum });
           }
 
-          if (!location.address && locationData?.address) {
+          if (!location.address && locationData.address) {
             location.address = locationData.address;
           }
-          if (!location.city && locationData?.city) {
+          if (!location.city && locationData.city) {
             location.city = locationData.city;
           }
-          if (location.category === 'restaurant' && locationData?.category) {
+          if (locationData.category) {
             location.category = locationData.category;
           }
         } else {
-          setResolvedCoordinates({ lat, lng });
+          // Fallback: use existing coordinates if available
+          const coords: any = location.coordinates || {};
+          const lat = Number(coords.lat ?? coords.latitude ?? 0);
+          const lng = Number(coords.lng ?? coords.longitude ?? 0);
+          if (lat && lng) {
+            setResolvedCoordinates({ lat, lng });
+          }
         }
       } catch (error) {
         console.error('Error fetching location details (drawer):', error);
@@ -264,11 +285,25 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
     if (!location) return;
     setLoading(true);
     try {
-      let locationId: string | null = location.id || null;
+      // Match PinDetailCard pattern: ensure we have internal location_id
+      let locationId = location.id;
 
-      // Fallback: search by name + city
+      // Try by google_place_id if no ID (fallback for older data)
+      if (!locationId && (location as any).google_place_id) {
+        const { data } = await supabase
+          .from('locations')
+          .select('id')
+          .eq('google_place_id', (location as any).google_place_id)
+          .maybeSingle();
+        
+        if (data) {
+          locationId = data.id;
+        }
+      }
+
+      // Try by name + city if still no ID
       if (!locationId) {
-        const { data: byName } = await supabase
+        const { data } = await supabase
           .from('locations')
           .select('id')
           .ilike('name', location.name)
@@ -277,7 +312,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
           .limit(1)
           .maybeSingle();
 
-        locationId = byName?.id || null;
+        locationId = data?.id || null;
       }
 
       if (!locationId) {
@@ -286,40 +321,46 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
         return;
       }
 
-      const { data, error } = await supabase
+      // Fetch posts - exactly like PinDetailCard
+      const { data: postRows, error } = await supabase
         .from('posts')
-        .select(`
-          id,
-          user_id,
-          caption,
-          media_url,
-          media_urls,
-          created_at,
-          profiles:user_id (
-            username,
-            avatar_url
-          )
-        `)
+        .select('id, user_id, caption, media_urls, created_at, location_id, rating')
         .eq('location_id', locationId)
         .not('media_urls', 'is', null)
         .order('created_at', { ascending: false })
-        .limit(2);
+        .limit(10);
 
       if (error) throw error;
 
-      const formattedPosts = (data || [])
-        .filter((p: any) => (p.media_urls && p.media_urls.length > 0) || p.media_url)
-        .map((p: any) => ({
-          id: p.id,
-          user_id: p.user_id,
-          caption: p.caption || '',
-          media_url: p.media_url || (p.media_urls?.[0] || ''),
-          created_at: p.created_at,
-          username: p.profiles?.username || 'User',
-          avatar_url: p.profiles?.avatar_url || '',
-        }));
+      // Get user profiles separately for better performance
+      const userIds = Array.from(new Set(postRows?.map((p: any) => p.user_id).filter(Boolean) || []));
+      let profilesMap = new Map<string, { username: string | null; avatar_url: string | null }>();
+      
+      if (userIds.length) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, username, avatar_url')
+          .in('id', userIds);
+        profilesMap = new Map((profilesData || []).map((p: any) => [p.id, { username: p.username, avatar_url: p.avatar_url }]));
+      }
 
-      setPosts(formattedPosts);
+      // Map posts with profiles and filter valid media
+      let mapped = (postRows || []).map((p: any) => ({
+        id: p.id,
+        user_id: p.user_id,
+        caption: p.caption || '',
+        media_url: p.media_urls?.[0] || '',
+        created_at: p.created_at,
+        username: profilesMap.get(p.user_id)?.username || 'User',
+        avatar_url: profilesMap.get(p.user_id)?.avatar_url || '',
+      }));
+
+      // Filter to ensure only posts with valid media_urls
+      mapped = mapped.filter((p: any) => 
+        p.media_url && p.media_url.length > 0
+      );
+
+      setPosts(mapped);
     } catch (error) {
       console.error('Error fetching location posts:', error);
     } finally {
@@ -331,11 +372,25 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
     if (!location) return;
     setReviewsLoading(true);
     try {
-      let locationId: string | null = location.id || null;
+      // Match PinDetailCard pattern: ensure we have internal location_id
+      let locationId = location.id;
 
-      // Fallback: search by name + city
+      // Try by google_place_id if no ID
+      if (!locationId && (location as any).google_place_id) {
+        const { data } = await supabase
+          .from('locations')
+          .select('id')
+          .eq('google_place_id', (location as any).google_place_id)
+          .maybeSingle();
+        
+        if (data) {
+          locationId = data.id;
+        }
+      }
+
+      // Try by name + city if still no ID
       if (!locationId) {
-        const { data: byName } = await supabase
+        const { data } = await supabase
           .from('locations')
           .select('id')
           .ilike('name', location.name)
@@ -344,7 +399,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
           .limit(1)
           .maybeSingle();
 
-        locationId = byName?.id || null;
+        locationId = data?.id || null;
       }
 
       if (!locationId) {
@@ -353,13 +408,14 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
         return;
       }
 
-      // Fetch reviews from posts table only
+      // Fetch reviews (posts with ratings)
       const { data: postsData } = await supabase
         .from('posts')
         .select('user_id, rating, caption, created_at')
         .eq('location_id', locationId)
         .not('rating', 'is', null)
-        .gt('rating', 0);
+        .gt('rating', 0)
+        .order('created_at', { ascending: false });
 
       if (!postsData || postsData.length === 0) {
         setReviews([]);
@@ -367,7 +423,7 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
         return;
       }
 
-      // Get unique user profiles
+      // Get user profiles separately
       const userIds = [...new Set(postsData.map(p => p.user_id))];
       const { data: profilesData } = await supabase
         .from('profiles')
@@ -376,20 +432,18 @@ const LocationDetailDrawer = ({ location, isOpen, onClose }: LocationDetailDrawe
 
       const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
 
-      const formattedReviews: Review[] = postsData
-        .map(p => {
-          const profile = profilesMap.get(p.user_id);
-          return {
-            id: `${p.user_id}-${p.created_at}`,
-            user_id: p.user_id,
-            username: profile?.username || 'User',
-            avatar_url: profile?.avatar_url || null,
-            rating: p.rating || 0,
-            comment: p.caption,
-            created_at: p.created_at,
-          };
-        })
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      const formattedReviews: Review[] = postsData.map(p => {
+        const profile = profilesMap.get(p.user_id);
+        return {
+          id: `${p.user_id}-${p.created_at}`,
+          user_id: p.user_id,
+          username: profile?.username || 'User',
+          avatar_url: profile?.avatar_url || null,
+          rating: p.rating || 0,
+          comment: p.caption,
+          created_at: p.created_at,
+        };
+      });
 
       setReviews(formattedReviews);
     } catch (error) {
