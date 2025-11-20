@@ -61,15 +61,17 @@ const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
 
         {/* Search Bar */}
         <div className="relative flex items-center gap-2">
-          {/* AI Assistant Button */}
-          <Button
-            onClick={onAiClick}
-            variant="ghost"
-            size="icon"
-            className="shrink-0 h-12 w-12 rounded-2xl bg-muted/50 hover:bg-muted"
-          >
-            <Sparkles className="w-5 h-5 text-primary" />
-          </Button>
+          {/* AI Assistant Button - Hidden when search is active */}
+          {!inputFocused && !searchQuery && (
+            <Button
+              onClick={onAiClick}
+              variant="ghost"
+              size="icon"
+              className="shrink-0 h-12 w-12 rounded-2xl bg-muted/50 hover:bg-muted"
+            >
+              <Sparkles className="w-5 h-5 text-primary" />
+            </Button>
+          )}
           
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />

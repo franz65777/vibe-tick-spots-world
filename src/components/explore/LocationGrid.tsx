@@ -312,7 +312,6 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
             coverImage: null,
             postsCount: 0,
             savesCount: 0,
-            rankingScore: 0,
             coordinates: {
               lat: parseFloat(loc.latitude?.toString() || '0'),
               lng: parseFloat(loc.longitude?.toString() || '0'),
