@@ -12,6 +12,8 @@ interface LocationIssue {
   google_place_id: string | null;
   address: string | null;
   city: string | null;
+  latitude: number | null;
+  longitude: number | null;
   issue: string;
 }
 
@@ -47,6 +49,8 @@ export const LocationDataFix = () => {
             google_place_id: loc.google_place_id,
             address: loc.address,
             city: loc.city,
+            latitude: loc.latitude,
+            longitude: loc.longitude,
             issue: 'Nome mancante o invalido'
           });
         }
@@ -58,6 +62,8 @@ export const LocationDataFix = () => {
             google_place_id: loc.google_place_id,
             address: loc.address,
             city: loc.city,
+            latitude: loc.latitude,
+            longitude: loc.longitude,
             issue: 'Città mancante'
           });
         }
@@ -69,6 +75,8 @@ export const LocationDataFix = () => {
             google_place_id: loc.google_place_id,
             address: loc.address,
             city: loc.city,
+            latitude: loc.latitude,
+            longitude: loc.longitude,
             issue: 'Indirizzo mancante'
           });
         }
@@ -92,11 +100,11 @@ export const LocationDataFix = () => {
     }
   };
 
-  const fixLocation = async (locationId: string, googlePlaceId: string | null) => {
-    if (!googlePlaceId) {
+  const fixLocation = async (locationId: string, latitude: number | null, longitude: number | null) => {
+    if (!latitude || !longitude) {
       toast({
         title: "Errore",
-        description: "Impossibile recuperare dati senza Google Place ID",
+        description: "Impossibile recuperare dati senza coordinate",
         variant: "destructive",
       });
       return;
@@ -105,22 +113,27 @@ export const LocationDataFix = () => {
     try {
       // Call Foursquare search to get proper data
       const { data, error } = await supabase.functions.invoke('foursquare-search', {
-        body: { placeId: googlePlaceId }
+        body: { 
+          lat: latitude, 
+          lng: longitude,
+          limit: 1
+        }
       });
 
-      if (error || !data?.name) {
+      if (error || !data?.results?.[0]) {
         throw new Error('Dati non trovati');
       }
+
+      const location = data.results[0];
 
       // Update the location with correct data
       const { error: updateError } = await supabase
         .from('locations')
         .update({
-          name: data.name,
-          address: data.address || null,
-          city: data.city || null,
-          latitude: data.latitude || null,
-          longitude: data.longitude || null,
+          name: location.name,
+          address: location.address || null,
+          city: location.city || null,
+          google_place_id: location.google_place_id || null,
         })
         .eq('id', locationId);
 
@@ -130,7 +143,7 @@ export const LocationDataFix = () => {
       
       toast({
         title: "Luogo aggiornato",
-        description: `${data.name} è stato corretto`,
+        description: `${location.name} è stato corretto`,
       });
     } catch (error) {
       console.error('Error fixing location:', error);
@@ -152,7 +165,7 @@ export const LocationDataFix = () => {
       if (fixed.includes(issue.id)) continue;
       
       try {
-        await fixLocation(issue.id, issue.google_place_id);
+        await fixLocation(issue.id, issue.latitude, issue.longitude);
         fixedCount++;
         // Add small delay to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -263,7 +276,7 @@ export const LocationDataFix = () => {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => fixLocation(issue.id, issue.google_place_id)}
+                          onClick={() => fixLocation(issue.id, issue.latitude, issue.longitude)}
                           disabled={loading}
                         >
                           Correggi
