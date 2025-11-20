@@ -287,11 +287,14 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
               <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin flex-shrink-0"></div>
             )}
             <button
-              onClick={() => setShowUserSearch(true)}
-              className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex-shrink-0"
-              title={t('mapFilters:addAnother')}
+              onClick={() => {
+                clearFollowedUsers();
+                setShowUserSearch(true);
+              }}
+              className="px-2 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex-shrink-0 font-medium text-xs"
+              title={t('mapFilters:showAllFollowing')}
             >
-              <Plus className="w-4 h-4" />
+              {t('common:all')}
             </button>
             <button
               onClick={handleExitSearch}

@@ -186,10 +186,15 @@ export const useMapLocations = ({ mapFilter, selectedCategories, currentCity, se
               .select('following_id')
               .eq('follower_id', user.id);
             
-            const followedUserIds = followedUsers?.map(f => f.following_id) || [];
+            let followedUserIds = followedUsers?.map(f => f.following_id) || [];
+            
+            // Filter by specific selected users if provided
+            if (selectedFollowedUserIds.length > 0) {
+              followedUserIds = followedUserIds.filter(id => selectedFollowedUserIds.includes(id));
+            }
             
             if (followedUserIds.length === 0) {
-              console.log('No followed users found');
+              finalLocations = [];
               break;
             }
             
