@@ -596,7 +596,7 @@ ${allMatches.slice(0, 8).map(loc => {
   const users = loc.userMentions?.length > 0 ? ` - Mentioned by: ${loc.userMentions.map((u: string) => u.split('|')[0]).join(', ')}` : '';
   const userIds = loc.userMentions?.length > 0 ? ` - UserIDs: ${loc.userMentions.map((u: string) => u.split('|')[1]).join(', ')}` : '';
   const comments = loc.userComments?.length > 0 ? ` - Comments: "${loc.userComments.join('; ')}"` : '';
-  const placeId = loc.google_place_id || `internal:${loc.id}`;
+  const placeId = `internal:${loc.id}`;
   return `- [PLACE:${loc.name}|${placeId}]${keywords}${users}${userIds}${comments}`;
 }).join('\n')}
 
