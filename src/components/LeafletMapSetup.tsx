@@ -272,7 +272,7 @@ const LeafletMapSetup = ({
       animate: true,
       duration: 0.8 
     });
-  }, [selectedPlace]);
+  }, [selectedPlace?.id, selectedPlace?.coordinates.lat, selectedPlace?.coordinates.lng]);
 
   // Ensure tiles recalc when toggling fullscreen to avoid white map
   useEffect(() => {
