@@ -77,11 +77,27 @@ const OpenStreetMapAutocomplete = ({
         .from('locations')
         .select('id, name, address, city, latitude, longitude')
         .or(`name.ilike.%${searchQuery}%,city.ilike.%${searchQuery}%,address.ilike.%${searchQuery}%`)
-        .limit(5);
+        .limit(20); // Get more to deduplicate
 
       if (dbLocations) {
+        // DEDUPLICATE by coordinates (within ~11 meters)
+        const uniqueLocations = new Map<string, typeof dbLocations[0]>();
+        const threshold = 0.0001;
+        
+        for (const loc of dbLocations) {
+          // Create coordinate key rounded to threshold
+          const latKey = Math.round(loc.latitude / threshold);
+          const lngKey = Math.round(loc.longitude / threshold);
+          const coordKey = `${latKey},${lngKey}`;
+          
+          // Only add if not already present at these coordinates
+          if (!uniqueLocations.has(coordKey)) {
+            uniqueLocations.set(coordKey, loc);
+          }
+        }
+        
         combinedResults.push(
-          ...dbLocations.map((loc) => ({
+          ...Array.from(uniqueLocations.values()).slice(0, 5).map((loc) => ({
             id: loc.id,
             name: loc.name,
             address: loc.address || '',
@@ -101,7 +117,7 @@ const OpenStreetMapAutocomplete = ({
           combinedResults.push(
             ...nominatimResults.map((result, idx) => ({
               id: `nominatim-${idx}`,
-              name: result.displayName.split(',')[0], // First part of address
+              name: result.displayName.split(',')[0],
               address: result.displayName,
               lat: result.lat,
               lng: result.lng,
