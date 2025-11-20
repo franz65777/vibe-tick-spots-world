@@ -83,6 +83,8 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', op
   const [reviews, setReviews] = useState<PostReview[]>([]);
   const [locationRanking, setLocationRanking] = useState<number | null>(null);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
   useEffect(() => {
     if (isOpen && postId) {
@@ -291,6 +293,29 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', op
     }
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStart) return;
+    
+    const touchEndPos = e.changedTouches[0].clientX;
+    setTouchEnd(touchEndPos);
+    
+    const minSwipeDistance = 50;
+    const distance = touchStart - touchEndPos;
+    
+    if (Math.abs(distance) > minSwipeDistance) {
+      if (distance > 0) {
+        nextMedia();
+      } else {
+        prevMedia();
+      }
+    }
+  };
+
   if (!isOpen) return null;
 
   if (loading) {
@@ -336,6 +361,8 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', op
               <div
                 ref={scrollContainerRef}
                 className="w-full h-full overflow-x-auto snap-x snap-mandatory scrollbar-hide flex"
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
               >
                 {post.media_urls.map((url, idx) => (
                   <div key={idx} className="snap-center flex-shrink-0 w-full h-full flex items-center justify-center">
@@ -350,38 +377,16 @@ export const PostDetailModal = ({ postId, isOpen, onClose, source = 'search', op
                 ))}
               </div>
 
-              {/* Navigation Arrows */}
-              {hasMultipleMedia && (
-                <>
-                  {currentMediaIndex > 0 && (
-                    <button
-                      onClick={prevMedia}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center text-white backdrop-blur-sm transition-all z-10"
-                    >
-                      <ChevronLeft className="w-6 h-6" />
-                    </button>
-                  )}
-                  {currentMediaIndex < post.media_urls.length - 1 && (
-                    <button
-                      onClick={nextMedia}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center text-white backdrop-blur-sm transition-all z-10"
-                    >
-                      <ChevronRight className="w-6 h-6" />
-                    </button>
-                  )}
-                </>
-              )}
-
               {/* Media Indicators */}
               {hasMultipleMedia && (
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
                   {post.media_urls.map((_, idx) => (
                     <div
                       key={idx}
-                      className={`h-1.5 rounded-full transition-all ${
+                      className={`w-1.5 h-1.5 rounded-full transition-all ${
                         idx === currentMediaIndex
-                          ? 'w-6 bg-white'
-                          : 'w-1.5 bg-white/50'
+                          ? 'bg-white w-2'
+                          : 'bg-white/50'
                       }`}
                     />
                   ))}

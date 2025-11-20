@@ -61,6 +61,8 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
   const [shareOpen, setShareOpen] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [expandedCaptions, setExpandedCaptions] = useState<{ [key: string]: boolean }>({});
+  const [carouselApis, setCarouselApis] = useState<Record<string, any>>({});
+  const [currentMediaIndexes, setCurrentMediaIndexes] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (isOpen && postId) {
@@ -411,7 +413,21 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
               {post.media_urls.length > 0 && (
                 <div className="post-compact-media relative">
                   {hasMultipleMedia ? (
-                    <Carousel className="w-full" gutter={false}>
+                    <Carousel 
+                      className="w-full" 
+                      gutter={false}
+                      setApi={(api) => {
+                        setCarouselApis(prev => ({ ...prev, [post.id]: api }));
+                        if (api) {
+                          api.on('select', () => {
+                            setCurrentMediaIndexes(prev => ({ 
+                              ...prev, 
+                              [post.id]: api.selectedScrollSnap() 
+                            }));
+                          });
+                        }
+                      }}
+                    >
                       <CarouselContent className="-ml-0">
                         {post.media_urls.map((url, idx) => {
                           const isVideo = url.includes('.mp4') || url.includes('.mov') || url.includes('.webm');
@@ -438,8 +454,19 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
                           );
                         })}
                       </CarouselContent>
-                      <CarouselPrevious className="left-2" />
-                      <CarouselNext className="right-2" />
+                      {/* Dots Indicators */}
+                      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                        {post.media_urls.map((_, idx) => (
+                          <div
+                            key={idx}
+                            className={`w-1.5 h-1.5 rounded-full transition-all ${
+                              idx === (currentMediaIndexes[post.id] || 0)
+                                ? 'bg-white w-2' 
+                                : 'bg-white/50'
+                            }`}
+                          />
+                        ))}
+                      </div>
                     </Carousel>
                   ) : (() => {
                     const isVideo = post.media_urls[0].includes('.mp4') || post.media_urls[0].includes('.mov') || post.media_urls[0].includes('.webm');
