@@ -15,6 +15,7 @@ import StoriesViewer from './StoriesViewer';
 import { useTranslation } from 'react-i18next';
 import { useMutualFollowers } from '@/hooks/useMutualFollowers';
 import { useCommunityChampions } from '@/hooks/useCommunityChampions';
+import { AiAssistantModal } from './ai/AiAssistantModal';
 
 // Lazy load heavy components
 const ExploreHeaderBar = lazy(() => import('./explore/ExploreHeaderBar'));
@@ -76,6 +77,7 @@ const ExplorePage = memo(() => {
       return new Set();
     }
   });
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
   // Prefetch altre tab per transizioni istantanee
   useTabPrefetch('explore');
@@ -417,6 +419,7 @@ const ExplorePage = memo(() => {
           onSearchChange={handleSearch}
           onInputFocus={setInputFocused}
           onClearSearch={clearSearch}
+          onAiClick={() => setIsAiModalOpen(true)}
         />
       </Suspense>
 
@@ -607,6 +610,12 @@ const ExplorePage = memo(() => {
           </div>
         </div>
       )}
+
+      {/* AI Assistant Modal */}
+      <AiAssistantModal 
+        isOpen={isAiModalOpen}
+        onClose={() => setIsAiModalOpen(false)}
+      />
     </div>
   );
 });

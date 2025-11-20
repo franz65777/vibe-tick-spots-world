@@ -1,5 +1,5 @@
 import { memo, RefObject } from 'react';
-import { Search, MapPin, Users } from 'lucide-react';
+import { Search, MapPin, Users, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
@@ -13,6 +13,7 @@ interface ExploreHeaderBarProps {
   onSearchChange: (query: string) => void;
   onInputFocus: (focused: boolean) => void;
   onClearSearch: () => void;
+  onAiClick?: () => void;
 }
 
 const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
@@ -25,17 +26,18 @@ const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
     onSearchModeChange,
     onSearchChange,
     onInputFocus,
-    onClearSearch
+    onClearSearch,
+    onAiClick
   } = props;
 
   return (
     <div className="bg-background pt-safe">
       <div className="px-2.5 py-4 pt-2">
         {/* Search Mode Toggle */}
-        <div className="flex bg-muted rounded-xl p-1 mb-4">
+        <div className="flex bg-muted rounded-2xl p-1 mb-4">
           <button
             onClick={() => onSearchModeChange('locations')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all ${
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-medium transition-all ${
               searchMode === 'locations'
                 ? 'bg-background text-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'
@@ -46,7 +48,7 @@ const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
           </button>
           <button
             onClick={() => onSearchModeChange('users')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all ${
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-medium transition-all ${
               searchMode === 'users'
                 ? 'bg-background text-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'
@@ -59,6 +61,16 @@ const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
 
         {/* Search Bar */}
         <div className="relative flex items-center gap-2">
+          {/* AI Assistant Button */}
+          <Button
+            onClick={onAiClick}
+            variant="ghost"
+            size="icon"
+            className="shrink-0 h-12 w-12 rounded-2xl bg-muted/50 hover:bg-muted"
+          >
+            <Sparkles className="w-5 h-5 text-primary" />
+          </Button>
+          
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
             <Input
@@ -73,7 +85,7 @@ const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
               onChange={(e) => onSearchChange(e.target.value)}
               onFocus={() => onInputFocus(true)}
               onBlur={() => setTimeout(() => onInputFocus(false), 100)}
-              className="pl-12 pr-4 h-12 bg-muted/50 border-border focus:bg-background rounded-xl"
+              className="pl-12 pr-4 h-12 bg-muted/50 border-border focus:bg-background rounded-2xl"
             />
             {searchQuery && (
               <Button
