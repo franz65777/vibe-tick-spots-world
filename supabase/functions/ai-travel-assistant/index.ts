@@ -600,7 +600,7 @@ ${allMatches.slice(0, 8).map(loc => {
   return `- [PLACE:${loc.name}|${placeId}]${keywords}${users}${userIds}${comments}`;
 }).join('\n')}
 
-IMPORTANT: Only recommend places from this list. When mentioning a place, also mention the user who recommended it using [USER:username|user_id] format. If a place is not in this list, tell the user they could be the first on Spott to try it and recommend it to friends!`;
+IMPORTANT: Focus your suggestions on places from this list. When mentioning a place, also mention the user who recommended it using [USER:username|user_id] format. If you suggest a place that is not in this list, describe it as an interesting option to explore.`;
       }
     }
     
