@@ -209,23 +209,29 @@ export class UnifiedLocationService {
       const placeId = location.google_place_id || location.id!;
 
       if (!location.address || !location.city) {
-        const { data, error } = await supabase.functions.invoke('reverse-geocode', {
-          body: {
-            latitude: location.latitude || location.coordinates?.lat,
-            longitude: location.longitude || location.coordinates?.lng
-          }
-        });
-
-        if (!error && data) {
-          return {
-            ...location,
-            address: location.address || data.formatted_address,
-            city: normalizeCity(data.city) || location.city || 'Unknown City',
-            coordinates: {
-              lat: location.latitude || location.coordinates?.lat,
-              lng: location.longitude || location.coordinates?.lng
+        const lat = location.latitude || location.coordinates?.lat;
+        const lng = location.longitude || location.coordinates?.lng;
+        
+        // Only call reverse-geocode if we have valid coordinates
+        if (lat && lng) {
+          const { data, error } = await supabase.functions.invoke('reverse-geocode', {
+            body: {
+              latitude: lat,
+              longitude: lng
             }
-          } as UnifiedLocation;
+          });
+
+          if (!error && data) {
+            return {
+              ...location,
+              address: location.address || data.formatted_address,
+              city: normalizeCity(data.city) || location.city || 'Unknown City',
+              coordinates: {
+                lat: location.latitude || location.coordinates?.lat,
+                lng: location.longitude || location.coordinates?.lng
+              }
+            } as UnifiedLocation;
+          }
         }
       }
 

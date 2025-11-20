@@ -16,7 +16,12 @@ const DataFixUtility = () => {
     setIsFixingCities(true);
     try {
       const { data, error } = await supabase.functions.invoke('reverse-geocode', {
-        body: { batchMode: true }
+        body: { 
+          batchMode: true,
+          // Dummy coordinates required by schema but not used in batch mode
+          latitude: 0,
+          longitude: 0
+        }
       });
 
       if (error) throw error;
