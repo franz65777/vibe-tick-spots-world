@@ -157,16 +157,17 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
           })
         );
 
-        // Organize posts: show clicked post first, then newer posts below, older posts can be scrolled up to
+        // Organize posts: clicked post in the middle of its chronological context
         const initialPostIndex = postsWithProfiles.findIndex(p => p.id === postId);
         if (initialPostIndex !== -1) {
-          // Split into posts before and after the clicked post
-          const newerPosts = postsWithProfiles.slice(0, initialPostIndex); // Newer posts
+          // Posts more recent than the clicked one (appear when scrolling up)
+          const newerPosts = postsWithProfiles.slice(0, initialPostIndex);
+          // Posts older than the clicked one (appear when scrolling down)
           const clickedPost = postsWithProfiles[initialPostIndex];
-          const olderPosts = postsWithProfiles.slice(initialPostIndex + 1); // Older posts
+          const olderPosts = postsWithProfiles.slice(initialPostIndex + 1);
           
-          // Order: older posts first (reversed for chronological order), clicked post, newer posts (reversed)
-          const reorderedPosts = [...olderPosts.reverse(), clickedPost, ...newerPosts.reverse()];
+          // Order: newer posts (closest first), clicked post, then older posts (chronological from clicked)
+          const reorderedPosts = [...newerPosts.reverse(), clickedPost, ...olderPosts];
           setPosts(reorderedPosts as any);
         } else {
           setPosts(postsWithProfiles as any);
@@ -210,16 +211,17 @@ export const PostDetailModalMobile = ({ postId, locationId, userId, isOpen, onCl
           })
         );
 
-        // Organize posts: show clicked post first, then newer posts below, older posts can be scrolled up to
+        // Organize posts: clicked post in the middle of its chronological context
         const initialPostIndex = postsWithProfiles.findIndex(p => p.id === postId);
         if (initialPostIndex !== -1) {
-          // Split into posts before and after the clicked post
-          const newerPosts = postsWithProfiles.slice(0, initialPostIndex); // Newer posts
+          // Posts more recent than the clicked one (appear when scrolling up)
+          const newerPosts = postsWithProfiles.slice(0, initialPostIndex);
+          // Posts older than the clicked one (appear when scrolling down)
           const clickedPost = postsWithProfiles[initialPostIndex];
-          const olderPosts = postsWithProfiles.slice(initialPostIndex + 1); // Older posts
+          const olderPosts = postsWithProfiles.slice(initialPostIndex + 1);
           
-          // Order: older posts first (reversed for chronological order), clicked post, newer posts (reversed)
-          const reorderedPosts = [...olderPosts.reverse(), clickedPost, ...newerPosts.reverse()];
+          // Order: newer posts (closest first), clicked post, then older posts (chronological from clicked)
+          const reorderedPosts = [...newerPosts.reverse(), clickedPost, ...olderPosts];
           setPosts(reorderedPosts as any);
         } else {
           setPosts(postsWithProfiles as any);
