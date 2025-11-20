@@ -34,7 +34,6 @@ const NotFound = lazy(() => import('@/pages/NotFound'));
 const BusinessClaimPage = lazy(() => import('@/pages/BusinessClaimPage'));
 const BusinessDashboardPage = lazy(() => import('@/pages/BusinessDashboardPage'));
 const SubscriptionPage = lazy(() => import('@/pages/SubscriptionPage'));
-const AdminAnalyticsPage = lazy(() => import('@/pages/AdminAnalyticsPage'));
 const AdminBusinessRequestsPage = lazy(() => import('@/pages/AdminBusinessRequestsPage'));
 const BusinessOverviewPageV2 = lazy(() => import('@/pages/business/BusinessOverviewPageV2'));
 const BusinessAnalyticsPage = lazy(() => import('@/pages/business/BusinessAnalyticsPage'));
@@ -134,7 +133,6 @@ function AppContent() {
           <Route path="/business-claim" element={<BusinessClaimPage />} />
           <Route path="/subscription" element={<SubscriptionPage />} />
           <Route path="/profile/:userId" element={<UserProfilePage />} />
-          <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
           <Route path="/admin/business-requests" element={<AdminBusinessRequestsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/share-location" element={<ShareLocationPage />} />

@@ -15,6 +15,7 @@ import MutedLocationsModal from '@/components/settings/MutedLocationsModal';
 import CloseFriendsModal from '@/components/settings/CloseFriendsModal';
 import AdminBusinessRequestsModal from '@/components/settings/AdminBusinessRequestsModal';
 import EditProfileModal from '@/components/settings/EditProfileModal';
+import { AdminAnalyticsModal } from '@/components/settings/AdminAnalyticsModal';
 import { useAdminRole } from '@/hooks/useAdminRole';
 import { useBusinessProfile } from '@/hooks/useBusinessProfile';
 
@@ -48,6 +49,10 @@ const SettingsPage: React.FC = () => {
   const [closeFriendsModalOpen, setCloseFriendsModalOpen] = useState(false);
   const [adminModalOpen, setAdminModalOpen] = useState(false);
   const [editProfileModalOpen, setEditProfileModalOpen] = useState(false);
+  const [adminAnalyticsModalOpen, setAdminAnalyticsModalOpen] = useState(false);
+  
+  // Check if user is fratrinky (admin analytics access)
+  const isFratrinky = user?.id === '101423bc-a06c-40cc-8bb9-42af76946e4d';
 
   useEffect(() => {
     const load = async () => {
@@ -229,6 +234,25 @@ const SettingsPage: React.FC = () => {
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
               </button>
             )}
+
+            {/* Admin Analytics - Only visible to fratrinky */}
+            {isFratrinky && (
+              <button
+                onClick={() => setAdminAnalyticsModalOpen(true)}
+                className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <Shield className="w-5 h-5 text-muted-foreground" />
+                  <div className="text-left">
+                    <div className="font-medium">Admin Analytics</div>
+                    <div className="text-sm text-muted-foreground">
+                      View retention metrics and data management
+                    </div>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              </button>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -276,6 +300,10 @@ const SettingsPage: React.FC = () => {
       <EditProfileModal
         open={editProfileModalOpen}
         onOpenChange={setEditProfileModalOpen}
+      />
+      <AdminAnalyticsModal
+        open={adminAnalyticsModalOpen}
+        onOpenChange={setAdminAnalyticsModalOpen}
       />
     </div>
   );
