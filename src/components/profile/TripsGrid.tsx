@@ -1,5 +1,6 @@
-import { Plus, MapPin, MoreVertical, Edit, Trash2, Folder } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, MapPin, MoreVertical, Edit, Trash2, Folder } from 'lucide-react';
 import CreateTripModal from './CreateTripModal';
 import { useTranslation } from 'react-i18next';
 import tripsEmptyImage from '@/assets/trips-empty-state.png';
@@ -23,6 +24,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 
 const TripsGrid = () => {
+  const navigate = useNavigate();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTrip, setSelectedTrip] = useState<any>(null);
   const [editingTrip, setEditingTrip] = useState<any>(null);
@@ -170,14 +172,14 @@ const TripsGrid = () => {
         <>
           <div className="mb-4 flex gap-2">
             <Button
-              onClick={() => setShowFolderEditor(true)}
+              onClick={() => navigate('/create-list')}
               className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl"
             >
               <Folder className="w-4 h-4 mr-2" />
               {t('newList')}
             </Button>
             <Button
-              onClick={() => setShowCreateModal(true)}
+              onClick={() => navigate('/create-trip')}
               variant="outline"
               className="flex-1 rounded-xl"
             >
@@ -228,7 +230,7 @@ const TripsGrid = () => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      setEditingFolderId(folder.id);
+                      navigate(`/create-list?folderId=${folder.id}`);
                     }}
                     className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-accent transition-colors opacity-0 group-hover:opacity-100"
                   >
