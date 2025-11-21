@@ -68,11 +68,12 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
         const grouped = await UnifiedLocationService.groupByCity(locations);
         setSavedPlaces(grouped);
 
-        // Load ratings for all locations in batch
-        const allLocationIds = locations.map((l: any) => l.id).filter(Boolean);
-        if (allLocationIds.length > 0) {
-          const stats = await fetchLocationStatsBatch(allLocationIds);
+        // Load ratings for all locations in batch using internal location ids
+        if (locations && locations.length > 0) {
+          const stats = await fetchLocationStatsBatch(locations as any[]);
           setLocationStats(stats);
+        } else {
+          setLocationStats(new Map());
         }
       } catch (error) {
         console.error('Error loading saved places:', error);
@@ -86,63 +87,137 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
     }
   }, [targetUserId, isOpen]);
 
-  const fetchLocationStatsBatch = async (locationIds: string[]) => {
+  const fetchLocationStatsBatch = async (locations: any[]) => {
     const statsMap = new Map<string, { averageRating: number | null }>();
+
+    if (!locations || locations.length === 0) {
+      return statsMap;
+    }
     
     try {
-      // Fetch all ratings from interactions for all locations at once
+      const internalIdsSet = new Set<string>();
+      const googleIdsSet = new Set<string>();
+      const idToPlaceKeys = new Map<string, string[]>();
+      const gpToPlaceKeys = new Map<string, string[]>();
+
+      locations.forEach((loc: any) => {
+        const placeKey = loc.id as string;
+        const internalId = loc.location_id as string | undefined;
+        const googlePlaceId = loc.google_place_id as string | undefined;
+
+        if (internalId) {
+          internalIdsSet.add(internalId);
+          if (!idToPlaceKeys.has(internalId)) {
+            idToPlaceKeys.set(internalId, []);
+          }
+          idToPlaceKeys.get(internalId)!.push(placeKey);
+        }
+
+        if (!internalId && googlePlaceId) {
+          googleIdsSet.add(googlePlaceId);
+          if (!gpToPlaceKeys.has(googlePlaceId)) {
+            gpToPlaceKeys.set(googlePlaceId, []);
+          }
+          gpToPlaceKeys.get(googlePlaceId)!.push(placeKey);
+        }
+      });
+
+      // Resolve additional internal location IDs from google_place_id values
+      if (googleIdsSet.size > 0) {
+        const { data: relatedLocations } = await supabase
+          .from('locations')
+          .select('id, google_place_id')
+          .in('google_place_id', Array.from(googleIdsSet));
+
+        relatedLocations?.forEach((loc: any) => {
+          const internalId = loc.id as string;
+          const gpId = loc.google_place_id as string | null;
+          if (!internalId || !gpId) return;
+
+          internalIdsSet.add(internalId);
+
+          const placeKeys = gpToPlaceKeys.get(gpId) || [];
+          if (!idToPlaceKeys.has(internalId)) {
+            idToPlaceKeys.set(internalId, []);
+          }
+          idToPlaceKeys.get(internalId)!.push(...placeKeys);
+        });
+      }
+
+      const internalIds = Array.from(internalIdsSet);
+      if (internalIds.length === 0) {
+        // No internal IDs mapped, so there can't be ratings in our DB
+        locations.forEach((loc: any) => {
+          statsMap.set(loc.id, { averageRating: null });
+        });
+        return statsMap;
+      }
+
+      // Fetch all ratings from interactions for all internal locations at once
       const { data: interactionsData } = await supabase
         .from('interactions')
         .select('location_id, weight')
-        .in('location_id', locationIds)
+        .in('location_id', internalIds)
         .eq('action_type', 'review')
         .not('weight', 'is', null);
 
-      // Fetch all ratings from posts for all locations at once
+      // Fetch all ratings from posts for all internal locations at once
       const { data: postsData } = await supabase
         .from('posts')
         .select('location_id, rating')
-        .in('location_id', locationIds)
+        .in('location_id', internalIds)
         .not('rating', 'is', null)
         .gt('rating', 0);
 
-      // Group ratings by location_id
+      // Group ratings by internal location_id
       const ratingsByLocation = new Map<string, number[]>();
 
       interactionsData?.forEach((item: any) => {
+        const locId = item.location_id as string | null;
         const rating = Number(item.weight);
-        if (rating > 0) {
-          if (!ratingsByLocation.has(item.location_id)) {
-            ratingsByLocation.set(item.location_id, []);
-          }
-          ratingsByLocation.get(item.location_id)!.push(rating);
+        if (!locId || rating <= 0) return;
+        if (!ratingsByLocation.has(locId)) {
+          ratingsByLocation.set(locId, []);
         }
+        ratingsByLocation.get(locId)!.push(rating);
       });
 
       postsData?.forEach((item: any) => {
+        const locId = item.location_id as string | null;
         const rating = Number(item.rating);
-        if (rating > 0) {
-          if (!ratingsByLocation.has(item.location_id)) {
-            ratingsByLocation.set(item.location_id, []);
+        if (!locId || rating <= 0) return;
+        if (!ratingsByLocation.has(locId)) {
+          ratingsByLocation.set(locId, []);
+        }
+        ratingsByLocation.get(locId)!.push(rating);
+      });
+
+      // Aggregate ratings by displayed place (UnifiedLocation id)
+      const ratingsByPlaceKey = new Map<string, number[]>();
+
+      ratingsByLocation.forEach((ratings, locId) => {
+        const placeKeys = idToPlaceKeys.get(locId) || [];
+        placeKeys.forEach((placeKey) => {
+          if (!ratingsByPlaceKey.has(placeKey)) {
+            ratingsByPlaceKey.set(placeKey, []);
           }
-          ratingsByLocation.get(item.location_id)!.push(rating);
-        }
+          ratingsByPlaceKey.get(placeKey)!.push(...ratings);
+        });
       });
 
-      // Calculate average for each location
-      ratingsByLocation.forEach((ratings, locationId) => {
-        if (ratings.length > 0) {
-          const avg = ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
-          statsMap.set(locationId, { averageRating: Math.round(avg * 10) / 10 });
-        } else {
-          statsMap.set(locationId, { averageRating: null });
+      ratingsByPlaceKey.forEach((ratings, placeKey) => {
+        if (ratings.length === 0) {
+          statsMap.set(placeKey, { averageRating: null });
+          return;
         }
+        const avg = ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
+        statsMap.set(placeKey, { averageRating: Math.round(avg * 10) / 10 });
       });
 
-      // Set null for locations without ratings
-      locationIds.forEach(id => {
-        if (!statsMap.has(id)) {
-          statsMap.set(id, { averageRating: null });
+      // Ensure all locations have an entry (null when no ratings)
+      locations.forEach((loc: any) => {
+        if (!statsMap.has(loc.id)) {
+          statsMap.set(loc.id, { averageRating: null });
         }
       });
     } catch (error) {
