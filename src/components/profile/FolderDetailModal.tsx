@@ -37,26 +37,29 @@ const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps
           .eq('id', folderData.user_id)
           .single();
 
-        // Fetch folder locations with location details
+        // Fetch folder locations and then load their details
         const { data: folderLocs, error: locsError } = await supabase
           .from('folder_locations')
-          .select(`
-            id,
-            location_id,
-            locations (
-              id,
-              name,
-              category,
-              city,
-              image_url
-            )
-          `)
+          .select('location_id')
           .eq('folder_id', folderId);
 
         if (locsError) throw locsError;
 
+        let locationsData: any[] = [];
+
+        if (folderLocs && folderLocs.length > 0) {
+          const locationIds = folderLocs.map((fl: any) => fl.location_id);
+          const { data: locs, error: locationsError } = await supabase
+            .from('locations')
+            .select('id, name, category, city, image_url')
+            .in('id', locationIds);
+
+          if (locationsError) throw locationsError;
+          locationsData = locs || [];
+        }
+
         setFolder({ ...folderData, profiles: profile });
-        setLocations(folderLocs?.map((fl: any) => fl.locations).filter(Boolean) || []);
+        setLocations(locationsData);
       } catch (error) {
         console.error('Error fetching folder:', error);
       } finally {
