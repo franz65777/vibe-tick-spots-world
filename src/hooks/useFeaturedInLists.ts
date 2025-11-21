@@ -19,14 +19,32 @@ export const useFeaturedInLists = (locationId?: string, googlePlaceId?: string) 
 
   useEffect(() => {
     const fetchLists = async () => {
-      if (!locationId && !googlePlaceId) return;
+      if (!locationId && !googlePlaceId) {
+        setLists([]);
+        setIsLoading(false);
+        return;
+      }
       
       setIsLoading(true);
       try {
         const featuredLists: FeaturedList[] = [];
+        let internalLocationId = locationId;
+
+        // If we only have googlePlaceId, try to find internal location_id
+        if (!internalLocationId && googlePlaceId) {
+          const { data: locationData } = await supabase
+            .from('locations')
+            .select('id')
+            .eq('google_place_id', googlePlaceId)
+            .maybeSingle();
+          
+          if (locationData) {
+            internalLocationId = locationData.id;
+          }
+        }
 
         // Query saved_folders (the main "Lists" system)
-        if (locationId) {
+        if (internalLocationId) {
           const { data: folderData, error: folderError } = await supabase
             .from('folder_locations')
             .select(`
@@ -41,79 +59,91 @@ export const useFeaturedInLists = (locationId?: string, googlePlaceId?: string) 
                 )
               )
             `)
-            .eq('location_id', locationId);
+            .eq('location_id', internalLocationId);
 
-          if (folderError) throw folderError;
+          if (folderError) {
+            console.error('Error fetching folders:', folderError);
+          } else {
+            folderData?.forEach((item: any) => {
+              const folder = item.saved_folders;
+              if (!folder) return;
 
-          folderData?.forEach((item: any) => {
-            const folder = item.saved_folders;
-            if (!folder) return;
-
-            const isOwnList = user?.id === folder.user_id;
-            
-            // Include if: own list OR public list
-            if (isOwnList || folder.is_public) {
-              featuredLists.push({
-                list_id: folder.id,
-                list_name: folder.name,
-                user_id: folder.user_id,
-                username: folder.profiles?.username || 'Unknown',
-                is_public: folder.is_public,
-                is_own: isOwnList,
-                type: 'folder'
-              });
-            }
-          });
+              const isOwnList = user?.id === folder.user_id;
+              
+              // Include if: own list OR public list
+              if (isOwnList || folder.is_public) {
+                featuredLists.push({
+                  list_id: folder.id,
+                  list_name: folder.name,
+                  user_id: folder.user_id,
+                  username: folder.profiles?.username || 'Unknown',
+                  is_public: folder.is_public,
+                  is_own: isOwnList,
+                  type: 'folder'
+                });
+              }
+            });
+          }
         }
 
         // Also query trips for backwards compatibility
-        const tripQuery = supabase
-          .from('trip_locations')
-          .select(`
-            trip_id,
-            trips!inner (
-              id,
-              name,
-              user_id,
-              is_public,
-              profiles!inner (
-                username
+        if (internalLocationId || googlePlaceId) {
+          const tripQuery = supabase
+            .from('trip_locations')
+            .select(`
+              trip_id,
+              trips!inner (
+                id,
+                name,
+                user_id,
+                is_public,
+                profiles!inner (
+                  username
+                )
               )
-            )
-          `);
+            `);
 
-        if (locationId) {
-          tripQuery.eq('location_id', locationId);
-        } else if (googlePlaceId) {
-          tripQuery.eq('google_place_id', googlePlaceId);
-        }
+          if (internalLocationId) {
+            tripQuery.eq('location_id', internalLocationId);
+          } else if (googlePlaceId) {
+            tripQuery.eq('google_place_id', googlePlaceId);
+          }
 
-        const { data: tripData, error: tripError } = await tripQuery;
+          const { data: tripData, error: tripError } = await tripQuery;
 
-        if (tripError) throw tripError;
+          if (tripError) {
+            console.error('Error fetching trips:', tripError);
+          } else {
+            tripData?.forEach((item: any) => {
+              const trip = item.trips;
+              if (!trip) return;
 
-        tripData?.forEach((item: any) => {
-          const trip = item.trips;
-          if (!trip) return;
-
-          const isOwnList = user?.id === trip.user_id;
-          
-          if (isOwnList || trip.is_public) {
-            featuredLists.push({
-              list_id: trip.id,
-              list_name: trip.name,
-              user_id: trip.user_id,
-              username: trip.profiles?.username || 'Unknown',
-              is_public: trip.is_public,
-              is_own: isOwnList,
-              type: 'trip'
+              const isOwnList = user?.id === trip.user_id;
+              
+              if (isOwnList || trip.is_public) {
+                featuredLists.push({
+                  list_id: trip.id,
+                  list_name: trip.name,
+                  user_id: trip.user_id,
+                  username: trip.profiles?.username || 'Unknown',
+                  is_public: trip.is_public,
+                  is_own: isOwnList,
+                  type: 'trip'
+                });
+              }
             });
           }
-        });
+        }
 
-        setLists(featuredLists);
+        // Remove duplicates by list_id
+        const uniqueLists = Array.from(
+          new Map(featuredLists.map(list => [list.list_id, list])).values()
+        );
+
+        setLists(uniqueLists);
       } catch (error) {
         console.error('Error fetching featured lists:', error);
+        setLists([]);
       } finally {
         setIsLoading(false);
       }

@@ -240,13 +240,48 @@ const CreateListPage = () => {
 
     setUploadingCover(true);
     try {
-      const fileExt = file.name.split('.').pop();
+      let fileToUpload = file;
+      let fileExt = file.name.split('.').pop()?.toLowerCase();
+
+      // Convert HEIC/HEIF to JPEG
+      if (fileExt === 'heic' || fileExt === 'heif') {
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const img = new Image();
+          
+          const imageUrl = URL.createObjectURL(file);
+          await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+            img.src = imageUrl;
+          });
+
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx?.drawImage(img, 0, 0);
+          
+          const blob = await new Promise<Blob>((resolve) => {
+            canvas.toBlob((b) => resolve(b!), 'image/jpeg', 0.9);
+          });
+          
+          fileToUpload = new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
+          fileExt = 'jpg';
+          URL.revokeObjectURL(imageUrl);
+        } catch (conversionError) {
+          console.error('HEIC conversion failed:', conversionError);
+          toast.error(t('profile:heicConversionFailed', { defaultValue: 'Impossibile convertire immagine HEIC. Usa JPG o PNG.' }));
+          setUploadingCover(false);
+          return;
+        }
+      }
+
       const fileName = `${user.id}-${Date.now()}.${fileExt}`;
       const filePath = `folder-covers/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('media')
-        .upload(filePath, file);
+        .upload(filePath, fileToUpload);
 
       if (uploadError) throw uploadError;
 
@@ -372,7 +407,7 @@ const CreateListPage = () => {
                   <input
                     id="cover-image"
                     type="file"
-                    accept="image/*"
+                    accept="image/*,.heic,.heif"
                     onChange={handleCoverImageUpload}
                     className="hidden"
                     disabled={uploadingCover}
