@@ -91,7 +91,8 @@ const TripsGrid = () => {
             ...folder,
             locations_count: count || 0,
             location_categories: categories,
-            // Use folder's cover_image_url if set, otherwise fallback to first location's image
+            // Keep both cover_image and cover_image_url for compatibility
+            cover_image_url: folder.cover_image_url || coverImage,
             cover_image: folder.cover_image_url || coverImage
           };
         })

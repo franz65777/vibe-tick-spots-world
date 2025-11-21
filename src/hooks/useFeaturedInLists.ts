@@ -7,7 +7,7 @@ interface FeaturedList {
   list_name: string;
   user_id: string;
   username: string;
-  is_public: boolean;
+  is_public: boolean; // Derived from is_private (inverted)
   is_own: boolean;
   type: 'trip' | 'folder';
 }
@@ -53,7 +53,7 @@ export const useFeaturedInLists = (locationId?: string, googlePlaceId?: string) 
                 id,
                 name,
                 user_id,
-                is_public,
+                is_private,
                 profiles!inner (
                   username
                 )
@@ -69,15 +69,16 @@ export const useFeaturedInLists = (locationId?: string, googlePlaceId?: string) 
               if (!folder) return;
 
               const isOwnList = user?.id === folder.user_id;
+              const isPublic = !folder.is_private; // is_private: false means public
               
               // Include if: own list OR public list
-              if (isOwnList || folder.is_public) {
+              if (isOwnList || isPublic) {
                 featuredLists.push({
                   list_id: folder.id,
                   list_name: folder.name,
                   user_id: folder.user_id,
                   username: folder.profiles?.username || 'Unknown',
-                  is_public: folder.is_public,
+                  is_public: isPublic,
                   is_own: isOwnList,
                   type: 'folder'
                 });
