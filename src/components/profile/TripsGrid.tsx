@@ -189,42 +189,56 @@ const TripsGrid = () => {
             {folders.map((folder) => (
               <div
                 key={`folder-${folder.id}`}
-                className="relative bg-card rounded-xl overflow-hidden shadow-sm border border-border cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => setSelectedFolder(folder.id)}
+                className="relative bg-card rounded-xl overflow-hidden shadow-sm border border-border hover:shadow-md transition-shadow group"
               >
-                {folder.cover_image ? (
-                  <div className="aspect-square bg-muted">
+                <div 
+                  className="aspect-square bg-muted cursor-pointer"
+                  onClick={() => setSelectedFolder(folder.id)}
+                >
+                  {folder.cover_image ? (
                     <img
                       src={folder.cover_image}
                       alt={folder.name}
                       className="w-full h-full object-cover"
                     />
-                  </div>
-                ) : folder.location_categories.length > 0 ? (
-                  <div className="aspect-square bg-gradient-to-br from-primary/20 to-primary/5 flex flex-wrap gap-2 items-center justify-center p-4">
-                    {folder.location_categories.slice(0, 4).map((category: string, idx: number) => (
-                      <div key={idx} className="bg-white/20 backdrop-blur-sm rounded-lg p-2">
-                        <CategoryIcon category={category} className="w-6 h-6" />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="aspect-square bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                    <Folder className="w-12 h-12 text-primary/40" />
-                  </div>
-                )}
-                
-                <div className="p-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-sm text-foreground truncate">
-                        {folder.name}
-                      </h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {folder.locations_count || 0} places
-                      </p>
+                  )
+                  : folder.location_categories.length > 0 ? (
+                    <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex flex-wrap gap-2 items-center justify-center p-4">
+                      {folder.location_categories.slice(0, 4).map((category: string, idx: number) => (
+                        <div key={idx} className="bg-white/20 backdrop-blur-sm rounded-lg p-2">
+                          <CategoryIcon category={category} className="w-6 h-6" />
+                        </div>
+                      ))}
                     </div>
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                      <Folder className="w-12 h-12 text-primary/40" />
+                    </div>
+                  )}
+                </div>
+                
+                <div className="p-3 relative">
+                  <div 
+                    className="cursor-pointer"
+                    onClick={() => setSelectedFolder(folder.id)}
+                  >
+                    <h3 className="font-semibold text-sm text-foreground truncate pr-8">
+                      {folder.name}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {folder.locations_count || 0} places
+                    </p>
                   </div>
+                  
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingFolderId(folder.id);
+                    }}
+                    className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-accent transition-colors opacity-0 group-hover:opacity-100"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
             ))}

@@ -1,8 +1,9 @@
-import { X, MapPin } from 'lucide-react';
+import { X, MapPin, Eye, Bookmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Trip, useTrips } from '@/hooks/useTrips';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface TripDetailModalProps {
   trip?: Trip | null;
@@ -44,7 +45,17 @@ const TripDetailModal = ({ trip: providedTrip, tripId, isOpen, onClose }: TripDe
           .single();
 
         if (error) throw error;
-        setTrip(data as Trip);
+
+        // Fetch user profile separately
+        if (data) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id, username, avatar_url')
+            .eq('id', data.user_id)
+            .single();
+
+          setTrip({ ...data, profiles: profile } as Trip);
+        }
       } catch (error) {
         console.error('Error fetching trip:', error);
       } finally {
@@ -74,57 +85,77 @@ const TripDetailModal = ({ trip: providedTrip, tripId, isOpen, onClose }: TripDe
   if (!trip) return null;
 
   const locations = trip.trip_locations || [];
-  const coverImage = trip.cover_image_url || locations[0]?.locations?.image_url || 
-    'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&h=600&fit=crop';
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 animate-in fade-in duration-200" onClick={onClose}>
       <div 
-        className="w-full max-w-2xl bg-white rounded-t-3xl max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom duration-300"
+        className="w-full max-w-2xl bg-background rounded-t-3xl max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom duration-300"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="sticky top-0 z-10 bg-white border-b border-border px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold">{trip.name}</h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="rounded-full"
-          >
-            <X className="w-5 h-5" />
-          </Button>
-        </div>
-
         {/* Cover Image */}
-        <div className="relative h-64">
-          <img 
-            src={coverImage} 
-            alt={trip.name}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+        <div className="relative aspect-[4/3] bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden">
+          {trip.cover_image_url ? (
+            <img
+              src={trip.cover_image_url}
+              alt={trip.name}
+              className="w-full h-full object-cover"
+            />
+          ) : locations[0]?.locations?.image_url ? (
+            <img
+              src={locations[0].locations.image_url}
+              alt={trip.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <MapPin className="w-16 h-16 text-primary/40" />
+          )}
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background transition-colors shadow-lg"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
         {/* Content */}
         <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-300px)]">
-          {/* Details */}
-          <div className="space-y-4">
-            {trip.description && (
-              <p className="text-muted-foreground leading-relaxed">{trip.description}</p>
-            )}
+          {/* Title */}
+          <h2 className="text-2xl font-bold">{trip.name}</h2>
 
-            <div className="flex flex-wrap gap-4">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <MapPin className="w-4 h-4" />
-                <span className="text-sm">{trip.city}</span>
-              </div>
-
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <span className="text-sm font-medium">{locations.length} locations</span>
-              </div>
+          {/* Stats Row */}
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <MapPin className="h-4 w-4" />
+              <span className="font-medium">{locations.length}</span>
+              <span>places</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Bookmark className="h-4 w-4" />
+              <span className="font-medium">{trip.save_count || 0}</span>
+              <span>saves</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Eye className="h-4 w-4" />
+              <span className="font-medium">{trip.view_count || 0}</span>
+              <span>views</span>
             </div>
           </div>
+
+          {/* User Info */}
+          {trip.profiles && (
+            <div className="flex items-center gap-2">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={trip.profiles.avatar_url} />
+                <AvatarFallback>{trip.profiles.username?.[0]?.toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <span className="text-sm text-muted-foreground">@{trip.profiles.username}</span>
+            </div>
+          )}
+
+          {/* Description */}
+          {trip.description && (
+            <p className="text-foreground leading-relaxed">{trip.description}</p>
+          )}
 
           {/* Locations */}
           {locations.length > 0 && (

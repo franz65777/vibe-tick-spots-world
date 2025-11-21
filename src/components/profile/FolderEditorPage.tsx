@@ -38,6 +38,8 @@ const FolderEditorPage = ({ isOpen, onClose, savedLocations = [], folderId, onFo
   const [searchQuery, setSearchQuery] = useState('');
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [coverImageUrl, setCoverImageUrl] = useState('');
+  const [uploadingCover, setUploadingCover] = useState(false);
 
   const isEditMode = !!folderId;
 
@@ -71,6 +73,7 @@ const FolderEditorPage = ({ isOpen, onClose, savedLocations = [], folderId, onFo
       setFolderName(folderData.name);
       setDescription(folderData.description || '');
       setIsPrivate(folderData.is_private || false);
+      setCoverImageUrl(folderData.cover_image_url || '');
 
       // Load folder locations
       const { data: locationData, error: locationError } = await supabase
@@ -102,6 +105,7 @@ const FolderEditorPage = ({ isOpen, onClose, savedLocations = [], folderId, onFo
             name: folderName.trim(),
             description: description.trim() || null,
             is_private: isPrivate,
+            cover_image_url: coverImageUrl || null,
           })
           .eq('id', folderId);
 
@@ -143,6 +147,7 @@ const FolderEditorPage = ({ isOpen, onClose, savedLocations = [], folderId, onFo
             color: randomColor,
             icon: 'folder',
             is_private: isPrivate,
+            cover_image_url: coverImageUrl || null,
           })
           .select('id')
           .single();
@@ -207,6 +212,36 @@ const FolderEditorPage = ({ isOpen, onClose, savedLocations = [], folderId, onFo
         ? prev.filter((id) => id !== idToUse)
         : [...prev, idToUse]
     );
+  };
+
+  const handleCoverImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    setUploadingCover(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `folder-covers/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('media')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('media')
+        .getPublicUrl(filePath);
+
+      setCoverImageUrl(publicUrl);
+      toast.success(t('coverImageUploaded', { ns: 'profile', defaultValue: 'Immagine di copertina caricata' }));
+    } catch (error) {
+      console.error('Error uploading cover image:', error);
+      toast.error(t('errorUploadingCover', { ns: 'profile', defaultValue: 'Errore nel caricamento dell\'immagine' }));
+    } finally {
+      setUploadingCover(false);
+    }
   };
 
   const filteredLocations = savedLocations.filter(place =>
@@ -282,6 +317,48 @@ const FolderEditorPage = ({ isOpen, onClose, savedLocations = [], folderId, onFo
                 placeholder={t('enterFolderDescription', { ns: 'profile', defaultValue: 'Aggiungi una descrizione...' })}
                 maxLength={200}
               />
+            </div>
+
+            {/* Cover Image */}
+            <div className="space-y-2">
+              <Label htmlFor="cover-image">
+                {t('coverImage', { ns: 'profile', defaultValue: 'Immagine di copertina (opzionale)' })}
+              </Label>
+              {coverImageUrl && (
+                <div className="relative aspect-video rounded-xl overflow-hidden bg-muted">
+                  <img src={coverImageUrl} alt="Cover" className="w-full h-full object-cover" />
+                  <button
+                    onClick={() => setCoverImageUrl('')}
+                    className="absolute top-2 right-2 p-1.5 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+              <label htmlFor="cover-image" className="block">
+                <div className="border-2 border-dashed border-border rounded-xl p-4 text-center cursor-pointer hover:border-primary transition-colors">
+                  {uploadingCover ? (
+                    <div className="text-sm text-muted-foreground">
+                      {t('uploading', { ns: 'common', defaultValue: 'Caricamento...' })}
+                    </div>
+                  ) : (
+                    <>
+                      <Plus className="h-6 w-6 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        {t('uploadCoverImage', { ns: 'profile', defaultValue: 'Carica immagine' })}
+                      </p>
+                    </>
+                  )}
+                </div>
+                <input
+                  id="cover-image"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCoverImageUpload}
+                  className="hidden"
+                  disabled={uploadingCover}
+                />
+              </label>
             </div>
 
             {/* Privacy Status Display */}
