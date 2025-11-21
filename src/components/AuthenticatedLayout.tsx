@@ -14,6 +14,7 @@ const AuthenticatedLayout: React.FC = () => {
   const isHomePage = location.pathname === '/';
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   const [isPhotoSelection, setIsPhotoSelection] = useState(false);
+  const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
 
   // Monitor DOM for map expansion state on home page
   useEffect(() => {
@@ -60,12 +61,28 @@ const AuthenticatedLayout: React.FC = () => {
     return () => observer.disconnect();
   }, []);
 
+  // Monitor folder modal state
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      const folderModalOpen = document.body.getAttribute('data-folder-modal-open') === 'true';
+      setIsFolderModalOpen(folderModalOpen);
+    });
+
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['data-folder-modal-open'],
+      subtree: true
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <div className="h-screen overflow-hidden">
         <Outlet />
       </div>
-      {!isDiscoverRoute && !isSettingsRoute && !isEditProfileRoute && !isCreateTripRoute && !isCreateListRoute && !isMapExpanded && !isPhotoSelection && (
+      {!isDiscoverRoute && !isSettingsRoute && !isEditProfileRoute && !isCreateTripRoute && !isCreateListRoute && !isMapExpanded && !isPhotoSelection && !isFolderModalOpen && (
         <div className="fixed bottom-0 left-0 right-0 z-[1500]">
           {isBusinessRoute ? <BusinessBottomNavigation /> : <NewBottomNavigation />}
         </div>
