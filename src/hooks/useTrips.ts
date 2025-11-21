@@ -12,6 +12,13 @@ export interface Trip {
   cover_image_url: string | null;
   is_public: boolean;
   created_at: string;
+  view_count?: number;
+  save_count?: number;
+  profiles?: {
+    id: string;
+    username: string;
+    avatar_url: string;
+  };
   trip_locations?: any[];
 }
 

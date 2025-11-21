@@ -770,6 +770,64 @@ export type Database = {
           },
         ]
       }
+      folder_saves: {
+        Row: {
+          folder_id: string
+          id: string
+          saved_at: string | null
+          user_id: string
+        }
+        Insert: {
+          folder_id: string
+          id?: string
+          saved_at?: string | null
+          user_id: string
+        }
+        Update: {
+          folder_id?: string
+          id?: string
+          saved_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "folder_saves_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "saved_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      folder_views: {
+        Row: {
+          folder_id: string
+          id: string
+          user_id: string
+          viewed_at: string | null
+        }
+        Insert: {
+          folder_id: string
+          id?: string
+          user_id: string
+          viewed_at?: string | null
+        }
+        Update: {
+          folder_id?: string
+          id?: string
+          user_id?: string
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "folder_views_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "saved_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       follows: {
         Row: {
           created_at: string | null
@@ -2029,36 +2087,45 @@ export type Database = {
       saved_folders: {
         Row: {
           color: string | null
+          cover_image_url: string | null
           created_at: string | null
           description: string | null
           icon: string | null
           id: string
           is_private: boolean | null
           name: string
+          save_count: number | null
           updated_at: string | null
           user_id: string
+          view_count: number | null
         }
         Insert: {
           color?: string | null
+          cover_image_url?: string | null
           created_at?: string | null
           description?: string | null
           icon?: string | null
           id?: string
           is_private?: boolean | null
           name: string
+          save_count?: number | null
           updated_at?: string | null
           user_id: string
+          view_count?: number | null
         }
         Update: {
           color?: string | null
+          cover_image_url?: string | null
           created_at?: string | null
           description?: string | null
           icon?: string | null
           id?: string
           is_private?: boolean | null
           name?: string
+          save_count?: number | null
           updated_at?: string | null
           user_id?: string
+          view_count?: number | null
         }
         Relationships: [
           {
@@ -2387,8 +2454,10 @@ export type Database = {
           id: string
           is_public: boolean | null
           name: string
+          save_count: number | null
           updated_at: string | null
           user_id: string
+          view_count: number | null
         }
         Insert: {
           city: string
@@ -2399,8 +2468,10 @@ export type Database = {
           id?: string
           is_public?: boolean | null
           name: string
+          save_count?: number | null
           updated_at?: string | null
           user_id: string
+          view_count?: number | null
         }
         Update: {
           city?: string
@@ -2411,8 +2482,10 @@ export type Database = {
           id?: string
           is_public?: boolean | null
           name?: string
+          save_count?: number | null
           updated_at?: string | null
           user_id?: string
+          view_count?: number | null
         }
         Relationships: []
       }
