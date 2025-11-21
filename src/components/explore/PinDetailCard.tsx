@@ -105,8 +105,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
   // Get the current locale for date formatting
   const currentLocale = localeMap[i18n.language] || localeMap['en'];
 
-  const locationIdForEngagement = place.id || locationDetails?.id || null;
-  const googlePlaceIdForEngagement = place.google_place_id || locationDetails?.google_place_id || null;
+  const locationIdForEngagement = locationDetails?.id || place.id || null;
+  const googlePlaceIdForEngagement = locationDetails?.google_place_id || place.google_place_id || null;
   const { engagement, loading: engagementLoading } = usePinEngagement(
     locationIdForEngagement,
     googlePlaceIdForEngagement
