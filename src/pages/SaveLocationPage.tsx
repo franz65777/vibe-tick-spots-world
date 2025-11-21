@@ -1,19 +1,22 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Search } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import UnifiedSearchAutocomplete from '@/components/UnifiedSearchAutocomplete';
 import PinDetailCard from '@/components/explore/PinDetailCard';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { cn } from '@/lib/utils';
 
 const SaveLocationPage = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [showSearch, setShowSearch] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState<any>(null);
+  const [isFocused, setIsFocused] = useState(true); // Auto-focus on mount
+  const [isScrolling, setIsScrolling] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const handlePlaceSelect = async (place: any) => {
     console.log('Place selected:', place);
@@ -28,9 +31,8 @@ const SaveLocationPage = () => {
 
     let locationToShow = existingLocation;
 
-    // If location doesn't exist, create it temporarily (will be saved properly when user clicks save)
+    // If location doesn't exist, create it temporarily
     if (!existingLocation) {
-      // Create the location in database so PinDetailCard can work with it
       const { data: newLocation, error } = await supabase
         .from('locations')
         .insert({
@@ -64,13 +66,28 @@ const SaveLocationPage = () => {
         lng: locationToShow?.longitude || place.coordinates.lng,
       },
     });
-    setShowSearch(false);
+  };
+
+  const handleOutsideClick = (e: React.MouseEvent) => {
+    if (e.target === containerRef.current) {
+      setIsFocused(false);
+    }
+  };
+
+  const handleScroll = () => {
+    setIsScrolling(true);
+    setIsFocused(false);
   };
 
   return (
     <>
-      {/* Main Page - Search Button */}
-      <div className="fixed inset-0 bg-background z-[10001] flex flex-col pt-[25px]">
+      {/* Main Page with Search */}
+      <div 
+        ref={containerRef}
+        onClick={handleOutsideClick}
+        className="fixed inset-0 bg-background z-[10001] flex flex-col pt-[25px]"
+      >
+        {/* Header */}
         <div className="flex items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <button
@@ -85,39 +102,27 @@ const SaveLocationPage = () => {
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col items-center justify-center px-4">
-          <button
-            onClick={() => setShowSearch(true)}
-            className="w-full max-w-md px-6 py-4 bg-muted hover:bg-muted/80 rounded-xl flex items-center gap-3 transition-colors"
-          >
-            <Search className="w-5 h-5 text-muted-foreground" />
-            <span className="text-muted-foreground">
-              {t('common:searchLocation', { defaultValue: 'Cerca luogo' })}
-            </span>
-          </button>
+        {/* Search Input - Positioned based on focus state */}
+        <div 
+          className={cn(
+            "px-4 transition-all duration-300",
+            isFocused && !isScrolling ? "mt-[30vh]" : "fixed bottom-24 left-0 right-0",
+            isScrolling && "opacity-0 pointer-events-none"
+          )}
+        >
+          <UnifiedSearchAutocomplete
+            onPlaceSelect={handlePlaceSelect}
+            placeholder={t('common:searchLocationPlaceholder', { defaultValue: 'Cerca ristoranti, bar, hotel...' })}
+            autoFocus={true}
+            onFocus={() => {
+              setIsFocused(true);
+              setIsScrolling(false);
+            }}
+            onScroll={handleScroll}
+            showCategoryIcons={true}
+          />
         </div>
       </div>
-
-      {/* Full-Page Search Overlay */}
-      {showSearch && (
-        <div className="fixed inset-0 bg-background z-[10002] flex flex-col pt-[25px]">
-          <div className="flex items-center gap-3 px-4 py-4">
-            <button
-              onClick={() => setShowSearch(false)}
-              className="p-2 hover:bg-accent rounded-full transition-colors flex-shrink-0"
-            >
-              <X className="h-5 w-5" />
-            </button>
-            <div className="flex-1">
-              <UnifiedSearchAutocomplete
-                onPlaceSelect={handlePlaceSelect}
-                placeholder={t('common:searchLocationPlaceholder', { defaultValue: 'Cerca ristoranti, bar, hotel...' })}
-                autoFocus
-              />
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* PinDetailCard */}
       {selectedPlace && (
