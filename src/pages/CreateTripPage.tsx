@@ -120,7 +120,7 @@ const CreateTripPage = () => {
       }
 
       toast.success(t('trips:tripCreated', { defaultValue: 'Viaggio creato con successo' }));
-      navigate('/profile');
+      navigate('/profile?tab=trips');
     } catch (error) {
       console.error('Error creating trip:', error);
       toast.error(t('trips:errorCreatingTrip', { defaultValue: 'Errore nella creazione del viaggio' }));
@@ -145,10 +145,10 @@ const CreateTripPage = () => {
   return (
     <div className="fixed inset-0 bg-background z-[10001] flex flex-col pt-[25px]">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-border">
+      <div className="flex items-center justify-between px-4 py-4">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <button
-            onClick={() => navigate('/profile')}
+            onClick={() => navigate('/profile?tab=trips')}
             className="p-2 hover:bg-accent rounded-full transition-colors flex-shrink-0"
           >
             <X className="h-5 w-5" />
@@ -287,7 +287,7 @@ const CreateTripPage = () => {
       </ScrollArea>
 
       {/* Footer Actions */}
-      <div className="p-4 border-t border-border">
+      <div className="p-4">
         <Button
           onClick={handleSave}
           disabled={saving || !tripName.trim()}

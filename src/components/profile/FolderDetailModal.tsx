@@ -33,6 +33,7 @@ const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps
   const [isSaved, setIsSaved] = useState(false);
   const [showSavedBy, setShowSavedBy] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -44,6 +45,11 @@ const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps
       document.body.removeAttribute('data-folder-modal-open');
     };
   }, [isOpen]);
+
+  const handleScroll = (e: any) => {
+    const scrollTop = e.target.scrollTop;
+    setScrolled(scrollTop > 50);
+  };
 
   useEffect(() => {
     const fetchFolder = async () => {
@@ -245,13 +251,16 @@ const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps
           </div>
 
           {/* Content */}
-          <div className="overflow-y-auto max-h-[calc(90vh-300px)]">
+          <div className="overflow-y-auto max-h-[calc(90vh-300px)]" onScroll={handleScroll}>
             <div className="p-6 space-y-6">
               {/* Title */}
               <h2 className="text-2xl font-bold">{folder.name}</h2>
 
-              {/* Stats Row with Action Buttons */}
-              <div className="flex items-center justify-between">
+              {/* Stats Row with Action Buttons - Fade on scroll */}
+              <div className={cn(
+                "flex items-center justify-between transition-opacity duration-300",
+                scrolled && "opacity-0 pointer-events-none"
+              )}>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1.5">
                     <MapPin className="h-4 w-4" />
@@ -293,9 +302,12 @@ const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps
                 </div>
               </div>
 
-              {/* User Info with Stories */}
+              {/* User Info with Stories - Fade on scroll */}
               {folder.profiles && (
-                <div className="flex items-center gap-3">
+                <div className={cn(
+                  "flex items-center gap-3 transition-opacity duration-300",
+                  scrolled && "opacity-0 pointer-events-none"
+                )}>
                   <button
                     onClick={handleAvatarClick}
                     disabled={isOwnFolder}
@@ -341,7 +353,7 @@ const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps
               {/* Locations */}
               {locations.length > 0 && (
                 <div className="space-y-3">
-                  <h3 className="font-semibold text-lg">{t('common:locations', { defaultValue: 'Locations' })}</h3>
+                  <h3 className="font-semibold text-lg">{t('common:vibes', { defaultValue: 'Vibes' })}</h3>
                   <div className="space-y-2">
                     {locations.map((location: any) => (
                       <button
@@ -403,17 +415,19 @@ const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps
         />
       )}
 
-      {/* Share Modal */}
+      {/* Share Modal - Higher z-index */}
       {showShareModal && folder && (
-        <LocationShareModal
-          isOpen={showShareModal}
-          onClose={() => setShowShareModal(false)}
-          place={{
-            id: folderId,
-            name: folder.name,
-            type: 'folder'
-          }}
-        />
+        <div className="fixed inset-0 z-[10005]">
+          <LocationShareModal
+            isOpen={showShareModal}
+            onClose={() => setShowShareModal(false)}
+            place={{
+              id: folderId,
+              name: folder.name,
+              type: 'folder'
+            }}
+          />
+        </div>
       )}
     </>
   );
