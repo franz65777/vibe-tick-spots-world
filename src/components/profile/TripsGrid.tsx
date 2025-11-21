@@ -171,18 +171,18 @@ const TripsGrid = () => {
           <div className="mb-4 flex gap-2">
             <Button
               onClick={() => setShowFolderEditor(true)}
-              className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+              className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl"
             >
               <Folder className="w-4 h-4 mr-2" />
-              New List
+              {t('newList')}
             </Button>
             <Button
               onClick={() => setShowCreateModal(true)}
               variant="outline"
-              className="flex-1"
+              className="flex-1 rounded-xl"
             >
               <Plus className="w-4 h-4 mr-2" />
-              New Trip
+              {t('newTrip')}
             </Button>
           </div>
           
@@ -191,15 +191,13 @@ const TripsGrid = () => {
             {folders.map((folder) => (
               <div
                 key={`folder-${folder.id}`}
-                className="relative bg-card rounded-xl overflow-hidden shadow-sm border border-border hover:shadow-md transition-shadow group"
+                className="relative bg-card rounded-xl overflow-hidden shadow-sm border border-border hover:shadow-md transition-shadow group cursor-pointer"
+                onClick={() => setViewingFolderId(folder.id)}
               >
-                <div 
-                  className="aspect-square bg-muted cursor-pointer"
-                  onClick={() => setViewingFolderId(folder.id)}
-                >
-                  {folder.cover_image ? (
+                <div className="aspect-square bg-muted">
+                  {folder.cover_image_url ? (
                     <img
-                      src={folder.cover_image}
+                      src={folder.cover_image_url}
                       alt={folder.name}
                       className="w-full h-full object-cover"
                     />
@@ -220,17 +218,12 @@ const TripsGrid = () => {
                 </div>
                 
                 <div className="p-3 relative">
-                  <div 
-                    className="cursor-pointer"
-                    onClick={() => setViewingFolderId(folder.id)}
-                  >
-                    <h3 className="font-semibold text-sm text-foreground truncate pr-8">
-                      {folder.name}
-                    </h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {folder.locations_count || 0} places
-                    </p>
-                  </div>
+                  <h3 className="font-semibold text-sm text-foreground truncate pr-8">
+                    {folder.name}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {folder.locations_count || 0} places
+                  </p>
                   
                   <button
                     onClick={(e) => {

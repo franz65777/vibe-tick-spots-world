@@ -1,9 +1,10 @@
-import { X, MapPin, Eye, Bookmark } from 'lucide-react';
+import { X, MapPin, Eye, Bookmark, MessageCircle, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Trip, useTrips } from '@/hooks/useTrips';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import TripChatModal from './TripChatModal';
 
 interface TripDetailModalProps {
   trip?: Trip | null;
@@ -15,6 +16,8 @@ interface TripDetailModalProps {
 const TripDetailModal = ({ trip: providedTrip, tripId, isOpen, onClose }: TripDetailModalProps) => {
   const [trip, setTrip] = useState<Trip | null>(providedTrip || null);
   const [loading, setLoading] = useState(false);
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [participants, setParticipants] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchTrip = async () => {
@@ -65,8 +68,29 @@ const TripDetailModal = ({ trip: providedTrip, tripId, isOpen, onClose }: TripDe
 
     if (isOpen) {
       fetchTrip();
+      if (trip?.id) {
+        loadParticipants();
+      }
     }
-  }, [tripId, providedTrip, isOpen]);
+  }, [tripId, providedTrip, isOpen, trip?.id]);
+
+  const loadParticipants = async () => {
+    if (!trip?.id) return;
+    
+    try {
+      const { data } = await supabase
+        .from('trip_participants')
+        .select(`
+          *,
+          profiles (id, username, avatar_url)
+        `)
+        .eq('trip_id', trip.id);
+
+      setParticipants(data?.map((p: any) => p.profiles).filter(Boolean) || []);
+    } catch (error) {
+      console.error('Error loading participants:', error);
+    }
+  };
 
   useEffect(() => {
     if (providedTrip) {
@@ -141,16 +165,33 @@ const TripDetailModal = ({ trip: providedTrip, tripId, isOpen, onClose }: TripDe
             </div>
           </div>
 
-          {/* User Info */}
-          {trip.profiles && (
-            <div className="flex items-center gap-2">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={trip.profiles.avatar_url} />
-                <AvatarFallback>{trip.profiles.username?.[0]?.toUpperCase()}</AvatarFallback>
-              </Avatar>
-              <span className="text-sm text-muted-foreground">@{trip.profiles.username}</span>
-            </div>
-          )}
+          {/* User Info & Participants */}
+          <div className="flex items-center justify-between">
+            {trip.profiles && (
+              <div className="flex items-center gap-2">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={trip.profiles.avatar_url} />
+                  <AvatarFallback>{trip.profiles.username?.[0]?.toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <span className="text-sm text-muted-foreground">@{trip.profiles.username}</span>
+              </div>
+            )}
+
+            {/* Show Chat Button if collaborative */}
+            {participants.length > 1 && (
+              <Button
+                onClick={() => setShowChatModal(true)}
+                variant="outline"
+                size="sm"
+                className="rounded-xl"
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                <span>Chat</span>
+                <Users className="w-4 h-4 ml-2 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">{participants.length}</span>
+              </Button>
+            )}
+          </div>
 
           {/* Description */}
           {trip.description && (
@@ -197,6 +238,15 @@ const TripDetailModal = ({ trip: providedTrip, tripId, isOpen, onClose }: TripDe
           )}
         </div>
       </div>
+
+      {showChatModal && trip && (
+        <TripChatModal
+          tripId={trip.id}
+          tripName={trip.name}
+          isOpen={showChatModal}
+          onClose={() => setShowChatModal(false)}
+        />
+      )}
     </div>
   );
 };
