@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { compressImage } from '@/utils/imageUtils';
 
 const FOLDER_COLORS = [
   'bg-red-500',
@@ -243,7 +244,7 @@ const CreateListPage = () => {
       let fileToUpload = file;
       let fileExt = file.name.split('.').pop()?.toLowerCase();
 
-      // Convert HEIC/HEIF to JPEG
+      // Convert HEIC/HEIF to JPEG when possible
       if (fileExt === 'heic' || fileExt === 'heif') {
         try {
           const canvas = document.createElement('canvas');
@@ -270,20 +271,33 @@ const CreateListPage = () => {
           URL.revokeObjectURL(imageUrl);
         } catch (conversionError) {
           console.error('HEIC conversion failed:', conversionError);
-          toast.error(t('profile:heicConversionFailed', { defaultValue: 'Impossibile convertire immagine HEIC. Usa JPG o PNG.' }));
-          setUploadingCover(false);
-          return;
+          // Fallback: upload original file (Supabase supports HEIC), but some browsers may not display it
+          fileToUpload = file;
         }
       }
 
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      // Compress large images to avoid hitting storage limits
+      if (fileToUpload.size > 3 * 1024 * 1024) {
+        try {
+          const compressed = await compressImage(fileToUpload, 1600, 0.8);
+          fileToUpload = compressed;
+          fileExt = compressed.name.split('.').pop()?.toLowerCase() || fileExt;
+        } catch (compressionError) {
+          console.error('Cover image compression failed:', compressionError);
+        }
+      }
+
+      const fileName = `${user.id}-${Date.now()}.${fileExt || 'jpg'}`;
       const filePath = `folder-covers/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('media')
         .upload(filePath, fileToUpload);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Supabase storage upload error:', uploadError);
+        throw uploadError;
+      }
 
       const { data: { publicUrl } } = supabase.storage
         .from('media')
@@ -291,9 +305,10 @@ const CreateListPage = () => {
 
       setCoverImageUrl(publicUrl);
       toast.success(t('profile:coverImageUploaded', { defaultValue: 'Immagine di copertina caricata' }));
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading cover image:', error);
-      toast.error(t('profile:errorUploadingCover', { defaultValue: 'Errore nel caricamento dell\'immagine' }));
+      const message = error?.message || t('profile:errorUploadingCover', { defaultValue: "Errore nel caricamento dell'immagine" });
+      toast.error(message);
     } finally {
       setUploadingCover(false);
     }
