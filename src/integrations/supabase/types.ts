@@ -2399,11 +2399,41 @@ export type Database = {
           },
         ]
       }
+      trip_location_likes: {
+        Row: {
+          created_at: string | null
+          id: string
+          trip_location_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          trip_location_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          trip_location_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_location_likes_trip_location_id_fkey"
+            columns: ["trip_location_id"]
+            isOneToOne: false
+            referencedRelation: "trip_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trip_locations: {
         Row: {
           created_at: string | null
           google_place_id: string | null
           id: string
+          likes_count: number | null
           location_id: string | null
           notes: string | null
           order_index: number
@@ -2413,6 +2443,7 @@ export type Database = {
           created_at?: string | null
           google_place_id?: string | null
           id?: string
+          likes_count?: number | null
           location_id?: string | null
           notes?: string | null
           order_index: number
@@ -2422,6 +2453,7 @@ export type Database = {
           created_at?: string | null
           google_place_id?: string | null
           id?: string
+          likes_count?: number | null
           location_id?: string | null
           notes?: string | null
           order_index?: number
@@ -2444,16 +2476,96 @@ export type Database = {
           },
         ]
       }
+      trip_messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          location_id: string | null
+          message_type: string | null
+          trip_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          location_id?: string | null
+          message_type?: string | null
+          trip_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          location_id?: string | null
+          message_type?: string | null
+          trip_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_messages_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_messages_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trip_participants: {
+        Row: {
+          id: string
+          joined_at: string | null
+          role: string
+          trip_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string | null
+          role?: string
+          trip_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string | null
+          role?: string
+          trip_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_participants_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trips: {
         Row: {
           city: string
           country: string | null
           cover_image_url: string | null
           created_at: string | null
+          created_by: string | null
           description: string | null
           id: string
+          is_collaborative: boolean | null
           is_public: boolean | null
           name: string
+          privacy: string | null
           save_count: number | null
           updated_at: string | null
           user_id: string
@@ -2464,10 +2576,13 @@ export type Database = {
           country?: string | null
           cover_image_url?: string | null
           created_at?: string | null
+          created_by?: string | null
           description?: string | null
           id?: string
+          is_collaborative?: boolean | null
           is_public?: boolean | null
           name: string
+          privacy?: string | null
           save_count?: number | null
           updated_at?: string | null
           user_id: string
@@ -2478,10 +2593,13 @@ export type Database = {
           country?: string | null
           cover_image_url?: string | null
           created_at?: string | null
+          created_by?: string | null
           description?: string | null
           id?: string
+          is_collaborative?: boolean | null
           is_public?: boolean | null
           name?: string
+          privacy?: string | null
           save_count?: number | null
           updated_at?: string | null
           user_id?: string
