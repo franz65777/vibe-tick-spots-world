@@ -199,6 +199,9 @@ const resources = {
       add: 'Add',
       feed: 'Feed',
       profile: 'Profile',
+      addLocation: 'Add Place',
+      addPost: 'Add Post',
+      addList: 'Create List'
     },
     mapFilters: {
       following: 'Following',
@@ -1035,6 +1038,9 @@ const resources = {
       add: 'Añadir',
       feed: 'Feed',
       profile: 'Perfil',
+      addLocation: 'Añadir lugar',
+      addPost: 'Añadir publicación',
+      addList: 'Crear lista'
     },
     mapFilters: {
       following: 'Siguiendo',
@@ -1827,6 +1833,9 @@ const resources = {
       add: 'Aggiungi',
       feed: 'Feed',
       profile: 'Profilo',
+      addLocation: 'Aggiungi luogo',
+      addPost: 'Aggiungi post',
+      addList: 'Crea lista'
     },
     mapFilters: {
       following: 'Seguiti',
@@ -2596,6 +2605,9 @@ const resources = {
       add: 'Ajouter',
       feed: 'Fil',
       profile: 'Profil',
+      addLocation: 'Ajouter un lieu',
+      addPost: 'Ajouter une publication',
+      addList: 'Créer une liste'
     },
     mapFilters: {
       following: 'Abonnés',
@@ -3246,6 +3258,9 @@ const resources = {
       add: 'Hinzufügen',
       feed: 'Feed',
       profile: 'Profil',
+      addLocation: 'Ort hinzufügen',
+      addPost: 'Beitrag hinzufügen',
+      addList: 'Liste erstellen'
     },
     mapFilters: {
       following: 'Folge ich',
@@ -3837,6 +3852,9 @@ const resources = {
       add: 'Adicionar',
       feed: 'Feed',
       profile: 'Perfil',
+      addLocation: 'Adicionar local',
+      addPost: 'Adicionar publicação',
+      addList: 'Criar lista'
     },
     mapFilters: {
       following: 'Seguindo',
@@ -4389,6 +4407,9 @@ const resources = {
       add: '添加',
       feed: '动态',
       profile: '个人资料',
+      addLocation: '添加地点',
+      addPost: '添加帖子',
+      addList: '创建列表'
     },
     mapFilters: {
       following: '关注',
