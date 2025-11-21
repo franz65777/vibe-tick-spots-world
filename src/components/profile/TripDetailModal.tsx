@@ -1,15 +1,77 @@
 import { X, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Trip } from '@/hooks/useTrips';
+import { Trip, useTrips } from '@/hooks/useTrips';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TripDetailModalProps {
-  trip: Trip | null;
+  trip?: Trip | null;
+  tripId?: string;
   isOpen: boolean;
   onClose: () => void;
 }
 
-const TripDetailModal = ({ trip, isOpen, onClose }: TripDetailModalProps) => {
-  if (!isOpen || !trip) return null;
+const TripDetailModal = ({ trip: providedTrip, tripId, isOpen, onClose }: TripDetailModalProps) => {
+  const [trip, setTrip] = useState<Trip | null>(providedTrip || null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchTrip = async () => {
+      if (!tripId || providedTrip) return;
+      
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('trips')
+          .select(`
+            *,
+            trip_locations (
+              id,
+              order_index,
+              notes,
+              location_id,
+              google_place_id,
+              locations (
+                id,
+                name,
+                category,
+                city,
+                image_url
+              )
+            )
+          `)
+          .eq('id', tripId)
+          .single();
+
+        if (error) throw error;
+        setTrip(data as Trip);
+      } catch (error) {
+        console.error('Error fetching trip:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (isOpen) {
+      fetchTrip();
+    }
+  }, [tripId, providedTrip, isOpen]);
+
+  useEffect(() => {
+    if (providedTrip) {
+      setTrip(providedTrip);
+    }
+  }, [providedTrip]);
+
+  if (!isOpen) return null;
+  if (loading) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      </div>
+    );
+  }
+  if (!trip) return null;
 
   const locations = trip.trip_locations || [];
   const coverImage = trip.cover_image_url || locations[0]?.locations?.image_url || 

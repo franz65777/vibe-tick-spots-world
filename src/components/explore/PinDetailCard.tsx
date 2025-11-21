@@ -19,6 +19,8 @@ import { useDetailedAddress } from '@/hooks/useDetailedAddress';
 import { useLocationStats } from '@/hooks/useLocationStats';
 import SavedByModal from './SavedByModal';
 import { useTranslation } from 'react-i18next';
+import { useFeaturedInLists } from '@/hooks/useFeaturedInLists';
+import TripDetailModal from '../profile/TripDetailModal';
 import { useMarketingCampaign } from '@/hooks/useMarketingCampaign';
 import MarketingCampaignBanner from './MarketingCampaignBanner';
 import { formatDistanceToNow, Locale } from 'date-fns';
@@ -78,6 +80,8 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
   const [showActionButtons, setShowActionButtons] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
+  const [tripDetailOpen, setTripDetailOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   // Source post ID - if the pin was opened from a post
@@ -105,6 +109,10 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
     googlePlaceIdForEngagement
   );
   const { stats, loading: statsLoading } = useLocationStats(
+    locationIdForEngagement,
+    googlePlaceIdForEngagement
+  );
+  const { lists: featuredLists, isLoading: listsLoading } = useFeaturedInLists(
     locationIdForEngagement,
     googlePlaceIdForEngagement
   );
@@ -638,6 +646,33 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
             </div>
           )}
 
+          {/* Featured in Lists Section */}
+          {!listsLoading && featuredLists.length > 0 && (
+            <div className="px-4 py-3 border-t border-border bg-muted/30">
+              <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+                📌 Featured in Lists
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {featuredLists.map((list) => (
+                  <button
+                    key={list.trip_id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedTripId(list.trip_id);
+                      setTripDetailOpen(true);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-background hover:bg-accent rounded-full border border-border text-xs font-medium transition-colors"
+                  >
+                    <span>{list.is_own ? '📝' : '👥'}</span>
+                    <span className="text-foreground">
+                      {list.is_own ? list.trip_name : `${list.username}'s ${list.trip_name}`}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Tabs and Content */}
           <div className="flex-1 overflow-hidden flex flex-col">
             {/* Tab Navigation with Horizontal Scroll */}
@@ -865,6 +900,17 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
         placeId={place.id || locationDetails?.id}
         googlePlaceId={place.google_place_id || locationDetails?.google_place_id}
       />
+
+      {selectedTripId && tripDetailOpen && (
+        <TripDetailModal
+          tripId={selectedTripId}
+          isOpen={tripDetailOpen}
+          onClose={() => {
+            setSelectedTripId(null);
+            setTripDetailOpen(false);
+          }}
+        />
+      )}
     </>
   );
 };

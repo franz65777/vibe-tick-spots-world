@@ -15,6 +15,8 @@ import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
 import { cn } from '@/lib/utils';
 import { SaveLocationDropdown } from '@/components/common/SaveLocationDropdown';
 import type { SaveTag } from '@/utils/saveTags';
+import { useFeaturedInLists } from '@/hooks/useFeaturedInLists';
+import TripDetailModal from '../profile/TripDetailModal';
 
 interface EnhancedLocationCardProps {
   place: any;
@@ -31,6 +33,8 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
   const [loading, setLoading] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
+  const [tripDetailOpen, setTripDetailOpen] = useState(false);
   const { mutedLocations, muteLocation, unmuteLocation, isMuting } = useMutedLocations(user?.id);
 
   const isMuted = mutedLocations?.some((m: any) => m.location_id === place.id);
@@ -44,6 +48,10 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
   });
 
   const { stats } = useLocationStats(place.id, place.google_place_id);
+  const { lists: featuredLists, isLoading: listsLoading } = useFeaturedInLists(
+    place.id,
+    place.google_place_id
+  );
 
   useEffect(() => {
     const checkInteractions = async () => {
@@ -315,6 +323,38 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
           </Button>
 
         </div>
+
+        {/* Featured in Lists Section */}
+        {!listsLoading && featuredLists.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-border">
+            <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+              📌 Featured in Lists
+            </h4>
+            <div className="flex flex-wrap gap-2">
+              {featuredLists.slice(0, 3).map((list) => (
+                <button
+                  key={list.trip_id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedTripId(list.trip_id);
+                    setTripDetailOpen(true);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-muted hover:bg-accent rounded-full border border-border text-xs font-medium transition-colors"
+                >
+                  <span>{list.is_own ? '📝' : '👥'}</span>
+                  <span className="text-foreground truncate max-w-[120px]">
+                    {list.is_own ? list.trip_name : `${list.username}'s ${list.trip_name}`}
+                  </span>
+                </button>
+              ))}
+              {featuredLists.length > 3 && (
+                <span className="text-xs text-muted-foreground py-1">
+                  +{featuredLists.length - 3} more
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
       
       {/* Share Modal */}
@@ -334,6 +374,18 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
           google_place_id: place.google_place_id
         }}
       />
+
+      {/* Trip Detail Modal */}
+      {selectedTripId && tripDetailOpen && (
+        <TripDetailModal
+          tripId={selectedTripId}
+          isOpen={tripDetailOpen}
+          onClose={() => {
+            setSelectedTripId(null);
+            setTripDetailOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 };

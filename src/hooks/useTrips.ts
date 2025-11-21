@@ -117,6 +117,28 @@ export const useTrips = () => {
     }
   };
 
+  const updateTrip = async (tripId: string, updates: {
+    name?: string;
+    description?: string;
+    cover_image_url?: string;
+    is_public?: boolean;
+  }) => {
+    try {
+      const { error } = await supabase
+        .from('trips')
+        .update(updates)
+        .eq('id', tripId);
+
+      if (error) throw error;
+
+      toast.success('List updated');
+      fetchTrips();
+    } catch (error: any) {
+      console.error('Error updating trip:', error);
+      toast.error('Failed to update list');
+    }
+  };
+
   const deleteTrip = async (tripId: string) => {
     try {
       const { error } = await supabase
@@ -126,11 +148,11 @@ export const useTrips = () => {
 
       if (error) throw error;
 
-      toast.success('Trip deleted');
+      toast.success('List deleted');
       fetchTrips();
     } catch (error: any) {
       console.error('Error deleting trip:', error);
-      toast.error('Failed to delete trip');
+      toast.error('Failed to delete list');
     }
   };
 
@@ -138,6 +160,7 @@ export const useTrips = () => {
     trips,
     isLoading,
     createTrip,
+    updateTrip,
     deleteTrip,
     refreshTrips: fetchTrips,
   };
