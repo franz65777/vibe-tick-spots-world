@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import SavedFoldersDrawer from './SavedFoldersDrawer';
 import FolderEditorPage from './FolderEditorPage';
+import FolderDetailModal from './FolderDetailModal';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
@@ -24,12 +25,12 @@ import { CategoryIcon } from '@/components/common/CategoryIcon';
 const TripsGrid = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTrip, setSelectedTrip] = useState<any>(null);
-  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [editingTrip, setEditingTrip] = useState<any>(null);
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [showFolderEditor, setShowFolderEditor] = useState(false);
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
+  const [viewingFolderId, setViewingFolderId] = useState<string | null>(null);
   const [folders, setFolders] = useState<any[]>([]);
   const [foldersLoading, setFoldersLoading] = useState(true);
   const { t } = useTranslation('trips');
@@ -88,7 +89,8 @@ const TripsGrid = () => {
             ...folder,
             locations_count: count || 0,
             location_categories: categories,
-            cover_image: coverImage
+            // Use folder's cover_image_url if set, otherwise fallback to first location's image
+            cover_image: folder.cover_image_url || coverImage
           };
         })
       );
@@ -193,7 +195,7 @@ const TripsGrid = () => {
               >
                 <div 
                   className="aspect-square bg-muted cursor-pointer"
-                  onClick={() => setSelectedFolder(folder.id)}
+                  onClick={() => setViewingFolderId(folder.id)}
                 >
                   {folder.cover_image ? (
                     <img
@@ -220,7 +222,7 @@ const TripsGrid = () => {
                 <div className="p-3 relative">
                   <div 
                     className="cursor-pointer"
-                    onClick={() => setSelectedFolder(folder.id)}
+                    onClick={() => setViewingFolderId(folder.id)}
                   >
                     <h3 className="font-semibold text-sm text-foreground truncate pr-8">
                       {folder.name}
@@ -323,12 +325,23 @@ const TripsGrid = () => {
         />
       )}
 
-      {selectedFolder && (
+      {viewingFolderId && (
+        <FolderDetailModal
+          folderId={viewingFolderId}
+          isOpen={!!viewingFolderId}
+          onClose={() => setViewingFolderId(null)}
+        />
+      )}
+
+      {editingFolderId && (
         <FolderEditorPage
-          isOpen={!!selectedFolder}
-          onClose={() => setSelectedFolder(null)}
-          folderId={selectedFolder}
-          onFolderSaved={loadFolders}
+          isOpen={!!editingFolderId}
+          onClose={() => setEditingFolderId(null)}
+          folderId={editingFolderId}
+          onFolderSaved={() => {
+            loadFolders();
+            setEditingFolderId(null);
+          }}
         />
       )}
 

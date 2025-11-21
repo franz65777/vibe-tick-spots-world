@@ -21,6 +21,7 @@ import SavedByModal from './SavedByModal';
 import { useTranslation } from 'react-i18next';
 import { useFeaturedInLists } from '@/hooks/useFeaturedInLists';
 import TripDetailModal from '../profile/TripDetailModal';
+import FolderDetailModal from '../profile/FolderDetailModal';
 import { useMarketingCampaign } from '@/hooks/useMarketingCampaign';
 import MarketingCampaignBanner from './MarketingCampaignBanner';
 import { formatDistanceToNow, Locale } from 'date-fns';
@@ -81,7 +82,9 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
   const [lastScrollY, setLastScrollY] = useState(0);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [tripDetailOpen, setTripDetailOpen] = useState(false);
+  const [folderDetailOpen, setFolderDetailOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   // Source post ID - if the pin was opened from a post
@@ -652,28 +655,30 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
               <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
                 📌 Featured in Lists
               </h4>
-              <div className="flex flex-wrap gap-2">
-                {featuredLists.map((list) => (
-                  <button
-                    key={list.list_id}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (list.type === 'folder') {
-                        // Open folder editor or detail view
-                        window.dispatchEvent(new CustomEvent('open-folder-detail', { detail: { folderId: list.list_id } }));
-                      } else {
-                        setSelectedTripId(list.list_id);
-                        setTripDetailOpen(true);
-                      }
-                    }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-background hover:bg-accent rounded-full border border-border text-xs font-medium transition-colors"
-                  >
-                    <span>{list.is_own ? '📝' : '👥'}</span>
-                    <span className="text-foreground">
-                      {list.is_own ? list.list_name : `${list.username}'s ${list.list_name}`}
-                    </span>
-                  </button>
-                ))}
+              <div className="overflow-x-auto">
+                <div className="flex gap-2 pb-2">
+                  {featuredLists.map((list) => (
+                    <button
+                      key={list.list_id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (list.type === 'folder') {
+                          setSelectedFolderId(list.list_id);
+                          setFolderDetailOpen(true);
+                        } else {
+                          setSelectedTripId(list.list_id);
+                          setTripDetailOpen(true);
+                        }
+                      }}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-muted hover:bg-accent rounded-full border border-border text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0"
+                    >
+                      <span>{list.is_own ? '📝' : '👥'}</span>
+                      <span className="text-foreground">
+                        {list.is_own ? list.list_name : `${list.username}'s ${list.list_name}`}
+                      </span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -913,6 +918,17 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
           onClose={() => {
             setSelectedTripId(null);
             setTripDetailOpen(false);
+          }}
+        />
+      )}
+
+      {selectedFolderId && folderDetailOpen && (
+        <FolderDetailModal
+          folderId={selectedFolderId}
+          isOpen={folderDetailOpen}
+          onClose={() => {
+            setSelectedFolderId(null);
+            setFolderDetailOpen(false);
           }}
         />
       )}

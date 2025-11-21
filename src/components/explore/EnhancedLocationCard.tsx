@@ -17,6 +17,7 @@ import { SaveLocationDropdown } from '@/components/common/SaveLocationDropdown';
 import type { SaveTag } from '@/utils/saveTags';
 import { useFeaturedInLists } from '@/hooks/useFeaturedInLists';
 import TripDetailModal from '../profile/TripDetailModal';
+import FolderDetailModal from '../profile/FolderDetailModal';
 
 interface EnhancedLocationCardProps {
   place: any;
@@ -34,7 +35,9 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [tripDetailOpen, setTripDetailOpen] = useState(false);
+  const [folderDetailOpen, setFolderDetailOpen] = useState(false);
   const { mutedLocations, muteLocation, unmuteLocation, isMuting } = useMutedLocations(user?.id);
 
   const isMuted = mutedLocations?.some((m: any) => m.location_id === place.id);
@@ -330,32 +333,30 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
             <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
               📌 Featured in Lists
             </h4>
-            <div className="flex flex-wrap gap-2">
-              {featuredLists.slice(0, 3).map((list) => (
-                <button
-                  key={list.list_id}
+            <div className="overflow-x-auto">
+              <div className="flex gap-2 pb-2">
+                {featuredLists.map((list) => (
+                  <button
+                    key={list.list_id}
                   onClick={(e) => {
                     e.stopPropagation();
                     if (list.type === 'folder') {
-                      window.dispatchEvent(new CustomEvent('open-folder-detail', { detail: { folderId: list.list_id } }));
+                      setSelectedFolderId(list.list_id);
+                      setFolderDetailOpen(true);
                     } else {
                       setSelectedTripId(list.list_id);
                       setTripDetailOpen(true);
                     }
                   }}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-muted hover:bg-accent rounded-full border border-border text-xs font-medium transition-colors"
-                >
-                  <span>{list.is_own ? '📝' : '👥'}</span>
-                  <span className="text-foreground truncate max-w-[120px]">
-                    {list.is_own ? list.list_name : `${list.username}'s ${list.list_name}`}
-                  </span>
-                </button>
-              ))}
-              {featuredLists.length > 3 && (
-                <span className="text-xs text-muted-foreground py-1">
-                  +{featuredLists.length - 3} more
-                </span>
-              )}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-muted hover:bg-accent rounded-full border border-border text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0"
+                  >
+                    <span>{list.is_own ? '📝' : '👥'}</span>
+                    <span className="text-foreground">
+                      {list.is_own ? list.list_name : `${list.username}'s ${list.list_name}`}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -387,6 +388,18 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
           onClose={() => {
             setSelectedTripId(null);
             setTripDetailOpen(false);
+          }}
+        />
+      )}
+
+      {/* Folder Detail Modal */}
+      {selectedFolderId && folderDetailOpen && (
+        <FolderDetailModal
+          folderId={selectedFolderId}
+          isOpen={folderDetailOpen}
+          onClose={() => {
+            setSelectedFolderId(null);
+            setFolderDetailOpen(false);
           }}
         />
       )}
