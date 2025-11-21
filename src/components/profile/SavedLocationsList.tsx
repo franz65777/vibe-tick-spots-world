@@ -3,7 +3,8 @@ import { ArrowLeft, Search, X, Bookmark } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import MinimalLocationCard from '@/components/explore/MinimalLocationCard';
+import { CategoryIcon } from '@/components/common/CategoryIcon';
+import CityLabel from '@/components/common/CityLabel';
 import LocationPostLibrary from '@/components/explore/LocationPostLibrary';
 import { useAuth } from '@/contexts/AuthContext';
 import { UnifiedLocationService } from '@/services/unifiedLocationService';
@@ -17,6 +18,12 @@ import SimpleCategoryFilter from '@/components/explore/SimpleCategoryFilter';
 import { AllowedCategory } from '@/utils/allowedCategories';
 import SavedFoldersDrawer from './SavedFoldersDrawer';
 import { useNavigate } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
+import { getRatingColor, getRatingFillColor } from '@/utils/ratingColors';
+import { getCategoryIcon } from '@/utils/categoryIcons';
+import { cn } from '@/lib/utils';
+import { Star } from 'lucide-react';
 
 interface SavedLocationsListProps {
   isOpen: boolean;
@@ -38,6 +45,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
   const [selectedCategory, setSelectedCategory] = useState<AllowedCategory | null>(null);
   const [isFoldersDrawerOpen, setIsFoldersDrawerOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
+  const [locationStats, setLocationStats] = useState<Map<string, { averageRating: number | null }>>(new Map());
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef(0);
@@ -59,6 +67,13 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
         const locations = await UnifiedLocationService.getUserSavedLocations(targetUserId, true);
         const grouped = await UnifiedLocationService.groupByCity(locations);
         setSavedPlaces(grouped);
+
+        // Load ratings for all locations in batch
+        const allLocationIds = locations.map((l: any) => l.id).filter(Boolean);
+        if (allLocationIds.length > 0) {
+          const stats = await fetchLocationStatsBatch(allLocationIds);
+          setLocationStats(stats);
+        }
       } catch (error) {
         console.error('Error loading saved places:', error);
       } finally {
@@ -70,6 +85,72 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
       loadSavedPlaces();
     }
   }, [targetUserId, isOpen]);
+
+  const fetchLocationStatsBatch = async (locationIds: string[]) => {
+    const statsMap = new Map<string, { averageRating: number | null }>();
+    
+    try {
+      // Fetch all ratings from interactions for all locations at once
+      const { data: interactionsData } = await supabase
+        .from('interactions')
+        .select('location_id, weight')
+        .in('location_id', locationIds)
+        .eq('action_type', 'review')
+        .not('weight', 'is', null);
+
+      // Fetch all ratings from posts for all locations at once
+      const { data: postsData } = await supabase
+        .from('posts')
+        .select('location_id, rating')
+        .in('location_id', locationIds)
+        .not('rating', 'is', null)
+        .gt('rating', 0);
+
+      // Group ratings by location_id
+      const ratingsByLocation = new Map<string, number[]>();
+
+      interactionsData?.forEach((item: any) => {
+        const rating = Number(item.weight);
+        if (rating > 0) {
+          if (!ratingsByLocation.has(item.location_id)) {
+            ratingsByLocation.set(item.location_id, []);
+          }
+          ratingsByLocation.get(item.location_id)!.push(rating);
+        }
+      });
+
+      postsData?.forEach((item: any) => {
+        const rating = Number(item.rating);
+        if (rating > 0) {
+          if (!ratingsByLocation.has(item.location_id)) {
+            ratingsByLocation.set(item.location_id, []);
+          }
+          ratingsByLocation.get(item.location_id)!.push(rating);
+        }
+      });
+
+      // Calculate average for each location
+      ratingsByLocation.forEach((ratings, locationId) => {
+        if (ratings.length > 0) {
+          const avg = ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
+          statsMap.set(locationId, { averageRating: Math.round(avg * 10) / 10 });
+        } else {
+          statsMap.set(locationId, { averageRating: null });
+        }
+      });
+
+      // Set null for locations without ratings
+      locationIds.forEach(id => {
+        if (!statsMap.has(id)) {
+          statsMap.set(id, { averageRating: null });
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching location stats:', error);
+    }
+
+    return statsMap;
+  };
 
   const unsavePlace = async (placeId: string, city: string) => {
     if (!currentUser || currentUser.id !== targetUserId) return;
@@ -439,24 +520,59 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
           <div className="px-4 pb-4">
             <div className="grid grid-cols-2 gap-2">
               {filteredAndSortedPlaces.map((p: any) => {
+                const stats = locationStats.get(p.id) || { averageRating: null };
+                const saveTagOption = SAVE_TAG_OPTIONS.find(opt => opt.value === p.save_tag);
+                
                 return (
                   <div key={p.id} className="relative group">
-                    <MinimalLocationCard
-                      place={{
-                        id: p.id,
-                        name: p.name,
-                        category: p.category,
-                        city: p.city,
-                        saveTag: p.save_tag
-                      }}
-                      onCardClick={() => handlePlaceClick(p)}
-                    />
+                    <div className="rounded-2xl shadow-sm border border-border hover:shadow-md transition-all duration-200 bg-card dark:bg-muted/30 dark:border-border/60 dark:backdrop-blur-sm">
+                      <div className="p-3 cursor-pointer" onClick={() => handlePlaceClick(p)}>
+                        <div className="flex items-center gap-3">
+                          <div className="shrink-0 bg-muted rounded-xl p-1.5">
+                            <CategoryIcon category={p.category} className="w-8 h-8" />
+                          </div>
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <h3 className="font-bold text-foreground text-sm truncate text-left">
+                                {p.name}
+                              </h3>
+                              {saveTagOption && p.save_tag !== 'general' && (
+                                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 shrink-0">
+                                  {saveTagOption.emoji}
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                              <div className="truncate">
+                                <CityLabel
+                                  id={p.google_place_id || p.id}
+                                  city={p.city}
+                                  name={p.name}
+                                  address={p.address}
+                                  coordinates={p.coordinates}
+                                />
+                              </div>
+                              {stats.averageRating && (
+                                <div className={cn("flex items-center gap-1 px-1.5 py-0.5 rounded-full shrink-0", getRatingFillColor(stats.averageRating) + "/10")}>
+                                  {(() => {
+                                    const CategoryIconComp = p.category ? getCategoryIcon(p.category) : Star;
+                                    return <CategoryIconComp className={cn("w-2.5 h-2.5", getRatingFillColor(stats.averageRating), getRatingColor(stats.averageRating))} />;
+                                  })()}
+                                  <span className={cn("text-xs font-semibold", getRatingColor(stats.averageRating))}>{stats.averageRating.toFixed(1)}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                     {isOwnProfile && (
                       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-6 w-6 bg-background/80 hover:bg-background"
+                          className="h-8 w-8 rounded-full bg-background/90 hover:bg-destructive hover:text-destructive-foreground"
                           onClick={(e) => handleUnsave(e, p)}
                         >
                           <X className="h-4 w-4" />

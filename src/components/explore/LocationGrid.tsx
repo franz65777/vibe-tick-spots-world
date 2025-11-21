@@ -347,11 +347,17 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
         g.postsCount = locationPosts;
 
         // Get average rating across all location IDs in this group
-        const ratings = g.allLocationIds
-          .map(id => ratingsMap.get(id))
-          .filter((r): r is number => r !== undefined);
-        if (ratings.length > 0) {
-          const avgRating = ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
+        // Collect ALL ratings from all location IDs (not average of averages)
+        const allRatings: number[] = [];
+        g.allLocationIds.forEach(id => {
+          const locationRatings = ratingsByLocation.get(id);
+          if (locationRatings && locationRatings.length > 0) {
+            allRatings.push(...locationRatings);
+          }
+        });
+        
+        if (allRatings.length > 0) {
+          const avgRating = allRatings.reduce((sum, r) => sum + r, 0) / allRatings.length;
           g.rankingScore = Math.round(avgRating * 10) / 10;
         }
       });
