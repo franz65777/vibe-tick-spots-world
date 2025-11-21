@@ -655,17 +655,22 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
               <div className="flex flex-wrap gap-2">
                 {featuredLists.map((list) => (
                   <button
-                    key={list.trip_id}
+                    key={list.list_id}
                     onClick={(e) => {
                       e.stopPropagation();
-                      setSelectedTripId(list.trip_id);
-                      setTripDetailOpen(true);
+                      if (list.type === 'folder') {
+                        // Open folder editor or detail view
+                        window.dispatchEvent(new CustomEvent('open-folder-detail', { detail: { folderId: list.list_id } }));
+                      } else {
+                        setSelectedTripId(list.list_id);
+                        setTripDetailOpen(true);
+                      }
                     }}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-background hover:bg-accent rounded-full border border-border text-xs font-medium transition-colors"
                   >
                     <span>{list.is_own ? '📝' : '👥'}</span>
                     <span className="text-foreground">
-                      {list.is_own ? list.trip_name : `${list.username}'s ${list.trip_name}`}
+                      {list.is_own ? list.list_name : `${list.username}'s ${list.list_name}`}
                     </span>
                   </button>
                 ))}

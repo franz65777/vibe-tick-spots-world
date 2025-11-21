@@ -1,5 +1,5 @@
-import { Plus, MapPin, MoreVertical, Edit, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { Plus, MapPin, MoreVertical, Edit, Trash2, Folder } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import CreateTripModal from './CreateTripModal';
 import { useTranslation } from 'react-i18next';
 import tripsEmptyImage from '@/assets/trips-empty-state.png';
@@ -15,15 +15,91 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import SavedFoldersDrawer from './SavedFoldersDrawer';
+import FolderEditorPage from './FolderEditorPage';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { CategoryIcon } from '@/components/common/CategoryIcon';
 
 const TripsGrid = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTrip, setSelectedTrip] = useState<any>(null);
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [editingTrip, setEditingTrip] = useState<any>(null);
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [showFolderEditor, setShowFolderEditor] = useState(false);
+  const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
+  const [folders, setFolders] = useState<any[]>([]);
+  const [foldersLoading, setFoldersLoading] = useState(true);
   const { t } = useTranslation('trips');
   const { trips, isLoading, createTrip, updateTrip, deleteTrip } = useTrips();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    loadFolders();
+  }, [user]);
+
+  const loadFolders = async () => {
+    if (!user) return;
+
+    setFoldersLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('saved_folders')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Get location counts for each folder
+      const foldersWithCounts = await Promise.all(
+        (data || []).map(async (folder: any) => {
+          const { count } = await supabase
+            .from('folder_locations')
+            .select('*', { count: 'exact', head: true })
+            .eq('folder_id', folder.id);
+
+          // Get first few locations for preview
+          const { data: folderLocs } = await supabase
+            .from('folder_locations')
+            .select('location_id')
+            .eq('folder_id', folder.id)
+            .limit(4);
+
+          let categories: string[] = [];
+          let coverImage: string | null = null;
+
+          if (folderLocs && folderLocs.length > 0) {
+            const locationIds = folderLocs.map((fl: any) => fl.location_id);
+            const { data: locs } = await supabase
+              .from('locations')
+              .select('category, image_url')
+              .in('id', locationIds);
+
+            if (locs) {
+              categories = locs.map((l: any) => l.category).filter(Boolean);
+              coverImage = locs[0]?.image_url || null;
+            }
+          }
+
+          return {
+            ...folder,
+            locations_count: count || 0,
+            location_categories: categories,
+            cover_image: coverImage
+          };
+        })
+      );
+
+      setFolders(foldersWithCounts);
+    } catch (error) {
+      console.error('Error loading folders:', error);
+    } finally {
+      setFoldersLoading(false);
+    }
+  };
 
   const handleCreateTrip = async (tripData: any) => {
     await createTrip(tripData);
@@ -52,7 +128,7 @@ const TripsGrid = () => {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || foldersLoading) {
     return (
       <div className="px-4 pt-6 flex justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -60,9 +136,11 @@ const TripsGrid = () => {
     );
   }
 
+  const allLists = [...folders, ...trips];
+
   return (
     <div className="px-4 pt-[25px]">
-      {trips.length === 0 ? (
+      {allLists.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-4 text-center">
           <div className="flex flex-col gap-3 w-full max-w-xs mb-8">
             <button 
@@ -88,17 +166,70 @@ const TripsGrid = () => {
         </div>
       ) : (
         <>
-          <div className="mb-4">
+          <div className="mb-4 flex gap-2">
+            <Button
+              onClick={() => setShowFolderEditor(true)}
+              className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
+              <Folder className="w-4 h-4 mr-2" />
+              New List
+            </Button>
             <Button
               onClick={() => setShowCreateModal(true)}
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+              variant="outline"
+              className="flex-1"
             >
               <Plus className="w-4 h-4 mr-2" />
-              {t('createButton')}
+              New Trip
             </Button>
           </div>
           
           <div className="grid grid-cols-2 gap-3 pb-4">
+            {/* Folders (main lists) */}
+            {folders.map((folder) => (
+              <div
+                key={`folder-${folder.id}`}
+                className="relative bg-card rounded-xl overflow-hidden shadow-sm border border-border cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => setSelectedFolder(folder.id)}
+              >
+                {folder.cover_image ? (
+                  <div className="aspect-square bg-muted">
+                    <img
+                      src={folder.cover_image}
+                      alt={folder.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : folder.location_categories.length > 0 ? (
+                  <div className="aspect-square bg-gradient-to-br from-primary/20 to-primary/5 flex flex-wrap gap-2 items-center justify-center p-4">
+                    {folder.location_categories.slice(0, 4).map((category: string, idx: number) => (
+                      <div key={idx} className="bg-white/20 backdrop-blur-sm rounded-lg p-2">
+                        <CategoryIcon category={category} className="w-6 h-6" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="aspect-square bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                    <Folder className="w-12 h-12 text-primary/40" />
+                  </div>
+                )}
+                
+                <div className="p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-sm text-foreground truncate">
+                        {folder.name}
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {folder.locations_count || 0} places
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {/* Trips */}
             {trips.map((trip) => (
               <div
                 key={trip.id}
@@ -178,10 +309,30 @@ const TripsGrid = () => {
         />
       )}
 
+      {selectedFolder && (
+        <FolderEditorPage
+          isOpen={!!selectedFolder}
+          onClose={() => setSelectedFolder(null)}
+          folderId={selectedFolder}
+          onFolderSaved={loadFolders}
+        />
+      )}
+
+      {showFolderEditor && (
+        <FolderEditorPage
+          isOpen={showFolderEditor}
+          onClose={() => setShowFolderEditor(false)}
+          onFolderSaved={() => {
+            loadFolders();
+            setShowFolderEditor(false);
+          }}
+        />
+      )}
+
       <Dialog open={!!editingTrip} onOpenChange={(open) => !open && setEditingTrip(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit List</DialogTitle>
+            <DialogTitle>Edit Trip</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -189,7 +340,7 @@ const TripsGrid = () => {
               <Input
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                placeholder="List name"
+                placeholder="Trip name"
               />
             </div>
             <div>
