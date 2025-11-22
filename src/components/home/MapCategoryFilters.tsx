@@ -202,7 +202,7 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
                 key={filter.id}
                 onClick={() => filter.id === 'following' ? handleFollowingClick() : setActiveFilter(filter.id)}
                 className={cn(
-                  "flex-shrink-0 flex flex-col items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl transition-all duration-200 backdrop-blur-xl border",
+                  "flex-1 flex flex-col items-center justify-center gap-1 px-5 py-1.5 rounded-xl transition-all duration-200 backdrop-blur-xl border min-w-[90px]",
                   isActive 
                     ? "bg-background/95 border-primary/40 shadow-md" 
                     : "bg-background/70 border-border/20 hover:bg-background/85"
