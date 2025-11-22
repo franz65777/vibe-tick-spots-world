@@ -19,6 +19,8 @@ interface MapFilterContextType {
   setSelectedSaveTags: (tags: SaveTagFilter[]) => void;
   toggleSaveTag: (tag: SaveTagFilter) => void;
   clearSaveTags: () => void;
+  filtersVisible: boolean;
+  setFiltersVisible: (visible: boolean) => void;
 }
 
 const MapFilterContext = createContext<MapFilterContextType | undefined>(undefined);
@@ -28,6 +30,7 @@ export const MapFilterProvider = ({ children }: { children: ReactNode }) => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedFollowedUserIds, setSelectedFollowedUserIds] = useState<string[]>([]);
   const [selectedSaveTags, setSelectedSaveTags] = useState<SaveTagFilter[]>([]);
+  const [filtersVisible, setFiltersVisible] = useState<boolean>(true);
 
   const toggleCategory = (categoryId: string) => {
     setSelectedCategories(prev => 
@@ -95,6 +98,8 @@ export const MapFilterProvider = ({ children }: { children: ReactNode }) => {
         setSelectedSaveTags,
         toggleSaveTag,
         clearSaveTags,
+        filtersVisible,
+        setFiltersVisible,
       }}
     >
       {children}

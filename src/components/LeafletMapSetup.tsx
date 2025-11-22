@@ -209,6 +209,13 @@ const LeafletMapSetup = ({
       onMapMove?.({ lat: center.lat, lng: center.lng }, bounds);
     });
 
+    // Map zoom event
+    map.on('zoomend', () => {
+      const center = map.getCenter();
+      const bounds = map.getBounds();
+      onMapMove?.({ lat: center.lat, lng: center.lng }, bounds);
+    });
+
     return () => {
       if (markerClusterGroupRef.current) {
         map.removeLayer(markerClusterGroupRef.current);
