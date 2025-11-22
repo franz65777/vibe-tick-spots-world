@@ -192,8 +192,16 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
     <div className="w-full max-w-full z-[1100] pointer-events-none">
       {/* Main Map Filters - Compact Style */}
       <div className="mb-2 pointer-events-auto flex justify-center">
-        <div className="flex gap-1.5 px-2">
-          {mapFilters.map((filter) => {
+        <div className="relative inline-flex">
+          {/* Background bar with fade */}
+          <div className="absolute inset-0 bg-background/20 backdrop-blur-md rounded-xl border border-border/5" />
+          
+          {/* Fade effect on edges */}
+          <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background/10 to-transparent pointer-events-none rounded-l-xl" />
+          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background/10 to-transparent pointer-events-none rounded-r-xl" />
+          
+          <div className="relative flex gap-1.5 px-2">
+            {mapFilters.map((filter) => {
             const isActive = activeFilter === filter.id;
             const Icon = filter.icon;
             
@@ -202,10 +210,10 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
                 key={filter.id}
                 onClick={() => filter.id === 'following' ? handleFollowingClick() : setActiveFilter(filter.id)}
                 className={cn(
-                  "flex-1 flex flex-col items-center justify-center gap-0.5 px-6 py-1 rounded-xl transition-all duration-200 backdrop-blur-xl border min-w-[95px]",
+                  "flex-1 flex flex-col items-center justify-center gap-0.5 px-6 py-1 rounded-xl transition-all duration-200 min-w-[95px]",
                   isActive 
-                    ? "bg-background/95 border-primary/40 shadow-md" 
-                    : "bg-background/70 border-border/20 hover:bg-background/85"
+                    ? "bg-primary/10 border-primary/20 shadow-sm" 
+                    : "hover:bg-background/10"
                 )}
                 title={filter.description}
               >
@@ -239,6 +247,7 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
               </button>
             );
           })}
+          </div>
         </div>
       </div>
 
@@ -359,13 +368,13 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
           {/* Continuous transparent background bar with fade edges */}
           <div className="relative inline-flex max-w-full">
             {/* Background bar */}
-            <div className="absolute inset-0 bg-background/50 backdrop-blur-md rounded-full border border-border/10" />
+            <div className="absolute inset-0 bg-background/25 backdrop-blur-md rounded-full border border-border/5" />
             
-            {/* Fade effect on edges */}
-            <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background/20 to-transparent pointer-events-none rounded-l-full" />
-            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background/20 to-transparent pointer-events-none rounded-r-full" />
+            {/* Fade effect on edges - more pronounced */}
+            <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-background/15 via-transparent to-transparent pointer-events-none rounded-l-full" />
+            <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-background/15 via-transparent to-transparent pointer-events-none rounded-r-full" />
             
-            <div className="relative flex gap-2 overflow-x-auto scrollbar-hide px-3 py-1.5">
+            <div className="relative flex gap-2 overflow-x-auto scrollbar-hide px-3 py-1">
               {/* Save Tags Filter - Only shown when in 'saved' mode */}
               {activeFilter === 'saved' && <SaveTagsFilter />}
               
