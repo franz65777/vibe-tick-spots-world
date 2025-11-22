@@ -8,7 +8,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Map, Search, Plus, Activity, User } from 'lucide-react';
 import { toast } from 'sonner';
 import AccountSwitchModal from './AccountSwitchModal';
-import { AddMenuDropdown } from './AddMenuDropdown';
 import { useTranslation } from 'react-i18next';
 import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -23,7 +22,6 @@ const NewBottomNavigation = () => {
   
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
-  const [showAddMenu, setShowAddMenu] = useState(false);
   const { t } = useTranslation();
   const [hideNav, setHideNav] = useState(false);
   const [longPressActivated, setLongPressActivated] = useState(false);
@@ -138,21 +136,6 @@ const NewBottomNavigation = () => {
     }
   };
 
-  const handleAddMenuSelect = (option: 'location' | 'post' | 'list') => {
-    trackEvent('add_menu_option_selected', { option });
-    switch (option) {
-      case 'location':
-        navigate('/save-location');
-        break;
-      case 'post':
-        navigate('/add');
-        break;
-      case 'list':
-        navigate('/create-list');
-        break;
-    }
-  };
-
   const navItems = [
     { 
       icon: <Map size={24} strokeWidth={2} />, 
@@ -191,12 +174,6 @@ const NewBottomNavigation = () => {
         currentMode="personal"
       />
       
-      <AddMenuDropdown
-        isOpen={showAddMenu}
-        onClose={() => setShowAddMenu(false)}
-        onSelectOption={handleAddMenuSelect}
-      />
-      
       <nav 
         className="fixed bottom-0 left-0 right-0 z-[110]"
         role="navigation"
@@ -209,13 +186,11 @@ const NewBottomNavigation = () => {
                 const isActive = location.pathname === item.path;
                 const isProfileTab = item.path === '/profile';
                 const isExploreTab = item.path === '/';
-                const isAddTab = item.path === '/add';
                 
                 return (
                   <button
                     key={item.path}
                     onClick={
-                      isAddTab ? () => setShowAddMenu(!showAddMenu) :
                       isProfileTab && !hasValidBusinessAccount ? handleProfileClick : 
                       isProfileTab || isExploreTab ? undefined : 
                       () => handleNavClick(item.path, item.label)

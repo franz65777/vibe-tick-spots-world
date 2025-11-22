@@ -131,6 +131,14 @@ export const useGeolocation = (): UseGeolocationReturn => {
     if (!navigator.geolocation) {
       console.error('🌍 Geolocation is not supported by this browser');
       setError('Geolocation is not supported by this browser');
+      // Set fallback immediately
+      const fallbackLocation = {
+        latitude: 37.7749,
+        longitude: -122.4194,
+        city: 'San Francisco',
+        accuracy: 0
+      };
+      setLocation(fallbackLocation);
       return;
     }
 
@@ -138,45 +146,76 @@ export const useGeolocation = (): UseGeolocationReturn => {
     setLoading(true);
     setError(null);
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude, accuracy } = position.coords;
-        console.log('🌍 Geolocation success:', { latitude, longitude, accuracy });
-        
+    // Try high accuracy first with longer timeout for mobile
+    const tryGetLocation = (useHighAccuracy: boolean, timeoutMs: number) => {
+      return new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: useHighAccuracy,
+          timeout: timeoutMs,
+          maximumAge: 0
+        });
+      });
+    };
+
+    // Try high accuracy first (30s timeout for mobile), fallback to low accuracy if it fails
+    const attemptGeolocation = async () => {
+      try {
+        console.log('🌍 Attempting high accuracy location (30s timeout)...');
+        const position = await tryGetLocation(true, 30000);
+        await processPosition(position);
+      } catch (highAccuracyError: any) {
+        console.warn('⚠️ High accuracy failed, trying low accuracy...', highAccuracyError);
         try {
-          const city = await getCityFromCoordinates(latitude, longitude);
-          console.log('🏙️ City detected from coordinates:', city);
-          
-          const newLocation = {
-            latitude,
-            longitude,
-            city,
-            accuracy
-          };
-          
-          // Save to localStorage for future use
-          try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(newLocation));
-          } catch (err) {
-            console.error('Error saving location to localStorage:', err);
-          }
-          
-          setLocation(newLocation);
-          console.log('✅ Location state updated:', newLocation);
+          const position = await tryGetLocation(false, 15000);
+          await processPosition(position);
+        } catch (lowAccuracyError: any) {
+          handleError(lowAccuracyError);
+        }
+      }
+    };
+
+    const processPosition = async (position: GeolocationPosition) => {
+      const { latitude, longitude, accuracy } = position.coords;
+      console.log('🌍 Geolocation success:', { latitude, longitude, accuracy });
+      
+      try {
+        const city = await getCityFromCoordinates(latitude, longitude);
+        console.log('🏙️ City detected from coordinates:', city);
+        
+        const newLocation = {
+          latitude,
+          longitude,
+          city,
+          accuracy
+        };
+        
+        // Save to localStorage for future use
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(newLocation));
         } catch (err) {
-          console.error('Error getting city name:', err);
-          setLocation({
-            latitude,
-            longitude,
-            accuracy
-          });
+          console.error('Error saving location to localStorage:', err);
         }
         
-        setLoading(false);
-      },
-      (error) => {
-        let errorMessage = 'Unknown error occurred';
-        
+        setLocation(newLocation);
+        console.log('✅ Location state updated:', newLocation);
+      } catch (err) {
+        console.error('Error getting city name:', err);
+        const newLocation = {
+          latitude,
+          longitude,
+          city: 'Unknown City',
+          accuracy
+        };
+        setLocation(newLocation);
+      }
+      
+      setLoading(false);
+    };
+
+    const handleError = (error: any) => {
+      let errorMessage = 'Unknown error occurred';
+      
+      if (error.code) {
         switch (error.code) {
           case error.PERMISSION_DENIED:
             errorMessage = 'Location permission denied. Please use the search bar to find your city.';
@@ -188,29 +227,32 @@ export const useGeolocation = (): UseGeolocationReturn => {
             errorMessage = 'Location request timed out. Try searching for your city instead.';
             break;
         }
-        
-        setError(errorMessage);
-        setLoading(false);
-        console.error('Geolocation error:', errorMessage);
-        
-        // If we don't have a stored location, set a default fallback
-        if (!location) {
-          console.log('🌍 Setting fallback location to San Francisco');
-          const fallbackLocation = {
-            latitude: 37.7749,
-            longitude: -122.4194,
-            city: 'San Francisco',
-            accuracy: 0
-          };
-          setLocation(fallbackLocation);
-        }
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0 // Always get fresh location
       }
-    );
+      
+      setError(errorMessage);
+      setLoading(false);
+      console.error('Geolocation error:', errorMessage, error);
+      
+      // Always set fallback location so app doesn't get stuck
+      if (!location) {
+        console.log('🌍 Setting fallback location to San Francisco');
+        const fallbackLocation = {
+          latitude: 37.7749,
+          longitude: -122.4194,
+          city: 'San Francisco',
+          accuracy: 0
+        };
+        setLocation(fallbackLocation);
+        // Save fallback to localStorage
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(fallbackLocation));
+        } catch (err) {
+          console.error('Error saving fallback location:', err);
+        }
+      }
+    };
+
+    attemptGeolocation();
   };
 
   useEffect(() => {
