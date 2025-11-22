@@ -288,7 +288,7 @@ const MapSection = ({
 
         {/* Map Controls - List View and Expand Toggle - Inside map - Hide when list is open */}
         {!isListViewOpen && (
-        <div className={`${isExpanded ? 'fixed bottom-[calc(env(safe-area-inset-bottom)+1rem)]' : 'absolute bottom-[calc(4rem+env(safe-area-inset-bottom)-1.75rem)]'} right-3 z-[1000] flex flex-row gap-2 data-[has-sharing=true]:flex-col data-[has-sharing=true]:items-end`} data-has-sharing={false}>
+        <div className={`${isExpanded ? 'fixed bottom-[calc(env(safe-area-inset-bottom)+1rem)]' : 'absolute bottom-[calc(4rem+env(safe-area-inset-bottom)-1.75rem+15px)]'} right-3 z-[1000] flex flex-row gap-2 data-[has-sharing=true]:flex-col data-[has-sharing=true]:items-end`} data-has-sharing={false}>
           {/* Expand/Collapse Button */}
           {onToggleExpand && (
             <Button
