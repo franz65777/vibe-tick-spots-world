@@ -281,9 +281,10 @@ const TripDetailModal = ({ trip: providedTrip, tripId, isOpen, onClose }: TripDe
       {/* Location Detail */}
       {selectedLocation && (
         <div className="fixed inset-0 z-[10010]">
-          <PinDetailCard
+          <PinDetailCard 
             place={selectedLocation}
             onClose={() => setSelectedLocation(null)}
+            onBack={() => setSelectedLocation(null)}
           />
         </div>
       )}

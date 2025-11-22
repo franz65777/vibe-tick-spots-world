@@ -418,9 +418,10 @@ const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps
       {/* Location Detail */}
       {selectedLocation && (
         <div className="fixed inset-0 z-[10010]">
-          <PinDetailCard
+          <PinDetailCard 
             place={selectedLocation}
             onClose={() => setSelectedLocation(null)}
+            onBack={() => setSelectedLocation(null)}
           />
         </div>
       )}
