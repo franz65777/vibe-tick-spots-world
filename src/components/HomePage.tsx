@@ -528,8 +528,8 @@ const HomePage = memo(() => {
         )}
       
       <main className="flex-1 flex flex-col overflow-x-hidden">
-        {/* Stories Section - 90px with overflow visible */}
-        {!isCreateStoryModalOpen && !isStoriesViewerOpen && (
+        {/* Stories Section - HIDDEN FOR NOW - Keep logic intact for later implementation */}
+        {/* {!isCreateStoryModalOpen && !isStoriesViewerOpen && (
           <Suspense fallback={<div className="h-[90px] flex-shrink-0" />}>
             <HomeStoriesSection
               stories={stories}
@@ -540,7 +540,7 @@ const HomePage = memo(() => {
               }}
             />
           </Suspense>
-        )}
+        )} */}
         
         {/* Discover Section - 110px */}
         {!isCreateStoryModalOpen && !isStoriesViewerOpen && (
