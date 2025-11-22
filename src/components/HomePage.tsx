@@ -529,7 +529,7 @@ const HomePage = memo(() => {
           />
         )}
       
-      <main className="flex-1 flex flex-col overflow-x-hidden">
+      <main className="flex-1 flex flex-col overflow-x-hidden pb-[calc(4rem+env(safe-area-inset-bottom))]">
         {/* Stories Section - HIDDEN FOR NOW - Keep logic intact for later implementation */}
         {/* {!isCreateStoryModalOpen && !isStoriesViewerOpen && (
           <Suspense fallback={<div className="h-[90px] flex-shrink-0" />}>
