@@ -87,7 +87,7 @@ const ProfilePage = memo(() => {
 
   if (error) {
     return (
-      <div className="flex flex-col h-full bg-background">
+      <div className="flex flex-col h-full bg-background pt-[env(safe-area-inset-top)]">
         <div className="flex items-center justify-center h-64">
           <p className="text-destructive">Error loading profile: {error}</p>
         </div>

@@ -454,7 +454,7 @@ const HomePage = memo(() => {
   // Show loading while checking onboarding
   if (checkingOnboarding) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center pt-[env(safe-area-inset-top)]">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading...</p>
@@ -465,7 +465,7 @@ const HomePage = memo(() => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center pt-[env(safe-area-inset-top)]">
         <div className="text-center">
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Welcome!</h2>
           <p className="text-gray-600 mb-4">Please sign in to explore amazing places</p>
