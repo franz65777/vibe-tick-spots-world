@@ -356,10 +356,16 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
       {/* Category Filters - Compact Icon Style with Continuous Background Bar */}
       {!(showUserSearch && activeFilter === 'following') && (
         <div className="flex justify-center pointer-events-auto">
-          {/* Continuous transparent background bar */}
-          <div className="relative inline-flex">
-            <div className="absolute inset-0 bg-background/60 backdrop-blur-xl rounded-2xl border border-border/20" />
-            <div className="relative flex gap-1.5 overflow-x-auto scrollbar-hide px-2 py-2">
+          {/* Continuous transparent background bar with fade edges */}
+          <div className="relative inline-flex max-w-full">
+            {/* Background bar */}
+            <div className="absolute inset-0 bg-background/50 backdrop-blur-md rounded-full border border-border/10" />
+            
+            {/* Fade effect on edges */}
+            <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background/20 to-transparent pointer-events-none rounded-l-full" />
+            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background/20 to-transparent pointer-events-none rounded-r-full" />
+            
+            <div className="relative flex gap-2 overflow-x-auto scrollbar-hide px-3 py-1.5">
               {/* Save Tags Filter - Only shown when in 'saved' mode */}
               {activeFilter === 'saved' && <SaveTagsFilter />}
               
@@ -371,40 +377,41 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
                     key={category.id}
                     onClick={() => toggleCategory(category.id)}
                     className={cn(
-                      "flex-shrink-0 flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-xl transition-all duration-200 backdrop-blur-xl border min-w-[52px]",
-                      isSelected 
-                        ? "bg-background/95 border-primary/40 shadow-md" 
-                        : "bg-background/30 border-border/10 hover:bg-background/50"
+                      "flex-shrink-0 flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded-lg transition-all duration-200 min-w-[48px]",
+                      isSelected && "bg-primary/10"
                     )}
                   >
-                  <CategoryIcon 
-                    category={category.id} 
-                    className="w-6 h-6"
-                  />
-                  <span className={cn(
-                    "text-[9px] font-medium whitespace-nowrap transition-colors",
-                    isSelected ? "text-foreground" : "text-muted-foreground"
-                  )}>
-                    {category.label}
+                    <CategoryIcon 
+                      category={category.id} 
+                      className={cn(
+                        "w-6 h-6 transition-all",
+                        isSelected && "scale-110"
+                      )}
+                    />
+                    <span className={cn(
+                      "text-[8px] font-medium whitespace-nowrap transition-colors",
+                      isSelected ? "text-primary" : "text-muted-foreground"
+                    )}>
+                      {category.label}
+                    </span>
+                  </button>
+                );
+              })}
+              
+              {selectedCategories.length > 0 && (
+                <button
+                  onClick={clearCategories}
+                  className="flex-shrink-0 flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded-lg hover:bg-secondary/50 transition-all duration-200 min-w-[48px]"
+                >
+                  <X className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-[8px] font-medium text-muted-foreground whitespace-nowrap">
+                    {t('common:clearAll')}
                   </span>
                 </button>
-              );
-            })}
-            
-            {selectedCategories.length > 0 && (
-              <button
-                onClick={clearCategories}
-                className="flex-shrink-0 flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-xl bg-background/30 backdrop-blur-xl border border-border/10 hover:bg-background/50 transition-all duration-200 min-w-[52px]"
-              >
-                <X className="w-4 h-4 text-muted-foreground" />
-                <span className="text-[9px] font-medium text-muted-foreground whitespace-nowrap">
-                  {t('common:clearAll')}
-                </span>
-              </button>
-            )}
+              )}
+            </div>
           </div>
         </div>
-      </div>
       )}
     </div>
   );
