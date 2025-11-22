@@ -25,6 +25,7 @@ interface MessagesModalProps {
 const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { i18n } = useTranslation();
   const [threads, setThreads] = useState<MessageThread[]>([]);
   const [selectedThread, setSelectedThread] = useState<MessageThread | null>(null);
   const [messages, setMessages] = useState<DirectMessage[]>([]);
@@ -138,7 +139,6 @@ const MessagesModal = ({ isOpen, onClose, initialUserId }: MessagesModalProps) =
   };
 
   const formatMessageTime = (timestamp: string) => {
-    const { i18n } = useTranslation();
     return formatDistanceToNow(new Date(timestamp), { addSuffix: true, locale: getDateFnsLocale(i18n.language) });
   };
 
