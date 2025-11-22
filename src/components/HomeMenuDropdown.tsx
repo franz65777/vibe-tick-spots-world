@@ -16,14 +16,12 @@ export const HomeMenuDropdown = ({ isOpen, onClose, onSelectOption }: HomeMenuDr
     {
       id: 'map' as const,
       icon: Map,
-      label: 'Mappa',
-      color: 'bg-blue-500 hover:bg-blue-600'
+      label: t('homeMenu.map', 'Mappa')
     },
     {
       id: 'share' as const,
       icon: MapPin,
-      label: 'Condividi luogo',
-      color: 'bg-green-500 hover:bg-green-600'
+      label: t('homeMenu.sharePosition', 'Condividi posizione')
     }
   ];
 
@@ -38,7 +36,7 @@ export const HomeMenuDropdown = ({ isOpen, onClose, onSelectOption }: HomeMenuDr
       />
       
       {/* Dropdown Menu */}
-      <div className="fixed bottom-20 left-8 z-[151] flex flex-col gap-3 pb-2">
+      <div className="fixed bottom-20 left-8 z-[151] flex flex-col gap-2 pb-2">
         {options.map((option, index) => (
           <button
             key={option.id}
@@ -47,9 +45,9 @@ export const HomeMenuDropdown = ({ isOpen, onClose, onSelectOption }: HomeMenuDr
               onClose();
             }}
             className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg text-white transition-all duration-200",
-              "transform hover:scale-105 active:scale-95",
-              option.color,
+              "flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg transition-all duration-200",
+              "bg-background/95 backdrop-blur-xl border border-border/20",
+              "hover:bg-accent/80 active:scale-95",
               "animate-in fade-in slide-in-from-bottom-4"
             )}
             style={{
@@ -57,10 +55,10 @@ export const HomeMenuDropdown = ({ isOpen, onClose, onSelectOption }: HomeMenuDr
               animationFillMode: 'both'
             }}
           >
-            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-              <option.icon className="w-5 h-5" />
+            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+              <option.icon className="w-5 h-5 text-primary" />
             </div>
-            <span className="font-medium text-sm whitespace-nowrap">
+            <span className="font-medium text-sm whitespace-nowrap text-foreground">
               {option.label}
             </span>
           </button>

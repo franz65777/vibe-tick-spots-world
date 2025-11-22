@@ -384,17 +384,17 @@ const ShareLocationPage = () => {
   return (
     <div className="min-h-screen bg-background overflow-y-auto scrollbar-hide">
       {/* Header */}
-      <div className="sticky top-0 z-50 bg-background">
+      <div className="sticky top-0 z-50 bg-background pt-safe">
         <div className="flex items-center justify-between p-4">
           <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-lg font-semibold">Condividi Posizione</h1>
+          <h1 className="text-lg font-semibold">{t('sharePosition.title', 'Condividi Posizione')}</h1>
           <div className="w-10" />
         </div>
       </div>
 
-      <div className="p-4 space-y-6 pb-32">
+      <div className="p-4 space-y-6 pb-32 pb-safe">
         {/* Search Bar */}
         <div className="relative flex items-center gap-2">
           <div className="relative flex-1">

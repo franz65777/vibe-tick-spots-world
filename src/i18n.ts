@@ -203,6 +203,13 @@ const resources = {
       addPost: 'Add Post',
       addList: 'Create List'
     },
+    homeMenu: {
+      map: 'Map',
+      sharePosition: 'Share Position'
+    },
+    sharePosition: {
+      title: 'Share Position'
+    },
     mapFilters: {
       following: 'Following',
       followingDesc: 'Places from people you follow',
@@ -1836,6 +1843,13 @@ const resources = {
       addLocation: 'Aggiungi luogo',
       addPost: 'Aggiungi post',
       addList: 'Crea lista'
+    },
+    homeMenu: {
+      map: 'Mappa',
+      sharePosition: 'Condividi posizione'
+    },
+    sharePosition: {
+      title: 'Condividi Posizione'
     },
     mapFilters: {
       following: 'Seguiti',
