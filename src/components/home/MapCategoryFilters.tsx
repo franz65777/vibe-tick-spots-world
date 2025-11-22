@@ -1,21 +1,10 @@
 import { useState, useEffect } from 'react';
 import { 
-  Coffee, 
-  Utensils, 
-  Wine, 
-  Building2 as Museum, 
-  ShoppingBag, 
-  Car,
-  Building,
-  TreePine,
   Users,
   TrendingUp,
   Bookmark,
-  Star,
   Search,
-  X,
-  Plus,
-  Croissant
+  X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMapFilter } from '@/contexts/MapFilterContext';
@@ -25,22 +14,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import SaveTagsFilter from './SaveTagsFilter';
+import { CategoryIcon } from '@/components/common/CategoryIcon';
 
-export interface CategoryFilter {
-  id: string;
-  name: string;
-  icon: React.ComponentType<{ className?: string }>;
-  color: string;
-}
-
-export const categoryFilters: CategoryFilter[] = [
-  { id: 'restaurant', name: 'Restaurants', icon: Utensils, color: 'bg-orange-500' },
-  { id: 'bar', name: 'Bars & Pubs', icon: Wine, color: 'bg-purple-500' },
-  { id: 'cafe', name: 'Cafés', icon: Coffee, color: 'bg-amber-500' },
-  { id: 'bakery', name: 'Bakeries', icon: Croissant, color: 'bg-yellow-500' },
-  { id: 'hotel', name: 'Hotels', icon: Building, color: 'bg-indigo-500' },
-  { id: 'museum', name: 'Museums', icon: Museum, color: 'bg-blue-500' },
-  { id: 'entertainment', name: 'Entertainment', icon: Star, color: 'bg-pink-500' }
+// Category config with emojis
+const categoryConfig = [
+  { id: 'restaurant', emoji: '🍝', label: 'Ristoranti' },
+  { id: 'bar', emoji: '🍸', label: 'Bar' },
+  { id: 'cafe', emoji: '☕', label: 'Caffè' },
+  { id: 'bakery', emoji: '🥐', label: 'Panetterie' },
+  { id: 'hotel', emoji: '🏨', label: 'Hotel' },
+  { id: 'museum', emoji: '🎨', label: 'Musei' },
+  { id: 'entertainment', emoji: '🎭', label: 'Intrattenimento' }
 ];
 
 interface MapCategoryFiltersProps {
@@ -67,13 +51,12 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Category counts type
   type CategoryCounts = Record<string, number>;
 
   const mapFilters = [
-    { id: 'following' as const, name: t('mapFilters:following'), icon: Users, description: t('mapFilters:followingDesc') },
-    { id: 'popular' as const, name: t('mapFilters:popular'), icon: TrendingUp, description: t('mapFilters:popularDesc') },
-    { id: 'saved' as const, name: t('mapFilters:saved'), icon: Bookmark, description: t('mapFilters:savedDesc') }
+    { id: 'following' as const, name: t('mapFilters:following'), icon: Users, emoji: '👥', description: t('mapFilters:followingDesc') },
+    { id: 'popular' as const, name: t('mapFilters:popular'), icon: TrendingUp, emoji: '🔥', description: t('mapFilters:popularDesc') },
+    { id: 'saved' as const, name: t('mapFilters:saved'), icon: Bookmark, emoji: '📍', description: t('mapFilters:savedDesc') }
   ];
 
   const handleFollowingClick = () => {
@@ -102,7 +85,6 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
     
     setLoading(true);
     try {
-      // Get users the current user follows
       const { data: followsData } = await supabase
         .from('follows')
         .select('following_id')
@@ -118,14 +100,12 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
 
       const normalizedCity = currentCity.trim().toLowerCase();
       
-      // Query saved_places with category counts
       const { data: savedPlacesData } = await supabase
         .from('saved_places')
         .select('user_id, city, place:places_cache(category)')
         .in('user_id', followingIds)
         .ilike('city', `%${normalizedCity}%`);
       
-      // Query user_saved_locations with category counts
       const { data: savedLocData } = await supabase
         .from('user_saved_locations')
         .select(`
@@ -134,7 +114,6 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
         `)
         .in('user_id', followingIds);
       
-      // Build user IDs and category counts
       const userDataMap = new Map<string, CategoryCounts>();
       
       savedPlacesData?.forEach((sp: any) => {
@@ -167,7 +146,6 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
         return;
       }
       
-      // Fetch profile data for these users
       let profileQuery = supabase
         .from('profiles')
         .select('id, username, avatar_url, bio')
@@ -179,7 +157,6 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
       
       const { data: profiles } = await profileQuery;
       
-      // Attach category counts to profiles
       const profilesWithCounts = (profiles || []).map(profile => ({
         ...profile,
         categoryCounts: userDataMap.get(profile.id) || {}
@@ -209,73 +186,63 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
     clearFollowedUsers();
   };
 
-  // Get selected user details
   const selectedUsers = users.filter(u => selectedFollowedUserIds.includes(u.id));
 
   return (
     <div className="w-full z-[1100] pointer-events-none">
-      {/* Main Map Filters - Show all in 3 columns */}
-      <div className={cn(
-        "mb-2 transition-all duration-200 pointer-events-auto",
-        showUserSearch && activeFilter === 'following' ? "grid grid-cols-1 gap-1.5" : "grid grid-cols-3 gap-1.5"
-      )}>
-        {/* Show only Following when search is open, otherwise show all 3 filters */}
-        {mapFilters.filter(f => showUserSearch && activeFilter === 'following' ? f.id === 'following' : true).map((filter) => {
-          const IconComponent = filter.icon;
-          const isActive = activeFilter === filter.id;
-          
-          // Define colors for each filter
-          const filterColors = {
-            following: isActive 
-              ? "bg-blue-600 text-white border-blue-600" 
-              : "bg-white/90 text-blue-600 border-blue-200 hover:bg-blue-50",
-            popular: isActive 
-              ? "bg-red-600 text-white border-red-600" 
-              : "bg-white/90 text-red-600 border-red-200 hover:bg-red-50",
-            saved: isActive 
-              ? "bg-green-600 text-white border-green-600" 
-              : "bg-white/90 text-green-600 border-green-200 hover:bg-green-50"
-          };
-          
-          return (
-            <button
-              key={filter.id}
-              onClick={() => filter.id === 'following' ? handleFollowingClick() : setActiveFilter(filter.id)}
-              className={cn(
-                "flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 backdrop-blur-sm border shadow-sm",
-                filterColors[filter.id as keyof typeof filterColors]
-              )}
-              title={filter.description}
-            >
-              <IconComponent className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline text-xs">{filter.name}</span>
-              {filter.id === 'following' && selectedUsers.length > 0 && (
-                <div className="flex items-center -space-x-1 ml-1">
-                  {selectedUsers.slice(0, 3).map(user => (
-                    <Avatar key={user.id} className="w-4 h-4 border border-white">
-                      <AvatarImage src={user.avatar_url || ''} />
-                      <AvatarFallback className="text-[8px]">
-                        {user.username?.[0]?.toUpperCase() || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                  ))}
-                  {selectedUsers.length > 3 && (
-                    <div className="w-4 h-4 rounded-full bg-blue-700 border border-white flex items-center justify-center text-[8px] text-white">
-                      +{selectedUsers.length - 3}
-                    </div>
-                  )}
-                </div>
-              )}
-            </button>
-          );
-        })}
+      {/* Main Map Filters - 3D Emoji Style */}
+      <div className="mb-3 pointer-events-auto">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide px-1">
+          {mapFilters.map((filter) => {
+            const isActive = activeFilter === filter.id;
+            
+            return (
+              <button
+                key={filter.id}
+                onClick={() => filter.id === 'following' ? handleFollowingClick() : setActiveFilter(filter.id)}
+                className={cn(
+                  "flex-shrink-0 flex flex-col items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl transition-all duration-300 backdrop-blur-xl border-2",
+                  isActive 
+                    ? "bg-background/95 border-primary/40 shadow-lg shadow-primary/20 scale-105" 
+                    : "bg-background/60 border-border/30 hover:bg-background/80 hover:scale-105"
+                )}
+                title={filter.description}
+              >
+                <span className="text-3xl filter drop-shadow-lg">{filter.emoji}</span>
+                <span className={cn(
+                  "text-xs font-semibold whitespace-nowrap transition-colors",
+                  isActive ? "text-foreground" : "text-muted-foreground"
+                )}>
+                  {filter.name}
+                </span>
+                {filter.id === 'following' && selectedUsers.length > 0 && (
+                  <div className="flex items-center -space-x-1.5 mt-0.5">
+                    {selectedUsers.slice(0, 2).map(user => (
+                      <Avatar key={user.id} className="w-5 h-5 border-2 border-background">
+                        <AvatarImage src={user.avatar_url || ''} />
+                        <AvatarFallback className="text-[9px]">
+                          {user.username?.[0]?.toUpperCase() || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                    ))}
+                    {selectedUsers.length > 2 && (
+                      <div className="w-5 h-5 rounded-full bg-primary border-2 border-background flex items-center justify-center text-[9px] text-primary-foreground font-bold">
+                        +{selectedUsers.length - 2}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* User Search Bar - Shown when Following is active and search is enabled */}
+      {/* User Search Bar */}
       {showUserSearch && activeFilter === 'following' && (
-        <div className="mb-2 bg-white/95 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-3 pointer-events-auto">
+        <div className="mb-3 bg-background/95 backdrop-blur-xl rounded-2xl shadow-xl border-2 border-border/30 p-3 pointer-events-auto">
           <div className="flex items-center gap-2">
-            <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
+            <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
             <Input
               type="text"
               placeholder={t('mapFilters:searchPlaceholder')}
@@ -284,28 +251,27 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
               className="flex-1 border-0 focus-visible:ring-0 h-8 text-sm bg-transparent"
             />
             {loading && (
-              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin flex-shrink-0"></div>
+              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin flex-shrink-0"></div>
             )}
             <button
               onClick={() => {
                 clearFollowedUsers();
                 setShowUserSearch(true);
               }}
-              className="px-2 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex-shrink-0 font-medium text-xs"
+              className="px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors flex-shrink-0 font-medium text-xs"
               title={t('mapFilters:showAllFollowing')}
             >
               {t('common:all')}
             </button>
             <button
               onClick={handleExitSearch}
-              className="p-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors flex-shrink-0"
+              className="p-1.5 rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors flex-shrink-0"
               title={t('mapFilters:clearFilter')}
             >
               <X className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Search Results */}
           {users.length > 0 && (
             <div className="mt-3 max-h-48 overflow-y-auto space-y-1.5 rounded-lg">
               {users
@@ -314,7 +280,7 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
                   <button
                     key={user.id}
                     onClick={() => handleUserSelect(user.id)}
-                    className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
+                    className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-secondary transition-colors text-left"
                   >
                     <Avatar className="w-9 h-9 flex-shrink-0">
                       <AvatarImage src={user.avatar_url || ''} />
@@ -323,24 +289,21 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                      <p className="text-sm font-medium text-foreground truncate">
                         {user.username || 'Unknown User'}
                       </p>
                       {user.bio && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.bio}</p>
+                        <p className="text-xs text-muted-foreground truncate">{user.bio}</p>
                       )}
                     </div>
-                    {/* Category counts */}
                     {user.categoryCounts && Object.keys(user.categoryCounts).length > 0 && (
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
-                        {Object.entries(user.categoryCounts).map(([category, count]: [string, any]) => {
-                          const categoryFilter = categoryFilters.find(c => c.id.toLowerCase() === category);
-                          if (!categoryFilter) return null;
-                          const IconComponent = categoryFilter.icon;
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        {Object.entries(user.categoryCounts).slice(0, 3).map(([category, count]: [string, any]) => {
+                          const categoryEmoji = categoryConfig.find(c => c.id.toLowerCase() === category)?.emoji || '📍';
                           return (
-                            <div key={category} className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700">
-                              <IconComponent className="w-3 h-3 text-gray-600 dark:text-gray-300" />
-                              <span className="text-xs font-medium text-gray-700 dark:text-gray-200">{count}</span>
+                            <div key={category} className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-secondary">
+                              <span className="text-xs">{categoryEmoji}</span>
+                              <span className="text-xs font-medium text-foreground">{count}</span>
                             </div>
                           );
                         })}
@@ -352,20 +315,19 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
           )}
           
           {users.length === 0 && !loading && (
-            <p className="mt-3 text-xs text-gray-500 dark:text-gray-400 text-center">
+            <p className="mt-3 text-xs text-muted-foreground text-center">
               {t('mapFilters:noUsersInCity', { city: currentCity || t('common:thisCity') })}
             </p>
           )}
 
-          {/* Selected Users */}
           {selectedUsers.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium">{t('mapFilters:showingPinsFrom')}</p>
+            <div className="mt-3 pt-3 border-t border-border/30">
+              <p className="text-xs text-muted-foreground mb-2 font-medium">{t('mapFilters:showingPinsFrom')}</p>
               <div className="flex flex-wrap gap-1.5">
                 {selectedUsers.map(user => (
                   <div
                     key={user.id}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 rounded-full text-xs border border-blue-100"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 bg-primary/10 rounded-full text-xs border border-primary/20"
                   >
                     <Avatar className="w-4 h-4">
                       <AvatarImage src={user.avatar_url || ''} />
@@ -373,10 +335,10 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
                         {user.username?.[0]?.toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="text-blue-900 font-medium">{user.username}</span>
+                    <span className="text-primary font-medium">{user.username}</span>
                     <button
                       onClick={() => removeFollowedUser(user.id)}
-                      className="ml-0.5 text-blue-600 hover:text-blue-800 transition-colors"
+                      className="ml-0.5 text-primary hover:text-primary/80 transition-colors"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -388,40 +350,48 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
         </div>
       )}
 
-      {/* Category Filters - Hidden when user search is open */}
+      {/* Category Filters - 3D Emoji Style */}
       {!(showUserSearch && activeFilter === 'following') && (
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide pointer-events-auto w-full">
-        {/* Save Tags Filter - Only shown when in 'saved' mode */}
-        {activeFilter === 'saved' && <SaveTagsFilter />}
-        
-        {categoryFilters.map((category) => {
-          const IconComponent = category.icon;
-          const isSelected = selectedCategories.includes(category.id);
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide pointer-events-auto px-1">
+          {/* Save Tags Filter - Only shown when in 'saved' mode */}
+          {activeFilter === 'saved' && <SaveTagsFilter />}
           
-          return (
+          {categoryConfig.map((category) => {
+            const isSelected = selectedCategories.includes(category.id);
+            
+            return (
+              <button
+                key={category.id}
+                onClick={() => toggleCategory(category.id)}
+                className={cn(
+                  "flex-shrink-0 flex flex-col items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl transition-all duration-300 backdrop-blur-xl border-2",
+                  isSelected 
+                    ? "bg-background/95 border-primary/40 shadow-lg shadow-primary/20 scale-105" 
+                    : "bg-background/60 border-border/30 hover:bg-background/80 hover:scale-105"
+                )}
+              >
+                <span className="text-3xl filter drop-shadow-lg">{category.emoji}</span>
+                <span className={cn(
+                  "text-xs font-semibold whitespace-nowrap transition-colors",
+                  isSelected ? "text-foreground" : "text-muted-foreground"
+                )}>
+                  {category.label}
+                </span>
+              </button>
+            );
+          })}
+          
+          {selectedCategories.length > 0 && (
             <button
-              key={category.id}
-              onClick={() => toggleCategory(category.id)}
-              className={cn(
-                "flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 shadow-sm backdrop-blur-sm",
-                isSelected 
-                  ? "bg-black/90 text-white" 
-                  : "bg-white/80 text-gray-700 hover:bg-white/90"
-              )}
+              onClick={clearCategories}
+              className="flex-shrink-0 flex flex-col items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl bg-background/60 backdrop-blur-xl border-2 border-border/30 hover:bg-background/80 transition-all duration-300"
             >
-              <IconComponent className="w-4 h-4" />
-              <span className="text-sm">{t(`categories:${category.id}`, { defaultValue: category.name })}</span>
+              <X className="w-6 h-6 text-muted-foreground" />
+              <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
+                {t('common:clearAll')}
+              </span>
             </button>
-          );
-        })}
-        {selectedCategories.length > 0 && (
-          <button
-            onClick={clearCategories}
-            className="flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium bg-white/80 text-gray-500 hover:bg-white/90 transition-all duration-200 shadow-sm backdrop-blur-sm"
-          >
-            {t('common:clearAll')}
-          </button>
-        )}
+          )}
         </div>
       )}
     </div>

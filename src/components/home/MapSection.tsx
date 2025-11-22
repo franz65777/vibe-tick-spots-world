@@ -244,7 +244,7 @@ const MapSection = ({
 
   return (
     <>
-      <div className={`${isExpanded ? 'fixed inset-0 w-screen h-screen relative' : 'flex-1 relative min-h-[500px]'} w-full overflow-hidden`}>
+      <div className={`${isExpanded ? 'fixed inset-0 w-screen h-screen relative' : 'flex-1 relative h-full'} w-full overflow-hidden`}>
         {/* Hide map when list view is open */}
         {!isListViewOpen && (
         <LeafletMapSetup
