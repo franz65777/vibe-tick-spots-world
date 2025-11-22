@@ -202,89 +202,91 @@ const NewBottomNavigation = () => {
         role="navigation"
         aria-label="Main navigation"
       >
-        <div className="w-full px-0 pb-[env(safe-area-inset-bottom)] bg-background border-t border-border">
-          <div className="h-16 flex items-center justify-around px-2">
-            {navItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              const isProfileTab = item.path === '/profile';
-              const isExploreTab = item.path === '/';
-              const isAddTab = item.path === '/add';
-              
-              return (
-                <button
-                  key={item.path}
-                  onClick={
-                    isAddTab ? () => setShowAddMenu(!showAddMenu) :
-                    isProfileTab && !hasValidBusinessAccount ? handleProfileClick : 
-                    isProfileTab || isExploreTab ? undefined : 
-                    () => handleNavClick(item.path, item.label)
-                  }
-                  onMouseDown={
-                    isProfileTab && hasValidBusinessAccount ? handleProfileLongPressStart : 
-                    isExploreTab ? handleExploreLongPressStart : 
-                    undefined
-                  }
-                  onMouseUp={
-                    isProfileTab && hasValidBusinessAccount ? handleProfileLongPressEnd : 
-                    isExploreTab ? handleExploreLongPressEnd : 
-                    undefined
-                  }
-                  onMouseLeave={
-                    isProfileTab && hasValidBusinessAccount ? handleProfileLongPressEnd : 
-                    isExploreTab ? handleExploreLongPressEnd : 
-                    undefined
-                  }
-                  onTouchStart={
-                    isProfileTab && hasValidBusinessAccount ? handleProfileLongPressStart : 
-                    isExploreTab ? handleExploreLongPressStart : 
-                    undefined
-                  }
-                  onTouchEnd={
-                    isProfileTab && hasValidBusinessAccount ? handleProfileLongPressEnd : 
-                    isExploreTab ? handleExploreLongPressEnd : 
-                    undefined
-                  }
-                  onTouchCancel={
-                    isProfileTab && hasValidBusinessAccount ? handleProfileLongPressEnd : 
-                    isExploreTab ? handleExploreLongPressEnd : 
-                    undefined
-                  }
-                  className="flex flex-col items-center justify-center gap-1 min-w-[64px] py-2 transition-colors duration-200"
-                  aria-label={item.label}
-                  aria-current={isActive ? 'page' : undefined}
-                >
-                  {isProfileTab ? (
-                    <div className={cn(
-                      "transition-colors duration-200 flex items-center justify-center",
+        <div className="w-full px-3 pb-[env(safe-area-inset-bottom)]">
+          <div className="bg-background/80 backdrop-blur-xl border border-border/50 rounded-3xl shadow-lg mx-2 mb-2">
+            <div className="h-16 flex items-center justify-around px-2">
+              {navItems.map((item) => {
+                const isActive = location.pathname === item.path;
+                const isProfileTab = item.path === '/profile';
+                const isExploreTab = item.path === '/';
+                const isAddTab = item.path === '/add';
+                
+                return (
+                  <button
+                    key={item.path}
+                    onClick={
+                      isAddTab ? () => setShowAddMenu(!showAddMenu) :
+                      isProfileTab && !hasValidBusinessAccount ? handleProfileClick : 
+                      isProfileTab || isExploreTab ? undefined : 
+                      () => handleNavClick(item.path, item.label)
+                    }
+                    onMouseDown={
+                      isProfileTab && hasValidBusinessAccount ? handleProfileLongPressStart : 
+                      isExploreTab ? handleExploreLongPressStart : 
+                      undefined
+                    }
+                    onMouseUp={
+                      isProfileTab && hasValidBusinessAccount ? handleProfileLongPressEnd : 
+                      isExploreTab ? handleExploreLongPressEnd : 
+                      undefined
+                    }
+                    onMouseLeave={
+                      isProfileTab && hasValidBusinessAccount ? handleProfileLongPressEnd : 
+                      isExploreTab ? handleExploreLongPressEnd : 
+                      undefined
+                    }
+                    onTouchStart={
+                      isProfileTab && hasValidBusinessAccount ? handleProfileLongPressStart : 
+                      isExploreTab ? handleExploreLongPressStart : 
+                      undefined
+                    }
+                    onTouchEnd={
+                      isProfileTab && hasValidBusinessAccount ? handleProfileLongPressEnd : 
+                      isExploreTab ? handleExploreLongPressEnd : 
+                      undefined
+                    }
+                    onTouchCancel={
+                      isProfileTab && hasValidBusinessAccount ? handleProfileLongPressEnd : 
+                      isExploreTab ? handleExploreLongPressEnd : 
+                      undefined
+                    }
+                    className="flex flex-col items-center justify-center gap-1 min-w-[64px] py-2 transition-colors duration-200"
+                    aria-label={item.label}
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    {isProfileTab ? (
+                      <div className={cn(
+                        "transition-colors duration-200 flex items-center justify-center",
+                        isActive ? 'text-primary' : 'text-muted-foreground'
+                      )}>
+                        <Avatar className="w-7 h-7">
+                          <AvatarImage src={profile?.avatar_url || ''} />
+                          <AvatarFallback className={cn(
+                            "text-xs font-semibold",
+                            isActive ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                          )}>
+                            {profile?.username?.charAt(0).toUpperCase() || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+                    ) : (
+                      <div className={cn(
+                        "transition-colors duration-200",
+                        isActive ? 'text-primary' : 'text-muted-foreground'
+                      )}>
+                        {item.icon}
+                      </div>
+                    )}
+                    <span className={cn(
+                      "text-[11px] font-medium transition-colors duration-200",
                       isActive ? 'text-primary' : 'text-muted-foreground'
                     )}>
-                      <Avatar className="w-7 h-7">
-                        <AvatarImage src={profile?.avatar_url || ''} />
-                        <AvatarFallback className={cn(
-                          "text-xs font-semibold",
-                          isActive ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
-                        )}>
-                          {profile?.username?.charAt(0).toUpperCase() || 'U'}
-                        </AvatarFallback>
-                      </Avatar>
-                    </div>
-                  ) : (
-                    <div className={cn(
-                      "transition-colors duration-200",
-                      isActive ? 'text-primary' : 'text-muted-foreground'
-                    )}>
-                      {item.icon}
-                    </div>
-                  )}
-                  <span className={cn(
-                    "text-[11px] font-medium transition-colors duration-200",
-                    isActive ? 'text-primary' : 'text-muted-foreground'
-                  )}>
-                    {item.label}
-                  </span>
-                </button>
-              );
-            })}
+                      {item.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </nav>
