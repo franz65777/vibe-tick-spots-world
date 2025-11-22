@@ -16,15 +16,15 @@ import { useTranslation } from 'react-i18next';
 import SaveTagsFilter from './SaveTagsFilter';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 
-// Category config with emojis
+// Category config
 const categoryConfig = [
-  { id: 'restaurant', emoji: '🍝', label: 'Ristoranti' },
-  { id: 'bar', emoji: '🍸', label: 'Bar' },
-  { id: 'cafe', emoji: '☕', label: 'Caffè' },
-  { id: 'bakery', emoji: '🥐', label: 'Panetterie' },
-  { id: 'hotel', emoji: '🏨', label: 'Hotel' },
-  { id: 'museum', emoji: '🎨', label: 'Musei' },
-  { id: 'entertainment', emoji: '🎭', label: 'Intrattenimento' }
+  { id: 'restaurant', label: 'Ristoranti' },
+  { id: 'bar', label: 'Bar' },
+  { id: 'cafe', label: 'Caffè' },
+  { id: 'bakery', label: 'Panetterie' },
+  { id: 'hotel', label: 'Hotel' },
+  { id: 'museum', label: 'Musei' },
+  { id: 'entertainment', label: 'Intrattenimento' }
 ];
 
 interface MapCategoryFiltersProps {
@@ -54,9 +54,9 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
   type CategoryCounts = Record<string, number>;
 
   const mapFilters = [
-    { id: 'following' as const, name: t('mapFilters:following'), icon: Users, emoji: '👥', description: t('mapFilters:followingDesc') },
-    { id: 'popular' as const, name: t('mapFilters:popular'), icon: TrendingUp, emoji: '🔥', description: t('mapFilters:popularDesc') },
-    { id: 'saved' as const, name: t('mapFilters:saved'), icon: Bookmark, emoji: '📍', description: t('mapFilters:savedDesc') }
+    { id: 'following' as const, name: t('mapFilters:following'), icon: Users, description: t('mapFilters:followingDesc') },
+    { id: 'popular' as const, name: t('mapFilters:popular'), icon: TrendingUp, description: t('mapFilters:popularDesc') },
+    { id: 'saved' as const, name: t('mapFilters:saved'), icon: Bookmark, description: t('mapFilters:savedDesc') }
   ];
 
   const handleFollowingClick = () => {
@@ -189,44 +189,48 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
   const selectedUsers = users.filter(u => selectedFollowedUserIds.includes(u.id));
 
   return (
-    <div className="w-full z-[1100] pointer-events-none">
-      {/* Main Map Filters - 3D Emoji Style */}
-      <div className="mb-3 pointer-events-auto">
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide px-1">
+    <div className="w-full max-w-full z-[1100] pointer-events-none">
+      {/* Main Map Filters - Compact Style */}
+      <div className="mb-2 pointer-events-auto flex justify-center">
+        <div className="flex gap-1.5 px-2">
           {mapFilters.map((filter) => {
             const isActive = activeFilter === filter.id;
+            const Icon = filter.icon;
             
             return (
               <button
                 key={filter.id}
                 onClick={() => filter.id === 'following' ? handleFollowingClick() : setActiveFilter(filter.id)}
                 className={cn(
-                  "flex-shrink-0 flex flex-col items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl transition-all duration-300 backdrop-blur-xl border-2",
+                  "flex-shrink-0 flex flex-col items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl transition-all duration-200 backdrop-blur-xl border",
                   isActive 
-                    ? "bg-background/95 border-primary/40 shadow-lg shadow-primary/20 scale-105" 
-                    : "bg-background/60 border-border/30 hover:bg-background/80 hover:scale-105"
+                    ? "bg-background/95 border-primary/40 shadow-md" 
+                    : "bg-background/70 border-border/20 hover:bg-background/85"
                 )}
                 title={filter.description}
               >
-                <span className="text-3xl filter drop-shadow-lg">{filter.emoji}</span>
+                <Icon className={cn(
+                  "w-4 h-4 transition-colors",
+                  isActive ? "text-primary" : "text-muted-foreground"
+                )} />
                 <span className={cn(
-                  "text-xs font-semibold whitespace-nowrap transition-colors",
+                  "text-[10px] font-medium whitespace-nowrap transition-colors",
                   isActive ? "text-foreground" : "text-muted-foreground"
                 )}>
                   {filter.name}
                 </span>
                 {filter.id === 'following' && selectedUsers.length > 0 && (
-                  <div className="flex items-center -space-x-1.5 mt-0.5">
+                  <div className="flex items-center -space-x-1 mt-0.5">
                     {selectedUsers.slice(0, 2).map(user => (
-                      <Avatar key={user.id} className="w-5 h-5 border-2 border-background">
+                      <Avatar key={user.id} className="w-3.5 h-3.5 border border-background">
                         <AvatarImage src={user.avatar_url || ''} />
-                        <AvatarFallback className="text-[9px]">
+                        <AvatarFallback className="text-[7px]">
                           {user.username?.[0]?.toUpperCase() || 'U'}
                         </AvatarFallback>
                       </Avatar>
                     ))}
                     {selectedUsers.length > 2 && (
-                      <div className="w-5 h-5 rounded-full bg-primary border-2 border-background flex items-center justify-center text-[9px] text-primary-foreground font-bold">
+                      <div className="w-3.5 h-3.5 rounded-full bg-primary border border-background flex items-center justify-center text-[7px] text-primary-foreground font-bold">
                         +{selectedUsers.length - 2}
                       </div>
                     )}
@@ -299,10 +303,9 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
                     {user.categoryCounts && Object.keys(user.categoryCounts).length > 0 && (
                       <div className="flex items-center gap-1 flex-shrink-0">
                         {Object.entries(user.categoryCounts).slice(0, 3).map(([category, count]: [string, any]) => {
-                          const categoryEmoji = categoryConfig.find(c => c.id.toLowerCase() === category)?.emoji || '📍';
                           return (
                             <div key={category} className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-secondary">
-                              <span className="text-xs">{categoryEmoji}</span>
+                              <CategoryIcon category={category} className="w-3 h-3" />
                               <span className="text-xs font-medium text-foreground">{count}</span>
                             </div>
                           );
@@ -350,48 +353,53 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
         </div>
       )}
 
-      {/* Category Filters - 3D Emoji Style */}
+      {/* Category Filters - Compact Icon Style */}
       {!(showUserSearch && activeFilter === 'following') && (
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide pointer-events-auto px-1">
-          {/* Save Tags Filter - Only shown when in 'saved' mode */}
-          {activeFilter === 'saved' && <SaveTagsFilter />}
-          
-          {categoryConfig.map((category) => {
-            const isSelected = selectedCategories.includes(category.id);
+        <div className="flex justify-center pointer-events-auto">
+          <div className="flex gap-1.5 overflow-x-auto scrollbar-hide px-2">
+            {/* Save Tags Filter - Only shown when in 'saved' mode */}
+            {activeFilter === 'saved' && <SaveTagsFilter />}
             
-            return (
+            {categoryConfig.map((category) => {
+              const isSelected = selectedCategories.includes(category.id);
+              
+              return (
+                <button
+                  key={category.id}
+                  onClick={() => toggleCategory(category.id)}
+                  className={cn(
+                    "flex-shrink-0 flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-xl transition-all duration-200 backdrop-blur-xl border min-w-[52px]",
+                    isSelected 
+                      ? "bg-background/95 border-primary/40 shadow-md" 
+                      : "bg-background/70 border-border/20 hover:bg-background/85"
+                  )}
+                >
+                  <CategoryIcon 
+                    category={category.id} 
+                    className="w-6 h-6"
+                  />
+                  <span className={cn(
+                    "text-[9px] font-medium whitespace-nowrap transition-colors",
+                    isSelected ? "text-foreground" : "text-muted-foreground"
+                  )}>
+                    {category.label}
+                  </span>
+                </button>
+              );
+            })}
+            
+            {selectedCategories.length > 0 && (
               <button
-                key={category.id}
-                onClick={() => toggleCategory(category.id)}
-                className={cn(
-                  "flex-shrink-0 flex flex-col items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl transition-all duration-300 backdrop-blur-xl border-2",
-                  isSelected 
-                    ? "bg-background/95 border-primary/40 shadow-lg shadow-primary/20 scale-105" 
-                    : "bg-background/60 border-border/30 hover:bg-background/80 hover:scale-105"
-                )}
+                onClick={clearCategories}
+                className="flex-shrink-0 flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-xl bg-background/70 backdrop-blur-xl border border-border/20 hover:bg-background/85 transition-all duration-200 min-w-[52px]"
               >
-                <span className="text-3xl filter drop-shadow-lg">{category.emoji}</span>
-                <span className={cn(
-                  "text-xs font-semibold whitespace-nowrap transition-colors",
-                  isSelected ? "text-foreground" : "text-muted-foreground"
-                )}>
-                  {category.label}
+                <X className="w-4 h-4 text-muted-foreground" />
+                <span className="text-[9px] font-medium text-muted-foreground whitespace-nowrap">
+                  {t('common:clearAll')}
                 </span>
               </button>
-            );
-          })}
-          
-          {selectedCategories.length > 0 && (
-            <button
-              onClick={clearCategories}
-              className="flex-shrink-0 flex flex-col items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl bg-background/60 backdrop-blur-xl border-2 border-border/30 hover:bg-background/80 transition-all duration-300"
-            >
-              <X className="w-6 h-6 text-muted-foreground" />
-              <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
-                {t('common:clearAll')}
-              </span>
-            </button>
-          )}
+            )}
+          </div>
         </div>
       )}
     </div>
