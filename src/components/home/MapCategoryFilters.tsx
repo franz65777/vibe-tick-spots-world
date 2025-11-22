@@ -202,7 +202,7 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
                 key={filter.id}
                 onClick={() => filter.id === 'following' ? handleFollowingClick() : setActiveFilter(filter.id)}
                 className={cn(
-                  "flex-1 flex flex-col items-center justify-center gap-1 px-5 py-1.5 rounded-xl transition-all duration-200 backdrop-blur-xl border min-w-[90px]",
+                  "flex-1 flex flex-col items-center justify-center gap-0.5 px-6 py-1 rounded-xl transition-all duration-200 backdrop-blur-xl border min-w-[95px]",
                   isActive 
                     ? "bg-background/95 border-primary/40 shadow-md" 
                     : "bg-background/70 border-border/20 hover:bg-background/85"
@@ -214,7 +214,7 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
                   isActive ? "text-primary" : "text-muted-foreground"
                 )} />
                 <span className={cn(
-                  "text-[10px] font-medium whitespace-nowrap transition-colors",
+                  "text-[9px] font-medium whitespace-nowrap transition-colors",
                   isActive ? "text-foreground" : "text-muted-foreground"
                 )}>
                   {filter.name}
@@ -353,27 +353,30 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
         </div>
       )}
 
-      {/* Category Filters - Compact Icon Style */}
+      {/* Category Filters - Compact Icon Style with Continuous Background Bar */}
       {!(showUserSearch && activeFilter === 'following') && (
         <div className="flex justify-center pointer-events-auto">
-          <div className="flex gap-1.5 overflow-x-auto scrollbar-hide px-2">
-            {/* Save Tags Filter - Only shown when in 'saved' mode */}
-            {activeFilter === 'saved' && <SaveTagsFilter />}
-            
-            {categoryConfig.map((category) => {
-              const isSelected = selectedCategories.includes(category.id);
+          {/* Continuous transparent background bar */}
+          <div className="relative inline-flex">
+            <div className="absolute inset-0 bg-background/60 backdrop-blur-xl rounded-2xl border border-border/20" />
+            <div className="relative flex gap-1.5 overflow-x-auto scrollbar-hide px-2 py-2">
+              {/* Save Tags Filter - Only shown when in 'saved' mode */}
+              {activeFilter === 'saved' && <SaveTagsFilter />}
               
-              return (
-                <button
-                  key={category.id}
-                  onClick={() => toggleCategory(category.id)}
-                  className={cn(
-                    "flex-shrink-0 flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-xl transition-all duration-200 backdrop-blur-xl border min-w-[52px]",
-                    isSelected 
-                      ? "bg-background/95 border-primary/40 shadow-md" 
-                      : "bg-background/70 border-border/20 hover:bg-background/85"
-                  )}
-                >
+              {categoryConfig.map((category) => {
+                const isSelected = selectedCategories.includes(category.id);
+                
+                return (
+                  <button
+                    key={category.id}
+                    onClick={() => toggleCategory(category.id)}
+                    className={cn(
+                      "flex-shrink-0 flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-xl transition-all duration-200 backdrop-blur-xl border min-w-[52px]",
+                      isSelected 
+                        ? "bg-background/95 border-primary/40 shadow-md" 
+                        : "bg-background/30 border-border/10 hover:bg-background/50"
+                    )}
+                  >
                   <CategoryIcon 
                     category={category.id} 
                     className="w-6 h-6"
@@ -391,7 +394,7 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
             {selectedCategories.length > 0 && (
               <button
                 onClick={clearCategories}
-                className="flex-shrink-0 flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-xl bg-background/70 backdrop-blur-xl border border-border/20 hover:bg-background/85 transition-all duration-200 min-w-[52px]"
+                className="flex-shrink-0 flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-xl bg-background/30 backdrop-blur-xl border border-border/10 hover:bg-background/50 transition-all duration-200 min-w-[52px]"
               >
                 <X className="w-4 h-4 text-muted-foreground" />
                 <span className="text-[9px] font-medium text-muted-foreground whitespace-nowrap">
@@ -401,6 +404,7 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
             )}
           </div>
         </div>
+      </div>
       )}
     </div>
   );

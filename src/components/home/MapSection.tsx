@@ -56,7 +56,19 @@ const MapSection = ({
   const { t } = useTranslation();
   
   // Use global filter context - single source of truth
-  const { activeFilter, selectedCategories, selectedFollowedUserIds, selectedSaveTags, setActiveFilter, toggleCategory } = useMapFilter();
+  const { activeFilter, selectedCategories, selectedFollowedUserIds, selectedSaveTags, setActiveFilter, toggleCategory, filtersVisible, setFiltersVisible } = useMapFilter();
+
+  // Hide filters when map is moving
+  const moveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (moveTimeoutRef.current) {
+        clearTimeout(moveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Dispatch events to hide/show bottom navigation when list view opens/closes
   useEffect(() => {
@@ -232,6 +244,19 @@ const MapSection = ({
   };
 
   const handleMapMove = (center: { lat: number; lng: number }, bounds: any) => {
+    // Hide filters immediately when movement starts
+    setFiltersVisible(false);
+    
+    // Clear existing timeout
+    if (moveTimeoutRef.current) {
+      clearTimeout(moveTimeoutRef.current);
+    }
+    
+    // Show filters after 500ms of no movement
+    moveTimeoutRef.current = setTimeout(() => {
+      setFiltersVisible(true);
+    }, 500);
+    
     // Update map bounds for dynamic loading
     setMapBounds({
       north: bounds.getNorth(),
@@ -280,10 +305,11 @@ const MapSection = ({
         {/* Map Category Filters - Hide when list view is open */}
         {!isListViewOpen && (
           <div className={cn(
-            "z-[1100] w-full",
+            "z-[1100] w-full transition-opacity duration-300",
             isExpanded
               ? "fixed top-[calc(env(safe-area-inset-top)+2rem)] left-0 right-0 px-4"
-              : "absolute top-4 left-0 right-0 px-1"
+              : "absolute top-4 left-0 right-0 px-1",
+            filtersVisible ? "opacity-100" : "opacity-0"
           )}>
             <div className="flex justify-center w-full">
               <MapCategoryFilters currentCity={currentCity} />
