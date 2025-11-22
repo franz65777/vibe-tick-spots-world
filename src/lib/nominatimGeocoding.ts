@@ -51,8 +51,13 @@ class NominatimGeocoding {
   /**
    * Forward geocoding: Search for a place by name
    * FREE - No API key needed
+   * Optionally accepts user location to prioritize nearby results
    */
-  async searchPlace(query: string, language?: string): Promise<GeocodeResult[]> {
+  async searchPlace(
+    query: string, 
+    language?: string,
+    userLocation?: { lat: number; lng: number }
+  ): Promise<GeocodeResult[]> {
     await this.rateLimit();
 
     try {
@@ -60,9 +65,24 @@ class NominatimGeocoding {
         q: query,
         format: 'json',
         addressdetails: '1',
-        limit: '5',
+        limit: '20', // Increased to get more results for better proximity sorting
         'accept-language': language || 'en',
       });
+
+      // Add viewbox parameter if user location is provided (prioritizes nearby results)
+      if (userLocation) {
+        // Create a bounding box around user location (~50km radius)
+        const latDelta = 0.5; // ~50km
+        const lngDelta = 0.5;
+        const viewbox = [
+          userLocation.lng - lngDelta,
+          userLocation.lat + latDelta,
+          userLocation.lng + lngDelta,
+          userLocation.lat - latDelta
+        ].join(',');
+        params.append('viewbox', viewbox);
+        params.append('bounded', '1'); // Restrict results to viewbox
+      }
 
       const response = await fetch(`${this.baseUrl}/search?${params}`, {
         headers: {
@@ -76,17 +96,50 @@ class NominatimGeocoding {
 
       const results: NominatimResult[] = await response.json();
 
-      return results.map(result => ({
+      let geocodeResults = results.map(result => ({
         lat: parseFloat(result.lat),
         lng: parseFloat(result.lon),
         city: result.address.city || result.address.town || result.address.village || '',
         address: result.display_name,
         displayName: result.display_name,
       }));
+
+      // Sort by distance if user location provided
+      if (userLocation) {
+        geocodeResults = geocodeResults
+          .map(result => ({
+            ...result,
+            distance: this.calculateDistance(
+              userLocation.lat,
+              userLocation.lng,
+              result.lat,
+              result.lng
+            )
+          }))
+          .sort((a, b) => a.distance - b.distance)
+          .slice(0, 10); // Return top 10 closest
+      }
+
+      return geocodeResults;
     } catch (error) {
       console.error('Nominatim search error:', error);
       return [];
     }
+  }
+
+  /**
+   * Calculate distance between two coordinates in kilometers
+   */
+  private calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
   }
 
   /**
