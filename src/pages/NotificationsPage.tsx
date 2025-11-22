@@ -114,7 +114,7 @@ const NotificationsPage = () => {
   }, [notifications]);
 
   return (
-    <div className="h-screen w-full bg-background flex flex-col overflow-hidden pt-[25px]">
+    <div className="h-screen w-full bg-background flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
       {/* Header */}
       <header className="shrink-0 bg-background w-full">
         <div className="py-3 flex items-center justify-between px-4">

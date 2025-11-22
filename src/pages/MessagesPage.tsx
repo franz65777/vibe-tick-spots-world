@@ -788,7 +788,7 @@ const MessagesPage = () => {
   };
 
   return (
-    <div className="h-screen w-full bg-background flex flex-col overflow-hidden pt-[25px]">
+    <div className="h-screen w-full bg-background flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
       {/* Header */}
       <header className="shrink-0 bg-background w-full border-b-0">
         <div className="px-4 py-3 flex items-center justify-between gap-3">

@@ -135,7 +135,7 @@ const LeafletMapSetup = ({
       zoom: 15,
       minZoom: 3,
       zoomControl: false,
-      attributionControl: true,
+      attributionControl: false,
       doubleClickZoom: false,
     });
 

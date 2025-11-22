@@ -39,7 +39,7 @@ export const AdminAnalyticsModal: React.FC<AdminAnalyticsModalProps> = ({ open, 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[100dvh] overflow-y-auto scrollbar-hide rounded-t-none p-0">
-        <SheetHeader className="pt-[25px] px-6 pb-4 sticky top-0 bg-background z-10 border-b">
+        <SheetHeader className="pt-[env(safe-area-inset-top)] px-6 pb-4 sticky top-0 bg-background z-10 border-b">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
