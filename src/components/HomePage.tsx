@@ -529,7 +529,7 @@ const HomePage = memo(() => {
           />
         )}
       
-      <main className="flex-1 flex flex-col overflow-x-hidden pb-[calc(4rem+env(safe-area-inset-bottom))]">
+      <main className="flex-1 flex flex-col overflow-x-hidden relative">
         {/* Stories Section - HIDDEN FOR NOW - Keep logic intact for later implementation */}
         {/* {!isCreateStoryModalOpen && !isStoriesViewerOpen && (
           <Suspense fallback={<div className="h-[90px] flex-shrink-0" />}>
@@ -578,20 +578,22 @@ const HomePage = memo(() => {
           </Suspense>
         )}
         
-        {/* Map Section - fills remaining space and extends under bottom nav */}
+        {/* Map Section - absolute positioned to extend under bottom nav */}
         {!isCreateStoryModalOpen && !isStoriesViewerOpen && (
-          <Suspense fallback={<div className="flex-1 relative" />}>
-            <HomeMapContainer
-              mapCenter={mapCenter}
-              currentCity={currentCity}
-              isExpanded={isMapExpanded}
-              isSearchOverlayOpen={isSearchOverlayOpen}
-              onToggleExpand={() => setIsMapExpanded(!isMapExpanded)}
-              initialSelectedPlace={initialPinToShow}
-              onClearInitialPlace={() => setInitialPinToShow(null)}
-              recenterToken={recenterToken}
-            />
-          </Suspense>
+          <div className="absolute top-[110px] left-0 right-0 bottom-0">
+            <Suspense fallback={<div className="w-full h-full" />}>
+              <HomeMapContainer
+                mapCenter={mapCenter}
+                currentCity={currentCity}
+                isExpanded={isMapExpanded}
+                isSearchOverlayOpen={isSearchOverlayOpen}
+                onToggleExpand={() => setIsMapExpanded(!isMapExpanded)}
+                initialSelectedPlace={initialPinToShow}
+                onClearInitialPlace={() => setInitialPinToShow(null)}
+                recenterToken={recenterToken}
+              />
+            </Suspense>
+          </div>
         )}
       </main>
 
