@@ -41,32 +41,12 @@
     }
   }
   
-  .campaign-border {
-    position: relative;
-    z-index: 0;
-    border: 2px solid transparent;
-    background: 
-      linear-gradient(hsl(var(--background)), hsl(var(--background))) padding-box,
-      linear-gradient(
-        90deg,
-        hsl(var(--border)) 0%,
-        hsl(var(--border)) 40%,
-        hsl(var(--primary)) 50%,
-        hsl(217.2 91.2% 75%) 55%,
-        hsl(var(--primary)) 60%,
-        hsl(var(--border)) 70%,
-        hsl(var(--border)) 100%
-      ) border-box;
-    background-size: 300% 300%;
-    animation: border-snake 3s linear infinite;
-  }
-  
-  .campaign-border::before {
-    content: none;
-  }
-  
-  .campaign-border::after {
-    content: none;
+  /* Glass morphism effect for cards */
+  .glass-card {
+    background: hsl(var(--background) / 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--border) / 0.2);
   }
 }
 

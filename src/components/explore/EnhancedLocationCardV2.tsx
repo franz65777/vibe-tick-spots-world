@@ -155,16 +155,17 @@ const EnhancedLocationCardV2 = ({ place, onCardClick }: EnhancedLocationCardV2Pr
   };
 
   return (
-    <Card className="overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 relative">
-      {/* Sparkle effect overlay for campaigns */}
+    <Card className="overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 relative bg-background/80 backdrop-blur-xl border-border/20">
+      {/* Fireworks effect for campaigns */}
       {hasCampaign && (
-        <div className="absolute top-2 left-2 z-20 pointer-events-none">
-          <div className="relative w-8 h-8">
-            <div className="absolute top-0 left-3 w-2 h-2 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 animate-[sparkle-float_1.8s_ease-in-out_infinite] shadow-lg"></div>
-            <div className="absolute top-1 right-0 w-1.5 h-1.5 rounded-full bg-gradient-to-br from-red-400 to-orange-400 animate-[sparkle-float_1.8s_ease-in-out_0.3s_infinite] shadow-lg"></div>
-            <div className="absolute top-1 left-0 w-1.5 h-1.5 rounded-full bg-gradient-to-br from-teal-400 to-green-500 animate-[sparkle-float_1.8s_ease-in-out_0.6s_infinite] shadow-lg"></div>
-            <div className="absolute top-3 left--1 w-1.5 h-1.5 rounded-full bg-gradient-to-br from-green-300 to-yellow-300 animate-[sparkle-float_1.8s_ease-in-out_0.9s_infinite] shadow-lg"></div>
-            <div className="absolute top-3 right--1 w-1.5 h-1.5 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 animate-[sparkle-float_1.8s_ease-in-out_1.2s_infinite] shadow-lg"></div>
+        <div className="absolute -top-1 -left-1 z-20 pointer-events-none">
+          <div className="relative w-12 h-12">
+            <div className="absolute top-0 left-4 w-2 h-2 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 animate-[sparkle-float_1.8s_ease-in-out_infinite] shadow-lg"></div>
+            <div className="absolute top-2 right-1 w-1.5 h-1.5 rounded-full bg-gradient-to-br from-red-400 to-orange-400 animate-[sparkle-float_1.8s_ease-in-out_0.3s_infinite] shadow-lg"></div>
+            <div className="absolute top-1 left-1 w-1.5 h-1.5 rounded-full bg-gradient-to-br from-teal-400 to-green-500 animate-[sparkle-float_1.8s_ease-in-out_0.6s_infinite] shadow-lg"></div>
+            <div className="absolute top-4 left-0 w-1.5 h-1.5 rounded-full bg-gradient-to-br from-green-300 to-yellow-300 animate-[sparkle-float_1.8s_ease-in-out_0.9s_infinite] shadow-lg"></div>
+            <div className="absolute top-5 right-0 w-1.5 h-1.5 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 animate-[sparkle-float_1.8s_ease-in-out_1.2s_infinite] shadow-lg"></div>
+            <div className="absolute top-3 left-6 w-1 h-1 rounded-full bg-gradient-to-br from-pink-400 to-red-500 animate-[sparkle-float_1.8s_ease-in-out_1.5s_infinite] shadow-lg"></div>
           </div>
         </div>
       )}
