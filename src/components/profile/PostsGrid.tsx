@@ -58,8 +58,13 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
   const [expandedCaptions, setExpandedCaptions] = useState<Set<string>>(new Set());
   const [reviewOrder, setReviewOrder] = useState<Record<string, number>>({});
 
-  // Assign progressive order to reviews for each location
+  // Assign progressive order to reviews for each location - memoized to prevent infinite loops
   React.useEffect(() => {
+    if (!allPosts || allPosts.length === 0) {
+      setReviewOrder({});
+      return;
+    }
+
     const locationReviews: Record<string, any[]> = {};
     
     // Group reviews by location
@@ -83,8 +88,12 @@ const PostsGrid = ({ userId, locationId, contentTypes, excludeUserId }: PostsGri
       });
     });
 
-    setReviewOrder(orderMap);
-  }, [allPosts]);
+    // Only update if the order has actually changed
+    setReviewOrder(prevOrder => {
+      const hasChanged = JSON.stringify(prevOrder) !== JSON.stringify(orderMap);
+      return hasChanged ? orderMap : prevOrder;
+    });
+  }, [allPosts.length, JSON.stringify(allPosts.map((p: any) => ({ id: p.id, created_at: p.created_at, location_id: p.location_id, rating: p.rating })))]);
 
   // Filter posts based on locationId, contentTypes, and excludeUserId
   const posts = allPosts.filter((post: any) => {
