@@ -415,19 +415,18 @@ const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps
         />
       )}
 
-      {/* Share Modal - Higher z-index */}
+      {/* Share Modal - Higher z-index than folder modal */}
       {showShareModal && folder && (
-        <div className="fixed inset-0 z-[10005]">
-          <LocationShareModal
-            isOpen={showShareModal}
-            onClose={() => setShowShareModal(false)}
-            place={{
-              id: folderId,
-              name: folder.name,
-              type: 'folder'
-            }}
-          />
-        </div>
+        <LocationShareModal
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          place={{
+            id: folderId,
+            name: folder.name,
+            type: 'folder'
+          }}
+          zIndex={10010}
+        />
       )}
     </>
   );
