@@ -122,6 +122,7 @@ const resources = {
       locationRemoved: 'Location removed',
       coordinatesNotAvailable: 'Coordinates not available',
       chooseMapApp: 'Choose your preferred map app',
+      featuredInLists: 'Featured in Lists',
       marketingCampaign: {
         event: 'Event',
         discount: 'Discount',
@@ -3209,6 +3210,7 @@ const resources = {
       noPostsYet: 'Noch keine Beiträge',
       coordinatesNotAvailable: 'Koordinaten nicht verfügbar',
       chooseMapApp: 'Wählen Sie Ihre bevorzugte Karten-App',
+      featuredInLists: 'In Listen Vorgestellt',
       marketingCampaign: {
         event: 'Veranstaltung',
         discount: 'Rabatt',

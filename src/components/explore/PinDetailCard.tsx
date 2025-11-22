@@ -651,33 +651,40 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
 
           {/* Featured in Lists Section */}
           {!listsLoading && featuredLists.length > 0 && (
-            <div className="px-4 py-3 border-t border-border bg-muted/30">
-              <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
-                📌 Featured in Lists
-              </h4>
-              <div className="overflow-x-auto">
-                <div className="flex gap-2 pb-2">
-                  {featuredLists.map((list) => (
-                    <button
-                      key={list.list_id}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (list.type === 'folder') {
-                          setSelectedFolderId(list.list_id);
-                          setFolderDetailOpen(true);
-                        } else {
-                          setSelectedTripId(list.list_id);
-                          setTripDetailOpen(true);
-                        }
-                      }}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-muted hover:bg-accent rounded-full border border-border text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0"
-                    >
-                      <span>{list.is_own ? '📝' : '👥'}</span>
-                      <span className="text-foreground">
-                        {list.is_own ? list.list_name : `${list.username}'s ${list.list_name}`}
-                      </span>
-                    </button>
-                  ))}
+            <div className="px-4 py-2">
+              <div className="inline-flex rounded-xl bg-gradient-to-r from-transparent via-background/20 to-transparent backdrop-blur-md border border-border/5 px-3 py-2 w-full">
+                <div className="w-full">
+                  <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+                    📌 {t('featuredInLists', { ns: 'common', defaultValue: 'Featured in Lists' })}
+                  </h4>
+                  <div className="overflow-x-auto scrollbar-hide">
+                    <div className="flex gap-2">
+                      {featuredLists.map((list) => (
+                        <button
+                          key={list.list_id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (list.type === 'folder') {
+                              setSelectedFolderId(list.list_id);
+                              setFolderDetailOpen(true);
+                            } else {
+                              setSelectedTripId(list.list_id);
+                              setTripDetailOpen(true);
+                            }
+                          }}
+                          className="inline-flex items-center gap-2 px-3 py-2.5 bg-background/40 hover:bg-accent rounded-xl border border-border text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0"
+                        >
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={`https://hrmklsvewmhpqixgyjmy.supabase.co/storage/v1/object/public/avatars/${list.user_id}`} />
+                            <AvatarFallback className="text-xs">{list.username.charAt(0).toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <span className="text-foreground">
+                            {list.is_own ? list.list_name : `${list.username}'s ${list.list_name}`}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -687,7 +694,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
           <div className="flex-1 overflow-hidden flex flex-col">
             {/* Tab Navigation with Horizontal Scroll */}
             <div 
-              className="flex-shrink-0 px-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory"
+              className="flex-shrink-0 px-4 pt-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory"
               onScroll={(e) => {
                 const scrollLeft = e.currentTarget.scrollLeft;
                 const width = e.currentTarget.offsetWidth;
