@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import TripChatModal from './TripChatModal';
 import PinDetailCard from '@/components/explore/PinDetailCard';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
+import { cn } from '@/lib/utils';
 
 interface TripDetailModalProps {
   trip?: Trip | null;
@@ -101,6 +102,11 @@ const TripDetailModal = ({ trip: providedTrip, tripId, isOpen, onClose }: TripDe
     }
   }, [providedTrip]);
 
+  const handleClose = () => {
+    setSelectedLocation(null);
+    onClose();
+  };
+
   if (!isOpen) return null;
   if (loading) {
     return (
@@ -114,7 +120,14 @@ const TripDetailModal = ({ trip: providedTrip, tripId, isOpen, onClose }: TripDe
   const locations = trip.trip_locations || [];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 animate-in fade-in duration-200" onClick={onClose}>
+    <>
+    <div 
+      className={cn(
+        "fixed inset-0 z-50 flex items-end justify-center bg-black/60 animate-in fade-in duration-200",
+        selectedLocation && "hidden"
+      )}
+      onClick={handleClose}
+    >
       <div 
         className="w-full max-w-2xl bg-background rounded-t-3xl max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom duration-300"
         onClick={(e) => e.stopPropagation()}
@@ -136,12 +149,12 @@ const TripDetailModal = ({ trip: providedTrip, tripId, isOpen, onClose }: TripDe
           ) : (
             <MapPin className="w-16 h-16 text-primary/40" />
           )}
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 p-2 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background transition-colors shadow-lg"
-          >
-            <X className="h-5 w-5" />
-          </button>
+            <button
+              onClick={handleClose}
+              className="absolute top-4 right-4 p-2 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background transition-colors shadow-lg"
+            >
+              <X className="h-5 w-5" />
+            </button>
         </div>
 
         {/* Content */}
@@ -254,6 +267,7 @@ const TripDetailModal = ({ trip: providedTrip, tripId, isOpen, onClose }: TripDe
           )}
         </div>
       </div>
+    </div>
 
       {showChatModal && trip && (
         <TripChatModal
@@ -273,7 +287,7 @@ const TripDetailModal = ({ trip: providedTrip, tripId, isOpen, onClose }: TripDe
           />
         </div>
       )}
-    </div>
+    </>
   );
 };
 
