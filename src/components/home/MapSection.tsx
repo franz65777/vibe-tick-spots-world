@@ -272,6 +272,11 @@ const MapSection = ({
         />
         )}
 
+        {/* Subtle fade effect at bottom of map */}
+        {!isListViewOpen && (
+          <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background/60 to-transparent pointer-events-none z-[999]" />
+        )}
+
         {/* Map Category Filters - Hide when list view is open */}
         {!isListViewOpen && (
           <div className={cn(
