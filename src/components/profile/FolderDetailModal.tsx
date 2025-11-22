@@ -212,6 +212,11 @@ const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps
     });
   };
 
+  const handleClose = () => {
+    setSelectedLocation(null);
+    onClose();
+  };
+
   if (!isOpen) return null;
   if (loading) {
     return (
@@ -226,7 +231,13 @@ const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps
 
   return (
     <>
-      <div className="fixed inset-0 z-[10000] flex items-end justify-center bg-black/60 animate-in fade-in duration-200" onClick={onClose}>
+      <div 
+        className={cn(
+          "fixed inset-0 z-[10000] flex items-end justify-center bg-black/60 animate-in fade-in duration-200",
+          selectedLocation && "hidden"
+        )} 
+        onClick={handleClose}
+      >
         <div 
           className="w-full max-w-2xl bg-background rounded-t-3xl max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom duration-300"
           onClick={(e) => e.stopPropagation()}
@@ -249,7 +260,7 @@ const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps
               <Folder className="w-16 h-16 text-primary/40" />
             )}
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="absolute top-4 right-4 p-2 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background transition-colors shadow-lg"
             >
               <X className="h-5 w-5" />
