@@ -45,13 +45,13 @@ const LocationCardWithStats = ({ location, notes, onClick }: { location: any; no
         </p>
         <div className="flex items-center gap-3 text-xs">
           {stats.averageRating && stats.averageRating > 0 && (
-            <div className="flex items-center gap-1 text-amber-500">
+            <div className="flex items-center gap-1">
               {location.category === 'restaurant' || location.category === 'cafe' || location.category === 'bakery' ? (
-                <Utensils className="w-3.5 h-3.5" />
+                <Utensils className="w-3.5 h-3.5 text-amber-500" />
               ) : (
-                <Star className="w-3.5 h-3.5 fill-current" />
+                <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
               )}
-              <span className="font-medium">{stats.averageRating.toFixed(1)}</span>
+              <span className="font-medium bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">{stats.averageRating.toFixed(1)}</span>
             </div>
           )}
           {stats.totalSaves > 0 && (
@@ -187,10 +187,7 @@ const TripDetailModal = ({ trip: providedTrip, tripId, isOpen, onClose }: TripDe
   return (
     <>
     <div 
-      className={cn(
-        "fixed inset-0 z-50 flex items-end justify-center bg-black/60 animate-in fade-in duration-200",
-        selectedLocation && "hidden"
-      )}
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 animate-in fade-in duration-200"
       onClick={handleClose}
     >
       <div 
