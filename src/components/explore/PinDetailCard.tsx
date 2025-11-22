@@ -651,10 +651,10 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
 
           {/* Featured in Lists Section */}
           {!listsLoading && featuredLists.length > 0 && (
-            <div className="px-4 py-2">
-              <div className="inline-flex rounded-xl bg-gradient-to-r from-transparent via-background/20 to-transparent backdrop-blur-md border border-border/5 px-3 py-2 w-full">
+            <div className="px-4 pb-1">
+              <div className="inline-flex rounded-xl bg-gradient-to-r from-transparent via-background/20 to-transparent backdrop-blur-md border border-border/5 px-3 py-1.5 w-full">
                 <div className="w-full">
-                  <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+                  <h4 className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">
                     📌 {t('featuredInLists', { ns: 'common', defaultValue: 'Featured in Lists' })}
                   </h4>
                   <div className="overflow-x-auto scrollbar-hide">
@@ -672,10 +672,10 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
                               setTripDetailOpen(true);
                             }
                           }}
-                          className="inline-flex items-center gap-2 px-3 py-2.5 bg-background/40 hover:bg-accent rounded-xl border border-border text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0"
+                          className="inline-flex items-center gap-2 px-3 py-2 bg-background/40 hover:bg-accent rounded-xl border border-border text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0"
                         >
                           <Avatar className="h-6 w-6">
-                            <AvatarImage src={`https://hrmklsvewmhpqixgyjmy.supabase.co/storage/v1/object/public/avatars/${list.user_id}`} />
+                            <AvatarImage src={list.avatar_url || undefined} />
                             <AvatarFallback className="text-xs">{list.username.charAt(0).toUpperCase()}</AvatarFallback>
                           </Avatar>
                           <span className="text-foreground">
@@ -694,7 +694,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
           <div className="flex-1 overflow-hidden flex flex-col">
             {/* Tab Navigation with Horizontal Scroll */}
             <div 
-              className="flex-shrink-0 px-4 pt-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory"
+              className="flex-shrink-0 px-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory"
               onScroll={(e) => {
                 const scrollLeft = e.currentTarget.scrollLeft;
                 const width = e.currentTarget.offsetWidth;
