@@ -57,29 +57,31 @@ const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps
       
       setLoading(true);
       try {
-        // Fetch folder details
-        const { data: folderData, error: folderError } = await supabase
-          .from('saved_folders')
-          .select('*')
-          .eq('id', folderId)
-          .single();
+        // Fetch all data in parallel for better performance
+        const [folderResult, folderLocsResult] = await Promise.all([
+          supabase
+            .from('saved_folders')
+            .select(`
+              *,
+              profiles!saved_folders_user_id_fkey (
+                id,
+                username,
+                avatar_url
+              )
+            `)
+            .eq('id', folderId)
+            .single(),
+          supabase
+            .from('folder_locations')
+            .select('location_id')
+            .eq('folder_id', folderId)
+        ]);
 
-        if (folderError) throw folderError;
+        if (folderResult.error) throw folderResult.error;
+        if (folderLocsResult.error) throw folderLocsResult.error;
 
-        // Fetch user profile
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('id, username, avatar_url')
-          .eq('id', folderData.user_id)
-          .single();
-
-        // Fetch folder locations and then load their details
-        const { data: folderLocs, error: locsError } = await supabase
-          .from('folder_locations')
-          .select('location_id')
-          .eq('folder_id', folderId);
-
-        if (locsError) throw locsError;
+        const folderData = folderResult.data;
+        const folderLocs = folderLocsResult.data;
 
         let locationsData: any[] = [];
 
@@ -94,18 +96,17 @@ const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps
           locationsData = locs || [];
         }
 
-        setFolder({ ...folderData, profiles: profile });
+        setFolder(folderData);
         setLocations(locationsData);
 
-        // Check if current user has saved this folder
+        // Check folder save status
         if (user && folderData.user_id !== user.id) {
           const { data: savedData } = await supabase
             .from('folder_saves')
             .select('id')
             .eq('folder_id', folderId)
             .eq('user_id', user.id)
-            .single();
-          
+            .maybeSingle();
           setIsSaved(!!savedData);
         }
 
@@ -130,12 +131,11 @@ const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps
           .gt('expires_at', new Date().toISOString())
           .order('created_at', { ascending: false });
 
-        // Transform stories to the format expected by StoriesViewer
         const formattedStories = (storiesData || []).map((story: any) => ({
           id: story.id,
           userId: story.user_id,
-          userName: profile?.username || '',
-          userAvatar: profile?.avatar_url || '',
+          userName: folderData.profiles?.username || '',
+          userAvatar: folderData.profiles?.avatar_url || '',
           mediaUrl: story.media_url,
           mediaType: story.media_type,
           locationId: story.location_id,
@@ -145,12 +145,11 @@ const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps
           timestamp: story.created_at,
           isViewed: false
         }));
-
         setCreatorStories(formattedStories);
 
-        // Track folder view
+        // Track folder view (non-blocking)
         if (user) {
-          await supabase.from('folder_views').insert({
+          supabase.from('folder_views').insert({
             folder_id: folderId,
             user_id: user.id
           });
@@ -203,7 +202,14 @@ const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps
   };
 
   const handleLocationClick = (location: any) => {
-    setSelectedLocation(location);
+    // Format location data for PinDetailCard
+    setSelectedLocation({
+      ...location,
+      coordinates: {
+        lat: location.latitude,
+        lng: location.longitude
+      }
+    });
   };
 
   if (!isOpen) return null;
@@ -400,10 +406,12 @@ const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps
 
       {/* Location Detail */}
       {selectedLocation && (
-        <PinDetailCard
-          place={selectedLocation}
-          onClose={() => setSelectedLocation(null)}
-        />
+        <div className="fixed inset-0 z-[10010]">
+          <PinDetailCard
+            place={selectedLocation}
+            onClose={() => setSelectedLocation(null)}
+          />
+        </div>
       )}
 
       {/* Saved By Modal */}

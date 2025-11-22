@@ -5,6 +5,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import TripChatModal from './TripChatModal';
+import PinDetailCard from '@/components/explore/PinDetailCard';
+import { CategoryIcon } from '@/components/common/CategoryIcon';
 
 interface TripDetailModalProps {
   trip?: Trip | null;
@@ -18,6 +20,7 @@ const TripDetailModal = ({ trip: providedTrip, tripId, isOpen, onClose }: TripDe
   const [loading, setLoading] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
   const [participants, setParticipants] = useState<any[]>([]);
+  const [selectedLocation, setSelectedLocation] = useState<any>(null);
 
   useEffect(() => {
     const fetchTrip = async () => {
@@ -208,18 +211,31 @@ const TripDetailModal = ({ trip: providedTrip, tripId, isOpen, onClose }: TripDe
                   if (!location) return null;
 
                   return (
-                    <div
+                    <button
                       key={tripLocation.id}
-                      className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl hover:bg-muted transition-colors"
+                      onClick={() => {
+                        setSelectedLocation({
+                          ...location,
+                          coordinates: {
+                            lat: location.latitude,
+                            lng: location.longitude
+                          }
+                        });
+                      }}
+                      className="w-full flex items-center gap-3 p-3 bg-muted/50 rounded-xl hover:bg-muted transition-colors"
                     >
-                      {location.image_url && (
+                      {location.image_url ? (
                         <img 
                           src={location.image_url} 
                           alt={location.name}
                           className="w-16 h-16 rounded-lg object-cover"
                         />
+                      ) : (
+                        <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <CategoryIcon category={location.category} className="w-8 h-8" />
+                        </div>
                       )}
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 text-left">
                         <h4 className="font-medium truncate">{location.name}</h4>
                         <p className="text-sm text-muted-foreground truncate">
                           {location.category} • {location.city}
@@ -230,7 +246,7 @@ const TripDetailModal = ({ trip: providedTrip, tripId, isOpen, onClose }: TripDe
                           </p>
                         )}
                       </div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -246,6 +262,16 @@ const TripDetailModal = ({ trip: providedTrip, tripId, isOpen, onClose }: TripDe
           isOpen={showChatModal}
           onClose={() => setShowChatModal(false)}
         />
+      )}
+
+      {/* Location Detail */}
+      {selectedLocation && (
+        <div className="fixed inset-0 z-[10010]">
+          <PinDetailCard
+            place={selectedLocation}
+            onClose={() => setSelectedLocation(null)}
+          />
+        </div>
       )}
     </div>
   );
