@@ -969,6 +969,7 @@ const resources = {
       noPostsYet: 'Aún no hay publicaciones',
       coordinatesNotAvailable: 'Coordenadas no disponibles',
       chooseMapApp: 'Elige tu aplicación de mapas preferida',
+      featuredInLists: 'Destacado en Listas',
       marketingCampaign: {
         event: 'Descuento',
         discount: 'Descuento',
@@ -1764,6 +1765,7 @@ const resources = {
       noPostsYet: 'Nessun post ancora',
       coordinatesNotAvailable: 'Coordinate non disponibili',
       chooseMapApp: 'Scegli la tua app di mappe preferita',
+      featuredInLists: 'In Evidenza nelle Liste',
       marketingCampaign: {
         event: 'Evento',
         discount: 'Sconto',
@@ -2543,6 +2545,7 @@ const resources = {
       noPostsYet: 'Pas encore de publications',
       coordinatesNotAvailable: 'Coordonnées non disponibles',
       chooseMapApp: 'Choisissez votre application de cartes préférée',
+      featuredInLists: 'Mis en Avant dans les Listes',
       marketingCampaign: {
         event: 'Événement',
         discount: 'Réduction',

@@ -7,6 +7,7 @@ interface FeaturedList {
   list_name: string;
   user_id: string;
   username: string;
+  avatar_url: string | null;
   is_public: boolean; // Derived from is_private (inverted)
   is_own: boolean;
   type: 'trip' | 'folder';
@@ -55,7 +56,8 @@ export const useFeaturedInLists = (locationId?: string, googlePlaceId?: string) 
                 user_id,
                 is_private,
                 profiles!inner (
-                  username
+                  username,
+                  avatar_url
                 )
               )
             `)
@@ -78,6 +80,7 @@ export const useFeaturedInLists = (locationId?: string, googlePlaceId?: string) 
                   list_name: folder.name,
                   user_id: folder.user_id,
                   username: folder.profiles?.username || 'Unknown',
+                  avatar_url: folder.profiles?.avatar_url || null,
                   is_public: isPublic,
                   is_own: isOwnList,
                   type: 'folder'
@@ -99,7 +102,8 @@ export const useFeaturedInLists = (locationId?: string, googlePlaceId?: string) 
                 user_id,
                 is_public,
                 profiles!inner (
-                  username
+                  username,
+                  avatar_url
                 )
               )
             `);
@@ -127,6 +131,7 @@ export const useFeaturedInLists = (locationId?: string, googlePlaceId?: string) 
                   list_name: trip.name,
                   user_id: trip.user_id,
                   username: trip.profiles?.username || 'Unknown',
+                  avatar_url: trip.profiles?.avatar_url || null,
                   is_public: trip.is_public,
                   is_own: isOwnList,
                   type: 'trip'
