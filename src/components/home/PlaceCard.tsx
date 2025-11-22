@@ -138,7 +138,7 @@ const PlaceCard = ({
   return (
     <>
       <div 
-        className="bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 group"
+        className="bg-background/80 backdrop-blur-xl rounded-2xl shadow-lg overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 group border border-border/20"
         onClick={() => onCardClick(place)}
       >
         {/* Image section */}
