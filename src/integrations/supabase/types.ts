@@ -1866,6 +1866,7 @@ export type Database = {
           is_business_user: boolean | null
           language: string
           last_username_change_at: string | null
+          onboarding_completed: boolean | null
           places_visited: number | null
           posts_count: number | null
           subscription_status:
@@ -1894,6 +1895,7 @@ export type Database = {
           is_business_user?: boolean | null
           language?: string
           last_username_change_at?: string | null
+          onboarding_completed?: boolean | null
           places_visited?: number | null
           posts_count?: number | null
           subscription_status?:
@@ -1922,6 +1924,7 @@ export type Database = {
           is_business_user?: boolean | null
           language?: string
           last_username_change_at?: string | null
+          onboarding_completed?: boolean | null
           places_visited?: number | null
           posts_count?: number | null
           subscription_status?:

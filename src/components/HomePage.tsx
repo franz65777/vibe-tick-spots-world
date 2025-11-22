@@ -10,6 +10,7 @@ import ModalsManager from './home/ModalsManager';
 import { supabase } from '@/integrations/supabase/client';
 import UnifiedSearchOverlay from './explore/UnifiedSearchOverlay';
 import SpottLogo from './common/SpottLogo';
+import OnboardingModal from './onboarding/OnboardingModal';
 
 // Lazy load heavy components
 const HomeStoriesSection = lazy(() => import('./home/HomeStoriesSection'));
@@ -77,6 +78,10 @@ const HomePage = memo(() => {
   const longPressTimerRef = React.useRef<NodeJS.Timeout | null>(null);
   const [isLongPressing, setIsLongPressing] = useState(false);
 
+  // Onboarding state
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [checkingOnboarding, setCheckingOnboarding] = useState(true);
+
   // Logo state - show only on first login (this session)
   const [showLogo, setShowLogo] = useState(() => {
     const hasShownLogo = sessionStorage.getItem('hasShownSpottLogo');
@@ -86,6 +91,41 @@ const HomePage = memo(() => {
     }
     return false;
   });
+
+  // Check onboarding status on mount
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      if (!user?.id) {
+        setCheckingOnboarding(false);
+        return;
+      }
+
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('onboarding_completed')
+          .eq('id', user.id)
+          .single();
+
+        if (error) {
+          console.error('Error checking onboarding status:', error);
+          setCheckingOnboarding(false);
+          return;
+        }
+
+        // Show onboarding if not completed
+        if (!profile?.onboarding_completed) {
+          setShowOnboarding(true);
+        }
+      } catch (error) {
+        console.error('Onboarding check error:', error);
+      } finally {
+        setCheckingOnboarding(false);
+      }
+    };
+
+    checkOnboardingStatus();
+  }, [user?.id]);
 
   // Handle navigation state for opening pin detail from posts
   useEffect(() => {
@@ -411,6 +451,18 @@ const HomePage = memo(() => {
     fetchFollowedStories();
   }, [user]);
 
+  // Show loading while checking onboarding
+  if (checkingOnboarding) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -430,6 +482,12 @@ const HomePage = memo(() => {
 
   return (
     <MapFilterProvider>
+      {/* Onboarding Modal */}
+      <OnboardingModal 
+        open={showOnboarding}
+        onComplete={() => setShowOnboarding(false)}
+      />
+      
       <div 
         className="h-screen w-full bg-background flex flex-col overflow-hidden pt-[25px]"
         data-map-expanded={isMapExpanded}
