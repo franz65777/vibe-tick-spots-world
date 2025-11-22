@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Map, Search, Plus, Activity, User } from 'lucide-react';
 import { toast } from 'sonner';
 import AccountSwitchModal from './AccountSwitchModal';
+import { HomeMenuDropdown } from './HomeMenuDropdown';
 import { useTranslation } from 'react-i18next';
 import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -22,6 +23,7 @@ const NewBottomNavigation = () => {
   
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
+  const [showHomeMenu, setShowHomeMenu] = useState(false);
   const { t } = useTranslation();
   const [hideNav, setHideNav] = useState(false);
   const [longPressActivated, setLongPressActivated] = useState(false);
@@ -114,25 +116,15 @@ const NewBottomNavigation = () => {
     }
   };
 
-  const handleExploreLongPressStart = () => {
-    setLongPressActivated(false);
-    const timer = setTimeout(() => {
-      setLongPressActivated(true);
-      navigate('/share-location');
-    }, 800); // 800ms long press
-    setLongPressTimer(timer);
-  };
-
-  const handleExploreLongPressEnd = () => {
-    if (longPressTimer) {
-      clearTimeout(longPressTimer);
-      setLongPressTimer(null);
-    }
-    
-    // Only navigate to home if long press was not activated
-    if (!longPressActivated) {
-      navigate('/');
-      trackEvent('nav_tab_clicked', { tab: 'explore' });
+  const handleHomeMenuSelect = (option: 'map' | 'share') => {
+    trackEvent('home_menu_option_selected', { option });
+    switch (option) {
+      case 'map':
+        navigate('/');
+        break;
+      case 'share':
+        navigate('/share-location');
+        break;
     }
   };
 
@@ -174,6 +166,12 @@ const NewBottomNavigation = () => {
         currentMode="personal"
       />
       
+      <HomeMenuDropdown
+        isOpen={showHomeMenu}
+        onClose={() => setShowHomeMenu(false)}
+        onSelectOption={handleHomeMenuSelect}
+      />
+      
       <nav 
         className="fixed bottom-0 left-0 right-0 z-[110]"
         role="navigation"
@@ -185,44 +183,39 @@ const NewBottomNavigation = () => {
               {navItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 const isProfileTab = item.path === '/profile';
-                const isExploreTab = item.path === '/';
+                const isHomeTab = item.path === '/';
                 
                 return (
                   <button
                     key={item.path}
                     onClick={
+                      isHomeTab ? () => setShowHomeMenu(!showHomeMenu) :
                       isProfileTab && !hasValidBusinessAccount ? handleProfileClick : 
-                      isProfileTab || isExploreTab ? undefined : 
+                      isProfileTab ? undefined : 
                       () => handleNavClick(item.path, item.label)
                     }
                     onMouseDown={
                       isProfileTab && hasValidBusinessAccount ? handleProfileLongPressStart : 
-                      isExploreTab ? handleExploreLongPressStart : 
                       undefined
                     }
                     onMouseUp={
                       isProfileTab && hasValidBusinessAccount ? handleProfileLongPressEnd : 
-                      isExploreTab ? handleExploreLongPressEnd : 
                       undefined
                     }
                     onMouseLeave={
                       isProfileTab && hasValidBusinessAccount ? handleProfileLongPressEnd : 
-                      isExploreTab ? handleExploreLongPressEnd : 
                       undefined
                     }
                     onTouchStart={
                       isProfileTab && hasValidBusinessAccount ? handleProfileLongPressStart : 
-                      isExploreTab ? handleExploreLongPressStart : 
                       undefined
                     }
                     onTouchEnd={
                       isProfileTab && hasValidBusinessAccount ? handleProfileLongPressEnd : 
-                      isExploreTab ? handleExploreLongPressEnd : 
                       undefined
                     }
                     onTouchCancel={
                       isProfileTab && hasValidBusinessAccount ? handleProfileLongPressEnd : 
-                      isExploreTab ? handleExploreLongPressEnd : 
                       undefined
                     }
                     className="flex flex-col items-center justify-center gap-1 min-w-[64px] py-2 transition-colors duration-200"
