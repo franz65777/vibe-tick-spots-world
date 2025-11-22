@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import UnifiedSearchOverlay from './explore/UnifiedSearchOverlay';
 import SpottLogo from './common/SpottLogo';
 import OnboardingModal from './onboarding/OnboardingModal';
+import { Geolocation } from "@capacitor/geolocation";
 
 // Lazy load heavy components
 const HomeStoriesSection = lazy(() => import('./home/HomeStoriesSection'));
@@ -91,6 +92,19 @@ const HomePage = memo(() => {
     }
     return false;
   });
+
+  // Request location permissions on iPhone
+  useEffect(() => {
+    (async () => {
+      try {
+        await Geolocation.requestPermissions();
+        const pos = await Geolocation.getCurrentPosition();
+        console.log("Location:", pos);
+      } catch (err) {
+        console.error("Location error:", err);
+      }
+    })();
+  }, []);
 
   // Check onboarding status on mount
   useEffect(() => {
