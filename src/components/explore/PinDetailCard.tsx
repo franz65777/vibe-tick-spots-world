@@ -53,9 +53,10 @@ interface PinDetailCardProps {
   place: any;
   onClose: () => void;
   onPostSelected?: (postId: string) => void;
+  onBack?: () => void;
 }
 
-const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) => {
+const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCardProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { mutedLocations, muteLocation, unmuteLocation, isMuting } = useMutedLocations(user?.id);
@@ -405,21 +406,25 @@ const PinDetailCard = ({ place, onClose, onPostSelected }: PinDetailCardProps) =
         dismissible={true}
         onOpenChange={(open) => { if (!open) onClose(); }}
       >
-        <DrawerContent className={`transition-all duration-300 h-auto max-h-[30vh] data-[state=open]:max-h-[90vh] ${shareOpen ? 'z-[1000]' : 'z-[2000]'}`}>
+        <DrawerContent className={`transition-all duration-300 h-auto max-h-[30vh] data-[state=open]:max-h-[90vh] ${shareOpen ? 'z-[1000]' : onBack ? 'z-[10020]' : 'z-[2000]'}`}>
           {/* Draggable Header - Compact and Draggable */}
           <div className="bg-background px-4 pt-3 pb-2 cursor-grab active:cursor-grabbing">
             <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-3" />
             <div className="flex items-center gap-3 pb-2">
-              {sourcePostId && (
+              {(sourcePostId || onBack) && (
                 <Button
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate(-1); // Torna alla pagina di provenienza (feed, profilo, ecc.)
+                    if (onBack) {
+                      onBack();
+                    } else {
+                      navigate(-1); // Torna alla pagina di provenienza (feed, profilo, ecc.)
+                    }
                   }}
                   size="icon"
                   variant="ghost"
                   className="shrink-0 h-10 w-10 rounded-full animate-fade-in"
-                  aria-label="Torna alla pagina precedente"
+                  aria-label="Torna indietro"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </Button>
