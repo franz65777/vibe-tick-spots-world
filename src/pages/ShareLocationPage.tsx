@@ -436,9 +436,8 @@ const ShareLocationPage = () => {
         {searchResults.length > 0 && (
           <div className="space-y-2">
             <h3 className="text-sm font-medium text-muted-foreground">Risultati ricerca</h3>
-            <div className="relative max-h-[calc(100vh-280px)]">
-              <div className="overflow-y-auto space-y-2 scrollbar-hide h-full">
-                {searchResults.map((result, index) => (
+            <div className="max-h-[calc(100vh-280px)] overflow-y-auto space-y-2 scrollbar-hide">
+              {searchResults.map((result, index) => (
                 <button
                   key={result.id || index}
                   onClick={() => {
@@ -477,10 +476,7 @@ const ShareLocationPage = () => {
                     <p className="text-xs text-primary mt-1">Nuovo luogo - verrà aggiunto all'app</p>
                   )}
                 </button>
-                ))}
-              </div>
-              {/* Fade effect at bottom */}
-              <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-background via-background/80 to-transparent pointer-events-none" />
+              ))}
             </div>
           </div>
         )}
@@ -489,9 +485,8 @@ const ShareLocationPage = () => {
         {!searchQuery && !selectedLocation && nearbyLocations.length > 0 && (
           <div className="space-y-2">
             <h3 className="text-sm font-medium text-muted-foreground">Luoghi nelle vicinanze</h3>
-            <div className="relative max-h-[calc(100vh-280px)]">
-              <div className="overflow-y-auto space-y-2 scrollbar-hide h-full">
-                {nearbyLocations.map((loc) => (
+            <div className="max-h-[calc(100vh-280px)] overflow-y-auto space-y-2 scrollbar-hide">
+              {nearbyLocations.map((loc) => (
                   <button
                     key={loc.id}
                     onClick={() => setSelectedLocation(loc)}
@@ -514,10 +509,7 @@ const ShareLocationPage = () => {
                       <p className="text-xs text-muted-foreground shrink-0">{loc.distance.toFixed(1)} km</p>
                     </div>
                   </button>
-                ))}
-              </div>
-              {/* Fade effect at bottom */}
-              <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-background via-background/80 to-transparent pointer-events-none" />
+              ))}
             </div>
           </div>
         )}
