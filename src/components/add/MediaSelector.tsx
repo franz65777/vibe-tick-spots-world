@@ -76,9 +76,9 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
             <Button 
               onClick={handleClick}
               size="lg"
-              className="w-full h-12 rounded-xl bg-background/80 backdrop-blur-xl border border-border/20 hover:bg-background/90 text-foreground"
+              className="w-full h-12 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm"
             >
-              <ImageIcon className="w-5 h-5 mr-2" />
+              <ImageIcon className="w-5 h-5 mr-2 text-primary" />
               {t('chooseFromLibrary', { ns: 'add' })}
             </Button>
 
@@ -86,18 +86,18 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
               <Button 
                 onClick={() => window.location.href = '/add-location'}
                 size="lg"
-                className="h-12 rounded-xl bg-background/80 backdrop-blur-xl border border-border/20 hover:bg-background/90 text-foreground"
+                className="h-12 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm"
               >
-                <Map className="w-5 h-5 mr-2" />
+                <Map className="w-5 h-5 mr-2 text-primary" />
                 Aggiungi luogo
               </Button>
 
               <Button 
                 onClick={() => window.location.href = '/create-list'}
                 size="lg"
-                className="h-12 rounded-xl bg-background/80 backdrop-blur-xl border border-border/20 hover:bg-background/90 text-foreground"
+                className="h-12 rounded-2xl bg-background/40 backdrop-blur-2xl border-2 border-primary/20 hover:border-primary/30 hover:bg-background/50 text-foreground transition-all duration-200 shadow-sm"
               >
-                <FolderPlus className="w-5 h-5 mr-2" />
+                <FolderPlus className="w-5 h-5 mr-2 text-primary" />
                 Crea lista
               </Button>
             </div>
