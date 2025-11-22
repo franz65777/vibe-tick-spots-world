@@ -1,4 +1,4 @@
-import { X, MapPin, Eye, Bookmark, MessageCircle, Users } from 'lucide-react';
+import { X, MapPin, Eye, Bookmark, MessageCircle, Users, Star, Utensils } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Trip, useTrips } from '@/hooks/useTrips';
 import { useState, useEffect } from 'react';
@@ -8,6 +8,8 @@ import TripChatModal from './TripChatModal';
 import PinDetailCard from '@/components/explore/PinDetailCard';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { cn } from '@/lib/utils';
+import { useLocationStats } from '@/hooks/useLocationStats';
+import { useLocationSavers } from '@/hooks/useLocationSavers';
 
 interface TripDetailModalProps {
   trip?: Trip | null;
@@ -15,6 +17,69 @@ interface TripDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+const LocationCardWithStats = ({ location, notes, onClick }: { location: any; notes?: string; onClick: () => void }) => {
+  const { stats } = useLocationStats(location.id, location.google_place_id);
+  const { savers } = useLocationSavers(location.id, 3);
+
+  return (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center gap-3 p-3 bg-muted/50 rounded-xl hover:bg-muted transition-colors"
+    >
+      {location.image_url ? (
+        <img 
+          src={location.image_url} 
+          alt={location.name}
+          className="w-16 h-16 rounded-lg object-cover"
+        />
+      ) : (
+        <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center">
+          <CategoryIcon category={location.category} className="w-8 h-8" />
+        </div>
+      )}
+      <div className="flex-1 min-w-0 text-left space-y-1">
+        <h4 className="font-medium truncate">{location.name}</h4>
+        <p className="text-sm text-muted-foreground truncate">
+          {location.category} • {location.city}
+        </p>
+        <div className="flex items-center gap-3 text-xs">
+          {stats.averageRating && stats.averageRating > 0 && (
+            <div className="flex items-center gap-1 text-amber-500">
+              {location.category === 'restaurant' || location.category === 'cafe' || location.category === 'bakery' ? (
+                <Utensils className="w-3.5 h-3.5" />
+              ) : (
+                <Star className="w-3.5 h-3.5 fill-current" />
+              )}
+              <span className="font-medium">{stats.averageRating.toFixed(1)}</span>
+            </div>
+          )}
+          {stats.totalSaves > 0 && (
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <Bookmark className="w-3.5 h-3.5" />
+              <span>{stats.totalSaves}</span>
+            </div>
+          )}
+          {savers.length > 0 && (
+            <div className="flex items-center -space-x-2">
+              {savers.map((saver) => (
+                <Avatar key={saver.id} className="w-5 h-5 ring-2 ring-background">
+                  <AvatarImage src={saver.avatar_url} />
+                  <AvatarFallback className="text-[8px]">{saver.username?.[0]?.toUpperCase()}</AvatarFallback>
+                </Avatar>
+              ))}
+            </div>
+          )}
+        </div>
+        {notes && (
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+            {notes}
+          </p>
+        )}
+      </div>
+    </button>
+  );
+};
 
 const TripDetailModal = ({ trip: providedTrip, tripId, isOpen, onClose }: TripDetailModalProps) => {
   const [trip, setTrip] = useState<Trip | null>(providedTrip || null);
@@ -224,8 +289,10 @@ const TripDetailModal = ({ trip: providedTrip, tripId, isOpen, onClose }: TripDe
                   if (!location) return null;
 
                   return (
-                    <button
+                    <LocationCardWithStats
                       key={tripLocation.id}
+                      location={location}
+                      notes={tripLocation.notes}
                       onClick={() => {
                         setSelectedLocation({
                           ...location,
@@ -235,31 +302,7 @@ const TripDetailModal = ({ trip: providedTrip, tripId, isOpen, onClose }: TripDe
                           }
                         });
                       }}
-                      className="w-full flex items-center gap-3 p-3 bg-muted/50 rounded-xl hover:bg-muted transition-colors"
-                    >
-                      {location.image_url ? (
-                        <img 
-                          src={location.image_url} 
-                          alt={location.name}
-                          className="w-16 h-16 rounded-lg object-cover"
-                        />
-                      ) : (
-                        <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <CategoryIcon category={location.category} className="w-8 h-8" />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0 text-left">
-                        <h4 className="font-medium truncate">{location.name}</h4>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {location.category} • {location.city}
-                        </p>
-                        {tripLocation.notes && (
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                            {tripLocation.notes}
-                          </p>
-                        )}
-                      </div>
-                    </button>
+                    />
                   );
                 })}
               </div>
@@ -283,7 +326,7 @@ const TripDetailModal = ({ trip: providedTrip, tripId, isOpen, onClose }: TripDe
         <div className="fixed inset-0 z-[10010]">
           <PinDetailCard 
             place={selectedLocation}
-            onClose={() => setSelectedLocation(null)}
+            onClose={handleClose}
             onBack={() => setSelectedLocation(null)}
           />
         </div>

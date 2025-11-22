@@ -1,4 +1,4 @@
-import { X, MapPin, Eye, Bookmark, Share2, MoreVertical, Users, Folder, BookmarkCheck } from 'lucide-react';
+import { X, MapPin, Eye, Bookmark, Share2, MoreVertical, Users, Folder, BookmarkCheck, Star, Utensils } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,12 +13,72 @@ import { useTranslation } from 'react-i18next';
 import FolderSavedByModal from './FolderSavedByModal';
 import { LocationShareModal } from '@/components/explore/LocationShareModal';
 import { cn } from '@/lib/utils';
+import { useLocationStats } from '@/hooks/useLocationStats';
+import { useLocationSavers } from '@/hooks/useLocationSavers';
 
 interface FolderDetailModalProps {
   folderId: string;
   isOpen: boolean;
   onClose: () => void;
 }
+
+const LocationCardWithStats = ({ location, onClick }: { location: any; onClick: () => void }) => {
+  const { stats } = useLocationStats(location.id, location.google_place_id);
+  const { savers } = useLocationSavers(location.id, 3);
+
+  return (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center gap-3 p-3 bg-muted/50 rounded-xl hover:bg-muted transition-colors"
+    >
+      {location.image_url ? (
+        <img 
+          src={location.image_url} 
+          alt={location.name}
+          className="w-16 h-16 rounded-lg object-cover"
+        />
+      ) : (
+        <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center">
+          <CategoryIcon category={location.category} className="w-8 h-8" />
+        </div>
+      )}
+      <div className="flex-1 min-w-0 text-left space-y-1">
+        <h4 className="font-medium truncate">{location.name}</h4>
+        <p className="text-sm text-muted-foreground truncate">
+          {location.category} • {location.city}
+        </p>
+        <div className="flex items-center gap-3 text-xs">
+          {stats.averageRating && stats.averageRating > 0 && (
+            <div className="flex items-center gap-1 text-amber-500">
+              {location.category === 'restaurant' || location.category === 'cafe' || location.category === 'bakery' ? (
+                <Utensils className="w-3.5 h-3.5" />
+              ) : (
+                <Star className="w-3.5 h-3.5 fill-current" />
+              )}
+              <span className="font-medium">{stats.averageRating.toFixed(1)}</span>
+            </div>
+          )}
+          {stats.totalSaves > 0 && (
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <Bookmark className="w-3.5 h-3.5" />
+              <span>{stats.totalSaves}</span>
+            </div>
+          )}
+          {savers.length > 0 && (
+            <div className="flex items-center -space-x-2">
+              {savers.map((saver) => (
+                <Avatar key={saver.id} className="w-5 h-5 ring-2 ring-background">
+                  <AvatarImage src={saver.avatar_url} />
+                  <AvatarFallback className="text-[8px]">{saver.username?.[0]?.toUpperCase()}</AvatarFallback>
+                </Avatar>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </button>
+  );
+};
 
 const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps) => {
   const { t } = useTranslation();
@@ -201,7 +261,24 @@ const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps
     }
   };
 
-  const handleLocationClick = (location: any) => {
+  const handleLocationClick = async (location: any) => {
+    // Pre-fetch location data for faster loading
+    const fetchPromises = [];
+    
+    if (location.id) {
+      fetchPromises.push(
+        supabase
+          .from('posts')
+          .select('id, media_urls, caption, rating, user_id, created_at')
+          .eq('location_id', location.id)
+          .order('created_at', { ascending: false })
+          .limit(20)
+      );
+    }
+
+    // Execute pre-fetch in background
+    Promise.all(fetchPromises).catch(console.error);
+
     // Format location data for PinDetailCard
     setSelectedLocation({
       ...location,
@@ -373,29 +450,11 @@ const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps
                   <h3 className="font-semibold text-lg">{t('common:vibes', { defaultValue: 'Vibes' })}</h3>
                   <div className="space-y-2">
                     {locations.map((location: any) => (
-                      <button
+                      <LocationCardWithStats 
                         key={location.id}
+                        location={location}
                         onClick={() => handleLocationClick(location)}
-                        className="w-full flex items-center gap-3 p-3 bg-muted/50 rounded-xl hover:bg-muted transition-colors"
-                      >
-                        {location.image_url ? (
-                          <img 
-                            src={location.image_url} 
-                            alt={location.name}
-                            className="w-16 h-16 rounded-lg object-cover"
-                          />
-                        ) : (
-                          <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <CategoryIcon category={location.category} className="w-8 h-8" />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0 text-left">
-                          <h4 className="font-medium truncate">{location.name}</h4>
-                          <p className="text-sm text-muted-foreground truncate">
-                            {location.category} • {location.city}
-                          </p>
-                        </div>
-                      </button>
+                      />
                     ))}
                   </div>
                 </div>
@@ -420,7 +479,7 @@ const FolderDetailModal = ({ folderId, isOpen, onClose }: FolderDetailModalProps
         <div className="fixed inset-0 z-[10010]">
           <PinDetailCard 
             place={selectedLocation}
-            onClose={() => setSelectedLocation(null)}
+            onClose={handleClose}
             onBack={() => setSelectedLocation(null)}
           />
         </div>
