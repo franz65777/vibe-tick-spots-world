@@ -86,6 +86,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [tripDetailOpen, setTripDetailOpen] = useState(false);
   const [folderDetailOpen, setFolderDetailOpen] = useState(false);
+  const [isListOpen, setIsListOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   // Source post ID - if the pin was opened from a post
@@ -401,7 +402,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
   return (
     <>
       <Drawer 
-        open={!savedByOpen}
+        open={!savedByOpen && !isListOpen}
         modal={false}
         dismissible={true}
         onOpenChange={(open) => { if (!open) onClose(); }}
@@ -672,9 +673,11 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                             if (list.type === 'folder') {
                               setSelectedFolderId(list.list_id);
                               setFolderDetailOpen(true);
+                              setIsListOpen(true);
                             } else {
                               setSelectedTripId(list.list_id);
                               setTripDetailOpen(true);
+                              setIsListOpen(true);
                             }
                           }}
                           className="inline-flex items-center gap-2 px-3 py-2 bg-background/40 hover:bg-accent rounded-xl border border-border text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0"
@@ -930,6 +933,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           onClose={() => {
             setSelectedTripId(null);
             setTripDetailOpen(false);
+            setIsListOpen(false);
           }}
         />
       )}
@@ -941,6 +945,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           onClose={() => {
             setSelectedFolderId(null);
             setFolderDetailOpen(false);
+            setIsListOpen(false);
           }}
         />
       )}
