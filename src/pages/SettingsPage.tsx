@@ -107,7 +107,7 @@ const SettingsPage: React.FC = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-background pt-[25px]">
+    <div className="h-screen flex flex-col bg-background pt-[env(safe-area-inset-top)]">
       {/* Header with back button */}
       <div className="flex items-center gap-3 p-4 bg-background sticky top-0 z-10">
         <button

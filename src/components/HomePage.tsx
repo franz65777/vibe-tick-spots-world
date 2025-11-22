@@ -489,7 +489,7 @@ const HomePage = memo(() => {
       />
       
       <div 
-        className="h-screen w-full bg-background flex flex-col overflow-hidden pt-[25px]"
+        className="h-screen w-full bg-background flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]"
         data-map-expanded={isMapExpanded}
         onTouchStart={(e) => {
           // Start long press timer
