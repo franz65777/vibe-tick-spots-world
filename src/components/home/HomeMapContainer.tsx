@@ -17,7 +17,7 @@ const HomeMapContainer = memo((props: HomeMapContainerProps) => {
   const { isExpanded, isSearchOverlayOpen, ...mapProps } = props;
   
   return (
-    <div className={isExpanded ? "fixed inset-0 z-50" : isSearchOverlayOpen ? "hidden" : "flex-1 relative overflow-hidden"}>
+    <div className={isExpanded ? "fixed inset-0 z-50" : isSearchOverlayOpen ? "hidden" : "flex-1 relative overflow-hidden pb-[calc(env(safe-area-inset-bottom)+4rem)]"}>
       <MapSection
         mapCenter={mapProps.mapCenter}
         currentCity={mapProps.currentCity}

@@ -1,7 +1,7 @@
 import { memo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import { MapPin, Star, Percent, Calendar, Sparkles, Megaphone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PostActions } from './PostActions';
@@ -262,8 +262,6 @@ const FeedPostItem = memo((props: FeedPostItemProps) => {
                   );
                 })}
               </CarouselContent>
-              <CarouselPrevious className="left-2" />
-              <CarouselNext className="right-2" />
             </Carousel>
           ) : (() => {
             const isVideo = mediaUrls[0].includes('.mp4') || mediaUrls[0].includes('.mov') || mediaUrls[0].includes('.webm');

@@ -295,11 +295,11 @@ const FeedPage = memo(() => {
 
 
   return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden pt-[25px]">
+    <div className="h-screen bg-background flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]">
       <div className="w-full h-full flex flex-col">
         {/* Header */}
-        <div className="sticky top-0 z-30 bg-background shadow-sm shrink-0 w-full safe-area-pt">
-          <div className="py-3 pl-[10px] flex justify-start w-full">
+        <div className="sticky top-0 z-30 bg-background shadow-sm shrink-0 w-full">
+          <div className="py-3 pl-4 flex justify-start w-full">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button 

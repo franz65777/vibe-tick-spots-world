@@ -90,7 +90,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({
   }
   
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col h-full bg-background pt-[env(safe-area-inset-top)]">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background px-4 py-3 flex items-center justify-between">
         <button
