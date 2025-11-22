@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Image as ImageIcon, Video, X } from 'lucide-react';
+import { Image as ImageIcon, Video, X, MapPin as Map, FolderPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import { useTranslation } from 'react-i18next';
@@ -72,14 +72,36 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
             </p>
           </div>
 
-          <Button 
-            onClick={handleClick}
-            size="lg"
-            className="w-full h-12 rounded-xl"
-          >
-            <ImageIcon className="w-5 h-5 mr-2" />
-            {t('chooseFromLibrary', { ns: 'add' })}
-          </Button>
+          <div className="space-y-3 w-full">
+            <Button 
+              onClick={handleClick}
+              size="lg"
+              className="w-full h-12 rounded-xl bg-background/80 backdrop-blur-xl border border-border/20 hover:bg-background/90 text-foreground"
+            >
+              <ImageIcon className="w-5 h-5 mr-2" />
+              {t('chooseFromLibrary', { ns: 'add' })}
+            </Button>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Button 
+                onClick={() => window.location.href = '/add-location'}
+                size="lg"
+                className="h-12 rounded-xl bg-background/80 backdrop-blur-xl border border-border/20 hover:bg-background/90 text-foreground"
+              >
+                <Map className="w-5 h-5 mr-2" />
+                Aggiungi luogo
+              </Button>
+
+              <Button 
+                onClick={() => window.location.href = '/create-list'}
+                size="lg"
+                className="h-12 rounded-xl bg-background/80 backdrop-blur-xl border border-border/20 hover:bg-background/90 text-foreground"
+              >
+                <FolderPlus className="w-5 h-5 mr-2" />
+                Crea lista
+              </Button>
+            </div>
+          </div>
 
           <input
             ref={fileInputRef}
@@ -89,10 +111,6 @@ export const MediaSelector: React.FC<MediaSelectorProps> = ({
             onChange={(e) => e.target.files && onFilesSelect(e.target.files)}
             className="hidden"
           />
-
-          <p className="text-xs text-muted-foreground">
-            {t('selectUpTo', { ns: 'add' })} {maxFiles} {t('photosOrVideos', { ns: 'add' })}
-          </p>
         </div>
       </div>
     );
