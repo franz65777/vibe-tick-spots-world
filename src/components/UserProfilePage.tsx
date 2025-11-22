@@ -147,7 +147,7 @@ const UserProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col h-full bg-background">
+      <div className="flex flex-col h-full bg-background pt-[env(safe-area-inset-top)]">
         <div className="flex items-center justify-center h-64">
           <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
         </div>
@@ -157,7 +157,7 @@ const UserProfilePage = () => {
 
   if (error || !profile) {
     return (
-      <div className="flex flex-col h-full bg-background">
+      <div className="flex flex-col h-full bg-background pt-[env(safe-area-inset-top)]">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <p className="text-destructive mb-4">User not found</p>
@@ -186,7 +186,7 @@ const UserProfilePage = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col h-full bg-background pt-[env(safe-area-inset-top)]">
       {/* Header - Instagram Style */}
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3 flex-1">
