@@ -283,12 +283,22 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
       const groups = new Map<string, Grouped>(); // canonical key -> group
       const nameCityIndex = new Map<string, string>(); // nameCityKey -> canonical key
 
-      const norm = (s?: string | null) => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+      // More strict normalization to prevent false matches between different locations
+      const norm = (s?: string | null) => {
+        if (!s) return '';
+        return s.toLowerCase()
+          .replace(/[^a-z0-9\s]+/g, '') // Keep spaces
+          .replace(/\s+/g, ' ')  // Normalize multiple spaces
+          .trim();
+      };
+      
       const toNameCityKey = (loc: any) => {
         const cityFromAddr = loc.address?.split(',')[1]?.trim();
         const nameKey = norm(loc.name);
         const cityKey = norm(loc.city || cityFromAddr);
-        return `${nameKey}_${cityKey}`;
+        // Include first 3 chars of address for additional uniqueness
+        const addrKey = norm(loc.address)?.substring(0, 20) || '';
+        return `${nameKey}|${cityKey}|${addrKey}`;
       };
 
       allLocations.forEach((loc) => {
@@ -515,12 +525,20 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
             <div
               key={location.id}
               onClick={() => handleLocationClick(location)}
-               className={`relative bg-white dark:bg-card rounded-2xl cursor-pointer transition-all flex flex-col h-[140px] ${
-                hasCampaign 
-                  ? 'campaign-border overflow-visible' 
-                  : 'border border-border overflow-hidden'
-              }`}
+              className="relative bg-background/80 backdrop-blur-xl border border-border/20 rounded-2xl cursor-pointer transition-all flex flex-col h-[140px] overflow-visible"
             >
+              {/* Fireworks effect for campaigns */}
+              {hasCampaign && (
+                <div className="absolute -top-1 -left-1 z-20 pointer-events-none">
+                  <div className="relative w-10 h-10">
+                    <div className="absolute top-0 left-3 w-2 h-2 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 animate-[sparkle-float_1.8s_ease-in-out_infinite] shadow-lg"></div>
+                    <div className="absolute top-2 right-0 w-1.5 h-1.5 rounded-full bg-gradient-to-br from-red-400 to-orange-400 animate-[sparkle-float_1.8s_ease-in-out_0.3s_infinite] shadow-lg"></div>
+                    <div className="absolute top-1 left-0 w-1.5 h-1.5 rounded-full bg-gradient-to-br from-teal-400 to-green-500 animate-[sparkle-float_1.8s_ease-in-out_0.6s_infinite] shadow-lg"></div>
+                    <div className="absolute top-4 left--1 w-1.5 h-1.5 rounded-full bg-gradient-to-br from-green-300 to-yellow-300 animate-[sparkle-float_1.8s_ease-in-out_0.9s_infinite] shadow-lg"></div>
+                    <div className="absolute top-4 right--1 w-1 h-1 rounded-full bg-gradient-to-br from-pink-400 to-red-500 animate-[sparkle-float_1.8s_ease-in-out_1.2s_infinite] shadow-lg"></div>
+                  </div>
+                </div>
+              )}
               {/* Top section with category, mute, and save */}
               <div className="relative p-2.5 flex items-start justify-between">
                 <CategoryIcon 
