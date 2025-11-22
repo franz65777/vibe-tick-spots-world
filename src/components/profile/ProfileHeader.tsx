@@ -108,7 +108,7 @@ const ProfileHeader = ({
   return (
     <div className="py-4 bg-background">
       <div className="flex gap-4 px-3">
-        {/* Profile Picture with Story */}
+        {/* Profile Picture - Story feature hidden for now */}
         <div className="relative shrink-0">
           {hasMyStories ? (
             <button
@@ -127,6 +127,7 @@ const ProfileHeader = ({
                   </AvatarFallback>
                 </Avatar>
               </div>
+              {/* Add story button hidden - keeping logic for later
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -137,30 +138,27 @@ const ProfileHeader = ({
               >
                 <Plus className="w-3 h-3 text-primary-foreground" />
               </button>
+              */}
             </button>
           ) : (
-            <button
-              onClick={handleStoryClick}
-              className="relative flex-shrink-0"
-              aria-label="Create new story"
-            >
-              <div className="relative">
-                <div className="w-16 h-16 rounded-full border-2 border-primary flex items-center justify-center bg-muted overflow-hidden">
-                  {profile?.avatar_url ? (
-                    <img 
-                      src={profile.avatar_url} 
-                      alt={displayUsername}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-sm font-semibold text-muted-foreground">{getInitials()}</span>
-                  )}
-                </div>
-                <div className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-primary border-2 border-background flex items-center justify-center">
-                  <Plus className="w-3 h-3 text-primary-foreground" />
-                </div>
+            <div className="relative flex-shrink-0">
+              <div className="w-16 h-16 rounded-full border-2 border-muted flex items-center justify-center bg-muted overflow-hidden">
+                {profile?.avatar_url ? (
+                  <img 
+                    src={profile.avatar_url} 
+                    alt={displayUsername}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-sm font-semibold text-muted-foreground">{getInitials()}</span>
+                )}
               </div>
-            </button>
+              {/* Create story button hidden - keeping logic for later
+              <div className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-primary border-2 border-background flex items-center justify-center">
+                <Plus className="w-3 h-3 text-primary-foreground" />
+              </div>
+              */}
+            </div>
           )}
         </div>
 
