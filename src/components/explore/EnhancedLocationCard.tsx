@@ -194,7 +194,7 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
 
   return (
     <div 
-      className="bg-white rounded-xl shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-all duration-300 group mx-4 mb-3"
+      className="bg-muted/10 backdrop-blur-md border border-border/10 rounded-xl shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-all duration-300 group mx-4 mb-3"
       onClick={() => onCardClick(place)}
     >
       {/* Mobile Optimized Image section */}
@@ -238,8 +238,8 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
       <div className="p-3">
         <div className="flex items-start justify-between mb-2">
           <div className="flex-1">
-            <h3 className="font-bold text-gray-900 text-base leading-tight mb-1">{place.name}</h3>
-            <div className="flex items-center gap-2 text-gray-500 flex-wrap">
+            <h3 className="font-bold text-foreground text-base leading-tight mb-1">{place.name}</h3>
+            <div className="flex items-center gap-2 text-muted-foreground flex-wrap">
               <div className="flex items-center gap-1">
                 <MapPin className="w-3 h-3" />
                 <span className="text-xs">{cityLabel || 'Unknown location'}</span>
@@ -249,18 +249,18 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
         </div>
 
         {/* Mobile Optimized Stats */}
-        <div className="flex items-center gap-3 text-xs text-gray-600 mb-3">
+        <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
           <div className="flex items-center gap-1">
-            <Heart className="w-3 h-3 text-red-400" />
+            <Heart className="w-3 h-3 text-destructive" />
             <span>{likeCount}</span>
           </div>
           <div className="flex items-center gap-1">
-            <Users className="w-3 h-3 text-blue-400" />
+            <Users className="w-3 h-3 text-primary" />
             <span>{place.visitors?.length || 0}</span>
           </div>
           {place.distance && (
             <div className="flex items-center gap-1">
-              <span className="text-green-500">•</span>
+              <span className="text-primary">•</span>
               <span>{typeof place.distance === 'number' ? `${place.distance.toFixed(1)}km` : place.distance}</span>
             </div>
           )}
