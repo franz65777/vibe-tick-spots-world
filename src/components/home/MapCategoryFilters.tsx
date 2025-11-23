@@ -232,20 +232,10 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
                 )}
                 title={filter.description}
               >
-                <Icon className={cn(
-                  "w-4 h-4 transition-colors",
-                  isActive ? "text-primary" : "text-muted-foreground"
-                )} />
-                <span className={cn(
-                  "text-[9px] font-medium whitespace-nowrap transition-colors",
-                  isActive ? "text-foreground" : "text-muted-foreground"
-                )}>
-                  {filter.name}
-                </span>
-                {filter.id === 'following' && selectedUsers.length > 0 && (
-                  <div className="flex items-center -space-x-1 mt-0.5">
+                {filter.id === 'following' && selectedUsers.length > 0 ? (
+                  <div className="flex items-center -space-x-1">
                     {selectedUsers.slice(0, 2).map(user => (
-                      <Avatar key={user.id} className="w-3.5 h-3.5 border border-background">
+                      <Avatar key={user.id} className="w-4 h-4 border border-background">
                         <AvatarImage src={user.avatar_url || ''} />
                         <AvatarFallback className="text-[7px]">
                           {user.username?.[0]?.toUpperCase() || 'U'}
@@ -253,12 +243,23 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
                       </Avatar>
                     ))}
                     {selectedUsers.length > 2 && (
-                      <div className="w-3.5 h-3.5 rounded-full bg-primary border border-background flex items-center justify-center text-[7px] text-primary-foreground font-bold">
+                      <div className="w-4 h-4 rounded-full bg-primary border border-background flex items-center justify-center text-[7px] text-primary-foreground font-bold">
                         +{selectedUsers.length - 2}
                       </div>
                     )}
                   </div>
+                ) : (
+                  <Icon className={cn(
+                    "w-4 h-4 transition-colors",
+                    isActive ? "text-primary" : "text-muted-foreground"
+                  )} />
                 )}
+                <span className={cn(
+                  "text-[9px] font-medium whitespace-nowrap transition-colors",
+                  isActive ? "text-foreground" : "text-muted-foreground"
+                )}>
+                  {filter.name}
+                </span>
               </button>
             );
           })}

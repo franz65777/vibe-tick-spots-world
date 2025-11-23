@@ -319,31 +319,33 @@ const MapSection = ({
 
         {/* Map Controls - List View and Expand Toggle - Inside map - Hide when list is open */}
         {!isListViewOpen && (
-        <div className={`${isExpanded ? 'fixed bottom-[calc(env(safe-area-inset-bottom)+1rem)]' : 'absolute bottom-[5.25rem]'} right-3 z-[1000] flex flex-row gap-2 data-[has-sharing=true]:flex-col data-[has-sharing=true]:items-end`} data-has-sharing={false}>
+        <div className={cn(
+          "right-3 z-[1000] flex flex-row gap-2 data-[has-sharing=true]:flex-col data-[has-sharing=true]:items-end transition-opacity duration-300",
+          isExpanded ? 'fixed bottom-[calc(env(safe-area-inset-bottom)+1rem)]' : 'absolute bottom-[5.25rem]',
+          filtersVisible ? "opacity-100" : "opacity-0"
+        )} data-has-sharing={false}>
           {/* Expand/Collapse Button */}
           {onToggleExpand && (
-            <Button
+            <button
               onClick={onToggleExpand}
-              size="icon"
-              className="rounded-full bg-background/95 backdrop-blur-md shadow-lg border border-border hover:bg-accent hover:scale-105 w-9 h-9 transition-all"
+              className="rounded-full bg-gradient-to-r from-transparent via-background/20 to-transparent backdrop-blur-md border border-border/5 shadow-lg hover:bg-background/30 hover:scale-105 w-9 h-9 transition-all flex items-center justify-center"
             >
               {isExpanded ? (
                 <Minimize2 className="w-4 h-4 text-foreground" />
               ) : (
                 <Maximize2 className="w-4 h-4 text-foreground" />
               )}
-            </Button>
+            </button>
           )}
 
           {/* List View Toggle */}
           <Sheet open={isListViewOpen} onOpenChange={setIsListViewOpen}>
             <SheetTrigger asChild>
-              <Button
-                size="icon"
-                className="rounded-full bg-background/95 backdrop-blur-md shadow-lg border border-border hover:bg-accent hover:scale-105 w-9 h-9 transition-all"
+              <button
+                className="rounded-full bg-gradient-to-r from-transparent via-background/20 to-transparent backdrop-blur-md border border-border/5 shadow-lg hover:bg-background/30 hover:scale-105 w-9 h-9 transition-all flex items-center justify-center"
               >
                 <List className="w-4 h-4 text-foreground" />
-              </Button>
+              </button>
             </SheetTrigger>
           </Sheet>
         </div>
