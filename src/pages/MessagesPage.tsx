@@ -1022,7 +1022,7 @@ const MessagesPage = () => {
                             {message.content && <div className={`rounded-2xl px-4 py-3 mb-2 relative ${isOwn ? 'bg-primary text-primary-foreground ml-auto max-w-fit' : 'bg-card text-card-foreground border border-border'}`}>
                                 <p className="text-sm">{message.content}</p>
                               </div>}
-                            <div className="bg-card rounded-2xl border border-border overflow-hidden relative">
+                            <div className="bg-card rounded-2xl border border-border relative overflow-visible">
                               {message.message_type === 'place_share' && <PlaceMessageCard placeData={message.shared_content} onViewPlace={placeData => {
                           // Get the other user ID from the message
                           const otherUserId = message.sender_id === user?.id ? message.receiver_id : message.sender_id;

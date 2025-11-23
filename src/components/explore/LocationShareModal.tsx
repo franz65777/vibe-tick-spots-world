@@ -92,12 +92,13 @@ export const LocationShareModal = ({ isOpen, onClose, place, zIndex }: LocationS
           .single();
 
         const folderShareData = {
-          id: place.id,
+          folder_id: folderData?.id || place.id,
+          creator_id: folderData?.user_id,
           name: folderData?.name || place.name,
           description: folderData?.description,
-          cover_image: folderData?.cover_image_url,
-          save_count: folderData?.save_count || 0,
-          creator: folderData?.profiles
+          cover_image_url: folderData?.cover_image_url,
+          location_count: folderData?.save_count || 0,
+          creator: folderData?.profiles || folderData?.creator
         };
 
         promises = Array.from(selected).map(userId =>
@@ -201,10 +202,10 @@ export const LocationShareModal = ({ isOpen, onClose, place, zIndex }: LocationS
   return (
     <Drawer.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 bg-black/50" style={{ zIndex: baseZIndex }} />
-        <Drawer.Content className="fixed inset-x-0 bottom-0 bg-background rounded-t-3xl flex flex-col max-h-[85vh] outline-none w-full" style={{ zIndex: baseZIndex + 1 }}>
+        <Drawer.Overlay className="fixed inset-0 bg-black/50" />
+        <Drawer.Content className="fixed inset-x-0 bottom-0 bg-background rounded-t-3xl flex flex-col max-h-[85vh] outline-none w-full">
           <style>{`
-            [data-vaul-drawer-wrapper] { z-index: ${baseZIndex + 1} !important; }
+            [data-vaul-drawer-wrapper] { z-index: 12000 !important; }
             body:has([data-vaul-drawer][data-state="open"]) .bottom-navigation { display: none !important; }
           `}</style>
           {/* Handle bar */}

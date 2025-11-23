@@ -531,7 +531,7 @@ class MessageService {
         .insert({
           sender_id: user.id,
           receiver_id: receiverId,
-          message_type: 'trip_share' as const,
+          message_type: 'folder_share' as const,
           shared_content: {
             ...folderData,
             share_type: 'folder'
