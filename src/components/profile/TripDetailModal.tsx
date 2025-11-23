@@ -51,12 +51,18 @@ const LocationCardWithStats = ({ location, notes, onClick }: { location: any; no
               ) : (
                 <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
               )}
-               <span className="font-medium" style={{
-                 background: 'linear-gradient(135deg, hsl(38 92% 50%), hsl(32 95% 44%))',
-                 WebkitBackgroundClip: 'text',
-                 WebkitTextFillColor: 'transparent',
-                 backgroundClip: 'text'
-               }}>{stats.averageRating.toFixed(1)}</span>
+               <span 
+                 className="font-medium" 
+                 style={{
+                   background: 'linear-gradient(135deg, hsl(38 92% 50%), hsl(32 95% 44%))',
+                   WebkitBackgroundClip: 'text',
+                   WebkitTextFillColor: 'transparent',
+                   backgroundClip: 'text',
+                   color: 'transparent'
+                 }}
+               >
+                 {stats.averageRating.toFixed(1)}
+               </span>
             </div>
           )}
           {stats.totalSaves > 0 && (

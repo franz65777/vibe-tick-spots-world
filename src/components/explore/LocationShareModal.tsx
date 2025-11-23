@@ -80,27 +80,74 @@ export const LocationShareModal = ({ isOpen, onClose, place, zIndex }: LocationS
 
     setSending(true);
     try {
-      const placeData = {
-        id: place.id || place.google_place_id,
-        name: place.name,
-        category: place.category,
-        address: place.address,
-        city: place.city,
-        image: place.image,
-        coordinates: place.coordinates
-      };
+      let promises;
 
-      // Send to all selected users
-      const promises = Array.from(selected).map(userId =>
-        messageService.sendPlaceShare(userId, placeData)
-      );
+      // Check if sharing a folder or trip
+      if (place.type === 'folder') {
+        // Fetch full folder data with cover image
+        const { data: folderData } = await supabase
+          .from('saved_folders')
+          .select('*, profiles(username, avatar_url)')
+          .eq('id', place.id)
+          .single();
+
+        const folderShareData = {
+          id: place.id,
+          name: folderData?.name || place.name,
+          description: folderData?.description,
+          cover_image: folderData?.cover_image_url,
+          save_count: folderData?.save_count || 0,
+          creator: folderData?.profiles
+        };
+
+        promises = Array.from(selected).map(userId =>
+          messageService.sendFolderShare(userId, folderShareData)
+        );
+      } else if (place.type === 'trip') {
+        // Fetch full trip data
+        const { data: tripData } = await supabase
+          .from('trips')
+          .select('*, profiles(username, avatar_url)')
+          .eq('id', place.id)
+          .single();
+
+        const tripShareData = {
+          id: place.id,
+          name: tripData?.name || place.name,
+          description: tripData?.description,
+          city: tripData?.city,
+          country: tripData?.country,
+          cover_image: tripData?.cover_image_url,
+          creator: tripData?.profiles
+        };
+
+        promises = Array.from(selected).map(userId =>
+          messageService.sendTripShare(userId, tripShareData)
+        );
+      } else {
+        // Regular place share
+        const placeData = {
+          id: place.id || place.google_place_id,
+          name: place.name,
+          category: place.category,
+          address: place.address,
+          city: place.city,
+          image: place.image,
+          coordinates: place.coordinates
+        };
+
+        promises = Array.from(selected).map(userId =>
+          messageService.sendPlaceShare(userId, placeData)
+        );
+      }
 
       await Promise.all(promises);
       
-      toast.success('Location condivisa con successo!');
+      const itemType = place.type === 'folder' ? 'Lista' : place.type === 'trip' ? 'Viaggio' : 'Location';
+      toast.success(`${itemType} condivisa con successo!`);
       onClose();
     } catch (error) {
-      console.error('Error sending place share:', error);
+      console.error('Error sending share:', error);
       toast.error('Errore durante la condivisione');
     } finally {
       setSending(false);
@@ -108,9 +155,17 @@ export const LocationShareModal = ({ isOpen, onClose, place, zIndex }: LocationS
   };
 
   const handleCopyLink = async () => {
-    const placeUrl = `${window.location.origin}/place/${place.id || place.google_place_id}`;
+    let url = '';
+    if (place.type === 'folder') {
+      url = `${window.location.origin}/folder/${place.id}`;
+    } else if (place.type === 'trip') {
+      url = `${window.location.origin}/trip/${place.id}`;
+    } else {
+      url = `${window.location.origin}/place/${place.id || place.google_place_id}`;
+    }
+    
     try {
-      await navigator.clipboard.writeText(placeUrl);
+      await navigator.clipboard.writeText(url);
       toast.success('Link copiato negli appunti');
       onClose();
     } catch (error) {
@@ -119,8 +174,20 @@ export const LocationShareModal = ({ isOpen, onClose, place, zIndex }: LocationS
   };
 
   const handleWhatsAppShare = () => {
-    const placeUrl = `${window.location.origin}/place/${place.id || place.google_place_id}`;
-    const text = encodeURIComponent(`Guarda questo posto su Spott: ${place.name} - ${placeUrl}`);
+    let url = '';
+    let itemType = 'questo posto';
+    
+    if (place.type === 'folder') {
+      url = `${window.location.origin}/folder/${place.id}`;
+      itemType = 'questa lista';
+    } else if (place.type === 'trip') {
+      url = `${window.location.origin}/trip/${place.id}`;
+      itemType = 'questo viaggio';
+    } else {
+      url = `${window.location.origin}/place/${place.id || place.google_place_id}`;
+    }
+    
+    const text = encodeURIComponent(`Guarda ${itemType} su Spott: ${place.name} - ${url}`);
     window.open(`https://wa.me/?text=${text}`, '_blank');
     onClose();
   };

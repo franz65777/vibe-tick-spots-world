@@ -521,6 +521,98 @@ class MessageService {
     }
   }
 
+  async sendFolderShare(receiverId: string, folderData: any): Promise<DirectMessage | null> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('direct_messages')
+        .insert({
+          sender_id: user.id,
+          receiver_id: receiverId,
+          message_type: 'trip_share' as const,
+          shared_content: {
+            ...folderData,
+            share_type: 'folder'
+          },
+          content: null
+        })
+        .select('*')
+        .single();
+
+      if (error) throw error;
+
+      const { data: senderProfile } = await supabase
+        .from('profiles')
+        .select('username, full_name, avatar_url')
+        .eq('id', user.id)
+        .single();
+      
+      return {
+        ...data,
+        sender: senderProfile ? {
+          username: senderProfile.username || 'Unknown',
+          full_name: senderProfile.full_name || 'Unknown User',
+          avatar_url: senderProfile.avatar_url || ''
+        } : {
+          username: 'Unknown',
+          full_name: 'Unknown User',
+          avatar_url: ''
+        }
+      } as DirectMessage;
+    } catch (error) {
+      console.error('Error sending folder share:', error);
+      return null;
+    }
+  }
+
+  async sendTripShare(receiverId: string, tripData: any): Promise<DirectMessage | null> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('direct_messages')
+        .insert({
+          sender_id: user.id,
+          receiver_id: receiverId,
+          message_type: 'trip_share' as const,
+          shared_content: {
+            ...tripData,
+            share_type: 'trip'
+          },
+          content: null
+        })
+        .select('*')
+        .single();
+
+      if (error) throw error;
+
+      const { data: senderProfile } = await supabase
+        .from('profiles')
+        .select('username, full_name, avatar_url')
+        .eq('id', user.id)
+        .single();
+      
+      return {
+        ...data,
+        sender: senderProfile ? {
+          username: senderProfile.username || 'Unknown',
+          full_name: senderProfile.full_name || 'Unknown User',
+          avatar_url: senderProfile.avatar_url || ''
+        } : {
+          username: 'Unknown',
+          full_name: 'Unknown User',
+          avatar_url: ''
+        }
+      } as DirectMessage;
+    } catch (error) {
+      console.error('Error sending trip share:', error);
+      return null;
+    }
+  }
+
   async sendStoryReply(receiverId: string, storyId: string, content: string): Promise<DirectMessage | null> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
