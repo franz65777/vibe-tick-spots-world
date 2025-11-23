@@ -175,7 +175,7 @@ const BusinessBottomNavigation = () => {
         role="navigation"
         aria-label="Business navigation"
       >
-        <div className="w-full px-0 bg-background/50 backdrop-blur-md border-t border-border/5">
+        <div className="w-full px-0 bg-muted/10 backdrop-blur-md border-t border-border/10">
           <div className="h-16 flex items-center justify-around px-2">
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
