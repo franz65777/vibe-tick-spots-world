@@ -150,7 +150,7 @@ const UserCard = ({
 
   return (
     <div 
-      className="flex items-center justify-between py-2 px-1 hover:bg-gray-50/50 transition-colors cursor-pointer"
+      className="flex items-center justify-between py-2 px-1 hover:bg-muted/10 transition-colors cursor-pointer rounded-lg"
       onClick={handleRowClick}
     >
       <div className="flex items-center gap-3 flex-1 min-w-0">
