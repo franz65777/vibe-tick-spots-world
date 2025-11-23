@@ -194,9 +194,13 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
 
   return (
     <div 
-      className="bg-muted/10 backdrop-blur-md border-[3px] border-primary/55 rounded-xl shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-all duration-300 group mx-4 mb-3"
+      className="relative bg-muted/10 backdrop-blur-md rounded-xl shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-all duration-300 group mx-4 mb-3
+        before:absolute before:inset-0 before:rounded-xl before:p-[1.5px]
+        before:bg-gradient-to-br before:from-primary/60 before:to-primary/20
+        before:-z-10 before:content-['']"
       onClick={() => onCardClick(place)}
     >
+    <div className="relative z-10 bg-background/95 rounded-xl overflow-hidden">
     <div className="relative h-36 overflow-hidden rounded-t-xl">
       <img
           src={getImageUrl()} 
@@ -356,10 +360,11 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
                   </button>
                 ))}
               </div>
-            </div>
-          </div>
+      </div>
+    </div>
         )}
       </div>
+    </div>
       
       {/* Share Modal */}
       <LocationShareModal
