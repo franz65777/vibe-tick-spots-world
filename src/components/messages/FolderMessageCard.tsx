@@ -17,11 +17,16 @@ const FolderMessageCard = ({ folderData }: FolderMessageCardProps) => {
     }
 
     const folderId = folderData.folder_id || folderData.id;
+    const creatorId = typeof folderData?.creator === 'object' 
+      ? folderData.creator?.id 
+      : folderData?.creator_id || folderData?.user_id;
     
-    // Navigate to the saved locations list with the folder pre-selected
-    navigate('/profile', {
-      state: { openFolderId: folderId }
-    });
+    // Navigate to the creator's profile with the folder pre-selected
+    if (creatorId) {
+      navigate(`/profile/${creatorId}`, {
+        state: { openFolderId: folderId }
+      });
+    }
   };
 
   if (!folderData) {
