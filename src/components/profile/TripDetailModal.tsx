@@ -52,13 +52,12 @@ const LocationCardWithStats = ({ location, notes, onClick }: { location: any; no
                 <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
               )}
                <span 
-                 className="font-medium" 
+                 className="font-bold" 
                  style={{
-                   background: 'linear-gradient(135deg, hsl(38 92% 50%), hsl(32 95% 44%))',
+                   background: 'linear-gradient(to right, #f59e0b, #d97706)',
                    WebkitBackgroundClip: 'text',
                    WebkitTextFillColor: 'transparent',
-                   backgroundClip: 'text',
-                   color: 'transparent'
+                   backgroundClip: 'text'
                  }}
                >
                  {stats.averageRating.toFixed(1)}
