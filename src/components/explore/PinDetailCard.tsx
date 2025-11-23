@@ -499,7 +499,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
 
           {/* Action Buttons - Hidden when scrolling down or when dropdown is open */}
           <div 
-            className={`relative bg-background px-4 pb-4 transition-all duration-300 ${
+            className={`relative z-10 bg-background px-4 pb-4 transition-all duration-300 ${
               showActionButtons || dropdownOpen ? 'opacity-100 max-h-32' : 'opacity-0 max-h-0 overflow-hidden pb-0'
             }`}
           >

@@ -32,10 +32,10 @@ const FolderMessageCard = ({ folderData }: FolderMessageCardProps) => {
   return (
     <button
       onClick={handleClick}
-      className="w-full text-left hover:opacity-90 transition-opacity"
+      className="w-full text-left hover:opacity-90 transition-opacity rounded-xl overflow-hidden bg-card border border-border"
     >
       {/* Cover Image */}
-      <div className="relative h-40 bg-gradient-to-br from-primary/20 to-primary/5 rounded-t-xl overflow-hidden">
+      <div className="relative h-24 bg-gradient-to-br from-primary/20 to-primary/5 overflow-hidden">
         {folderData.cover_image_url ? (
           <img
             src={folderData.cover_image_url}
@@ -44,30 +44,24 @@ const FolderMessageCard = ({ folderData }: FolderMessageCardProps) => {
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <Folder className="w-12 h-12 text-primary/40" />
+            <Folder className="w-8 h-8 text-primary/40" />
           </div>
         )}
       </div>
 
       {/* Content */}
-      <div className="p-3 space-y-2">
-        <h3 className="font-semibold text-foreground line-clamp-1">
+      <div className="p-2">
+        <h3 className="font-semibold text-sm text-foreground line-clamp-1 mb-1">
           {folderData.name || 'Lista'}
         </h3>
-        
-        {folderData.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {folderData.description}
-          </p>
-        )}
 
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
-            <MapPin className="w-3.5 h-3.5" />
+            <MapPin className="w-3 h-3" />
             <span>{folderData.location_count || 0} luoghi</span>
           </div>
           {folderData.creator && (
-            <span>@{typeof folderData.creator === 'string' ? folderData.creator : folderData.creator.username}</span>
+            <span className="truncate">@{typeof folderData.creator === 'string' ? folderData.creator : folderData.creator.username}</span>
           )}
         </div>
       </div>
