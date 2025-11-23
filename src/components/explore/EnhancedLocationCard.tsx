@@ -194,12 +194,11 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
 
   return (
     <div 
-      className="bg-muted/10 backdrop-blur-md border border-border/10 rounded-xl shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-all duration-300 group mx-4 mb-3"
+      className="bg-muted/10 backdrop-blur-md border-[3px] border-primary/55 rounded-xl shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-all duration-300 group mx-4 mb-3"
       onClick={() => onCardClick(place)}
     >
-      {/* Mobile Optimized Image section */}
-      <div className="relative h-36 overflow-hidden">
-        <img 
+    <div className="relative h-36 overflow-hidden rounded-t-xl">
+      <img
           src={getImageUrl()} 
           alt={place.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
