@@ -50,15 +50,15 @@ const LocationCardWithStats = ({ location, onClick }: { location: any; onClick: 
         <div className="flex items-center gap-3 text-xs">
           {stats.averageRating && stats.averageRating > 0 && (
             <div className="flex items-center gap-1">
-              {location.category === 'restaurant' || location.category === 'cafe' || location.category === 'bakery' ? (
-                <Utensils className="w-3.5 h-3.5 text-amber-500" />
+               {location.category === 'restaurant' || location.category === 'cafe' || location.category === 'bakery' ? (
+                <Utensils className="w-3.5 h-3.5 text-green-500" />
               ) : (
-                <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                <Star className="w-3.5 h-3.5 fill-green-500 text-green-500" />
               )}
                <span 
                  className="font-bold" 
                  style={{
-                   background: 'linear-gradient(to right, #f59e0b, #d97706)',
+                   background: 'linear-gradient(to right, #10b981, #059669)',
                    WebkitBackgroundClip: 'text',
                    WebkitTextFillColor: 'transparent',
                    backgroundClip: 'text'

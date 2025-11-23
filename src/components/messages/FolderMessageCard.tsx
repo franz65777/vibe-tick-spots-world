@@ -9,12 +9,25 @@ const FolderMessageCard = ({ folderData }: FolderMessageCardProps) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
+    if (!folderData) {
+      console.error('No folder data available');
+      return;
+    }
+
     if (folderData.folder_id) {
       navigate(`/profile/${folderData.creator_id}`, {
         state: { openFolderId: folderData.folder_id }
       });
     }
   };
+
+  if (!folderData) {
+    return (
+      <div className="w-full p-3 text-center text-muted-foreground text-sm">
+        Lista non disponibile
+      </div>
+    );
+  }
 
   return (
     <button
@@ -26,7 +39,7 @@ const FolderMessageCard = ({ folderData }: FolderMessageCardProps) => {
         {folderData.cover_image_url ? (
           <img
             src={folderData.cover_image_url}
-            alt={folderData.name}
+            alt={folderData.name || 'Folder'}
             className="w-full h-full object-cover"
           />
         ) : (
@@ -39,7 +52,7 @@ const FolderMessageCard = ({ folderData }: FolderMessageCardProps) => {
       {/* Content */}
       <div className="p-3 space-y-2">
         <h3 className="font-semibold text-foreground line-clamp-1">
-          {folderData.name}
+          {folderData.name || 'Lista'}
         </h3>
         
         {folderData.description && (
