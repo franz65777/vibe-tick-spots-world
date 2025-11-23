@@ -8,8 +8,13 @@ const SaveTagsFilter = () => {
   const { selectedSaveTags, toggleSaveTag } = useMapFilter();
   const { t } = useTranslation();
 
+  // Only show when there are active save tags
+  if (selectedSaveTags.length === 0) {
+    return null;
+  }
+
   return (
-    <div className="grid grid-cols-4 gap-2 px-[10px] py-3">
+    <div className="flex gap-2 px-[10px] py-2 overflow-x-auto">
       {SAVE_TAG_OPTIONS.filter(opt => opt.value !== 'general').map((option) => {
         const isSelected = selectedSaveTags.includes(option.value);
         return (
@@ -17,17 +22,19 @@ const SaveTagsFilter = () => {
             key={option.value}
             onClick={() => toggleSaveTag(option.value as SaveTag)}
             className={cn(
-              "relative flex items-center justify-center rounded-md transition-transform p-2",
-              isSelected ? 'ring-2 ring-primary bg-primary/10' : 'bg-card'
+              "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl transition-all shrink-0",
+              isSelected 
+                ? 'bg-primary text-primary-foreground' 
+                : 'bg-card hover:bg-accent'
             )}
             aria-pressed={isSelected}
             aria-label={t(option.labelKey, { ns: 'save_tags' })}
           >
-            <span className={cn(
-              "text-3xl leading-none",
-              isSelected ? 'opacity-100' : 'opacity-80'
-            )}>
+            <span className="text-2xl leading-none">
               {option.emoji}
+            </span>
+            <span className="text-[10px] font-medium whitespace-nowrap">
+              {t(option.labelKey, { ns: 'save_tags' })}
             </span>
           </button>
         );

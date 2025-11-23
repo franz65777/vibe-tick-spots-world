@@ -46,16 +46,23 @@ const UserProfilePage = () => {
     type: null
   });
   const [isLocationsListOpen, setIsLocationsListOpen] = useState(false);
+  const [initialFolderId, setInitialFolderId] = useState<string | undefined>(undefined);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
   const [showBadgesModal, setShowBadgesModal] = useState(false);
   const [showStories, setShowStories] = useState(false);
   const { stories: allStories } = useStories();
 
-  // Recording visits for search history is handled in ExplorePage only to avoid duplicates
+  // Handle initial folder opening from navigation state
   useEffect(() => {
-    // Intentionally left blank
-  }, []);
+    const state = location.state as { openFolderId?: string } | null;
+    if (state?.openFolderId) {
+      setInitialFolderId(state.openFolderId);
+      setIsLocationsListOpen(true);
+      // Clear the state to avoid reopening on subsequent renders
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const isOwnProfile = currentUser?.id === userId;
 
@@ -399,8 +406,12 @@ const UserProfilePage = () => {
 
       <SavedLocationsList
         isOpen={isLocationsListOpen}
-        onClose={() => setIsLocationsListOpen(false)}
+        onClose={() => {
+          setIsLocationsListOpen(false);
+          setInitialFolderId(undefined);
+        }}
         userId={userId}
+        initialFolderId={initialFolderId}
       />
 
       <ShareProfileModal
