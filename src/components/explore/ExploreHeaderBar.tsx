@@ -34,11 +34,9 @@ const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
     <div className="bg-background pt-safe">
       <div className="px-2.5 py-4 pt-2">
         {/* Search Mode Toggle */}
-        <div className="relative flex bg-muted/10 backdrop-blur-md rounded-2xl p-1 mb-4 overflow-hidden
-          before:absolute before:inset-0 before:rounded-2xl before:p-[1.5px]
-          before:bg-gradient-to-br before:from-primary/60 before:to-primary/20
-          before:-z-10 before:content-['']">
-          <div className="relative z-10 flex w-full bg-background/95 rounded-2xl p-1">
+        <div className="flex bg-muted/10 backdrop-blur-md rounded-2xl p-1 mb-4 border-[1.5px] border-transparent
+          [background-image:linear-gradient(hsl(var(--background)/0.95),hsl(var(--background)/0.95)),linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))]
+          [background-origin:border-box] [background-clip:padding-box,border-box]">
           <button
             onClick={() => onSearchModeChange('locations')}
             className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-medium transition-all ${
@@ -61,7 +59,6 @@ const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
             <Users className="w-4 h-4" />
             {t('people', { ns: 'explore' })}
           </button>
-        </div>
         </div>
 
         {/* Search Bar */}
