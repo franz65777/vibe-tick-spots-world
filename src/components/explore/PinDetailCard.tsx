@@ -402,11 +402,11 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
   return (
     <>
       <Drawer 
-        open={!savedByOpen && !isListOpen && !shareOpen && !reviewOpen}
+        open={!savedByOpen && !isListOpen}
         modal={false}
         dismissible={true}
         onOpenChange={(open) => { 
-          if (!open) {
+          if (!open && !shareOpen && !reviewOpen) {
             if (onBack) {
               onBack();
             } else {
@@ -415,7 +415,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
           }
         }}
       >
-        <DrawerContent className={`transition-all duration-300 h-auto max-h-[30vh] data-[state=open]:max-h-[90vh] ${shareOpen || reviewOpen ? 'z-[10]' : onBack ? 'z-[10020]' : 'z-[2000]'}`}>
+        <DrawerContent className={`transition-all duration-300 h-auto max-h-[30vh] data-[state=open]:max-h-[90vh] ${onBack ? 'z-[10020]' : 'z-[2000]'}`}>
           {/* Draggable Header - Compact and Draggable */}
           <div className="bg-background px-4 pt-3 pb-2 cursor-grab active:cursor-grabbing">
             <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-3" />
