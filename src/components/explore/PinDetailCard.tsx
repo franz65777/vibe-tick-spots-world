@@ -402,7 +402,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
   return (
     <>
       <Drawer 
-        open={!savedByOpen && !isListOpen}
+        open={!savedByOpen && !isListOpen && !shareOpen && !reviewOpen}
         modal={false}
         dismissible={true}
         onOpenChange={(open) => { 
