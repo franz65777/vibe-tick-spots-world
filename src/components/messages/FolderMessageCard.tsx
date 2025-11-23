@@ -1,5 +1,6 @@
 import { Folder, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 interface FolderMessageCardProps {
   folderData: any;
@@ -7,6 +8,7 @@ interface FolderMessageCardProps {
 
 const FolderMessageCard = ({ folderData }: FolderMessageCardProps) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleClick = () => {
     if (!folderData) {
@@ -15,24 +17,17 @@ const FolderMessageCard = ({ folderData }: FolderMessageCardProps) => {
     }
 
     const folderId = folderData.folder_id || folderData.id;
-    const creatorId =
-      folderData.creator_id ||
-      folderData.user_id ||
-      (typeof folderData.creator === 'object' ? folderData.creator.id : undefined);
-
-    if (folderId && creatorId) {
-      navigate(`/profile/${creatorId}`, {
-        state: { openFolderId: folderId }
-      });
-    } else {
-      console.warn('Missing folderId or creatorId in shared folder data', folderData);
-    }
+    
+    // Navigate to the saved locations list with the folder pre-selected
+    navigate('/profile', {
+      state: { openFolderId: folderId }
+    });
   };
 
   if (!folderData) {
     return (
       <div className="w-full p-3 text-center text-muted-foreground text-sm">
-        Lista non disponibile
+        {t('listNotAvailable', { ns: 'messages' })}
       </div>
     );
   }
@@ -71,7 +66,7 @@ const FolderMessageCard = ({ folderData }: FolderMessageCardProps) => {
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
             <MapPin className="w-3 h-3" />
-            <span>{folderData.location_count || folderData.save_count || 0} luoghi</span>
+            <span>{folderData.location_count || 0} {t('places', { ns: 'messages' })}</span>
           </div>
           {creatorUsername && (
             <span className="truncate">@{creatorUsername}</span>

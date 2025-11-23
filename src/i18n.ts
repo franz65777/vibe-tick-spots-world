@@ -856,7 +856,9 @@ const resources = {
       searchCity: 'Search city...',
       noCitiesAvailable: 'No cities available',
       noResultsTryDifferentFilter: 'No results. Try different filter or city',
-      resetFilters: 'Reset'
+      resetFilters: 'Reset',
+      places: 'places',
+      listNotAvailable: 'List not available'
     }
   },
   es: {
@@ -1651,7 +1653,9 @@ const resources = {
       searchCity: 'Buscar ciudad...',
       noCitiesAvailable: 'No hay ciudades disponibles',
       noResultsTryDifferentFilter: 'Sin resultados. Prueba con otro filtro o ciudad',
-      resetFilters: 'Restablecer'
+      resetFilters: 'Restablecer',
+      places: 'lugares',
+      listNotAvailable: 'Lista no disponible'
     }
   },
 
@@ -2467,7 +2471,9 @@ const resources = {
       searchCity: 'Cerca città...',
       noCitiesAvailable: 'Nessuna città disponibile',
       noResultsTryDifferentFilter: 'Nessun risultato. Prova con un altro filtro o città',
-      resetFilters: 'Ripristina'
+      resetFilters: 'Ripristina',
+      places: 'luoghi',
+      listNotAvailable: 'Lista non disponibile'
     }
   },
 
@@ -3135,7 +3141,9 @@ const resources = {
       searchCity: 'Rechercher ville...',
       noCitiesAvailable: 'Aucune ville disponible',
       noResultsTryDifferentFilter: 'Aucun résultat. Essayez un autre filtre ou ville',
-      resetFilters: 'Réinitialiser'
+      resetFilters: 'Réinitialiser',
+      places: 'lieux',
+      listNotAvailable: 'Liste non disponible'
     }
   },
 
