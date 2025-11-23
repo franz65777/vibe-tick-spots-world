@@ -25,7 +25,7 @@ const ProfileTabs = ({
   const { t } = useTranslation();
   return (
     <div className="">{/* No padding */}
-      <div className="flex bg-gradient-to-r from-transparent via-background/20 to-transparent backdrop-blur-md border border-border/5 rounded-xl p-1 mb-4 mx-3">
+      <div className="flex bg-background/50 backdrop-blur-md border border-border/5 rounded-xl p-1 mb-4 mx-3">
         <button
           onClick={() => onTabChange('posts')}
           className={cn(
