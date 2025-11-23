@@ -67,7 +67,7 @@ const FolderMessageCard = ({ folderData }: FolderMessageCardProps) => {
             <span>{folderData.location_count || 0} luoghi</span>
           </div>
           {folderData.creator && (
-            <span>@{folderData.creator}</span>
+            <span>@{typeof folderData.creator === 'string' ? folderData.creator : folderData.creator.username}</span>
           )}
         </div>
       </div>

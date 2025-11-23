@@ -113,7 +113,7 @@ const TripMessageCard = ({ tripData }: TripMessageCardProps) => {
 
         {tripData.creator && (
           <p className="text-xs text-muted-foreground">
-            @{tripData.creator}
+            @{typeof tripData.creator === 'string' ? tripData.creator : tripData.creator.username}
           </p>
         )}
       </div>
