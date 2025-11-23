@@ -25,14 +25,14 @@ const ProfileTabs = ({
   const { t } = useTranslation();
   return (
     <div className="">{/* No padding */}
-      <div className="flex bg-gray-100 rounded-xl p-1 mb-4 mx-3">
+      <div className="flex bg-gradient-to-r from-transparent via-background/20 to-transparent backdrop-blur-md border border-border/5 rounded-xl p-1 mb-4 mx-3">
         <button
           onClick={() => onTabChange('posts')}
           className={cn(
             "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5",
             activeTab === 'posts'
-              ? "bg-blue-600 text-white shadow-sm"
-              : "text-gray-600"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground"
           )}
         >
           <Grid3X3 className="w-4 h-4" />
@@ -44,8 +44,8 @@ const ProfileTabs = ({
             className={cn(
               "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5",
               activeTab === 'trips'
-                ? "bg-blue-600 text-white shadow-sm"
-                : "text-gray-600"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground"
             )}
           >
             <MapPin className="w-4 h-4" />
@@ -58,8 +58,8 @@ const ProfileTabs = ({
             className={cn(
               "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5",
               activeTab === 'marketing'
-                ? "bg-blue-600 text-white shadow-sm"
-                : "text-gray-600"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground"
             )}
           >
             <Megaphone className="w-4 h-4" />
@@ -71,8 +71,8 @@ const ProfileTabs = ({
           className={cn(
             "relative flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5",
             activeTab === 'badges'
-              ? "bg-blue-600 text-white shadow-sm"
-              : "text-gray-600"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground"
           )}
         >
           <Award className="w-4 h-4" />
@@ -86,8 +86,8 @@ const ProfileTabs = ({
           className={cn(
             "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5",
             activeTab === 'tagged'
-              ? "bg-blue-600 text-white shadow-sm"
-              : "text-gray-600"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground"
           )}
         >
           <Tag className="w-4 h-4" />
