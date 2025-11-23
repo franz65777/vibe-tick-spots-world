@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Search, Send, X, MessageSquare, Image, Mic, Trash2, Smile } from 'lucide-react';
+import { ArrowLeft, Search, Send, X, MessageSquare, Image, Trash2, Smile } from 'lucide-react';
 import pinIcon from '@/assets/pin-icon.png';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,8 @@ import PlaceMessageCard from '@/components/messages/PlaceMessageCard';
 import PostMessageCard from '@/components/messages/PostMessageCard';
 import ProfileMessageCard from '@/components/messages/ProfileMessageCard';
 import StoryMessageCard from '@/components/messages/StoryMessageCard';
+import FolderMessageCard from '@/components/messages/FolderMessageCard';
+import TripMessageCard from '@/components/messages/TripMessageCard';
 import { useTranslation } from 'react-i18next';
 import { useStories } from '@/hooks/useStories';
 import StoriesViewer from '@/components/StoriesViewer';
@@ -45,7 +47,6 @@ const MessagesPage = () => {
   const [searchLoading, setSearchLoading] = useState(false);
   const [showStories, setShowStories] = useState(false);
   const [initialStoryIndex, setInitialStoryIndex] = useState(0);
-  const [isRecording, setIsRecording] = useState(false);
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -67,8 +68,6 @@ const MessagesPage = () => {
   const lastTapRef = useRef<number>(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<any>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
   const chatViewportWrapperRef = useRef<HTMLDivElement | null>(null);
   const {
     stories: allStories
@@ -269,69 +268,6 @@ const MessagesPage = () => {
       await loadThreads(); // Reload threads to update the list
     } catch (error) {
       console.error('Error sending message:', error);
-    } finally {
-      setSending(false);
-    }
-  };
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true
-      });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-      mediaRecorder.ondataavailable = event => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, {
-          type: 'audio/webm'
-        });
-        await sendAudioMessage(audioBlob);
-        stream.getTracks().forEach(track => track.stop());
-      };
-      mediaRecorder.start();
-      setIsRecording(true);
-    } catch (error) {
-      console.error('Error starting recording:', error);
-    }
-  };
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-    }
-  };
-  const sendAudioMessage = async (audioBlob: Blob) => {
-    if (!selectedThread || !user) return;
-    const otherParticipant = getOtherParticipant(selectedThread);
-    if (!otherParticipant) return;
-    try {
-      setSending(true);
-
-      // Convert blob to base64
-      const reader = new FileReader();
-      reader.readAsDataURL(audioBlob);
-      reader.onloadend = async () => {
-        const base64Audio = reader.result as string;
-        const base64Data = base64Audio.split(',')[1];
-        const {
-          data,
-          error
-        } = await supabase.functions.invoke('upload-audio-message', {
-          body: {
-            receiverId: otherParticipant.id,
-            audioData: base64Data
-          }
-        });
-        if (error) throw error;
-        await loadMessages(otherParticipant.id);
-      };
-    } catch (error) {
-      console.error('Error sending audio message:', error);
     } finally {
       setSending(false);
     }
@@ -913,6 +849,14 @@ const MessagesPage = () => {
               messagePreview = t('sharedAProfile', {
                 ns: 'messages'
               });
+            } else if (lastMessage?.message_type === 'folder_share') {
+              messagePreview = t('sharedAList', {
+                ns: 'messages'
+              });
+            } else if (lastMessage?.message_type === 'trip_share') {
+              messagePreview = t('sharedATrip', {
+                ns: 'messages'
+              });
             } else if (lastMessage?.content) {
               const content = lastMessage.content;
               messagePreview = content.length > 30 ? `${content.substring(0, 30)}...` : content;
@@ -1080,7 +1024,7 @@ const MessagesPage = () => {
                             <p className={`text-xs text-muted-foreground px-2 mt-1 ${isOwn ? 'text-right' : 'text-left'}`}>
                               {formatMessageTime(message.created_at)}
                             </p>
-                          </div> : ['place_share', 'post_share', 'profile_share'].includes(message.message_type) && message.shared_content ? <div className={`w-full max-w-[280px] ${isOwn ? 'ml-auto' : ''}`}>
+                          </div> : ['place_share', 'post_share', 'profile_share', 'folder_share', 'trip_share'].includes(message.message_type) && message.shared_content ? <div className={`w-full max-w-[280px] ${isOwn ? 'ml-auto' : ''}`}>
                             {message.content && <div className={`rounded-2xl px-4 py-3 mb-2 relative ${isOwn ? 'bg-primary text-primary-foreground ml-auto max-w-fit' : 'bg-card text-card-foreground border border-border'}`}>
                                 <p className="text-sm">{message.content}</p>
                               </div>}
@@ -1109,6 +1053,8 @@ const MessagesPage = () => {
                         }} />}
                               {message.message_type === 'post_share' && <PostMessageCard postData={message.shared_content} />}
                               {message.message_type === 'profile_share' && <ProfileMessageCard profileData={message.shared_content} currentChatUserId={otherParticipant?.id} />}
+                              {message.message_type === 'folder_share' && <FolderMessageCard folderData={message.shared_content} />}
+                              {message.message_type === 'trip_share' && <TripMessageCard tripData={message.shared_content} />}
                               {messageReactions[message.id]?.length > 0 && <div className="absolute -bottom-2 left-2 flex gap-0.5 bg-background/95 rounded-full px-1.5 py-0.5 shadow-sm border border-border">
                                   {messageReactions[message.id].map((reaction, idx) => <button key={idx} onClick={e => {
                             e.stopPropagation();
@@ -1155,35 +1101,44 @@ const MessagesPage = () => {
           {/* Message Input */}
           <div className="shrink-0 p-3 bg-background pb-16">
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="flex-shrink-0 h-9 w-9 text-muted-foreground hover:text-foreground" onClick={() => {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
-            input.onchange = e => {
-              const file = (e.target as HTMLInputElement).files?.[0];
-              if (file) {
-                console.log('Image selected:', file);
-                // TODO: Implement image upload
-              }
-            };
-            input.click();
-          }}>
-                <Image className="w-5 h-5" />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="flex-shrink-0 h-9 w-9 text-muted-foreground hover:text-foreground" 
+                onClick={() => {
+                  loadSavedPlaces();
+                  setShowSavedPlacesModal(true);
+                }}
+              >
+                <img 
+                  alt="Pin" 
+                  className="w-9 h-9" 
+                  src="/lovable-uploads/e48ff6d7-7d85-4bbe-aad3-223abcbf495b.png" 
+                />
               </Button>
               
-              <Input type="text" placeholder={isRecording ? t('recordingAudio', {
-            ns: 'messages'
-          }) : t('typeMessage', {
-            ns: 'messages'
-          })} value={newMessage} onChange={e => setNewMessage(e.target.value)} onKeyPress={e => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              handleSendMessage();
-            }
-          }} disabled={sending || isRecording} className={`flex-1 rounded-full ${isRecording ? 'bg-destructive/10 border-destructive animate-pulse' : ''}`} />
+              <Input 
+                type="text" 
+                placeholder={t('typeMessage', { ns: 'messages' })} 
+                value={newMessage} 
+                onChange={e => setNewMessage(e.target.value)} 
+                onKeyPress={e => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }} 
+                disabled={sending} 
+                className="flex-1 rounded-full" 
+              />
 
-              <Button onClick={newMessage.trim() ? handleSendMessage : isRecording ? stopRecording : startRecording} disabled={sending} size="icon" className={`flex-shrink-0 h-9 w-9 ${isRecording ? 'bg-destructive hover:bg-destructive/90' : ''}`}>
-                {newMessage.trim() ? <Send className="w-4 h-4" /> : <Mic className="w-5 h-5" />}
+              <Button 
+                onClick={handleSendMessage} 
+                disabled={sending || !newMessage.trim()} 
+                size="icon" 
+                className="flex-shrink-0 h-9 w-9"
+              >
+                <Send className="w-4 h-4" />
               </Button>
             </div>
           </div>
