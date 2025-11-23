@@ -197,15 +197,15 @@ export const LocationShareModal = ({ isOpen, onClose, place, zIndex }: LocationS
     u.username?.toLowerCase().includes(query.toLowerCase())
   );
 
-  const baseZIndex = zIndex || 3000;
-
+  const baseZIndex = zIndex || 20000;
+ 
   return (
     <Drawer.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 bg-black/50" />
-        <Drawer.Content className="fixed inset-x-0 bottom-0 bg-background rounded-t-3xl flex flex-col max-h-[85vh] outline-none w-full">
+        <Drawer.Overlay className="fixed inset-0 bg-black/50" style={{ zIndex: baseZIndex }} />
+        <Drawer.Content className="fixed inset-x-0 bottom-0 bg-background rounded-t-3xl flex flex-col max-h-[85vh] outline-none w-full" style={{ zIndex: baseZIndex + 1 }}>
           <style>{`
-            [data-vaul-drawer-wrapper] { z-index: 12000 !important; }
+            [data-vaul-drawer-wrapper] { z-index: ${baseZIndex} !important; }
             body:has([data-vaul-drawer][data-state="open"]) .bottom-navigation { display: none !important; }
           `}</style>
           {/* Handle bar */}
