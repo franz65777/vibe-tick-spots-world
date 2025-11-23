@@ -2,7 +2,7 @@
 import { useState, useEffect, memo } from 'react';
 import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useTabPrefetch } from '@/hooks/useTabPrefetch';
 import ProfileHeader from './profile/ProfileHeader';
@@ -23,6 +23,7 @@ const ProfilePage = memo(() => {
   const { user } = useAuth();
   const { profile, loading, error } = useOptimizedProfile();
   const navigate = useNavigate();
+  const location = useLocation();
   
   // Prefetch altre tab per transizioni istantanee
   useTabPrefetch('profile');
@@ -35,6 +36,16 @@ const ProfilePage = memo(() => {
   const { badges } = useUserBadges();
   const [lastBadgeCount, setLastBadgeCount] = useState(0);
   const [hasNewBadges, setHasNewBadges] = useState(false);
+
+  // Handle opening folder from message share
+  useEffect(() => {
+    const state = location.state as any;
+    if (state?.openFolderId) {
+      setIsLocationsListOpen(true);
+      // Clear the state to prevent reopening on subsequent renders
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // Reset state when user changes - prevents showing stale data
   useEffect(() => {

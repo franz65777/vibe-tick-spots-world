@@ -104,13 +104,19 @@ export const LocationShareModal = ({ isOpen, onClose, place, zIndex }: LocationS
 
         console.log('Fetched folder data:', folderData);
 
+        // Count actual locations in the folder
+        const { count: locationCount } = await supabase
+          .from('folder_locations')
+          .select('*', { count: 'exact', head: true })
+          .eq('folder_id', place.id);
+
         const folderShareData = {
           folder_id: folderData?.id || place.id,
           creator_id: folderData?.user_id,
           name: folderData?.name || place.name,
           description: folderData?.description,
           cover_image_url: folderData?.cover_image_url,
-          location_count: folderData?.save_count || 0,
+          location_count: locationCount || 0,
           creator: folderData?.profiles
         };
 
