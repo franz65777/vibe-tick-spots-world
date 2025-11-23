@@ -703,12 +703,6 @@ const MessagesPage = () => {
                 ns: 'messages'
               })} value={searchQuery} onChange={e => handleSearch(e.target.value)} onFocus={() => setView('search')} className="pl-9 h-9 bg-muted/50 rounded-full" />
                 </div>
-                <Button onClick={() => {
-              loadSavedPlaces();
-              setShowSavedPlacesModal(true);
-            }} variant="ghost" size="icon" className="flex-shrink-0 h-10 w-10">
-                  <img alt="Pin" className="w-9 h-9" src="/lovable-uploads/e48ff6d7-7d85-4bbe-aad3-223abcbf495b.png" />
-                </Button>
               </div> : null}
           </div>
         </div>
@@ -1099,12 +1093,12 @@ const MessagesPage = () => {
            </div>
 
           {/* Message Input */}
-          <div className="shrink-0 p-3 bg-background pb-16">
+          <div className="shrink-0 p-3 bg-background pb-[calc(env(safe-area-inset-bottom)+8px)]">
             <div className="flex items-center gap-2">
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="flex-shrink-0 h-9 w-9 text-muted-foreground hover:text-foreground" 
+                className="flex-shrink-0 h-9 w-9 p-0 text-muted-foreground hover:text-foreground" 
                 onClick={() => {
                   loadSavedPlaces();
                   setShowSavedPlacesModal(true);
@@ -1112,7 +1106,7 @@ const MessagesPage = () => {
               >
                 <img 
                   alt="Pin" 
-                  className="w-9 h-9" 
+                  className="w-7 h-7 object-contain" 
                   src="/lovable-uploads/e48ff6d7-7d85-4bbe-aad3-223abcbf495b.png" 
                 />
               </Button>
@@ -1136,7 +1130,7 @@ const MessagesPage = () => {
                 onClick={handleSendMessage} 
                 disabled={sending || !newMessage.trim()} 
                 size="icon" 
-                className="flex-shrink-0 h-9 w-9"
+                className="flex-shrink-0 h-9 w-9 rounded-full"
               >
                 <Send className="w-4 h-4" />
               </Button>

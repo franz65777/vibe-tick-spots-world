@@ -13,6 +13,11 @@ const TripMessageCard = ({ tripData }: TripMessageCardProps) => {
   const { i18n } = useTranslation();
 
   const handleClick = () => {
+    if (!tripData) {
+      console.error('No trip data available');
+      return;
+    }
+
     if (tripData.trip_id) {
       navigate(`/profile/${tripData.creator_id}`, {
         state: { openTripId: tripData.trip_id }
@@ -29,18 +34,31 @@ const TripMessageCard = ({ tripData }: TripMessageCardProps) => {
   };
 
   const formatDateRange = () => {
-    if (!tripData.start_date) return null;
+    if (!tripData?.start_date) return null;
     
-    const locale = getLocale();
-    const start = format(new Date(tripData.start_date), 'd MMM', { locale });
-    
-    if (tripData.end_date) {
-      const end = format(new Date(tripData.end_date), 'd MMM yyyy', { locale });
-      return `${start} - ${end}`;
+    try {
+      const locale = getLocale();
+      const start = format(new Date(tripData.start_date), 'd MMM', { locale });
+      
+      if (tripData.end_date) {
+        const end = format(new Date(tripData.end_date), 'd MMM yyyy', { locale });
+        return `${start} - ${end}`;
+      }
+      
+      return start;
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return null;
     }
-    
-    return start;
   };
+
+  if (!tripData) {
+    return (
+      <div className="w-full p-3 text-center text-muted-foreground text-sm">
+        Viaggio non disponibile
+      </div>
+    );
+  }
 
   return (
     <button
@@ -52,7 +70,7 @@ const TripMessageCard = ({ tripData }: TripMessageCardProps) => {
         {tripData.cover_image_url ? (
           <img
             src={tripData.cover_image_url}
-            alt={tripData.name}
+            alt={tripData.name || 'Trip'}
             className="w-full h-full object-cover"
           />
         ) : (
@@ -65,7 +83,7 @@ const TripMessageCard = ({ tripData }: TripMessageCardProps) => {
       {/* Content */}
       <div className="p-3 space-y-2">
         <h3 className="font-semibold text-foreground line-clamp-1">
-          {tripData.name}
+          {tripData.name || 'Viaggio'}
         </h3>
         
         {tripData.description && (
@@ -75,10 +93,16 @@ const TripMessageCard = ({ tripData }: TripMessageCardProps) => {
         )}
 
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <MapPin className="w-3.5 h-3.5" />
-            <span>{tripData.city}, {tripData.country}</span>
-          </div>
+          {(tripData.city || tripData.country) && (
+            <div className="flex items-center gap-1">
+              <MapPin className="w-3.5 h-3.5" />
+              <span>
+                {tripData.city && tripData.country 
+                  ? `${tripData.city}, ${tripData.country}`
+                  : tripData.city || tripData.country}
+              </span>
+            </div>
+          )}
           {formatDateRange() && (
             <div className="flex items-center gap-1">
               <Calendar className="w-3.5 h-3.5" />
