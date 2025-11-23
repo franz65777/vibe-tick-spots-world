@@ -310,7 +310,7 @@ const FeedPage = memo(() => {
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56 bg-background z-50 rounded-lg">
+              <DropdownMenuContent align="start" className="w-56"  >
                 <DropdownMenuItem 
                   onClick={() => setFeedType('forYou')}
                   className="cursor-pointer focus:bg-accent"

@@ -597,7 +597,7 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
                 
                 {/* Dropdown positioned absolutely */}
                 <div className="absolute left-4 top-0 w-auto z-50">
-                  <div className="w-56 bg-background backdrop-blur-sm border border-border rounded-2xl shadow-lg">
+                  <div className="w-56 bg-muted/10 backdrop-blur-md border border-border/10 rounded-2xl shadow-lg">
                     {isSaved && (
                       <button
                         onClick={(e) => {
