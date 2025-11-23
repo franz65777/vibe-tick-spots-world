@@ -33,6 +33,7 @@ const ProfilePage = memo(() => {
     type: null
   });
   const [isLocationsListOpen, setIsLocationsListOpen] = useState(false);
+  const [initialFolderId, setInitialFolderId] = useState<string | null>(null);
   const { badges } = useUserBadges();
   const [lastBadgeCount, setLastBadgeCount] = useState(0);
   const [hasNewBadges, setHasNewBadges] = useState(false);
@@ -41,6 +42,7 @@ const ProfilePage = memo(() => {
   useEffect(() => {
     const state = location.state as any;
     if (state?.openFolderId) {
+      setInitialFolderId(state.openFolderId);
       setIsLocationsListOpen(true);
       // Clear the state to prevent reopening on subsequent renders
       window.history.replaceState({}, document.title);
@@ -150,7 +152,11 @@ const ProfilePage = memo(() => {
 
       <SavedLocationsList
         isOpen={isLocationsListOpen}
-        onClose={() => setIsLocationsListOpen(false)}
+        onClose={() => {
+          setIsLocationsListOpen(false);
+          setInitialFolderId(null);
+        }}
+        initialFolderId={initialFolderId}
       />
     </div>
   );

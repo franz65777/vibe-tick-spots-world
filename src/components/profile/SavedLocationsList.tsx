@@ -29,9 +29,10 @@ interface SavedLocationsListProps {
   isOpen: boolean;
   onClose: () => void;
   userId?: string;
+  initialFolderId?: string | null;
 }
 
-const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps) => {
+const SavedLocationsList = ({ isOpen, onClose, userId, initialFolderId }: SavedLocationsListProps) => {
   const { t, i18n } = useTranslation();
   const { user: currentUser } = useAuth();
   const { mutedLocations } = useMutedLocations(currentUser?.id);
@@ -44,6 +45,9 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
   const [selectedSaveTag, setSelectedSaveTag] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState<AllowedCategory | null>(null);
   const [isFoldersDrawerOpen, setIsFoldersDrawerOpen] = useState(false);
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+  const [selectedFolderName, setSelectedFolderName] = useState<string>('');
+  const [folderLocationIds, setFolderLocationIds] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(true);
   const [locationStats, setLocationStats] = useState<Map<string, { averageRating: number | null }>>(new Map());
   const containerRef = useRef<HTMLDivElement>(null);
@@ -52,6 +56,59 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
   const touchCurrentX = useRef(0);
   const isDragging = useRef(false);
   const lastScrollY = useRef(0);
+
+  // Handle initial folder ID from navigation
+  useEffect(() => {
+    if (isOpen && initialFolderId) {
+      setSelectedFolderId(initialFolderId);
+      loadFolderLocations(initialFolderId);
+    }
+  }, [isOpen, initialFolderId]);
+
+  const loadFolderLocations = async (folderId: string) => {
+    try {
+      // Get folder details
+      const { data: folderData, error: folderError } = await supabase
+        .from('saved_folders')
+        .select('name')
+        .eq('id', folderId)
+        .single();
+
+      if (folderError) throw folderError;
+      setSelectedFolderName(folderData?.name || '');
+
+      // Get location IDs in this folder
+      const { data: folderLocs, error: locsError } = await supabase
+        .from('folder_locations')
+        .select('location_id')
+        .eq('folder_id', folderId);
+
+      if (locsError) throw locsError;
+      setFolderLocationIds(folderLocs?.map(fl => fl.location_id) || []);
+    } catch (error) {
+      console.error('Error loading folder locations:', error);
+      toast.error(t('errorLoadingFolder', { ns: 'profile', defaultValue: 'Error loading folder' }));
+    }
+  };
+
+  const handleFolderSelect = (folderId: string) => {
+    setSelectedFolderId(folderId);
+    loadFolderLocations(folderId);
+    setIsFoldersDrawerOpen(false);
+  };
+
+  const handleClearFolderFilter = () => {
+    setSelectedFolderId(null);
+    setSelectedFolderName('');
+    setFolderLocationIds([]);
+  };
+
+  // Open folders drawer automatically if initialFolderId is provided
+  useEffect(() => {
+    if (isOpen && initialFolderId) {
+      setIsFoldersDrawerOpen(true);
+    }
+  }, [isOpen, initialFolderId]);
 
   useEffect(() => {
     const loadSavedPlaces = async () => {
@@ -396,6 +453,13 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
 
   const filteredAndSortedPlaces = useMemo(() => {
     let places = allPlaces.filter(place => {
+      // If a folder is selected, only show locations in that folder
+      if (selectedFolderId && folderLocationIds.length > 0) {
+        if (!folderLocationIds.includes(place.id)) {
+          return false;
+        }
+      }
+
       const matchesSearch = !searchQuery || 
         place.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         place.city?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -416,7 +480,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
     });
 
     return places;
-  }, [allPlaces, searchQuery, selectedCity, selectedSaveTag, selectedCategory, isOwnProfile, mutedLocations]);
+  }, [allPlaces, searchQuery, selectedCity, selectedSaveTag, selectedCategory, isOwnProfile, mutedLocations, selectedFolderId, folderLocationIds]);
 
   const handlePlaceClick = (place: any) => {
     setSelectedPlace({
@@ -448,6 +512,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
         isOpen={isFoldersDrawerOpen}
         onClose={() => setIsFoldersDrawerOpen(false)}
         savedLocations={allPlaces}
+        onFolderSelect={handleFolderSelect}
       />
       
       <div ref={containerRef} className="fixed inset-0 bg-background z-[9999] flex flex-col">
@@ -471,7 +536,18 @@ const SavedLocationsList = ({ isOpen, onClose, userId }: SavedLocationsListProps
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <h1 className="text-base font-semibold truncate">{t('savedLocations', { ns: 'profile' })}</h1>
+            <h1 className="text-base font-semibold truncate">
+              {selectedFolderId && selectedFolderName ? selectedFolderName : t('savedLocations', { ns: 'profile' })}
+            </h1>
+            {selectedFolderId && (
+              <button
+                onClick={handleClearFolderFilter}
+                className="p-1.5 hover:bg-muted rounded-lg transition-colors flex-shrink-0"
+                title={t('showAll', { ns: 'common', defaultValue: 'Show all' })}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
           <div className="bg-primary/10 text-primary font-bold px-3 py-1.5 rounded-full text-sm flex-shrink-0">
             {filteredAndSortedPlaces.length}
