@@ -155,7 +155,7 @@ const LocationReviewModal = ({ isOpen, onClose, location }: LocationReviewModalP
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-background max-w-md rounded-3xl sm:rounded-3xl">
+      <DialogContent className="bg-background max-w-md rounded-3xl sm:rounded-3xl z-[20000]">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold">
             {t('reviewLocation', { ns: 'explore', location: location.name, defaultValue: `Review ${location.name}` })}

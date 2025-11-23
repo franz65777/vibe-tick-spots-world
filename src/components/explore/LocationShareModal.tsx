@@ -76,7 +76,11 @@ export const LocationShareModal = ({ isOpen, onClose, place, zIndex }: LocationS
   };
 
   const handleSend = async () => {
-    if (selected.size === 0 || !place) return;
+    if (selected.size === 0 || !place) {
+      console.log('Cannot send: no users selected or no place', { selectedSize: selected.size, place });
+      toast.error('Seleziona almeno un utente');
+      return;
+    }
 
     setSending(true);
     try {
@@ -84,12 +88,21 @@ export const LocationShareModal = ({ isOpen, onClose, place, zIndex }: LocationS
 
       // Check if sharing a folder or trip
       if (place.type === 'folder') {
+        console.log('Sharing folder:', place.id);
+        
         // Fetch full folder data with cover image
-        const { data: folderData } = await supabase
+        const { data: folderData, error: folderError } = await supabase
           .from('saved_folders')
-          .select('*, profiles(username, avatar_url)')
+          .select('*, profiles!saved_folders_user_id_fkey(id, username, avatar_url)')
           .eq('id', place.id)
           .single();
+
+        if (folderError) {
+          console.error('Error fetching folder data:', folderError);
+          throw folderError;
+        }
+
+        console.log('Fetched folder data:', folderData);
 
         const folderShareData = {
           folder_id: folderData?.id || place.id,
@@ -100,6 +113,8 @@ export const LocationShareModal = ({ isOpen, onClose, place, zIndex }: LocationS
           location_count: folderData?.save_count || 0,
           creator: folderData?.profiles
         };
+
+        console.log('Sending folder share data:', folderShareData);
 
         promises = Array.from(selected).map(userId =>
           messageService.sendFolderShare(userId, folderShareData)
