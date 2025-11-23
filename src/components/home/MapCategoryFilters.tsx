@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   Users,
   TrendingUp,
@@ -186,7 +186,30 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
     clearFollowedUsers();
   };
 
+  const handleShowAllFollowing = () => {
+    clearFollowedUsers();
+    setShowUserSearch(false);
+  };
+
   const selectedUsers = users.filter(u => selectedFollowedUserIds.includes(u.id));
+
+  // Calculate available categories based on selected users
+  const availableCategories = useMemo(() => {
+    if (activeFilter !== 'following' || selectedFollowedUserIds.length === 0) {
+      return categoryConfig.map(c => c.id);
+    }
+
+    const categoriesSet = new Set<string>();
+    selectedUsers.forEach(user => {
+      if (user.categoryCounts) {
+        Object.keys(user.categoryCounts).forEach(cat => {
+          categoriesSet.add(cat);
+        });
+      }
+    });
+
+    return Array.from(categoriesSet);
+  }, [activeFilter, selectedFollowedUserIds, selectedUsers]);
 
   return (
     <div className="w-full max-w-full z-[1100] pointer-events-none">
@@ -244,7 +267,7 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
 
       {/* User Search Bar */}
       {showUserSearch && activeFilter === 'following' && (
-        <div className="mb-3 bg-background/95 backdrop-blur-xl rounded-2xl shadow-xl border-2 border-border/30 p-3 pointer-events-auto">
+        <div className="mb-3 rounded-2xl bg-gradient-to-r from-transparent via-background/20 to-transparent backdrop-blur-md border border-border/5 p-3 pointer-events-auto">
           <div className="flex items-center gap-2">
             <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
             <Input
@@ -258,10 +281,7 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
               <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin flex-shrink-0"></div>
             )}
             <button
-              onClick={() => {
-                clearFollowedUsers();
-                setShowUserSearch(true);
-              }}
+              onClick={handleShowAllFollowing}
               className="px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors flex-shrink-0 font-medium text-xs"
               title={t('mapFilters:showAllFollowing')}
             >
@@ -362,34 +382,36 @@ const MapCategoryFilters = ({ currentCity }: MapCategoryFiltersProps) => {
               {/* Save Tags Filter - Only shown when in 'saved' mode */}
               {activeFilter === 'saved' && <SaveTagsFilter />}
               
-              {categoryConfig.map((category) => {
-                const isSelected = selectedCategories.includes(category.id);
-                
-                return (
-                  <button
-                    key={category.id}
-                    onClick={() => toggleCategory(category.id)}
-                    className={cn(
-                      "flex-shrink-0 flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded-lg transition-all duration-200 min-w-[48px]",
-                      isSelected && "bg-primary/10"
-                    )}
-                  >
-                    <CategoryIcon 
-                      category={category.id} 
+              {categoryConfig
+                .filter(category => availableCategories.includes(category.id))
+                .map((category) => {
+                  const isSelected = selectedCategories.includes(category.id);
+                  
+                  return (
+                    <button
+                      key={category.id}
+                      onClick={() => toggleCategory(category.id)}
                       className={cn(
-                        "w-6 h-6 transition-all",
-                        isSelected && "scale-110"
+                        "flex-shrink-0 flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded-lg transition-all duration-200 min-w-[48px]",
+                        isSelected && "bg-primary/10"
                       )}
-                    />
-                    <span className={cn(
-                      "text-[8px] font-medium whitespace-nowrap transition-colors",
-                      isSelected ? "text-primary" : "text-muted-foreground"
-                    )}>
-                      {category.label}
-                    </span>
-                  </button>
-                );
-              })}
+                    >
+                      <CategoryIcon 
+                        category={category.id} 
+                        className={cn(
+                          "w-6 h-6 transition-all",
+                          isSelected && "scale-110"
+                        )}
+                      />
+                      <span className={cn(
+                        "text-[8px] font-medium whitespace-nowrap transition-colors",
+                        isSelected ? "text-primary" : "text-muted-foreground"
+                      )}>
+                        {category.label}
+                      </span>
+                    </button>
+                  );
+                })}
               
               {selectedCategories.length > 0 && (
                 <button

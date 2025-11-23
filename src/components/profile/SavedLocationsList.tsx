@@ -59,7 +59,7 @@ const SavedLocationsList = ({ isOpen, onClose, userId, initialFolderId }: SavedL
 
   // Handle initial folder ID from navigation
   useEffect(() => {
-    if (isOpen && initialFolderId) {
+    if (isOpen && initialFolderId && initialFolderId !== null) {
       setSelectedFolderId(initialFolderId);
       loadFolderLocations(initialFolderId);
     }
