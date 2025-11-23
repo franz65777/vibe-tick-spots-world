@@ -14,10 +14,18 @@ const FolderMessageCard = ({ folderData }: FolderMessageCardProps) => {
       return;
     }
 
-    if (folderData.folder_id) {
-      navigate(`/profile/${folderData.creator_id}`, {
-        state: { openFolderId: folderData.folder_id }
+    const folderId = folderData.folder_id || folderData.id;
+    const creatorId =
+      folderData.creator_id ||
+      folderData.user_id ||
+      (typeof folderData.creator === 'object' ? folderData.creator.id : undefined);
+
+    if (folderId && creatorId) {
+      navigate(`/profile/${creatorId}`, {
+        state: { openFolderId: folderId }
       });
+    } else {
+      console.warn('Missing folderId or creatorId in shared folder data', folderData);
     }
   };
 
@@ -29,6 +37,11 @@ const FolderMessageCard = ({ folderData }: FolderMessageCardProps) => {
     );
   }
 
+  const creatorUsername =
+    typeof folderData?.creator === 'string'
+      ? folderData.creator
+      : folderData?.creator?.username || folderData?.username;
+
   return (
     <button
       onClick={handleClick}
@@ -36,9 +49,9 @@ const FolderMessageCard = ({ folderData }: FolderMessageCardProps) => {
     >
       {/* Cover Image */}
       <div className="relative h-24 bg-gradient-to-br from-primary/20 to-primary/5 overflow-hidden">
-        {folderData.cover_image_url ? (
+        {folderData.cover_image_url || folderData.cover_image ? (
           <img
-            src={folderData.cover_image_url}
+            src={folderData.cover_image_url || folderData.cover_image}
             alt={folderData.name || 'Folder'}
             className="w-full h-full object-cover"
           />
@@ -58,10 +71,10 @@ const FolderMessageCard = ({ folderData }: FolderMessageCardProps) => {
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
             <MapPin className="w-3 h-3" />
-            <span>{folderData.location_count || 0} luoghi</span>
+            <span>{folderData.location_count || folderData.save_count || 0} luoghi</span>
           </div>
-          {folderData.creator && (
-            <span className="truncate">@{typeof folderData.creator === 'string' ? folderData.creator : folderData.creator.username}</span>
+          {creatorUsername && (
+            <span className="truncate">@{creatorUsername}</span>
           )}
         </div>
       </div>
