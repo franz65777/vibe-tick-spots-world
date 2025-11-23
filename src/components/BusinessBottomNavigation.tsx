@@ -175,8 +175,8 @@ const BusinessBottomNavigation = () => {
         role="navigation"
         aria-label="Business navigation"
       >
-        <div className="w-full px-0 bg-background border-t border-border">
-          <div className="h-16 flex items-center justify-around px-2 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]">
+        <div className="w-full px-0 bg-gradient-to-r from-transparent via-background/20 to-transparent backdrop-blur-md border-t border-border/5">
+          <div className="h-16 flex items-center justify-around px-2">
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
               const isProfileTab = item.path === '/business/profile';
