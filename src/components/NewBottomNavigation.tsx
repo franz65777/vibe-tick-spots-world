@@ -178,11 +178,10 @@ const NewBottomNavigation = () => {
         aria-label="Main navigation"
       >
         <div className="w-full px-3 pb-[env(safe-area-inset-bottom)]">
-          <div className="relative bg-muted/10 backdrop-blur-md rounded-3xl mx-2 mb-2 shadow-sm overflow-hidden
-            before:absolute before:inset-0 before:rounded-3xl before:p-[1.5px] 
-            before:bg-gradient-to-br before:from-primary/60 before:to-primary/20
-            before:-z-10 before:content-['']">
-            <div className="h-16 flex items-center justify-around px-2 bg-background/95 rounded-3xl">
+          <div className="bg-muted/10 backdrop-blur-md rounded-3xl mx-2 mb-2 shadow-sm border-[1.5px] border-transparent
+            [background-image:linear-gradient(hsl(var(--background)/0.95),hsl(var(--background)/0.95)),linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))]
+            [background-origin:border-box] [background-clip:padding-box,border-box]">
+            <div className="h-16 flex items-center justify-around px-2">
               {navItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 const isProfileTab = item.path === '/profile';

@@ -367,18 +367,15 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
             <div key={spot.id} className="flex-shrink-0 flex flex-col gap-1">
               <button
                 onClick={() => handleSpotClick(spot)}
-                className="relative px-3 py-2 rounded-lg bg-muted/10 backdrop-blur-md hover:bg-muted/20 flex items-center gap-2 transition-all hover:shadow-md overflow-hidden
-                  before:absolute before:inset-0 before:rounded-lg before:p-[1.5px]
-                  before:bg-gradient-to-br before:from-primary/60 before:to-primary/20
-                  before:-z-10 before:content-['']"
+                className="px-3 py-2 rounded-lg bg-muted/10 backdrop-blur-md hover:bg-muted/20 flex items-center gap-2 transition-all hover:shadow-md border-[1.5px] border-transparent
+                  [background-image:linear-gradient(hsl(var(--background)/0.95),hsl(var(--background)/0.95)),linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))]
+                  [background-origin:border-box] [background-clip:padding-box,border-box]"
                 aria-label={`Zoom to ${spot.name}`}
               >
-                <div className="relative z-10 flex items-center gap-2">
                 <CategoryIcon category={spot.category} className="w-5 h-5" />
                 <span className="text-xs font-medium text-foreground line-clamp-1 max-w-[160px]">
                   {spot.name}
                 </span>
-              </div>
               </button>
               
               {/* Event registration button */}
