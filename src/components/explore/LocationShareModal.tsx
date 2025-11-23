@@ -98,7 +98,7 @@ export const LocationShareModal = ({ isOpen, onClose, place, zIndex }: LocationS
           description: folderData?.description,
           cover_image_url: folderData?.cover_image_url,
           location_count: folderData?.save_count || 0,
-          creator: folderData?.profiles || folderData?.creator
+          creator: folderData?.profiles
         };
 
         promises = Array.from(selected).map(userId =>
