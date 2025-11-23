@@ -1,16 +1,38 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useMapFilter } from '@/contexts/MapFilterContext';
 import { SAVE_TAG_OPTIONS, SaveTag } from '@/utils/saveTags';
 import { useTranslation } from 'react-i18next';
+import { SlidersHorizontal } from 'lucide-react';
 
 const SaveTagsFilter = () => {
   const { selectedSaveTags, toggleSaveTag } = useMapFilter();
   const { t } = useTranslation();
+  const [showFilters, setShowFilters] = useState(false);
 
   return (
     <>
-      {SAVE_TAG_OPTIONS.filter(opt => opt.value !== 'general').map((option) => {
+      <button
+        onClick={() => setShowFilters(!showFilters)}
+        className={cn(
+          "flex-shrink-0 flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded-lg transition-all duration-200 min-w-[48px]",
+          showFilters && "bg-primary/10"
+        )}
+        aria-label="Toggle save filters"
+      >
+        <SlidersHorizontal className={cn(
+          "w-5 h-5 transition-colors",
+          showFilters ? "text-primary" : "text-muted-foreground"
+        )} />
+        <span className={cn(
+          "text-[8px] font-medium whitespace-nowrap transition-colors",
+          showFilters ? "text-primary" : "text-muted-foreground"
+        )}>
+          {t('explore:filters')}
+        </span>
+      </button>
+
+      {showFilters && SAVE_TAG_OPTIONS.filter(opt => opt.value !== 'general').map((option) => {
         const isSelected = selectedSaveTags.includes(option.value);
         return (
           <button

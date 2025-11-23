@@ -9,11 +9,11 @@ export interface SaveTagOption {
 }
 
 export const SAVE_TAG_OPTIONS: SaveTagOption[] = [
-  { value: 'general', emoji: '📍', labelKey: 'save_tags.general' },
-  { value: 'date_night', emoji: '💑', labelKey: 'save_tags.date_night' },
-  { value: 'birthday', emoji: '🎂', labelKey: 'save_tags.birthday' },
-  { value: 'night_out', emoji: '🎉', labelKey: 'save_tags.night_out' },
-  { value: 'family', emoji: '👨‍👩‍👧‍👦', labelKey: 'save_tags.family' },
+  { value: 'general', emoji: '📍', labelKey: 'general' },
+  { value: 'date_night', emoji: '💑', labelKey: 'date_night' },
+  { value: 'birthday', emoji: '🎂', labelKey: 'birthday' },
+  { value: 'night_out', emoji: '🎉', labelKey: 'night_out' },
+  { value: 'family', emoji: '👨‍👩‍👧‍👦', labelKey: 'family' },
 ];
 
 export const getSaveTagOption = (tag: SaveTag): SaveTagOption => {
