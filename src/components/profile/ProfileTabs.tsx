@@ -25,7 +25,11 @@ const ProfileTabs = ({
   const { t } = useTranslation();
   return (
     <div className="">{/* No padding */}
-      <div className="flex bg-muted/10 backdrop-blur-md border-[3px] border-primary/55 rounded-xl p-1 mb-4 mx-3">
+      <div className="relative flex bg-muted/10 backdrop-blur-md rounded-xl p-1 mb-4 mx-3 overflow-hidden
+        before:absolute before:inset-0 before:rounded-xl before:p-[1.5px]
+        before:bg-gradient-to-br before:from-primary/60 before:to-primary/20
+        before:-z-10 before:content-['']">
+        <div className="relative z-10 flex w-full bg-background/95 rounded-xl p-1">
         <button
           onClick={() => onTabChange('posts')}
           className={cn(
@@ -93,6 +97,7 @@ const ProfileTabs = ({
           <Tag className="w-4 h-4" />
           <span className="hidden sm:inline">{t('tagged', { ns: 'profile' })}</span>
         </button>
+      </div>
       </div>
     </div>
   );
