@@ -34,7 +34,7 @@ const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
     <div className="bg-background pt-safe">
       <div className="px-2.5 py-4 pt-2">
         {/* Search Mode Toggle */}
-        <div className="flex bg-muted/10 backdrop-blur-md border border-border/10 rounded-2xl p-1 mb-4">
+        <div className="flex bg-muted/10 backdrop-blur-md border-[3px] border-primary/55 rounded-2xl p-1 mb-4">
           <button
             onClick={() => onSearchModeChange('locations')}
             className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-medium transition-all ${
