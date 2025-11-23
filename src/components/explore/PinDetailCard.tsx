@@ -405,7 +405,15 @@ const PinDetailCard = ({ place, onClose, onPostSelected, onBack }: PinDetailCard
         open={!savedByOpen && !isListOpen}
         modal={false}
         dismissible={true}
-        onOpenChange={(open) => { if (!open) onClose(); }}
+        onOpenChange={(open) => { 
+          if (!open) {
+            if (onBack) {
+              onBack();
+            } else {
+              onClose(); 
+            }
+          }
+        }}
       >
         <DrawerContent className={`transition-all duration-300 h-auto max-h-[30vh] data-[state=open]:max-h-[90vh] ${shareOpen ? 'z-[1000]' : onBack ? 'z-[10020]' : 'z-[2000]'}`}>
           {/* Draggable Header - Compact and Draggable */}

@@ -51,7 +51,12 @@ const LocationCardWithStats = ({ location, notes, onClick }: { location: any; no
               ) : (
                 <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
               )}
-              <span className="font-medium bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">{stats.averageRating.toFixed(1)}</span>
+               <span className="font-medium" style={{
+                 background: 'linear-gradient(135deg, hsl(38 92% 50%), hsl(32 95% 44%))',
+                 WebkitBackgroundClip: 'text',
+                 WebkitTextFillColor: 'transparent',
+                 backgroundClip: 'text'
+               }}>{stats.averageRating.toFixed(1)}</span>
             </div>
           )}
           {stats.totalSaves > 0 && (
@@ -187,7 +192,10 @@ const TripDetailModal = ({ trip: providedTrip, tripId, isOpen, onClose }: TripDe
   return (
     <>
     <div 
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 animate-in fade-in duration-200"
+      className={cn(
+        "fixed inset-0 z-50 flex items-end justify-center bg-black/60 animate-in fade-in duration-200",
+        selectedLocation && "hidden"
+      )}
       onClick={handleClose}
     >
       <div 
@@ -323,7 +331,7 @@ const TripDetailModal = ({ trip: providedTrip, tripId, isOpen, onClose }: TripDe
         <div className="fixed inset-0 z-[10010]">
           <PinDetailCard 
             place={selectedLocation}
-            onClose={handleClose}
+            onClose={() => setSelectedLocation(null)}
             onBack={() => setSelectedLocation(null)}
           />
         </div>
