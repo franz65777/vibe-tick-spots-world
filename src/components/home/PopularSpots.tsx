@@ -264,13 +264,13 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
     }
   };
 
-  const getFilterIcon = () => {
+const getFilterIcon = () => {
     switch (filterType) {
-      case 'discount': return <Percent className="w-4 h-4 text-white" />;
-      case 'event': return <Calendar className="w-4 h-4 text-white" />;
-      case 'promotion': return <Megaphone className="w-4 h-4 text-white" />;
-      case 'new': return <Sparkles className="w-4 h-4 text-white" />;
-      default: return <TrendingUp className="w-4 h-4 text-white" />;
+      case 'discount': return <Percent className="w-4 h-4 text-foreground" />;
+      case 'event': return <Calendar className="w-4 h-4 text-foreground" />;
+      case 'promotion': return <Megaphone className="w-4 h-4 text-foreground" />;
+      case 'new': return <Sparkles className="w-4 h-4 text-foreground" />;
+      default: return <TrendingUp className="w-4 h-4 text-foreground" />;
     }
   };
 
@@ -298,8 +298,9 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
         <div className="relative flex items-center gap-1.5 flex-1 min-w-0" ref={dropdownRef}>
           <button
             onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="w-7 h-7 bg-gradient-to-br from-orange-500 to-pink-500 rounded-lg flex items-center justify-center shadow-sm hover:shadow-md transition-shadow flex-shrink-0"
+            className="relative w-7 h-7 bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md rounded-lg flex items-center justify-center shadow-sm hover:shadow-md transition-shadow flex-shrink-0 overflow-hidden"
           >
+            <div className="absolute inset-0 rounded-lg border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
             {getFilterIcon()}
           </button>
           
@@ -315,18 +316,19 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                       setFilterType(option.type);
                       setDropdownOpen(false);
                     }}
-                     className={`flex-shrink-0 flex flex-col items-center justify-center gap-0.5 p-1.5 rounded-lg transition-all w-[58px] ${
+                    className={`relative flex-shrink-0 flex flex-col items-center justify-center gap-0.5 p-1.5 rounded-lg transition-all w-[58px] overflow-hidden ${
                       isActive 
-                        ? 'bg-gradient-to-br from-orange-500 to-pink-500 text-white shadow-md' 
-                        : 'bg-muted hover:bg-accent text-foreground'
+                        ? 'bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md shadow-md' 
+                        : 'bg-gray-200/30 dark:bg-slate-800/50 backdrop-blur-md hover:bg-gray-200/50 dark:hover:bg-slate-800/70'
                     }`}
                   >
-                     <div className={`w-6 h-6 rounded-md flex items-center justify-center ${
-                      isActive ? 'bg-white/20' : 'bg-background'
-                    }`}>
-                      <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-foreground'}`} />
+                    {isActive && (
+                      <div className="absolute inset-0 rounded-lg border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
+                    )}
+                     <div className="w-6 h-6 rounded-md flex items-center justify-center bg-background/50">
+                       <Icon className="w-3.5 h-3.5 text-foreground" />
                     </div>
-                    <span className="text-[9px] font-medium text-center leading-tight">{option.label}</span>
+                    <span className="text-[9px] font-medium text-center leading-tight text-foreground">{option.label}</span>
                   </button>
                 );
               })}
