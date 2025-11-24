@@ -178,8 +178,8 @@ const NewBottomNavigation = () => {
         aria-label="Main navigation"
       >
         <div className="w-full px-3 pb-[env(safe-area-inset-bottom)]">
-          <div className="bg-muted/10 backdrop-blur-md rounded-3xl mx-2 mb-2 shadow-sm border-[1.5px] border-transparent
-            [background-image:linear-gradient(hsl(var(--background)/0.95),hsl(var(--background)/0.95)),linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))]
+          <div className="bg-background/20 backdrop-blur-md rounded-3xl mx-2 mb-2 shadow-sm border-[1.5px] border-transparent
+            [background-image:linear-gradient(hsl(var(--background)/0.2),hsl(var(--background)/0.2)),linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))]
             [background-origin:border-box] [background-clip:padding-box,border-box]">
             <div className="h-16 flex items-center justify-around px-2">
               {navItems.map((item) => {
