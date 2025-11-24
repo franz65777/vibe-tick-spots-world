@@ -526,9 +526,8 @@ const LocationGrid = ({ searchQuery, selectedCategory }: LocationGridProps) => {
               key={location.id}
               onClick={() => handleLocationClick(location)}
               className="relative backdrop-blur-xl rounded-2xl cursor-pointer transition-all flex flex-col h-[140px] overflow-visible border-[1.5px] border-transparent
-                bg-gray-100/50 dark:bg-slate-900/80
-                [background-image:linear-gradient(rgb(245_245_244/0.5),rgb(245_245_244/0.5)),linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))]
-                dark:[background-image:linear-gradient(rgb(15_23_42/0.8),rgb(15_23_42/0.8)),linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))]
+                [background-image:linear-gradient(rgb(229_229_229/0.35),rgb(229_229_229/0.35)),linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))]
+                dark:[background-image:linear-gradient(rgb(30_41_59/0.55),rgb(30_41_59/0.55)),linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))]
                 [background-origin:border-box] [background-clip:padding-box,border-box]"
             >
               {/* Fireworks effect for campaigns */}
