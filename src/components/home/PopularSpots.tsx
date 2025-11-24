@@ -367,11 +367,10 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
             <div key={spot.id} className="flex-shrink-0 flex flex-col gap-1">
               <button
                 onClick={() => handleSpotClick(spot)}
-                className="px-3 py-2 rounded-lg bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md hover:bg-muted/20 flex items-center gap-2 transition-all hover:shadow-md border-[1.5px] border-transparent
-                  [background:linear-gradient(var(--tw-gradient-stops))_padding-box,linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box]
-                  [background-clip:padding-box,border-box]"
+                className="relative px-3 py-2 rounded-lg bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md hover:bg-muted/20 flex items-center gap-2 transition-all hover:shadow-md overflow-hidden"
                 aria-label={`Zoom to ${spot.name}`}
               >
+                <div className="absolute inset-0 rounded-lg border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
                 <CategoryIcon category={spot.category} className="w-5 h-5" />
                 <span className="text-xs font-medium text-foreground line-clamp-1 max-w-[160px]">
                   {spot.name}
