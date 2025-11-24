@@ -367,9 +367,9 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
             <div key={spot.id} className="flex-shrink-0 flex flex-col gap-1">
               <button
                 onClick={() => handleSpotClick(spot)}
-                className="px-3 py-2 rounded-lg bg-background/20 backdrop-blur-md hover:bg-muted/20 flex items-center gap-2 transition-all hover:shadow-md border-[1.5px] border-transparent
-                  [background-image:linear-gradient(hsl(var(--background)/0.2),hsl(var(--background)/0.2)),linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))]
-                  [background-origin:border-box] [background-clip:padding-box,border-box]"
+                className="px-3 py-2 rounded-lg bg-gray-100/50 dark:bg-slate-900/80 backdrop-blur-md hover:bg-muted/20 flex items-center gap-2 transition-all hover:shadow-md border-[1.5px] border-transparent
+                  [background-image:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))]
+                  [background-origin:border-box] [background-clip:border-box]"
                 aria-label={`Zoom to ${spot.name}`}
               >
                 <CategoryIcon category={spot.category} className="w-5 h-5" />

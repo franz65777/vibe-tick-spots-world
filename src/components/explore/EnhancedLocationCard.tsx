@@ -194,9 +194,9 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
 
   return (
     <div 
-      className="bg-background/20 backdrop-blur-md rounded-xl shadow-sm cursor-pointer hover:shadow-md transition-all duration-300 group mx-4 mb-3 border-[1.5px] border-transparent
-        [background-image:linear-gradient(hsl(var(--background)/0.2),hsl(var(--background)/0.2)),linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))]
-        [background-origin:border-box] [background-clip:padding-box,border-box]"
+      className="bg-gray-100/50 dark:bg-slate-900/80 backdrop-blur-md rounded-xl shadow-sm cursor-pointer hover:shadow-md transition-all duration-300 group mx-4 mb-3 border-[1.5px] border-transparent
+        [background-image:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))]
+        [background-origin:border-box] [background-clip:border-box]"
       onClick={() => onCardClick(place)}
     >
     <div className="relative h-36 overflow-hidden rounded-t-xl">

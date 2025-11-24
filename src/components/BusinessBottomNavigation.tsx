@@ -175,9 +175,9 @@ const BusinessBottomNavigation = () => {
         role="navigation"
         aria-label="Business navigation"
       >
-        <div className="w-full px-0 bg-background/20 backdrop-blur-md border-t border-border/10 border-[1.5px] border-transparent
-          [background-image:linear-gradient(hsl(var(--background)/0.2),hsl(var(--background)/0.2)),linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))]
-          [background-origin:border-box] [background-clip:padding-box,border-box]">
+        <div className="w-full px-0 bg-gray-100/50 dark:bg-slate-900/80 backdrop-blur-md border-t border-border/10 border-[1.5px] border-transparent
+          [background-image:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))]
+          [background-origin:border-box] [background-clip:border-box]">
           <div className="h-16 flex items-center justify-around px-2">
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
