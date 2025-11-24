@@ -25,10 +25,9 @@ const ProfileTabs = ({
   const { t } = useTranslation();
   return (
     <div className="">{/* No padding */}
-      <div className="flex backdrop-blur-md rounded-xl p-1 mb-4 mx-3 border-[1.5px] border-transparent
-        [background-image:linear-gradient(rgba(229,229,229,0.35),rgba(229,229,229,0.35)),linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))]
-        dark:[background-image:linear-gradient(rgba(30,41,59,0.6),rgba(30,41,59,0.6)),linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))]
-        [background-origin:border-box] [background-clip:padding-box,border-box]">
+      <div className="flex bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md rounded-xl p-1 mb-4 mx-3 border-[1.5px] border-transparent
+        [background:linear-gradient(var(--tw-gradient-stops))_padding-box,linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box]
+        [background-clip:padding-box,border-box]">
         <button
           onClick={() => onTabChange('posts')}
           className={cn(
