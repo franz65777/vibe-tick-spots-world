@@ -35,9 +35,8 @@ const ExploreHeaderBar = memo((props: ExploreHeaderBarProps) => {
       <div className="px-2.5 py-4 pt-2">
         {/* Search Mode Toggle */}
         <div className="flex backdrop-blur-md rounded-2xl p-1 mb-4 border-[1.5px] border-transparent
-          bg-gray-100/50 dark:bg-slate-900/80
-          [background-image:linear-gradient(rgb(245_245_244/0.5),rgb(245_245_244/0.5)),linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))]
-          dark:[background-image:linear-gradient(rgb(15_23_42/0.8),rgb(15_23_42/0.8)),linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))]
+          [background-image:linear-gradient(rgb(229_229_229/0.35),rgb(229_229_229/0.35)),linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))]
+          dark:[background-image:linear-gradient(rgb(30_41_59/0.55),rgb(30_41_59/0.55)),linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))]
           [background-origin:border-box] [background-clip:padding-box,border-box]">
           <button
             onClick={() => onSearchModeChange('locations')}
