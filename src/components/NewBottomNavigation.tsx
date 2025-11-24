@@ -178,9 +178,11 @@ const NewBottomNavigation = () => {
         aria-label="Main navigation"
       >
         <div className="w-full px-3 pb-[env(safe-area-inset-bottom)]">
-          <div className="bg-gray-100/50 dark:bg-slate-900/80 backdrop-blur-md rounded-3xl mx-2 mb-2 shadow-sm border-[1.5px] border-transparent
-            [background-image:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))]
-            [background-origin:border-box] [background-clip:border-box]">
+          <div className="backdrop-blur-md rounded-3xl mx-2 mb-2 shadow-sm border-[1.5px] border-transparent
+            bg-gray-100/50 dark:bg-slate-900/80
+            [background-image:linear-gradient(rgb(245_245_244/0.5),rgb(245_245_244/0.5)),linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))]
+            dark:[background-image:linear-gradient(rgb(15_23_42/0.8),rgb(15_23_42/0.8)),linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))]
+            [background-origin:border-box] [background-clip:padding-box,border-box]">
             <div className="h-16 flex items-center justify-around px-2">
               {navItems.map((item) => {
                 const isActive = location.pathname === item.path;
