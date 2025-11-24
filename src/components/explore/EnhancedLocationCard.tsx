@@ -194,11 +194,10 @@ const EnhancedLocationCard = ({ place, onCardClick }: EnhancedLocationCardProps)
 
   return (
     <div 
-      className="bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md rounded-xl shadow-sm cursor-pointer hover:shadow-md transition-all duration-300 group mx-4 mb-3 border-[1.5px] border-transparent
-        [background:linear-gradient(var(--tw-gradient-stops))_padding-box,linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box]
-        [background-clip:padding-box,border-box]"
+      className="relative bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md rounded-xl shadow-sm cursor-pointer hover:shadow-md transition-all duration-300 group mx-4 mb-3 overflow-hidden"
       onClick={() => onCardClick(place)}
     >
+      <div className="absolute inset-0 rounded-xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
     <div className="relative h-36 overflow-hidden rounded-t-xl">
       <img
           src={getImageUrl()} 
