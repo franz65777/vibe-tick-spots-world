@@ -303,25 +303,22 @@ const getFilterIcon = () => {
   return (
     <div className="h-full px-[10px] py-1 bg-background/50">
       {/* Filter Options */}
-      <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1.5 px-1 pt-1">
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1.5 px-1 pt-1">
         {filterOptions.map((option) => (
           <button
             key={option.value}
             onClick={() => setFilterType(option.value)}
             className={cn(
-              "flex flex-col items-center gap-1 transition-all flex-shrink-0",
+              "flex flex-col items-center gap-1 px-2 py-1.5 rounded-lg transition-all flex-shrink-0",
               selectedFilter === option.value
-                ? "opacity-100"
-                : "opacity-60 hover:opacity-80"
+                ? "bg-primary/10"
+                : "hover:bg-muted/50"
             )}
           >
             <img 
               src={option.icon} 
               alt="" 
-              className={cn(
-                "w-16 h-16 object-contain transition-transform",
-                selectedFilter === option.value && "scale-110"
-              )} 
+              className="w-10 h-10 object-contain" 
             />
             <span className={cn(
               "text-[10px] font-medium whitespace-nowrap",

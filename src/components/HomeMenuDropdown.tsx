@@ -46,16 +46,17 @@ export const HomeMenuDropdown = ({ isOpen, onClose, onSelectOption }: HomeMenuDr
               onClose();
             }}
             className={cn(
-               "flex items-center gap-3 px-3 py-2 rounded-2xl shadow-lg transition-all duration-200",
-               "bg-background/95 backdrop-blur-xl border border-border/20",
+               "relative flex items-center gap-3 px-3 py-2 rounded-2xl shadow-lg transition-all duration-200",
+               "bg-background/95 backdrop-blur-xl",
                "hover:bg-accent/80 active:scale-95",
-               "animate-in fade-in slide-in-from-bottom-4"
+               "animate-in fade-in slide-in-from-bottom-4 overflow-hidden"
              )}
             style={{
               animationDelay: `${index * 50}ms`,
               animationFillMode: 'both'
             }}
           >
+            <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
             <img src={option.icon} alt="" className="w-12 h-12 object-contain" />
             <span className="font-medium text-sm whitespace-nowrap text-foreground">
               {option.label}
