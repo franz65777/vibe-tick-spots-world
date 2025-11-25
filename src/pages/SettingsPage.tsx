@@ -80,7 +80,7 @@ const SettingsPage: React.FC = () => {
     
     if (!user?.id) {
       localStorage.setItem('i18nextLng', newLanguage);
-      i18n.changeLanguage(newLanguage);
+      await i18n.changeLanguage(newLanguage);
       return;
     }
 
@@ -92,7 +92,8 @@ const SettingsPage: React.FC = () => {
         .eq('id', user.id);
       if (error) throw error;
       localStorage.setItem('i18nextLng', newLanguage);
-      i18n.changeLanguage(newLanguage);
+      // Wait for i18n to change language before showing toast
+      await i18n.changeLanguage(newLanguage);
       toast.success(t('languageSaved', { ns: 'settings' }));
     } catch (e: any) {
       toast.error(e?.message || t('failedToSave', { ns: 'settings' }));
