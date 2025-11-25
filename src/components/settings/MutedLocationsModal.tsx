@@ -135,7 +135,11 @@ const MutedLocationsModal: React.FC<MutedLocationsModalProps> = ({ open, onOpenC
                   disabled={isMuting}
                   className="flex-shrink-0"
                 >
-                  <Bell className="w-4 h-4" />
+                  <img 
+                    src={bellOffIcon} 
+                    alt="Enable notifications" 
+                    className="w-5 h-5 object-contain"
+                  />
                 </Button>
               </div>
             ))
