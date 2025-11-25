@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Upload, Trash2, ArrowLeft } from 'lucide-react';
+import { Upload, ArrowLeft } from 'lucide-react';
+import deleteIcon from '@/assets/icon-delete-new.png';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -285,9 +286,9 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
           </SheetHeader>
 
           <div className="flex-1 overflow-y-auto pb-4">
-            <div className="max-w-2xl mx-auto p-4 space-y-6">
+            <div className="max-w-2xl mx-auto p-4 space-y-4">
               {/* Avatar Section */}
-              <div className="flex flex-col items-center gap-4 py-6">
+              <div className="flex flex-col items-center gap-3 py-3">
                 <button
                   type="button"
                   aria-label={t('upload')}
@@ -324,7 +325,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
                     onClick={handleRemoveAvatar}
                     disabled={isLoading || isUploading}
                   >
-                    <Trash2 className="w-4 h-4 mr-2" />
+                    <img src={deleteIcon} alt="" className="w-5 h-5 mr-2" />
                     {t('remove', { ns: 'common' })}
                   </Button>
                 )}
