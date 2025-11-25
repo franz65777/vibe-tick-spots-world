@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { ArrowLeft, Check, Loader2, X, MapPin } from 'lucide-react';
+import languageIcon from '@/assets/icon-language.png';
 import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 
@@ -153,11 +154,11 @@ const SignupStart: React.FC = () => {
           <ArrowLeft className="mr-2" /> {t('auth:back') || 'Indietro'}
         </Button>
         <div className="w-40">
-          <Select value={i18n.language} onValueChange={(v) => { i18n.changeLanguage(v); localStorage.setItem('i18nextLng', v); }}>
-            <SelectTrigger className="h-9 rounded-full bg-background border border-input text-sm flex items-center gap-2" aria-label="Language selector">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
-              <SelectValue placeholder="Language" />
-            </SelectTrigger>
+            <Select value={i18n.language} onValueChange={(v) => { i18n.changeLanguage(v); localStorage.setItem('i18nextLng', v); }}>
+              <SelectTrigger className="h-9 rounded-full bg-background border border-input text-sm flex items-center gap-2" aria-label="Language selector">
+                <img src={languageIcon} alt="" className="w-4 h-4 flex-shrink-0" />
+                <SelectValue placeholder="Language" />
+              </SelectTrigger>
             <SelectContent className="rounded-xl bg-popover text-popover-foreground z-[99999]">
               {languages.map((l) => (
                 <SelectItem key={l.code} value={l.code}>{l.label}</SelectItem>

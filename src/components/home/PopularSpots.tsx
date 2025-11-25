@@ -3,6 +3,7 @@ import { MapPin, Users, ChevronDown, UserPlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
+import { cn } from '@/lib/utils';
 import fireIcon from '@/assets/fire-icon-3d.png';
 import trendingIcon from '@/assets/filter-trending.png';
 import discountIcon from '@/assets/filter-discount.png';
@@ -290,74 +291,46 @@ const getFilterIcon = () => {
   };
 
   const filterOptions = [
-    { type: 'most_saved' as FilterType, label: t('filters.trending', { ns: 'home' }), icon: trendingIcon },
-    { type: 'discount' as FilterType, label: t('filters.discount', { ns: 'home' }), icon: discountIcon },
-    { type: 'event' as FilterType, label: t('filters.event', { ns: 'home' }), icon: eventIcon },
-    { type: 'promotion' as FilterType, label: t('filters.promotion', { ns: 'home' }), icon: promotionIcon },
-    { type: 'new' as FilterType, label: t('filters.new', { ns: 'home' }), icon: newIcon },
+    { value: 'most_saved' as FilterType, label: t('filters.trending', { ns: 'home' }), icon: trendingIcon },
+    { value: 'discount' as FilterType, label: t('filters.discount', { ns: 'home' }), icon: discountIcon },
+    { value: 'event' as FilterType, label: t('filters.event', { ns: 'home' }), icon: eventIcon },
+    { value: 'promotion' as FilterType, label: t('filters.promotion', { ns: 'home' }), icon: promotionIcon },
+    { value: 'new' as FilterType, label: t('filters.new', { ns: 'home' }), icon: newIcon },
   ];
 
+  const selectedFilter = filterType;
+
   return (
-    <div className="h-full px-[10px] py-2 bg-background/50">
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <div className="relative flex items-center gap-1.5 flex-1 min-w-0" ref={dropdownRef}>
+    <div className="h-full px-[10px] py-1 bg-background/50">
+      {/* Filter Options */}
+      <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1.5 px-1 pt-1">
+        {filterOptions.map((option) => (
           <button
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="relative w-7 h-7 bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md rounded-lg flex items-center justify-center shadow-sm hover:shadow-md transition-shadow flex-shrink-0 overflow-hidden"
+            key={option.value}
+            onClick={() => setFilterType(option.value)}
+            className={cn(
+              "flex flex-col items-center gap-1 transition-all flex-shrink-0",
+              selectedFilter === option.value
+                ? "opacity-100"
+                : "opacity-60 hover:opacity-80"
+            )}
           >
-            <div className="absolute inset-0 rounded-lg border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
-            {getFilterIcon()}
+            <img 
+              src={option.icon} 
+              alt="" 
+              className={cn(
+                "w-16 h-16 object-contain transition-transform",
+                selectedFilter === option.value && "scale-110"
+              )} 
+            />
+            <span className={cn(
+              "text-[10px] font-medium whitespace-nowrap",
+              selectedFilter === option.value ? "text-primary" : "text-muted-foreground"
+            )}>
+              {option.label}
+            </span>
           </button>
-          
-          {dropdownOpen ? (
-            <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
-              {filterOptions.map((option) => {
-                const isActive = filterType === option.type;
-                return (
-                  <button
-                    key={option.type}
-                    onClick={() => {
-                      setFilterType(option.type);
-                      setDropdownOpen(false);
-                    }}
-                    className={`relative flex-shrink-0 flex flex-col items-center justify-center gap-0.5 p-1.5 rounded-lg transition-all w-[58px] overflow-hidden ${
-                      isActive 
-                        ? 'bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md shadow-md' 
-                        : 'bg-gray-200/30 dark:bg-slate-800/50 backdrop-blur-md hover:bg-gray-200/50 dark:hover:bg-slate-800/70'
-                    }`}
-                  >
-                    {isActive && (
-                      <div className="absolute inset-0 rounded-lg border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
-                    )}
-                     <div className="w-6 h-6 rounded-md flex items-center justify-center bg-background/50">
-                       <img src={option.icon} alt={option.label} className="w-4 h-4 object-contain" />
-                    </div>
-                    <span className="text-[9px] font-medium text-center leading-tight text-foreground">{option.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="flex flex-col min-w-0">
-              <h3 className="text-sm font-semibold text-foreground truncate">
-                {loading ? t('loading', { ns: 'common' }) : `${getFilterLabel()}${currentCity ? ` in ${currentCity}` : ''}`}
-              </h3>
-              <p className="text-xs text-muted-foreground truncate text-left">
-                {loading ? t('findingSpots', { ns: 'home' }) : t('filters.placesFound', { ns: 'home', count: popularSpots.length })}
-              </p>
-            </div>
-          )}
-        </div>
-        
-        {!dropdownOpen && (
-          <button
-            onClick={onSwipeDiscoveryOpen}
-            className="w-8 h-8 flex items-center justify-center transition-all hover:scale-110 flex-shrink-0"
-            aria-label="Discover places"
-          >
-            <img src={fireIcon} alt="Discover" className="w-7 h-7" style={{ transform: 'scaleX(0.85)' }} />
-          </button>
-        )}
+        ))}
       </div>
 
       {/* Horizontal chips */}
