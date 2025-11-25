@@ -593,9 +593,9 @@ const HomePage = memo(() => {
           </Suspense>
         )}
         
-        {/* Map Section - absolute positioned to extend under bottom nav */}
+        {/* Map Section - absolute positioned to extend under bottom nav with proper padding */}
         {!isCreateStoryModalOpen && !isStoriesViewerOpen && !showOnboarding && (
-          <div className="absolute top-[110px] left-0 right-0 bottom-0 pb-0">
+          <div className="absolute top-[110px] left-0 right-0 bottom-0 pb-[calc(60px+env(safe-area-inset-bottom))]">
             <Suspense fallback={<div className="w-full h-full" />}>
               <HomeMapContainer
                 mapCenter={mapCenter}
