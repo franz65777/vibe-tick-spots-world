@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 export const useMutedLocations = (userId: string | undefined) => {
   const queryClient = useQueryClient();
-
+  const { t } = useTranslation('settings');
   const { data: mutedLocations, isLoading } = useQuery({
     queryKey: ['muted-locations', userId],
     queryFn: async () => {
@@ -61,10 +62,13 @@ export const useMutedLocations = (userId: string | undefined) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['muted-locations', userId] });
-      toast.success('Location muted');
+      toast.success(t('locationMutedToast', { defaultValue: 'Location muted' }));
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Failed to mute location');
+      toast.error(
+        error.message ||
+          t('muteLocationError', { defaultValue: 'Failed to mute location' })
+      );
     },
   });
 
@@ -82,10 +86,13 @@ export const useMutedLocations = (userId: string | undefined) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['muted-locations', userId] });
-      toast.success('Location unmuted');
+      toast.success(t('locationUnmutedToast', { defaultValue: 'Location unmuted' }));
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Failed to unmute location');
+      toast.error(
+        error.message ||
+          t('unmuteLocationError', { defaultValue: 'Failed to unmute location' })
+      );
     },
   });
 

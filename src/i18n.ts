@@ -1294,6 +1294,10 @@ const resources = {
       errorRemoving: 'Error al eliminar amigo',
       addFromFollowers: 'Agregar de tus seguidores',
       noFollowersAvailable: 'No hay seguidores disponibles',
+      locationMutedToast: 'Ubicación silenciada',
+      locationUnmutedToast: 'Ubicación reactivada',
+      muteLocationError: 'Error al silenciar la ubicación',
+      unmuteLocationError: 'Error al reactivar la ubicación',
     },
     feed: {
       yourFeed: 'Tu Feed',
