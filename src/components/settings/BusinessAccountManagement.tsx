@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDate } from 'date-fns';
 import { it } from 'date-fns/locale';
+import businessIcon from '@/assets/settings-business.png';
 
 interface BusinessAccountManagementProps {
   open: boolean;
@@ -99,7 +100,7 @@ const BusinessAccountManagement: React.FC<BusinessAccountManagementProps> = ({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-full p-0 [&>button]:hidden">
         <div className="h-full flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
-          <SheetHeader className="p-4 px-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+          <SheetHeader className="p-4">
             <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
@@ -109,14 +110,14 @@ const BusinessAccountManagement: React.FC<BusinessAccountManagementProps> = ({
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
-              <SheetTitle className="flex items-center gap-2">
-                <Building2 className="h-5 w-5" />
+              <SheetTitle className="flex items-center gap-3">
+                <img src={businessIcon} alt="" className="w-10 h-10 object-contain" />
                 Account Business
               </SheetTitle>
             </div>
           </SheetHeader>
 
-          <div className="flex-1 overflow-y-auto p-4 px-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+          <div className="flex-1 overflow-y-auto p-4">
             <div className="py-6 space-y-6">
           {loading || loadingSubscription ? (
             <div className="text-center py-8">

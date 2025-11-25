@@ -1,5 +1,6 @@
 
-import { Building2, Settings, Plus } from 'lucide-react';
+import { Building2, Plus } from 'lucide-react';
+import settingsIcon from '@/assets/settings-icon.png';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
@@ -183,7 +184,7 @@ const ProfileHeader = ({
                 className="h-8 w-8 p-0"
                 onClick={() => navigate('/settings')}
               >
-                <Settings className="w-5 h-5" />
+                <img src={settingsIcon} alt="Settings" className="w-6 h-6" />
               </Button>
             </div>
           </div>

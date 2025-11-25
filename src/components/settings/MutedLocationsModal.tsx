@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getCategoryImage } from '@/utils/categoryIcons';
 import { formatDetailedAddress } from '@/utils/addressFormatter';
+import notificationsIcon from '@/assets/settings-notifications.png';
 
 interface MutedLocationsModalProps {
   open: boolean;
@@ -72,8 +73,8 @@ const MutedLocationsModal: React.FC<MutedLocationsModalProps> = ({ open, onOpenC
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
-              <SheetTitle className="flex items-center gap-2">
-                <BellOff className="w-5 h-5" />
+              <SheetTitle className="flex items-center gap-3">
+                <img src={notificationsIcon} alt="" className="w-10 h-10 object-contain" />
                 {t('mutedLocations', { ns: 'settings' })}
               </SheetTitle>
             </div>

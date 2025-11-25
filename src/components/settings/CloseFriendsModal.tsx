@@ -8,6 +8,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import closeFriendsIcon from '@/assets/settings-close-friends.png';
 
 interface User {
   id: string;
@@ -148,7 +149,8 @@ const CloseFriendsModal: React.FC<CloseFriendsModalProps> = ({ open, onOpenChang
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
-              <SheetTitle className="text-lg font-semibold">
+              <SheetTitle className="text-lg font-semibold flex items-center gap-3">
+                <img src={closeFriendsIcon} alt="" className="w-10 h-10 object-contain" />
                 {t('closeFriends', { ns: 'settings' })}
               </SheetTitle>
             </div>
