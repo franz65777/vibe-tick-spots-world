@@ -41,6 +41,10 @@ interface SwipeDiscoveryProps {
   userLocation: { lat: number; lng: number } | null;
 }
 
+export interface SwipeDiscoveryHandle {
+  reload: () => void;
+}
+
 interface FollowedUser {
   id: string;
   username: string;
@@ -48,7 +52,7 @@ interface FollowedUser {
   new_saves_count: number;
 }
 
-const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
+const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProps>(({ userLocation }, ref) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -75,11 +79,42 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
 
   useEffect(() => {
     fetchFollowedUsers();
+    
+    // Subscribe to realtime updates for followed users' saves
+    if (!user) return;
+    
+    const channel = supabase
+      .channel('discover-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'saved_places'
+        },
+        () => {
+          // Refresh followed users when new saves happen
+          fetchFollowedUsers();
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   useEffect(() => {
     fetchDailyLocations();
   }, [userLocation, user, selectedUserId]);
+
+  // Expose reload function via ref
+  React.useImperativeHandle(ref, () => ({
+    reload: () => {
+      fetchFollowedUsers();
+      fetchDailyLocations();
+    }
+  }));
 
   // Calculate category counts when locations change
   useEffect(() => {
@@ -481,9 +516,9 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
   const currentLocation = filteredLocations[currentIndex];
 
   return (
-    <div className="fixed inset-0 w-full bg-background z-50 flex flex-col overflow-hidden pt-8">
+    <div className="fixed inset-0 w-full bg-background z-50 flex flex-col overflow-hidden safe-area-pt">
       {/* Header with back button - compact for more space */}
-      <div className="bg-transparent px-4 py-2.5 flex items-center gap-3 relative z-10">
+      <div className="bg-transparent px-4 py-2.5 flex items-center gap-3 relative z-10 safe-area-pt">
         <button
           onClick={() => navigate('/')}
           className="p-2 hover:bg-muted rounded-full transition-colors"
@@ -495,8 +530,9 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       </div>
 
       {/* Followed Users Row - overflow visible to prevent clipping */}
-      <div className="bg-background px-4 pt-3 pb-3 overflow-visible relative z-30">
-        <div className="flex gap-3 overflow-x-auto overflow-y-visible scrollbar-hide pb-1 pl-2 pr-3" style={{ scrollSnapType: 'x mandatory' }}>
+      {followedUsers.length > 0 && (
+        <div className="bg-background px-4 pt-3 pb-3 overflow-visible relative z-30">
+          <div className="flex gap-3 overflow-x-auto overflow-y-visible scrollbar-hide pb-1 pl-2 pr-3" style={{ scrollSnapType: 'x mandatory' }}>
           {/* All button */}
           <button
             onClick={() => {
@@ -557,7 +593,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                     </div>
                   )}
                 </div>
-                <span className="text-[10px] font-medium text-gray-700 max-w-[60px] truncate">
+                <span className="text-[10px] font-medium text-foreground max-w-[60px] truncate">
                   {followedUser.username}
                 </span>
               </button>
@@ -565,6 +601,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
           })}
         </div>
       </div>
+      )}
 
       {/* Category Filter */}
       {!loading && filteredLocations.length > 0 && (
@@ -583,7 +620,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
             <p className="text-gray-600 font-medium">{t('findingAmazingPlaces')}</p>
           </div>
         ) : !currentLocation ? (
-          <div className="h-full flex flex-col">
+          <div className="h-full flex flex-col pb-safe">
             {/* Keep filters visible even when no cards */}
             <div className="px-4 py-3">
               <SwipeCategoryFilter
@@ -597,7 +634,7 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
             </div>
             
             {/* Empty state */}
-            <div className="flex-1 flex items-center justify-center p-8 text-center">
+            <div className="flex-1 flex items-center justify-center p-8 text-center pb-24">
               <div className="space-y-6 max-w-sm mx-auto">
                 <div className="flex items-center justify-center">
                   <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center shadow-lg">
@@ -606,8 +643,8 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                 </div>
                 
                 <div className="space-y-3">
-                  <h3 className="text-2xl font-bold text-gray-900">{t('noPlacesToDiscover')}</h3>
-                  <p className="text-gray-600 leading-relaxed">
+                  <h3 className="text-2xl font-bold text-foreground">{t('noPlacesToDiscover')}</h3>
+                  <p className="text-muted-foreground leading-relaxed">
                     {selectedCategory 
                       ? t('noPlacesInCategory', { category: selectedCategory })
                       : t('followMorePeople')
@@ -634,19 +671,12 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
                     <UserPlus className="w-5 h-5 mr-2" />
                     {t('findPeopleToFollow')}
                   </Button>
-                  <Button 
-                    onClick={fetchDailyLocations} 
-                    variant="outline" 
-                    className="rounded-full h-12 text-base"
-                  >
-                    {t('tryAgain')}
-                  </Button>
                 </div>
               </div>
             </div>
           </div>
         ) : (
-          <div className="h-full flex items-start justify-center px-3 pt-3 pb-3">
+          <div className="h-full flex items-start justify-center px-3 pt-3 pb-24 safe-area-pb">
             {/* Swipeable Card */}
             <div
               onTouchStart={handleTouchStart}
@@ -776,6 +806,8 @@ const SwipeDiscovery = ({ userLocation }: SwipeDiscoveryProps) => {
       />
     </div>
   );
-};
+});
+
+SwipeDiscovery.displayName = 'SwipeDiscovery';
 
 export default SwipeDiscovery;
