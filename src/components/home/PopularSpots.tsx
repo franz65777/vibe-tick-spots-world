@@ -302,33 +302,36 @@ const getFilterIcon = () => {
 
   return (
     <div className="h-full px-[10px] py-1 bg-background/50">
-      {/* Filter Options */}
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1.5 px-1 pt-1">
-        {filterOptions.map((option) => (
-          <button
-            key={option.value}
-            onClick={() => setFilterType(option.value)}
-            className={cn(
-              "flex flex-col items-center gap-1 px-2 py-1.5 rounded-lg transition-all flex-shrink-0",
-              selectedFilter === option.value
-                ? "bg-primary/10"
-                : "hover:bg-muted/50"
-            )}
-          >
-            <img 
-              src={option.icon} 
-              alt="" 
-              className="w-10 h-10 object-contain" 
-            />
-            <span className={cn(
-              "text-[10px] font-medium whitespace-nowrap",
-              selectedFilter === option.value ? "text-primary" : "text-muted-foreground"
-            )}>
-              {option.label}
-            </span>
-          </button>
-        ))}
-      </div>
+      {/* Filter Options - Only show bar when spots exist */}
+      {(loading || popularSpots.length > 0) && (
+        <div className="relative mb-1">
+          <div className="absolute inset-0 bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md rounded-lg border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude]"></div>
+          <div className="relative flex gap-3 overflow-x-auto scrollbar-hide px-3 py-2">
+            {filterOptions.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => setFilterType(option.value)}
+                className={cn(
+                  "flex flex-col items-center gap-0.5 transition-all flex-shrink-0",
+                  selectedFilter === option.value ? "opacity-100" : "opacity-70 hover:opacity-90"
+                )}
+              >
+                <img 
+                  src={option.icon} 
+                  alt="" 
+                  className="w-12 h-12 object-contain" 
+                />
+                <span className={cn(
+                  "text-[10px] font-medium whitespace-nowrap",
+                  selectedFilter === option.value ? "text-primary" : "text-muted-foreground"
+                )}>
+                  {option.label}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Horizontal chips */}
       {loading ? (
