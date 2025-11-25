@@ -2,11 +2,16 @@ import { useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { MapPin, Search, FolderHeart, User, Users, Heart, MessageCircle, Share2 } from 'lucide-react';
+import { Users, Heart, MessageCircle, Share2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
+import mapIcon from '@/assets/onboarding-map.png';
+import exploreIcon from '@/assets/onboarding-explore.png';
+import listIcon from '@/assets/onboarding-list.png';
+import profileIcon from '@/assets/onboarding-profile.png';
 
 interface OnboardingModalProps {
   open: boolean;
@@ -17,70 +22,71 @@ const OnboardingModal = ({ open, onComplete }: OnboardingModalProps) => {
   const [currentStep, setCurrentStep] = useState(0);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useTranslation('onboarding');
 
   const steps = [
     {
-      title: "Welcome to Spott! 🌍",
-      description: "Discover and share amazing places with friends around the world",
+      title: t('welcomeTitle'),
+      description: t('welcomeDescription'),
       content: (
         <div className="space-y-6 py-4">
           <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col items-center p-4 rounded-lg bg-secondary/20">
-              <MapPin className="w-8 h-8 mb-2 text-primary" />
-              <h3 className="font-semibold text-sm">Map</h3>
-              <p className="text-xs text-muted-foreground text-center">View all your saved spots</p>
+            <div className="flex flex-col items-center p-4 rounded-2xl bg-secondary/20">
+              <img src={mapIcon} alt={t('map')} className="w-12 h-12 mb-2 object-contain" />
+              <h3 className="font-semibold text-sm">{t('map')}</h3>
+              <p className="text-xs text-muted-foreground text-center">{t('mapDescription')}</p>
             </div>
-            <div className="flex flex-col items-center p-4 rounded-lg bg-secondary/20">
-              <Search className="w-8 h-8 mb-2 text-primary" />
-              <h3 className="font-semibold text-sm">Explore</h3>
-              <p className="text-xs text-muted-foreground text-center">Find new places & friends</p>
+            <div className="flex flex-col items-center p-4 rounded-2xl bg-secondary/20">
+              <img src={exploreIcon} alt={t('explore')} className="w-12 h-12 mb-2 object-contain" />
+              <h3 className="font-semibold text-sm">{t('explore')}</h3>
+              <p className="text-xs text-muted-foreground text-center">{t('exploreDescription')}</p>
             </div>
-            <div className="flex flex-col items-center p-4 rounded-lg bg-secondary/20">
-              <FolderHeart className="w-8 h-8 mb-2 text-primary" />
-              <h3 className="font-semibold text-sm">Lists</h3>
-              <p className="text-xs text-muted-foreground text-center">Curate & share collections</p>
+            <div className="flex flex-col items-center p-4 rounded-2xl bg-secondary/20">
+              <img src={listIcon} alt={t('lists')} className="w-12 h-12 mb-2 object-contain" />
+              <h3 className="font-semibold text-sm">{t('lists')}</h3>
+              <p className="text-xs text-muted-foreground text-center">{t('listsDescription')}</p>
             </div>
-            <div className="flex flex-col items-center p-4 rounded-lg bg-secondary/20">
-              <User className="w-8 h-8 mb-2 text-primary" />
-              <h3 className="font-semibold text-sm">Profile</h3>
-              <p className="text-xs text-muted-foreground text-center">Your stats & settings</p>
+            <div className="flex flex-col items-center p-4 rounded-2xl bg-secondary/20">
+              <img src={profileIcon} alt={t('profile')} className="w-12 h-12 mb-2 object-contain" />
+              <h3 className="font-semibold text-sm">{t('profile')}</h3>
+              <p className="text-xs text-muted-foreground text-center">{t('profileDescription')}</p>
             </div>
           </div>
         </div>
       ),
     },
     {
-      title: "Connect with Friends 👥",
-      description: "Discover your friends' favorite spots and share yours!",
+      title: t('connectTitle'),
+      description: t('connectDescription'),
       content: (
         <div className="space-y-6 py-4">
           <div className="space-y-4">
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-secondary/20">
+            <div className="flex items-start gap-3 p-3 rounded-2xl bg-secondary/20">
               <Users className="w-6 h-6 text-primary flex-shrink-0 mt-0.5" />
               <div>
-                <h3 className="font-semibold text-sm">Follow Friends</h3>
-                <p className="text-xs text-muted-foreground">See what places your friends are loving</p>
+                <h3 className="font-semibold text-sm">{t('followFriends')}</h3>
+                <p className="text-xs text-muted-foreground">{t('followFriendsDescription')}</p>
               </div>
             </div>
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-secondary/20">
+            <div className="flex items-start gap-3 p-3 rounded-2xl bg-secondary/20">
               <Heart className="w-6 h-6 text-primary flex-shrink-0 mt-0.5" />
               <div>
-                <h3 className="font-semibold text-sm">Like & Comment</h3>
-                <p className="text-xs text-muted-foreground">Engage with places and posts from your network</p>
+                <h3 className="font-semibold text-sm">{t('likeComment')}</h3>
+                <p className="text-xs text-muted-foreground">{t('likeCommentDescription')}</p>
               </div>
             </div>
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-secondary/20">
+            <div className="flex items-start gap-3 p-3 rounded-2xl bg-secondary/20">
               <Share2 className="w-6 h-6 text-primary flex-shrink-0 mt-0.5" />
               <div>
-                <h3 className="font-semibold text-sm">Share Experiences</h3>
-                <p className="text-xs text-muted-foreground">Post stories and recommend places to friends</p>
+                <h3 className="font-semibold text-sm">{t('shareExperiences')}</h3>
+                <p className="text-xs text-muted-foreground">{t('shareExperiencesDescription')}</p>
               </div>
             </div>
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-secondary/20">
+            <div className="flex items-start gap-3 p-3 rounded-2xl bg-secondary/20">
               <MessageCircle className="w-6 h-6 text-primary flex-shrink-0 mt-0.5" />
               <div>
-                <h3 className="font-semibold text-sm">Direct Messages</h3>
-                <p className="text-xs text-muted-foreground">Send places and recommendations privately</p>
+                <h3 className="font-semibold text-sm">{t('directMessages')}</h3>
+                <p className="text-xs text-muted-foreground">{t('directMessagesDescription')}</p>
               </div>
             </div>
           </div>
@@ -88,32 +94,32 @@ const OnboardingModal = ({ open, onComplete }: OnboardingModalProps) => {
       ),
     },
     {
-      title: "Let's Get Started! 🚀",
-      description: "Save 3 locations to begin discovering your world map",
+      title: t('getStartedTitle'),
+      description: t('getStartedDescription'),
       content: (
         <div className="space-y-6 py-4">
-          <div className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-lg p-6 text-center space-y-4">
+          <div className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-2xl p-6 text-center space-y-4">
             <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto">
-              <MapPin className="w-8 h-8 text-primary" />
+              <img src={mapIcon} alt="Mission" className="w-10 h-10 object-contain" />
             </div>
             <div>
-              <h3 className="font-bold text-lg mb-2">Your First Mission</h3>
+              <h3 className="font-bold text-lg mb-2">{t('firstMission')}</h3>
               <p className="text-sm text-muted-foreground">
-                Find and save at least 3 places to populate your map:
+                {t('firstMissionDescription')}
               </p>
             </div>
             <div className="space-y-2 text-left text-sm">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold">1</div>
-                <span>Your favorite hometown spot</span>
+                <span>{t('mission1')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold">2</div>
-                <span>A restaurant you love</span>
+                <span>{t('mission2')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold">3</div>
-                <span>A dream travel destination</span>
+                <span>{t('mission3')}</span>
               </div>
             </div>
           </div>
@@ -171,7 +177,7 @@ const OnboardingModal = ({ open, onComplete }: OnboardingModalProps) => {
   return (
     <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent 
-        className="sm:max-w-md max-h-[85vh] overflow-y-auto"
+        className="sm:max-w-md max-h-[85vh] overflow-y-auto rounded-3xl"
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
@@ -180,13 +186,13 @@ const OnboardingModal = ({ open, onComplete }: OnboardingModalProps) => {
           <div className="space-y-2">
             <Progress value={progress} className="h-1.5" />
             <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Step {currentStep + 1} of {steps.length}</span>
+              <span>{t('step')} {currentStep + 1} {t('of')} {steps.length}</span>
               {currentStep < steps.length - 1 && (
                 <button
                   onClick={handleSkip}
                   className="hover:text-foreground transition-colors"
                 >
-                  Skip
+                  {t('skip')}
                 </button>
               )}
             </div>
@@ -209,16 +215,16 @@ const OnboardingModal = ({ open, onComplete }: OnboardingModalProps) => {
               <Button
                 variant="outline"
                 onClick={() => setCurrentStep(currentStep - 1)}
-                className="flex-1"
+                className="flex-1 rounded-2xl"
               >
-                Back
+                {t('back')}
               </Button>
             )}
             <Button
               onClick={handleNext}
-              className="flex-1"
+              className="flex-1 rounded-2xl"
             >
-              {currentStep === steps.length - 1 ? "Let's Go!" : "Next"}
+              {currentStep === steps.length - 1 ? t('letsGo') : t('next')}
             </Button>
           </div>
         </div>
