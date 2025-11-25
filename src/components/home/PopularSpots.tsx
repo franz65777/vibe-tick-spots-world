@@ -302,54 +302,47 @@ const getFilterIcon = () => {
 
   return (
     <div className="h-full px-[10px] py-1 bg-background/50">
-      {/* Filter Options */}
-      <div className="relative mb-2">
-        <div className="absolute inset-0 bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md rounded-lg border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude]"></div>
-        <div className="relative flex gap-3 overflow-x-auto scrollbar-hide px-3 py-2">
-          {filterOptions.map((option) => (
-            <button
-              key={option.value}
-              onClick={() => setFilterType(option.value)}
-              className={cn(
-                "flex flex-col items-center gap-0.5 transition-all flex-shrink-0",
-                selectedFilter === option.value ? "opacity-100" : "opacity-70 hover:opacity-90"
-              )}
-            >
-              <img 
-                src={option.icon} 
-                alt="" 
-                className="w-12 h-12 object-contain" 
-              />
-              <span className={cn(
-                "text-[10px] font-medium whitespace-nowrap",
-                selectedFilter === option.value ? "text-primary" : "text-muted-foreground"
-              )}>
-                {option.label}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Header with title and count */}
-      {!loading && popularSpots.length > 0 && (
-        <div className="flex items-center justify-between px-2 mb-2">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-pink-500 rounded-xl flex items-center justify-center">
-              <img src={fireIcon} alt="" className="w-7 h-7 object-contain" />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-foreground">
-                {getFilterLabel()} {t('in', { ns: 'common' })} {currentCity}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {t('filters.placesFound', { ns: 'home', count: popularSpots.length })}
-              </p>
-            </div>
+      {/* Filter Dropdown Button */}
+      <div className="relative mb-2" ref={dropdownRef}>
+        <button
+          onClick={() => setDropdownOpen(!dropdownOpen)}
+          className="relative w-full px-3 py-2 rounded-lg bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md flex items-center justify-between hover:bg-muted/20 transition-all overflow-hidden"
+        >
+          <div className="absolute inset-0 rounded-lg border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
+          <div className="relative flex items-center gap-2">
+            {getFilterIcon()}
+            <span className="text-xs font-medium text-foreground">{getFilterLabel()}</span>
           </div>
-          <img src={fireIcon} alt="" className="w-8 h-8 object-contain" />
-        </div>
-      )}
+          <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform relative", dropdownOpen && "rotate-180")} />
+        </button>
+
+        {/* Dropdown Menu */}
+        {dropdownOpen && (
+          <div className="absolute top-full left-0 right-0 mt-1 bg-background/95 backdrop-blur-md rounded-lg border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] shadow-lg z-10 overflow-hidden">
+            {filterOptions.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => {
+                  setFilterType(option.value);
+                  setDropdownOpen(false);
+                }}
+                className={cn(
+                  "w-full px-3 py-2.5 flex items-center gap-3 hover:bg-muted/50 transition-colors",
+                  selectedFilter === option.value && "bg-primary/10"
+                )}
+              >
+                <img src={option.icon} alt="" className="w-6 h-6 object-contain" />
+                <span className={cn(
+                  "text-sm font-medium",
+                  selectedFilter === option.value ? "text-primary" : "text-foreground"
+                )}>
+                  {option.label}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Popular spots cards */}
       {loading ? (
