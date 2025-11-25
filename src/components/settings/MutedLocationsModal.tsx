@@ -117,8 +117,9 @@ const MutedLocationsModal: React.FC<MutedLocationsModalProps> = ({ open, onOpenC
                   src={getCategoryImage(muted.locations?.category || 'restaurant')} 
                   alt={muted.locations?.category}
                   className={`object-contain flex-shrink-0 ${
-                    muted.locations?.category === 'cafe' ? 'w-11 h-11' : 
-                    muted.locations?.category === 'bar' ? 'w-8 h-8' : 
+                    muted.locations?.category === 'cafe' ? 'w-9 h-9' : 
+                    muted.locations?.category === 'bar' ? 'w-8 h-8' :
+                    muted.locations?.category === 'hotel' ? 'w-11 h-11' : 
                     'w-12 h-12'
                   }`}
                 />
@@ -140,7 +141,7 @@ const MutedLocationsModal: React.FC<MutedLocationsModalProps> = ({ open, onOpenC
                   <img 
                     src={bellOffIcon} 
                     alt="Enable notifications" 
-                    className="w-12 h-12 object-contain"
+                    className="w-20 h-20 object-contain"
                   />
                 </Button>
               </div>
@@ -150,7 +151,7 @@ const MutedLocationsModal: React.FC<MutedLocationsModalProps> = ({ open, onOpenC
               <img 
                 src={bellOffIcon} 
                 alt="No notifications" 
-                className="w-16 h-16 mx-auto mb-3 object-contain"
+                className="w-24 h-24 mx-auto mb-3 object-contain"
               />
               <p className="text-muted-foreground">
                 {searchQuery.trim() 
