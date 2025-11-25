@@ -23,7 +23,6 @@ import Achievements from './profile/Achievements';
 import FollowersModal from './profile/FollowersModal';
 import SavedLocationsList from './profile/SavedLocationsList';
 import ShareProfileModal from './profile/ShareProfileModal';
-import MessagesModal from './MessagesModal';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTranslation } from 'react-i18next';
@@ -46,7 +45,6 @@ const UserProfilePage = () => {
   const [isLocationsListOpen, setIsLocationsListOpen] = useState(false);
   const [initialFolderId, setInitialFolderId] = useState<string | undefined>(undefined);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [isMessagesOpen, setIsMessagesOpen] = useState(false);
   const [showBadgesModal, setShowBadgesModal] = useState(false);
 
   // Handle initial folder opening from navigation state
@@ -219,7 +217,7 @@ const UserProfilePage = () => {
       </div>
 
       {/* Profile Header - Instagram Style */}
-      <div className="px-4 py-6">
+      <div className="px-4 py-3">
         {/* Avatar and Username/Stats Row */}
         <div className="flex items-start gap-4 mb-4">
           {/* Smaller Avatar */}
@@ -345,7 +343,7 @@ const UserProfilePage = () => {
               variant="secondary"
               size="icon"
               className="rounded-lg h-9 w-9"
-              onClick={() => setIsMessagesOpen(true)}
+              onClick={() => navigate('/messages', { state: { initialUserId: userId } })}
               title={t('userProfile.sendMessage', { ns: 'common' })}
             >
               <MessageCircle className="w-4 h-4" />
@@ -383,12 +381,6 @@ const UserProfilePage = () => {
         onClose={() => setIsShareModalOpen(false)}
         profileId={userId || ''}
         profileUsername={displayUsername}
-      />
-
-      <MessagesModal
-        isOpen={isMessagesOpen}
-        onClose={() => setIsMessagesOpen(false)}
-        initialUserId={userId}
       />
 
       {showBadgesModal && (

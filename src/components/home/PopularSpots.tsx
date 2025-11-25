@@ -310,11 +310,11 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
   }, [dropdownOpen]);
 
   return (
-    <div className="h-full px-[10px] py-1 bg-background/50">
+    <div className="h-full px-[10px] pt-0 pb-1 bg-background/50">
       {/* Header + dropdown trigger */}
-      <div className="relative mb-2" ref={dropdownRef}>
+      <div className="relative mb-1" ref={dropdownRef}>
         {!loading && (
-          <div className="flex items-center justify-between px-2">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setDropdownOpen((open) => !open)}
@@ -374,8 +374,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
             <div key={i} className="flex-shrink-0 w-40 h-10 rounded-lg bg-gray-200 animate-pulse" />
           ))}
         </div>
-      ) : (popularSpots.length > 0 || dropdownOpen) ? (
-        popularSpots.length > 0 ? (
+      ) : popularSpots.length > 0 ? (
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
           {popularSpots.map((spot) => (
             <div key={spot.id} className="flex-shrink-0 flex flex-col gap-1">
@@ -411,11 +410,10 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
             </div>
           ))}
         </div>
-        ) : (
-          <p className="text-xs text-muted-foreground text-center py-4">
-            {t('filters.noLocationsWithFilter', { ns: 'home', filter: getFilterLabel(), city: currentCity || t('thisArea', { ns: 'common' }) })}
-          </p>
-        )
+      ) : !dropdownOpen ? (
+        <p className="text-xs text-muted-foreground text-center py-4">
+          {t('filters.noLocationsWithFilter', { ns: 'home', filter: getFilterLabel(), city: currentCity || t('thisArea', { ns: 'common' }) })}
+        </p>
       ) : null}
     </div>
   );
