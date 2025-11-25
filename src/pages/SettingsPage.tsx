@@ -126,15 +126,14 @@ const SettingsPage: React.FC = () => {
 
       {/* Settings content */}
       <div className="flex-1 overflow-y-auto">
-        <Card className="border-0 shadow-none rounded-none">
-          <CardContent className="p-0">
+        <div className="p-0">
             {/* Edit Profile Setting */}
             <button
               onClick={() => setEditProfileModalOpen(true)}
               className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <img src={editProfileIcon} alt="" className="w-10 h-10" />
+                <img src={editProfileIcon} alt="" className="w-12 h-12 object-contain" />
                 <div className="text-left">
                   <div className="font-medium">{t('editProfile', { ns: 'settings' })}</div>
                   <div className="text-sm text-muted-foreground">
@@ -151,7 +150,7 @@ const SettingsPage: React.FC = () => {
               className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <img src={languageIcon} alt="" className="w-10 h-10" />
+                <img src={languageIcon} alt="" className="w-12 h-12 object-contain" />
                 <div className="text-left">
                   <div className="font-medium">{t('language', { ns: 'settings' })}</div>
                   <div className="text-sm text-muted-foreground">
@@ -174,7 +173,7 @@ const SettingsPage: React.FC = () => {
               className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <img src={businessIcon} alt="" className="w-10 h-10" />
+                <img src={businessIcon} alt="" className="w-12 h-12 object-contain" />
                 <div className="text-left">
                   <div className="font-medium">{t('businessAccount', { ns: 'settings' })}</div>
                   <div className="text-sm text-muted-foreground">
@@ -193,7 +192,7 @@ const SettingsPage: React.FC = () => {
               className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <img src={notificationsIcon} alt="" className="w-10 h-10" />
+                <img src={notificationsIcon} alt="" className="w-12 h-12 object-contain" />
                 <div className="text-left">
                   <div className="font-medium">{t('mutedLocations', { ns: 'settings' })}</div>
                   <div className="text-sm text-muted-foreground">
@@ -210,7 +209,7 @@ const SettingsPage: React.FC = () => {
               className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <img src={closeFriendsIcon} alt="" className="w-10 h-10" />
+                <img src={closeFriendsIcon} alt="" className="w-12 h-12 object-contain" />
                 <div className="text-left">
                   <div className="font-medium">{t('closeFriends', { ns: 'settings' })}</div>
                   <div className="text-sm text-muted-foreground">
@@ -258,8 +257,7 @@ const SettingsPage: React.FC = () => {
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
               </button>
             )}
-          </CardContent>
-        </Card>
+        </div>
       </div>
 
       {/* Logout Button */}

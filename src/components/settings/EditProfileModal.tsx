@@ -288,7 +288,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
           <div className="flex-1 overflow-y-auto pb-4">
             <div className="max-w-2xl mx-auto p-4 space-y-4">
               {/* Avatar Section */}
-              <div className="flex flex-col items-center gap-3 py-3">
+              <div className="flex flex-col items-center gap-2 py-2">
                 <button
                   type="button"
                   aria-label={t('upload')}
@@ -317,17 +317,15 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
                 />
                 
                 {(avatarPreview || profile?.avatar_url) && (
-                  <Button
+                  <button
                     type="button"
-                    variant="outline"
-                    size="sm"
-                    className="rounded-[16px]"
                     onClick={handleRemoveAvatar}
                     disabled={isLoading || isUploading}
+                    className="p-2 hover:bg-muted rounded-full transition-colors disabled:opacity-50"
+                    aria-label={t('remove', { ns: 'common' })}
                   >
-                    <img src={deleteIcon} alt="" className="w-5 h-5 mr-2" />
-                    {t('remove', { ns: 'common' })}
-                  </Button>
+                    <img src={deleteIcon} alt="" className="w-8 h-8" />
+                  </button>
                 )}
               </div>
 
