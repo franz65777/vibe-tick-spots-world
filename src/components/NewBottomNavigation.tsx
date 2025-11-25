@@ -189,6 +189,7 @@ const NewBottomNavigation = () => {
                 return (
                   <button
                     key={item.path}
+                    type="button"
                     onClick={
                       isHomeTab ? () => setShowHomeMenu(!showHomeMenu) :
                       isProfileTab && !hasValidBusinessAccount ? handleProfileClick : 
