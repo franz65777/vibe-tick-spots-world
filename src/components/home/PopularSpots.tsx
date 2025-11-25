@@ -270,13 +270,13 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
     }
   };
 
-const getFilterIcon = () => {
+  const getFilterIcon = () => {
     switch (filterType) {
-      case 'discount': return <img src={discountIcon} alt="Discount" className="w-5 h-5 object-contain" />;
-      case 'event': return <img src={eventIcon} alt="Event" className="w-5 h-5 object-contain" />;
-      case 'promotion': return <img src={promotionIcon} alt="Promotion" className="w-5 h-5 object-contain" />;
-      case 'new': return <img src={newIcon} alt="New" className="w-5 h-5 object-contain" />;
-      default: return <img src={trendingIcon} alt="Trending" className="w-5 h-5 object-contain" />;
+      case 'discount': return <img src={discountIcon} alt="Discount" className="w-7 h-7 object-contain" />;
+      case 'event': return <img src={eventIcon} alt="Event" className="w-7 h-7 object-contain" />;
+      case 'promotion': return <img src={promotionIcon} alt="Promotion" className="w-7 h-7 object-contain" />;
+      case 'new': return <img src={newIcon} alt="New" className="w-7 h-7 object-contain" />;
+      default: return <img src={trendingIcon} alt="Trending" className="w-7 h-7 object-contain" />;
     }
   };
 
@@ -304,37 +304,13 @@ const getFilterIcon = () => {
     <div className="h-full px-[10px] py-1 bg-background/50">
       {/* Header + dropdown trigger */}
       <div className="relative mb-2" ref={dropdownRef}>
-        {!loading && popularSpots.length > 0 && (
-          <div className="flex items-center justify-between px-2">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="relative w-12 h-12 rounded-xl bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md flex items-center justify-center overflow-hidden"
-              >
-                <div className="absolute inset-0 rounded-xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
-                <div className="relative flex items-center justify-center">
-                  {getFilterIcon()}
-                </div>
-              </button>
-              <div>
-                <h3 className="text-lg font-bold text-foreground">
-                  {getFilterLabel()} {t('in', { ns: 'common' })} {currentCity}
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  {t('filters.placesFound', { ns: 'home', count: popularSpots.length })}
-                </p>
-              </div>
-            </div>
-            <img src={fireIcon} alt="" className="w-8 h-8 object-contain" />
-          </div>
-        )}
-
-        {/* Horizontal dropdown bar */}
-        {dropdownOpen && (
-          <div className="mt-2 flex gap-3 overflow-x-auto scrollbar-hide px-3 py-2 bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md rounded-lg border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude]">
+        {/* Horizontal dropdown bar - shown above header like original design */}
+        {dropdownOpen && !loading && popularSpots.length > 0 && (
+          <div className="mb-2 flex gap-3 overflow-x-auto scrollbar-hide px-3 py-2 bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md rounded-lg border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude]">
             {filterOptions.map((option) => (
               <button
                 key={option.value}
+                type="button"
                 onClick={() => {
                   setFilterType(option.value);
                   setDropdownOpen(false);
@@ -345,14 +321,43 @@ const getFilterIcon = () => {
                 )}
               >
                 <img src={option.icon} alt="" className="w-10 h-10 object-contain" />
-                <span className={cn(
-                  "text-[10px] font-medium whitespace-nowrap",
-                  selectedFilter === option.value ? "text-primary" : "text-muted-foreground"
-                )}>
+                <span
+                  className={cn(
+                    "text-[10px] font-medium whitespace-nowrap",
+                    selectedFilter === option.value ? "text-primary" : "text-muted-foreground"
+                  )}
+                >
                   {option.label}
                 </span>
               </button>
             ))}
+          </div>
+        )}
+
+        {!loading && popularSpots.length > 0 && (
+          <div className="flex items-center justify-between px-2">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setDropdownOpen((open) => !open)}
+                className="flex items-center justify-center"
+                aria-label={t('filters.openFilter', { ns: 'home', defaultValue: 'Open trending filters' })}
+              >
+                {/* Slightly larger main icon without glass container */}
+                <div className="w-9 h-9 flex items-center justify-center">
+                  {getFilterIcon()}
+                </div>
+              </button>
+              <div>
+                <h3 className="text-[15px] font-semibold text-foreground leading-tight">
+                  {getFilterLabel()} {t('in', { ns: 'common' })} {currentCity}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {t('filters.placesFound', { ns: 'home', count: popularSpots.length })}
+                </p>
+              </div>
+            </div>
+            <img src={fireIcon} alt="" className="w-7 h-7 object-contain" />
           </div>
         )}
       </div>
