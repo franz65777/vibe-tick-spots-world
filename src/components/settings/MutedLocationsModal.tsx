@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { BellOff, ArrowLeft, Bell, Search } from 'lucide-react';
+import { BellOff, ArrowLeft, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useMutedLocations } from '@/hooks/useMutedLocations';
 import { useAuth } from '@/contexts/AuthContext';
@@ -133,12 +133,12 @@ const MutedLocationsModal: React.FC<MutedLocationsModalProps> = ({ open, onOpenC
                   size="sm"
                   onClick={() => unmuteLocation(muted.location_id)}
                   disabled={isMuting}
-                  className="flex-shrink-0"
+                  className="flex-shrink-0 p-2"
                 >
                   <img 
                     src={bellOffIcon} 
                     alt="Enable notifications" 
-                    className="w-5 h-5 object-contain"
+                    className="w-6 h-6 object-contain"
                   />
                 </Button>
               </div>
