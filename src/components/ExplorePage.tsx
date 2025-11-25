@@ -425,7 +425,7 @@ const ExplorePage = memo(() => {
 
       {/* Results */}
       <div className="flex-1 overflow-y-auto scrollbar-hide pb-16">
-        <Suspense fallback={<div className="py-20 flex justify-center"><div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>}>
+        <Suspense fallback={<div className="py-12 flex justify-center"><div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>}>
           <ExploreResults
             searchMode={searchMode}
             loading={loading}

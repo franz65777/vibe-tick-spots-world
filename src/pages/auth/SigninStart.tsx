@@ -80,7 +80,7 @@ const SigninStart = () => {
   };
 
   return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden">
+    <div className="h-screen bg-background flex flex-col overflow-hidden pt-safe pb-safe">
       {/* Main content */}
       <div className="flex-1 overflow-y-auto scrollbar-hide px-6 py-8 overscroll-contain [-webkit-overflow-scrolling:touch]">
         <div className="flex items-center justify-between mb-4">
@@ -168,7 +168,7 @@ const SigninStart = () => {
           </form>
 
           {/* Sign up link */}
-          <div className="text-center text-sm text-muted-foreground">
+          <div className="text-center text-sm text-muted-foreground mt-6">
             {t('auth:dontHaveAccount')} {' '}
             <button
               onClick={() => navigate('/signup/start')}
