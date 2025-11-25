@@ -77,10 +77,13 @@ const SettingsPage: React.FC = () => {
 
   const handleLanguageChange = async (newLanguage: string) => {
     setLanguage(newLanguage);
+
+    const tForLang = i18n.getFixedT(newLanguage, 'settings');
     
     if (!user?.id) {
       localStorage.setItem('i18nextLng', newLanguage);
       await i18n.changeLanguage(newLanguage);
+      toast.success(tForLang('languageSaved'));
       return;
     }
 
@@ -92,11 +95,10 @@ const SettingsPage: React.FC = () => {
         .eq('id', user.id);
       if (error) throw error;
       localStorage.setItem('i18nextLng', newLanguage);
-      // Wait for i18n to change language before showing toast
       await i18n.changeLanguage(newLanguage);
-      toast.success(t('languageSaved', { ns: 'settings' }));
+      toast.success(tForLang('languageSaved'));
     } catch (e: any) {
-      toast.error(e?.message || t('failedToSave', { ns: 'settings' }));
+      toast.error(e?.message || tForLang('failedToSave'));
     } finally {
       setSaving(false);
     }
