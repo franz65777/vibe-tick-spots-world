@@ -106,7 +106,7 @@ const ProfileHeader = ({
   };
 
   return (
-    <div className="py-4 bg-background">
+    <div className="py-2 bg-background">
       <div className="flex gap-4 px-3">
         {/* Profile Picture - Story feature hidden for now */}
         <div className="relative shrink-0">
@@ -164,7 +164,7 @@ const ProfileHeader = ({
 
         {/* Stats and Info */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between mb-2">
+          <div className="flex items-start justify-between mb-1">
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <h1 className="text-base font-bold text-foreground">{displayUsername}</h1>
               {hasBusinessAccount && (
@@ -190,7 +190,7 @@ const ProfileHeader = ({
 
           {/* Bio - only show if exists */}
           {profile?.bio && (
-            <p className="text-sm text-foreground text-left line-clamp-2 mb-3">
+            <p className="text-sm text-foreground text-left line-clamp-2 mb-2">
               {profile.bio}
             </p>
           )}
