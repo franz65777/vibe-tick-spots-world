@@ -133,7 +133,7 @@ const SettingsPage: React.FC = () => {
               className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <img src={editProfileIcon} alt="" className="w-12 h-12 object-contain" />
+                <img src={editProfileIcon} alt="" className="w-12 h-10 object-contain" />
                 <div className="text-left">
                   <div className="font-medium">{t('editProfile', { ns: 'settings' })}</div>
                   <div className="text-sm text-muted-foreground">

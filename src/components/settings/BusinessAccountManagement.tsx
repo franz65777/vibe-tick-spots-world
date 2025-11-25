@@ -97,25 +97,27 @@ const BusinessAccountManagement: React.FC<BusinessAccountManagementProps> = ({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[100dvh] overflow-y-auto scrollbar-hide rounded-t-none p-0">
-        <SheetHeader className="pt-[env(safe-area-inset-top)]">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onOpenChange(false)}
-              className="shrink-0"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <SheetTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
-              Account Business
-            </SheetTitle>
-          </div>
-        </SheetHeader>
+      <SheetContent side="bottom" className="h-full p-0 [&>button]:hidden">
+        <div className="h-full flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
+          <SheetHeader className="p-4 px-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onOpenChange(false)}
+                className="shrink-0"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <SheetTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5" />
+                Account Business
+              </SheetTitle>
+            </div>
+          </SheetHeader>
 
-        <div className="py-6 space-y-6">
+          <div className="flex-1 overflow-y-auto p-4 px-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+            <div className="py-6 space-y-6">
           {loading || loadingSubscription ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
@@ -276,6 +278,8 @@ const BusinessAccountManagement: React.FC<BusinessAccountManagementProps> = ({
               </div>
             </>
           )}
+            </div>
+          </div>
         </div>
       </SheetContent>
     </Sheet>
