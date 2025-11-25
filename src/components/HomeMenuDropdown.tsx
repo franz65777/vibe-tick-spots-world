@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
-import mapIcon from '@/assets/icon-map-new.png';
+import mapIcon from '@/assets/icon-map-search.png';
 import shareLocationIcon from '@/assets/icon-share-location-new.png';
 
 interface HomeMenuDropdownProps {
