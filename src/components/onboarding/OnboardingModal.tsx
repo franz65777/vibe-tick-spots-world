@@ -183,55 +183,66 @@ const OnboardingModal = ({ open, onComplete }: OnboardingModalProps) => {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-background flex items-center justify-center">
-      <div className="w-full h-full max-w-2xl mx-auto flex flex-col p-6">
-        {/* Progress bar */}
-        <div className="space-y-2 mb-8">
-          <Progress value={progress} className="h-1.5" />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>{t('step')} {currentStep + 1} {t('of')} {steps.length}</span>
-            {currentStep < steps.length - 1 && (
-              <button
-                onClick={handleSkip}
-                className="hover:text-foreground transition-colors"
+    <>
+      <style>{`
+        [class*="bottom-navigation"],
+        [class*="NewBottomNavigation"],
+        [class*="BusinessBottomNavigation"],
+        nav[class*="fixed bottom"],
+        div[class*="fixed bottom-0"] {
+          display: none !important;
+        }
+      `}</style>
+      <div className="fixed inset-0 z-[2000] bg-background flex items-center justify-center">
+        <div className="w-full h-full max-w-2xl mx-auto flex flex-col p-6">
+          {/* Progress bar */}
+          <div className="space-y-2 mb-8">
+            <Progress value={progress} className="h-1.5" />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>{t('step')} {currentStep + 1} {t('of')} {steps.length}</span>
+              {currentStep < steps.length - 1 && (
+                <button
+                  onClick={handleSkip}
+                  className="hover:text-foreground transition-colors"
+                >
+                  {t('skip')}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Step content */}
+          <div className="flex-1 flex flex-col justify-center space-y-6">
+            <div className="text-center space-y-2">
+              <h2 className="text-3xl font-bold">{steps[currentStep].title}</h2>
+              <p className="text-base text-muted-foreground">
+                {steps[currentStep].description}
+              </p>
+            </div>
+            {steps[currentStep].content}
+          </div>
+
+          {/* Navigation buttons */}
+          <div className="flex gap-2 pt-6">
+            {currentStep > 0 && (
+              <Button
+                variant="outline"
+                onClick={() => setCurrentStep(currentStep - 1)}
+                className="flex-1 rounded-2xl h-12"
               >
-                {t('skip')}
-              </button>
+                {t('back')}
+              </Button>
             )}
-          </div>
-        </div>
-
-        {/* Step content */}
-        <div className="flex-1 flex flex-col justify-center space-y-6">
-          <div className="text-center space-y-2">
-            <h2 className="text-3xl font-bold">{steps[currentStep].title}</h2>
-            <p className="text-base text-muted-foreground">
-              {steps[currentStep].description}
-            </p>
-          </div>
-          {steps[currentStep].content}
-        </div>
-
-        {/* Navigation buttons */}
-        <div className="flex gap-2 pt-6">
-          {currentStep > 0 && (
             <Button
-              variant="outline"
-              onClick={() => setCurrentStep(currentStep - 1)}
+              onClick={handleNext}
               className="flex-1 rounded-2xl h-12"
             >
-              {t('back')}
+              {currentStep === steps.length - 1 ? t('letsGo') : t('next')}
             </Button>
-          )}
-          <Button
-            onClick={handleNext}
-            className="flex-1 rounded-2xl h-12"
-          >
-            {currentStep === steps.length - 1 ? t('letsGo') : t('next')}
-          </Button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
