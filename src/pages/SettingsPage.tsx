@@ -6,7 +6,12 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { useTranslation } from 'react-i18next';
-import { ChevronRight, Globe, Building2, BellOff, ArrowLeft, Shield, User, LogOut, UserCheck } from 'lucide-react';
+import { ChevronRight, ArrowLeft, Shield, LogOut } from 'lucide-react';
+import editProfileIcon from '@/assets/settings-edit-profile.png';
+import languageIcon from '@/assets/settings-language.png';
+import businessIcon from '@/assets/settings-business.png';
+import notificationsIcon from '@/assets/settings-notifications.png';
+import closeFriendsIcon from '@/assets/settings-close-friends.png';
 import { useNavigate } from 'react-router-dom';
 import BusinessRequestModal from '@/components/BusinessRequestModal';
 import BusinessAccountManagement from '@/components/settings/BusinessAccountManagement';
@@ -129,7 +134,7 @@ const SettingsPage: React.FC = () => {
               className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <User className="w-5 h-5 text-muted-foreground" />
+                <img src={editProfileIcon} alt="" className="w-8 h-8" />
                 <div className="text-left">
                   <div className="font-medium">{t('editProfile', { ns: 'settings' })}</div>
                   <div className="text-sm text-muted-foreground">
@@ -146,7 +151,7 @@ const SettingsPage: React.FC = () => {
               className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <Globe className="w-5 h-5 text-muted-foreground" />
+                <img src={languageIcon} alt="" className="w-8 h-8" />
                 <div className="text-left">
                   <div className="font-medium">{t('language', { ns: 'settings' })}</div>
                   <div className="text-sm text-muted-foreground">
@@ -169,7 +174,7 @@ const SettingsPage: React.FC = () => {
               className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <Building2 className="w-5 h-5 text-muted-foreground" />
+                <img src={businessIcon} alt="" className="w-8 h-8" />
                 <div className="text-left">
                   <div className="font-medium">{t('businessAccount', { ns: 'settings' })}</div>
                   <div className="text-sm text-muted-foreground">
@@ -188,7 +193,7 @@ const SettingsPage: React.FC = () => {
               className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <BellOff className="w-5 h-5 text-muted-foreground" />
+                <img src={notificationsIcon} alt="" className="w-8 h-8" />
                 <div className="text-left">
                   <div className="font-medium">{t('mutedLocations', { ns: 'settings' })}</div>
                   <div className="text-sm text-muted-foreground">
@@ -205,7 +210,7 @@ const SettingsPage: React.FC = () => {
               className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <UserCheck className="w-5 h-5 text-muted-foreground" />
+                <img src={closeFriendsIcon} alt="" className="w-8 h-8" />
                 <div className="text-left">
                   <div className="font-medium">{t('closeFriends', { ns: 'settings' })}</div>
                   <div className="text-sm text-muted-foreground">
@@ -262,7 +267,7 @@ const SettingsPage: React.FC = () => {
         <Button
           onClick={handleLogout}
           variant="outline"
-          className="w-full rounded-[20px] py-6 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
+          className="w-full rounded-[20px] py-6 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive"
         >
           <LogOut className="w-5 h-5 mr-2" />
           {t('logout', { ns: 'common' })}
