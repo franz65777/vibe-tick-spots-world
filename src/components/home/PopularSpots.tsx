@@ -313,7 +313,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
     <div className="h-full px-[10px] py-1 bg-background/50">
       {/* Header + dropdown trigger */}
       <div className="relative mb-2" ref={dropdownRef}>
-        {!loading && popularSpots.length > 0 && (
+        {!loading && (
           <div className="flex items-center justify-between px-2">
             <div className="flex items-center gap-2">
               <button
@@ -321,10 +321,10 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                 className="flex items-center justify-center"
                 aria-label={t('filters.openFilter', { ns: 'home', defaultValue: 'Open trending filters' })}
               >
-                {/* Larger main icon */}
+                {/* Larger main icon - 60% bigger */}
                 <div className={cn(
                   "flex items-center justify-center transition-all",
-                  dropdownOpen ? "w-12 h-12" : "w-10 h-10"
+                  dropdownOpen ? "w-16 h-16" : "w-14 h-14"
                 )}>
                   {getFilterIcon()}
                 </div>
@@ -344,7 +344,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                         }}
                         className="flex-shrink-0 opacity-70 hover:opacity-100 transition-opacity"
                       >
-                        <img src={option.icon} alt={option.label} className="w-10 h-10 object-contain" />
+                        <img src={option.icon} alt={option.label} className="w-13 h-13 object-contain" />
                       </button>
                     ))}
                 </div>
@@ -353,21 +353,21 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
               {/* Show title only when dropdown is closed */}
               {!dropdownOpen && (
                 <div>
-                  <h3 className="text-[15px] font-semibold text-foreground leading-tight">
+                  <h3 className="text-[13px] font-semibold text-foreground leading-tight">
                     {getFilterLabel()} {t('in', { ns: 'common' })} {currentCity}
                   </h3>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-[11px] text-muted-foreground">
                     {t('filters.placesFound', { ns: 'home', count: popularSpots.length })}
                   </p>
                 </div>
               )}
             </div>
-            {!dropdownOpen && <img src={fireIcon} alt="" className="w-7 h-7 object-contain" />}
+            {!dropdownOpen && popularSpots.length > 0 && <img src={fireIcon} alt="" className="w-7 h-7 object-contain" />}
           </div>
         )}
       </div>
 
-      {/* Popular spots cards */}
+      {/* Popular spots cards or empty state */}
       {loading ? (
         <div className="flex gap-2 overflow-x-auto pb-2">
           {[1, 2, 3].map(i => (
@@ -412,7 +412,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
         </div>
       ) : (
         <p className="text-xs text-muted-foreground text-center py-4">
-          {t('noPopularSpots', { ns: 'home' })} {currentCity || t('thisArea', { ns: 'common' })}
+          {t('filters.noLocationsWithFilter', { ns: 'home', filter: getFilterLabel(), city: currentCity || t('thisArea', { ns: 'common' }) })}
         </p>
       )}
     </div>

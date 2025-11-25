@@ -180,7 +180,7 @@ const MapSection = ({
     
     // Only allow quick add when in saved filter
     if (activeFilter !== 'saved') {
-      toast.info('Switch to "Saved" filter to add pins', { duration: 2000 });
+      toast.info(t('switchToSavedToAdd'), { duration: 2000 });
       return;
     }
     
@@ -195,7 +195,7 @@ const MapSection = ({
     
     // Only allow quick add when in saved filter
     if (activeFilter !== 'saved') {
-      toast.info('Switch to "Saved" filter to add pins', { duration: 2000 });
+      toast.info(t('switchToSavedToAdd'), { duration: 2000 });
       return;
     }
     

@@ -326,7 +326,9 @@ const resources = {
         event: 'Event',
         promotion: 'Promotion',
         new: 'New',
-        placesFound: '{{count}} places'
+        placesFound: '{{count}} places',
+        noLocationsWithFilter: 'No locations with {{filter}} in {{city}}',
+        openFilter: 'Open trending filters'
       }
     },
     explore: {
@@ -1142,7 +1144,9 @@ const resources = {
         event: 'Evento',
         promotion: 'Promoción',
         new: 'Nuevo',
-        placesFound: '{{count}} lugares'
+        placesFound: '{{count}} lugares',
+        noLocationsWithFilter: 'No hay lugares con {{filter}} en {{city}}',
+        openFilter: 'Abrir filtros de tendencias'
       }
     },
     explore: {
@@ -1949,7 +1953,9 @@ const resources = {
         event: 'Evento',
         promotion: 'Promozione',
         new: 'Nuovo',
-        placesFound: '{{count}} luoghi'
+        placesFound: '{{count}} luoghi',
+        noLocationsWithFilter: 'Nessun luogo con {{filter}} in {{city}}',
+        openFilter: 'Apri filtri tendenza'
       }
     },
     explore: {
@@ -2739,7 +2745,9 @@ const resources = {
         event: 'Événement',
         promotion: 'Promotion',
         new: 'Nouveau',
-        placesFound: '{{count}} lieux'
+        placesFound: '{{count}} lieux',
+        noLocationsWithFilter: 'Aucun lieu avec {{filter}} à {{city}}',
+        openFilter: 'Ouvrir les filtres tendances'
       }
     },
     explore: {
@@ -3410,7 +3418,9 @@ const resources = {
         event: 'Veranstaltung',
         promotion: 'Aktion',
         new: 'Neu',
-        placesFound: '{{count}} Orte'
+        placesFound: '{{count}} Orte',
+        noLocationsWithFilter: 'Keine Orte mit {{filter}} in {{city}}',
+        openFilter: 'Trending-Filter öffnen'
       }
     },
     explore: {
@@ -4019,7 +4029,9 @@ const resources = {
         event: 'Evento',
         promotion: 'Promoção',
         new: 'Novo',
-        placesFound: '{{count}} locais'
+        placesFound: '{{count}} locais',
+        noLocationsWithFilter: 'Sem locais com {{filter}} em {{city}}',
+        openFilter: 'Abrir filtros de tendências'
       }
     },
     explore: {
@@ -4587,7 +4599,9 @@ const resources = {
         event: '活动',
         promotion: '促销',
         new: '新',
-        placesFound: '{{count}}个地点'
+        placesFound: '{{count}}个地点',
+        noLocationsWithFilter: '{{city}}没有{{filter}}地点',
+        openFilter: '打开热门筛选'
       }
     },
     explore: {
@@ -5097,7 +5111,9 @@ const resources = {
         event: 'イベント',
         promotion: 'プロモーション',
         new: '新着',
-        placesFound: '{{count}}件'
+        placesFound: '{{count}}件',
+        noLocationsWithFilter: '{{city}}に{{filter}}の場所がありません',
+        openFilter: 'トレンドフィルターを開く'
       }
     },
     explore: {
@@ -5645,7 +5661,9 @@ const resources = {
         event: '이벤트',
         promotion: '프로모션',
         new: '새로운',
-        placesFound: '{{count}}개'
+        placesFound: '{{count}}개',
+        noLocationsWithFilter: '{{city}}에 {{filter}} 장소가 없습니다',
+        openFilter: '트렌딩 필터 열기'
       }
     },
     explore: {
@@ -6176,7 +6194,9 @@ const resources = {
         event: 'حدث',
         promotion: 'عرض',
         new: 'جديد',
-        placesFound: '{{count}} أماكن'
+        placesFound: '{{count}} أماكن',
+        noLocationsWithFilter: 'لا توجد أماكن مع {{filter}} في {{city}}',
+        openFilter: 'افتح فلاتر الشائع'
       }
     },
     explore: {
@@ -6706,7 +6726,9 @@ const resources = {
         event: 'कार्यक्रम',
         promotion: 'प्रचार',
         new: 'नया',
-        placesFound: '{{count}} स्थान'
+        placesFound: '{{count}} स्थान',
+        noLocationsWithFilter: '{{city}} में {{filter}} के साथ कोई स्थान नहीं',
+        openFilter: 'ट्रेंडिंग फ़िल्टर खोलें'
       }
     },
     explore: {
@@ -7253,7 +7275,9 @@ const resources = {
         event: 'Событие',
         promotion: 'Акция',
         new: 'Новое',
-        placesFound: '{{count}} мест'
+        placesFound: '{{count}} мест',
+        noLocationsWithFilter: 'Нет мест с {{filter}} в {{city}}',
+        openFilter: 'Открыть фильтры трендов'
       }
     },
     explore: {
