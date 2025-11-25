@@ -1,8 +1,6 @@
 import { useState } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Users, Heart, MessageCircle, Share2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,6 +10,11 @@ import mapIcon from '@/assets/onboarding-map.png';
 import exploreIcon from '@/assets/onboarding-explore.png';
 import listIcon from '@/assets/onboarding-list.png';
 import profileIcon from '@/assets/onboarding-profile.png';
+import connectIcon from '@/assets/onboarding-connect.png';
+import followIcon from '@/assets/onboarding-follow.png';
+import likeIcon from '@/assets/onboarding-like.png';
+import shareIcon from '@/assets/onboarding-share.png';
+import messagesIcon from '@/assets/onboarding-messages.png';
 
 interface OnboardingModalProps {
   open: boolean;
@@ -60,30 +63,33 @@ const OnboardingModal = ({ open, onComplete }: OnboardingModalProps) => {
       description: t('connectDescription'),
       content: (
         <div className="space-y-6 py-4">
+          <div className="flex items-center justify-center mb-8">
+            <img src={connectIcon} alt={t('connectTitle')} className="w-32 h-32 object-contain" />
+          </div>
           <div className="space-y-4">
             <div className="flex items-start gap-3 p-3 rounded-2xl bg-secondary/20">
-              <Users className="w-6 h-6 text-primary flex-shrink-0 mt-0.5" />
+              <img src={followIcon} alt={t('followFriends')} className="w-10 h-10 object-contain flex-shrink-0 mt-0.5" />
               <div>
                 <h3 className="font-semibold text-sm">{t('followFriends')}</h3>
                 <p className="text-xs text-muted-foreground">{t('followFriendsDescription')}</p>
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 rounded-2xl bg-secondary/20">
-              <Heart className="w-6 h-6 text-primary flex-shrink-0 mt-0.5" />
+              <img src={likeIcon} alt={t('likeComment')} className="w-10 h-10 object-contain flex-shrink-0 mt-0.5" />
               <div>
                 <h3 className="font-semibold text-sm">{t('likeComment')}</h3>
                 <p className="text-xs text-muted-foreground">{t('likeCommentDescription')}</p>
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 rounded-2xl bg-secondary/20">
-              <Share2 className="w-6 h-6 text-primary flex-shrink-0 mt-0.5" />
+              <img src={shareIcon} alt={t('shareExperiences')} className="w-10 h-10 object-contain flex-shrink-0 mt-0.5" />
               <div>
                 <h3 className="font-semibold text-sm">{t('shareExperiences')}</h3>
                 <p className="text-xs text-muted-foreground">{t('shareExperiencesDescription')}</p>
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 rounded-2xl bg-secondary/20">
-              <MessageCircle className="w-6 h-6 text-primary flex-shrink-0 mt-0.5" />
+              <img src={messagesIcon} alt={t('directMessages')} className="w-10 h-10 object-contain flex-shrink-0 mt-0.5" />
               <div>
                 <h3 className="font-semibold text-sm">{t('directMessages')}</h3>
                 <p className="text-xs text-muted-foreground">{t('directMessagesDescription')}</p>
@@ -174,62 +180,58 @@ const OnboardingModal = ({ open, onComplete }: OnboardingModalProps) => {
 
   const progress = ((currentStep + 1) / steps.length) * 100;
 
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent 
-        className="sm:max-w-md max-h-[85vh] overflow-y-auto rounded-3xl"
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
-      >
-        <div className="space-y-4">
-          {/* Progress bar */}
-          <div className="space-y-2">
-            <Progress value={progress} className="h-1.5" />
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>{t('step')} {currentStep + 1} {t('of')} {steps.length}</span>
-              {currentStep < steps.length - 1 && (
-                <button
-                  onClick={handleSkip}
-                  className="hover:text-foreground transition-colors"
-                >
-                  {t('skip')}
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Step content */}
-          <div className="space-y-3">
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold">{steps[currentStep].title}</h2>
-              <p className="text-sm text-muted-foreground">
-                {steps[currentStep].description}
-              </p>
-            </div>
-            {steps[currentStep].content}
-          </div>
-
-          {/* Navigation buttons */}
-          <div className="flex gap-2 pt-4">
-            {currentStep > 0 && (
-              <Button
-                variant="outline"
-                onClick={() => setCurrentStep(currentStep - 1)}
-                className="flex-1 rounded-2xl"
+    <div className="fixed inset-0 z-50 bg-background flex items-center justify-center">
+      <div className="w-full h-full max-w-2xl mx-auto flex flex-col p-6">
+        {/* Progress bar */}
+        <div className="space-y-2 mb-8">
+          <Progress value={progress} className="h-1.5" />
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>{t('step')} {currentStep + 1} {t('of')} {steps.length}</span>
+            {currentStep < steps.length - 1 && (
+              <button
+                onClick={handleSkip}
+                className="hover:text-foreground transition-colors"
               >
-                {t('back')}
-              </Button>
+                {t('skip')}
+              </button>
             )}
-            <Button
-              onClick={handleNext}
-              className="flex-1 rounded-2xl"
-            >
-              {currentStep === steps.length - 1 ? t('letsGo') : t('next')}
-            </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+
+        {/* Step content */}
+        <div className="flex-1 flex flex-col justify-center space-y-6">
+          <div className="text-center space-y-2">
+            <h2 className="text-3xl font-bold">{steps[currentStep].title}</h2>
+            <p className="text-base text-muted-foreground">
+              {steps[currentStep].description}
+            </p>
+          </div>
+          {steps[currentStep].content}
+        </div>
+
+        {/* Navigation buttons */}
+        <div className="flex gap-2 pt-6">
+          {currentStep > 0 && (
+            <Button
+              variant="outline"
+              onClick={() => setCurrentStep(currentStep - 1)}
+              className="flex-1 rounded-2xl h-12"
+            >
+              {t('back')}
+            </Button>
+          )}
+          <Button
+            onClick={handleNext}
+            className="flex-1 rounded-2xl h-12"
+          >
+            {currentStep === steps.length - 1 ? t('letsGo') : t('next')}
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 };
 
