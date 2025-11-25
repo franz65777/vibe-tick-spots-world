@@ -173,7 +173,7 @@ const NewBottomNavigation = () => {
       />
       
       <nav 
-        className="fixed bottom-0 left-0 right-0 z-[110]"
+        className="fixed bottom-0 left-0 right-0 z-[110] pointer-events-auto"
         role="navigation"
         aria-label="Main navigation"
       >
