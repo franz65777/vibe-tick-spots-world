@@ -323,9 +323,9 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
               >
                 {/* Larger main icon - 60% bigger */}
                 <div className={cn(
-                  "flex items-center justify-center transition-all",
-                  dropdownOpen ? "w-16 h-16" : "w-14 h-14"
-                )}>
+                   "flex items-center justify-center transition-all",
+                   dropdownOpen ? "w-11 h-11" : "w-9 h-9"
+                 )}>
                   {getFilterIcon()}
                 </div>
               </button>
@@ -344,7 +344,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                         }}
                         className="flex-shrink-0 opacity-70 hover:opacity-100 transition-opacity"
                       >
-                        <img src={option.icon} alt={option.label} className="w-13 h-13 object-contain" />
+                        <img src={option.icon} alt={option.label} className="w-9 h-9 object-contain" />
                       </button>
                     ))}
                 </div>
