@@ -1,9 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { TrendingUp, MapPin, Users, ChevronDown, Percent, Calendar, Megaphone, Sparkles, UserPlus } from 'lucide-react';
+import { MapPin, Users, ChevronDown, UserPlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { CategoryIcon } from '@/components/common/CategoryIcon';
 import fireIcon from '@/assets/fire-icon-3d.png';
+import trendingIcon from '@/assets/filter-trending.png';
+import discountIcon from '@/assets/filter-discount.png';
+import eventIcon from '@/assets/filter-event.png';
+import promotionIcon from '@/assets/filter-promotion.png';
+import newIcon from '@/assets/filter-new.png';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
@@ -266,11 +271,11 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
 
 const getFilterIcon = () => {
     switch (filterType) {
-      case 'discount': return <Percent className="w-4 h-4 text-foreground" />;
-      case 'event': return <Calendar className="w-4 h-4 text-foreground" />;
-      case 'promotion': return <Megaphone className="w-4 h-4 text-foreground" />;
-      case 'new': return <Sparkles className="w-4 h-4 text-foreground" />;
-      default: return <TrendingUp className="w-4 h-4 text-foreground" />;
+      case 'discount': return <img src={discountIcon} alt="Discount" className="w-5 h-5 object-contain" />;
+      case 'event': return <img src={eventIcon} alt="Event" className="w-5 h-5 object-contain" />;
+      case 'promotion': return <img src={promotionIcon} alt="Promotion" className="w-5 h-5 object-contain" />;
+      case 'new': return <img src={newIcon} alt="New" className="w-5 h-5 object-contain" />;
+      default: return <img src={trendingIcon} alt="Trending" className="w-5 h-5 object-contain" />;
     }
   };
 
@@ -285,11 +290,11 @@ const getFilterIcon = () => {
   };
 
   const filterOptions = [
-    { type: 'most_saved' as FilterType, label: t('filters.trending', { ns: 'home' }), icon: TrendingUp },
-    { type: 'discount' as FilterType, label: t('filters.discount', { ns: 'home' }), icon: Percent },
-    { type: 'event' as FilterType, label: t('filters.event', { ns: 'home' }), icon: Calendar },
-    { type: 'promotion' as FilterType, label: t('filters.promotion', { ns: 'home' }), icon: Megaphone },
-    { type: 'new' as FilterType, label: t('filters.new', { ns: 'home' }), icon: Sparkles },
+    { type: 'most_saved' as FilterType, label: t('filters.trending', { ns: 'home' }), icon: trendingIcon },
+    { type: 'discount' as FilterType, label: t('filters.discount', { ns: 'home' }), icon: discountIcon },
+    { type: 'event' as FilterType, label: t('filters.event', { ns: 'home' }), icon: eventIcon },
+    { type: 'promotion' as FilterType, label: t('filters.promotion', { ns: 'home' }), icon: promotionIcon },
+    { type: 'new' as FilterType, label: t('filters.new', { ns: 'home' }), icon: newIcon },
   ];
 
   return (
@@ -307,7 +312,6 @@ const getFilterIcon = () => {
           {dropdownOpen ? (
             <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
               {filterOptions.map((option) => {
-                const Icon = option.icon;
                 const isActive = filterType === option.type;
                 return (
                   <button
@@ -326,7 +330,7 @@ const getFilterIcon = () => {
                       <div className="absolute inset-0 rounded-lg border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
                     )}
                      <div className="w-6 h-6 rounded-md flex items-center justify-center bg-background/50">
-                       <Icon className="w-3.5 h-3.5 text-foreground" />
+                       <img src={option.icon} alt={option.label} className="w-4 h-4 object-contain" />
                     </div>
                     <span className="text-[9px] font-medium text-center leading-tight text-foreground">{option.label}</span>
                   </button>

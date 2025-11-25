@@ -2119,6 +2119,10 @@ const resources = {
       errorRemoving: 'Errore nella rimozione dell\'amico',
       addFromFollowers: 'Aggiungi dai tuoi follower',
       noFollowersAvailable: 'Nessun follower disponibile',
+      locationMutedToast: 'Notifiche disattivate',
+      locationUnmutedToast: 'Notifiche riattivate',
+      muteLocationError: 'Errore nel disattivare le notifiche',
+      unmuteLocationError: 'Errore nel riattivare le notifiche',
     },
     accountSwitch: {
       title: 'Cambia Account',
