@@ -189,13 +189,16 @@ const NewBottomNavigation = () => {
                 return (
                   <button
                     key={item.path}
-                    type="button"
-                    onClick={
-                      isHomeTab ? () => setShowHomeMenu(!showHomeMenu) :
-                      isProfileTab && !hasValidBusinessAccount ? handleProfileClick : 
-                      isProfileTab ? undefined : 
-                      () => handleNavClick(item.path, item.label)
-                    }
+                    onClick={() => {
+                      if (isHomeTab) {
+                        setShowHomeMenu(!showHomeMenu);
+                      } else if (isProfileTab && hasValidBusinessAccount) {
+                        // Long press logic handled separately
+                        return;
+                      } else {
+                        handleNavClick(item.path, item.label);
+                      }
+                    }}
                     onMouseDown={
                       isProfileTab && hasValidBusinessAccount ? handleProfileLongPressStart : 
                       undefined
