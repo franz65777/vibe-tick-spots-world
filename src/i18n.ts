@@ -1877,7 +1877,7 @@ const resources = {
     },
     homeMenu: {
       map: 'Mappa',
-      sharePosition: 'Condividi posizione'
+      sharePosition: 'Condividi Posizione'
     },
     sharePosition: {
       title: 'Condividi Posizione'
