@@ -46,17 +46,17 @@ export const HomeMenuDropdown = ({ isOpen, onClose, onSelectOption }: HomeMenuDr
               onClose();
             }}
             className={cn(
-              "flex items-center gap-4 px-4 py-3 rounded-2xl shadow-lg transition-all duration-200",
-              "bg-background/95 backdrop-blur-xl border border-border/20",
-              "hover:bg-accent/80 active:scale-95",
-              "animate-in fade-in slide-in-from-bottom-4"
-            )}
+               "flex items-center gap-3 px-3 py-2 rounded-2xl shadow-lg transition-all duration-200",
+               "bg-background/95 backdrop-blur-xl border border-border/20",
+               "hover:bg-accent/80 active:scale-95",
+               "animate-in fade-in slide-in-from-bottom-4"
+             )}
             style={{
               animationDelay: `${index * 50}ms`,
               animationFillMode: 'both'
             }}
           >
-            <img src={option.icon} alt="" className="w-16 h-16 object-contain" />
+            <img src={option.icon} alt="" className="w-12 h-12 object-contain" />
             <span className="font-medium text-sm whitespace-nowrap text-foreground">
               {option.label}
             </span>

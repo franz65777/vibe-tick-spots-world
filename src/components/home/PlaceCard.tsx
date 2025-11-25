@@ -292,7 +292,7 @@ const PlaceCard = ({
               }`}
             >
               {isMuted ? <BellOff className="w-4 h-4 mr-2" /> : <Bell className="w-4 h-4 mr-2" />}
-              {isMuted ? t('muted') : t('mute')}
+              {isMuted ? t('muted', { ns: 'settings' }) : t('mute', { ns: 'settings' })}
             </Button>
           </div>
 
