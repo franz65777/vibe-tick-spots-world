@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Upload, ArrowLeft } from 'lucide-react';
 import deleteIcon from '@/assets/icon-delete-new.png';
+import editProfileIcon from '@/assets/settings-edit-profile.png';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -279,7 +280,8 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
-              <SheetTitle className="text-lg font-semibold">
+              <SheetTitle className="text-lg font-semibold flex items-center gap-3">
+                <img src={editProfileIcon} alt="" className="w-10 h-8 object-contain" />
                 {t('editProfile', { ns: 'settings' })}
               </SheetTitle>
             </div>
@@ -288,21 +290,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
           <div className="flex-1 overflow-y-auto pb-4">
             <div className="max-w-2xl mx-auto p-4 space-y-4">
               {/* Avatar Section */}
-              <div className="flex items-center gap-4 py-1 justify-center">
-                {(avatarPreview || profile?.avatar_url) && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="rounded-[16px] flex items-center gap-2"
-                    onClick={handleRemoveAvatar}
-                    disabled={isLoading || isUploading}
-                  >
-                    <img src={deleteIcon} alt="" className="w-6 h-6" />
-                    {t('remove', { ns: 'common' })}
-                  </Button>
-                )}
-                
+              <div className="flex flex-col items-center gap-2 py-1">
                 <button
                   type="button"
                   aria-label={t('upload')}
@@ -329,6 +317,19 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
                   className="hidden"
                   disabled={isLoading || isUploading}
                 />
+
+                {/* Remove avatar button - below the photo */}
+                {(avatarPreview || profile?.avatar_url) && (
+                  <button
+                    onClick={handleRemoveAvatar}
+                    className="flex items-center gap-2 text-destructive hover:text-destructive/80 transition-colors"
+                    aria-label="Rimuovi avatar"
+                    disabled={isLoading || isUploading}
+                  >
+                    <img src={deleteIcon} alt="" className="w-7 h-7" />
+                    <span className="text-sm">Rimuovi</span>
+                  </button>
+                )}
               </div>
 
               {/* Name Field */}
