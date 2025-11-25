@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { getCategoryImage } from '@/utils/categoryIcons';
 import { formatDetailedAddress } from '@/utils/addressFormatter';
 import notificationsIcon from '@/assets/settings-notifications.png';
+import bellOffIcon from '@/assets/icon-notification-bell.png';
 
 interface MutedLocationsModalProps {
   open: boolean;
@@ -115,7 +116,9 @@ const MutedLocationsModal: React.FC<MutedLocationsModalProps> = ({ open, onOpenC
                 <img 
                   src={getCategoryImage(muted.locations?.category || 'restaurant')} 
                   alt={muted.locations?.category}
-                  className="w-12 h-12 object-contain flex-shrink-0"
+                  className={`object-contain flex-shrink-0 ${
+                    muted.locations?.category === 'cafe' ? 'w-10 h-10' : 'w-12 h-12'
+                  }`}
                 />
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium truncate mb-1">
@@ -138,7 +141,11 @@ const MutedLocationsModal: React.FC<MutedLocationsModalProps> = ({ open, onOpenC
             ))
           ) : (
             <div className="text-center py-12">
-              <BellOff className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
+              <img 
+                src={bellOffIcon} 
+                alt="No notifications" 
+                className="w-16 h-16 mx-auto mb-3 object-contain"
+              />
               <p className="text-muted-foreground">
                 {searchQuery.trim() 
                   ? t('noSearchResults', { ns: 'settings', defaultValue: 'No locations found' })
