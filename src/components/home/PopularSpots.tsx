@@ -90,7 +90,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
       setLoading(true);
       const normalizedCity = currentCity.trim().toLowerCase();
 
-      // For non-trending filters, fetch cities with active campaigns globally
+      // For non-trending filters, first check if there are locations in current city
       if (filterType !== 'most_saved') {
         const campaignTypeMap = {
           'discount': 'discount',
@@ -116,7 +116,36 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
           return;
         }
 
-        // Get locations with these campaigns
+        // Get locations with these campaigns in the current city first
+        const { data: currentCityLocations } = await supabase
+          .from('locations')
+          .select('id, name, category, city, address, google_place_id, latitude, longitude')
+          .in('id', campaignLocationIds)
+          .or(`city.ilike.%${normalizedCity}%,address.ilike.%${normalizedCity}%`);
+
+        // If there are locations in the current city, show them as location cards
+        if (currentCityLocations && currentCityLocations.length > 0) {
+          const locationSpots: PopularSpot[] = currentCityLocations.map(location => ({
+            id: location.id,
+            name: location.name,
+            category: location.category,
+            city: location.city || 'Unknown',
+            address: location.address,
+            google_place_id: location.google_place_id,
+            savesCount: 0,
+            coordinates: {
+              lat: parseFloat(location.latitude?.toString() || '0'),
+              lng: parseFloat(location.longitude?.toString() || '0')
+            }
+          }));
+
+          setPopularSpots(locationSpots);
+          setCitySpots([]);
+          setLoading(false);
+          return;
+        }
+
+        // If no locations in current city, show city cards from other cities
         const { data: locationsData } = await supabase
           .from('locations')
           .select('city, latitude, longitude')
@@ -127,6 +156,13 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
         locationsData?.forEach(location => {
           if (!location.city) return;
           const city = location.city.trim();
+          const locationCity = city.toLowerCase();
+          
+          // Skip the current city
+          if (locationCity.includes(normalizedCity) || normalizedCity.includes(locationCity)) {
+            return;
+          }
+
           const existing = cityMap.get(city);
           if (existing) {
             cityMap.set(city, { ...existing, count: existing.count + 1 });
@@ -291,15 +327,15 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setDropdownOpen((open) => !open)}
-                className="flex items-center justify-center"
+                className="flex items-center justify-start"
                 aria-label={t('filters.openFilter', { ns: 'home', defaultValue: 'Open trending filters' })}
               >
                 {/* Main filter icon - larger size except for promotion */}
                 <div className={cn(
                    "flex items-center justify-center transition-all",
                    dropdownOpen 
-                     ? (filterType === 'promotion' ? "w-14 h-14" : "w-16 h-16")
-                     : (filterType === 'promotion' ? "w-12 h-12" : "w-14 h-14")
+                     ? (filterType === 'promotion' ? "w-14 h-14" : "w-20 h-20")
+                     : (filterType === 'promotion' ? "w-12 h-12" : "w-16 h-16")
                  )}>
                   {getFilterIcon()}
                 </div>
@@ -324,7 +360,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                           alt={option.label} 
                           className={cn(
                             "object-contain",
-                            option.value === 'promotion' ? "w-12 h-12" : "w-14 h-14"
+                            option.value === 'promotion' ? "w-12 h-12" : "w-16 h-16"
                           )} 
                         />
                       </button>
@@ -373,7 +409,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                   aria-label={`Zoom to ${city.city}`}
                 >
                   <div className="absolute inset-0 rounded-lg border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
-                  <img src={cityIcon} alt="City" className="w-5 h-5 object-contain" />
+                  <img src={cityIcon} alt="City" className="w-7 h-7 object-contain" />
                   <span className="text-xs font-medium text-foreground line-clamp-1 max-w-[160px]">
                     {city.city} ({city.locationCount})
                   </span>
@@ -399,10 +435,6 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
             ))
           )}
         </div>
-      ) : !dropdownOpen ? (
-        <p className="text-xs text-muted-foreground text-center py-4">
-          {t('filters.noLocationsWithFilter', { ns: 'home', filter: getFilterLabel().toLowerCase(), city: currentCity || t('thisArea', { ns: 'common' }) })}
-        </p>
       ) : null}
     </div>
   );
