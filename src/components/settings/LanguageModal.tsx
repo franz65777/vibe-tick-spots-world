@@ -1,7 +1,8 @@
-import React from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { Check, ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Globe, ArrowLeft } from 'lucide-react';
+import languageIcon from '@/assets/settings-language.png';
 
 interface LanguageModalProps {
   open: boolean;
@@ -48,7 +49,7 @@ const LanguageModal: React.FC<LanguageModalProps> = ({
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <SheetTitle className="flex items-center gap-2">
-                <Globe className="w-5 h-5" />
+                <img src={languageIcon} alt="" className="w-6 h-6 object-contain" />
                 {t('language', { ns: 'settings' })}
               </SheetTitle>
             </div>
