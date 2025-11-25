@@ -303,7 +303,7 @@ const getFilterIcon = () => {
   return (
     <div className="h-full px-[10px] py-1 bg-background/50">
       {/* Filter Options */}
-      <div className="relative mb-1">
+      <div className="relative mb-2">
         <div className="absolute inset-0 bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md rounded-lg border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude]"></div>
         <div className="relative flex gap-3 overflow-x-auto scrollbar-hide px-3 py-2">
           {filterOptions.map((option) => (
@@ -331,7 +331,7 @@ const getFilterIcon = () => {
         </div>
       </div>
 
-      {/* Horizontal chips */}
+      {/* Popular spots cards */}
       {loading ? (
         <div className="flex gap-2 overflow-x-auto pb-2">
           {[1, 2, 3].map(i => (

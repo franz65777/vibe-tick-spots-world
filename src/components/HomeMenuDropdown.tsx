@@ -57,7 +57,7 @@ export const HomeMenuDropdown = ({ isOpen, onClose, onSelectOption }: HomeMenuDr
             }}
           >
             <div className="absolute inset-0 rounded-2xl border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
-            <img src={option.icon} alt="" className="w-12 h-12 object-contain" />
+            <img src={option.icon} alt="" className="w-10 h-10 object-contain" />
             <span className="font-medium text-sm whitespace-nowrap text-foreground">
               {option.label}
             </span>
