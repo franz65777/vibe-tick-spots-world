@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { sendLocalizedNotification } from '@/services/notificationLocalizationService';
 
 interface UserProfile {
   id: string;
@@ -139,18 +140,19 @@ export const useUserProfile = (userId?: string) => {
         .eq('id', currentUser.id)
         .single();
 
-      // Create notification
-      await supabase.from('notifications').insert({
-        user_id: userId,
-        type: 'follow',
-        title: 'New follower',
-        message: `${followerProfile?.username || 'Someone'} started following you`,
-        data: {
+      // Create localized notification
+      await sendLocalizedNotification(
+        userId,
+        'new_follower',
+        {
           user_id: currentUser.id,
           user_name: followerProfile?.username,
           avatar_url: followerProfile?.avatar_url,
         },
-      });
+        {
+          username: followerProfile?.username || 'Someone'
+        }
+      );
 
       setProfile(prev => prev ? {
         ...prev,

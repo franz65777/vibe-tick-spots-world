@@ -4,7 +4,7 @@ import { X, UserPlus, UserMinus, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useFriendRequests } from '@/hooks/useFriendRequests';
-import { useNotifications } from '@/hooks/useNotifications';
+import { sendLocalizedNotification } from '@/services/notificationLocalizationService';
 
 interface FriendRequestsModalProps {
   isOpen: boolean;
@@ -13,7 +13,6 @@ interface FriendRequestsModalProps {
 
 const FriendRequestsModal = ({ isOpen, onClose }: FriendRequestsModalProps) => {
   const { pendingRequests, acceptFriendRequest, blockUser, loading } = useFriendRequests();
-  const { sendNotification } = useNotifications();
   const [processingRequest, setProcessingRequest] = useState<string | null>(null);
 
   const handleAcceptRequest = async (requestId: string, requesterId: string) => {
@@ -21,12 +20,11 @@ const FriendRequestsModal = ({ isOpen, onClose }: FriendRequestsModalProps) => {
     try {
       const result = await acceptFriendRequest(requestId);
       if (result.success) {
-        // Send notification to requester
-        await sendNotification(
+        // Send localized notification to requester
+        await sendLocalizedNotification(
           requesterId,
           'friend_accepted',
-          'Friend Request Accepted',
-          'Your friend request has been accepted!'
+          {}
         );
         console.log('Friend request accepted successfully');
       } else {
