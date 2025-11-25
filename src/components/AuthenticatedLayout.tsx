@@ -15,6 +15,7 @@ const AuthenticatedLayout: React.FC = () => {
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   const [isPhotoSelection, setIsPhotoSelection] = useState(false);
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
 
   // Monitor DOM for map expansion state on home page
   useEffect(() => {
@@ -77,12 +78,33 @@ const AuthenticatedLayout: React.FC = () => {
     return () => observer.disconnect();
   }, []);
 
+  // Monitor onboarding state
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      const homeDiv = document.querySelector('[data-onboarding-open]');
+      if (homeDiv) {
+        const onboardingOpen = homeDiv.getAttribute('data-onboarding-open') === 'true';
+        setIsOnboardingOpen(onboardingOpen);
+      } else {
+        setIsOnboardingOpen(false);
+      }
+    });
+
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['data-onboarding-open'],
+      subtree: true
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <div className="h-screen overflow-hidden">
         <Outlet />
       </div>
-      {!isDiscoverRoute && !isSettingsRoute && !isEditProfileRoute && !isCreateTripRoute && !isCreateListRoute && !isMapExpanded && !isPhotoSelection && !isFolderModalOpen && (
+      {!isDiscoverRoute && !isSettingsRoute && !isEditProfileRoute && !isCreateTripRoute && !isCreateListRoute && !isMapExpanded && !isPhotoSelection && !isFolderModalOpen && !isOnboardingOpen && (
         <div className="fixed bottom-0 left-0 right-0 z-[1500]">
           {isBusinessRoute ? <BusinessBottomNavigation /> : <NewBottomNavigation />}
         </div>

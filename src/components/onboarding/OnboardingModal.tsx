@@ -10,7 +10,7 @@ import mapIcon from '@/assets/onboarding-map.png';
 import exploreIcon from '@/assets/onboarding-explore.png';
 import listIcon from '@/assets/onboarding-list.png';
 import profileIcon from '@/assets/onboarding-profile.png';
-import connectIcon from '@/assets/onboarding-connect.png';
+import friendsIcon from '@/assets/onboarding-friends.png';
 import followIcon from '@/assets/onboarding-follow.png';
 import likeIcon from '@/assets/onboarding-like.png';
 import shareIcon from '@/assets/onboarding-share.png';
@@ -64,7 +64,7 @@ const OnboardingModal = ({ open, onComplete }: OnboardingModalProps) => {
       content: (
         <div className="space-y-6 py-4">
           <div className="flex items-center justify-center mb-8">
-            <img src={connectIcon} alt={t('connectTitle')} className="w-32 h-32 object-contain" />
+            <img src={friendsIcon} alt={t('connectTitle')} className="w-32 h-32 object-contain" />
           </div>
           <div className="space-y-4">
             <div className="flex items-start gap-3 p-3 rounded-2xl bg-secondary/20">
