@@ -117,7 +117,9 @@ const MutedLocationsModal: React.FC<MutedLocationsModalProps> = ({ open, onOpenC
                   src={getCategoryImage(muted.locations?.category || 'restaurant')} 
                   alt={muted.locations?.category}
                   className={`object-contain flex-shrink-0 ${
-                    muted.locations?.category === 'cafe' ? 'w-10 h-10' : 'w-12 h-12'
+                    muted.locations?.category === 'cafe' ? 'w-11 h-11' : 
+                    muted.locations?.category === 'bar' ? 'w-8 h-8' : 
+                    'w-12 h-12'
                   }`}
                 />
                 <div className="flex-1 min-w-0">
@@ -129,16 +131,16 @@ const MutedLocationsModal: React.FC<MutedLocationsModalProps> = ({ open, onOpenC
                   </p>
                 </div>
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={() => unmuteLocation(muted.location_id)}
                   disabled={isMuting}
-                  className="flex-shrink-0 p-2"
+                  className="flex-shrink-0 p-1 hover:bg-muted/50"
                 >
                   <img 
                     src={bellOffIcon} 
                     alt="Enable notifications" 
-                    className="w-8 h-8 object-contain"
+                    className="w-12 h-12 object-contain"
                   />
                 </Button>
               </div>
