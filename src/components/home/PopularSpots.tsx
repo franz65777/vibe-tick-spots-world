@@ -331,6 +331,26 @@ const getFilterIcon = () => {
         </div>
       </div>
 
+      {/* Header with title and count */}
+      {!loading && popularSpots.length > 0 && (
+        <div className="flex items-center justify-between px-2 mb-2">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-pink-500 rounded-xl flex items-center justify-center">
+              <img src={fireIcon} alt="" className="w-7 h-7 object-contain" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-foreground">
+                {getFilterLabel()} {t('in', { ns: 'common' })} {currentCity}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {t('filters.placesFound', { ns: 'home', count: popularSpots.length })}
+              </p>
+            </div>
+          </div>
+          <img src={fireIcon} alt="" className="w-8 h-8 object-contain" />
+        </div>
+      )}
+
       {/* Popular spots cards */}
       {loading ? (
         <div className="flex gap-2 overflow-x-auto pb-2">
