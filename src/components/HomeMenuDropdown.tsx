@@ -56,7 +56,7 @@ export const HomeMenuDropdown = ({ isOpen, onClose, onSelectOption }: HomeMenuDr
               animationFillMode: 'both'
             }}
           >
-            <img src={option.icon} alt="" className="w-12 h-12 object-contain" />
+            <img src={option.icon} alt="" className="w-16 h-16 object-contain" />
             <span className="font-medium text-sm whitespace-nowrap text-foreground">
               {option.label}
             </span>
