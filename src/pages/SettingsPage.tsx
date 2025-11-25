@@ -112,9 +112,9 @@ const SettingsPage: React.FC = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-background pt-[env(safe-area-inset-top)]">
+    <div className="h-screen flex flex-col pt-[env(safe-area-inset-top)]">
       {/* Header with back button */}
-      <div className="flex items-center gap-3 p-4 bg-background sticky top-0 z-10">
+      <div className="flex items-center gap-3 p-4 sticky top-0 z-10">
         <button
           onClick={() => navigate('/profile')}
           className="p-2 hover:bg-muted rounded-full transition-colors"
@@ -134,7 +134,7 @@ const SettingsPage: React.FC = () => {
               className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <img src={editProfileIcon} alt="" className="w-8 h-8" />
+                <img src={editProfileIcon} alt="" className="w-10 h-10" />
                 <div className="text-left">
                   <div className="font-medium">{t('editProfile', { ns: 'settings' })}</div>
                   <div className="text-sm text-muted-foreground">
@@ -151,7 +151,7 @@ const SettingsPage: React.FC = () => {
               className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <img src={languageIcon} alt="" className="w-8 h-8" />
+                <img src={languageIcon} alt="" className="w-10 h-10" />
                 <div className="text-left">
                   <div className="font-medium">{t('language', { ns: 'settings' })}</div>
                   <div className="text-sm text-muted-foreground">
@@ -174,7 +174,7 @@ const SettingsPage: React.FC = () => {
               className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <img src={businessIcon} alt="" className="w-8 h-8" />
+                <img src={businessIcon} alt="" className="w-10 h-10" />
                 <div className="text-left">
                   <div className="font-medium">{t('businessAccount', { ns: 'settings' })}</div>
                   <div className="text-sm text-muted-foreground">
@@ -193,7 +193,7 @@ const SettingsPage: React.FC = () => {
               className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <img src={notificationsIcon} alt="" className="w-8 h-8" />
+                <img src={notificationsIcon} alt="" className="w-10 h-10" />
                 <div className="text-left">
                   <div className="font-medium">{t('mutedLocations', { ns: 'settings' })}</div>
                   <div className="text-sm text-muted-foreground">
@@ -210,7 +210,7 @@ const SettingsPage: React.FC = () => {
               className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <img src={closeFriendsIcon} alt="" className="w-8 h-8" />
+                <img src={closeFriendsIcon} alt="" className="w-10 h-10" />
                 <div className="text-left">
                   <div className="font-medium">{t('closeFriends', { ns: 'settings' })}</div>
                   <div className="text-sm text-muted-foreground">
@@ -263,11 +263,11 @@ const SettingsPage: React.FC = () => {
       </div>
 
       {/* Logout Button */}
-      <div className="p-4 pb-24 bg-background">
+      <div className="p-4 pb-24">
         <Button
           onClick={handleLogout}
           variant="outline"
-          className="w-full rounded-[20px] py-6 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive"
+          className="w-full rounded-[20px] py-6 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive dark:bg-gray-800 dark:hover:bg-gray-700"
         >
           <LogOut className="w-5 h-5 mr-2" />
           {t('logout', { ns: 'common' })}
