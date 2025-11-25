@@ -353,7 +353,7 @@ const MapSection = ({
 
         {/* Location List Sheet - Always rendered */}
         <Sheet open={isListViewOpen} onOpenChange={setIsListViewOpen}>
-          <SheetContent side="bottom" className="h-[80vh] rounded-t-3xl flex flex-col">
+          <SheetContent side="bottom" className="h-[80vh] rounded-t-3xl flex flex-col z-[150]">
             <SheetHeader className="pb-4 flex-shrink-0">
               <SheetTitle className="text-xl font-semibold">
                 {t('locationsTitle', { ns: 'mapFilters' })}

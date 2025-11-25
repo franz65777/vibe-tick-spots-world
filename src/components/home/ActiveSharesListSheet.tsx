@@ -68,7 +68,7 @@ const ActiveSharesListSheet: React.FC<ActiveSharesListSheetProps> = ({ open, onO
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[80vh] rounded-t-3xl flex flex-col pb-safe">
+      <SheetContent side="bottom" className="h-[80vh] rounded-t-3xl flex flex-col pb-safe z-[150]">
         <SheetHeader className="pb-2">
           <SheetTitle className="text-xl font-semibold flex items-center gap-2">
             {t('activeShares', { ns: 'mapFilters' })}

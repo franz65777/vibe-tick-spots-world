@@ -159,8 +159,6 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
         .select('following_id')
         .eq('follower_id', user.id);
 
-      console.log('📊 Follows data:', followsData);
-
       if (!followsData || followsData.length === 0) {
         setFollowedUsers([]);
         return;
@@ -168,59 +166,61 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
 
       const followingIds = followsData.map(f => f.following_id);
 
-      // Get my saved place_ids
-      const { data: mySavedPlaces } = await supabase
+      // Get my saved place_ids in parallel with profiles
+      const [mySavedPlacesResult, usersWithSavesResult] = await Promise.all([
+        supabase
+          .from('saved_places')
+          .select('place_id')
+          .eq('user_id', user.id),
+        supabase
+          .from('profiles')
+          .select('id, username, avatar_url')
+          .in('id', followingIds)
+      ]);
+
+      const mySavedPlaceIds = new Set((mySavedPlacesResult.data || []).map(s => s.place_id));
+
+      if (!usersWithSavesResult.data) {
+        setFollowedUsers([]);
+        return;
+      }
+
+      // Get all their saves in a single batch query
+      const { data: allTheirSaves } = await supabase
         .from('saved_places')
-        .select('place_id')
-        .eq('user_id', user.id);
+        .select('user_id, place_id')
+        .in('user_id', followingIds);
 
-      const mySavedPlaceIds = new Set((mySavedPlaces || []).map(s => s.place_id));
+      // Group saves by user_id
+      const savesByUser = new Map<string, string[]>();
+      (allTheirSaves || []).forEach(save => {
+        const saves = savesByUser.get(save.user_id) || [];
+        saves.push(save.place_id);
+        savesByUser.set(save.user_id, saves);
+      });
 
-      console.log('🗺️ My saved places count:', mySavedPlaceIds.size);
+      // Count NEW saves for each user
+      const usersWithCounts = usersWithSavesResult.data.map(profile => {
+        const theirPlaces = savesByUser.get(profile.id) || [];
+        const newPlacesCount = theirPlaces.filter(
+          placeId => !mySavedPlaceIds.has(placeId)
+        ).length;
 
-      // Get profiles
-      const { data: usersWithSaves } = await supabase
-        .from('profiles')
-        .select('id, username, avatar_url')
-        .in('id', followingIds);
+        return {
+          id: profile.id,
+          username: profile.username || 'User',
+          avatar_url: profile.avatar_url || '',
+          new_saves_count: newPlacesCount
+        };
+      });
 
-      console.log('👥 Users with saves:', usersWithSaves);
-
-      if (!usersWithSaves) return;
-
-      // Count NEW saves for each user (places they saved that I haven't)
-      const usersWithCounts = await Promise.all(
-        usersWithSaves.map(async (profile) => {
-          // Get all their saved places
-          const { data: theirSaves } = await supabase
-            .from('saved_places')
-            .select('place_id')
-            .eq('user_id', profile.id);
-
-          // Count how many of their saves are NEW to me (I haven't saved them)
-          const newPlacesCount = (theirSaves || []).filter(
-            save => !mySavedPlaceIds.has(save.place_id)
-          ).length;
-
-          return {
-            id: profile.id,
-            username: profile.username || 'User',
-            avatar_url: profile.avatar_url || '',
-            new_saves_count: newPlacesCount
-          };
-        })
-      );
-
-      console.log('✨ Users with new places count:', usersWithCounts);
-
-      // Sort users by new saves count and filter to only show users with NEW places
-      const sortedUsers = usersWithCounts
-        .filter(u => u.new_saves_count > 0)
-        .sort((a, b) => b.new_saves_count - a.new_saves_count);
-
-      setFollowedUsers(sortedUsers);
+      // Only show users with NEW places - filter BEFORE setting state
+      const usersWithNewPlaces = usersWithCounts.filter(u => u.new_saves_count > 0);
+      
+      setFollowedUsers(usersWithNewPlaces);
     } catch (error) {
       console.error('❌ Error fetching followed users:', error);
+      setFollowedUsers([]);
     }
   };
 
