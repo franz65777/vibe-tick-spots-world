@@ -5,6 +5,7 @@ import { authTranslations } from './i18n-auth';
 import { authTranslationsExtended } from './i18n-auth-extended';
 import { saveTagsTranslations } from './i18n-save-tags';
 import { onboardingTranslations } from './i18n-onboarding';
+import { turkishTranslations } from './i18n-turkish';
 
 // Comprehensive resources for all languages
 const resources = {
@@ -7660,6 +7661,14 @@ Object.keys(onboardingTranslations).forEach(lang => {
       ...onboardingTranslations[lang]
     };
   }
+});
+
+// Merge Turkish translations into resources
+Object.keys(turkishTranslations).forEach(lang => {
+  resources[lang] = {
+    ...resources[lang] || {},
+    ...turkishTranslations[lang]
+  };
 });
 
 // Add Chinese (zh) as the 12th language

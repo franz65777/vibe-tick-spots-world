@@ -294,10 +294,12 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                 className="flex items-center justify-center"
                 aria-label={t('filters.openFilter', { ns: 'home', defaultValue: 'Open trending filters' })}
               >
-                {/* Main filter icon - same size as uploaded image */}
+                {/* Main filter icon - larger size except for promotion */}
                 <div className={cn(
                    "flex items-center justify-center transition-all",
-                   dropdownOpen ? "w-14 h-14" : "w-12 h-12"
+                   dropdownOpen 
+                     ? (filterType === 'promotion' ? "w-14 h-14" : "w-16 h-16")
+                     : (filterType === 'promotion' ? "w-12 h-12" : "w-14 h-14")
                  )}>
                   {getFilterIcon()}
                 </div>
@@ -317,7 +319,14 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                         }}
                         className="flex-shrink-0 opacity-70 hover:opacity-100 transition-opacity"
                       >
-                        <img src={option.icon} alt={option.label} className="w-12 h-12 object-contain" />
+                        <img 
+                          src={option.icon} 
+                          alt={option.label} 
+                          className={cn(
+                            "object-contain",
+                            option.value === 'promotion' ? "w-12 h-12" : "w-14 h-14"
+                          )} 
+                        />
                       </button>
                     ))}
                 </div>
