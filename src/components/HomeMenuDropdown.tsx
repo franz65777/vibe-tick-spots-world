@@ -1,7 +1,8 @@
 import React from 'react';
-import { Map, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
+import mapIcon from '@/assets/icon-map-new.png';
+import shareLocationIcon from '@/assets/icon-share-location-new.png';
 
 interface HomeMenuDropdownProps {
   isOpen: boolean;
@@ -15,12 +16,12 @@ export const HomeMenuDropdown = ({ isOpen, onClose, onSelectOption }: HomeMenuDr
   const options = [
     {
       id: 'map' as const,
-      icon: Map,
+      icon: mapIcon,
       label: t('homeMenu.map', 'Mappa')
     },
     {
       id: 'share' as const,
-      icon: MapPin,
+      icon: shareLocationIcon,
       label: t('homeMenu.sharePosition', 'Condividi posizione')
     }
   ];
@@ -56,7 +57,7 @@ export const HomeMenuDropdown = ({ isOpen, onClose, onSelectOption }: HomeMenuDr
             }}
           >
             <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-              <option.icon className="w-5 h-5 text-primary" />
+              <img src={option.icon} alt="" className="w-5 h-5 object-contain" />
             </div>
             <span className="font-medium text-sm whitespace-nowrap text-foreground">
               {option.label}

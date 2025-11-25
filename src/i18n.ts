@@ -1058,6 +1058,13 @@ const resources = {
       addPost: 'Añadir publicación',
       addList: 'Crear lista'
     },
+    homeMenu: {
+      map: 'Mapa',
+      sharePosition: 'Compartir ubicación'
+    },
+    sharePosition: {
+      title: 'Compartir Ubicación'
+    },
     mapFilters: {
       following: 'Siguiendo',
       followingDesc: 'Lugares de la gente que sigues',
@@ -2646,6 +2653,13 @@ const resources = {
       addPost: 'Ajouter une publication',
       addList: 'Créer une liste'
     },
+    homeMenu: {
+      map: 'Carte',
+      sharePosition: 'Partager la position'
+    },
+    sharePosition: {
+      title: 'Partager la Position'
+    },
     mapFilters: {
       following: 'Abonnés',
       followingDesc: 'Lieux des personnes que vous suivez',
@@ -3306,6 +3320,13 @@ const resources = {
       addPost: 'Beitrag hinzufügen',
       addList: 'Liste erstellen'
     },
+    homeMenu: {
+      map: 'Karte',
+      sharePosition: 'Position teilen'
+    },
+    sharePosition: {
+      title: 'Position Teilen'
+    },
     mapFilters: {
       following: 'Folge ich',
       followingDesc: 'Orte von Personen denen du folgst',
@@ -3904,6 +3925,13 @@ const resources = {
       addPost: 'Adicionar publicação',
       addList: 'Criar lista'
     },
+    homeMenu: {
+      map: 'Mapa',
+      sharePosition: 'Compartilhar localização'
+    },
+    sharePosition: {
+      title: 'Compartilhar Localização'
+    },
     mapFilters: {
       following: 'Seguindo',
       followingDesc: 'Locais de pessoas que você segue',
@@ -4463,6 +4491,13 @@ const resources = {
       addPost: '添加帖子',
       addList: '创建列表'
     },
+    homeMenu: {
+      map: '地图',
+      sharePosition: '分享位置'
+    },
+    sharePosition: {
+      title: '分享位置'
+    },
     mapFilters: {
       following: '关注',
       followingDesc: '你关注的人的地点',
@@ -4960,6 +4995,13 @@ const resources = {
       add: '追加',
       feed: 'フィード',
       profile: 'プロフィール',
+    },
+    homeMenu: {
+      map: '地図',
+      sharePosition: '位置を共有'
+    },
+    sharePosition: {
+      title: '位置を共有'
     },
     mapFilters: {
       following: 'フォロー中',
@@ -5498,6 +5540,13 @@ const resources = {
       feed: '피드',
       profile: '프로필',
     },
+    homeMenu: {
+      map: '지도',
+      sharePosition: '위치 공유'
+    },
+    sharePosition: {
+      title: '위치 공유'
+    },
     mapFilters: {
       following: '팔로잉',
       followingDesc: '팔로우하는 사람들의 장소',
@@ -6018,6 +6067,13 @@ const resources = {
       feed: 'التغذية',
       profile: 'الملف الشخصي',
     },
+    homeMenu: {
+      map: 'الخريطة',
+      sharePosition: 'مشاركة الموقع'
+    },
+    sharePosition: {
+      title: 'مشاركة الموقع'
+    },
     mapFilters: {
       following: 'متابَع',
       followingDesc: 'أماكن من الأشخاص الذين تتابعهم',
@@ -6536,6 +6592,13 @@ const resources = {
       add: 'जोड़ें',
       feed: 'फ़ीड',
       profile: 'प्रोफ़ाइल',
+    },
+    homeMenu: {
+      map: 'मानचित्र',
+      sharePosition: 'स्थान साझा करें'
+    },
+    sharePosition: {
+      title: 'स्थान साझा करें'
     },
     mapFilters: {
       following: 'फॉलो किया',
@@ -7072,6 +7135,13 @@ const resources = {
       add: 'Добавить',
       feed: 'Лента',
       profile: 'Профиль',
+    },
+    homeMenu: {
+      map: 'Карта',
+      sharePosition: 'Поделиться местоположением'
+    },
+    sharePosition: {
+      title: 'Поделиться Местоположением'
     },
     mapFilters: {
       following: 'Подписки',

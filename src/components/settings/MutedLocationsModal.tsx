@@ -141,7 +141,7 @@ const MutedLocationsModal: React.FC<MutedLocationsModalProps> = ({ open, onOpenC
                   <img 
                     src={bellOffIcon} 
                     alt="Enable notifications" 
-                    className="w-20 h-20 object-contain"
+                    className="w-17 h-17 object-contain"
                   />
                 </Button>
               </div>
@@ -151,7 +151,7 @@ const MutedLocationsModal: React.FC<MutedLocationsModalProps> = ({ open, onOpenC
               <img 
                 src={bellOffIcon} 
                 alt="No notifications" 
-                className="w-24 h-24 mx-auto mb-3 object-contain"
+                className="w-20 h-20 mx-auto mb-3 object-contain"
               />
               <p className="text-muted-foreground">
                 {searchQuery.trim() 
