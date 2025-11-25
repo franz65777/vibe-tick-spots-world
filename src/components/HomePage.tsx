@@ -505,6 +505,7 @@ const HomePage = memo(() => {
       <div 
         className="h-screen w-full bg-background flex flex-col overflow-hidden pt-[env(safe-area-inset-top)]"
         data-map-expanded={isMapExpanded}
+        data-onboarding-open={showOnboarding}
         onTouchStart={(e) => {
           // Only trigger long press for single touch (not pinch/zoom)
           if (e.touches.length === 1) {
@@ -531,7 +532,7 @@ const HomePage = memo(() => {
         }}
       >
         {/* Fixed Header - ~60px */}
-        {!isCreateStoryModalOpen && (
+        {!isCreateStoryModalOpen && !showOnboarding && (
           <Header
             searchQuery={searchQuery}
             currentCity={currentCity}
@@ -559,7 +560,7 @@ const HomePage = memo(() => {
         )} */}
         
         {/* Discover Section - 110px */}
-        {!isCreateStoryModalOpen && !isStoriesViewerOpen && (
+        {!isCreateStoryModalOpen && !isStoriesViewerOpen && !showOnboarding && (
           <Suspense fallback={<div className="h-[110px] flex-shrink-0" />}>
             <HomeDiscoverSection
               currentCity={currentCity}
@@ -593,7 +594,7 @@ const HomePage = memo(() => {
         )}
         
         {/* Map Section - absolute positioned to extend under bottom nav */}
-        {!isCreateStoryModalOpen && !isStoriesViewerOpen && (
+        {!isCreateStoryModalOpen && !isStoriesViewerOpen && !showOnboarding && (
           <div className="absolute top-[110px] left-0 right-0 bottom-0 pb-0">
             <Suspense fallback={<div className="w-full h-full" />}>
               <HomeMapContainer
