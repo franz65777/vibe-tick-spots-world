@@ -13,6 +13,7 @@ interface SendOTPRequest {
   method: 'email' | 'phone';
   email?: string;
   phone?: string;
+  redirectUrl?: string;
 }
 
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
@@ -23,7 +24,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { method, email, phone }: SendOTPRequest = await req.json();
+    const { method, email, phone, redirectUrl }: SendOTPRequest = await req.json();
     const code = generateOTP();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
     const identifier = email || phone;
@@ -55,6 +56,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (method === 'email' && email) {
 
       // Send email via Resend (DEV MODE: returns OTP if sending fails)
+      const baseUrl = redirectUrl || 'https://spott.cloud';
       let devMode = false;
       try {
         const { data: emailData, error: emailError } = await resend.emails.send({
@@ -62,14 +64,21 @@ const handler = async (req: Request): Promise<Response> => {
           to: [email],
           subject: "Il tuo codice di verifica Spott",
           html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h1 style="color: #2563eb;">Benvenuto su Spott!</h1>
-              <p>Il tuo codice di verifica è:</p>
-              <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
-                <h2 style="font-size: 32px; letter-spacing: 8px; margin: 0;">${code}</h2>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h1 style="color: #2563eb; text-align: center;">SPOTT</h1>
+              <div style="background-color: #f8fafc; border-radius: 10px; padding: 30px; margin: 20px 0;">
+                <h2 style="color: #1e293b; margin-top: 0;">Il tuo codice di verifica</h2>
+                <p style="color: #475569; font-size: 16px;">Usa questo codice per completare la registrazione:</p>
+                <div style="background-color: white; border: 2px solid #e2e8f0; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0;">
+                  <span style="font-size: 32px; font-weight: bold; color: #2563eb; letter-spacing: 8px;">${code}</span>
+                </div>
+                <p style="color: #64748b; font-size: 14px; margin-bottom: 0;">Questo codice scadrà tra 10 minuti.</p>
+                <p style="color: #64748b; font-size: 14px; margin-top: 10px;">Se non hai richiesto questo codice, ignora questa email.</p>
               </div>
-              <p>Questo codice scadrà tra 10 minuti.</p>
-              <p>Se non hai richiesto questo codice, ignora questa email.</p>
+              <p style="color: #94a3b8; font-size: 12px; text-align: center; margin-top: 30px;">
+                © 2025 SPOTT. Tutti i diritti riservati.<br/>
+                <a href="${baseUrl}" style="color: #2563eb; text-decoration: none;">spott.cloud</a>
+              </p>
             </div>
           `,
         });
