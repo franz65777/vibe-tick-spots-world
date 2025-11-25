@@ -181,10 +181,10 @@ const ProfileHeader = ({
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="h-8 w-8 p-0"
+                className="h-10 w-10 p-0"
                 onClick={() => navigate('/settings')}
               >
-                <img src={settingsIcon} alt="Settings" className="w-10 h-10 object-contain" />
+                <img src={settingsIcon} alt="Settings" className="w-9 h-9 object-contain" />
               </Button>
             </div>
           </div>
