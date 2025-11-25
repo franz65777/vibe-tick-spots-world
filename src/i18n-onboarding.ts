@@ -55,7 +55,7 @@ export const onboardingTranslations = {
       listsDescription: 'Crea e condividi collezioni',
       profile: 'Profilo',
       profileDescription: 'Le tue statistiche e impostazioni',
-      connectTitle: 'Connettiti con gli Amici 👥',
+      connectTitle: 'Connettiti con gli Amici',
       connectDescription: 'Scopri i luoghi preferiti dei tuoi amici e condividi i tuoi!',
       followFriends: 'Segui Amici',
       followFriendsDescription: 'Vedi quali luoghi piacciono ai tuoi amici',
