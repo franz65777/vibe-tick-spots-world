@@ -31,13 +31,16 @@ const languages = [
   { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
   { code: 'it', label: 'Italiano', flag: '🇮🇹' },
   { code: 'pt', label: 'Português', flag: '🇵🇹' },
-  { code: 'zh', label: '中文', flag: '🇨🇳' },
+  { code: 'zh-CN', label: '中文', flag: '🇨🇳' },
   { code: 'ja', label: '日本語', flag: '🇯🇵' },
   { code: 'ko', label: '한국어', flag: '🇰🇷' },
   { code: 'ar', label: 'العربية', flag: '🇸🇦' },
   { code: 'hi', label: 'हिन्दी', flag: '🇮🇳' },
   { code: 'ru', label: 'Русский', flag: '🇷🇺' },
 ];
+
+const normalizeLanguage = (lang: string) =>
+  lang === 'zh' || lang === 'zh_CN' || lang === 'zh-CN' ? 'zh-CN' : lang;
 
 const SettingsPage: React.FC = () => {
   const { user } = useAuth();
@@ -67,22 +70,24 @@ const SettingsPage: React.FC = () => {
         .select('language')
         .eq('id', user.id)
         .single();
-      const lang = data?.language || 'en';
-      setLanguage(lang);
-      localStorage.setItem('i18nextLng', lang);
-      i18n.changeLanguage(lang);
+      const langFromDb = data?.language || 'en';
+      const normalizedLang = normalizeLanguage(langFromDb);
+      setLanguage(normalizedLang);
+      localStorage.setItem('i18nextLng', normalizedLang);
+      i18n.changeLanguage(normalizedLang);
     };
     load();
   }, [user?.id]);
 
   const handleLanguageChange = async (newLanguage: string) => {
-    setLanguage(newLanguage);
+    const normalized = normalizeLanguage(newLanguage);
+    setLanguage(normalized);
 
-    const tForLang = i18n.getFixedT(newLanguage, 'settings');
+    const tForLang = i18n.getFixedT(normalized, 'settings');
     
     if (!user?.id) {
-      localStorage.setItem('i18nextLng', newLanguage);
-      await i18n.changeLanguage(newLanguage);
+      localStorage.setItem('i18nextLng', normalized);
+      await i18n.changeLanguage(normalized);
       toast.success(tForLang('languageSaved'));
       return;
     }
@@ -91,11 +96,11 @@ const SettingsPage: React.FC = () => {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ language: newLanguage })
+        .update({ language: normalized })
         .eq('id', user.id);
       if (error) throw error;
-      localStorage.setItem('i18nextLng', newLanguage);
-      await i18n.changeLanguage(newLanguage);
+      localStorage.setItem('i18nextLng', normalized);
+      await i18n.changeLanguage(normalized);
       toast.success(tForLang('languageSaved'));
     } catch (e: any) {
       toast.error(e?.message || tForLang('failedToSave'));

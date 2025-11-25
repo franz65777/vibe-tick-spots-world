@@ -16,7 +16,7 @@ const languages = [
   { code: 'de', label: 'Deutsch', phonePlaceholder: '+49 151 23456789' },
   { code: 'it', label: 'Italiano', phonePlaceholder: '+39 333 123 4567' },
   { code: 'pt', label: 'Português', phonePlaceholder: '+351 912 345 678' },
-  { code: 'zh', label: '中文', phonePlaceholder: '+86 138 0013 8000' },
+  { code: 'zh-CN', label: '中文', phonePlaceholder: '+86 138 0013 8000' },
   { code: 'ja', label: '日本語', phonePlaceholder: '+81 90 1234 5678' },
   { code: 'ko', label: '한국어', phonePlaceholder: '+82 10 1234 5678' },
   { code: 'ar', label: 'العربية', phonePlaceholder: '+966 50 123 4567' },
