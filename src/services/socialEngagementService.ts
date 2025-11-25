@@ -224,6 +224,21 @@ export async function addPostComment(
 
     if (error) throw error;
 
+    // Update comments count on post
+    const { data: postData } = await supabase
+      .from('posts')
+      .select('comments_count')
+      .eq('id', postId)
+      .single();
+
+    if (postData) {
+      const newCount = (postData.comments_count || 0) + 1;
+      await supabase
+        .from('posts')
+        .update({ comments_count: newCount })
+        .eq('id', postId);
+    }
+
     // Fetch commenter profile
     const { data: profile } = await supabase
       .from('profiles')
@@ -271,6 +286,16 @@ export async function addPostComment(
 
 export async function deletePostComment(commentId: string, userId: string): Promise<boolean> {
   try {
+    // Get post_id before deleting
+    const { data: comment } = await supabase
+      .from('post_comments')
+      .select('post_id')
+      .eq('id', commentId)
+      .eq('user_id', userId)
+      .single();
+
+    if (!comment) throw new Error('Comment not found');
+
     const { error } = await supabase
       .from('post_comments')
       .delete()
@@ -278,6 +303,22 @@ export async function deletePostComment(commentId: string, userId: string): Prom
       .eq('user_id', userId);
 
     if (error) throw error;
+
+    // Update comments count on post
+    const { data: post } = await supabase
+      .from('posts')
+      .select('comments_count')
+      .eq('id', comment.post_id)
+      .single();
+
+    if (post) {
+      const newCount = Math.max(0, (post.comments_count || 0) - 1);
+      await supabase
+        .from('posts')
+        .update({ comments_count: newCount })
+        .eq('id', comment.post_id);
+    }
+
     toast.success('Comment deleted');
     return true;
   } catch (error) {
