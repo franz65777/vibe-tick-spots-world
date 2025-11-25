@@ -529,10 +529,10 @@ const SwipeDiscovery = React.forwardRef<SwipeDiscoveryHandle, SwipeDiscoveryProp
         <h1 className="text-xl font-semibold text-foreground">{t('discoverPlaces')}</h1>
       </div>
 
-      {/* Followed Users Row - overflow visible to prevent clipping */}
-      {followedUsers.length > 0 && (
-        <div className="bg-background px-4 pt-3 pb-3 overflow-visible relative z-30">
-          <div className="flex gap-3 overflow-x-auto overflow-y-visible scrollbar-hide pb-1 pl-2 pr-3" style={{ scrollSnapType: 'x mandatory' }}>
+      {/* Followed Users Row - only show if there are locations to swipe */}
+      {followedUsers.length > 0 && filteredLocations.length > 0 && (
+        <div className="bg-background px-4 pt-5 pb-3 overflow-visible relative z-30">
+          <div className="flex gap-3 overflow-x-auto overflow-y-visible scrollbar-hide pb-1 pt-1 pl-2 pr-3" style={{ scrollSnapType: 'x mandatory' }}>
           {/* All button */}
           <button
             onClick={() => {
