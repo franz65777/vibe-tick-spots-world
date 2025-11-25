@@ -62,34 +62,34 @@ const OnboardingModal = ({ open, onComplete }: OnboardingModalProps) => {
       title: t('connectTitle'),
       description: t('connectDescription'),
       content: (
-        <div className="space-y-6 py-4">
-          <div className="flex items-center justify-center mb-8">
-            <img src={friendsIcon} alt={t('connectTitle')} className="w-32 h-32 object-contain" />
+        <div className="space-y-2 py-2">
+          <div className="flex items-center justify-center mb-4">
+            <img src={friendsIcon} alt={t('connectTitle')} className="w-24 h-24 object-contain" />
           </div>
-          <div className="space-y-4">
+          <div className="space-y-2">
             <div className="flex items-start gap-3 p-3 rounded-2xl bg-secondary/20">
-              <img src={followIcon} alt={t('followFriends')} className="w-10 h-10 object-contain flex-shrink-0 mt-0.5" />
+              <img src={followIcon} alt={t('followFriends')} className="w-9 h-9 object-contain flex-shrink-0 mt-0.5" />
               <div>
                 <h3 className="font-semibold text-sm">{t('followFriends')}</h3>
                 <p className="text-xs text-muted-foreground">{t('followFriendsDescription')}</p>
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 rounded-2xl bg-secondary/20">
-              <img src={likeIcon} alt={t('likeComment')} className="w-10 h-10 object-contain flex-shrink-0 mt-0.5" />
+              <img src={likeIcon} alt={t('likeComment')} className="w-9 h-9 object-contain flex-shrink-0 mt-0.5" />
               <div>
                 <h3 className="font-semibold text-sm">{t('likeComment')}</h3>
                 <p className="text-xs text-muted-foreground">{t('likeCommentDescription')}</p>
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 rounded-2xl bg-secondary/20">
-              <img src={shareIcon} alt={t('shareExperiences')} className="w-10 h-10 object-contain flex-shrink-0 mt-0.5" />
+              <img src={shareIcon} alt={t('shareExperiences')} className="w-9 h-9 object-contain flex-shrink-0 mt-0.5" />
               <div>
                 <h3 className="font-semibold text-sm">{t('shareExperiences')}</h3>
                 <p className="text-xs text-muted-foreground">{t('shareExperiencesDescription')}</p>
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 rounded-2xl bg-secondary/20">
-              <img src={messagesIcon} alt={t('directMessages')} className="w-10 h-10 object-contain flex-shrink-0 mt-0.5" />
+              <img src={messagesIcon} alt={t('directMessages')} className="w-9 h-9 object-contain flex-shrink-0 mt-0.5" />
               <div>
                 <h3 className="font-semibold text-sm">{t('directMessages')}</h3>
                 <p className="text-xs text-muted-foreground">{t('directMessagesDescription')}</p>
@@ -193,10 +193,10 @@ const OnboardingModal = ({ open, onComplete }: OnboardingModalProps) => {
           display: none !important;
         }
       `}</style>
-      <div className="fixed inset-0 z-[2000] bg-background flex items-center justify-center">
-        <div className="w-full h-full max-w-2xl mx-auto flex flex-col p-6">
+      <div className="fixed inset-0 z-[2000] bg-background flex items-center justify-center safe-top safe-bottom">
+        <div className="w-full h-full max-w-2xl mx-auto flex flex-col p-6 pt-safe pb-safe">
           {/* Progress bar */}
-          <div className="space-y-2 mb-8">
+          <div className="space-y-2 mb-4">
             <Progress value={progress} className="h-1.5" />
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>{t('step')} {currentStep + 1} {t('of')} {steps.length}</span>
@@ -211,8 +211,11 @@ const OnboardingModal = ({ open, onComplete }: OnboardingModalProps) => {
             </div>
           </div>
 
-          {/* Step content */}
-          <div className="flex-1 flex flex-col justify-center space-y-6">
+          {/* Step content with transition */}
+          <div 
+            key={currentStep}
+            className="flex-1 flex flex-col justify-center space-y-3 animate-fade-in"
+          >
             <div className="text-center space-y-2">
               <h2 className="text-3xl font-bold">{steps[currentStep].title}</h2>
               <p className="text-base text-muted-foreground">
@@ -223,7 +226,7 @@ const OnboardingModal = ({ open, onComplete }: OnboardingModalProps) => {
           </div>
 
           {/* Navigation buttons */}
-          <div className="flex gap-2 pt-6">
+          <div className="flex gap-2 pt-4">
             {currentStep > 0 && (
               <Button
                 variant="outline"
