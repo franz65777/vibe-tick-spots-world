@@ -10,6 +10,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { getDateFnsLocale } from '@/utils/dateFnsLocales';
 import type { Comment } from '@/services/socialEngagementService';
+import { useOptimizedProfile } from '@/hooks/useOptimizedProfile';
 
 interface CommentDrawerProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ export const CommentDrawer = ({
   onDeleteComment,
 }: CommentDrawerProps) => {
   const { user } = useAuth();
+  const { profile } = useOptimizedProfile();
   const { t, i18n } = useTranslation();
   const [newComment, setNewComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -125,9 +127,9 @@ export const CommentDrawer = ({
           <form onSubmit={handleSubmit} className="p-4 border-t border-border shrink-0 bg-background">
             <div className="flex gap-3 items-center">
               <Avatar className="w-9 h-9 shrink-0">
-                <AvatarImage src={user?.user_metadata?.avatar_url} />
+                <AvatarImage src={profile?.avatar_url || user?.user_metadata?.avatar_url} />
                 <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                  {user?.user_metadata?.username?.[0]?.toUpperCase() || 'U'}
+                  {profile?.username?.[0]?.toUpperCase() || user?.user_metadata?.username?.[0]?.toUpperCase() || 'U'}
                 </AvatarFallback>
               </Avatar>
 
