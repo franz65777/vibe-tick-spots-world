@@ -10,6 +10,7 @@ import discountIcon from '@/assets/filter-discount.png';
 import eventIcon from '@/assets/filter-event.png';
 import promotionIcon from '@/assets/filter-promotion.png';
 import newIcon from '@/assets/filter-new.png';
+import cityIcon from '@/assets/city-icon.png';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
@@ -36,6 +37,15 @@ interface PopularSpot {
   };
 }
 
+interface CitySpot {
+  city: string;
+  locationCount: number;
+  coordinates: {
+    lat: number;
+    lng: number;
+  };
+}
+
 interface PopularSpotsProps {
   currentCity?: string;
   onLocationClick?: (coords: { lat: number; lng: number }) => void;
@@ -47,6 +57,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
   const { t } = useTranslation();
   const { user } = useAuth();
   const [popularSpots, setPopularSpots] = useState<PopularSpot[]>([]);
+  const [citySpots, setCitySpots] = useState<CitySpot[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState<FilterType>('most_saved');
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -70,6 +81,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
   const fetchPopularSpots = async () => {
     if (!currentCity || currentCity === 'Unknown City') {
       setPopularSpots([]);
+      setCitySpots([]);
       setLoading(false);
       return;
     }
@@ -78,21 +90,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
       setLoading(true);
       const normalizedCity = currentCity.trim().toLowerCase();
 
-      // Base query for locations
-      const locationsQuery = supabase
-        .from('locations')
-        .select('id, name, category, city, address, google_place_id, latitude, longitude')
-        .or(`city.ilike.%${normalizedCity}%,address.ilike.%${normalizedCity}%`)
-        .limit(200);
-
-      const locationsResult = await locationsQuery;
-      if (locationsResult.error) throw locationsResult.error;
-
-      const locationsData = locationsResult.data || [];
-      const locationIds = locationsData.map(l => l.id);
-
-      // If filter is not "most_saved", get active marketing campaigns
-      let campaignsMap = new Map<string, any>();
+      // For non-trending filters, fetch cities with active campaigns globally
       if (filterType !== 'most_saved') {
         const campaignTypeMap = {
           'discount': 'discount',
@@ -101,122 +99,136 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
           'new': 'new_opening'
         };
 
+        // Get all active campaigns of this type
         const { data: campaignsData } = await supabase
           .from('marketing_campaigns')
-          .select('id, location_id, campaign_type, end_date')
+          .select('location_id, campaign_type')
           .eq('campaign_type', campaignTypeMap[filterType])
           .eq('is_active', true)
-          .gte('end_date', new Date().toISOString())
-          .in('location_id', locationIds);
+          .gte('end_date', new Date().toISOString());
 
-        campaignsData?.forEach(campaign => {
-          campaignsMap.set(campaign.location_id, campaign);
-        });
-      }
+        const campaignLocationIds = campaignsData?.map(c => c.location_id) || [];
 
-      // Get event registrations if filter is event
-      let registrationsMap = new Map<string, { count: number; userRegistered: boolean }>();
-      if (filterType === 'event' && campaignsMap.size > 0) {
-        const campaignIds = Array.from(campaignsMap.values()).map(c => c.id);
-        
-        const { data: registrationsData } = await supabase
-          .from('event_registrations')
-          .select('campaign_id, user_id')
-          .in('campaign_id', campaignIds);
-
-        registrationsData?.forEach(reg => {
-          const current = registrationsMap.get(reg.campaign_id) || { count: 0, userRegistered: false };
-          registrationsMap.set(reg.campaign_id, {
-            count: current.count + 1,
-            userRegistered: current.userRegistered || (user && reg.user_id === user.id)
-          });
-        });
-      }
-
-      // Get saves count for locations
-      const { data: savesData } = await supabase
-        .from('user_saved_locations')
-        .select('location_id')
-        .in('location_id', locationIds);
-
-      const savesMap = new Map<string, number>();
-      savesData?.forEach(save => {
-        savesMap.set(save.location_id, (savesMap.get(save.location_id) || 0) + 1);
-      });
-
-      // Get Google saves
-      const { data: googleSavesData } = await supabase
-        .from('saved_places')
-        .select('place_id')
-        .ilike('city', `%${normalizedCity}%`);
-
-      const googleSavesMap = new Map<string, number>();
-      googleSavesData?.forEach(save => {
-        googleSavesMap.set(save.place_id, (googleSavesMap.get(save.place_id) || 0) + 1);
-      });
-
-      // Process and filter locations
-      const locationMap = new Map<string, PopularSpot>();
-
-      locationsData?.forEach((location) => {
-        const locationCity = location.city?.trim().toLowerCase();
-        
-        // Filter by city
-        if (!locationCity || (!locationCity.includes(normalizedCity) && !normalizedCity.includes(locationCity))) {
+        if (campaignLocationIds.length === 0) {
+          setCitySpots([]);
+          setPopularSpots([]);
+          setLoading(false);
           return;
         }
 
-        // If filter is not "most_saved", only include locations with active campaigns
-        if (filterType !== 'most_saved' && !campaignsMap.has(location.id)) {
-          return;
-        }
+        // Get locations with these campaigns
+        const { data: locationsData } = await supabase
+          .from('locations')
+          .select('city, latitude, longitude')
+          .in('id', campaignLocationIds);
 
-        const key = location.google_place_id || location.id;
-        const savesCount = (savesMap.get(location.id) || 0) + (location.google_place_id ? (googleSavesMap.get(location.google_place_id) || 0) : 0);
-        
-        // Only include locations with at least 1 save or with active campaign
-        if (savesCount > 0 || campaignsMap.has(location.id)) {
-          const campaign = campaignsMap.get(location.id);
-          const registrations = campaign ? registrationsMap.get(campaign.id) : undefined;
-
-          if (!locationMap.has(key) || (locationMap.get(key)?.savesCount || 0) < savesCount) {
-            locationMap.set(key, {
-              id: location.id,
-              name: location.name,
-              category: location.category,
-              city: location.city || 'Unknown',
-              address: location.address,
-              google_place_id: location.google_place_id,
-              savesCount,
-              coordinates: {
-                lat: parseFloat(location.latitude?.toString() || '0'),
-                lng: parseFloat(location.longitude?.toString() || '0')
-              },
-              campaign: campaign ? {
-                id: campaign.id,
-                type: campaign.campaign_type,
-                registrationsCount: registrations?.count || 0,
-                userRegistered: registrations?.userRegistered || false
-              } : undefined
+        // Group by city and count
+        const cityMap = new Map<string, { count: number; lat: number; lng: number }>();
+        locationsData?.forEach(location => {
+          if (!location.city) return;
+          const city = location.city.trim();
+          const existing = cityMap.get(city);
+          if (existing) {
+            cityMap.set(city, { ...existing, count: existing.count + 1 });
+          } else {
+            cityMap.set(city, {
+              count: 1,
+              lat: parseFloat(location.latitude?.toString() || '0'),
+              lng: parseFloat(location.longitude?.toString() || '0')
             });
           }
-        }
-      });
+        });
 
-      // Sort by registrations count if event filter, otherwise by saves count
-      const topSpots = Array.from(locationMap.values())
-        .sort((a, b) => {
-          if (filterType === 'event' && a.campaign && b.campaign) {
-            return b.campaign.registrationsCount - a.campaign.registrationsCount;
+        const cities = Array.from(cityMap.entries())
+          .map(([city, data]) => ({
+            city,
+            locationCount: data.count,
+            coordinates: { lat: data.lat, lng: data.lng }
+          }))
+          .sort((a, b) => b.locationCount - a.locationCount)
+          .slice(0, 10);
+
+        setCitySpots(cities);
+        setPopularSpots([]);
+      } else {
+        // Original logic for trending filter
+        const locationsQuery = supabase
+          .from('locations')
+          .select('id, name, category, city, address, google_place_id, latitude, longitude')
+          .or(`city.ilike.%${normalizedCity}%,address.ilike.%${normalizedCity}%`)
+          .limit(200);
+
+        const locationsResult = await locationsQuery;
+        if (locationsResult.error) throw locationsResult.error;
+
+        const locationsData = locationsResult.data || [];
+        const locationIds = locationsData.map(l => l.id);
+
+        // Get saves count for locations
+        const { data: savesData } = await supabase
+          .from('user_saved_locations')
+          .select('location_id')
+          .in('location_id', locationIds);
+
+        const savesMap = new Map<string, number>();
+        savesData?.forEach(save => {
+          savesMap.set(save.location_id, (savesMap.get(save.location_id) || 0) + 1);
+        });
+
+        // Get Google saves
+        const { data: googleSavesData } = await supabase
+          .from('saved_places')
+          .select('place_id')
+          .ilike('city', `%${normalizedCity}%`);
+
+        const googleSavesMap = new Map<string, number>();
+        googleSavesData?.forEach(save => {
+          googleSavesMap.set(save.place_id, (googleSavesMap.get(save.place_id) || 0) + 1);
+        });
+
+        // Process and filter locations
+        const locationMap = new Map<string, PopularSpot>();
+
+        locationsData?.forEach((location) => {
+          const locationCity = location.city?.trim().toLowerCase();
+          
+          if (!locationCity || (!locationCity.includes(normalizedCity) && !normalizedCity.includes(locationCity))) {
+            return;
           }
-          return b.savesCount - a.savesCount;
-        })
-        .slice(0, 10);
 
-      setPopularSpots(topSpots);
+          const key = location.google_place_id || location.id;
+          const savesCount = (savesMap.get(location.id) || 0) + (location.google_place_id ? (googleSavesMap.get(location.google_place_id) || 0) : 0);
+          
+          if (savesCount > 0) {
+            if (!locationMap.has(key) || (locationMap.get(key)?.savesCount || 0) < savesCount) {
+              locationMap.set(key, {
+                id: location.id,
+                name: location.name,
+                category: location.category,
+                city: location.city || 'Unknown',
+                address: location.address,
+                google_place_id: location.google_place_id,
+                savesCount,
+                coordinates: {
+                  lat: parseFloat(location.latitude?.toString() || '0'),
+                  lng: parseFloat(location.longitude?.toString() || '0')
+                }
+              });
+            }
+          }
+        });
+
+        const topSpots = Array.from(locationMap.values())
+          .sort((a, b) => b.savesCount - a.savesCount)
+          .slice(0, 10);
+
+        setPopularSpots(topSpots);
+        setCitySpots([]);
+      }
     } catch (error) {
       console.error('Error fetching popular spots:', error);
       setPopularSpots([]);
+      setCitySpots([]);
     } finally {
       setLoading(false);
     }
@@ -227,47 +239,8 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
     onSpotSelect?.(spot);
   };
 
-  const handleEventRegistration = async (e: React.MouseEvent, spot: PopularSpot) => {
-    e.stopPropagation();
-    
-    if (!user) {
-      toast.error('Please log in to register for events');
-      return;
-    }
-
-    if (!spot.campaign) return;
-
-    try {
-      if (spot.campaign.userRegistered) {
-        // Unregister
-        const { error } = await supabase
-          .from('event_registrations')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('campaign_id', spot.campaign.id);
-
-        if (error) throw error;
-        toast.success('Registration cancelled');
-      } else {
-        // Register
-        const { error } = await supabase
-          .from('event_registrations')
-          .insert({
-            user_id: user.id,
-            campaign_id: spot.campaign.id,
-            location_id: spot.id
-          });
-
-        if (error) throw error;
-        toast.success('Registered for event!');
-      }
-      
-      // Refresh spots
-      fetchPopularSpots();
-    } catch (error) {
-      console.error('Error handling event registration:', error);
-      toast.error('Failed to update registration');
-    }
+  const handleCityClick = (city: CitySpot) => {
+    onLocationClick?.(city.coordinates);
   };
 
   const getFilterIcon = () => {
@@ -298,16 +271,16 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
     { value: 'new' as FilterType, label: t('filters.new', { ns: 'home' }), icon: newIcon },
   ];
 
-  const selectedFilter = filterType;
-
   useEffect(() => {
-    // Notify parent when dropdown opens/closes to hide/show tinder section
     if (dropdownOpen) {
       window.dispatchEvent(new CustomEvent('filter-dropdown-open'));
     } else {
       window.dispatchEvent(new CustomEvent('filter-dropdown-close'));
     }
   }, [dropdownOpen]);
+
+  const showingCities = filterType !== 'most_saved';
+  const hasResults = showingCities ? citySpots.length > 0 : popularSpots.length > 0;
 
   return (
     <div className="h-full px-[10px] pt-0 pb-1 bg-background/50">
@@ -321,10 +294,10 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                 className="flex items-center justify-center"
                 aria-label={t('filters.openFilter', { ns: 'home', defaultValue: 'Open trending filters' })}
               >
-                {/* Larger main icon - 60% bigger */}
+                {/* Main filter icon - same size as uploaded image */}
                 <div className={cn(
                    "flex items-center justify-center transition-all",
-                   dropdownOpen ? "w-11 h-11" : "w-9 h-9"
+                   dropdownOpen ? "w-14 h-14" : "w-12 h-12"
                  )}>
                   {getFilterIcon()}
                 </div>
@@ -344,7 +317,7 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
                         }}
                         className="flex-shrink-0 opacity-70 hover:opacity-100 transition-opacity"
                       >
-                        <img src={option.icon} alt={option.label} className="w-9 h-9 object-contain" />
+                        <img src={option.icon} alt={option.label} className="w-12 h-12 object-contain" />
                       </button>
                     ))}
                 </div>
@@ -354,65 +327,72 @@ const PopularSpots = ({ currentCity, onLocationClick, onSwipeDiscoveryOpen, onSp
               {!dropdownOpen && (
                 <div>
                   <h3 className="text-[13px] font-semibold text-foreground leading-tight">
-                    {getFilterLabel()} {t('in', { ns: 'common' })} {currentCity}
+                    {getFilterLabel()} {showingCities ? t('globally', { ns: 'common', defaultValue: 'Globally' }) : `${t('in', { ns: 'common' })} ${currentCity}`}
                   </h3>
                   <p className="text-[11px] text-muted-foreground">
-                    {t('filters.placesFound', { ns: 'home', count: popularSpots.length })}
+                    {hasResults 
+                      ? showingCities 
+                        ? `${citySpots.length} ${t('cities', { ns: 'common', defaultValue: 'cities' })}`
+                        : t('filters.placesFound', { ns: 'home', count: popularSpots.length })
+                      : t('filters.noLocationsWithFilter', { ns: 'home', filter: getFilterLabel().toLowerCase(), city: currentCity })
+                    }
                   </p>
                 </div>
               )}
             </div>
-            {!dropdownOpen && popularSpots.length > 0 && <img src={fireIcon} alt="" className="w-7 h-7 object-contain" />}
+            {!dropdownOpen && hasResults && <img src={fireIcon} alt="" className="w-7 h-7 object-contain" />}
           </div>
         )}
       </div>
 
-      {/* Popular spots cards or empty state */}
+      {/* Cards section */}
       {loading ? (
         <div className="flex gap-2 overflow-x-auto pb-2">
           {[1, 2, 3].map(i => (
             <div key={i} className="flex-shrink-0 w-40 h-10 rounded-lg bg-gray-200 animate-pulse" />
           ))}
         </div>
-      ) : popularSpots.length > 0 ? (
+      ) : hasResults ? (
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          {popularSpots.map((spot) => (
-            <div key={spot.id} className="flex-shrink-0 flex flex-col gap-1">
-              <button
-                onClick={() => handleSpotClick(spot)}
-                className="relative px-3 py-2 rounded-lg bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md hover:bg-muted/20 flex items-center gap-2 transition-all hover:shadow-md overflow-hidden"
-                aria-label={`Zoom to ${spot.name}`}
-              >
-                <div className="absolute inset-0 rounded-lg border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
-                <CategoryIcon category={spot.category} className="w-5 h-5" />
-                <span className="text-xs font-medium text-foreground line-clamp-1 max-w-[160px]">
-                  {spot.name}
-                </span>
-              </button>
-              
-              {/* Event registration button */}
-              {spot.campaign?.type === 'event' && (
+          {showingCities ? (
+            /* City cards */
+            citySpots.map((city) => (
+              <div key={city.city} className="flex-shrink-0">
                 <button
-                  onClick={(e) => handleEventRegistration(e, spot)}
-                  className={`px-2 py-1 rounded-md text-[10px] font-medium flex items-center justify-center gap-1 transition-all ${
-                    spot.campaign.userRegistered
-                      ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                      : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                  }`}
+                  onClick={() => handleCityClick(city)}
+                  className="relative px-3 py-2 rounded-lg bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md hover:bg-muted/20 flex items-center gap-2 transition-all hover:shadow-md overflow-hidden"
+                  aria-label={`Zoom to ${city.city}`}
                 >
-                  <UserPlus className="w-3 h-3" />
-                  {spot.campaign.userRegistered ? 'Registered' : 'Register'}
-                  {spot.campaign.registrationsCount > 0 && (
-                    <span className="ml-1">({spot.campaign.registrationsCount})</span>
-                  )}
+                  <div className="absolute inset-0 rounded-lg border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
+                  <img src={cityIcon} alt="City" className="w-5 h-5 object-contain" />
+                  <span className="text-xs font-medium text-foreground line-clamp-1 max-w-[160px]">
+                    {city.city} ({city.locationCount})
+                  </span>
                 </button>
-              )}
-            </div>
-          ))}
+              </div>
+            ))
+          ) : (
+            /* Location cards */
+            popularSpots.map((spot) => (
+              <div key={spot.id} className="flex-shrink-0">
+                <button
+                  onClick={() => handleSpotClick(spot)}
+                  className="relative px-3 py-2 rounded-lg bg-gray-200/40 dark:bg-slate-800/65 backdrop-blur-md hover:bg-muted/20 flex items-center gap-2 transition-all hover:shadow-md overflow-hidden"
+                  aria-label={`Zoom to ${spot.name}`}
+                >
+                  <div className="absolute inset-0 rounded-lg border-[1.5px] border-transparent [background:linear-gradient(135deg,hsl(var(--primary)/0.6),hsl(var(--primary)/0.2))_border-box] [background-clip:border-box] [-webkit-mask:linear-gradient(#fff_0_0)_padding-box,linear-gradient(#fff_0_0)] [-webkit-mask-composite:xor] [mask-composite:exclude] pointer-events-none"></div>
+                  <CategoryIcon category={spot.category} className="w-5 h-5" />
+                  <span className="text-xs font-medium text-foreground line-clamp-1 max-w-[160px]">
+                    {spot.name}
+                  </span>
+                </button>
+              </div>
+            ))
+          )}
         </div>
       ) : !dropdownOpen ? (
         <p className="text-xs text-muted-foreground text-center py-4">
-          {t('filters.noLocationsWithFilter', { ns: 'home', filter: getFilterLabel(), city: currentCity || t('thisArea', { ns: 'common' }) })}
+          {t('filters.noLocationsWithFilter', { ns: 'home', filter: getFilterLabel().toLowerCase(), city: currentCity || t('thisArea', { ns: 'common' }) })}
         </p>
       ) : null}
     </div>
